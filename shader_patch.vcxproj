@@ -1,0 +1,179 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{77065F00-E7E4-4EDF-8C98-6EB87BC49C4D}</ProjectGuid>
+    <RootNamespace>dll</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <ProjectName>shader_patch</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>D:\Program Files (x86)\LucasArts\Star Wars Battlefront II\GameData</OutDir>
+    <IntDir>build\$(Configuration)\</IntDir>
+    <TargetName>dinput8</TargetName>
+    <TargetExt>.dll</TargetExt>
+    <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
+    <CodeAnalysisRuleSet>NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>D:\Program Files (x86)\LucasArts\Star Wars Battlefront II\GameData</OutDir>
+    <IntDir>build\$(Configuration)\</IntDir>
+    <TargetName>dinput8</TargetName>
+    <TargetExt>.dll</TargetExt>
+    <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
+    <EnableCppCoreCheck>true</EnableCppCoreCheck>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <PreprocessorDefinitions>GLM_FORCE_CXX03;NOMINMAX;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4127</DisableSpecificWarnings>
+      <ConformanceMode>true</ConformanceMode>
+      <EnablePREfast>false</EnablePREfast>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>dxguid.lib;d3d9.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>dinput8.def</ModuleDefinitionFile>
+    </Link>
+    <CustomBuild>
+      <Outputs>a lot of shader files (hopefully)</Outputs>
+      <Command>powershell -File compile_shaders.ps1 -checksums_dir build/$(ConfigurationName) -extra_args /Zi</Command>
+      <Message>Compiling Shaders...</Message>
+      <LinkObjects>false</LinkObjects>
+    </CustomBuild>
+    <FxCompile>
+      <ObjectFileOutput />
+    </FxCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <PreprocessorDefinitions>GLM_FORCE_CXX03;NOMINMAX;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4127</DisableSpecificWarnings>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>dxguid.lib;d3d9.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>dinput8.def</ModuleDefinitionFile>
+    </Link>
+    <CustomBuild>
+      <Outputs>a lot of shader files (hopefully)</Outputs>
+      <Command>powershell -File compile_shaders.ps1 -checksums_dir build/$(ConfigurationName)</Command>
+      <Message>Compiling Shaders...</Message>
+      <LinkObjects>false</LinkObjects>
+    </CustomBuild>
+    <FxCompile>
+      <ObjectFileOutput />
+    </FxCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\direct3d\check_required_features.cpp" />
+    <ClCompile Include="src\direct3d\create_device.cpp" />
+    <ClCompile Include="src\direct3d\device.cpp" />
+    <ClCompile Include="src\direct3d\device_stubs.cpp" />
+    <ClCompile Include="src\direct3d\rendertarget.cpp" />
+    <ClCompile Include="src\imgui\imgui.cpp">
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">TurnOffAllWarnings</WarningLevel>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</TreatWarningAsError>
+    </ClCompile>
+    <ClCompile Include="src\imgui\imgui_demo.cpp">
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">TurnOffAllWarnings</WarningLevel>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</TreatWarningAsError>
+    </ClCompile>
+    <ClCompile Include="src\imgui\imgui_draw.cpp">
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">TurnOffAllWarnings</WarningLevel>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</TreatWarningAsError>
+    </ClCompile>
+    <ClCompile Include="src\imgui\imgui_impl_dx9.cpp">
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">TurnOffAllWarnings</WarningLevel>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</TreatWarningAsError>
+    </ClCompile>
+    <ClCompile Include="src\input_hooker.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\texture_loader.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="dinput8.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\direct3d\check_required_features.hpp" />
+    <ClInclude Include="src\direct3d\create_device.hpp" />
+    <ClInclude Include="src\direct3d\device.hpp" />
+    <ClInclude Include="src\direct3d\rendertarget.hpp" />
+    <ClInclude Include="src\direct3d\shader.hpp" />
+    <ClInclude Include="src\direct3d\shader_constant.hpp" />
+    <ClInclude Include="src\direct3d\shader_metadata.hpp" />
+    <ClInclude Include="src\direct3d\render_state_block.hpp" />
+    <ClInclude Include="src\hook_vtable.hpp" />
+    <ClInclude Include="src\imgui\imconfig.h" />
+    <ClInclude Include="src\imgui\imgui.h" />
+    <ClInclude Include="src\imgui\imgui_impl_dx9.h" />
+    <ClInclude Include="src\imgui\imgui_internal.h" />
+    <ClInclude Include="src\imgui\stb_rect_pack.h" />
+    <ClInclude Include="src\imgui\stb_textedit.h" />
+    <ClInclude Include="src\imgui\stb_truetype.h" />
+    <ClInclude Include="src\input_hooker.hpp" />
+    <ClInclude Include="src\logger.hpp" />
+    <ClInclude Include="src\shader_constants.hpp" />
+    <ClInclude Include="src\texture_loader.hpp" />
+    <ClInclude Include="src\window_helpers.hpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

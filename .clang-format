@@ -1,0 +1,28 @@
+﻿---
+BasedOnStyle: LLVM
+AccessModifierOffset: '-3'
+AlignAfterOpenBracket: Align
+AlignOperands: 'true'
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: 'true'
+AllowShortLoopsOnASingleLine: 'true'
+BreakBeforeBraces: Stroustrup
+ConstructorInitializerAllOnOneLineOrOnePerLine: 'true'
+ColumnLimit: '80'
+IndentWidth: '3'
+Language: Cpp
+NamespaceIndentation: None
+PointerAlignment: Left
+SortIncludes: 'true'
+TabWidth: '3'
+UseTab: Never
+FixNamespaceComments: 'false'
+AlwaysBreakTemplateDeclarations: 'true'
+SpaceAfterTemplateKeyword: 'false'
+Cpp11BracedListStyle: 'true'
+ConstructorInitializerIndentWidth: '3'
+ContinuationIndentWidth: '3'
+PenaltyReturnTypeOnItsOwnLine: '200'
+PenaltyBreakBeforeFirstCallParameter: '200'
+PenaltyExcessCharacter: '2'
+...
