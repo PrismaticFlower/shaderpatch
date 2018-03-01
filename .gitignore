@@ -3,6 +3,9 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# Ignore preparepackage results
+packaged/
+
 # User-specific files
 *.suo
 *.user
@@ -24,8 +27,7 @@ bld/
 build/
 [Bb]in/
 [Oo]bj/
-[Ll]og/
-shaderpatch/
+[Ll]og/ 
 
 
 # Visual Studio 2015 cache/options directory
