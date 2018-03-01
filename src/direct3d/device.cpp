@@ -18,6 +18,7 @@
 #include <string_view>
 #include <vector>
 
+#include <INIReader.h>
 #include <gsl/gsl>
 
 using namespace std::literals;
@@ -58,7 +59,10 @@ Device::Device(Com_ptr<IDirect3DDevice9> device, const HWND window,
                const glm::uvec2 resolution) noexcept
    : _device{std::move(device)}, _window{window}, _resolution{resolution}
 {
-   _water_texture = load_dds_from_file(*_device, L"shaderpatch/textures/water.dds"s);
+   _water_texture =
+      load_dds_from_file(*_device, L"data/shaderpatch/textures/water.dds"s);
+
+   read_config();
 }
 
 Device::~Device()
@@ -90,6 +94,12 @@ HRESULT Device::TestCooperativeLevel() noexcept
 HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 {
    if (presentation_parameters == nullptr) return D3DERR_INVALIDCALL;
+
+   if (_display_override) {
+      presentation_parameters->Windowed = _force_windowed;
+      presentation_parameters->BackBufferWidth = _override_resolution.x;
+      presentation_parameters->BackBufferHeight = _override_resolution.y;
+   }
 
    // drop resources
 
@@ -158,7 +168,7 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
                         HWND dest_window_override, const RGNDATA* dirty_region) noexcept
 {
    if (_window_dirty) {
-      make_borderless_window(_window);
+      if (_borderless_windowed) make_borderless_window(_window);
       resize_window(_window, _resolution);
       centre_window(_window);
       if (GetFocus() == _window) clip_cursor_to_window(_window);
@@ -418,5 +428,21 @@ void Device::update_refraction_texture() noexcept
    _refraction_texture->GetSurfaceLevel(0, dest.clear_and_assign());
 
    _device->StretchRect(rt.get(), nullptr, dest.get(), nullptr, D3DTEXF_LINEAR);
+}
+
+void Device::read_config() noexcept
+{
+   INIReader reader{"shader patch.ini"s};
+
+   if (reader.ParseError() < 0) {
+      log(Log_level::warning, "Failed to parse config file \'",
+          "shader patch.ini"s, '\'');
+   }
+
+   _display_override = reader.GetBoolean("display"s, "Enabled"s, false);
+   _force_windowed = reader.GetBoolean("display"s, "Windowed"s, false);
+   _borderless_windowed = reader.GetBoolean("display"s, "Borderless"s, true);
+   _override_resolution.x = reader.GetInteger("display"s, "Width"s, 800);
+   _override_resolution.y = reader.GetInteger("display"s, "Width"s, 600);
 }
 }

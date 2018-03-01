@@ -69,8 +69,7 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <PreprocessorDefinitions>GLM_FORCE_CXX03;NOMINMAX;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalIncludeDirectories>
-      </AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>submodules/inih;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4127</DisableSpecificWarnings>
       <ConformanceMode>true</ConformanceMode>
       <EnablePREfast>false</EnablePREfast>
@@ -101,8 +100,7 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <PreprocessorDefinitions>GLM_FORCE_CXX03;NOMINMAX;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalIncludeDirectories>
-      </AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>submodules/inih;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4127</DisableSpecificWarnings>
       <ConformanceMode>true</ConformanceMode>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>

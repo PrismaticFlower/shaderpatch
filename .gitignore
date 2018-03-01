@@ -21,9 +21,12 @@
 x64/
 x86/
 bld/
+build/
 [Bb]in/
 [Oo]bj/
 [Ll]og/
+shaderpatch/
+
 
 # Visual Studio 2015 cache/options directory
 .vs/

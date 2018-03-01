@@ -313,6 +313,8 @@ private:
 
    void update_refraction_texture() noexcept;
 
+   void read_config() noexcept;
+
    const Com_ptr<IDirect3DDevice9> _device;
    const HWND _window;
 
@@ -327,6 +329,11 @@ private:
    bool _fake_device_loss = false;
 
    glm::uvec2 _resolution;
+
+   bool _display_override = false;
+   bool _force_windowed = false;
+   bool _borderless_windowed = false;
+   glm::uvec2 _override_resolution{};
 
    Ps_2f_shader_constant<constants::ps::fog_range> _fog_range_const;
    Ps_3f_shader_constant<constants::ps::fog_color> _fog_color_const;
