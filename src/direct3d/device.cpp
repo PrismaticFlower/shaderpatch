@@ -443,6 +443,6 @@ void Device::read_config() noexcept
    _force_windowed = reader.GetBoolean("display"s, "Windowed"s, false);
    _borderless_windowed = reader.GetBoolean("display"s, "Borderless"s, true);
    _override_resolution.x = reader.GetInteger("display"s, "Width"s, 800);
-   _override_resolution.y = reader.GetInteger("display"s, "Width"s, 600);
+   _override_resolution.y = reader.GetInteger("display"s, "Height"s, 600);
 }
 }
