@@ -6,6 +6,7 @@
 #include "input_hooker.hpp"
 
 #include <exception>
+#include <string>
 
 #include <d3d9.h>
 #include <dinput.h>
@@ -15,7 +16,15 @@ using namespace sp;
 
 HMODULE load_dinput_dll() noexcept
 {
-   const static auto handle = LoadLibraryW(LR"(C:\Windows\SysWOW64\DINPUT8.dll)");
+   std::wstring buffer;
+   buffer.resize(512u);
+
+   const auto size = GetSystemDirectoryW(buffer.data(), buffer.size());
+   buffer.resize(size);
+
+   buffer += LR"(\DINPUT8.dll)";
+
+   const static auto handle = LoadLibraryW(buffer.c_str());
 
    if (handle == nullptr) std::terminate();
 
