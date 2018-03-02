@@ -26,25 +26,25 @@ bool feature_test(const bool result, std::string_view error_msg)
 
 bool supports_texture_format(IDirect3D9& d3d, D3DFORMAT format)
 {
-   return (d3d.CheckDeviceFormat(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, D3DFMT_A8R8G8B8,
-                                 0, D3DRTYPE_TEXTURE, format) == D3D_OK);
+   return (SUCCEEDED(d3d.CheckDeviceFormat(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, D3DFMT_X8R8G8B8,
+                                           0, D3DRTYPE_TEXTURE, format)) == 1);
 }
 }
 
 void check_required_features(IDirect3D9& d3d) noexcept
 {
-   bool supported = false;
+   bool supported = true;
 
    D3DCAPS9 caps;
 
    d3d.GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, &caps);
 
-   supported |= feature_test(caps.VertexShaderVersion >= 0xfffe0300u,
+   supported &= feature_test(caps.VertexShaderVersion >= 0xfffe0300u,
                              "Device does not support Shader Model 3.0."sv);
-   supported |= feature_test(caps.PixelShaderVersion >= 0xfffe0300u,
+   supported &= feature_test(caps.PixelShaderVersion >= 0xfffe0300u,
                              "Device does not support Shader Model 3.0."sv);
 
-   supported |= feature_test(supports_texture_format(d3d, D3DFMT_DXT5),
+   supported &= feature_test(supports_texture_format(d3d, D3DFMT_DXT5),
                              "Device does not support BC3 (DXT(4|5) textures."sv);
 
    if (!supported) {
