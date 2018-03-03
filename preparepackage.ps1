@@ -25,6 +25,8 @@ if ($installationPath -and (test-path "$installationPath\Common7\Tools\vsdevcmd.
 msbuild /t:Build /p:Configuration=Release /m shader_patch.sln
 
 copy .\bin\Release\dinput8.dll .\packaged\
+copy ".\bin\Release\shader patch installer.exe" .\packaged\
+copy ".\bin\Release\Microsoft.Expression.Drawing.dll" .\packaged\
 
 # Copy Assets
 copy '.\assets\shader patch.ini' .\packaged\
