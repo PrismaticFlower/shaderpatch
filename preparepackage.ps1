@@ -31,6 +31,7 @@ copy ".\bin\Release\Microsoft.Expression.Drawing.dll" .\packaged\
 
 # Copy Assets
 copy '.\assets\shader patch.ini' .\packaged\
+copy '.\assets\shader patch user readme.txt' '.\packaged\shader patch readme.txt'
 
 md .\packaged\data\
 md .\packaged\data\shaderpatch\
