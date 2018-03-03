@@ -22,7 +22,8 @@ if ($installationPath -and (test-path "$installationPath\Common7\Tools\vsdevcmd.
 }
 
 # Build
-msbuild /t:Build /p:Configuration=Release /m shader_patch.sln
+msbuild /t:Build /p:Configuration=Release /m shader_patch.vcxproj
+msbuild /t:Build /p:Configuration=Release /m installer/installer.csproj
 
 copy .\bin\Release\dinput8.dll .\packaged\
 copy ".\bin\Release\shader patch installer.exe" .\packaged\

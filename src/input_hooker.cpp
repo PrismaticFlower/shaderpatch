@@ -22,7 +22,7 @@ HHOOK g_hook = nullptr;
 HHOOK g_wnd_proc_hook = nullptr;
 Input_mode g_input_mode = Input_mode::normal;
 
-WPARAM g_hotkey = VK_NONAME;
+WPARAM g_hotkey = 0;
 std::function<void()> g_hotkey_func;
 
 using Set_coop_level_type = HRESULT __stdcall(IDirectInputDevice8A& self,

@@ -345,6 +345,8 @@ private:
 
    Render_state_block _state_block;
 
+   WPARAM _imgui_hotkey;
+
    std::atomic<ULONG> _ref_count{1};
 };
 }

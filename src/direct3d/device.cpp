@@ -146,7 +146,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
       set_input_window(GetCurrentThreadId(), _window);
 
-      set_input_hotkey(VK_OEM_5);
+      set_input_hotkey(_imgui_hotkey);
       set_input_hotkey_func([this] {
          _imgui_active = !_imgui_active;
 
@@ -444,5 +444,7 @@ void Device::read_config() noexcept
    _borderless_windowed = reader.GetBoolean("display"s, "Borderless"s, true);
    _override_resolution.x = reader.GetInteger("display"s, "Width"s, 800);
    _override_resolution.y = reader.GetInteger("display"s, "Height"s, 600);
+
+   _imgui_hotkey = reader.GetInteger("debugscreen"s, "ActivateVirtualKey"s, 0);
 }
 }
