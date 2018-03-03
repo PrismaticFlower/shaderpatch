@@ -39,7 +39,7 @@
          <Label Content="Select where SWBFII is installed:" Margin="10,10,10,0" VerticalAlignment="Top"/>
          <Button x:Name="installButton" Content="Install!" Margin="10,0,10,10" VerticalAlignment="Bottom" IsEnabled="{Binding SelectedIndex, Converter={StaticResource SelectedIndexToBool}, ElementName=gameDirList}" Click="OnInstallClicked"/>
          <ListView x:Name="gameDirList" Margin="0,37.333,0,34.96" SelectionMode="Single" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.HorizontalScrollBarVisibility="Auto" IsSynchronizedWithCurrentItem="False"/>
-         <Grid x:Name="installedMask" HorizontalAlignment="Left" Height="{Binding ActualHeight, ElementName=installGrid}" VerticalAlignment="Top" Width="{Binding ActualWidth, ElementName=installGrid}" IsEnabled="False">
+         <Grid x:Name="installedMask" HorizontalAlignment="Left" Height="{Binding ActualHeight, ElementName=installGrid}" VerticalAlignment="Top" Width="{Binding ActualWidth, ElementName=installGrid}" IsEnabled="False" Visibility="Hidden">
             <Rectangle Fill="#FFF4F4F5" Stroke="Black"/>
             <TextBlock HorizontalAlignment="Center" Margin="0" TextWrapping="Wrap" Text="Shader Patch should now be installed to the directory you chose, you can exit the installer." VerticalAlignment="Center" FontSize="14"/>
             <TextBlock Margin="0,0,0,114.19" TextWrapping="Wrap" VerticalAlignment="Bottom" FontSize="14" Height="20.74" d:LayoutOverrides="Width" HorizontalAlignment="Center"><Run Text="In order to uninstall it run th"/><Run Text="e installer again from "/><Run Text="the "/><Run Text="game "/><Run Text="directory."/><LineBreak/><Run/></TextBlock>
