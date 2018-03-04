@@ -335,7 +335,7 @@ private:
    bool _borderless_windowed = false;
    glm::uvec2 _override_resolution{};
 
-   Ps_2f_shader_constant<constants::ps::fog_range> _fog_range_const;
+   Ps_3f_shader_constant<constants::ps::fog_range> _fog_range_const;
    Ps_3f_shader_constant<constants::ps::fog_color> _fog_color_const;
    Ps_4f_shader_constant<constants::ps::rt_resolution> _rt_resolution_const;
    Vs_1f_shader_constant<constants::vs::time> _time_vs_const;

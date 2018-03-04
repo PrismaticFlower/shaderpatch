@@ -353,8 +353,15 @@ HRESULT Device::SetRenderState(D3DRENDERSTATETYPE state, DWORD value) noexcept
 
       if (fog_state.x == 0.0f && fog_state.y == 0.0f) {
          fog_state.y += 1000000.f;
-         value = reinterpret_cast<DWORD&>(fog_state.y);
       }
+
+      if (fog_state.x == fog_state.y) {
+         fog_state.y += 0.00001f;
+      }
+
+      value = reinterpret_cast<DWORD&>(fog_state.y);
+
+      fog_state.z = 1.0f / (fog_state.y - fog_state.x);
 
       _fog_range_const.set(*_device, fog_state);
 
