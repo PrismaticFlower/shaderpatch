@@ -38,7 +38,9 @@
       <Grid x:Name="installGrid" VerticalAlignment="Top" HorizontalAlignment="Left" Width="{Binding ActualWidth, ElementName=grid}" Height="{Binding ActualHeight, ElementName=grid}">
          <Label Content="Select where SWBFII is installed:" Margin="10,10,10,0" VerticalAlignment="Top"/>
          <Button x:Name="installButton" Content="Install!" Margin="10,0,10,10" VerticalAlignment="Bottom" IsEnabled="{Binding SelectedIndex, Converter={StaticResource SelectedIndexToBool}, ElementName=gameDirList}" Click="OnInstallClicked"/>
-         <ListView x:Name="gameDirList" Margin="0,37.333,0,34.96" SelectionMode="Single" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.HorizontalScrollBarVisibility="Auto" IsSynchronizedWithCurrentItem="False"/>
+         <ListView x:Name="gameDirList" Margin="0,37.333,0,64" SelectionMode="Single" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.HorizontalScrollBarVisibility="Auto" IsSynchronizedWithCurrentItem="False"/>
+         <TextBlock HorizontalAlignment="Left" Height="26.04" Margin="10,0,0,33" TextWrapping="Wrap" VerticalAlignment="Bottom" Width="383"><Run Text="Not seeing your install location? Browse for &quot;battlefrontii.exe&quot; manually"/><Run Text="."/><LineBreak/><Run/><LineBreak/><Run/></TextBlock>
+         <Button Content="Browse" Margin="398,0,10,39.04" VerticalAlignment="Bottom" Click="OnBrowsePressed"/>
          <Grid x:Name="installedMask" HorizontalAlignment="Left" Height="{Binding ActualHeight, ElementName=installGrid}" VerticalAlignment="Top" Width="{Binding ActualWidth, ElementName=installGrid}" IsEnabled="False" Visibility="Hidden">
             <Rectangle Fill="#FFF4F4F5" Stroke="Black"/>
             <TextBlock HorizontalAlignment="Center" Margin="0" TextWrapping="Wrap" Text="Shader Patch should now be installed to the directory you chose, you can exit the installer." VerticalAlignment="Center" FontSize="14"/>

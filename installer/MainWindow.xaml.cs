@@ -41,7 +41,8 @@ namespace installer
             uninstallGrid.Visibility = Visibility.Hidden;
             uninstallGrid.IsEnabled = false;
 
-            gameDirList.ItemsSource = installerViewModel.SearchForInstalls();
+            installerViewModel.SearchForInstalls();
+            gameDirList.ItemsSource = installerViewModel.PossibleGameLocations;
          }
       }
 
@@ -76,6 +77,13 @@ namespace installer
          });
 
          uninstallerViewModel.FinishUninstall();
+      }
+
+      private void OnBrowsePressed(object sender, RoutedEventArgs e)
+      {
+         installerViewModel.BrowseForInstallPath();
+         gameDirList.ItemsSource = null;
+         gameDirList.ItemsSource = installerViewModel.PossibleGameLocations;
       }
    }
 }

@@ -6,15 +6,15 @@ using System.Data.OleDb;
 using System.IO;
 using System.Xml.Serialization;
 using Microsoft.VisualBasic.FileIO;
+using Microsoft.Win32;
+
 
 namespace installer
 {
    class InstallerModel
    {
-      public List<String> SearchForInstallPaths()
+      private void CheckWindowsSearchForPaths(ref HashSet<String> install_paths)
       {
-         List<String> install_paths = new List<String>();
-
          using (var connection = new OleDbConnection(@"Provider=Search.CollatorDSO;Extended Properties=""Application=Windows"""))
          {
 
@@ -31,17 +31,56 @@ namespace installer
                   {
                      var path = reader[0].ToString();
                      path = path.Substring(5);
+                     path = path.Replace('/', '\\');
 
                      install_paths.Add(path);
                   }
                }
 
                connection.Close();
-
             }
          }
+      }
 
-         return install_paths;
+      private void CheckRegistryForPaths(ref HashSet<String> install_paths)
+      {
+         var path = Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\LucasArts\Star Wars Battlefront II\1.0",
+                                      "ExePath",
+                                      null);
+
+         if (path != null) install_paths.Add(path.ToString());
+
+         path = Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\LucasArts\Star Wars Battlefront II\1.0",
+                                  "ExePath",
+                                  null);
+
+         if (path != null) install_paths.Add(path.ToString());
+      }
+
+      public List<String> SearchForInstallPaths()
+      {
+         HashSet<String> install_paths = new HashSet<String>();
+
+         CheckWindowsSearchForPaths(ref install_paths);
+         CheckRegistryForPaths(ref install_paths);
+
+         return install_paths.ToList();
+      }
+      
+      public string BrowseForInstallPath()
+      {
+         var dialog = new OpenFileDialog
+         {
+            Filter = "SWBFII Executable|battlefrontii.exe"
+         };
+
+
+         if (dialog.ShowDialog() == true)
+         {
+            return dialog.FileName;
+         }
+
+         return null;
       }
 
       public void Install(string path)

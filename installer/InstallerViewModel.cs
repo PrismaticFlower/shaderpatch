@@ -11,7 +11,7 @@ namespace installer
 
       private InstallerModel installerModel = new InstallerModel();
 
-      public  List<string> PossibleGameLocations
+      public List<string> PossibleGameLocations
       {
          get
          {
@@ -19,9 +19,19 @@ namespace installer
          }
       }
 
-      public List<string> SearchForInstalls()
+      public void SearchForInstalls()
       {
-         return installerModel.SearchForInstallPaths();
+         possibleGameLocations = installerModel.SearchForInstallPaths();
+      }
+
+      public void BrowseForInstallPath()
+      {
+         var path = installerModel.BrowseForInstallPath();
+
+         if (path != null)
+         {
+            possibleGameLocations.Add(path);
+         }
       }
 
       public void Install(string path)
