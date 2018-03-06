@@ -14,7 +14,13 @@ VC++ runtime - https://www.visualstudio.com/downloads/
 .NET Framework - https://www.microsoft.com/en-nz/download/details.aspx?id=48130
 
 Once you have those you should be able to just run the installer and it'll take care of everything
-for you.
+for you. 
+
+If you do not have write access to your game directory the installer may prompt you to
+run it as an Administrator; it will however only do this if it has. It will depends on your OS version, 
+game version and your personal configuration. In all cases you can edit the permissions of your
+game folder to make sure you have write access as a normal user and it will remove the need for
+admin elevation.
 
 If you want to manually install Shader Patch you just need to copy the contents of this folder
 into the GameData directory of your SWBFII installation. (Backup any duplicate files first, when using 

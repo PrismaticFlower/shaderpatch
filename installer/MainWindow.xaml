@@ -46,6 +46,10 @@
             <TextBlock HorizontalAlignment="Center" Margin="0" TextWrapping="Wrap" Text="Shader Patch should now be installed to the directory you chose, you can exit the installer." VerticalAlignment="Center" FontSize="14"/>
             <TextBlock Margin="0,0,0,114.19" TextWrapping="Wrap" VerticalAlignment="Bottom" FontSize="14" Height="20.74" d:LayoutOverrides="Width" HorizontalAlignment="Center"><Run Text="In order to uninstall it run th"/><Run Text="e installer again from "/><Run Text="the "/><Run Text="game "/><Run Text="directory."/><LineBreak/><Run/></TextBlock>
          </Grid>
+         <Grid x:Name="installFailedMask" HorizontalAlignment="Left" Height="{Binding ActualHeight, ElementName=installGrid}" VerticalAlignment="Top" Width="{Binding ActualWidth, ElementName=installGrid}" IsEnabled="False" Visibility="Hidden">
+            <Rectangle Fill="#FFF4F4F5" Stroke="Black"/>
+            <TextBlock x:Name="installFailedMessage" HorizontalAlignment="Center" Margin="0" TextWrapping="Wrap" Text="Installation failed!" VerticalAlignment="Center" FontSize="14"/>
+         </Grid>
          <Grid x:Name="installingMask" HorizontalAlignment="Left" Height="{Binding ActualHeight, ElementName=installGrid}" VerticalAlignment="Top" Width="{Binding ActualWidth, ElementName=installGrid}" IsEnabled="False" Visibility="Hidden">
             <Rectangle Fill="#FFF4F4F5" Stroke="Black"/>
             <TextBlock HorizontalAlignment="Center" Margin="0" TextWrapping="Wrap" Text="Shader Patch is being installed. How exciting!" VerticalAlignment="Center" FontSize="16"/>

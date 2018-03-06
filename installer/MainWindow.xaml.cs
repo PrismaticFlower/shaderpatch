@@ -48,19 +48,31 @@ namespace installer
 
       private async void OnInstallClicked(object sender, RoutedEventArgs e)
       {
-         installingMask.IsEnabled = true;
-         installingMask.Visibility = Visibility.Visible;
-
-         var path = gameDirList.SelectedItem.ToString();
-         path = path.Remove(path.Length - "battlefrontii.exe".Length);
-
-         await Task.Run(() => 
+         try
          {
-            installerViewModel.Install(path);
-         });
+            var path = gameDirList.SelectedItem.ToString();
 
-         installingMask.IsEnabled = false;
-         installingMask.Visibility = Visibility.Hidden;
+            installingMask.IsEnabled = true;
+            installingMask.Visibility = Visibility.Visible;
+
+            await Task.Run(() =>
+            {
+               installerViewModel.Install(path);
+            });
+         }
+         catch (Exception exception)
+         {
+            installFailedMask.IsEnabled = true;
+            installFailedMask.Visibility = Visibility.Visible;
+
+            installFailedMessage.Text = string.Format("Failed to install Shader Patch. Exception message was \"{0}\".", exception.Message);
+         }
+         finally
+         {
+            installingMask.IsEnabled = false;
+            installingMask.Visibility = Visibility.Hidden;
+         }
+
 
          installedMask.IsEnabled = true;
          installedMask.Visibility = Visibility.Visible;

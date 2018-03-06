@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Management;
+using System.IO;
 
 namespace installer
 {
@@ -36,6 +38,8 @@ namespace installer
 
       public void Install(string path)
       {
+         path = path.Remove(path.Length - "battlefrontii.exe".Length);
+         
          installerModel.Install(path);
       }
    }

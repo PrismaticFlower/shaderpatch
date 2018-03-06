@@ -21,8 +21,25 @@ namespace installer
          Uninstallable = File.Exists("battlefrontii.exe");
       }
 
-      public void StartUninstall()
+      public void StartUninstall(bool adminUninstall = false)
       {
+         if (File.Exists("./data/shaderpatch/admin install.txt") && !adminUninstall)
+         {
+            var processInfo = new ProcessStartInfo
+            {
+               WindowStyle = ProcessWindowStyle.Hidden,
+               CreateNoWindow = true,
+               UseShellExecute = true,
+               Arguments = "-uninstall " + Process.GetCurrentProcess().Id.ToString(),
+               Verb = "runas",
+               WorkingDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase),
+               FileName = Path.GetFileName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase)
+            };
+
+            Process.Start(processInfo);
+            Environment.Exit(0);
+         }
+
          List<string> files;
          
          XmlSerializer serializer = new XmlSerializer(typeof(List<string>));
@@ -49,11 +66,13 @@ namespace installer
          Directory.Delete("./data/shaderpatch", true);
       }
       
-      public void FinishUninstall()
+      public void FinishUninstall(int? parentProcessId = null)
       {
          using (var batch = File.CreateText("~finishShaderPatchUninstall.bat"))
          {
             batch.WriteLine("taskkill /PID {0}", Process.GetCurrentProcess().Id);
+            if (parentProcessId != null) batch.WriteLine("taskkill /PID {0}", parentProcessId);
+
             batch.WriteLine("timeout /T 1 /NOBREAK");
 
             foreach (var path in deferredFiles)

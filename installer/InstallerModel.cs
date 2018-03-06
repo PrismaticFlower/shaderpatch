@@ -5,9 +5,9 @@ using System.Text;
 using System.Data.OleDb;
 using System.IO;
 using System.Xml.Serialization;
+using System.Diagnostics;
 using Microsoft.VisualBasic.FileIO;
 using Microsoft.Win32;
-
 
 namespace installer
 {
@@ -56,7 +56,7 @@ namespace installer
 
          if (path != null) install_paths.Add(path.ToString());
       }
-
+      
       public List<String> SearchForInstallPaths()
       {
          HashSet<String> install_paths = new HashSet<String>();
@@ -82,32 +82,64 @@ namespace installer
 
          return null;
       }
-
-      public void Install(string path)
+      
+      public void Install(string path, bool adminInstall = false)
       {
-         Directory.CreateDirectory(Path.Combine(path, "data/shaderpatch/backup/"));
-
-         if (!File.Exists(Path.Combine(path, "data/shaderpatch/backup/core.lvl")))
+         try
          {
-            File.Move(Path.Combine(path, "data/_lvl_pc/core.lvl"),
-                      Path.Combine(path, "data/shaderpatch/backup/core.lvl"));
+            Directory.CreateDirectory(Path.Combine(path, "data/shaderpatch/backup/"));
+
+            if (!File.Exists(Path.Combine(path, "data/shaderpatch/backup/core.lvl")))
+            {
+               File.Move(Path.Combine(path, "data/_lvl_pc/core.lvl"),
+                         Path.Combine(path, "data/shaderpatch/backup/core.lvl"));
+            }
+
+            FileSystem.CopyDirectory("./", path, true);
+
+            List<string> files = new List<string>();
+
+            files.Add("./data/shaderpatch/file_manifest.xml");
+
+            foreach (string file in Directory.GetFiles("./", "*", System.IO.SearchOption.AllDirectories))
+               files.Add(file);
+            
+            if (adminInstall)
+            {
+               File.WriteAllText(Path.Combine(path, "data/shaderpatch/admin install.txt"),
+                                 "# Do not delete this file! #");
+               files.Add("./data/shaderpatch/admin install.txt");
+            }
+
+            XmlSerializer serializer = new XmlSerializer(typeof(List<string>));
+
+            using (var stream = File.OpenWrite(Path.Combine(path, "data/shaderpatch/file_manifest.xml")))
+            {
+               serializer.Serialize(stream, files);
+            }
+         }
+         catch (UnauthorizedAccessException)
+         {
+            if (adminInstall) throw;
+
+            var processInfo = new ProcessStartInfo
+            {
+               WindowStyle = ProcessWindowStyle.Hidden,
+               CreateNoWindow = true,
+               UseShellExecute = true,
+               Arguments = "-install \"" + path.Replace('\\', '/') + "\"",
+               Verb = "runas",
+               WorkingDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase),
+               FileName = Path.GetFileName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase)
+            };
+            
+            var adminProcess =  Process.Start(processInfo);
+
+            adminProcess.WaitForExit();
+
+            if (adminProcess.ExitCode != 0) throw;
          }
 
-         FileSystem.CopyDirectory("./", path, true);
-         
-         List<string> files = new List<string>();
-
-         files.Add("./data/shaderpatch/file_manifest.xml");
-
-         foreach (string file in Directory.GetFiles("./", "*", System.IO.SearchOption.AllDirectories))
-            files.Add(file);
-
-         XmlSerializer serializer = new XmlSerializer(typeof(List<string>));
-
-         using (var stream = File.OpenWrite(Path.Combine(path, "data/shaderpatch/file_manifest.xml")))
-         {
-            serializer.Serialize(stream, files);
-         }
       }
    }
 }
