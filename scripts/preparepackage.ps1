@@ -32,7 +32,7 @@ msbuild /t:Build /p:Configuration=Release /m shader_patch.vcxproj
 msbuild /t:Build /p:Configuration=Release /m tools/installer/installer.csproj
 
 copy .\bin\Release\dinput8.dll .\packaged\
-copy ".\bin\Release\shader patch installer.exe" .\packaged\
+copy ".\bin\Release\shader patch installer.exe" ".\packaged\Shader Patch Installer.exe"
 copy ".\bin\Release\Microsoft.Expression.Drawing.dll" .\packaged\
 
 # Copy Assets
