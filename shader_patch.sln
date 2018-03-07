@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shader_patch", "shader_patch.vcxproj", "{77065F00-E7E4-4EDF-8C98-6EB87BC49C4D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "installer", "installer\installer.csproj", "{D1C33C73-8766-49AF-AB30-FD4A2ECF5EB7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "installer", "tools\installer\installer.csproj", "{D1C33C73-8766-49AF-AB30-FD4A2ECF5EB7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
