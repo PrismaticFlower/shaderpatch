@@ -6,6 +6,7 @@ using System.Data.OleDb;
 using System.IO;
 using System.Xml.Serialization;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using Microsoft.VisualBasic.FileIO;
 using Microsoft.Win32;
 
@@ -57,6 +58,33 @@ namespace installer
          if (path != null) install_paths.Add(path.ToString());
       }
       
+      private bool Vc14RuntimeInstalled()
+      {
+         try
+         {
+            var systemPath = Environment.SystemDirectory;
+
+            if (Environment.Is64BitOperatingSystem) systemPath = systemPath.Replace("System32", "SysWOW64");
+
+            return File.Exists(Path.Combine(systemPath, "vcruntime140.dll")) && 
+               File.Exists(Path.Combine(systemPath, "msvcp140.dll"));
+         }
+         catch
+         {
+            return false;
+         }
+      }
+
+      private Task InstallVc14Runtime()
+      {
+         return Task.Run(() =>
+         {
+            var vcInstaller = Process.Start(Path.Combine(Directory.GetCurrentDirectory(), "data/shaderpatch/bin/VCRedist_x86.exe"));
+
+            vcInstaller.WaitForExit();
+         });
+      }
+
       public List<String> SearchForInstallPaths()
       {
          HashSet<String> install_paths = new HashSet<String>();
@@ -85,6 +113,10 @@ namespace installer
       
       public void Install(string path, bool adminInstall = false)
       {
+         Task runtimeInstall = null;
+
+         if (!Vc14RuntimeInstalled()) runtimeInstall = InstallVc14Runtime();
+
          try
          {
             Directory.CreateDirectory(Path.Combine(path, "data/shaderpatch/backup/"));
@@ -117,6 +149,8 @@ namespace installer
             {
                serializer.Serialize(stream, files);
             }
+
+            if (runtimeInstall != null) runtimeInstall.Wait();
          }
          catch (UnauthorizedAccessException)
          {
@@ -139,7 +173,6 @@ namespace installer
 
             if (adminProcess.ExitCode != 0) throw;
          }
-
       }
    }
 }

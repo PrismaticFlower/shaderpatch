@@ -2,8 +2,12 @@
   Remove-Item -Path .\packaged -Force -Recurse
 }
 
-# Create packaged folder
+# Create package directory structure.
 md .\packaged
+md .\packaged\data\
+md .\packaged\data\shaderpatch\
+md .\packaged\data\shaderpatch\bin\
+md .\packaged\data\shaderpatch\textures
 
 copy .\LICENSE ".\packaged\shader patch license.txt"
 copy .\third_party.md ".\packaged\shader patch acknowledgements.txt"
@@ -20,9 +24,12 @@ if ($installationPath -and (test-path "$installationPath\Common7\Tools\vsdevcmd.
   }
 }
 
+# Copy over redistributable
+copy "${installationPath}\VC\Redist\MSVC\14.*\VCRedist_x86.exe" ".\packaged\data\shaderpatch\bin\VCRedist_x86.exe"
+
 # Build
 msbuild /t:Build /p:Configuration=Release /m shader_patch.vcxproj
-msbuild /t:Build /p:Configuration=Release /m installer/installer.csproj
+msbuild /t:Build /p:Configuration=Release /m tools/installer/installer.csproj
 
 copy .\bin\Release\dinput8.dll .\packaged\
 copy ".\bin\Release\shader patch installer.exe" .\packaged\
@@ -32,12 +39,9 @@ copy ".\bin\Release\Microsoft.Expression.Drawing.dll" .\packaged\
 copy '.\assets\shader patch.ini' .\packaged\
 copy '.\assets\shader patch user readme.txt' '.\packaged\shader patch readme.txt'
 
-md .\packaged\data\
-md .\packaged\data\shaderpatch\
-md .\packaged\data\shaderpatch\textures
 
 Copy-Item -Path .\assets\textures\* -Destination .\packaged\data\shaderpatch\textures -Recurse
 
 md .\packaged\data\_lvl_pc
 
-Write-Host "shader patch packaged prepared, remember to copy core.lvl over from the shader toolkit!"
+Write-Host "shader patch package prepared, remember to copy core.lvl over from the shader toolkit!"
