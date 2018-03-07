@@ -1,3 +1,6 @@
 [submodule "submodules/inih"]
 	path = submodules/inih
 	url = https://github.com/jtilly/inih
+[submodule "submodules/vcpkg"]
+	path = submodules/vcpkg
+	url = https://github.com/Microsoft/vcpkg

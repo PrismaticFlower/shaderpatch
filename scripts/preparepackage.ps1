@@ -1,5 +1,4 @@
-﻿
-if (Test-Path .\packaged) {
+﻿if (Test-Path .\packaged) {
   Remove-Item -Path .\packaged -Force -Recurse
 }
 
