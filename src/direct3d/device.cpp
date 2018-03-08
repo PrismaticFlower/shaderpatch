@@ -56,13 +56,11 @@ void set_active_light_constants(IDirect3DDevice9& device, Vs_flags flags) noexce
 }
 
 Device::Device(Com_ptr<IDirect3DDevice9> device, const HWND window,
-               const glm::uvec2 resolution) noexcept
+               const glm::ivec2 resolution) noexcept
    : _device{std::move(device)}, _window{window}, _resolution{resolution}
 {
    _water_texture =
       load_dds_from_file(*_device, L"data/shaderpatch/textures/water.dds"s);
-
-   read_config();
 }
 
 Device::~Device()
@@ -95,10 +93,10 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 {
    if (presentation_parameters == nullptr) return D3DERR_INVALIDCALL;
 
-   if (_display_override) {
-      presentation_parameters->Windowed = _force_windowed;
-      presentation_parameters->BackBufferWidth = _override_resolution.x;
-      presentation_parameters->BackBufferHeight = _override_resolution.y;
+   if (const auto& display = _config.display; display.enabled) {
+      presentation_parameters->Windowed = display.windowed;
+      presentation_parameters->BackBufferWidth = display.resolution.x;
+      presentation_parameters->BackBufferHeight = display.resolution.y;
    }
 
    // drop resources
@@ -127,7 +125,9 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
    // recreate textures
 
-   _device->CreateTexture(_resolution.x / 2u, _resolution.y / 2u, 1,
+   const auto refraction_res = _resolution / _config.rendering.refraction_buffer_factor;
+
+   _device->CreateTexture(refraction_res.x, refraction_res.y, 1,
                           D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT,
                           _refraction_texture.clear_and_assign(), nullptr);
 
@@ -146,7 +146,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
       set_input_window(GetCurrentThreadId(), _window);
 
-      set_input_hotkey(_imgui_hotkey);
+      set_input_hotkey(_config.debugscreen.activate_key);
       set_input_hotkey_func([this] {
          _imgui_active = !_imgui_active;
 
@@ -168,7 +168,7 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
                         HWND dest_window_override, const RGNDATA* dirty_region) noexcept
 {
    if (_window_dirty) {
-      if (_borderless_windowed) make_borderless_window(_window);
+      if (_config.display.borderless) make_borderless_window(_window);
       resize_window(_window, _resolution);
       centre_window(_window);
       if (GetFocus() == _window) clip_cursor_to_window(_window);
@@ -213,8 +213,13 @@ HRESULT Device::CreateDepthStencilSurface(UINT width, UINT height, D3DFORMAT for
                                           HANDLE* shared_handle) noexcept
 {
    if (width == 512u && height == 256u) {
-      width = _resolution.y * 2u;
-      height = _resolution.y;
+      if (_config.rendering.high_res_reflections) {
+         width = _resolution.y * 2u;
+         height = _resolution.y;
+      }
+
+      width /= _config.rendering.reflection_buffer_factor;
+      height /= _config.rendering.reflection_buffer_factor;
    }
 
    return _device->CreateDepthStencilSurface(width, height, format,
@@ -230,7 +235,7 @@ HRESULT Device::SetRenderTarget(DWORD render_target_index,
 
       render_target->GetDesc(&desc);
 
-      const auto fl_res = static_cast<glm::vec2>(glm::uvec2{desc.Width, desc.Height});
+      const auto fl_res = static_cast<glm::vec2>(glm::ivec2{desc.Width, desc.Height});
 
       _rt_resolution_const.set(*_device, {fl_res, glm::vec2{1.0f} / fl_res});
    }
@@ -244,8 +249,13 @@ HRESULT Device::CreateTexture(UINT width, UINT height, UINT levels, DWORD usage,
 {
    if (usage & D3DUSAGE_RENDERTARGET) {
       if (width == 512u && height == 256u) {
-         width = _resolution.y * 2u;
-         height = _resolution.y;
+         if (_config.rendering.high_res_reflections) {
+            width = _resolution.y * 2u;
+            height = _resolution.y;
+         }
+
+         width /= _config.rendering.reflection_buffer_factor;
+         height /= _config.rendering.reflection_buffer_factor;
       }
    }
 
@@ -435,23 +445,5 @@ void Device::update_refraction_texture() noexcept
    _refraction_texture->GetSurfaceLevel(0, dest.clear_and_assign());
 
    _device->StretchRect(rt.get(), nullptr, dest.get(), nullptr, D3DTEXF_LINEAR);
-}
-
-void Device::read_config() noexcept
-{
-   INIReader reader{"shader patch.ini"s};
-
-   if (reader.ParseError() < 0) {
-      log(Log_level::warning, "Failed to parse config file \'",
-          "shader patch.ini"s, '\'');
-   }
-
-   _display_override = reader.GetBoolean("display"s, "Enabled"s, false);
-   _force_windowed = reader.GetBoolean("display"s, "Windowed"s, false);
-   _borderless_windowed = reader.GetBoolean("display"s, "Borderless"s, true);
-   _override_resolution.x = reader.GetInteger("display"s, "Width"s, 800);
-   _override_resolution.y = reader.GetInteger("display"s, "Height"s, 600);
-
-   _imgui_hotkey = reader.GetInteger("debugscreen"s, "ActivateVirtualKey"s, 0);
 }
 }

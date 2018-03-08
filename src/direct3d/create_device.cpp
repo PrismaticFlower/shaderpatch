@@ -17,10 +17,10 @@ HRESULT __stdcall create_device_hook(IDirect3D9& self, UINT adapter,
 
    Com_ptr<IDirect3DDevice9> device;
 
-   glm::uvec2 resolution{};
+   glm::ivec2 resolution{};
 
    if (presentation_parameters) {
-      resolution = glm::uvec2{presentation_parameters->BackBufferWidth,
+      resolution = glm::ivec2{presentation_parameters->BackBufferWidth,
                               presentation_parameters->BackBufferHeight};
    }
 

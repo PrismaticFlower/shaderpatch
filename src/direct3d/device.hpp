@@ -2,6 +2,7 @@
 
 #include "../com_ptr.hpp"
 #include "../shader_constants.hpp"
+#include "../user_config.hpp"
 #include "render_state_block.hpp"
 #include "shader_constant.hpp"
 
@@ -17,7 +18,7 @@ namespace sp::direct3d {
 class Device : public IDirect3DDevice9 {
 public:
    Device(Com_ptr<IDirect3DDevice9> device, const HWND window,
-          const glm::uvec2 resolution) noexcept;
+          const glm::ivec2 resolution) noexcept;
 
    HRESULT __stdcall QueryInterface(const IID& iid, void** object) noexcept override;
    ULONG __stdcall AddRef() noexcept override;
@@ -313,8 +314,6 @@ private:
 
    void update_refraction_texture() noexcept;
 
-   void read_config() noexcept;
-
    const Com_ptr<IDirect3DDevice9> _device;
    const HWND _window;
 
@@ -328,12 +327,9 @@ private:
    bool _imgui_active = false;
    bool _fake_device_loss = false;
 
-   glm::uvec2 _resolution;
+   glm::ivec2 _resolution;
 
-   bool _display_override = false;
-   bool _force_windowed = false;
-   bool _borderless_windowed = false;
-   glm::uvec2 _override_resolution{};
+   User_config _config{"shader patch.ini"s};
 
    Ps_3f_shader_constant<constants::ps::fog_range> _fog_range_const;
    Ps_3f_shader_constant<constants::ps::fog_color> _fog_color_const;
@@ -344,8 +340,6 @@ private:
       std::chrono::steady_clock::now()};
 
    Render_state_block _state_block;
-
-   WPARAM _imgui_hotkey;
 
    std::atomic<ULONG> _ref_count{1};
 };

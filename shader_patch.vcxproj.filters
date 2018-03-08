@@ -113,6 +113,9 @@
     <ClInclude Include="src\direct3d\check_required_features.hpp">
       <Filter>src\direct3d</Filter>
     </ClInclude>
+    <ClInclude Include="src\user_config.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="dinput8.def" />

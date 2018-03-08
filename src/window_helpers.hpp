@@ -17,7 +17,7 @@ inline void make_borderless_window(const HWND window)
                    SWP_NOACTIVATE);
 }
 
-inline void resize_window(const HWND window, const glm::uvec2 size)
+inline void resize_window(const HWND window, const glm::ivec2 size)
 {
    Expects(IsWindow(window));
 
