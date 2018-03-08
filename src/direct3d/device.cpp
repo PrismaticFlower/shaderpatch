@@ -8,6 +8,7 @@
 #include "../texture_loader.hpp"
 #include "../window_helpers.hpp"
 #include "rendertarget.hpp"
+#include "sampler_state_block.hpp"
 #include "shader.hpp"
 #include "shader_metadata.hpp"
 
@@ -121,7 +122,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
    _rt_resolution_const.set(*_device, {fl_res, glm::vec2{1.0f} / fl_res});
 
-   _state_block = create_filled_state_block(*_device);
+   _state_block = create_filled_render_state_block(*_device);
 
    // recreate textures
 
@@ -225,6 +226,24 @@ HRESULT Device::CreateDepthStencilSurface(UINT width, UINT height, D3DFORMAT for
    return _device->CreateDepthStencilSurface(width, height, format,
                                              multi_sample, multi_sample_quality,
                                              discard, surface, shared_handle);
+}
+
+HRESULT Device::SetTexture(DWORD stage, IDirect3DBaseTexture9* texture) noexcept
+{
+   if (texture == nullptr) return _device->SetTexture(stage, nullptr);
+
+   if (auto type = texture->GetType(); type == D3DRTYPE_CUBETEXTURE && stage == 2) {
+      set_ps_bool_constant<constants::ps::cubemap_projection>(*_device, true);
+
+      create_filled_sampler_state_block(*_device, 2).apply(*_device, cubemap_projection_slot);
+
+      return _device->SetTexture(cubemap_projection_slot, texture);
+   }
+   else if (stage == 2) {
+      set_ps_bool_constant<constants::ps::cubemap_projection>(*_device, false);
+   }
+
+   return _device->SetTexture(stage, texture);
 }
 
 HRESULT Device::SetRenderTarget(DWORD render_target_index,

@@ -325,11 +325,6 @@ HRESULT Device::GetTexture(DWORD stage, IDirect3DBaseTexture9** texture) noexcep
    return _device->GetTexture(stage, texture);
 }
 
-HRESULT Device::SetTexture(DWORD stage, IDirect3DBaseTexture9* texture) noexcept
-{
-   return _device->SetTexture(stage, texture);
-}
-
 HRESULT Device::GetTextureStageState(DWORD stage, D3DTEXTURESTAGESTATETYPE type,
                                      DWORD* value) noexcept
 {

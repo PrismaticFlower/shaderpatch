@@ -6,6 +6,7 @@ namespace sp::constants {
 namespace ps {
 constexpr auto light_state = 0u;
 constexpr auto fog_enabled = 5u;
+constexpr auto cubemap_projection = 6u;
 
 constexpr auto fog_range = 51u;
 constexpr auto fog_color = 52u;

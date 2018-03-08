@@ -116,6 +116,9 @@
     <ClInclude Include="src\user_config.hpp">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="src\direct3d\sampler_state_block.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="dinput8.def" />

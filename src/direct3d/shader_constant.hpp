@@ -1,8 +1,10 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstring>
+#include <iterator>
 #include <type_traits>
 
 #include <d3d9.h>
@@ -11,6 +13,59 @@
 #include <glm/gtc/type_ptr.hpp>
 
 namespace sp::direct3d {
+
+template<typename Shader_type, std::size_t offset, std::size_t count>
+inline void set_bool_constants(IDirect3DDevice9& device,
+                               const std::array<bool, count> values) noexcept
+{
+   static_assert((offset + count) <= 16,
+                 "Offset and count overflow bool constant count!");
+
+   std::array<BOOL, count> dx_values;
+   std::copy_n(std::cbegin(values), count, std::begin(dx_values));
+
+   if constexpr (std::is_same_v<Shader_type, IDirect3DVertexShader9>) {
+      device.SetVertexShaderConstantB(offset, dx_values.data(), dx_values.size());
+   }
+   else if constexpr (std::is_same_v<Shader_type, IDirect3DPixelShader9>) {
+      device.SetPixelShaderConstantB(offset, dx_values.data(), dx_values.size());
+   }
+   else {
+      static_assert(false, "Invalid shader type.");
+   }
+}
+
+template<std::size_t offset, std::size_t count>
+inline void set_vs_bool_constants(IDirect3DDevice9& device,
+                                  const std::array<bool, count> values) noexcept
+{
+   set_bool_constants<IDirect3DVertexShader9, offset, count>(device, values);
+}
+
+template<std::size_t offset, std::size_t count>
+inline void set_ps_bool_constants(IDirect3DDevice9& device,
+                                  const std::array<bool, count> values) noexcept
+{
+   set_bool_constants<IDirect3DPixelShader9, offset, count>(device, values);
+}
+
+template<typename Shader_type, std::size_t offset>
+inline void set_bool_constant(IDirect3DDevice9& device, const bool value) noexcept
+{
+   set_bool_constants<Shader_type, offset, 1>(device, {value});
+}
+
+template<std::size_t offset>
+inline void set_vs_bool_constant(IDirect3DDevice9& device, const bool value) noexcept
+{
+   set_bool_constant<IDirect3DVertexShader9, offset>(device, value);
+}
+
+template<std::size_t offset>
+inline void set_ps_bool_constant(IDirect3DDevice9& device, const bool value) noexcept
+{
+   set_bool_constant<IDirect3DPixelShader9, offset>(device, value);
+}
 
 template<typename Type, typename Shader_type, DWORD offset, DWORD row_count>
 class Shader_constant {

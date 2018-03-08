@@ -158,6 +158,7 @@
     <ClInclude Include="src\direct3d\create_device.hpp" />
     <ClInclude Include="src\direct3d\device.hpp" />
     <ClInclude Include="src\direct3d\rendertarget.hpp" />
+    <ClInclude Include="src\direct3d\sampler_state_block.hpp" />
     <ClInclude Include="src\direct3d\shader.hpp" />
     <ClInclude Include="src\direct3d\shader_constant.hpp" />
     <ClInclude Include="src\direct3d\shader_metadata.hpp" />

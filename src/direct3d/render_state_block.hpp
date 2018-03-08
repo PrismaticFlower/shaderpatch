@@ -21,7 +21,7 @@ public:
    template<typename Type = DWORD>
    const Type& at(const D3DRENDERSTATETYPE state) const
    {
-      auto index = DWORD{state};
+      auto index = static_cast<DWORD>(state);
 
       if (index & 128u) index >> 1u;
 
@@ -44,10 +44,8 @@ private:
    std::array<DWORD, 105> _state_block;
 };
 
-inline Render_state_block create_filled_state_block(IDirect3DDevice9& device) noexcept
+inline Render_state_block create_filled_render_state_block(IDirect3DDevice9& device) noexcept
 {
-   const auto state = D3DRS_ALPHATESTENABLE;
-
    Render_state_block block;
 
    device.GetRenderState(D3DRS_ZENABLE, &block.at(D3DRS_ZENABLE));
