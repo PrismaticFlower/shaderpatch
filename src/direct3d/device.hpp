@@ -330,6 +330,8 @@ private:
 
    glm::ivec2 _resolution;
 
+   bool _water_refraction = false;
+
    User_config _config{"shader patch.ini"s};
 
    Ps_3f_shader_constant<constants::ps::fog_range> _fog_range_const;

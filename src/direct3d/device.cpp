@@ -197,6 +197,9 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
    _time_vs_const.set(*_device,
                       std::chrono::duration<float>{time_since_epoch}.count());
 
+   // update water refraction
+   _water_refraction = false;
+
    const auto result =
       _device->Present(source_rect, dest_rect, dest_window_override, dirty_region);
 
@@ -351,6 +354,16 @@ HRESULT Device::SetPixelShader(IDirect3DPixelShader9* shader) noexcept
 
          _on_ps_shader_set = nullptr;
       };
+   }
+   else if (!_water_refraction && pixel_shader->metadata.name == "water"sv) {
+      if ((pixel_shader->metadata.entry_point ==
+           "normal_map_distorted_reflection_ps") ||
+          (pixel_shader->metadata.entry_point ==
+           "normal_map_distorted_reflection_specular_ps")) {
+         update_refraction_texture();
+
+         _water_refraction = true;
+      }
    }
 
    return _device->SetPixelShader(&pixel_shader->get());
