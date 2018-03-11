@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../com_ptr.hpp"
-#include "shader_metadata.hpp"
+#include "../shader_metadata.hpp"
 
 #include <atomic>
 

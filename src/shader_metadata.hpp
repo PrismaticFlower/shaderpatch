@@ -10,7 +10,7 @@
 
 #include <d3d9types.h>
 
-namespace sp::direct3d {
+namespace sp {
 
 enum class Vs_flags : std::uint32_t {
    none = 0,

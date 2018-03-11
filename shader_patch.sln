@@ -7,7 +7,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shader_patch", "shader_patc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "installer", "tools\installer\installer.csproj", "{D1C33C73-8766-49AF-AB30-FD4A2ECF5EB7}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shared_src", "shared_src\shared_src.vcxitems", "{F1810F20-C9CC-43DF-981F-9DF8E60AE6EB}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		shared_src\shared_src.vcxitems*{77065f00-e7e4-4edf-8c98-6eb87bc49c4d}*SharedItemsImports = 4
+		shared_src\shared_src.vcxitems*{f1810f20-c9cc-43df-981f-9df8e60ae6eb}*SharedItemsImports = 9
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|x86 = Debug|x86

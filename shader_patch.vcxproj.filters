@@ -62,9 +62,6 @@
     <ClInclude Include="src\direct3d\rendertarget.hpp">
       <Filter>src\direct3d</Filter>
     </ClInclude>
-    <ClInclude Include="src\direct3d\shader_metadata.hpp">
-      <Filter>src\direct3d</Filter>
-    </ClInclude>
     <ClInclude Include="src\direct3d\shader.hpp">
       <Filter>src\direct3d</Filter>
     </ClInclude>
@@ -118,6 +115,9 @@
     </ClInclude>
     <ClInclude Include="src\direct3d\sampler_state_block.hpp">
       <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader_metadata.hpp">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

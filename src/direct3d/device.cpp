@@ -5,12 +5,12 @@
 #include "../input_hooker.hpp"
 #include "../logger.hpp"
 #include "../shader_constants.hpp"
+#include "../shader_metadata.hpp"
 #include "../texture_loader.hpp"
 #include "../window_helpers.hpp"
 #include "rendertarget.hpp"
 #include "sampler_state_block.hpp"
 #include "shader.hpp"
-#include "shader_metadata.hpp"
 
 #include <algorithm>
 #include <chrono>
