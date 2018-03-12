@@ -9,4 +9,5 @@ cd submodules/vcpkg
 ./vcpkg install glm:x86-windows-static
 ./vcpkg install ms-gsl:x86-windows-static
 ./vcpkg install nlohmann-json:x86-windows-static
+./vcpkg install boost:x86-windows-static
 

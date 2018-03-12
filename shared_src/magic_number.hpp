@@ -3,6 +3,9 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <iosfwd>
+
+namespace sp {
 
 enum class Magic_number : std::uint32_t {};
 
@@ -27,4 +30,5 @@ constexpr Magic_number create_magic_number(const std::array<char, 4> chars)
 constexpr Magic_number operator""_mn(const char* chars, const std::size_t) noexcept
 {
    return create_magic_number(chars[0], chars[1], chars[2], chars[3]);
+}
 }

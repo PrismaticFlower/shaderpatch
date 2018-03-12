@@ -10,6 +10,8 @@
 #include <string>
 #include <type_traits>
 
+namespace sp {
+
 template<Magic_number type_mn>
 class Ucfb_reader_strict;
 
@@ -497,3 +499,4 @@ private:
    {
    }
 };
+}

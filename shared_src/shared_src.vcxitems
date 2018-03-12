@@ -14,7 +14,9 @@
     <ProjectCapability Include="SourceItemsFromImports" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)com_ptr.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)magic_number.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ucfb_reader.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ucfb_writer.hpp" />
   </ItemGroup>
 </Project>
