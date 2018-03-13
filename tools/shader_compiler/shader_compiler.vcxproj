@@ -74,7 +74,7 @@
       <SDLCheck>true</SDLCheck>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessorDefinitions>NOMINMAX;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)/submodules/vcpkg/installed/x86-windows-static-md/include;$(SolutionDir)/submodules/vcpkg/installed/x86-windows/include;%(AdditionalIncludeDirectories);submodules/vcpkg/installed/x86-windows-static/include;submodules/vcpkg/installed/x86-windows/include;%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)/submodules/vcpkg/installed/x86-windows-static-md/include;%(AdditionalIncludeDirectories);submodules/vcpkg/installed/x86-windows-static/include;submodules/vcpkg/installed/x86-windows/include;$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
