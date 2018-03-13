@@ -6,8 +6,8 @@ cd submodules/vcpkg
 ./bootstrap-vcpkg.bat
 
 ./vcpkg install directxtex:x86-windows
-./vcpkg install glm:x86-windows-static
-./vcpkg install ms-gsl:x86-windows-static
-./vcpkg install nlohmann-json:x86-windows-static
-./vcpkg install boost:x86-windows-static
+./vcpkg install glm:x86-windows-static-md
+./vcpkg install ms-gsl:x86-windows-static-md
+./vcpkg install nlohmann-json:x86-windows-static-md
+./vcpkg install boost:x86-windows-static-md
 

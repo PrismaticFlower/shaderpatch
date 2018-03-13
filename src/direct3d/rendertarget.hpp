@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../com_ptr.hpp"
+#include "com_ptr.hpp"
 
 #include <atomic>
 #include <optional>

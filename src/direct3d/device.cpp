@@ -5,12 +5,12 @@
 #include "../input_hooker.hpp"
 #include "../logger.hpp"
 #include "../shader_constants.hpp"
-#include "../shader_metadata.hpp"
 #include "../texture_loader.hpp"
 #include "../window_helpers.hpp"
 #include "rendertarget.hpp"
 #include "sampler_state_block.hpp"
 #include "shader.hpp"
+#include "shader_metadata.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -28,27 +28,27 @@ namespace sp::direct3d {
 
 namespace {
 
-void set_active_light_constants(IDirect3DDevice9& device, Vs_flags flags) noexcept
+void set_active_light_constants(IDirect3DDevice9& device, Shader_flags flags) noexcept
 {
    std::array<BOOL, 5> constants{};
 
-   if ((flags & Vs_flags::light_dir) == Vs_flags::light_dir) {
+   if ((flags & Shader_flags::light_dir) == Shader_flags::light_dir) {
       constants[0] = true;
    }
 
-   if ((flags & Vs_flags::light_point) == Vs_flags::light_point) {
+   if ((flags & Shader_flags::light_point) == Shader_flags::light_point) {
       std::fill_n(std::begin(constants) + 1, 1, true);
    }
 
-   if ((flags & Vs_flags::light_point2) == Vs_flags::light_point2) {
+   if ((flags & Shader_flags::light_point2) == Shader_flags::light_point2) {
       std::fill_n(std::begin(constants) + 1, 2, true);
    }
 
-   if ((flags & Vs_flags::light_point4) == Vs_flags::light_point4) {
+   if ((flags & Shader_flags::light_point4) == Shader_flags::light_point4) {
       std::fill_n(std::begin(constants) + 1, 3, true);
    }
 
-   if ((flags & Vs_flags::light_spot) == Vs_flags::light_spot) {
+   if ((flags & Shader_flags::light_spot) == Shader_flags::light_spot) {
       constants[4] = true;
    }
 
@@ -327,9 +327,7 @@ HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
 
    auto* const vertex_shader = static_cast<Vertex_shader*>(shader);
 
-   if (vertex_shader->metadata.vs_flags) {
-      set_active_light_constants(*_device, *vertex_shader->metadata.vs_flags);
-   }
+   set_active_light_constants(*_device, vertex_shader->metadata.shader_flags);
 
    return _device->SetVertexShader(&vertex_shader->get());
 }

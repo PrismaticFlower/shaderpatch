@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../com_ptr.hpp"
 #include "../shader_constants.hpp"
 #include "../user_config.hpp"
+#include "com_ptr.hpp"
 #include "render_state_block.hpp"
 #include "shader_constant.hpp"
 

@@ -100,9 +100,6 @@ public:
    template<typename Type>
    void write(const gsl::span<Type> span, Alignment alignment = Alignment::aligned)
    {
-      static_assert(std::is_trivially_copyable_v<Type>,
-                    "Type must be trivially copyable!");
-
       _file->write(reinterpret_cast<const char*>(span.data()), span.size_bytes());
       _size += span.size_bytes();
 
@@ -117,6 +114,11 @@ public:
       _size += string.length() + 1;
 
       if (alignment == Alignment::aligned) align_file();
+   }
+
+   void write(const std::string& string, Alignment alignment = Alignment::aligned)
+   {
+      write(std::string_view{string}, alignment);
    }
 
    template<typename... Args>

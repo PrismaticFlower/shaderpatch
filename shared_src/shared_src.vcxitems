@@ -16,6 +16,8 @@
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)com_ptr.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)magic_number.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)shader_flags.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)shader_metadata.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ucfb_reader.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ucfb_writer.hpp" />
   </ItemGroup>
