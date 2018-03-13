@@ -7,7 +7,6 @@
 #include "../shader_constants.hpp"
 #include "../texture_loader.hpp"
 #include "../window_helpers.hpp"
-#include "rendertarget.hpp"
 #include "sampler_state_block.hpp"
 #include "shader.hpp"
 #include "shader_metadata.hpp"

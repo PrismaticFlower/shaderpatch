@@ -24,9 +24,6 @@
     <ClCompile Include="src\direct3d\device_stubs.cpp">
       <Filter>src\direct3d</Filter>
     </ClCompile>
-    <ClCompile Include="src\direct3d\rendertarget.cpp">
-      <Filter>src\direct3d</Filter>
-    </ClCompile>
     <ClCompile Include="src\imgui\imgui_impl_dx9.cpp">
       <Filter>src\imgui</Filter>
     </ClCompile>
@@ -57,9 +54,6 @@
       <Filter>src\direct3d</Filter>
     </ClInclude>
     <ClInclude Include="src\direct3d\device.hpp">
-      <Filter>src\direct3d</Filter>
-    </ClInclude>
-    <ClInclude Include="src\direct3d\rendertarget.hpp">
       <Filter>src\direct3d</Filter>
     </ClInclude>
     <ClInclude Include="src\direct3d\shader.hpp">
