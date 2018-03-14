@@ -1,4 +1,4 @@
-﻿param([string]$binpath="../bin/")
+﻿param([string]$binpath=";" + (Resolve-Path "../bin/").Path)
 
 $old_path = $env:Path
 
