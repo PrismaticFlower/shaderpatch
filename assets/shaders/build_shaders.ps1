@@ -5,14 +5,14 @@ $old_path = $env:Path
 $env:Path += $binpath
 
 # Make sure we have a place to put checksums and munged files.
-mkdir -Force build/checksums/ > $null
+mkdir -Force build/ > $null
 mkdir -Force munged/ > $null
 
 function file_changed($file)
 {
 	$file_name = $file.Name;
 
-   $checksum_path = "build/checksums/$file_name.checksum"
+   $checksum_path = "build/$file_name.checksum"
 
    $result = $true
    $hash = (Get-FileHash -Path $file -Algorithm MD5).hash
@@ -59,21 +59,21 @@ function remove_shader_checksums($srcname)
 {
    if (Test-Path -Path "src\$srcname")
    {
-      Remove-Item -Path "build\checksums\$srcname.checksum"
+      Remove-Item -Path "build\$srcname.checksum"
    }
    
    $json_name = $srcname -replace ".fx", ".json"
 
    if (Test-Path -Path "src\$json_name")
    {
-      Remove-Item -Path "build\checksums\$json_name.checksum"
+      Remove-Item -Path "build\$json_name.checksum"
    }
 
    $hlsl_name = $srcname -replace ".fx", ".hlsl"
 
    if (Test-Path -Path "src\$hlsl_name")
    {
-      Remove-Item -Path "build\checksums\$hlsl_name.checksum"
+      Remove-Item -Path "build\$hlsl_name.checksum"
    }
 }
 
