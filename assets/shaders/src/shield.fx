@@ -108,7 +108,7 @@ float4 shield_ps(Ps_input input, float2 position : VPOS) : COLOR
 
    if (alpha_value <= 0.5) specular = 0.0;
 
-   float3 color = material_diffuse_color.rgb;
+   float3 color = diffuse_color.rgb * material_diffuse_color.rgb;
 
    float alpha = material_diffuse_color.a * diffuse_color.a;
 
