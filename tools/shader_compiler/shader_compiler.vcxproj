@@ -58,7 +58,7 @@
       <SDLCheck>true</SDLCheck>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessorDefinitions>NOMINMAX;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)/submodules/vcpkg/installed/x86-windows-static-md/include;$(SolutionDir)/submodules/vcpkg/installed/x86-windows/include;%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)/submodules/vcpkg/installed/x86-windows-static-md/include;%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>boost_system-vc140-mt-gd.lib;boost_filesystem-vc140-mt-gd.lib;D3dcompiler.lib</AdditionalDependencies>

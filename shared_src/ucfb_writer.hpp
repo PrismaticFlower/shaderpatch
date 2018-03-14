@@ -16,7 +16,7 @@ namespace sp {
 
 template<typename Last_act>
 class Ucfb_writer_child : public Ucfb_writer {
-   static_assert(std::is_invocable_v<Last_act, decltype(_size)>);
+   static_assert(std::is_invocable_v<Last_act, decltype(Ucfb_writer::_size)>);
 
 public:
    Ucfb_writer_child(Last_act last_act, boost::local_shared_ptr<std::ofstream> file,
@@ -27,7 +27,7 @@ public:
 
    ~Ucfb_writer_child()
    {
-      _last_act(_size);
+      _last_act(Ucfb_writer::_size);
    }
 
 private:
