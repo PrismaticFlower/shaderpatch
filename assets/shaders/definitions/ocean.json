@@ -1,0 +1,47 @@
+{
+  "rendertype": "ocean",
+
+  "states": [
+    {
+      "name": "far ocean",
+      "id": 0,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "far_vs",
+          "pixel_shader": "far_ps",
+
+          "vs_target": "vs_2_0",
+          "ps_target": "ps_2_0"
+        }
+      ]
+    },
+
+    {
+      "name": "near ocean",
+      "id": 1,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "near_vs",
+          "pixel_shader": "near_ps",
+
+          "vs_target": "vs_2_0",
+          "ps_target": "ps_2_0"
+        }
+      ]
+    }
+  ]
+}

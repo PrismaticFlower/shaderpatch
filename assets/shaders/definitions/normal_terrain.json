@@ -1,0 +1,52 @@
+{
+  "rendertype": "Terrain2",
+
+  "states": [
+    {
+      "name": "diffuse blendmap",
+      "id": 0,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": false,
+          "transform": "normals",
+
+          "vertex_shader": "diffuse_blendmap_vs",
+          "pixel_shader": "diffuse_blendmap_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "diffuse blendmap with shadows and projected texture",
+      "id": 1,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": false,
+          "transform": "normals",
+
+          "vertex_shader": "diffuse_blendmap_vs",
+          "pixel_shader": "diffuse_blendmap_unlit_ps"
+        },
+
+        {
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": false,
+          "transform": "normals",
+
+          "vertex_shader": "detailing_vs",
+          "pixel_shader": "detailing_ps"
+        }
+      ]
+    }
+  ]
+}

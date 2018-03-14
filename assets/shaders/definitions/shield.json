@@ -1,0 +1,23 @@
+{
+  "rendertype": "shield",
+
+  "states": [
+    {
+      "name": "shield",
+      "id": 0,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "shield_vs",
+          "pixel_shader": "shield_ps"
+        }
+      ]
+    }
+  ]
+}

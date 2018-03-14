@@ -1,0 +1,113 @@
+{
+  "rendertype": "refraction",
+
+  "states": [
+    {
+      "name": "refraction far",
+      "id": 0,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "far_vs",
+          "pixel_shader": "far_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "refraction nodistortion",
+      "id": 1,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "nodistortion_vs",
+          "pixel_shader": "far_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "refraction near",
+      "id": 2,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "distortion_vs",
+          "pixel_shader": "near_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "refraction near bump",
+      "id": 3,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "distortion_vs",
+          "pixel_shader": "near_bump_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "refraction near diffuse",
+      "id": 4,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "distortion_vs",
+          "pixel_shader": "near_diffuse_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "refraction near diffuse bump",
+      "id": 5,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "distortion_vs",
+          "pixel_shader": "near_diffuse_bump_ps"
+        }
+      ]
+    }
+  ]
+}

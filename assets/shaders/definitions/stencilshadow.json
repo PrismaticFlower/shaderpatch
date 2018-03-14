@@ -1,0 +1,349 @@
+{
+  "rendertype": "stencilshadow",
+
+  "states": [
+    {
+      "name": "cpu pre-extended",
+      "id": 0,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "preextended_vs",
+          "pixel_shader": "shadow_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "extend directional unskinned",
+      "id": 1,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "extend_directional_vs",
+          "pixel_shader": "shadow_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "extend directional hard skinned",
+      "id": 2,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "extend_directional_hardskin_facenormal_vs",
+          "pixel_shader": "shadow_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "extend directional hard skinned generate normal",
+      "id": 3,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "extend_directional_hardskin_gen_normal_vs",
+          "pixel_shader": "shadow_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "extend directional soft skinned",
+      "id": 4,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "extend_directional_softskin_facenormal_vs",
+          "pixel_shader": "shadow_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "extend directional soft skinned generate normal",
+      "id": 5,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "extend_directional_softskin_gen_normal_vs",
+          "pixel_shader": "shadow_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "extend point unskinned",
+      "id": 6,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "extend_point_vs",
+          "pixel_shader": "shadow_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "extend point hard skinned",
+      "id": 7,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "extend_point_hardskin_facenormal_vs",
+          "pixel_shader": "shadow_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "extend point hard skinned generate normal",
+      "id": 8,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "extend_point_hardskin_gen_normal_vs",
+          "pixel_shader": "shadow_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "extend point soft skinned",
+      "id": 9,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "extend_point_softskin_facenormal_vs",
+          "pixel_shader": "shadow_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "extend point soft skinned generate normal",
+      "id": 10,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "extend_point_softskin_gen_normal_vs",
+          "pixel_shader": "shadow_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "extend directional + point unskinned",
+      "id": 11,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "extend_directional_vs",
+          "pixel_shader": "shadow_ps"
+        },
+
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "extend_point_vs",
+          "pixel_shader": "shadow_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "extend directional + point hard skinned",
+      "id": 12,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "extend_directional_hardskin_facenormal_vs",
+          "pixel_shader": "shadow_ps"
+        },
+
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "extend_point_hardskin_facenormal_vs",
+          "pixel_shader": "shadow_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "extend directional + point hard skinned generate normal",
+      "id": 13,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "extend_directional_hardskin_gen_normal_vs",
+          "pixel_shader": "shadow_ps"
+        },
+
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "extend_point_hardskin_gen_normal_vs",
+          "pixel_shader": "shadow_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "extend directional + point soft skinned",
+      "id": 14,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "extend_directional_softskin_facenormal_vs",
+          "pixel_shader": "shadow_ps"
+        },
+
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "extend_point_softskin_facenormal_vs",
+          "pixel_shader": "shadow_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "extend directional + point soft skinned generate normal",
+      "id": 15,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "extend_directional_softskin_gen_normal_vs",
+          "pixel_shader": "shadow_ps"
+        },
+
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "extend_point_softskin_gen_normal_vs",
+          "pixel_shader": "shadow_ps"
+        }
+      ]
+    }
+
+  ]
+}

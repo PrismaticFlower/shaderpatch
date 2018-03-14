@@ -1,0 +1,77 @@
+{
+  "rendertype": "hdr",
+
+  "states": [
+    {
+      "name": "glow threshold",
+      "id": 0,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "transform": "none",
+
+          "vertex_shader": "screenspace_vs",
+          "pixel_shader": "glowthreshold_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "luminance",
+      "id": 1,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "transform": "none",
+
+          "vertex_shader": "screenspace_vs",
+          "pixel_shader": "luminance_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "bloomfilter",
+      "id": 2,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "transform": "none",
+
+          "vertex_shader": "bloomfilter_vs",
+          "pixel_shader": "bloomfilter_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "screenspace",
+      "id": 3,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "transform": "none",
+
+          "vertex_shader": "screenspace_vs",
+          "pixel_shader": "screenspace_ps"
+        }
+      ]
+    }
+  ]
+}

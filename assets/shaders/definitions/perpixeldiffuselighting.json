@@ -1,0 +1,569 @@
+{
+  "rendertype": "perpixeldiffuselighting",
+
+  "states": [
+    {
+      "name": "opaque no normal map 3 lights",
+      "id": 0,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "lights_3_vs",
+          "pixel_shader": "lights_3_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "opaque no normal map 2 lights",
+      "id": 1,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "lights_3_vs",
+          "pixel_shader": "lights_2_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "opaque no normal map 1 lights",
+      "id": 2,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "lights_3_vs",
+          "pixel_shader": "lights_1_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "opaque 3 lights with spotlight/projection no normal map",
+      "id": 3,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "lights_3_vs",
+          "pixel_shader": "lights_3_ps"
+        },
+
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "spotlight_vs",
+          "pixel_shader": "spotlight_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "opaque 2 lights with spotlight/projection no normal map",
+      "id": 4,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "lights_3_vs",
+          "pixel_shader": "lights_2_ps"
+        },
+
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "spotlight_vs",
+          "pixel_shader": "spotlight_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "opaque 1 light with spotlight/projection no normal map",
+      "id": 5,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "lights_3_vs",
+          "pixel_shader": "lights_1_ps"
+        },
+
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "spotlight_vs",
+          "pixel_shader": "spotlight_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "opaque with normal map 3 lights",
+      "id": 6,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "binormals",
+
+          "vertex_shader": "lights_3_vs",
+          "pixel_shader": "lights_3_normalmap_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "opaque with normal map 2 lights",
+      "id": 7,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "binormals",
+
+          "vertex_shader": "lights_3_vs",
+          "pixel_shader": "lights_2_normalmap_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "opaque with normal map 1 light",
+      "id": 8,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "binormals",
+
+          "vertex_shader": "lights_3_vs",
+          "pixel_shader": "lights_1_normalmap_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "opaque 3 lights with spotlight/projection with normal map",
+      "id": 9,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "binormals",
+
+          "vertex_shader": "lights_3_vs",
+          "pixel_shader": "lights_3_normalmap_ps"
+        },
+
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "binormals",
+
+          "vertex_shader": "spotlight_vs",
+          "pixel_shader": "spotlight_normalmap_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "opaque 2 lights with spotlight/projection with normal map",
+      "id": 10,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "binormals",
+
+          "vertex_shader": "lights_3_vs",
+          "pixel_shader": "lights_2_normalmap_ps"
+        },
+
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "binormals",
+
+          "vertex_shader": "spotlight_vs",
+          "pixel_shader": "spotlight_normalmap_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "opaque 1 light with spotlight/projection with normal map",
+      "id": 11,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "binormals",
+
+          "vertex_shader": "lights_3_vs",
+          "pixel_shader": "lights_1_normalmap_ps"
+        },
+
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "binormals",
+
+          "vertex_shader": "spotlight_vs",
+          "pixel_shader": "spotlight_normalmap_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "opaque with normal map (generate binormals) 3 lights",
+      "id": 12,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "lights_3_genbinormals_vs",
+          "pixel_shader": "lights_3_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "opaque with normal map (generate binormals) 2 lights",
+      "id": 13,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "lights_3_genbinormals_vs",
+          "pixel_shader": "lights_2_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "opaque with normal map (generate binormals) 1 lights",
+      "id": 14,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "lights_3_genbinormals_vs",
+          "pixel_shader": "lights_1_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "opaque 3 lights with spotlight/projection with normal map (generate binormals)",
+      "id": 15,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "lights_3_genbinormals_vs",
+          "pixel_shader": "lights_3_normalmap_ps"
+        },
+
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "spotlight_genbinormals_vs",
+          "pixel_shader": "spotlight_normalmap_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "opaque 2 lights with spotlight/projection with normal map (generate binormals)",
+      "id": 16,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "lights_3_genbinormals_vs",
+          "pixel_shader": "lights_2_normalmap_ps"
+        },
+
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "spotlight_genbinormals_vs",
+          "pixel_shader": "spotlight_normalmap_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "opaque 1 light with spotlight/projection with normal map (generate binormals)",
+      "id": 17,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "lights_3_genbinormals_vs",
+          "pixel_shader": "lights_1_normalmap_ps"
+        },
+
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "spotlight_genbinormals_vs",
+          "pixel_shader": "spotlight_normalmap_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "terrain with normal map (generate binormals) 3 lights",
+      "id": 18,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "lights_3_genbinormals_terrain_vs",
+          "pixel_shader": "lights_3_normalmap_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "terrain with normal map (generate binormals) 2 lights",
+      "id": 19,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "lights_3_genbinormals_terrain_vs",
+          "pixel_shader": "lights_2_normalmap_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "terrain with normal map (generate binormals) 1 lights",
+      "id": 20,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "lights_3_genbinormals_terrain_vs",
+          "pixel_shader": "lights_1_normalmap_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "terrain 3 lights with spotlight/projection with normal map (generate binormals)",
+      "id": 21,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "lights_3_genbinormals_terrain_vs",
+          "pixel_shader": "lights_3_normalmap_ps"
+        },
+
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "spotlight_genbinormals_terrain_vs",
+          "pixel_shader": "spotlight_normalmap_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "terrain 2 lights with spotlight/projection with normal map (generate binormals)",
+      "id": 22,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "lights_3_genbinormals_terrain_vs",
+          "pixel_shader": "lights_2_normalmap_ps"
+        },
+
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "spotlight_genbinormals_terrain_vs",
+          "pixel_shader": "spotlight_normalmap_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "terrain 1 lights with spotlight/projection with normal map (generate binormals)",
+      "id": 23,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "lights_3_genbinormals_terrain_vs",
+          "pixel_shader": "lights_1_normalmap_ps"
+        },
+
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "spotlight_genbinormals_terrain_vs",
+          "pixel_shader": "spotlight_normalmap_ps"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "rendertype": "particle",
+
+  "states": [
+    {
+      "name": "normal particle",
+      "id": 0,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "position",
+
+          "vertex_shader": "normal_vs",
+          "pixel_shader": "normal_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "blur particle",
+      "id": 1,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "blur_vs",
+          "pixel_shader": "blur_ps"
+        }
+      ]
+    }
+  ]
+}

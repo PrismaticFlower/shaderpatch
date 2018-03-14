@@ -1,0 +1,23 @@
+{
+  "rendertype": "rain",
+
+  "states": [
+    {
+      "name": "rain",
+      "id": 0,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "rain_vs",
+          "pixel_shader": "rain_ps"
+        }
+      ]
+    }
+  ]
+}

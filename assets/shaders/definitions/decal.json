@@ -1,0 +1,59 @@
+{
+  "rendertype": "decal",
+
+  "states": [
+    {
+      "name": "diffuse",
+      "id": 0,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "decal_vs",
+          "pixel_shader": "diffuse_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "diffuse bump",
+      "id": 1,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "decal_vs",
+          "pixel_shader": "diffuse_bump_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "bump",
+      "id": 2,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "decal_vs",
+          "pixel_shader": "bump_ps"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "rendertype": "sample",
+
+  "states": [
+    {
+      "name": "sample",
+      "id": 0,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "sample_vs",
+          "pixel_shader": "sample_ps"
+        }
+      ]
+    }
+  ]
+}

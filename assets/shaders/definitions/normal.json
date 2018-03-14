@@ -1,0 +1,365 @@
+{
+  "rendertype": "normal",
+
+  "states": [
+    {
+      "name": "unlit opaque",
+      "id": 0,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "position",
+
+          "vertex_shader": "unlit_opaque_vs",
+          "pixel_shader": "unlit_opaque_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "unlit opaque hardedged",
+      "id": 1,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "position",
+
+          "vertex_shader": "unlit_opaque_vs",
+          "pixel_shader": "unlit_opaque_hardedged_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "unlit transparent",
+      "id": 2,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "position",
+
+          "vertex_shader": "unlit_transparent_vs",
+          "pixel_shader": "unlit_transparent_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "unlit transparent",
+      "id": 3,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "position",
+
+          "vertex_shader": "unlit_transparent_vs",
+          "pixel_shader": "unlit_transparent_hardedged_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "near opaque",
+      "id": 4,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "near_opaque_vs",
+          "pixel_shader": "near_opaque_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "near opaque hardedged",
+      "id": 5,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "near_opaque_vs",
+          "pixel_shader": "near_opaque_hardedged_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "near transparent",
+      "id": 6,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "near_transparent_shadow_projectedtex_vs",
+          "pixel_shader": "near_transparent_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "near transparent hardedged",
+      "id": 7,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "near_transparent_shadow_projectedtex_vs",
+          "pixel_shader": "near_transparent_hardedged_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "near opaque projectedtex",
+      "id": 8,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "near_opaque_shadow_projectedtex_vs",
+          "pixel_shader": "near_opaque_projectedtex_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "near opaque hardedged projectedtex",
+      "id": 9,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "near_opaque_shadow_projectedtex_vs",
+          "pixel_shader": "near_opaque_hardedged_projectedtex_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "near transparent projectedtex",
+      "id": 10,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "near_transparent_shadow_projectedtex_vs",
+          "pixel_shader": "near_transparent_projectedtex_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "near transparent hardedged projectedtex",
+      "id": 11,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "near_transparent_shadow_projectedtex_vs",
+          "pixel_shader": "near_transparent_hardedged_projectedtex_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "near opaque shadow",
+      "id": 12,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "near_opaque_shadow_projectedtex_vs",
+          "pixel_shader": "near_opaque_shadow_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "near opaque hardedged shadow",
+      "id": 13,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "near_opaque_shadow_projectedtex_vs",
+          "pixel_shader": "near_opaque_hardedged_shadow_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "near opaque shadow projectedtex",
+      "id": 14,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "near_opaque_shadow_projectedtex_vs",
+          "pixel_shader": "near_opaque_shadow_projectedtex_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "near opaque hardedged shadow projectedtex",
+      "id": 15,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "near_opaque_shadow_projectedtex_vs",
+          "pixel_shader": "near_opaque_hardedged_shadow_projectedtex_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "near transparent shadow",
+      "id": 16,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "near_transparent_shadow_projectedtex_vs",
+          "pixel_shader": "near_transparent_shadow_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "near transparent hardedged shadow",
+      "id": 17,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "near_transparent_shadow_projectedtex_vs",
+          "pixel_shader": "near_transparent_hardedged_shadow_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "near transparent shadow projectedtex",
+      "id": 18,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "near_transparent_shadow_projectedtex_vs",
+          "pixel_shader": "near_transparent_shadow_projectedtex_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "near transparent hardedged shadow projectedtex",
+      "id": 19,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "normals",
+
+          "vertex_shader": "near_transparent_shadow_projectedtex_vs",
+          "pixel_shader": "near_transparent_shadow_projectedtex_ps"
+        }
+      ]
+    }
+  ]
+}

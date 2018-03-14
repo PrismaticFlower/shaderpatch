@@ -1,0 +1,23 @@
+{
+  "rendertype": "sprite",
+
+  "states": [
+    {
+      "name": "sprite",
+      "id": 0,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "position",
+
+          "vertex_shader": "sprite_vs",
+          "pixel_shader": "sprite_ps"
+        }
+      ]
+    }
+  ]
+}

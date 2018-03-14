@@ -1,0 +1,41 @@
+{
+  "rendertype": "flare",
+
+  "states": [
+    {
+      "name": "textured flare",
+      "id": 0,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "transform": "position",
+
+          "vertex_shader": "flare_textured_vs",
+          "pixel_shader": "flare_textured_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "untextured flare",
+      "id": 1,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": false,
+          "transform": "position",
+
+          "vertex_shader": "flare_untextured_vs",
+          "pixel_shader": "flare_untextured_ps"
+        }
+      ]
+    }
+  ]
+}

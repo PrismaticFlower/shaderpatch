@@ -1,0 +1,41 @@
+{
+  "rendertype": "prereflection",
+
+  "states": [
+    {
+      "name": "prereflection",
+      "id": 0,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "position",
+
+          "vertex_shader": "prereflection_vs",
+          "pixel_shader": "prereflection_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "prereflection fake stencil",
+      "id": 1,
+
+      "passes": [
+        {
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "position",
+
+          "vertex_shader": "prereflection_fake_stencil_vs",
+          "pixel_shader": "prereflection_ps"
+        }
+      ]
+    }
+  ]
+}

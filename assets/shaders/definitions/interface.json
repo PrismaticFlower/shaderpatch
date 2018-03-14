@@ -1,0 +1,77 @@
+{
+  "rendertype": "interface",
+
+  "states": [
+    {
+      "name": "masked bitmap element",
+      "id": 0,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "masked_bitmap_vs",
+          "pixel_shader": "masked_bitmap_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "vector element",
+      "id": 1,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "vector_vs",
+          "pixel_shader": "vector_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "untextured bitmap element",
+      "id": 2,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "bitmap_untextured_vs",
+          "pixel_shader": "bitmap_untextured_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "textured bitmap element",
+      "id": 3,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "bitmap_textured_vs",
+          "pixel_shader": "bitmap_textured_ps"
+        }
+      ]
+    }
+  ]
+}

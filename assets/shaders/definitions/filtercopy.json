@@ -1,0 +1,111 @@
+{
+  "rendertype": "filtercopy",
+
+  "states": [
+    {
+      "name": "filtercopy four textures",
+      "id": 0,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "filtercopy_vs",
+          "pixel_shader": "filtercopy_4tex_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "filtercopy one texture",
+      "id": 1,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "filtercopy_vs",
+          "pixel_shader": "filtercopy_4tex_ps"
+        },
+
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "filtercopy_vs",
+          "pixel_shader": "filtercopy_1tex_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "filtercopy two textures",
+      "id": 2,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "filtercopy_vs",
+          "pixel_shader": "filtercopy_4tex_ps"
+        },
+
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "filtercopy_vs",
+          "pixel_shader": "filtercopy_2tex_ps"
+        }
+      ]
+    },
+
+    {
+      "name": "filtercopy three textures",
+      "id": 3,
+
+      "passes": [
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "filtercopy_vs",
+          "pixel_shader": "filtercopy_4tex_ps"
+        },
+
+        {
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "transform": "none",
+
+          "vertex_shader": "filtercopy_vs",
+          "pixel_shader": "filtercopy_3tex_ps"
+        }
+      ]
+    }
+
+  ]
+}
