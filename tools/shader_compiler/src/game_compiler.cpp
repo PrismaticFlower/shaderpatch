@@ -229,7 +229,7 @@ auto Game_compiler::compile_vertex_shader(const nlohmann::json& parent_metadata,
       std::cout << static_cast<char*>(error_message->GetBufferPointer());
    }
 
-   _vs_shaders.emplace_back(embed_meta_data(parent_metadata, _source_path,
+   _vs_shaders.emplace_back(embed_meta_data(parent_metadata, _render_type,
                                             entry_point, target, variation.flags,
                                             make_dword_span(*shader)));
 
@@ -264,7 +264,7 @@ auto Game_compiler::compile_pixel_shader(const nlohmann::json& parent_metadata,
       std::cout << static_cast<char*>(error_message->GetBufferPointer());
    }
 
-   _ps_shaders.emplace_back(embed_meta_data(parent_metadata, _source_path, entry_point,
+   _ps_shaders.emplace_back(embed_meta_data(parent_metadata, _render_type, entry_point,
                                             target, {}, make_dword_span(*shader)));
 
    return _ps_cache[key];
