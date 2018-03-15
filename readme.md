@@ -3,9 +3,6 @@ This project is aimed at enabling the writing of more advanced shaders for Star 
 things like expose additional shader constants, access to additional textures or performing other actions at key points
 during the game's rendering process.
 
-This repository is a counterpart to [shaderpatch](https://github.com/SleepKiller/swbfii_shader_toolkit/tree/shaderpatch)
-branch of the swbfii_shader_toolkit repository.
-
 ### Building
 Before anything else you'll need to install [git](https://git-scm.com/) (and made avalible on `PATH`) and
 of course [Visual Studio 2017 Community](https://www.visualstudio.com/downloads/) (you'll need the Desktop C++ 
