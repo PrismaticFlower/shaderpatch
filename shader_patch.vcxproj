@@ -172,6 +172,7 @@
     <ClInclude Include="src\input_hooker.hpp" />
     <ClInclude Include="src\logger.hpp" />
     <ClInclude Include="src\shader_constants.hpp" />
+    <ClInclude Include="src\shader_database.hpp" />
     <ClInclude Include="src\texture_loader.hpp" />
     <ClInclude Include="src\user_config.hpp" />
     <ClInclude Include="src\window_helpers.hpp" />

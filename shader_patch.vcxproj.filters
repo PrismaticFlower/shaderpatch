@@ -110,6 +110,9 @@
     <ClInclude Include="src\direct3d\sampler_state_block.hpp">
       <Filter>src\direct3d</Filter>
     </ClInclude>
+    <ClInclude Include="src\shader_database.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="dinput8.def" />
