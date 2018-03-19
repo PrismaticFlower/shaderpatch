@@ -34,74 +34,40 @@ float3 ambient(float3 world_normal)
 
 float intensity_directional(float3 world_normal, float4 direction)
 {
-   float intensity = dot(world_normal.xyz, -direction.xyz);
-
-   return max(intensity, 0.0);
+   return max(dot(world_normal, -direction.xyz);, 0.0);
 }
 
 float intensity_point(float3 world_normal, float3 world_position, float4 light_position)
 {
-   float3 light_dir = world_position - light_position.xyz;
-
-   const float dir_dot = dot(light_dir, light_dir);
-
-   light_dir *= rsqrt(dir_dot);
-
-   float3 intensity;
-
    const float inv_range_sq = light_position.w;
+   const float light_dst = distance(world_position, light_position.xyz);
 
-   intensity.x = 1.0;
-   intensity.z = -dir_dot * inv_range_sq + intensity.x;
-   intensity.y = dot(world_normal.xyz, -light_dir);
-   intensity = max(intensity, 0.0);
+   float attenuation = max(1.0 - (light_dst * light_dst) * inv_range_sq, 0.0);
 
-   return intensity.y * intensity.z;
+   const float3 light_dir = normalize(world_position - light_position.xyz);
+
+   const float intensity = max(dot(world_normal.xyz, -light_dir), 0.0);
+
+   return attenuation * intensity;
 }
 
 float intensity_spot(float3 world_normal, float3 world_position)
 {
+   const float3 light_dir = normalize(world_position - light_spot_pos.xyz);
+
+   const float intensity = max(dot(world_normal, -light_dir), 0.0);
+
    const float inv_range_sq = light_spot_pos.w;
-   const float bidirectional = light_spot_dir.w;
+   const float light_dst = distance(world_position, light_spot_pos.xyz);
 
-   // find light direction
-   float3 light_dir = world_position + -light_spot_pos.xyz;
+   const float attenuation = max(1.0 - (light_dst * light_dst) * inv_range_sq, 0.0);
 
-   const float dir_dot = dot(light_dir, light_dir);
-   const float dir_rsqr = rsqrt(dir_dot);
+   const float outer_cone = light_spot_params.x;
 
-   light_dir *= dir_rsqr;
+   const float theta = max(dot(light_dir, light_spot_dir.xyz), 0.0);
+   const float cone_falloff = saturate((theta - outer_cone)  * light_spot_params.z);
 
-   // calculate angular attenuation
-   float4 attenuation;
-
-   attenuation = dot(light_dir, light_spot_dir.xyz);
-   attenuation.x = (dir_rsqr < 0.0) ? 1.0f : 0.0f;
-   attenuation.y = 1.0;
-   attenuation.x = bidirectional * -attenuation.x + attenuation.y;
-   attenuation.w = attenuation.w * attenuation.x;
-
-   // compute distance attenuation
-   attenuation.z = -dir_dot * inv_range_sq + attenuation.y;
-   attenuation = max(attenuation, 0.0);
-
-   // set if inside the inner/outer cone
-   attenuation.y = (attenuation.w >= light_spot_params.x) ? 1.0f : 0.0f;
-   attenuation.x = (attenuation.w <  0.0) ? 1.0f : 0.0f;
-   attenuation.z *= attenuation.y;
-
-   // compute the falloff if inbetween the inner and outer cone
-   attenuation.y = attenuation.w + -light_spot_params.x;
-   attenuation.y *= light_spot_params.z;
-   attenuation.w *= light_spot_params.w * attenuation.x;
-   attenuation.x = dot(world_normal, -light_dir);
-
-   float4 coefficient = lit(attenuation.x, attenuation.y, attenuation.w);
-
-   // calculate spot attenuated intensity
-   attenuation = max(attenuation, 0.0);
-
-   return (attenuation.z * coefficient.z) * attenuation.x;
+   return intensity * attenuation * cone_falloff;
 }
 
 Lighting calculate(float3 normals, float3 world_position,
