@@ -243,7 +243,7 @@ static const float PI = 3.14159265359f;
 float normal_distribution(float roughness, float3 N, float3 H)
 {
    const float a = roughness * roughness;
-   const float NdotH = dot(N, H);
+   const float NdotH = saturate(dot(N, H));
 
    const float d = (NdotH * NdotH) * ((a * a) - 1.0) + 1.0;
 
@@ -254,8 +254,8 @@ float geometric_occlusion(float roughness, float3 N, float3 L, float3 V)
 {
    const float k = (roughness + 1) * (roughness + 1) / 8;
 
-   const float NdotL = dot(N, L);
-   const float NdotV = dot(N, V);
+   const float NdotL = saturate(dot(N, L));
+   const float NdotV = saturate(dot(N, V));
 
    const float g1 = NdotL / (NdotL * (1 - k) + k);
    const float g2 = NdotV / (NdotV * (1 - k) + k);
@@ -263,9 +263,9 @@ float geometric_occlusion(float roughness, float3 N, float3 L, float3 V)
    return g1 * g2;
 }
 
-float fresnel_schlick(float F0, float3 V, float3 H)
+float3 fresnel_schlick(float3 F0, float3 V, float3 H)
 {
-   const float VdotH = dot(V, H);
+   const float VdotH = saturate(dot(V, H));
 
    return F0 + (1.0 - F0) * pow(1.0 - VdotH, 5);
 }
@@ -275,28 +275,31 @@ float3 diffuse_term(float3 albedo)
    return albedo / PI;
 }
 
-float3 brdf_light(float3 albedo, float F0, float roughness, float3 N, float3 L, float3 V,
+float3 brdf_light(float3 albedo, float3 F0, float roughness, float3 N, float3 L, float3 V,
                   float light_atten, float3 light_color)
 {
    const float3 H = normalize(L + V);
 
    const float D = normal_distribution(roughness, N, H);
    const float G = geometric_occlusion(roughness, N, L, V);
-   const float F = fresnel_schlick(F0, V, H);
+   const float3 F = fresnel_schlick(F0, V, H);
 
-   const float NdotL = dot(N, L);
-   const float NdotV = dot(N, V);
+   const float NdotL = saturate(dot(N, L));
+   const float NdotV = saturate(dot(N, V));
 
    const float3 spec = (D * G * F) / (4.0 * NdotL * NdotV);
    const float3 diffuse = (1.0 - F) * diffuse_term(albedo);
 
-   return max(NdotL, 0.0) * light_atten * light_color * (spec + diffuse);
+   return NdotL * light_atten * light_color * (spec + diffuse);
 }
 
 float3 calculate(float3 world_normal, float3 world_position, float3 albedo,
-                 float roughness, float metallic, float ao, float shadow,
-                 float F0, float V)
+                 float roughness, float metallic, float ao, float shadow, float3 V)
 {
+   const float dielectric = 0.04;
+   const float3 F0 = lerp(dielectric, albedo, metallic);
+   albedo = lerp(albedo * (1 - dielectric), 0.0, metallic);
+
    float3 light = 0.0;
 
    [branch] if (directional_lights) {
@@ -348,7 +351,7 @@ float3 calculate(float3 world_normal, float3 world_position, float3 albedo,
    }
 
    light *= shadow;
-   light =+ (ambient(world_normal) * ao);
+   light += (ambient(world_normal) * ao);
 
    return light;
 }
