@@ -92,7 +92,23 @@ foreach ($file in Get-ChildItem -File -Path definitions\* -Include *.json)
 
    Write-Host Munging $file.Name
 
-   shader_compiler $file.FullName "src\$srcname" "munged\$outname"
+   shader_compiler $file.FullName "munged\$outname" "src\$srcname" 
+
+   if ($LASTEXITCODE -ne 0)
+   {
+      remove_shader_checksums $srcname
+
+      throw "Compiling " + $file.Name + " failed!"
+   }
+}
+
+foreach ($file in Get-ChildItem -File -Path patch_definitions\* -Include *.json)
+{
+   $outname = $file.Name -replace ".json", ".shader"
+
+   Write-Host Munging $file.Name
+
+   shader_compiler -p $file.FullName "munged\$outname"
 
    if ($LASTEXITCODE -ne 0)
    {

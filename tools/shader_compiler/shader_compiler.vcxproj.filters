@@ -7,6 +7,9 @@
     <ClCompile Include="src\main.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\patch_compiler.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -18,6 +21,12 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\shader_variations.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\compiler_helpers.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\patch_compiler.hpp">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

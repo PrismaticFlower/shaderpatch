@@ -2,77 +2,69 @@
 
 #include <cstdint>
 #include <fstream>
+#include <ostream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <utility>
 
-#include <boost/smart_ptr/local_shared_ptr.hpp>
 #include <gsl/gsl>
 
 #include "magic_number.hpp"
 
-namespace sp {
+namespace sp::ucfb {
 
 template<typename Last_act>
-class Ucfb_writer_child : public Ucfb_writer {
-   static_assert(std::is_invocable_v<Last_act, decltype(Ucfb_writer::_size)>);
+class Writer_child : public Writer {
+   static_assert(std::is_invocable_v<Last_act, decltype(Writer::_size)>);
 
 public:
-   Ucfb_writer_child(Last_act last_act, boost::local_shared_ptr<std::ofstream> file,
-                     const Magic_number mn)
-      : Ucfb_writer{std::move(file), mn}, _last_act{last_act}
+   Writer_child(Last_act last_act, std::ostream& output_stream, const Magic_number mn)
+      : Writer{output_stream, mn}, _last_act{last_act}
    {
    }
 
-   ~Ucfb_writer_child()
+   ~Writer_child()
    {
-      _last_act(Ucfb_writer::_size);
+      _last_act(Writer::_size);
    }
 
 private:
    Last_act _last_act;
 };
 
-class Ucfb_writer {
+class Writer {
 public:
    enum class Alignment : bool { unaligned, aligned };
 
-   Ucfb_writer(const std::string_view file)
+   Writer(std::ostream& output_stream, const Magic_number root_mn = "ucfb"_mn)
+      : _out{output_stream}
    {
-      using namespace std::literals;
+      Expects(output_stream.good());
 
-      _file = std::make_unique<std::ofstream>(std::string{file}, std::ios::binary);
+      _out.write(reinterpret_cast<const char*>(&root_mn), sizeof(Magic_number));
 
-      if (!_file->is_open()) {
-         throw std::runtime_error{"Unable to open file \""s +
-                                  std::string{file} + "\" for output."s};
-      }
-
-      constexpr auto mn = "ucfb"_mn;
-
-      _file->write(reinterpret_cast<const char*>(&mn), sizeof(Magic_number));
-
-      _size_pos = _file->tellp();
-      _file->write(reinterpret_cast<const char*>(&size_place_hold),
-                   sizeof(size_place_hold));
+      _size_pos = _out.tellp();
+      _out.write(reinterpret_cast<const char*>(&size_place_hold),
+                 sizeof(size_place_hold));
    }
 
-   ~Ucfb_writer()
+   ~Writer()
    {
-      const auto cur_pos = _file->tellp();
+      const auto cur_pos = _out.tellp();
 
       const auto chunk_size = static_cast<std::uint32_t>(_size);
 
-      _file->seekp(_size_pos);
-      _file->write(reinterpret_cast<const char*>(&chunk_size), sizeof(chunk_size));
-      _file->seekp(cur_pos);
+      _out.seekp(_size_pos);
+      _out.write(reinterpret_cast<const char*>(&chunk_size), sizeof(chunk_size));
+      _out.seekp(cur_pos);
    }
 
-   Ucfb_writer() = delete;
+   Writer() = delete;
 
-   Ucfb_writer& operator=(const Ucfb_writer&) = delete;
-   Ucfb_writer& operator=(Ucfb_writer&&) = delete;
+   Writer& operator=(const Writer&) = delete;
+   Writer& operator=(Writer&&) = delete;
 
    auto emplace_child(const Magic_number mn)
    {
@@ -82,7 +74,7 @@ public:
 
       _size += 8;
 
-      return Ucfb_writer_child<decltype(last_act)>{last_act, _file, mn};
+      return Writer_child<decltype(last_act)>{last_act, _out, mn};
    }
 
    template<typename Type>
@@ -91,7 +83,7 @@ public:
       static_assert(std::is_trivially_copyable_v<Type>,
                     "Type must be trivially copyable!");
 
-      _file->write(reinterpret_cast<const char*>(&value), sizeof(Type));
+      _out.write(reinterpret_cast<const char*>(&value), sizeof(Type));
       _size += sizeof(Type);
 
       if (alignment == Alignment::aligned) align_file();
@@ -100,7 +92,7 @@ public:
    template<typename Type>
    void write(const gsl::span<Type> span, Alignment alignment = Alignment::aligned)
    {
-      _file->write(reinterpret_cast<const char*>(span.data()), span.size_bytes());
+      _out.write(reinterpret_cast<const char*>(span.data()), span.size_bytes());
       _size += span.size_bytes();
 
       if (alignment == Alignment::aligned) align_file();
@@ -108,8 +100,8 @@ public:
 
    void write(const std::string_view string, Alignment alignment = Alignment::aligned)
    {
-      *_file << string;
-      _file->put('\0');
+      _out.write(string.data(), string.size());
+      _out.put('\0');
 
       _size += string.length() + 1;
 
@@ -137,36 +129,41 @@ public:
 
 private:
    template<typename Last_act>
-   friend class Ucfb_writer_child;
+   friend class Writer_child;
 
    constexpr static std::uint32_t size_place_hold = 0;
 
-   Ucfb_writer(const Ucfb_writer&) = default;
-   Ucfb_writer(Ucfb_writer&&) = default;
-
-   Ucfb_writer(boost::local_shared_ptr<std::ofstream> file, const Magic_number mn) noexcept
-      : _file{file}
-   {
-      _file->write(reinterpret_cast<const char*>(&mn), sizeof(Magic_number));
-
-      _size_pos = _file->tellp();
-      _file->write(reinterpret_cast<const char*>(&size_place_hold),
-                   sizeof(size_place_hold));
-   }
+   Writer(const Writer&) = default;
+   Writer(Writer&&) = default;
 
    void align_file() noexcept
    {
       const auto remainder = _size % 4;
 
       if (remainder != 0) {
-         _file->write("\0\0\0\0", (4 - remainder));
+         _out.write("\0\0\0\0", (4 - remainder));
 
          _size += (4 - remainder);
       }
    }
 
-   boost::local_shared_ptr<std::ofstream> _file;
+   std::ostream& _out;
    std::streampos _size_pos;
    std::int64_t _size{};
 };
+
+inline auto open_file_for_output(const std::string& file_name) -> std::ofstream
+{
+   using namespace std::literals;
+
+   std::ofstream file;
+
+   file.open(file_name, std::ios::binary);
+
+   if (!file.is_open()) {
+      throw std::runtime_error{"Unable to open file \""s + file_name + "\" for output."s};
+   }
+
+   return file;
+}
 }

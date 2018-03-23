@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <iosfwd>
+#include <memory>
 #include <type_traits>
 #include <utility>
 
@@ -201,5 +202,13 @@ inline auto operator<<(std::basic_ostream<Char, Traits>& ostream,
    -> std::basic_ostream<Char, Traits>&
 {
    return ostream << com_ptr.get();
+}
+
+template<typename Class>
+inline auto make_shared_com_ptr(Com_ptr<Class> com_ptr) -> std::shared_ptr<Class>
+{
+   return {com_ptr.release(), [](Class* ptr) {
+              if (ptr) ptr->Release();
+           }};
 }
 }

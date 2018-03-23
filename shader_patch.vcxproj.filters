@@ -77,15 +77,6 @@
     <ClInclude Include="src\imgui\imgui_internal.h">
       <Filter>src\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="src\imgui\stb_rect_pack.h">
-      <Filter>src\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\imgui\stb_textedit.h">
-      <Filter>src\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\imgui\stb_truetype.h">
-      <Filter>src\imgui</Filter>
-    </ClInclude>
     <ClInclude Include="src\input_hooker.hpp">
       <Filter>src</Filter>
     </ClInclude>

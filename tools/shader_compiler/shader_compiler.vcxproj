@@ -87,8 +87,11 @@
   <ItemGroup>
     <ClCompile Include="src\game_compiler.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\patch_compiler.cpp" />
+    <ClInclude Include="src\patch_compiler.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\compiler_helpers.hpp" />
     <ClInclude Include="src\game_compiler.hpp" />
     <ClInclude Include="src\shader_variations.hpp" />
   </ItemGroup>

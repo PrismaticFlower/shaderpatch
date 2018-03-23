@@ -1,5 +1,6 @@
 
 #include "game_compiler.hpp"
+#include "compiler_helpers.hpp"
 #include "magic_number.hpp"
 #include "shader_metadata.hpp"
 #include "shader_variations.hpp"
@@ -21,64 +22,6 @@ namespace fs = boost::filesystem;
 
 namespace sp {
 
-namespace {
-
-template<typename... Args>
-std::size_t compiler_cache_hash(Args&&... args)
-{
-   const auto hash = [](std::size_t& seed, auto value) {
-      std::hash<std::remove_reference_t<decltype(value)>> hasher{};
-      seed ^= hasher(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-   };
-
-   std::size_t seed = 0;
-
-   (hash(seed, std::forward<Args>(args)), ...);
-
-   return seed;
-}
-
-gsl::span<DWORD> make_dword_span(ID3DBlob& blob)
-{
-   if (blob.GetBufferSize() % 4) {
-      throw std::runtime_error{"Resulting shader bytecode was bad."s};
-   }
-
-   return gsl::make_span<DWORD>(static_cast<DWORD*>(blob.GetBufferPointer()),
-                                static_cast<std::ptrdiff_t>(blob.GetBufferSize()) / 4);
-}
-
-auto read_source_file(std::string_view file_name) -> std::string
-{
-   const auto path = fs::path{std::cbegin(file_name), std::cend(file_name)};
-
-   if (!fs::exists(path)) {
-      throw std::runtime_error{"Source file does not exist."s};
-   }
-
-   return {std::istreambuf_iterator<char>(std::ifstream{path.string(), std::ios::binary}),
-           std::istreambuf_iterator<char>()};
-}
-
-auto read_definition_file(std::string_view file_name) -> nlohmann::json
-{
-   const auto path = fs::path{std::cbegin(file_name), std::cend(file_name)};
-
-   if (!fs::exists(path)) {
-      throw std::runtime_error{"Source file does not exist."s};
-   }
-
-   std::ifstream file{path.string()};
-
-   nlohmann::json config;
-   file >> config;
-
-   return config;
-}
-}
-
-const auto compiler_flags = D3DCOMPILE_DEBUG | D3DCOMPILE_OPTIMIZATION_LEVEL3;
-
 Game_compiler::Game_compiler(std::string definition_path, std::string source_path)
    : _definition_path{std::move(definition_path)}, _source_path{std::move(source_path)}
 {
@@ -97,7 +40,9 @@ Game_compiler::Game_compiler(std::string definition_path, std::string source_pat
 
 void Game_compiler::save(std::string_view output_path)
 {
-   Ucfb_writer writer{output_path};
+   auto file = ucfb::open_file_for_output(std::string{output_path});
+
+   ucfb::Writer writer{file};
 
    auto shdr = writer.emplace_child("SHDR"_mn);
 

@@ -64,7 +64,9 @@ int main(int arg_count, char* args[])
 
       fs::create_directory(out_path.parent_path());
 
-      Ucfb_writer writer{out_path.string()};
+      auto output_file = ucfb::open_file_for_output(out_path.string());
+
+      ucfb::Writer writer{output_file};
 
       for (std::ifstream definition{def_path.string()}; definition;) {
          std::string filename;
@@ -76,7 +78,7 @@ int main(int arg_count, char* args[])
             const auto file =
                read_binary_in(fs::path{munged_files_path}.append(filename));
 
-            Ucfb_reader reader{gsl::make_span(file)};
+            ucfb::Reader reader{gsl::make_span(file)};
 
             writer.write(reader.read_array<std::byte>(reader.size()));
          }

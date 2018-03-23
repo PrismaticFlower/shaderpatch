@@ -10,10 +10,10 @@
 #include <string>
 #include <type_traits>
 
-namespace sp {
+namespace sp::ucfb {
 
 template<Magic_number type_mn>
-class Ucfb_reader_strict;
+class Reader_strict;
 
 //! \brief The class used for reading SWBF's game files. Modified version of the
 //! class used in swbf-unmunge.
@@ -21,7 +21,7 @@ class Ucfb_reader_strict;
 //! Each reader represents a non-owning view at a chunk from a "ucfb" file.
 //! A reader holds only one piece of mutable state and that is the offset to the
 //! next unread byte. When a reader is copied, this offset is also copied. It
-//! can however be reset at anytime by calling Ucfb_reader::reset_head.
+//! can however be reset at anytime by calling Reader::reset_head.
 //!
 //! The various `read_*` all advance the read head by the size of the value
 //! they read. The read can be aligned or unaligned. When it is aligned the
@@ -31,18 +31,18 @@ class Ucfb_reader_strict;
 //! An inidividual instance of this class is not threadsafe, however because it
 //! only represents an immutable view the multiple threads can safely hold
 //! different readers all reading the same chunk.
-class Ucfb_reader {
+class Reader {
 public:
-   Ucfb_reader() = delete;
+   Reader() = delete;
 
-   //! \brief Creates a Ucfb_reader from a span of memory.
+   //! \brief Creates a Reader from a span of memory.
    //!
    //! \param bytes The span of memory holding the ucfb chunk. The size of the
    //! span must be at least 8.
    //!
    //! \exception std::runtime_error Thrown when the size of the chunk does not
    //! match the size of the span.
-   Ucfb_reader(const gsl::span<const std::byte> bytes)
+   Reader(const gsl::span<const std::byte> bytes)
       : _mn{reinterpret_cast<const Magic_number&>(bytes[0])},
         _size{reinterpret_cast<const std::uint32_t&>(bytes[4])},
         _data{&bytes[8]}
@@ -56,14 +56,14 @@ public:
    }
 
    template<Magic_number type_mn>
-   Ucfb_reader(const Ucfb_reader_strict<type_mn>&) = delete;
+   Reader(const Reader_strict<type_mn>&) = delete;
    template<Magic_number type_mn>
-   Ucfb_reader& operator=(const Ucfb_reader_strict<type_mn>&) = delete;
+   Reader& operator=(const Reader_strict<type_mn>&) = delete;
 
    template<Magic_number type_mn>
-   Ucfb_reader(Ucfb_reader_strict<type_mn>&&) = delete;
+   Reader(Reader_strict<type_mn>&&) = delete;
    template<Magic_number type_mn>
-   Ucfb_reader& operator=(Ucfb_reader_strict<type_mn>&&) = delete;
+   Reader& operator=(Reader_strict<type_mn>&&) = delete;
 
    //! \brief Reads a trivial value from the chunk.
    //!
@@ -198,11 +198,11 @@ public:
    //!
    //! \param unaligned If the read is unaligned or not.
    //!
-   //! \return A new Ucfb_reader for the child chunk.
+   //! \return A new Reader for the child chunk.
    //!
    //! \exception std::runtime_error Thrown when reading the child would go past
    //! the end of the current chunk.
-   Ucfb_reader read_child(const bool unaligned = false)
+   Reader read_child(const bool unaligned = false)
    {
       const auto child_mn = read_trivial<Magic_number>();
       const auto child_size = read_trivial<std::uint32_t>();
@@ -214,16 +214,16 @@ public:
 
       if (!unaligned) align_head();
 
-      return Ucfb_reader{child_mn, child_size, _data + child_data_offset};
+      return Reader{child_mn, child_size, _data + child_data_offset};
    }
 
    //! \brief Reads an unaligned child chunk.
    //!
-   //! \return A new Ucfb_reader for the child chunk.
+   //! \return A new Reader for the child chunk.
    //!
    //! \exception std::runtime_error Thrown when reading the child would go past
    //! the end of the current chunk.
-   Ucfb_reader read_child_unaligned()
+   Reader read_child_unaligned()
    {
       return read_child(true);
    }
@@ -234,10 +234,10 @@ public:
    //! \param <unnamed> std tag type for specifying the noexcept function.
    //! \param unaligned If the read is unaligned or not.
    //!
-   //! \return A std::optional<Ucfb_reader> for the child chunk. If the read
+   //! \return A std::optional<Reader> for the child chunk. If the read
    //! failed (because it would overflow the chunk) nullopt is returned instead.
    auto read_child(const std::nothrow_t, const bool unaligned = false) noexcept
-      -> std::optional<Ucfb_reader>
+      -> std::optional<Reader>
    {
       if ((_head + 8) > _size) return std::nullopt;
 
@@ -257,7 +257,7 @@ public:
 
       if (!unaligned) align_head();
 
-      return Ucfb_reader{child_mn, child_size, _data + child_data_offset};
+      return Reader{child_mn, child_size, _data + child_data_offset};
    }
 
    //! \brief Attempts to read an unaligned child chunk without the possibility
@@ -265,9 +265,9 @@ public:
    //!
    //! \param <unnamed> std tag type for specifying the noexcept function.
    //!
-   //! \return A std::optional<Ucfb_reader> for the child chunk. If the read
+   //! \return A std::optional<Reader> for the child chunk. If the read
    //! failed (because it would overflow the chunk) nullopt is returned instead.
-   auto read_child_unaligned(const std::nothrow_t) noexcept -> std::optional<Ucfb_reader>
+   auto read_child_unaligned(const std::nothrow_t) noexcept -> std::optional<Reader>
    {
       return read_child(std::nothrow, true);
    }
@@ -279,17 +279,17 @@ public:
    //!
    //! \param unaligned If the read is unaligned or not.
    //!
-   //! \return A new Ucfb_reader_strict<type_mn> for the child chunk.
+   //! \return A new Reader_strict<type_mn> for the child chunk.
    //!
    //! \exception std::runtime_error Thrown when the magic number of the child
    //! and the expected magic number do not match. If this happens the read head
    //! is not moved. \exception std::runtime_error Thrown when reading the child
    //! would go past the end of the current chunk.
    template<Magic_number type_mn>
-   auto read_child_strict(const bool unaligned = false) -> Ucfb_reader_strict<type_mn>
+   auto read_child_strict(const bool unaligned = false) -> Reader_strict<type_mn>
    {
       return {read_child_strict(type_mn, unaligned),
-              Ucfb_reader_strict<type_mn>::Unchecked_tag{}};
+              Reader_strict<type_mn>::Unchecked_tag{}};
    }
 
    //! \brief Reads an unaligned child if it's magic number matches an expected
@@ -297,14 +297,14 @@ public:
    //!
    //! \tparam type_mn The expected Magic_number of the child chunk.
    //!
-   //! \return A new Ucfb_reader_strict<type_mn> for the child chunk.
+   //! \return A new Reader_strict<type_mn> for the child chunk.
    //!
    //! \exception std::runtime_error Thrown when the magic number of the child
    //! and the expected magic number do not match. If this happens the read head
    //! is not moved. \exception std::runtime_error Thrown when reading the child
    //! would go past the end of the current chunk.
    template<Magic_number type_mn>
-   auto read_child_strict_unaligned() -> Ucfb_reader_strict<type_mn>
+   auto read_child_strict_unaligned() -> Reader_strict<type_mn>
    {
       return read_child_strict<type_mn>(true);
    }
@@ -316,19 +316,19 @@ public:
    //!
    //! \param unaligned If the read is unaligned or not.
    //!
-   //! \return A std::optional<Ucfb_reader_strict<type_mn>> for the child chunk.
+   //! \return A std::optional<Reader_strict<type_mn>> for the child chunk.
    //! If the magic number does not match std::nullopt is returned.
    //!
    //! \exception std::runtime_error Thrown when reading the child would go past
    //! the end of the current chunk.
    template<Magic_number type_mn>
    auto read_child_strict_optional(const bool unaligned = false)
-      -> std::optional<Ucfb_reader_strict<type_mn>>
+      -> std::optional<Reader_strict<type_mn>>
    {
       const auto child = read_child_strict_optional(type_mn, unaligned);
 
       if (child) {
-         return {{*child, Ucfb_reader_strict<type_mn>::Unchecked_tag{}}};
+         return {{*child, Reader_strict<type_mn>::Unchecked_tag{}}};
       }
 
       return {};
@@ -339,14 +339,14 @@ public:
    //!
    //! \tparam type_mn The expected Magic_number of the child chunk.
    //!
-   //! \return A std::optional<Ucfb_reader_strict<type_mn>> for the child chunk.
+   //! \return A std::optional<Reader_strict<type_mn>> for the child chunk.
    //! If the magic number does not match std::nullopt is returned.
    //!
    //! \exception std::runtime_error Thrown when reading the child would go past
    //! the end of the current chunk.
    template<Magic_number type_mn>
    auto read_child_strict_optional_unaligned()
-      -> std::optional<Ucfb_reader_strict<type_mn>>
+      -> std::optional<Reader_strict<type_mn>>
    {
       return read_child_strict_optional<type_mn>(true);
    }
@@ -410,13 +410,12 @@ public:
 
 private:
    // Special constructor for use by read_child, performs no error checking.
-   Ucfb_reader(const Magic_number mn, const std::uint32_t size,
-               const std::byte* const data)
+   Reader(const Magic_number mn, const std::uint32_t size, const std::byte* const data)
       : _mn{mn}, _size{size}, _data{data}
    {
    }
 
-   Ucfb_reader read_child_strict(const Magic_number child_mn, const bool unaligned)
+   Reader read_child_strict(const Magic_number child_mn, const bool unaligned)
    {
       const auto old_head = _head;
 
@@ -434,7 +433,7 @@ private:
    }
 
    auto read_child_strict_optional(const Magic_number child_mn, const bool unaligned)
-      -> std::optional<Ucfb_reader>
+      -> std::optional<Reader>
    {
       const auto old_head = _head;
 
@@ -474,29 +473,25 @@ private:
 //!
 //! \tparam type_mn The magic number to restrict the reader to.
 template<Magic_number type_mn>
-class Ucfb_reader_strict : public Ucfb_reader {
+class Reader_strict : public Reader {
 public:
-   Ucfb_reader_strict() = delete;
+   Reader_strict() = delete;
 
    //! \brief Construct a strict reader.
    //!
    //! \param ucfb_reader The reader to construct the strict reader from.
    //! The magic number of the reader must match type_mn.
-   explicit Ucfb_reader_strict(Ucfb_reader ucfb_reader) noexcept
-      : Ucfb_reader{ucfb_reader}
+   explicit Reader_strict(Reader ucfb_reader) noexcept : Reader{ucfb_reader}
    {
       Expects(type_mn == ucfb_reader.magic_number());
    }
 
 private:
-   friend class Ucfb_reader;
+   friend class Reader;
 
    struct Unchecked_tag {
    };
 
-   Ucfb_reader_strict(Ucfb_reader ucfb_reader, Unchecked_tag)
-      : Ucfb_reader{ucfb_reader}
-   {
-   }
+   Reader_strict(Reader ucfb_reader, Unchecked_tag) : Reader{ucfb_reader} {}
 };
 }
