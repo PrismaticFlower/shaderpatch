@@ -97,14 +97,6 @@ void Device::GetGammaRamp(UINT swap_chain_index, D3DGAMMARAMP* ramp) noexcept
 {
    return _device->GetGammaRamp(swap_chain_index, ramp);
 }
-HRESULT Device::CreateVolumeTexture(UINT width, UINT height, UINT depth, UINT levels,
-                                    DWORD usage, D3DFORMAT format, D3DPOOL pool,
-                                    IDirect3DVolumeTexture9** volume_texture,
-                                    HANDLE* shared_handle) noexcept
-{
-   return _device->CreateVolumeTexture(width, height, depth, levels, usage, format,
-                                       pool, volume_texture, shared_handle);
-}
 
 HRESULT Device::CreateCubeTexture(UINT edge_length, UINT levels, DWORD usage,
                                   D3DFORMAT format, D3DPOOL pool,

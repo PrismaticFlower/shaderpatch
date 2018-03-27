@@ -462,6 +462,15 @@ private:
       if (remainder != 0) _head += (4 - remainder);
    }
 
+   template<typename Char_type, typename Size_type>
+   static Size_type cstring_length(const Char_type* const string, const Size_type max_length)
+   {
+      const auto string_end =
+         std::find(string, string + max_length, static_cast<Char_type>('\0'));
+
+      return static_cast<Size_type>(std::distance(string, string_end));
+   }
+
    const Magic_number _mn;
    const std::size_t _size;
    const std::byte* const _data;

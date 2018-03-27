@@ -5,6 +5,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <string>
 
 #include <gsl/gsl>
 
@@ -18,13 +19,13 @@ enum class Volume_resource_type : std::uint16_t {
 
 constexpr auto unpack_size(std::uint32_t height, std::uint32_t depth) noexcept
 {
-   return height | (depth << 16u);
+   return height | (depth << 15u);
 }
 
 constexpr auto pack_size(std::uint32_t size) noexcept -> std::array<std::uint16_t, 2>
 {
-   const std::uint16_t lower = size & 0xffffu;
-   const std::uint16_t upper = (size >> 16u);
+   const std::uint16_t lower = size & 0x7fffu;
+   const std::uint16_t upper = (size >> 15u) & 0x7fffu;
 
    return {lower, upper};
 }
@@ -32,6 +33,8 @@ constexpr auto pack_size(std::uint32_t size) noexcept -> std::array<std::uint16_
 void save_volume_resource(const std::string& output_path, std::string_view name,
                           Volume_resource_type type, gsl::span<const std::byte> data)
 {
+   using namespace std::literals;
+
    auto file = ucfb::open_file_for_output(std::string{output_path});
 
    ucfb::Writer root_writer{file};

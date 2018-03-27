@@ -87,9 +87,9 @@ void Patch_compiler::optimize_permutations()
 
             if (std::equal(std::cbegin(shaders[i]), std::cend(shaders[i]),
                            std::cbegin(shaders[j]), std::cend(shaders[j]))) {
-               shaders.erase(std::cbegin(shaders));
+               shaders.erase(std::cbegin(shaders) + i);
 
-               std::invoke(std::forward<decltype(remapper)>(remapper), 0, j);
+               std::invoke(std::forward<decltype(remapper)>(remapper), i, j);
 
                return true;
             }
@@ -127,6 +127,8 @@ void Patch_compiler::save(std::string_view output_path) const
    // create shader chunk
    {
       ucfb::Writer writer{shader_chunk, "ssdr"_mn};
+
+      writer.emplace_child("RTYP"_mn).write(_render_type);
 
       // write vertex shaders
       {

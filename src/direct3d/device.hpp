@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../shader_constants.hpp"
+#include "../shader_database.hpp"
 #include "../user_config.hpp"
 #include "com_ptr.hpp"
 #include "render_state_block.hpp"
@@ -338,6 +339,8 @@ private:
    Ps_3f_shader_constant<constants::ps::fog_color> _fog_color_const;
    Ps_4f_shader_constant<constants::ps::rt_resolution> _rt_resolution_const;
    Vs_1f_shader_constant<constants::vs::time> _time_vs_const;
+
+   Shader_database _shaders;
 
    const std::chrono::steady_clock::time_point _device_start{
       std::chrono::steady_clock::now()};

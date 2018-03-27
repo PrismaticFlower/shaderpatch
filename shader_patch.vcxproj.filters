@@ -45,6 +45,9 @@
     <ClCompile Include="src\direct3d\check_required_features.cpp">
       <Filter>src\direct3d</Filter>
     </ClCompile>
+    <ClCompile Include="src\shader_loader.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -102,6 +105,15 @@
       <Filter>src\direct3d</Filter>
     </ClInclude>
     <ClInclude Include="src\shader_database.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\resource_uploader.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader_program.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader_loader.hpp">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

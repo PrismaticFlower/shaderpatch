@@ -4,12 +4,15 @@
 #include "../imgui/imgui_impl_dx9.h"
 #include "../input_hooker.hpp"
 #include "../logger.hpp"
+#include "../resource_uploader.hpp"
 #include "../shader_constants.hpp"
+#include "../shader_loader.hpp"
 #include "../texture_loader.hpp"
 #include "../window_helpers.hpp"
 #include "sampler_state_block.hpp"
 #include "shader.hpp"
 #include "shader_metadata.hpp"
+#include "volume_resource.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -262,6 +265,36 @@ HRESULT Device::SetRenderTarget(DWORD render_target_index,
    }
 
    return _device->SetRenderTarget(render_target_index, render_target);
+}
+
+HRESULT Device::CreateVolumeTexture(UINT width, UINT height, UINT depth, UINT levels,
+                                    DWORD usage, D3DFORMAT format, D3DPOOL pool,
+                                    IDirect3DVolumeTexture9** volume_texture,
+                                    HANDLE* shared_handle) noexcept
+{
+   if (static_cast<Volume_resource_type>(width) == Volume_resource_type::shader) {
+      auto post_upload = [this](gsl::span<std::byte> data) {
+         try {
+            auto [rendertype, shader_group] =
+               load_shader(ucfb::Reader{data}, *_device);
+
+            _shaders.add(rendertype, std::move(shader_group));
+         }
+         catch (std::exception& e) {
+            log(Log_level::error,
+                "Exception occured while loading shader resource: "sv, e.what());
+         }
+      };
+
+      auto uploader = make_resource_uploader(unpack_size(height, depth), post_upload);
+
+      *volume_texture = uploader.release();
+
+      return S_OK;
+   }
+
+   return _device->CreateVolumeTexture(width, height, depth, levels, usage, format,
+                                       pool, volume_texture, shared_handle);
 }
 
 HRESULT Device::CreateTexture(UINT width, UINT height, UINT levels, DWORD usage,
