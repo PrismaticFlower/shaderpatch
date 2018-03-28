@@ -11,6 +11,8 @@
 #include <sstream>
 #include <unordered_map>
 
+#include <boost/container/flat_map.hpp>
+
 namespace sp {
 
 using namespace std::literals;
@@ -79,24 +81,40 @@ void Patch_compiler::optimize_permutations()
    _vs_cache.clear();
    _ps_cache.clear();
 
-   const auto optimize = [](std::vector<std::vector<DWORD>>& shaders,
-                            auto&& remapper) -> bool {
-      for (auto i = 0u; i < shaders.size(); ++i) {
-         for (auto j = 0u; j < shaders.size(); ++j) {
-            if (i == j) continue;
+   boost::container::flat_map<std::size_t, std::vector<DWORD>> stable_shaders;
 
-            if (std::equal(std::cbegin(shaders[i]), std::cend(shaders[i]),
-                           std::cbegin(shaders[j]), std::cend(shaders[j]))) {
-               shaders.erase(std::cbegin(shaders) + i);
+   const auto optimize = [&](auto&& remapper) {
+      std::vector<std::size_t> to_remove;
+      to_remove.reserve(stable_shaders.size());
 
-               std::invoke(std::forward<decltype(remapper)>(remapper), i, j);
+      for (auto& a : stable_shaders) {
+         for (auto& b : stable_shaders) {
+            if (a.first == b.first) continue;
 
-               return true;
+            if (std::equal(std::cbegin(a.second), std::cend(a.second),
+                           std::cbegin(b.second), std::cend(b.second))) {
+               std::invoke(std::forward<decltype(remapper)>(remapper), b.first, a.first);
+
+               to_remove.emplace_back(b.first);
             }
          }
       }
 
-      return false;
+      for (const auto& remove : to_remove) {
+         stable_shaders.erase(remove);
+      }
+   };
+
+   const auto linearize = [&](auto&& remapper) {
+      std::size_t i = 0;
+
+      for (auto& a : stable_shaders) {
+         if (a.first == i) continue;
+
+         std::invoke(std::forward<decltype(remapper)>(remapper), a.first, i);
+
+         i += 1;
+      }
    };
 
    const auto remap_vs_state = [this](std::size_t from, std::size_t to) {
@@ -107,7 +125,22 @@ void Patch_compiler::optimize_permutations()
       }
    };
 
-   while (optimize(_vs_shaders, remap_vs_state)) continue;
+   stable_shaders.reserve(_vs_shaders.size());
+
+   for (auto i = 0u; i < _vs_shaders.size(); ++i) {
+      stable_shaders[i] = std::move(_vs_shaders[i]);
+   }
+
+   _vs_shaders.clear();
+
+   optimize(remap_vs_state);
+   linearize(remap_vs_state);
+
+   for (auto& shader : stable_shaders) {
+      std::swap(_vs_shaders.emplace_back(), shader.second);
+   }
+
+   stable_shaders.clear();
 
    const auto remap_ps_state = [this](std::size_t from, std::size_t to) {
       for (auto& state : _states) {
@@ -117,7 +150,20 @@ void Patch_compiler::optimize_permutations()
       }
    };
 
-   while (optimize(_ps_shaders, remap_ps_state)) continue;
+   stable_shaders.reserve(_ps_shaders.size());
+
+   for (auto i = 0u; i < _ps_shaders.size(); ++i) {
+      stable_shaders[i] = std::move(_ps_shaders[i]);
+   }
+
+   _ps_shaders.clear();
+
+   optimize(remap_ps_state);
+   linearize(remap_ps_state);
+
+   for (auto& shader : stable_shaders) {
+      std::swap(_ps_shaders.emplace_back(), shader.second);
+   }
 }
 
 void Patch_compiler::save(std::string_view output_path) const

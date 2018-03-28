@@ -56,7 +56,7 @@ int main(int arg_count, char* args[])
       else {
          sp::Patch_compiler compiler{def_file};
 
-         // compiler.optimize_permutations();
+         compiler.optimize_permutations();
 
          compiler.save(output_file);
       }
