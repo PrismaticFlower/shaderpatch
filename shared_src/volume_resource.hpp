@@ -13,7 +13,7 @@ namespace sp {
 
 enum class Volume_resource_type : std::uint16_t {
    shader = 2048,
-   texture_pack = 4096,
+   texture = 4096,
    material = 8192
 };
 
@@ -40,7 +40,9 @@ void save_volume_resource(const std::string& output_path, std::string_view name,
    ucfb::Writer root_writer{file};
    auto writer = root_writer.emplace_child("tex_"_mn);
 
-   writer.emplace_child("NAME"_mn).write("_SP_RES_"s += name);
+   auto prefix = (Volume_resource_type::material != type) ? "_SP_RES_"s : ""s;
+
+   writer.emplace_child("NAME"_mn).write(prefix += name);
 
    constexpr std::uint32_t fmt_l8 = 50;
 

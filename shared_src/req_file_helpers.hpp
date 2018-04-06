@@ -103,4 +103,36 @@ inline auto parse_req_file(boost::filesystem::path filepath)
 
    return section_values;
 }
+
+inline void emit_req_file(
+   boost::filesystem::path filepath,
+   const std::vector<std::pair<std::string, std::vector<std::string>>>& key_sections)
+{
+   namespace fs = boost::filesystem;
+   using namespace std::literals;
+
+   std::ofstream file{filepath.string()};
+
+   if (!file) {
+      throw compose_exception<std::runtime_error>("Unable to open file "sv,
+                                                  filepath, " for output."sv);
+   }
+
+   file << "uctf\n{\n"sv;
+
+   for (const auto& key_section : key_sections) {
+      file << "   "sv
+           << "REQN\n   {\n"sv;
+
+      file << "      "sv << std::quoted(key_section.first) << '\n';
+
+      for (const auto& entry : key_section.second) {
+         file << "      "sv << std::quoted(entry) << '\n';
+      }
+
+      file << "   }\n"sv;
+   }
+
+   file << "}\n"sv;
+}
 }

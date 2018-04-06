@@ -15,19 +15,19 @@
 
 namespace sp::ucfb {
 
-template<typename Last_act>
-class Writer_child : public Writer {
+template<typename Last_act, typename Writer_type>
+class Writer_child : public Writer_type {
    static_assert(std::is_invocable_v<Last_act, decltype(Writer::_size)>);
 
 public:
    Writer_child(Last_act last_act, std::ostream& output_stream, const Magic_number mn)
-      : Writer{output_stream, mn}, _last_act{last_act}
+      : Writer_type{output_stream, mn}, _last_act{last_act}
    {
    }
 
    ~Writer_child()
    {
-      _last_act(Writer::_size);
+      _last_act(Writer_type::_size);
    }
 
 private:
@@ -74,7 +74,7 @@ public:
 
       _size += 8;
 
-      return Writer_child<decltype(last_act)>{last_act, _out, mn};
+      return Writer_child<decltype(last_act), Writer>{last_act, _out, mn};
    }
 
    template<typename Type>
@@ -128,7 +128,7 @@ public:
    }
 
 private:
-   template<typename Last_act>
+   template<typename Last_act, typename Writer_type>
    friend class Writer_child;
 
    constexpr static std::uint32_t size_place_hold = 0;

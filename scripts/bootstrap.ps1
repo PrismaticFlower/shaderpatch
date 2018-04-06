@@ -12,4 +12,5 @@ cd submodules/vcpkg
 ./vcpkg install nlohmann-json:x86-windows-static-md
 ./vcpkg install boost:x86-windows-static-md
 ./vcpkg install clara:x86-windows-static-md
+./vcpkg install yaml-cpp:x86-windows-static-md
 

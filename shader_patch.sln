@@ -21,8 +21,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shaders", "assets\shaders\g
 		{08B2B3F5-A506-49F0-9775-56BB4A87F22D} = {08B2B3F5-A506-49F0-9775-56BB4A87F22D}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "material_munge", "tools\material_munge\material_munge.vcxproj", "{0459C299-DA5D-4AB2-AF50-C38D4F569A19}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		shared_src\shared_src.vcxitems*{0459c299-da5d-4ab2-af50-c38d4f569a19}*SharedItemsImports = 4
 		shared_src\shared_src.vcxitems*{08b2b3f5-a506-49f0-9775-56bb4a87f22d}*SharedItemsImports = 4
 		shared_src\shared_src.vcxitems*{55ede7a5-d7bb-476b-84a2-85b962bbc36a}*SharedItemsImports = 4
 		shared_src\shared_src.vcxitems*{77065f00-e7e4-4edf-8c98-6eb87bc49c4d}*SharedItemsImports = 4
@@ -85,6 +88,16 @@ Global
 		{7FA8E104-8A4E-4A69-8CEE-7C800757DB6E}.Release|x64.Build.0 = Release|x64
 		{7FA8E104-8A4E-4A69-8CEE-7C800757DB6E}.Release|x86.ActiveCfg = Release|Win32
 		{7FA8E104-8A4E-4A69-8CEE-7C800757DB6E}.Release|x86.Build.0 = Release|Win32
+		{0459C299-DA5D-4AB2-AF50-C38D4F569A19}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{0459C299-DA5D-4AB2-AF50-C38D4F569A19}.Debug|x64.ActiveCfg = Debug|x64
+		{0459C299-DA5D-4AB2-AF50-C38D4F569A19}.Debug|x64.Build.0 = Debug|x64
+		{0459C299-DA5D-4AB2-AF50-C38D4F569A19}.Debug|x86.ActiveCfg = Debug|Win32
+		{0459C299-DA5D-4AB2-AF50-C38D4F569A19}.Debug|x86.Build.0 = Debug|Win32
+		{0459C299-DA5D-4AB2-AF50-C38D4F569A19}.Release|Any CPU.ActiveCfg = Release|Win32
+		{0459C299-DA5D-4AB2-AF50-C38D4F569A19}.Release|x64.ActiveCfg = Release|x64
+		{0459C299-DA5D-4AB2-AF50-C38D4F569A19}.Release|x64.Build.0 = Release|x64
+		{0459C299-DA5D-4AB2-AF50-C38D4F569A19}.Release|x86.ActiveCfg = Release|Win32
+		{0459C299-DA5D-4AB2-AF50-C38D4F569A19}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -93,6 +106,7 @@ Global
 		{D1C33C73-8766-49AF-AB30-FD4A2ECF5EB7} = {69E77B09-01C8-4B00-929C-69F81C130C74}
 		{08B2B3F5-A506-49F0-9775-56BB4A87F22D} = {69E77B09-01C8-4B00-929C-69F81C130C74}
 		{55EDE7A5-D7BB-476B-84A2-85B962BBC36A} = {69E77B09-01C8-4B00-929C-69F81C130C74}
+		{0459C299-DA5D-4AB2-AF50-C38D4F569A19} = {69E77B09-01C8-4B00-929C-69F81C130C74}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E60021EE-5B9E-4C2E-B6AB-83302F205408}
