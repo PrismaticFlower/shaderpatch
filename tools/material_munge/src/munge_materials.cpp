@@ -22,7 +22,7 @@ using namespace std::literals;
 
 namespace {
 
-void munge_material(const fs::path& material_path, const fs::path& output_path)
+void munge_material(const fs::path& material_path, const fs::path& output_file_path)
 {
    auto root_node = YAML::LoadFile(material_path.string());
 
@@ -80,9 +80,6 @@ void munge_material(const fs::path& material_path, const fs::path& output_path)
       if (!texture.empty()) required_sp_textures.emplace_back(texture);
    }
 
-   const auto output_file_path =
-      output_path / material_path.stem().replace_extension(".texture"s);
-
    write_patch_material(output_file_path, material);
    emit_req_file(fs::change_extension(output_file_path, ".texture.req"s), required_files);
 }
@@ -99,7 +96,16 @@ void munge_materials(const fs::path& output_dir,
          if (file.second.extension() == ".mtrl"s) {
             synced_print("Munging "sv, file.first, "..."sv);
 
-            munge_material(file.second, output_dir);
+            const auto output_file_path =
+               output_dir / file.second.stem().replace_extension(".texture"s);
+
+            if (fs::exists(output_file_path) &&
+                (fs::last_write_time(file.second) <
+                 fs::last_write_time(output_file_path))) {
+               continue;
+            }
+
+            munge_material(file.second, output_file_path);
 
             munged_materials.emplace_back(file.second.stem().string());
          }
