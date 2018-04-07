@@ -1,14 +1,21 @@
 
 #include "munge_materials.hpp"
+#include "material_flags.hpp"
 #include "patch_material.hpp"
 #include "req_file_helpers.hpp"
 #include "synced_io.hpp"
+#include "ucfb_tweaker.hpp"
 
 #include <array>
+#include <cstdint>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
+
+#include <gsl/gsl>
+
+#include <boost/iostreams/device/mapped_file.hpp>
 
 #pragma warning(push)
 #pragma warning(disable : 4996)
@@ -97,6 +104,71 @@ auto munge_material(const fs::path& material_path, const fs::path& output_file_p
    return flags;
 }
 
+void fixup_munged_model(const fs::path& model_path, std::string_view material_name,
+                        Hardcoded_material_flags flags)
+{
+   using boost::iostreams::mapped_file;
+
+   mapped_file file{model_path, mapped_file::readwrite};
+
+   auto file_span =
+      gsl::make_span(reinterpret_cast<std::byte*>(file.data()), file.size());
+
+   ucfb::Tweaker tweaker{file_span};
+
+   auto modl_chunks = ucfb::find_all("modl"_mn, tweaker);
+
+   for (auto& modl : modl_chunks) {
+      auto segm_chunks = ucfb::find_all("segm"_mn, modl);
+
+      for (auto& segm : segm_chunks) {
+         auto mtrl_chunk = ucfb::find_next("MTRL"_mn, segm);
+         auto tnam_chunks = ucfb::find_all("TNAM"_mn, segm);
+
+         bool edit = false;
+
+         for (auto& tnam : tnam_chunks) {
+            tnam.get<std::int32_t>();
+
+            auto string = tnam.read_string();
+
+            edit = edit || (material_name == string);
+         }
+
+         if (!edit) continue;
+
+         if (!mtrl_chunk) {
+            throw std::runtime_error{"Segment in model did not have material info!"s};
+         }
+
+         auto& mtrl_flags = mtrl_chunk->get<Material_flags>();
+
+         constexpr auto cleared_flags =
+            Material_flags::glossmap | Material_flags::glow |
+            Material_flags::perpixel | Material_flags::specular |
+            Material_flags::env_map;
+
+         mtrl_flags &= ~cleared_flags;
+
+         // clang-format off
+
+         if (flags.transparent) mtrl_flags |= Material_flags::transparent;
+         else mtrl_flags &= ~Material_flags::transparent;
+
+         if (flags.hard_edged) mtrl_flags |= Material_flags::hardedged;
+         else mtrl_flags &= ~Material_flags::hardedged;
+
+         if (flags.double_sided) mtrl_flags |= Material_flags::doublesided;
+         else mtrl_flags &= ~Material_flags::doublesided;
+
+         if (flags.statically_lit) mtrl_flags |= Material_flags::vertex_lit;
+         else mtrl_flags &= ~Material_flags::vertex_lit;
+
+         // clang-format on
+      }
+   }
+}
+
 void fixup_munged_models(
    const fs::path& output_dir,
    const std::unordered_map<std::string, std::vector<fs::path>>& texture_references,
@@ -110,7 +182,8 @@ void fixup_munged_models(
 
          if (!fs::exists(output_file_path) ||
              (fs::last_write_time(output_file_path) < fs::last_write_time(file_ref))) {
-            fs::copy_file(file_ref, output_file_path);
+            fs::copy_file(file_ref, output_file_path,
+                          fs::copy_option::overwrite_if_exists);
 
             const auto ext = fs::extension(file_ref);
 
@@ -120,11 +193,15 @@ void fixup_munged_models(
                auto output_req_file_path =
                   fs::change_extension(output_file_path, ext + ".req"s);
 
-               fs::copy_file(req_file_path, output_req_file_path);
+               fs::copy_file(req_file_path, output_req_file_path,
+                             fs::copy_option::overwrite_if_exists);
             }
          }
 
-         synced_print("One day "sv, file_ref.filename(), " will be edited."sv);
+         synced_print("Editing "sv, output_file_path.filename().string(),
+                      " for material "sv, name, "..."sv);
+
+         fixup_munged_model(output_file_path, name, flags);
       }
    }
 }
@@ -139,8 +216,6 @@ void munge_materials(const fs::path& output_dir,
    for (auto& file : files) {
       try {
          if (file.second.extension() == ".mtrl"s) {
-            synced_print("Munging "sv, file.first, "..."sv);
-
             const auto output_file_path =
                output_dir / file.second.stem().replace_extension(".texture"s);
 
@@ -149,6 +224,8 @@ void munge_materials(const fs::path& output_dir,
                  fs::last_write_time(output_file_path))) {
                continue;
             }
+
+            synced_print("Munging "sv, file.first, "..."sv);
 
             const auto flags = munge_material(file.second, output_file_path);
 

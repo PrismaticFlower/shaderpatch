@@ -32,7 +32,7 @@ auto find_texture_references(const fs::path& from)
             if (section.first != "texture"sv) continue;
 
             for (auto& texture : section.second) {
-               results[texture].emplace_back(path.stem());
+               results[texture].emplace_back(path.parent_path() / path.stem());
             }
          }
       }

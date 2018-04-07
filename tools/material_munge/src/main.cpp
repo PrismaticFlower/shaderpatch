@@ -53,6 +53,22 @@ int main(int arg_count, char* args[])
       return 0;
    }
 
+   if (!fs::exists(output_dir)) fs::create_directory(output_dir);
+
+   if (!fs::exists(source_dir)) {
+      synced_error_print("Source Directory "sv, std::quoted(source_dir),
+                         " does not exist!"sv);
+
+      return 1;
+   }
+
+   if (!fs::exists(munged_input_dir)) {
+      synced_error_print("Munged Input Directory "sv,
+                         std::quoted(munged_input_dir), " does not exist!"sv);
+
+      return 1;
+   }
+
    auto files_result =
       std::async(std::launch::async, build_input_file_map, source_dir);
 
