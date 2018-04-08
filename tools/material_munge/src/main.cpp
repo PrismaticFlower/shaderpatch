@@ -30,10 +30,10 @@ int main(int arg_count, char* args[])
    auto cli = Help{help}
       | Opt{output_dir, "output directory"s}
       ["--outputdir"s]
-      ("Path to place output files."s)
+      ("Path to place munged files in."s)
       | Opt{source_dir, "source directory"s}
       ["--sourcedir"s]
-      ("Path to input .mtrl files."s)
+      ("Path to search for input .mtrl files."s)
       | Opt{munged_input_dir, "munged source directory"s}
       ["--mungedsourcedir"s]
       ("Path to input munged files."s);
@@ -53,7 +53,12 @@ int main(int arg_count, char* args[])
       return 0;
    }
 
-   if (!fs::exists(output_dir)) fs::create_directory(output_dir);
+   if (!fs::exists(output_dir) && !fs::create_directory(output_dir)) {
+      synced_error_print("Unable to create output directory "sv,
+                         std::quoted(output_dir), "."sv);
+
+      return 1;
+   }
 
    if (!fs::exists(source_dir)) {
       synced_error_print("Source Directory "sv, std::quoted(source_dir),
@@ -77,6 +82,4 @@ int main(int arg_count, char* args[])
    auto files = files_result.get();
 
    munge_materials(output_dir, texture_references, files);
-
-   return 0;
 }
