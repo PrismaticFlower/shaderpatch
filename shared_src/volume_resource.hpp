@@ -30,8 +30,9 @@ constexpr auto pack_size(std::uint32_t size) noexcept -> std::array<std::uint16_
    return {lower, upper};
 }
 
-void save_volume_resource(const std::string& output_path, std::string_view name,
-                          Volume_resource_type type, gsl::span<const std::byte> data)
+inline void save_volume_resource(const std::string& output_path,
+                                 std::string_view name, Volume_resource_type type,
+                                 gsl::span<const std::byte> data)
 {
    using namespace std::literals;
 

@@ -119,8 +119,6 @@ auto load_dds_from_file(IDirect3DDevice9& device, std::wstring file) noexcept
 
    if (result != S_OK) return nullptr;
 
-   const auto bytes_per_pixel = DirectX::BitsPerPixel(metadata.format) / 8u;
-
    for (auto i = 0u; i < metadata.mipLevels; ++i) {
       D3DLOCKED_RECT rect{};
 

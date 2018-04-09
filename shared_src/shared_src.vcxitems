@@ -19,6 +19,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)magic_number.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)material_flags.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)patch_material.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)patch_texture.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)req_file_helpers.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)shader_flags.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)shader_metadata.hpp" />

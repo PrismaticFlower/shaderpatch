@@ -23,7 +23,8 @@ struct Material_info {
    std::array<std::string, 8> textures{};
 };
 
-void write_patch_material(boost::filesystem::path save_path, const Material_info& info)
+inline void write_patch_material(boost::filesystem::path save_path,
+                                 const Material_info& info)
 {
    using namespace std::literals;
    namespace fs = boost::filesystem;
