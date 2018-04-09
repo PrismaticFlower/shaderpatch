@@ -105,8 +105,8 @@ auto make_image_power_of_2(DX::ScratchImage image) -> DX::ScratchImage
    if (!is_power_of_2(image_res.x) || !is_power_of_2(image_res.y)) {
       DX::ScratchImage resized_image;
 
-      if (FAILED(DX::Resize(*image.GetImage(0, 0, 0),
-                            round_next_power_of_2(image_res.x),
+      if (FAILED(DX::Resize(image.GetImages(), image.GetImageCount(),
+                            image.GetMetadata(), round_next_power_of_2(image_res.x),
                             round_next_power_of_2(image_res.y),
                             DX::TEX_FILTER_CUBIC | DX::TEX_FILTER_FORCE_NON_WIC,
                             resized_image))) {
