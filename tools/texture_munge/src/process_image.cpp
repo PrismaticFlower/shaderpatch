@@ -89,13 +89,40 @@ auto get_mip_filter_type(YAML::Node config) -> DX::TEX_FILTER_FLAGS
 
 auto load_image(const fs::path& image_file_path) -> DirectX::ScratchImage
 {
-   DirectX::ScratchImage tga_image;
+   DirectX::ScratchImage loaded_image;
 
-   if (FAILED(DirectX::LoadFromTGAFile(image_file_path.c_str(), nullptr, tga_image))) {
+   if (FAILED(DirectX::LoadFromTGAFile(image_file_path.c_str(), nullptr, loaded_image))) {
       throw std::runtime_error{"Unable to open texture file."s};
    }
 
-   return tga_image;
+   return loaded_image;
+}
+
+auto swizzle_pixel_format(DX::ScratchImage image) -> DX::ScratchImage
+{
+   DXGI_FORMAT convert_to_format = image.GetMetadata().format;
+
+   switch (image.GetMetadata().format) {
+   case DXGI_FORMAT_R8G8B8A8_UNORM:
+      convert_to_format = DXGI_FORMAT_B8G8R8A8_UNORM;
+      break;
+   case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+      convert_to_format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+      break;
+   default:
+      return image;
+   }
+
+   DX::ScratchImage converted_image;
+
+   if (DX::Convert(image.GetImages(), image.GetImageCount(), image.GetMetadata(),
+                   convert_to_format, DX::TEX_FILTER_DEFAULT | DX::TEX_FILTER_FORCE_NON_WIC,
+                   0.0f, converted_image)) {
+      throw std::runtime_error{
+         "Failed to swizzle pixel format from RGBA to BGRA for Direct3D 9."s};
+   }
+
+   return converted_image;
 }
 
 auto make_image_power_of_2(DX::ScratchImage image) -> DX::ScratchImage
@@ -175,6 +202,10 @@ auto process_image(YAML::Node config, fs::path image_file_path)
    Expects(fs::exists(image_file_path) && fs::is_regular_file(image_file_path));
 
    auto image = load_image(image_file_path);
+
+   if (config["Uncompressed"s] && config["Uncompressed"s].as<bool>()) {
+      image = swizzle_pixel_format(std::move(image));
+   }
 
    check_image_resolution(image);
 
