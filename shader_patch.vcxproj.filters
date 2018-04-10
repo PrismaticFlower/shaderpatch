@@ -116,6 +116,9 @@
     <ClInclude Include="src\shader_loader.hpp">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="src\texture.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="dinput8.def" />

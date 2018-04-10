@@ -9,6 +9,7 @@
 #include "../shader_loader.hpp"
 #include "../texture_loader.hpp"
 #include "../window_helpers.hpp"
+#include "patch_texture.hpp"
 #include "sampler_state_block.hpp"
 #include "shader.hpp"
 #include "shader_metadata.hpp"
@@ -272,8 +273,9 @@ HRESULT Device::CreateVolumeTexture(UINT width, UINT height, UINT depth, UINT le
                                     IDirect3DVolumeTexture9** volume_texture,
                                     HANDLE* shared_handle) noexcept
 {
-   if (static_cast<Volume_resource_type>(width) == Volume_resource_type::shader) {
-      auto post_upload = [this](gsl::span<std::byte> data) {
+   if (const auto type = static_cast<Volume_resource_type>(width);
+       type == Volume_resource_type::shader) {
+      auto post_upload = [&, this](gsl::span<std::byte> data) {
          try {
             auto [rendertype, shader_group] =
                load_shader(ucfb::Reader{data}, *_device);
@@ -286,9 +288,38 @@ HRESULT Device::CreateVolumeTexture(UINT width, UINT height, UINT depth, UINT le
          }
       };
 
-      auto uploader = make_resource_uploader(unpack_size(height, depth), post_upload);
+      auto uploader =
+         make_resource_uploader(unpack_resource_size(height, depth), post_upload);
 
       *volume_texture = uploader.release();
+
+      return S_OK;
+   }
+   else if (type == Volume_resource_type::texture) {
+      auto handle_resource = [&, this](gsl::span<std::byte> data) -> std::any {
+         try {
+            auto [d3d_texture, name, sampler_info] =
+               load_patch_texture(ucfb::Reader{data}, *_device, D3DPOOL_MANAGED);
+
+            auto texture =
+               std::make_shared<Texture>(_device, std::move(d3d_texture), sampler_info);
+
+            _textures[name] = texture;
+
+            return texture;
+         }
+         catch (std::exception& e) {
+            log(Log_level::error, "Exception occured while loading texture: "sv,
+                e.what());
+
+            return std::any{};
+         }
+      };
+
+      auto handler = make_resource_handler(unpack_resource_size(height, depth),
+                                           handle_resource);
+
+      *volume_texture = handler.release();
 
       return S_OK;
    }

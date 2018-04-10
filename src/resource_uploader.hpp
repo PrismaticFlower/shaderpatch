@@ -2,10 +2,11 @@
 #include "com_ptr.hpp"
 #include "logger.hpp"
 
+#include <any>
 #include <atomic>
 #include <cstddef>
-#include <functional>
-#include <memory>
+#include <type_traits>
+#include <vector>
 
 #include <gsl/gsl>
 
@@ -13,13 +14,23 @@
 
 namespace sp {
 
-class Resource_uploader final : public IDirect3DVolumeTexture9 {
+template<typename Handler>
+class Patch_resource final : public IDirect3DVolumeTexture9 {
 public:
-   Resource_uploader(const Resource_uploader&) = delete;
-   Resource_uploader& operator=(const Resource_uploader&) = delete;
+   static_assert(
+      std::is_invocable_r_v<std::any, Handler, gsl::span<std::byte>>,
+      "Resource handler must be invocable as std::any (gsl::span<std::byte>).");
 
-   Resource_uploader(Resource_uploader&&) = delete;
-   Resource_uploader& operator=(Resource_uploader&&) = delete;
+   Patch_resource(std::uint32_t resource_size, Handler handler)
+      : _resource_size{resource_size}, _handler{std::move(handler)}
+   {
+   }
+
+   Patch_resource(const Patch_resource&) = delete;
+   Patch_resource& operator=(const Patch_resource&) = delete;
+
+   Patch_resource(Patch_resource&&) = delete;
+   Patch_resource& operator=(Patch_resource&&) = delete;
 
    HRESULT __stdcall LockBox(UINT level, D3DLOCKED_BOX* locked_volume,
                              const D3DBOX* box, DWORD) noexcept override
@@ -43,7 +54,7 @@ public:
       if (level != 0) return D3DERR_INVALIDCALL;
       if (!_data) return D3DERR_INVALIDCALL;
 
-      _post_upload(gsl::make_span(_data.get(), _resource_size));
+      _handler(gsl::make_span(_data.get(), _resource_size));
 
       _data.reset();
 
@@ -216,16 +227,10 @@ public:
       -> Com_ptr<IDirect3DVolumeTexture9>;
 
 private:
-   Resource_uploader(std::uint32_t resource_size,
-                     std::function<void(gsl::span<std::byte>)> post_upload)
-      : _resource_size{resource_size}, _post_upload{post_upload}
-   {
-   }
-
-   ~Resource_uploader() = default;
+   ~Patch_resource() = default;
 
    const std::uint32_t _resource_size;
-   const std::function<void(gsl::span<std::byte>)> _post_upload;
+   Handler _handler;
 
    std::unique_ptr<std::byte[]> _data;
 
@@ -238,7 +243,26 @@ inline auto make_resource_uploader(std::uint32_t resource_size,
 {
    Expects(post_upload != nullptr);
 
+   const auto post_upload_wrapper = [post_upload](gsl::span<std::byte> span) {
+      post_upload(span);
+
+      return std::any{};
+   };
+
    return Com_ptr<IDirect3DVolumeTexture9>{
-      new Resource_uploader{resource_size, post_upload}};
+      new Patch_resource<decltype(post_upload_wrapper)>{resource_size,
+                                                        post_upload_wrapper}};
+}
+
+template<typename Handler>
+inline auto make_resource_handler(std::uint32_t resource_size, Handler handler) noexcept
+   -> Com_ptr<IDirect3DVolumeTexture9>
+{
+   static_assert(
+      std::is_invocable_r_v<std::any, Handler, gsl::span<std::byte>>,
+      "Resource handler must be invocable as std::any (gsl::span<std::byte>).");
+
+   return Com_ptr<IDirect3DVolumeTexture9>{
+      new Patch_resource<Handler>{resource_size, std::move(handler)}};
 }
 }

@@ -17,7 +17,7 @@ enum class Volume_resource_type : std::uint16_t {
    material = 8192
 };
 
-constexpr auto unpack_size(std::uint32_t height, std::uint32_t depth) noexcept
+constexpr auto unpack_resource_size(std::uint32_t height, std::uint32_t depth) noexcept
 {
    return height | (depth << 15u);
 }
@@ -41,7 +41,10 @@ inline void save_volume_resource(const std::string& output_path,
    ucfb::Writer root_writer{file};
    auto writer = root_writer.emplace_child("tex_"_mn);
 
-   auto prefix = (Volume_resource_type::material != type) ? "_SP_RES_"s : ""s;
+   std::string prefix;
+
+   if (type == Volume_resource_type::shader) prefix = "_SP_SHADER_"s;
+   if (type == Volume_resource_type::texture) prefix = "_SP_TEXTURE_"s;
 
    writer.emplace_child("NAME"_mn).write(prefix += name);
 

@@ -45,7 +45,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>bin\$(Configuration)\</OutDir>
+    <OutDir>D:\Program Files (x86)\LucasArts\Star Wars Battlefront II\GameData\</OutDir>
     <IntDir>build\$(Configuration)\</IntDir>
     <TargetName>dinput8</TargetName>
     <TargetExt>.dll</TargetExt>
@@ -174,6 +174,7 @@
     <ClInclude Include="src\shader_database.hpp" />
     <ClInclude Include="src\shader_loader.hpp" />
     <ClInclude Include="src\shader_program.hpp" />
+    <ClInclude Include="src\texture.hpp" />
     <ClInclude Include="src\texture_loader.hpp" />
     <ClInclude Include="src\user_config.hpp" />
     <ClInclude Include="src\window_helpers.hpp" />
