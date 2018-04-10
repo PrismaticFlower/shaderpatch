@@ -54,7 +54,7 @@ public:
       if (level != 0) return D3DERR_INVALIDCALL;
       if (!_data) return D3DERR_INVALIDCALL;
 
-      _handler(gsl::make_span(_data.get(), _resource_size));
+      _keep_alive = _handler(gsl::make_span(_data.get(), _resource_size));
 
       _data.reset();
 
@@ -234,6 +234,7 @@ private:
 
    std::unique_ptr<std::byte[]> _data;
 
+   std::any _keep_alive;
    std::atomic<ULONG> _ref_count{1};
 };
 
