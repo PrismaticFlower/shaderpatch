@@ -93,7 +93,7 @@ inline auto load_patch_texture(ucfb::Reader reader, IDirect3DDevice9& device, D3
 
       std::memcpy(locked.pBits, data.data(), static_cast<std::size_t>(data.size()));
 
-      texture->UnlockRect(0);
+      texture->UnlockRect(i);
    }
 
    return {Com_ptr<IDirect3DBaseTexture9>{texture.release()}, std::string{name},
