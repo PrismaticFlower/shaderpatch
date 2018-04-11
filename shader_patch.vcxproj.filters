@@ -107,9 +107,6 @@
     <ClInclude Include="src\shader_database.hpp">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\resource_uploader.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="src\shader_program.hpp">
       <Filter>src</Filter>
     </ClInclude>
@@ -117,6 +114,9 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\texture.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\resource_handle.hpp">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

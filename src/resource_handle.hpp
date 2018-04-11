@@ -2,7 +2,6 @@
 #include "com_ptr.hpp"
 #include "logger.hpp"
 
-#include <any>
 #include <atomic>
 #include <cstddef>
 #include <type_traits>
@@ -14,23 +13,26 @@
 
 namespace sp {
 
-template<typename Handler>
-class Patch_resource final : public IDirect3DVolumeTexture9 {
+template<typename Processor>
+class Resource_handle final : public IDirect3DVolumeTexture9 {
 public:
-   static_assert(
-      std::is_invocable_r_v<std::any, Handler, gsl::span<std::byte>>,
-      "Resource handler must be invocable as std::any (gsl::span<std::byte>).");
+   static_assert(std::is_invocable_v<Processor, gsl::span<std::byte>>,
+                 "Resource processor must be invocable with "
+                 "gsl::span<std::byte> as an argument.");
 
-   Patch_resource(std::uint32_t resource_size, Handler handler)
+   static_assert(std::is_invocable_r_v<void, Processor, gsl::span<std::byte>>,
+                 "Resource processor must be not have void return type.");
+
+   Resource_handle(std::uint32_t resource_size, Processor handler)
       : _resource_size{resource_size}, _handler{std::move(handler)}
    {
    }
 
-   Patch_resource(const Patch_resource&) = delete;
-   Patch_resource& operator=(const Patch_resource&) = delete;
+   Resource_handle(const Resource_handle&) = delete;
+   Resource_handle& operator=(const Resource_handle&) = delete;
 
-   Patch_resource(Patch_resource&&) = delete;
-   Patch_resource& operator=(Patch_resource&&) = delete;
+   Resource_handle(Resource_handle&&) = delete;
+   Resource_handle& operator=(Resource_handle&&) = delete;
 
    HRESULT __stdcall LockBox(UINT level, D3DLOCKED_BOX* locked_volume,
                              const D3DBOX* box, DWORD) noexcept override
@@ -227,43 +229,38 @@ public:
       -> Com_ptr<IDirect3DVolumeTexture9>;
 
 private:
-   ~Patch_resource() = default;
+   ~Resource_handle() = default;
 
    const std::uint32_t _resource_size;
-   Handler _handler;
+   Processor _handler;
 
    std::unique_ptr<std::byte[]> _data;
 
-   std::any _keep_alive;
+   std::invoke_result_t<Processor, gsl::span<std::byte>> _keep_alive;
    std::atomic<ULONG> _ref_count{1};
 };
 
 inline auto make_resource_uploader(std::uint32_t resource_size,
-                                   std::function<void(gsl::span<std::byte>)> post_upload) noexcept
+                                   std::function<void(gsl::span<std::byte>)> processor) noexcept
    -> Com_ptr<IDirect3DVolumeTexture9>
 {
-   Expects(post_upload != nullptr);
+   Expects(processor != nullptr);
 
-   const auto post_upload_wrapper = [post_upload](gsl::span<std::byte> span) {
-      post_upload(span);
+   const auto processor_wrapper = [processor](gsl::span<std::byte> span) {
+      processor(span);
 
-      return std::any{};
+      return nullptr;
    };
 
    return Com_ptr<IDirect3DVolumeTexture9>{
-      new Patch_resource<decltype(post_upload_wrapper)>{resource_size,
-                                                        post_upload_wrapper}};
+      new Resource_handle<decltype(processor_wrapper)>{resource_size, processor_wrapper}};
 }
 
-template<typename Handler>
-inline auto make_resource_handler(std::uint32_t resource_size, Handler handler) noexcept
+template<typename Processor>
+inline auto make_resource_handler(std::uint32_t resource_size, Processor processor) noexcept
    -> Com_ptr<IDirect3DVolumeTexture9>
 {
-   static_assert(
-      std::is_invocable_r_v<std::any, Handler, gsl::span<std::byte>>,
-      "Resource handler must be invocable as std::any (gsl::span<std::byte>).");
-
    return Com_ptr<IDirect3DVolumeTexture9>{
-      new Patch_resource<Handler>{resource_size, std::move(handler)}};
+      new Resource_handle<Processor>{resource_size, std::move(processor)}};
 }
 }

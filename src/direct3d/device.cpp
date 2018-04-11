@@ -4,7 +4,7 @@
 #include "../imgui/imgui_impl_dx9.h"
 #include "../input_hooker.hpp"
 #include "../logger.hpp"
-#include "../resource_uploader.hpp"
+#include "../resource_handle.hpp"
 #include "../shader_constants.hpp"
 #include "../shader_loader.hpp"
 #include "../texture_loader.hpp"
@@ -296,7 +296,8 @@ HRESULT Device::CreateVolumeTexture(UINT width, UINT height, UINT depth, UINT le
       return S_OK;
    }
    else if (type == Volume_resource_type::texture) {
-      auto handle_resource = [&, this](gsl::span<std::byte> data) -> std::any {
+      auto handle_resource =
+         [&, this](gsl::span<std::byte> data) -> std::shared_ptr<Texture> {
          try {
             auto [d3d_texture, name, sampler_info] =
                load_patch_texture(ucfb::Reader{data}, *_device, D3DPOOL_MANAGED);
@@ -312,7 +313,7 @@ HRESULT Device::CreateVolumeTexture(UINT width, UINT height, UINT depth, UINT le
             log(Log_level::error, "Exception occured while loading texture: "sv,
                 e.what());
 
-            return std::any{};
+            return nullptr;
          }
       };
 

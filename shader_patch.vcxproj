@@ -169,7 +169,7 @@
     <ClInclude Include="src\imgui\imgui_internal.h" />
     <ClInclude Include="src\input_hooker.hpp" />
     <ClInclude Include="src\logger.hpp" />
-    <ClInclude Include="src\resource_uploader.hpp" />
+    <ClInclude Include="src\resource_handle.hpp" />
     <ClInclude Include="src\shader_constants.hpp" />
     <ClInclude Include="src\shader_database.hpp" />
     <ClInclude Include="src\shader_loader.hpp" />
