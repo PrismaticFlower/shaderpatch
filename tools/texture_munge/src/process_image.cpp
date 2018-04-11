@@ -69,7 +69,7 @@ auto calculate_mip_count(glm::uvec2 resolution)
 
 auto get_mip_filter_type(YAML::Node config) -> DX::TEX_FILTER_FLAGS
 {
-   int flags = DX::TEX_FILTER_LINEAR | DX::TEX_FILTER_FORCE_NON_WIC;
+   int flags = DX::TEX_FILTER_CUBIC | DX::TEX_FILTER_FORCE_NON_WIC;
 
    const auto wrap_mode = config["WrapMode"s].as<std::string>();
 
@@ -87,12 +87,16 @@ auto get_mip_filter_type(YAML::Node config) -> DX::TEX_FILTER_FLAGS
    return static_cast<DX::TEX_FILTER_FLAGS>(flags);
 }
 
-auto load_image(const fs::path& image_file_path) -> DirectX::ScratchImage
+auto load_image(const fs::path& image_file_path, bool srgb) -> DirectX::ScratchImage
 {
    DirectX::ScratchImage loaded_image;
 
    if (FAILED(DirectX::LoadFromTGAFile(image_file_path.c_str(), nullptr, loaded_image))) {
       throw std::runtime_error{"Unable to open texture file."s};
+   }
+
+   if (srgb) {
+      loaded_image.OverrideFormat(DX::MakeSRGB(loaded_image.GetMetadata().format));
    }
 
    return loaded_image;
@@ -201,9 +205,9 @@ auto process_image(YAML::Node config, fs::path image_file_path)
 {
    Expects(fs::exists(image_file_path) && fs::is_regular_file(image_file_path));
 
-   auto image = load_image(image_file_path);
+   auto image = load_image(image_file_path, config["sRGB"s].as<bool>(true));
 
-   if (config["Uncompressed"s] && config["Uncompressed"s].as<bool>()) {
+   if (config["Uncompressed"s].as<bool>(false)) {
       image = swizzle_pixel_format(std::move(image));
    }
 
