@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <string_view>
 
+#include <Compressonator.h>
 #include <DirectXTex.h>
 #include <glm/glm.hpp>
 #include <gsl/gsl>
@@ -179,6 +180,70 @@ auto get_texture_info(const DX::ScratchImage& image) -> Texture_info
    return info;
 }
 
+auto compress_image(const DX::ScratchImage& image, YAML::Node config)
+   -> std::tuple<std::vector<std::vector<std::byte>>, D3DFORMAT>
+{
+   CMP_CompressOptions compress_options{sizeof(CMP_CompressOptions)};
+
+   compress_options.bUseChannelWeighting = true;
+   compress_options.fWeightingRed = 0.3086;
+   compress_options.fWeightingGreen = 0.6094;
+   compress_options.fWeightingBlue = 0.0820;
+   compress_options.bUseAdaptiveWeighting = true;
+   compress_options.bDXT1UseAlpha = true;
+   compress_options.bUseGPUDecompress = false;
+   compress_options.bUseGPUCompress = false;
+   compress_options.nAlphaThreshold = 0x7f;
+   compress_options.nCompressionSpeed = CMP_Speed_Normal;
+   compress_options.fquality = 1.0;
+
+   const auto [target_format, d3d_target_format] =
+      read_config_format(config["CompressionFormat"s].as<std::string>("BC3"s));
+   const auto source_format = dxgi_format_to_cmp_format(image.GetMetadata().format);
+
+   std::vector<std::vector<std::byte>> mips;
+
+   mips.reserve(image.GetImageCount());
+
+   for (const DX::Image& sub_image :
+        gsl::make_span(image.GetImages(), image.GetImageCount())) {
+      CMP_Texture source_texture{sizeof(CMP_Texture)};
+      source_texture.dwWidth = sub_image.width;
+      source_texture.dwHeight = sub_image.height;
+      source_texture.dwPitch = sub_image.rowPitch;
+      source_texture.format = source_format;
+      source_texture.nBlockHeight = 4;
+      source_texture.nBlockWidth = 4;
+      source_texture.nBlockDepth = 1;
+      source_texture.dwDataSize = sub_image.slicePitch;
+      source_texture.pData = sub_image.pixels;
+
+      CMP_Texture dest_texture{sizeof(CMP_Texture)};
+      dest_texture.dwWidth = sub_image.width;
+      dest_texture.dwHeight = sub_image.height;
+      dest_texture.dwPitch = 0;
+      dest_texture.format = target_format;
+      dest_texture.nBlockHeight = 4;
+      dest_texture.nBlockWidth = 4;
+      dest_texture.nBlockDepth = 1;
+
+      std::vector<std::byte> level;
+      level.resize(CMP_CalculateBufferSize(&dest_texture));
+
+      dest_texture.dwDataSize = level.size();
+      dest_texture.pData = reinterpret_cast<std::uint8_t*>(level.data());
+
+      CMP_ConvertTexture(&source_texture, &dest_texture, &compress_options,
+                         nullptr, 0, 0);
+
+      std::memcpy(level.data(), dest_texture.pData, dest_texture.dwDataSize);
+
+      mips.emplace_back(std::move(level));
+   }
+
+   return {mips, d3d_target_format};
+}
+
 auto vectorify_image(const DX::ScratchImage& image)
    -> std::vector<std::vector<std::byte>>
 {
@@ -207,15 +272,22 @@ auto process_image(YAML::Node config, fs::path image_file_path)
 
    auto image = load_image(image_file_path, config["sRGB"s].as<bool>(true));
 
-   if (config["Uncompressed"s].as<bool>(false)) {
-      image = swizzle_pixel_format(std::move(image));
-   }
-
    check_image_resolution(image);
 
+   image = swizzle_pixel_format(std::move(image));
    image = make_image_power_of_2(std::move(image));
    image = mipmap_image(std::move(image), get_mip_filter_type(config));
 
-   return {get_texture_info(image), vectorify_image(image)};
+   auto texture_info = get_texture_info(image);
+   std::vector<std::vector<std::byte>> mip_levels;
+
+   if (!config["Uncompressed"s].as<bool>(false)) {
+      std::tie(mip_levels, texture_info.format) = compress_image(image, config);
+   }
+   else {
+      mip_levels = vectorify_image(image);
+   }
+
+   return {texture_info, mip_levels};
 }
 }

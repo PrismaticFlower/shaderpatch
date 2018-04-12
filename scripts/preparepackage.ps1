@@ -1,4 +1,7 @@
-﻿if (Test-Path .\packaged) {
+﻿# Setup developer environment.
+.\scripts\setupdeveloperenvironment.ps1
+
+if (Test-Path .\packaged) {
   Remove-Item -Path .\packaged -Force -Recurse
 }
 
@@ -14,19 +17,9 @@ md .\packaged\data\_lvl_pc\
 copy .\LICENSE ".\packaged\shader patch license.txt"
 copy .\third_party.md ".\packaged\shader patch acknowledgements.txt"
 
-# Find and import Developer Command Prompt environment.
-$env:path += ";${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\"
-
+# Copy over redistributable
 $installationPath = vswhere.exe -prerelease -latest -property installationPath
 
-if ($installationPath -and (test-path "$installationPath\Common7\Tools\vsdevcmd.bat")) {
-  & "${env:COMSPEC}" /s /c "`"$installationPath\Common7\Tools\vsdevcmd.bat`" -no_logo && set" | foreach-object {
-    $name, $value = $_ -split '=', 2
-    set-content env:\"$name" $value
-  }
-}
-
-# Copy over redistributable
 copy "${installationPath}\VC\Redist\MSVC\14.*\VCRedist_x86.exe" ".\packaged\data\shaderpatch\bin\VCRedist_x86.exe"
 
 # Build
