@@ -67,18 +67,6 @@ inline gsl::span<DWORD> make_dword_span(ID3DBlob& blob)
                                 static_cast<std::ptrdiff_t>(blob.GetBufferSize()) / 4);
 }
 
-inline auto read_source_file(std::string_view file_name) -> std::string
-{
-   const auto path = fs::path{std::cbegin(file_name), std::cend(file_name)};
-
-   if (!fs::exists(path)) {
-      throw std::runtime_error{"Source file does not exist."s};
-   }
-
-   return {std::istreambuf_iterator<char>(std::ifstream{path.string(), std::ios::binary}),
-           std::istreambuf_iterator<char>()};
-}
-
 inline auto read_definition_file(std::string_view file_name) -> nlohmann::json
 {
    const auto path = fs::path{std::cbegin(file_name), std::cend(file_name)};

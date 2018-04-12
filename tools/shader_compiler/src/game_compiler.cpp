@@ -25,7 +25,7 @@ namespace sp {
 Game_compiler::Game_compiler(std::string definition_path, std::string source_path)
    : _definition_path{std::move(definition_path)}, _source_path{std::move(source_path)}
 {
-   _source = read_source_file(_source_path);
+   fs::load_string_file(_source_path, _source);
 
    const auto definition = read_definition_file(_definition_path);
 
