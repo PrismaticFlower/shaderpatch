@@ -2,6 +2,8 @@
 #include "patch_compiler.hpp"
 #include "com_ptr.hpp"
 #include "compiler_helpers.hpp"
+#include "compose_exception.hpp"
+#include "synced_io.hpp"
 #include "ucfb_writer.hpp"
 #include "volume_resource.hpp"
 
@@ -60,11 +62,26 @@ auto compile_shader_impl(const std::string& entry_point,
 }
 }
 
-Patch_compiler::Patch_compiler(std::string definition_path)
+Patch_compiler::Patch_compiler(const fs::path& definition_path, const fs::path& output_path)
+   : _output_path{output_path}
 {
    const auto definition = read_definition_file(definition_path);
 
    _source_path = (std::string{} = definition["source_path"s]);
+
+   if (!fs::exists(_source_path)) {
+      throw compose_exception<std::runtime_error>("Specified source file "sv,
+                                                  _source_path, " does not exist"sv);
+   }
+
+   if (fs::exists(output_path) && (std::max(fs::last_write_time(definition_path),
+                                            date_test_shader_file(_source_path)) <
+                                   fs::last_write_time(output_path))) {
+      return;
+   }
+
+   synced_print("Munging shader "sv, definition_path.filename().string(), " ..."sv);
+
    _render_type = definition["rendertype"s];
 
    _variations = get_shader_variations(definition["skinned"s], definition["lighting"s],
@@ -73,6 +90,9 @@ Patch_compiler::Patch_compiler(std::string definition_path)
    for (const auto& state_def : definition["states"s]) {
       _states.emplace_back(compile_state(state_def));
    }
+
+   optimize_permutations();
+   save();
 }
 
 void Patch_compiler::optimize_permutations()
@@ -140,7 +160,7 @@ void Patch_compiler::optimize_permutations()
    return;
 }
 
-void Patch_compiler::save(std::string_view output_path) const
+void Patch_compiler::save() const
 {
    std::ostringstream shader_chunk;
 
@@ -196,7 +216,7 @@ void Patch_compiler::save(std::string_view output_path) const
 
    const auto data = shader_chunk.str();
 
-   save_volume_resource(std::string{output_path}, _render_type,
+   save_volume_resource(_output_path.string(), _render_type,
                         Volume_resource_type::shader,
                         gsl::make_span(reinterpret_cast<const std::byte*>(data.data()),
                                        data.size()));

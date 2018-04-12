@@ -1,9 +1,14 @@
 #pragma once
 
+#include "com_ptr.hpp"
+
+#include <algorithm>
+#include <ctime>
 #include <fstream>
 #include <functional>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include <boost/filesystem.hpp>
@@ -67,10 +72,8 @@ inline gsl::span<DWORD> make_dword_span(ID3DBlob& blob)
                                 static_cast<std::ptrdiff_t>(blob.GetBufferSize()) / 4);
 }
 
-inline auto read_definition_file(std::string_view file_name) -> nlohmann::json
+inline auto read_definition_file(const fs::path& path) -> nlohmann::json
 {
-   const auto path = fs::path{std::cbegin(file_name), std::cend(file_name)};
-
    if (!fs::exists(path)) {
       throw std::runtime_error{"Source file does not exist."s};
    }
@@ -81,5 +84,75 @@ inline auto read_definition_file(std::string_view file_name) -> nlohmann::json
    file >> config;
 
    return config;
+}
+
+inline auto date_test_shader_file(const fs::path& file_path) noexcept -> std::time_t
+{
+   Expects(fs::is_regular_file(file_path));
+
+   class Includer : public ID3DInclude {
+   public:
+      Includer(fs::path relative_path)
+         : _relative_path{std::move(relative_path)} {};
+
+      HRESULT __stdcall Open(D3D_INCLUDE_TYPE include_type, LPCSTR zfile_name,
+                             LPCVOID parent_data, LPCVOID* out_data, UINT* out_size) override
+      {
+         std::string file_name{zfile_name};
+
+         if (_opened_files.count(file_name)) {
+            *out_data = _opened_files[file_name].data();
+            *out_size = _opened_files[file_name].size();
+
+            return S_OK;
+         }
+
+         const auto file_path = _relative_path / file_name;
+
+         if (!fs::exists(file_path) || !fs::is_regular_file(file_path)) {
+            *out_data = "";
+            *out_size = sizeof("");
+
+            return S_OK;
+         }
+
+         _newest_time = std::max(_newest_time, fs::last_write_time(file_path));
+
+         fs::load_string_file(file_path, _opened_files[file_name]);
+
+         *out_data = _opened_files[file_name].data();
+         *out_size = _opened_files[file_name].size();
+
+         return S_OK;
+      }
+
+      HRESULT __stdcall Close(LPCVOID data) noexcept override
+      {
+         return S_OK;
+      }
+
+      std::time_t newest() const noexcept
+      {
+         return _newest_time;
+      }
+
+   private:
+      fs::path _relative_path{};
+      std::time_t _newest_time{0};
+      std::unordered_map<std::string, std::string> _opened_files;
+   };
+
+   Includer includer{file_path.parent_path()};
+
+   std::string file_contents;
+
+   fs::load_string_file(file_path, file_contents);
+
+   Com_ptr<ID3DBlob> blob;
+
+   D3DPreprocess(file_contents.data(), file_contents.size(), nullptr, nullptr,
+                 &includer, blob.clear_and_assign(), nullptr);
+
+   return std::max(includer.newest(), fs::last_write_time(file_path));
 }
 }

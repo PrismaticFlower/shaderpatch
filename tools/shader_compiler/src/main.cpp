@@ -1,8 +1,8 @@
 
 #include "game_compiler.hpp"
 #include "patch_compiler.hpp"
+#include "synced_io.hpp"
 
-#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -10,6 +10,7 @@
 #include <clara.hpp>
 
 using namespace std::literals;
+using namespace sp;
 
 int main(int arg_count, char* args[])
 {
@@ -39,12 +40,12 @@ int main(int arg_count, char* args[])
    const auto result = cli.parse(Args(arg_count, args));
 
    if (!result) {
-      std::cerr << "Commandline Error: "sv << result.errorMessage() << '\n';
+      synced_error_print("Commandline Error: "sv, result.errorMessage());
 
       return 1;
    }
    else if (help) {
-      std::cout << cli;
+      synced_print(cli);
 
       return 0;
    }
@@ -54,15 +55,11 @@ int main(int arg_count, char* args[])
          sp::Game_compiler{def_file, source_file}.save(output_file);
       }
       else {
-         sp::Patch_compiler compiler{def_file};
-
-         compiler.optimize_permutations();
-
-         compiler.save(output_file);
+         sp::Patch_compiler compiler{def_file, output_file};
       }
    }
    catch (std::exception& e) {
-      std::cerr << e.what() << '\n';
+      synced_error_print(e.what(), '\n');
 
       return 1;
    }

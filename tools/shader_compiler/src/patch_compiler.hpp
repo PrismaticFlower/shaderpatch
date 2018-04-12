@@ -18,11 +18,8 @@ class Patch_compiler {
 public:
    Patch_compiler() = default;
 
-   Patch_compiler(std::string definition_path);
-
-   void optimize_permutations();
-
-   void save(std::string_view output_path) const;
+   Patch_compiler(const boost::filesystem::path& definition_path,
+                  const boost::filesystem::path& output_path);
 
 private:
    struct Shader {
@@ -38,6 +35,10 @@ private:
       std::vector<Shader> shaders;
    };
 
+   void optimize_permutations();
+
+   void save() const;
+
    auto compile_state(const nlohmann::json& state_def) -> State;
 
    auto compile_vertex_shader(const std::string& entry_point,
@@ -50,6 +51,7 @@ private:
 
    std::string _render_type;
    boost::filesystem::path _source_path;
+   boost::filesystem::path _output_path;
 
    std::vector<Shader_variation> _variations;
 
