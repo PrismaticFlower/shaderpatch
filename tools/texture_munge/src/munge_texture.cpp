@@ -57,17 +57,17 @@ auto get_sampler_info(YAML::Node config) -> Sampler_info
    if (const auto filter = config["Filter"s].as<std::string>(); filter == "point"sv) {
       info.mag_filter = D3DTEXF_POINT;
       info.min_filter = D3DTEXF_POINT;
-      info.mag_filter = D3DTEXF_NONE;
+      info.mip_filter = D3DTEXF_NONE;
    }
    else if (filter == "linear"sv) {
       info.mag_filter = D3DTEXF_LINEAR;
       info.min_filter = D3DTEXF_LINEAR;
-      info.mag_filter = D3DTEXF_LINEAR;
+      info.mip_filter = D3DTEXF_LINEAR;
    }
    else if (filter == "anioscoptic"sv) {
       info.mag_filter = D3DTEXF_ANISOTROPIC;
       info.min_filter = D3DTEXF_ANISOTROPIC;
-      info.mag_filter = D3DTEXF_LINEAR;
+      info.mip_filter = D3DTEXF_LINEAR;
    }
    else {
       throw compose_exception<std::runtime_error>("Invalid Filter in config "sv,
