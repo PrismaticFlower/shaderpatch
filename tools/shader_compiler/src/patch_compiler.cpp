@@ -24,7 +24,7 @@ auto compile_shader_impl(const std::string& entry_point,
                          const std::vector<D3D_SHADER_MACRO>& defines,
                          const boost::filesystem::path& source_path,
                          std::vector<std::vector<DWORD>>& shaders,
-                         std::unordered_map<std::size_t, std::size_t> cache,
+                         std::unordered_map<std::size_t, std::size_t>& cache,
                          std::string target) -> std::size_t
 {
 
@@ -77,93 +77,67 @@ Patch_compiler::Patch_compiler(std::string definition_path)
 
 void Patch_compiler::optimize_permutations()
 {
-   // Invalidate caches.
    _vs_cache.clear();
    _ps_cache.clear();
 
-   boost::container::flat_map<std::size_t, std::vector<DWORD>> stable_shaders;
+   const auto optimize = [](std::vector<std::vector<DWORD>>& shaders, auto remapper) {
+      boost::container::flat_map<std::size_t, std::vector<DWORD>> stable_shaders;
+      stable_shaders.reserve(shaders.size());
 
-   const auto optimize = [&](auto&& remapper) {
-      std::vector<std::size_t> to_remove;
-      to_remove.reserve(stable_shaders.size());
+      for (auto i = 0u; i < shaders.size(); ++i) {
+         stable_shaders[i] = std::move(shaders[i]);
+      }
 
-      for (auto& a : stable_shaders) {
-         for (auto& b : stable_shaders) {
-            if (a.first == b.first) continue;
+      const auto remove_next_duplicate = [&] {
+         for (auto& a : stable_shaders) {
+            for (auto& b : stable_shaders) {
+               if (a.first == b.first) continue;
 
-            if (std::equal(std::cbegin(a.second), std::cend(a.second),
-                           std::cbegin(b.second), std::cend(b.second))) {
-               std::invoke(std::forward<decltype(remapper)>(remapper), b.first, a.first);
+               if (std::equal(std::cbegin(a.second), std::cend(a.second),
+                              std::cbegin(b.second), std::cend(b.second))) {
+                  remapper(b.first, a.first);
 
-               to_remove.emplace_back(b.first);
+                  stable_shaders.erase(b.first);
+
+                  return true;
+               }
             }
          }
-      }
 
-      for (const auto& remove : to_remove) {
-         stable_shaders.erase(remove);
+         return false;
+      };
+
+      while (remove_next_duplicate())
+         ;
+
+      shaders.clear();
+
+      auto iter = std::begin(stable_shaders);
+
+      for (auto i = 0u; i < stable_shaders.size(); ++i, ++iter) {
+         remapper(iter->first, i);
+
+         std::swap(shaders.emplace_back(), iter->second);
       }
    };
 
-   const auto linearize = [&](auto&& remapper) {
-      std::size_t i = 0;
-
-      for (auto& a : stable_shaders) {
-         if (a.first == i) continue;
-
-         std::invoke(std::forward<decltype(remapper)>(remapper), a.first, i);
-
-         i += 1;
-      }
-   };
-
-   const auto remap_vs_state = [this](std::size_t from, std::size_t to) {
+   optimize(_vs_shaders, [this](std::size_t from, std::size_t to) {
       for (auto& state : _states) {
          for (auto& shader : state.shaders) {
             if (shader.vs_index == from) shader.vs_index = to;
          }
       }
-   };
+   });
 
-   stable_shaders.reserve(_vs_shaders.size());
-
-   for (auto i = 0u; i < _vs_shaders.size(); ++i) {
-      stable_shaders[i] = std::move(_vs_shaders[i]);
-   }
-
-   _vs_shaders.clear();
-
-   optimize(remap_vs_state);
-   linearize(remap_vs_state);
-
-   for (auto& shader : stable_shaders) {
-      std::swap(_vs_shaders.emplace_back(), shader.second);
-   }
-
-   stable_shaders.clear();
-
-   const auto remap_ps_state = [this](std::size_t from, std::size_t to) {
+   optimize(_ps_shaders, [this](std::size_t from, std::size_t to) {
       for (auto& state : _states) {
          for (auto& shader : state.shaders) {
             if (shader.ps_index == from) shader.ps_index = to;
          }
       }
-   };
+   });
 
-   stable_shaders.reserve(_ps_shaders.size());
-
-   for (auto i = 0u; i < _ps_shaders.size(); ++i) {
-      stable_shaders[i] = std::move(_ps_shaders[i]);
-   }
-
-   _ps_shaders.clear();
-
-   optimize(remap_ps_state);
-   linearize(remap_ps_state);
-
-   for (auto& shader : stable_shaders) {
-      std::swap(_ps_shaders.emplace_back(), shader.second);
-   }
+   return;
 }
 
 void Patch_compiler::save(std::string_view output_path) const
