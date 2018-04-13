@@ -6,6 +6,6 @@ $env:Path += $binpath
 
 shader_compiler --outputdir "munged\" --definitioninputdir "definitions\" --hlslinputdir "src\"
 
-lvl_pack ".\core.lvldef" "munged\" ".\core.lvl"
+lvl_pack --sourcedirs "munged\" --inputdir ".\" --outputdir ".\"
 
 $env:Path = $old_path
