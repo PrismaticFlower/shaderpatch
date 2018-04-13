@@ -1,9 +1,11 @@
 
 #include "game_compiler.hpp"
 #include "compiler_helpers.hpp"
+#include "compose_exception.hpp"
 #include "magic_number.hpp"
 #include "shader_metadata.hpp"
 #include "shader_variations.hpp"
+#include "synced_io.hpp"
 #include "ucfb_writer.hpp"
 
 #include <fstream>
@@ -22,25 +24,44 @@ namespace fs = boost::filesystem;
 
 namespace sp {
 
-Game_compiler::Game_compiler(std::string definition_path, std::string source_path)
-   : _definition_path{std::move(definition_path)}, _source_path{std::move(source_path)}
+Game_compiler::Game_compiler(const boost::filesystem::path& definition_path,
+                             boost::filesystem::path source_path,
+                             boost::filesystem::path output_path)
+   : _source_path{std::move(source_path)}, _output_path{std::move(output_path)}
 {
-   fs::load_string_file(_source_path, _source);
+   Expects(fs::exists(definition_path));
 
-   const auto definition = read_definition_file(_definition_path);
+   if (!fs::exists(_source_path)) {
+      throw compose_exception<std::runtime_error>("Source file "sv, _source_path,
+                                                  " does not exist"sv);
+   }
+
+   if (fs::exists(_output_path) && (std::max(fs::last_write_time(definition_path),
+                                             date_test_shader_file(_source_path)) <
+                                    fs::last_write_time(_output_path))) {
+      return;
+   }
+
+   synced_print("Munging shader "sv, definition_path.filename().string(), "..."sv);
+
+   const auto definition = read_definition_file(definition_path);
 
    _render_type = definition["rendertype"];
+
+   fs::load_string_file(_source_path, _source);
 
    const auto metadata = definition.value("metadata", nlohmann::json::object());
 
    for (const auto& state_def : definition["states"]) {
       _states.emplace_back(compile_state(state_def, metadata));
    }
+
+   save();
 }
 
-void Game_compiler::save(std::string_view output_path)
+void Game_compiler::save()
 {
-   auto file = ucfb::open_file_for_output(std::string{output_path});
+   auto file = ucfb::open_file_for_output(_output_path.string());
 
    ucfb::Writer writer{file};
 
@@ -162,7 +183,7 @@ auto Game_compiler::compile_vertex_shader(const nlohmann::json& parent_metadata,
    Com_ptr<ID3DBlob> shader;
 
    auto result =
-      D3DCompile(_source.data(), _source.length(), _source_path.data(),
+      D3DCompile(_source.data(), _source.length(), _source_path.string().data(),
                  variation.definitions.data(), D3D_COMPILE_STANDARD_FILE_INCLUDE,
                  entry_point.data(), target.data(), compiler_flags, NULL,
                  shader.clear_and_assign(), error_message.clear_and_assign());
@@ -197,8 +218,8 @@ auto Game_compiler::compile_pixel_shader(const nlohmann::json& parent_metadata,
    Com_ptr<ID3DBlob> shader;
 
    auto result =
-      D3DCompile(_source.data(), _source.length(), _source_path.data(), nullptr,
-                 D3D_COMPILE_STANDARD_FILE_INCLUDE, entry_point.data(),
+      D3DCompile(_source.data(), _source.length(), _source_path.string().data(),
+                 nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, entry_point.data(),
                  target.data(), compiler_flags, NULL, shader.clear_and_assign(),
                  error_message.clear_and_assign());
 

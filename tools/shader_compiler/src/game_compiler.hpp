@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <boost/filesystem.hpp>
 #include <d3dcompiler.h>
 #include <nlohmann/json.hpp>
 
@@ -16,11 +17,15 @@ struct Shader_variation;
 
 class Game_compiler {
 public:
-   Game_compiler() = default;
+   Game_compiler(const boost::filesystem::path& definition_path,
+                 boost::filesystem::path source_path,
+                 boost::filesystem::path output_path);
 
-   Game_compiler(std::string definition_path, std::string source_path);
+   Game_compiler(const Game_compiler&) = delete;
+   Game_compiler& operator=(const Game_compiler&) = delete;
 
-   void save(std::string_view output_path);
+   Game_compiler(Game_compiler&&) = delete;
+   Game_compiler& operator=(Game_compiler&&) = delete;
 
 private:
    enum class Pass_flags : std::uint32_t {
@@ -62,6 +67,8 @@ private:
       std::vector<Pass> passes;
    };
 
+   void save();
+
    State compile_state(const nlohmann::json& state_def,
                        const nlohmann::json& parent_metadata);
 
@@ -76,8 +83,9 @@ private:
                              std::string_view entry_point,
                              std::string_view target) -> Pixel_shader_ref;
 
-   std::string _definition_path;
-   std::string _source_path;
+   boost::filesystem::path _source_path;
+   boost::filesystem::path _output_path;
+
    std::string _render_type;
    std::string _source;
 

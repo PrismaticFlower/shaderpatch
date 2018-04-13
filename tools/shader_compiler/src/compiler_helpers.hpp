@@ -75,7 +75,7 @@ inline gsl::span<DWORD> make_dword_span(ID3DBlob& blob)
 inline auto read_definition_file(const fs::path& path) -> nlohmann::json
 {
    if (!fs::exists(path)) {
-      throw std::runtime_error{"Source file does not exist."s};
+      throw std::runtime_error{"Definition file does not exist."s};
    }
 
    std::ifstream file{path.string()};
@@ -95,8 +95,8 @@ inline auto date_test_shader_file(const fs::path& file_path) noexcept -> std::ti
       Includer(fs::path relative_path)
          : _relative_path{std::move(relative_path)} {};
 
-      HRESULT __stdcall Open(D3D_INCLUDE_TYPE include_type, LPCSTR zfile_name,
-                             LPCVOID parent_data, LPCVOID* out_data, UINT* out_size) override
+      HRESULT __stdcall Open(D3D_INCLUDE_TYPE, LPCSTR zfile_name, LPCVOID,
+                             LPCVOID* out_data, UINT* out_size) override
       {
          std::string file_name{zfile_name};
 
@@ -126,7 +126,7 @@ inline auto date_test_shader_file(const fs::path& file_path) noexcept -> std::ti
          return S_OK;
       }
 
-      HRESULT __stdcall Close(LPCVOID data) noexcept override
+      HRESULT __stdcall Close(LPCVOID) noexcept override
       {
          return S_OK;
       }

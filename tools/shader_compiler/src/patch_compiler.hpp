@@ -16,10 +16,14 @@ namespace sp {
 
 class Patch_compiler {
 public:
-   Patch_compiler() = default;
-
    Patch_compiler(const boost::filesystem::path& definition_path,
                   const boost::filesystem::path& output_path);
+
+   Patch_compiler(const Patch_compiler&) = delete;
+   Patch_compiler& operator=(const Patch_compiler&) = delete;
+
+   Patch_compiler(Patch_compiler&&) = delete;
+   Patch_compiler& operator=(Patch_compiler&&) = delete;
 
 private:
    struct Shader {

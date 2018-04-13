@@ -80,7 +80,7 @@ Patch_compiler::Patch_compiler(const fs::path& definition_path, const fs::path& 
       return;
    }
 
-   synced_print("Munging shader "sv, definition_path.filename().string(), " ..."sv);
+   synced_print("Munging shader "sv, definition_path.filename().string(), "..."sv);
 
    _render_type = definition["rendertype"s];
 

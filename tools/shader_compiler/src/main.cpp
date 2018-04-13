@@ -52,10 +52,10 @@ int main(int arg_count, char* args[])
 
    try {
       if (!patchshader) {
-         sp::Game_compiler{def_file, source_file}.save(output_file);
+         sp::Game_compiler{def_file, source_file, output_file};
       }
       else {
-         sp::Patch_compiler compiler{def_file, output_file};
+         sp::Patch_compiler{def_file, output_file};
       }
    }
    catch (std::exception& e) {
