@@ -24,27 +24,31 @@ namespace fs = boost::filesystem;
 
 namespace sp {
 
-Game_compiler::Game_compiler(const boost::filesystem::path& definition_path,
-                             boost::filesystem::path source_path,
-                             boost::filesystem::path output_path)
-   : _source_path{std::move(source_path)}, _output_path{std::move(output_path)}
+Game_compiler::Game_compiler(nlohmann::json definition, const fs::path& definition_path,
+                             const fs::path& source_file_dir, const fs::path& output_dir)
 {
-   Expects(fs::exists(definition_path));
+   Expects(fs::is_directory(source_file_dir) && fs::is_directory(output_dir));
+
+   _source_path =
+      source_file_dir /
+      definition.value("source_name"s,
+                       definition_path.stem().replace_extension(".fx"s).string());
 
    if (!fs::exists(_source_path)) {
       throw compose_exception<std::runtime_error>("Source file "sv, _source_path,
                                                   " does not exist"sv);
    }
 
-   if (fs::exists(_output_path) && (std::max(fs::last_write_time(definition_path),
-                                             date_test_shader_file(_source_path)) <
-                                    fs::last_write_time(_output_path))) {
+   const auto output_path =
+      output_dir / definition_path.stem().replace_extension(".shader"s);
+
+   if (fs::exists(output_path) && (std::max(fs::last_write_time(definition_path),
+                                            date_test_shader_file(_source_path)) <
+                                   fs::last_write_time(output_path))) {
       return;
    }
 
    synced_print("Munging shader "sv, definition_path.filename().string(), "..."sv);
-
-   const auto definition = read_definition_file(definition_path);
 
    _render_type = definition["rendertype"];
 
@@ -56,12 +60,12 @@ Game_compiler::Game_compiler(const boost::filesystem::path& definition_path,
       _states.emplace_back(compile_state(state_def, metadata));
    }
 
-   save();
+   save(output_path);
 }
 
-void Game_compiler::save()
+void Game_compiler::save(const boost::filesystem::path& output_path)
 {
-   auto file = ucfb::open_file_for_output(_output_path.string());
+   auto file = ucfb::open_file_for_output(output_path.string());
 
    ucfb::Writer writer{file};
 

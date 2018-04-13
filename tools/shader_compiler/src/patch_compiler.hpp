@@ -16,8 +16,10 @@ namespace sp {
 
 class Patch_compiler {
 public:
-   Patch_compiler(const boost::filesystem::path& definition_path,
-                  const boost::filesystem::path& output_path);
+   Patch_compiler(nlohmann::json definition,
+                  const boost::filesystem::path& definition_path,
+                  const boost::filesystem::path& source_file_dir,
+                  const boost::filesystem::path& output_dir);
 
    Patch_compiler(const Patch_compiler&) = delete;
    Patch_compiler& operator=(const Patch_compiler&) = delete;
@@ -41,7 +43,7 @@ private:
 
    void optimize_permutations();
 
-   void save() const;
+   void save(const boost::filesystem::path& output_path) const;
 
    auto compile_state(const nlohmann::json& state_def) -> State;
 
@@ -55,7 +57,6 @@ private:
 
    std::string _render_type;
    boost::filesystem::path _source_path;
-   boost::filesystem::path _output_path;
 
    std::vector<Shader_variation> _variations;
 

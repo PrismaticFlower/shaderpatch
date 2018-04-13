@@ -45,8 +45,6 @@ const auto compiler_flags = D3DCOMPILE_DEBUG | D3DCOMPILE_OPTIMIZATION_LEVEL3;
 
 using namespace std::literals;
 
-namespace fs = boost::filesystem;
-
 template<typename... Args>
 inline std::size_t compiler_cache_hash(Args&&... args)
 {
@@ -72,11 +70,11 @@ inline gsl::span<DWORD> make_dword_span(ID3DBlob& blob)
                                 static_cast<std::ptrdiff_t>(blob.GetBufferSize()) / 4);
 }
 
-inline auto read_definition_file(const fs::path& path) -> nlohmann::json
+inline auto read_definition_file(const boost::filesystem::path& path) -> nlohmann::json
 {
-   if (!fs::exists(path)) {
-      throw std::runtime_error{"Definition file does not exist."s};
-   }
+   namespace fs = boost::filesystem;
+
+   Expects(fs::exists(path));
 
    std::ifstream file{path.string()};
 
@@ -86,8 +84,11 @@ inline auto read_definition_file(const fs::path& path) -> nlohmann::json
    return config;
 }
 
-inline auto date_test_shader_file(const fs::path& file_path) noexcept -> std::time_t
+inline auto date_test_shader_file(const boost::filesystem::path& file_path) noexcept
+   -> std::time_t
 {
+   namespace fs = boost::filesystem;
+
    Expects(fs::is_regular_file(file_path));
 
    class Includer : public ID3DInclude {

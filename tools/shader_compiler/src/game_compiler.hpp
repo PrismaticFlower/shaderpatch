@@ -17,9 +17,10 @@ struct Shader_variation;
 
 class Game_compiler {
 public:
-   Game_compiler(const boost::filesystem::path& definition_path,
-                 boost::filesystem::path source_path,
-                 boost::filesystem::path output_path);
+   Game_compiler(nlohmann::json definition,
+                 const boost::filesystem::path& definition_path,
+                 const boost::filesystem::path& source_file_dir,
+                 const boost::filesystem::path& output_dir);
 
    Game_compiler(const Game_compiler&) = delete;
    Game_compiler& operator=(const Game_compiler&) = delete;
@@ -67,7 +68,7 @@ private:
       std::vector<Pass> passes;
    };
 
-   void save();
+   void save(const boost::filesystem::path& output_path);
 
    State compile_state(const nlohmann::json& state_def,
                        const nlohmann::json& parent_metadata);
@@ -84,7 +85,6 @@ private:
                              std::string_view target) -> Pixel_shader_ref;
 
    boost::filesystem::path _source_path;
-   boost::filesystem::path _output_path;
 
    std::string _render_type;
    std::string _source;

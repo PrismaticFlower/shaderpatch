@@ -62,17 +62,24 @@ auto compile_shader_impl(const std::string& entry_point,
 }
 }
 
-Patch_compiler::Patch_compiler(const fs::path& definition_path, const fs::path& output_path)
-   : _output_path{output_path}
+Patch_compiler::Patch_compiler(nlohmann::json definition, const fs::path& definition_path,
+                               const fs::path& source_file_dir,
+                               const fs::path& output_dir)
 {
-   const auto definition = read_definition_file(definition_path);
+   Expects(fs::is_directory(source_file_dir) && fs::is_directory(output_dir));
 
-   _source_path = (std::string{} = definition["source_path"s]);
+   _source_path =
+      source_file_dir /
+      definition.value("source_name"s,
+                       definition_path.stem().replace_extension(".fx"s).string());
 
    if (!fs::exists(_source_path)) {
-      throw compose_exception<std::runtime_error>("Specified source file "sv,
-                                                  _source_path, " does not exist"sv);
+      throw compose_exception<std::runtime_error>("Source file "sv, _source_path,
+                                                  " does not exist"sv);
    }
+
+   const auto output_path =
+      output_dir / definition_path.stem().replace_extension(".shader"s);
 
    if (fs::exists(output_path) && (std::max(fs::last_write_time(definition_path),
                                             date_test_shader_file(_source_path)) <
@@ -92,7 +99,7 @@ Patch_compiler::Patch_compiler(const fs::path& definition_path, const fs::path& 
    }
 
    optimize_permutations();
-   save();
+   save(output_path);
 }
 
 void Patch_compiler::optimize_permutations()
@@ -160,7 +167,7 @@ void Patch_compiler::optimize_permutations()
    return;
 }
 
-void Patch_compiler::save() const
+void Patch_compiler::save(const fs::path& output_path) const
 {
    std::ostringstream shader_chunk;
 
@@ -216,8 +223,7 @@ void Patch_compiler::save() const
 
    const auto data = shader_chunk.str();
 
-   save_volume_resource(_output_path.string(), _render_type,
-                        Volume_resource_type::shader,
+   save_volume_resource(output_path.string(), _render_type, Volume_resource_type::shader,
                         gsl::make_span(reinterpret_cast<const std::byte*>(data.data()),
                                        data.size()));
 }
