@@ -155,7 +155,7 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">All the shaders, in the world.</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">All the shaders, in the world.</Outputs>
     </CustomBuild>
-    <None Include="core.lvldef" />
+    <None Include="core.req" />
     <None Include="definitions\decal.json" />
     <None Include="definitions\filtercopy.json" />
     <None Include="definitions\flare.json" />

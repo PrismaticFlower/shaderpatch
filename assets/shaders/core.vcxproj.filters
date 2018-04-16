@@ -70,8 +70,100 @@
     <None Include="definitions\zprepass.json">
       <Filter>definitions</Filter>
     </None>
-    <None Include="core.lvldef" />
-    <None Include="build_shaders.ps1" />
+    <None Include="src\decal.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\ext_constants_list.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\filtercopy.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\flare.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\fog_utilities.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\hdr.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\interface.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\lightbeam.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\lighting_utilities.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\normal.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\normal.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\normal_terrain.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\ocean.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\particle.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\perpixeldiffuselighting.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\pixel_utilities.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\prereflection.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\rain.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\refraction.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\sample.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\shadowquad.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\shield.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\skyfog.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\specularlighting.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\sprite.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\stencilshadow.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\transform_utilities.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\vertex_utilities.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\water.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\zprepass.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\constants_list.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="core.req" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">
@@ -80,100 +172,11 @@
     <Filter Include="src">
       <UniqueIdentifier>{85d5cf72-b134-4bdb-a2fe-8ec546486129}</UniqueIdentifier>
     </Filter>
+    <Filter Include="definitions\patch">
+      <UniqueIdentifier>{d3186a52-bf6a-47d1-90d2-ad874b6b82dd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="src\constants_list.hlsl">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\decal.fx">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\ext_constants_list.hlsl">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\filtercopy.fx">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\flare.fx">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\fog_utilities.hlsl">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\hdr.fx">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\interface.fx">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\lightbeam.fx">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\lighting_utilities.hlsl">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\normal.fx">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\normal.hlsl">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\normal_terrain.fx">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\ocean.fx">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\particle.fx">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\perpixeldiffuselighting.fx">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\pixel_utilities.hlsl">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\prereflection.fx">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\rain.fx">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\refraction.fx">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\sample.fx">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\shadowquad.fx">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\shield.fx">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\skyfog.fx">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\specularlighting.fx">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\sprite.fx">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\stencilshadow.fx">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\transform_utilities.hlsl">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\vertex_utilities.hlsl">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\water.fx">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\zprepass.fx">
-      <Filter>src</Filter>
-    </FxCompile>
+    <CustomBuild Include="build_shaders.ps1" />
   </ItemGroup>
 </Project>
