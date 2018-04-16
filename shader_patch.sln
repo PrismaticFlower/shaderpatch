@@ -15,7 +15,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shader_compiler", "tools\sh
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lvl_pack", "tools\lvl_pack\lvl_pack.vcxproj", "{55EDE7A5-D7BB-476B-84A2-85B962BBC36A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shaders", "assets\shaders\core.vcxproj", "{7FA8E104-8A4E-4A69-8CEE-7C800757DB6E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shaders", "assets\core\core.vcxproj", "{7FA8E104-8A4E-4A69-8CEE-7C800757DB6E}"
 	ProjectSection(ProjectDependencies) = postProject
 		{55EDE7A5-D7BB-476B-84A2-85B962BBC36A} = {55EDE7A5-D7BB-476B-84A2-85B962BBC36A}
 		{08B2B3F5-A506-49F0-9775-56BB4A87F22D} = {08B2B3F5-A506-49F0-9775-56BB4A87F22D}
