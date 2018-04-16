@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ucfb_reader.hpp"
 #include "ucfb_writer.hpp"
 #include "volume_resource.hpp"
 
@@ -8,9 +9,9 @@
 #include <sstream>
 #include <string>
 
-#include <glm/glm.hpp>
-
 #include <boost/filesystem.hpp>
+#include <glm/glm.hpp>
+#include <gsl/gsl>
 
 namespace sp {
 
@@ -57,5 +58,38 @@ inline void write_patch_material(boost::filesystem::path save_path,
 
    save_volume_resource(save_path.string(), save_path.stem().string(),
                         Volume_resource_type::material, matl_span);
+}
+
+inline auto read_patch_material(ucfb::Reader reader) -> Material_info
+{
+   Material_info info;
+
+   const auto version =
+      reader.read_child_strict<"VER_"_mn>().read_trivial<Material_version>();
+
+   Ensures(version == Material_version::_1);
+
+   info.rendertype = reader.read_child_strict<"RTYP"_mn>().read_string();
+   info.overridden_rendertype = reader.read_child_strict<"ORTP"_mn>().read_string();
+
+   const auto constants = reader.read_child_strict<"CNST"_mn>()
+                             .read_trivial<std::array<std::array<float, 4>, 8>>();
+
+   for (auto i = 0; i < 8; ++i) {
+      for (auto j = 0; j < 4; ++j) {
+         info.constants[i][j] = constants[i][j];
+      }
+   }
+
+   info.textures[0] = reader.read_child_strict<"TX05"_mn>().read_string();
+   info.textures[1] = reader.read_child_strict<"TX06"_mn>().read_string();
+   info.textures[2] = reader.read_child_strict<"TX07"_mn>().read_string();
+   info.textures[3] = reader.read_child_strict<"TX08"_mn>().read_string();
+   info.textures[4] = reader.read_child_strict<"TX09"_mn>().read_string();
+   info.textures[5] = reader.read_child_strict<"TX10"_mn>().read_string();
+   info.textures[6] = reader.read_child_strict<"TX11"_mn>().read_string();
+   info.textures[7] = reader.read_child_strict<"TX12"_mn>().read_string();
+
+   return info;
 }
 }

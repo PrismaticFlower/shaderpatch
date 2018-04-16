@@ -4,6 +4,7 @@
 #include "../imgui/imgui_impl_dx9.h"
 #include "../input_hooker.hpp"
 #include "../logger.hpp"
+#include "../material_resource.hpp"
 #include "../resource_handle.hpp"
 #include "../shader_constants.hpp"
 #include "../shader_loader.hpp"
@@ -106,6 +107,8 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
    // drop resources
 
    _refraction_texture.reset(nullptr);
+
+   _textures.clean_lost_textures();
 
    // reset device
 
@@ -305,7 +308,7 @@ HRESULT Device::CreateVolumeTexture(UINT width, UINT height, UINT depth, UINT le
             auto texture =
                std::make_shared<Texture>(_device, std::move(d3d_texture), sampler_info);
 
-            _textures[name] = texture;
+            _textures.add(name, texture);
 
             return texture;
          }
@@ -321,6 +324,12 @@ HRESULT Device::CreateVolumeTexture(UINT width, UINT height, UINT depth, UINT le
                                            handle_resource);
 
       *volume_texture = handler.release();
+
+      return S_OK;
+   }
+   else if (type == Volume_resource_type::material) {
+      *volume_texture = new Material_resource{unpack_resource_size(height, depth),
+                                              _device, _shaders, _textures};
 
       return S_OK;
    }

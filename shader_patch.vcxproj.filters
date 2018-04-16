@@ -48,6 +48,9 @@
     <ClCompile Include="src\shader_loader.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\material.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -117,6 +120,15 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\resource_handle.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\material_resource.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\material.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\texture_database.hpp">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,11 +1,13 @@
 #pragma once
 
 #include "com_ptr.hpp"
+#include "logger.hpp"
 #include "shader_metadata.hpp"
 #include "shader_program.hpp"
 
 #include <array>
 #include <functional>
+#include <iomanip>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -53,20 +55,35 @@ private:
 
 class Shader_group {
 public:
-   Shader_variations& operator[](const std::string& name) noexcept
+   Shader_variations& at(const std::string& entrypoint) noexcept
    {
-      return _shader_entrypoints.at(name);
+      if (!_shader_entrypoints.count(entrypoint)) {
+         log_and_terminate("Unable to find shader variation set for entrypoint "sv,
+                           std::quoted(entrypoint), '.');
+      }
+
+      return _shader_entrypoints.at(entrypoint);
    }
 
-   const Shader_variations& operator[](const std::string& name) const noexcept
+   const Shader_variations& at(const std::string& entrypoint) const noexcept
    {
-      return _shader_entrypoints.at(name);
+      if (!_shader_entrypoints.count(entrypoint)) {
+         log_and_terminate("Unable to find shader variation set for entrypoint "sv,
+                           std::quoted(entrypoint), '.');
+      }
+
+      return _shader_entrypoints.at(entrypoint);
    }
 
-   Shader_variations& add(const std::string& name,
+   Shader_variations& add(const std::string& entrypoint,
                           Shader_variations shader_variations) noexcept
    {
-      return _shader_entrypoints[name] = shader_variations;
+      if (_shader_entrypoints.count(entrypoint)) {
+         log_and_terminate("Attempt to add shader variation set for already defined entrypoint "sv,
+                           std::quoted(entrypoint), '.');
+      }
+
+      return _shader_entrypoints[entrypoint] = shader_variations;
    }
 
 private:
@@ -77,19 +94,34 @@ private:
 
 class Shader_database {
 public:
-   Shader_group& operator[](const std::string& rendertype) noexcept
+   Shader_group& at(const std::string& rendertype) noexcept
    {
+      if (!_shader_groups.count(rendertype)) {
+         log_and_terminate("Unable to find shader group for rendertype "sv,
+                           std::quoted(rendertype), '.');
+      }
+
       return _shader_groups.at(rendertype);
    }
 
-   const Shader_group& operator[](const std::string& rendertype) const noexcept
+   const Shader_group& at(const std::string& rendertype) const noexcept
    {
+      if (!_shader_groups.count(rendertype)) {
+         log_and_terminate("Unable to find shader group for rendertype "sv,
+                           std::quoted(rendertype), '.');
+      }
+
       return _shader_groups.at(rendertype);
    }
 
-   Shader_group& add(const std::string& rendertype, Shader_group shader_set) noexcept
+   Shader_group& add(const std::string& rendertype, Shader_group shader_group) noexcept
    {
-      return _shader_groups[rendertype] = shader_set;
+      if (_shader_groups.count(rendertype)) {
+         log_and_terminate("Attempt to add shader group for already defined rendertype "sv,
+                           std::quoted(rendertype), '.');
+      }
+
+      return _shader_groups[rendertype] = shader_group;
    }
 
 private:

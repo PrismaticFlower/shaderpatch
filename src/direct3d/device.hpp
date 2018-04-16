@@ -3,6 +3,7 @@
 #include "../shader_constants.hpp"
 #include "../shader_database.hpp"
 #include "../texture.hpp"
+#include "../texture_database.hpp"
 #include "../user_config.hpp"
 #include "com_ptr.hpp"
 #include "render_state_block.hpp"
@@ -344,8 +345,7 @@ private:
    Vs_1f_shader_constant<constants::vs::time> _time_vs_const;
 
    Shader_database _shaders;
-
-   std::unordered_map<std::string, std::weak_ptr<Texture>> _textures;
+   Texture_database _textures;
 
    const std::chrono::steady_clock::time_point _device_start{
       std::chrono::steady_clock::now()};

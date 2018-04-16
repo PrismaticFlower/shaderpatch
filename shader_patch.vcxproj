@@ -148,6 +148,7 @@
     </ClCompile>
     <ClCompile Include="src\input_hooker.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\material.cpp" />
     <ClCompile Include="src\shader_loader.cpp" />
     <ClCompile Include="src\texture_loader.cpp" />
   </ItemGroup>
@@ -169,12 +170,15 @@
     <ClInclude Include="src\imgui\imgui_internal.h" />
     <ClInclude Include="src\input_hooker.hpp" />
     <ClInclude Include="src\logger.hpp" />
+    <ClInclude Include="src\material.hpp" />
+    <ClInclude Include="src\material_resource.hpp" />
     <ClInclude Include="src\resource_handle.hpp" />
     <ClInclude Include="src\shader_constants.hpp" />
     <ClInclude Include="src\shader_database.hpp" />
     <ClInclude Include="src\shader_loader.hpp" />
     <ClInclude Include="src\shader_program.hpp" />
     <ClInclude Include="src\texture.hpp" />
+    <ClInclude Include="src\texture_database.hpp" />
     <ClInclude Include="src\texture_loader.hpp" />
     <ClInclude Include="src\user_config.hpp" />
     <ClInclude Include="src\window_helpers.hpp" />

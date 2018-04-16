@@ -5,20 +5,25 @@
 
 #include <utility>
 
+#include <gsl/gsl>
+
 #include <d3d9.h>
 
 namespace sp {
 
 class Texture {
 public:
-   Texture(Com_ptr<IDirect3DDevice9> device,
-           Com_ptr<IDirect3DBaseTexture9> d3d_texture, Sampler_info sampler_info)
-      : _device{std::move(device)}, _texture{std::move(d3d_texture)}, _sampler{sampler_info} {};
+   Texture() = default;
 
-   Texture() = delete;
+   Texture(gsl::not_null<Com_ptr<IDirect3DDevice9>> device,
+           gsl::not_null<Com_ptr<IDirect3DBaseTexture9>> d3d_texture,
+           Sampler_info sampler_info)
+      : _device{std::move(device)}, _texture{std::move(d3d_texture)}, _sampler{sampler_info} {};
 
    void bind(DWORD slot) const noexcept
    {
+      if (!_device || !_texture) return;
+
       _device->SetSamplerState(slot, D3DSAMP_ADDRESSU, _sampler.address_mode_u);
       _device->SetSamplerState(slot, D3DSAMP_ADDRESSV, _sampler.address_mode_v);
       _device->SetSamplerState(slot, D3DSAMP_ADDRESSW, _sampler.address_mode_w);
@@ -35,6 +40,6 @@ public:
 private:
    Com_ptr<IDirect3DDevice9> _device;
    Com_ptr<IDirect3DBaseTexture9> _texture;
-   Sampler_info _sampler;
+   Sampler_info _sampler{};
 };
 }

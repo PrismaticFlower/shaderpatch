@@ -1,11 +1,11 @@
+#pragma once
 
 #include "com_ptr.hpp"
 #include "logger.hpp"
+#include "magic_number.hpp"
+#include "material.hpp"
 
 #include <atomic>
-#include <cstddef>
-#include <type_traits>
-#include <vector>
 
 #include <gsl/gsl>
 
@@ -13,26 +13,20 @@
 
 namespace sp {
 
-template<typename Processor>
-class Resource_handle final : public IDirect3DVolumeTexture9 {
+class Material_resource final : public IDirect3DVolumeTexture9 {
 public:
-   static_assert(std::is_invocable_v<Processor, gsl::span<std::byte>>,
-                 "Resource processor must be invocable with "
-                 "gsl::span<std::byte> as an argument.");
-
-   static_assert(std::is_invocable_r_v<void, Processor, gsl::span<std::byte>>,
-                 "Resource processor must be not have void return type.");
-
-   Resource_handle(std::uint32_t resource_size, Processor processor)
-      : _resource_size{resource_size}, _processor{std::move(processor)}
+   Material_resource(std::uint32_t resource_size,
+                     gsl::not_null<Com_ptr<IDirect3DDevice9>> device,
+                     const Shader_database& shaders, const Texture_database& textures)
+      : _resource_size{resource_size}, _device{std::move(device)}, _shaders{shaders}, _textures{textures}
    {
    }
 
-   Resource_handle(const Resource_handle&) = delete;
-   Resource_handle& operator=(const Resource_handle&) = delete;
+   Material_resource(const Material_resource&) = delete;
+   Material_resource& operator=(const Material_resource&) = delete;
 
-   Resource_handle(Resource_handle&&) = delete;
-   Resource_handle& operator=(Resource_handle&&) = delete;
+   Material_resource(Material_resource&&) = delete;
+   Material_resource& operator=(Material_resource&&) = delete;
 
    HRESULT __stdcall LockBox(UINT level, D3DLOCKED_BOX* locked_volume,
                              const D3DBOX* box, DWORD) noexcept override
@@ -56,7 +50,15 @@ public:
       if (level != 0) return D3DERR_INVALIDCALL;
       if (!_data) return D3DERR_INVALIDCALL;
 
-      _keep_alive = _processor(gsl::make_span(_data.get(), _resource_size));
+      try {
+         _material.emplace(read_patch_material(ucfb::Reader{
+                              gsl::make_span(_data.get(), _resource_size)}),
+                           _device, _shaders, _textures);
+      }
+      catch (std::exception& e) {
+         log_and_terminate("Failed to read material in from game. Exception message: "sv,
+                           e.what());
+      }
 
       _data.reset();
 
@@ -152,10 +154,7 @@ public:
 
    D3DRESOURCETYPE __stdcall GetType() noexcept override
    {
-      log(Log_level::warning,
-          "Unimplemented function \"" __FUNCSIG__ "\" called.");
-
-      return D3DRTYPE_VOLUMETEXTURE;
+      return id;
    }
 
    DWORD __stdcall SetLOD(DWORD) noexcept override
@@ -202,9 +201,6 @@ public:
 
    HRESULT __stdcall GetLevelDesc(UINT, D3DVOLUME_DESC*) noexcept override
    {
-      log(Log_level::warning,
-          "Unimplemented function \"" __FUNCSIG__ "\" called.");
-
       return E_NOTIMPL;
    }
 
@@ -224,39 +220,29 @@ public:
       return E_NOTIMPL;
    }
 
+   auto get_material() const noexcept -> Material
+   {
+      if (!_material) {
+         log_and_terminate("Material bound before being uploaded."sv);
+      }
+
+      return *_material;
+   }
+
+   constexpr static auto id = static_cast<D3DRESOURCETYPE>("mtrl"_mn);
+
 private:
-   ~Resource_handle() = default;
+   ~Material_resource() = default;
 
    const std::uint32_t _resource_size;
-   Processor _processor;
+
+   const Com_ptr<IDirect3DDevice9> _device;
+   const Shader_database& _shaders;
+   const Texture_database& _textures;
+
+   std::optional<Material> _material;
 
    std::unique_ptr<std::byte[]> _data;
-
-   std::invoke_result_t<Processor, gsl::span<std::byte>> _keep_alive;
    std::atomic<ULONG> _ref_count{1};
 };
-
-inline auto make_resource_uploader(std::uint32_t resource_size,
-                                   std::function<void(gsl::span<std::byte>)> processor) noexcept
-   -> Com_ptr<IDirect3DVolumeTexture9>
-{
-   Expects(processor != nullptr);
-
-   const auto processor_wrapper = [processor](gsl::span<std::byte> span) {
-      processor(span);
-
-      return nullptr;
-   };
-
-   return Com_ptr<IDirect3DVolumeTexture9>{
-      new Resource_handle<decltype(processor_wrapper)>{resource_size, processor_wrapper}};
-}
-
-template<typename Processor>
-inline auto make_resource_handler(std::uint32_t resource_size, Processor processor) noexcept
-   -> Com_ptr<IDirect3DVolumeTexture9>
-{
-   return Com_ptr<IDirect3DVolumeTexture9>{
-      new Resource_handle<Processor>{resource_size, std::move(processor)}};
-}
 }
