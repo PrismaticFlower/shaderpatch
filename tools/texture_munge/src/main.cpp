@@ -32,7 +32,7 @@ int main(int arg_count, char* args[])
       ("Path to place munged files in."s)
       | Opt{source_dir, "source directory"s}
       ["--sourcedir"s]
-      ("Path to search for input .tex files."s);
+      ("Path to search for input .tga.yml files."s);
 
    // clang-format on
 
