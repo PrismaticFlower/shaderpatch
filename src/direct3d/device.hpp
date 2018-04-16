@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../material.hpp"
 #include "../shader_constants.hpp"
 #include "../shader_database.hpp"
 #include "../texture.hpp"
@@ -7,12 +8,14 @@
 #include "../user_config.hpp"
 #include "com_ptr.hpp"
 #include "render_state_block.hpp"
+#include "shader.hpp"
 #include "shader_constant.hpp"
 
 #include <atomic>
 #include <chrono>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <unordered_map>
 #include <vector>
 
@@ -336,6 +339,11 @@ private:
    glm::ivec2 _resolution;
 
    bool _water_refraction = false;
+
+   std::optional<Material> _material;
+
+   Com_ptr<Vertex_shader> _game_vertex_shader;
+   Com_ptr<Pixel_shader> _game_pixel_shader;
 
    User_config _config{"shader patch.ini"s};
 

@@ -6,6 +6,7 @@
 #include <atomic>
 
 #include <d3d9.h>
+#include <gsl/gsl>
 
 namespace sp::direct3d {
 
@@ -46,14 +47,14 @@ public:
       return _interface->GetFunction(data, data_size);
    }
 
-   Type& get() noexcept
+   gsl::not_null<Type*> get() noexcept
    {
-      return *_interface;
+      return _interface.get();
    }
 
-   Type& get() const noexcept
+   gsl::not_null<const Type*> get() const noexcept
    {
-      return *_interface;
+      return _interface.get();
    }
 
    const Shader_metadata metadata;

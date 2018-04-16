@@ -22,6 +22,12 @@ public:
    Material(const Material_info& info, gsl::not_null<Com_ptr<IDirect3DDevice9>> device,
             const Shader_database& shaders, const Texture_database& textures) noexcept;
 
+   Material(const Material&) = default;
+   Material& operator=(const Material&) = default;
+
+   Material(Material&&) = default;
+   Material& operator=(Material&&) = default;
+
    auto target_rendertype() const noexcept -> std::string_view;
 
    void use(const std::string& entrypoint,

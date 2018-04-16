@@ -12,7 +12,6 @@
 #include "../window_helpers.hpp"
 #include "patch_texture.hpp"
 #include "sampler_state_block.hpp"
-#include "shader.hpp"
 #include "shader_metadata.hpp"
 #include "volume_resource.hpp"
 
@@ -239,9 +238,32 @@ HRESULT Device::CreateDepthStencilSurface(UINT width, UINT height, D3DFORMAT for
 
 HRESULT Device::SetTexture(DWORD stage, IDirect3DBaseTexture9* texture) noexcept
 {
-   if (texture == nullptr) return _device->SetTexture(stage, nullptr);
+   if (texture == nullptr) {
+      return _device->SetTexture(stage, nullptr);
+   }
 
-   if (auto type = texture->GetType(); type == D3DRTYPE_CUBETEXTURE && stage == 2) {
+   auto type = texture->GetType();
+
+   // Custom Material Handling
+   if (type == Material_resource::id) {
+      auto& material_resource = static_cast<Material_resource&>(*texture);
+      _material.emplace(material_resource.get_material());
+
+      auto& metadata = _game_pixel_shader->metadata;
+
+      if (metadata.name == _material->target_rendertype()) {
+         _material->use(metadata.entry_point, metadata.shader_flags);
+      }
+
+      return S_OK;
+   }
+   else if (_material) {
+      _device->SetVertexShader(_game_vertex_shader.get());
+      _device->SetPixelShader(_game_pixel_shader.get());
+   }
+
+   // Projected Cube Texture Workaround
+   if (type == D3DRTYPE_CUBETEXTURE) {
       set_ps_bool_constant<constants::ps::cubemap_projection>(*_device, true);
 
       create_filled_sampler_state_block(*_device, 2).apply(*_device, cubemap_projection_slot);
@@ -398,11 +420,14 @@ HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
 {
    if (!shader) return _device->SetVertexShader(nullptr);
 
-   auto* const vertex_shader = static_cast<Vertex_shader*>(shader);
+   auto& vertex_shader = static_cast<Vertex_shader&>(*shader);
 
-   set_active_light_constants(*_device, vertex_shader->metadata.shader_flags);
+   vertex_shader.AddRef();
+   _game_vertex_shader.reset(&vertex_shader);
 
-   return _device->SetVertexShader(&vertex_shader->get());
+   set_active_light_constants(*_device, vertex_shader.metadata.shader_flags);
+
+   return _device->SetVertexShader(vertex_shader.get());
 }
 
 HRESULT Device::SetPixelShader(IDirect3DPixelShader9* shader) noexcept
@@ -411,9 +436,19 @@ HRESULT Device::SetPixelShader(IDirect3DPixelShader9* shader) noexcept
 
    if (!shader) return _device->SetPixelShader(nullptr);
 
-   auto* const pixel_shader = static_cast<Pixel_shader*>(shader);
+   auto& pixel_shader = static_cast<Pixel_shader&>(*shader);
+   const auto& metadata = pixel_shader.metadata;
 
-   if (pixel_shader->metadata.name == "shield"sv) {
+   pixel_shader.AddRef();
+   _game_pixel_shader.reset(&pixel_shader);
+
+   if (_material && (metadata.name == _material->target_rendertype())) {
+      _material->update(metadata.entry_point, metadata.shader_flags);
+
+      return S_OK;
+   }
+
+   if (metadata.name == "shield"sv) {
       update_refraction_texture();
 
       _device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
@@ -426,10 +461,9 @@ HRESULT Device::SetPixelShader(IDirect3DPixelShader9* shader) noexcept
          _on_ps_shader_set = nullptr;
       };
    }
-   else if (!_water_refraction && pixel_shader->metadata.name == "water"sv) {
-      if ((pixel_shader->metadata.entry_point ==
-           "normal_map_distorted_reflection_ps") ||
-          (pixel_shader->metadata.entry_point ==
+   else if (!_water_refraction && metadata.name == "water"sv) {
+      if ((metadata.entry_point == "normal_map_distorted_reflection_ps") ||
+          (metadata.entry_point ==
            "normal_map_distorted_reflection_specular_ps")) {
          update_refraction_texture();
 
@@ -437,7 +471,7 @@ HRESULT Device::SetPixelShader(IDirect3DPixelShader9* shader) noexcept
       }
    }
 
-   return _device->SetPixelShader(&pixel_shader->get());
+   return _device->SetPixelShader(pixel_shader.get());
 }
 
 HRESULT Device::SetRenderState(D3DRENDERSTATETYPE state, DWORD value) noexcept
