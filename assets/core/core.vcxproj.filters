@@ -177,6 +177,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="build_shaders.ps1" />
+    <CustomBuild Include="munge_core.ps1" />
   </ItemGroup>
 </Project>

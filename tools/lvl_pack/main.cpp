@@ -151,7 +151,7 @@ void write_req_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
          const auto filename = value + "."s + section.first;
          if (!file_map_list.count(filename)) {
             synced_error_print("Warning nonexistent file "sv, std::quoted(filename),
-                               "referenced in "sv, req_file_path);
+                               " referenced in "sv, req_file_path, '.');
 
             continue;
          }
@@ -214,9 +214,10 @@ int main(int arg_count, char* args[])
       | Opt{input_dir, "input directory"s}
       ["--inputdir"s]
       ("Input directory for .req files"s)
-      | Opt{source_directories, "source directories"s}
-      ["--sourcedirs"s]
-      ("Source directories for munged files, listed in order of precedence."s)
+      | Opt{source_directories, "source directory"s}
+      ["--sourcedir"s]["-s"s]
+      ("Specify a source directory for munged files. Multiple source" 
+       " directories can be used and should be listed in order of precedence."s)
       | Opt{recursive, "recursive"s}
       ["-r"s]["--recursive"s]
       ("Search input directory recursively for .req files."s);

@@ -1,2 +1,5 @@
 # Ignore generated .lvl file.
 *.lvl
+
+# Ignore munged files
+munged/
