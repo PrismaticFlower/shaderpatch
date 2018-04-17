@@ -32,5 +32,6 @@ ucft
       "sprite"
       "stencilshadow"
       "water"
+      "zprepass"
    }
 }
