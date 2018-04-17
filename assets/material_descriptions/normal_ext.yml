@@ -18,8 +18,8 @@ Property Mappings:
 
 Texture Mappings:
    DiffuseMap: 
-      Slot: 05
+      Slot: 04
    SpecularMap: 
-      Slot: 06
+      Slot: 05
    NormalMap: 
-      Slot: 07
+      Slot: 06

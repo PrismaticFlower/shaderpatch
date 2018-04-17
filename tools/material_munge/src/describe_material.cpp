@@ -93,7 +93,7 @@ void read_texture_slot(const std::string& texture_key, const YAML::Node value,
 
    auto index = texture_mappings[texture_key]["Slot"s].as<int>();
 
-   if (index < 5 || index > 12) {
+   if (index < 4 || index > 11) {
       throw compose_exception<std::runtime_error>("Invalid material texture description"sv,
                                                   std::quoted(texture_key),
                                                   " encountered."sv);

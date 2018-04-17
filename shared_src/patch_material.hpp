@@ -41,14 +41,14 @@ inline void write_patch_material(boost::filesystem::path save_path,
       writer.emplace_child("RTYP"_mn).write(info.rendertype);
       writer.emplace_child("ORTP"_mn).write(info.overridden_rendertype);
       writer.emplace_child("CNST"_mn).write(gsl::make_span(info.constants));
-      writer.emplace_child("TX05"_mn).write(info.textures[0]);
-      writer.emplace_child("TX06"_mn).write(info.textures[1]);
-      writer.emplace_child("TX07"_mn).write(info.textures[2]);
-      writer.emplace_child("TX08"_mn).write(info.textures[3]);
-      writer.emplace_child("TX09"_mn).write(info.textures[4]);
-      writer.emplace_child("TX10"_mn).write(info.textures[5]);
-      writer.emplace_child("TX11"_mn).write(info.textures[6]);
-      writer.emplace_child("TX12"_mn).write(info.textures[7]);
+      writer.emplace_child("TX04"_mn).write(info.textures[0]);
+      writer.emplace_child("TX05"_mn).write(info.textures[1]);
+      writer.emplace_child("TX06"_mn).write(info.textures[2]);
+      writer.emplace_child("TX07"_mn).write(info.textures[3]);
+      writer.emplace_child("TX08"_mn).write(info.textures[4]);
+      writer.emplace_child("TX09"_mn).write(info.textures[5]);
+      writer.emplace_child("TX10"_mn).write(info.textures[6]);
+      writer.emplace_child("TX11"_mn).write(info.textures[7]);
    }
 
    const auto matl_data = ostream.str();
@@ -81,14 +81,14 @@ inline auto read_patch_material(ucfb::Reader reader) -> Material_info
       }
    }
 
-   info.textures[0] = reader.read_child_strict<"TX05"_mn>().read_string();
-   info.textures[1] = reader.read_child_strict<"TX06"_mn>().read_string();
-   info.textures[2] = reader.read_child_strict<"TX07"_mn>().read_string();
-   info.textures[3] = reader.read_child_strict<"TX08"_mn>().read_string();
-   info.textures[4] = reader.read_child_strict<"TX09"_mn>().read_string();
-   info.textures[5] = reader.read_child_strict<"TX10"_mn>().read_string();
-   info.textures[6] = reader.read_child_strict<"TX11"_mn>().read_string();
-   info.textures[7] = reader.read_child_strict<"TX12"_mn>().read_string();
+   info.textures[0] = reader.read_child_strict<"TX04"_mn>().read_string();
+   info.textures[1] = reader.read_child_strict<"TX05"_mn>().read_string();
+   info.textures[2] = reader.read_child_strict<"TX06"_mn>().read_string();
+   info.textures[3] = reader.read_child_strict<"TX07"_mn>().read_string();
+   info.textures[4] = reader.read_child_strict<"TX08"_mn>().read_string();
+   info.textures[5] = reader.read_child_strict<"TX09"_mn>().read_string();
+   info.textures[6] = reader.read_child_strict<"TX10"_mn>().read_string();
+   info.textures[7] = reader.read_child_strict<"TX11"_mn>().read_string();
 
    return info;
 }
