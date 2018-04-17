@@ -314,8 +314,8 @@ public:
 private:
    ~Device();
 
-   constexpr static auto water_slot = 8;
-   constexpr static auto refraction_slot = 9;
+   constexpr static auto water_slot = 12;
+   constexpr static auto refraction_slot = 13;
    constexpr static auto cubemap_projection_slot = 15;
 
    void bind_water_texture() noexcept;

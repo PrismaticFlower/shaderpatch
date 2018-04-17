@@ -150,8 +150,8 @@ struct Ps_normal_map_input
 };
 
 float4 normal_map_distorted_reflection_ps(Ps_normal_map_input input,
-                                          uniform sampler2D normal_map : register(s8),
-                                          uniform sampler2D refraction_map : register(s9),
+                                          uniform sampler2D normal_map : register(s12),
+                                          uniform sampler2D refraction_map : register(s13),
                                           uniform sampler2D reflection_map : register(s3)) : COLOR
 {
    float3 view_normal = normalize(input.view_normal);
@@ -181,8 +181,8 @@ float4 normal_map_distorted_reflection_ps(Ps_normal_map_input input,
 }
 
 float4 normal_map_distorted_reflection_specular_ps(Ps_normal_map_input input,
-                                                   uniform sampler2D normal_map : register(s8),
-                                                   uniform sampler2D refraction_map : register(s9),
+                                                   uniform sampler2D normal_map : register(s12),
+                                                   uniform sampler2D refraction_map : register(s13),
                                                    uniform sampler2D reflection_map : register(s3)) : COLOR
 {
    float3 view_normal = normalize(input.view_normal);
@@ -217,7 +217,7 @@ float4 normal_map_distorted_reflection_specular_ps(Ps_normal_map_input input,
 }
 
 float4 normal_map_reflection_ps(Ps_normal_map_input input,
-                                           uniform sampler2D normal_map : register(s8),
+                                           uniform sampler2D normal_map : register(s12),
                                            uniform sampler2D reflection_map : register(s3)) : COLOR
 {
    float3 reflection = tex2D(reflection_map, input.position * rt_resolution.zw).rgb;
@@ -238,7 +238,7 @@ float4 normal_map_reflection_ps(Ps_normal_map_input input,
 }
 
 float4 normal_map_reflection_specular_ps(Ps_normal_map_input input,
-                                         uniform sampler2D normal_map : register(s8), 
+                                         uniform sampler2D normal_map : register(s12), 
                                          uniform sampler2D reflection_map : register(s3)) : COLOR
 {
    float3 reflection = tex2D(reflection_map, input.position * rt_resolution.zw).rgb;
@@ -262,7 +262,7 @@ float4 normal_map_reflection_specular_ps(Ps_normal_map_input input,
 }
 
 float4 normal_map_ps(Ps_normal_map_input input,
-                     uniform sampler2D normal_map : register(s8)) : COLOR
+                     uniform sampler2D normal_map : register(s12)) : COLOR
 {
    float3 view_normal = normalize(input.view_normal);
    float3 normal = perturb_normal(normal_map, input.texcoords,
@@ -276,7 +276,7 @@ float4 normal_map_ps(Ps_normal_map_input input,
 }
 
 float4 normal_map_specular_ps(Ps_normal_map_input input,
-                              uniform sampler2D normal_map : register(s8)) : COLOR
+                              uniform sampler2D normal_map : register(s12)) : COLOR
 {
    float3 view_normal = normalize(input.view_normal);
    float3 normal = perturb_normal(normal_map, input.texcoords,

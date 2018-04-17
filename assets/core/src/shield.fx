@@ -73,8 +73,8 @@ Vs_output shield_vs(Vs_input input)
 }
 
 sampler2D diffuse_map : register(ps, s0);
-sampler2D normal_map : register(ps, s8);
-sampler2D refraction_texture : register(ps, s9);
+sampler2D normal_map : register(ps, s12);
+sampler2D refraction_texture : register(ps, s13);
 
 struct Ps_input
 {
