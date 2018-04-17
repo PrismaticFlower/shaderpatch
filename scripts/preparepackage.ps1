@@ -10,8 +10,6 @@ md .\packaged
 md .\packaged\data\
 md .\packaged\data\shaderpatch\
 md .\packaged\data\shaderpatch\bin\
-md .\packaged\data\shaderpatch\textures\
-md .\packaged\data\shaderpatch\core\
 md .\packaged\data\_lvl_pc\
 
 copy .\LICENSE ".\packaged\shader patch license.txt"
@@ -36,19 +34,22 @@ copy ".\bin\Release\shader_compiler.exe" ".\packaged\data\shaderpatch\bin\shader
 copy ".\bin\Release\sp_texture_munge.exe" ".\packaged\data\shaderpatch\bin\sp_texture_munge.exe"
 
 # Copy Assets
-copy '.\assets\material_descriptions\' '.\packaged\data\shaderpatch\bin\material_descriptions\'
+copy '.\assets\material_descriptions\' '.\packaged\data\shaderpatch\bin\material_descriptions\' -Recurse
+copy  '.\assets\textures\' '.\packaged\data\shaderpatch\textures\' -Recurse
 copy '.\assets\shader patch.ini' .\packaged\
 copy '.\assets\shader patch user readme.txt' '.\packaged\shader patch readme.txt'
 
-
-Copy-Item -Path .\assets\textures\* -Destination .\packaged\data\shaderpatch\textures -Recurse
-
 # Copy core.lvl source files.
-Copy-Item -Path .\assets\core\* -Destination .\packaged\data\shaderpatch\core -Recurse
+copy '.\assets\core\' '.\packaged\data\shaderpatch\core\' -Recurse
 
-if (Test-Path -Path ".\packaged\data\shaderpatch\shaders\munged") 
+if (Test-Path -Path ".\packaged\data\shaderpatch\core\munged") 
 { 
-   del ".\packaged\data\shaderpatch\shaders\munged" -Recurse
+   del ".\packaged\data\shaderpatch\core\munged" -Recurse
+}
+
+if (Test-Path -Path ".\packaged\data\shaderpatch\core\build") 
+{ 
+   del ".\packaged\data\shaderpatch\core\build" -Recurse
 }
 
 Move-Item -Path .\packaged\data\shaderpatch\core\core.lvl -Destination .\packaged\data\_lvl_pc\core.lvl
