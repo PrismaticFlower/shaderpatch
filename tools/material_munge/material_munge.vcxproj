@@ -133,12 +133,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\describe_material.cpp" />
     <ClCompile Include="src\helpers.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\munge_materials.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\helpers.hpp" />
+    <ClInclude Include="src\describe_material.hpp" />
     <ClInclude Include="src\munge_materials.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

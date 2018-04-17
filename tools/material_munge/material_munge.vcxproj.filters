@@ -15,12 +15,18 @@
     <ClCompile Include="src\munge_materials.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\describe_material.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\helpers.hpp">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\munge_materials.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\describe_material.hpp">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

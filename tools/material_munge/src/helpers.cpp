@@ -61,4 +61,30 @@ auto build_input_file_map(const fs::path& in)
 
    return results;
 }
+
+auto load_material_descriptions(const std::vector<std::string>& directories)
+   -> std::unordered_map<std::string, YAML::Node>
+{
+   std::unordered_map<std::string, YAML::Node> results;
+
+   for (fs::path path : directories) {
+      if (!fs::exists(path) || !fs::is_directory(path)) {
+         synced_error_print("Warning specified material description directory "sv,
+                            path, " does not exist!"sv);
+      }
+
+      for (auto entry : fs::directory_iterator{path}) {
+         try {
+            results[entry.path().stem().string()] =
+               YAML::LoadFile(entry.path().string());
+         }
+         catch (std::exception& e) {
+            synced_error_print("Error failed to read material description "sv,
+                               entry.path(), " message: "sv, e.what());
+         }
+      }
+   }
+
+   return results;
+}
 }

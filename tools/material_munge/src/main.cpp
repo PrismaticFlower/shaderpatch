@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include <clara.hpp>
 
@@ -24,6 +25,7 @@ int main(int arg_count, char* args[])
    auto output_dir = "./"s;
    auto source_dir = "./"s;
    auto munged_input_dir = "./"s;
+   std::vector<std::string> description_dirs;
 
    // clang-format off
 
@@ -36,7 +38,11 @@ int main(int arg_count, char* args[])
       ("Path to search for input .mtrl files."s)
       | Opt{munged_input_dir, "munged source directory"s}
       ["--mungedsourcedir"s]
-      ("Path to input munged files."s);
+      ("Path to input munged files."s)
+      | Opt{description_dirs, "description directory"s}
+      ["--descdir"s]
+      ("Add a path to search (non recursively) for input *.yml files"
+       " describing munged materials."s);
 
    // clang-format on
 
@@ -77,9 +83,15 @@ int main(int arg_count, char* args[])
    auto files_result =
       std::async(std::launch::async, build_input_file_map, source_dir);
 
+   auto descriptions_async =
+      std::async(std::launch::async, load_material_descriptions, description_dirs);
+
    auto texture_references = find_texture_references(munged_input_dir);
 
    auto files = files_result.get();
+   auto descriptions = descriptions_async.get();
 
-   munge_materials(output_dir, texture_references, files);
+   munge_materials(output_dir, texture_references, files, descriptions);
+
+   return 0;
 }

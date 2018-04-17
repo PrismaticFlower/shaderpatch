@@ -23,6 +23,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)req_file_helpers.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)shader_flags.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)shader_metadata.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)string_utilities.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)synced_io.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ucfb_reader.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ucfb_tweaker.hpp" />

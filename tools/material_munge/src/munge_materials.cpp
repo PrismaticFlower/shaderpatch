@@ -1,8 +1,10 @@
 
 #include "munge_materials.hpp"
+#include "describe_material.hpp"
 #include "material_flags.hpp"
 #include "patch_material.hpp"
 #include "req_file_helpers.hpp"
+#include "string_utilities.hpp"
 #include "synced_io.hpp"
 #include "ucfb_tweaker.hpp"
 
@@ -17,13 +19,6 @@
 
 #include <boost/iostreams/device/mapped_file.hpp>
 
-#pragma warning(push)
-#pragma warning(disable : 4996)
-#pragma warning(disable : 4127)
-
-#include <yaml-cpp/yaml.h>
-#pragma warning(pop)
-
 namespace sp {
 
 using namespace std::literals;
@@ -37,35 +32,37 @@ struct Hardcoded_material_flags {
    bool statically_lit = false;
 };
 
-auto munge_material(const fs::path& material_path, const fs::path& output_file_path)
+auto munge_material(const fs::path& material_path, const fs::path& output_file_path,
+                    const std::unordered_map<std::string, YAML::Node>& descriptions)
    -> Hardcoded_material_flags
 {
    auto root_node = YAML::LoadFile(material_path.string());
+
+   if (!root_node["RenderType"s]) {
+      throw std::runtime_error{"Null RenderType YAML node."s};
+   }
 
    if (!root_node["Material"s]) {
       throw std::runtime_error{"Null Material YAML node."s};
    }
 
-   auto material_node = root_node["Material"s];
-
-   Material_info material;
-
-   material.rendertype = material_node["RenderType"s].as<std::string>();
-   material.overridden_rendertype = "normal"s;
-
-   material.constants[0].x = material_node["BaseColor"s][0].as<float>();
-   material.constants[0].y = material_node["BaseColor"s][1].as<float>();
-   material.constants[0].z = material_node["BaseColor"s][2].as<float>();
-
-   material.constants[0].w = material_node["Metallicness"s].as<float>();
-   material.constants[1].x = material_node["Roughness"s].as<float>();
-
-   material.constants[1].y = material_node["AOStrength"s].as<float>();
-   material.constants[1].z = material_node["EmissiveStrength"s].as<float>();
+   if (!root_node["Textures"s]) {
+      throw std::runtime_error{"Null Textures YAML node."s};
+   }
 
    if (!root_node["Flags"s]) {
       throw std::runtime_error{"Null Flags YAML node."s};
    }
+
+   const auto rendertype = root_node["RenderType"s].as<std::string>();
+
+   const auto desc_name = std::string{split_string(rendertype, "."sv)[0]};
+
+   if (!descriptions.count(desc_name)) {
+      throw std::runtime_error{"RenderType has no material description."s};
+   }
+
+   const auto material = describe_material(descriptions.at(desc_name), root_node);
 
    auto flags_node = root_node["Flags"s];
 
@@ -75,19 +72,6 @@ auto munge_material(const fs::path& material_path, const fs::path& output_file_p
    flags.hard_edged = flags_node["HardEdged"s].as<bool>();
    flags.double_sided = flags_node["DoubleSided"s].as<bool>();
    flags.statically_lit = flags_node["StaticallyLit"s].as<bool>();
-
-   if (!root_node["Textures"s]) {
-      throw std::runtime_error{"Null Textures YAML node."s};
-   }
-
-   auto textures_node = root_node["Textures"s];
-
-   material.textures[0] = textures_node["AlbedoMap"s].as<std::string>();
-   material.textures[1] = textures_node["NormalMap"s].as<std::string>();
-   material.textures[2] = textures_node["MetallicRoughnessMap"s].as<std::string>();
-   material.textures[3] = textures_node["AOMap"s].as<std::string>();
-   material.textures[4] = textures_node["LightMap"s].as<std::string>();
-   material.textures[5] = textures_node["EmissiveMap"s].as<std::string>();
 
    std::vector<std::pair<std::string, std::vector<std::string>>> required_files;
 
@@ -209,7 +193,8 @@ void fixup_munged_models(
 
 void munge_materials(const fs::path& output_dir,
                      const std::unordered_map<std::string, std::vector<fs::path>>& texture_references,
-                     const std::unordered_map<std::string, fs::path>& files)
+                     const std::unordered_map<std::string, fs::path>& files,
+                     const std::unordered_map<std::string, YAML::Node>& descriptions)
 {
    std::vector<std::pair<std::string, Hardcoded_material_flags>> munged_materials;
 
@@ -227,13 +212,14 @@ void munge_materials(const fs::path& output_dir,
 
             synced_print("Munging "sv, file.first, "..."sv);
 
-            const auto flags = munge_material(file.second, output_file_path);
+            const auto flags =
+               munge_material(file.second, output_file_path, descriptions);
 
             munged_materials.emplace_back(file.second.stem().string(), flags);
          }
       }
       catch (std::exception& e) {
-         synced_error_print("Error munging "sv, file.first, ':', e.what());
+         synced_error_print("Error munging "sv, file.first, ": "sv, e.what());
       }
    }
 
