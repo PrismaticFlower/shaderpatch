@@ -9,7 +9,7 @@ namespace fog
 
 float get_eye_distance(float3 world_position)
 {
-   return distance(world_view_position.xyz, world_position);
+   return distance(world_view_position, world_position);
 }
 
 float3 apply(float3 color, float eye_distance)

@@ -49,7 +49,7 @@ Vs_normalmapped_ouput normalmapped_vs(Vs_input input)
                                                input.weights);
 
    output.world_position = world_position.xyz;
-   output.world_view_position = world_view_position.xyz;
+   output.world_view_position = world_view_position;
    output.position = position_project(world_position);
    output.fog_eye_distance = fog::get_eye_distance(world_position.xyz);
 
@@ -98,7 +98,7 @@ Vs_blinn_phong_ouput blinn_phong_vs(Vs_input input,
                                                input.weights);
 
    output.world_position = world_position.xyz;
-   output.world_view_position = world_view_position.xyz;
+   output.world_view_position = world_view_position;
    output.position = position_project(world_position);
    output.fog_eye_distance = fog::get_eye_distance(world_position.xyz);
 
@@ -112,7 +112,7 @@ Vs_blinn_phong_ouput blinn_phong_vs(Vs_input input,
 
    output.normal = world_normal;
 
-   float3 camera_direction = normalize(world_view_position.xyz - world_position.xyz);
+   float3 camera_direction = normalize(world_view_position - world_position.xyz);
    output.envmap_coords = normalize(reflect(world_normal, camera_direction));
    output.envmapped = (specular_state.x == 1.0);
 
@@ -140,7 +140,7 @@ Vs_normalmapped_envmap_ouput normalmapped_envmap_vs(Vs_input input)
                                                input.weights);
 
    output.world_position = world_position.xyz;
-   output.world_view_position = world_view_position.xyz;
+   output.world_view_position = world_view_position;
    output.position = position_project(world_position);
    output.fog_eye_distance = fog::get_eye_distance(world_position.xyz);
 

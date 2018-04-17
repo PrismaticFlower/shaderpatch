@@ -38,7 +38,7 @@ Vs_output shield_vs(Vs_input input)
    output.world_normal = world_normal;
    output.position = transform::position_project(input.position);
 
-   float3 view_normal = world_position.xyz - world_view_position.xyz;
+   float3 view_normal = world_position.xyz - world_view_position;
    float view_distance = length(view_normal);
    view_normal = normalize(view_normal);
 

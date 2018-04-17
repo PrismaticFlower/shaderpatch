@@ -61,7 +61,7 @@ Vs_lowquality_output lowquality_vs(float4 position : POSITION, float3 normal : N
    float4 world_position = transform::position(position);
    float3 world_normal = normals_to_world(decompress_normals(normal));
 
-   float3 view_normal = normalize(world_view_position - world_position).xyz;
+   float3 view_normal = normalize(world_view_position - world_position.xyz);
 
    float3 half_vector = normalize(light_direction.xyz + view_normal);
    float specular_angle = max(dot(half_vector, normal), 0.0);
@@ -107,7 +107,7 @@ Vs_normal_map_output normal_map_vs(float4 position : POSITION, float3 normal : N
 
    output.position = position_project(world_position);
    output.world_normal = normals_to_world(decompress_normals(normal));
-   output.view_normal = normalize(world_view_position - world_position).xyz;
+   output.view_normal = normalize(world_view_position - world_position.xyz);
    output.fog_eye_distance = fog::get_eye_distance(world_position.xyz);
 
    float2 texcoords = world_position.xz * 0.125;

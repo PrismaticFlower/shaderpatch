@@ -9,7 +9,7 @@
 float4x4 projection_matrix : register(vs, c[2]);
 
 // the position of the camera
-float4 world_view_position : register(c[6]);
+float3 world_view_position : register(c[6]);
 
 // (camera fog scale, camera fog offset, world fog scale, world fog offset)
 float4 fog_info : register(c[7]);
