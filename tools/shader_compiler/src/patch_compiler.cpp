@@ -94,8 +94,11 @@ Patch_compiler::Patch_compiler(nlohmann::json definition, const fs::path& defini
    _variations = get_shader_variations(definition["skinned"s], definition["lighting"s],
                                        definition["vertex_color"s]);
 
+   std::vector<std::string> shader_defines =
+      definition.value<std::vector<std::string>>("defines"s, {});
+
    for (const auto& state_def : definition["states"s]) {
-      _states.emplace_back(compile_state(state_def));
+      _states.emplace_back(compile_state(state_def, shader_defines));
    }
 
    optimize_permutations();
@@ -228,7 +231,8 @@ void Patch_compiler::save(const fs::path& output_path) const
                                        data.size()));
 }
 
-auto Patch_compiler::compile_state(const nlohmann::json& state_def)
+auto Patch_compiler::compile_state(const nlohmann::json& state_def,
+                                   const std::vector<std::string>& global_defines)
    -> Patch_compiler::State
 {
    const std::string vs_entry_point = state_def["vertex_shader"s];
@@ -248,10 +252,15 @@ auto Patch_compiler::compile_state(const nlohmann::json& state_def)
       shader.flags = variation.flags;
 
       std::vector<D3D_SHADER_MACRO> defines;
-      defines.reserve(variation.definitions.size() + state_defines.size());
+      defines.reserve(variation.definitions.size() + state_defines.size() +
+                      global_defines.size());
       defines = variation.definitions;
 
       defines.pop_back();
+
+      for (auto& def : global_defines) {
+         defines.emplace_back() = {def.c_str(), nullptr};
+      }
 
       for (auto& def : state_defines) {
          defines.emplace_back() = {def.c_str(), nullptr};

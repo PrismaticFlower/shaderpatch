@@ -45,7 +45,8 @@ private:
 
    void save(const boost::filesystem::path& output_path) const;
 
-   auto compile_state(const nlohmann::json& state_def) -> State;
+   auto compile_state(const nlohmann::json& state_def,
+                      const std::vector<std::string>& global_defines) -> State;
 
    auto compile_vertex_shader(const std::string& entry_point,
                               const std::vector<D3D_SHADER_MACRO>& defines)
