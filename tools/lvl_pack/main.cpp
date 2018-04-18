@@ -4,14 +4,18 @@
 #include "ucfb_reader.hpp"
 #include "ucfb_writer.hpp"
 
+#include <algorithm>
 #include <cstring>
+#include <cwctype>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <iterator>
+#include <optional>
+#include <regex>
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -50,15 +54,42 @@ constexpr Magic_number lvl_name_hash(std::string_view str)
    return static_cast<Magic_number>(fnv_1a_hash(str));
 }
 
+auto normalize_path(fs::path path) -> fs::path::string_type
+{
+   path = path.lexically_normal().make_preferred();
+
+   fs::path::string_type string;
+   string.reserve(path.native().size());
+
+   std::transform(std::cbegin(path.native()), std::cend(path.native()),
+                  std::back_inserter(string), std::towlower);
+
+   return string;
+}
+
 void write_file_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
                        std::unordered_set<fs::path::string_type>& added_files,
-                       const std::unordered_map<std::string, fs::path>& file_map_list,
+                       const std::vector<fs::path>& source_dirs,
                        const fs::path& filepath);
 
 void write_req_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
                       std::unordered_set<fs::path::string_type>& added_files,
-                      const std::unordered_map<std::string, fs::path>& file_map_list,
+                      const std::vector<fs::path>& source_dirs,
                       std::vector<std::pair<std::string, std::vector<std::string>>> req_file_contents);
+
+auto find_file(const std::string& filename, const std::vector<fs::path>& source_dirs)
+   -> std::optional<fs::path>
+{
+   for (const auto& dir : source_dirs) {
+      const auto path = dir / filename;
+
+      if (!fs::exists(path) || !fs::is_regular_file(path)) continue;
+
+      return path;
+   }
+
+   return std::nullopt;
+}
 
 auto read_binary_in(const fs::path& path) -> std::vector<std::byte>
 {
@@ -77,50 +108,19 @@ auto read_binary_in(const fs::path& path) -> std::vector<std::byte>
    return vector;
 }
 
-auto build_file_map_list(const std::vector<std::string>& source_directories) noexcept
-   -> std::unordered_map<std::string, fs::path>
-{
-   std::unordered_map<std::string, fs::path> files;
-
-   for (auto& dir : source_directories) {
-      fs::path source_path{dir};
-
-      if (!fs::exists(source_path) || !fs::is_directory(source_path)) {
-         synced_error_print("Warning source directory "sv, source_path,
-                            " does not exist!"sv);
-
-         continue;
-      }
-
-      for (auto& entry : fs::recursive_directory_iterator{source_path}) {
-         const auto filename = entry.path().filename().string();
-
-         if (!fs::is_regular_file(entry.path()) ||
-             fs::extension(entry.path()) == ".req"sv || files.count(filename)) {
-            continue;
-         }
-
-         files[filename] = entry.path();
-      }
-   }
-
-   return files;
-}
-
 void write_file_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
                        std::unordered_set<fs::path::string_type>& added_files,
-                       const std::unordered_map<std::string, fs::path>& file_map_list,
-                       const fs::path& filepath)
+                       const std::vector<fs::path>& source_dirs, const fs::path& filepath)
 {
-   const auto filename = filepath.filename().native();
+   const auto normalized_path = normalize_path(filepath);
 
-   if (added_files.count(filename)) return;
+   if (added_files.count(normalized_path)) return;
 
    const auto req_path =
       fs::change_extension(filepath, fs::extension(filepath) += ".req"sv);
 
    if (fs::exists(req_path) && fs::is_regular_file(req_path)) {
-      write_req_to_lvl(req_file_path, writer, added_files, file_map_list,
+      write_req_to_lvl(req_file_path, writer, added_files, source_dirs,
                        parse_req_file(req_path));
    }
 
@@ -138,32 +138,33 @@ void write_file_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
       writer.write(reader.read_array<std::byte>(reader.size()));
    }
 
-   added_files.emplace(filename);
+   added_files.emplace(normalized_path);
 }
 
 void write_req_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
                       std::unordered_set<fs::path::string_type>& added_files,
-                      const std::unordered_map<std::string, fs::path>& file_map_list,
+                      const std::vector<fs::path>& source_dirs,
                       std::vector<std::pair<std::string, std::vector<std::string>>> req_file_contents)
 {
    for (auto& section : req_file_contents) {
       for (auto& value : section.second) {
          const auto filename = value + "."s + section.first;
-         if (!file_map_list.count(filename)) {
+
+         if (const auto path = find_file(filename, source_dirs); path) {
+            write_file_to_lvl(req_file_path, writer, added_files, source_dirs, *path);
+         }
+         else {
             synced_error_print("Warning nonexistent file "sv, std::quoted(filename),
                                " referenced in "sv, req_file_path, '.');
 
             continue;
          }
-
-         write_file_to_lvl(req_file_path, writer, added_files, file_map_list,
-                           file_map_list.at(filename));
       }
    }
 }
 
 void build_lvl_file(const fs::path& req_file_path, const fs::path& output_directory,
-                    const std::unordered_map<std::string, fs::path>& file_map_list) noexcept
+                    const std::vector<fs::path>& source_dirs) noexcept
 {
    Expects(fs::exists(req_file_path) && fs::exists(output_directory));
 
@@ -183,7 +184,7 @@ void build_lvl_file(const fs::path& req_file_path, const fs::path& output_direct
 
       std::unordered_set<fs::path::string_type> added_files;
 
-      write_req_to_lvl(req_file_path, writer, added_files, file_map_list,
+      write_req_to_lvl(req_file_path, writer, added_files, source_dirs,
                        parse_req_file(req_file_path));
 
       success = true;
@@ -202,6 +203,7 @@ int main(int arg_count, char* args[])
    bool help = false;
    auto output_dir = "./"s;
    auto input_dir = "./"s;
+   auto input_filter = R"(.+\.req)"s;
    std::vector<std::string> source_directories;
    bool recursive = false;
 
@@ -218,6 +220,10 @@ int main(int arg_count, char* args[])
       ["--sourcedir"s]["-s"s]
       ("Specify a source directory for munged files. Multiple source" 
        " directories can be used and should be listed in order of precedence."s)
+      | Opt{input_filter, "input filter"s}
+      ["--inputfilter"s]["-f"s]
+      ("Regular Expression (EMCA Script syntax) to test each possible input filename " 
+       " against. Default is \".+\\.req\""s)
       | Opt{recursive, "recursive"s}
       ["-r"s]["--recursive"s]
       ("Search input directory recursively for .req files."s);
@@ -257,19 +263,27 @@ int main(int arg_count, char* args[])
       return 1;
    }
 
-   const auto file_map_list = build_file_map_list(source_directories);
+   const std::vector<fs::path> source_directories_paths{std::cbegin(source_directories),
+                                                        std::cend(source_directories)};
+
+   for (const auto& path : source_directories_paths) {
+      if (!fs::exists(path) || !fs::is_directory(path)) {
+         synced_error_print("Warning source directory "sv, path, " does not exist!"sv);
+      }
+   }
 
    const auto process_directory = [&](auto&& iterator) {
       for (auto& entry : std::forward<decltype(iterator)>(iterator)) {
          if (!fs::is_regular_file(entry.path())) continue;
 
-         if (const auto ext = fs::extension(entry); ext != ".req"sv && ext != ".mrq"sv) {
+         if (!std::regex_match(entry.path().filename().string(),
+                               std::regex{input_filter, std::regex::ECMAScript})) {
             continue;
          }
 
          synced_print("Munging lvl "sv, entry.path().filename().string(), "..."sv);
 
-         build_lvl_file(entry.path(), output_dir, file_map_list);
+         build_lvl_file(entry.path(), output_dir, source_directories_paths);
       }
    };
 
