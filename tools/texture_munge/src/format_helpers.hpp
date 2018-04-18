@@ -232,7 +232,7 @@ inline auto read_config_format(std::string_view format)
    if (boost::iequals(format, "BC1"sv)) return {CMP_FORMAT_BC1, D3DFMT_DXT1};
    if (boost::iequals(format, "BC3"sv)) return {CMP_FORMAT_BC3, D3DFMT_DXT5};
    if (boost::iequals(format, "BC4"sv)) {
-      return {CMP_FORMAT_BC3, static_cast<D3DFORMAT>(MAKEFOURCC('A', 'T', 'I', '1'))};
+      return {CMP_FORMAT_BC4, static_cast<D3DFORMAT>(MAKEFOURCC('A', 'T', 'I', '1'))};
    }
    if (boost::iequals(format, "ATI2"sv)) {
       return {CMP_FORMAT_ATI2N,
