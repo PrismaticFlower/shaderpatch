@@ -75,6 +75,20 @@ public:
       return _shader_entrypoints.at(shader_state);
    }
 
+   Shader_variations* find(const std::string& shader_state) noexcept
+   {
+      if (!_shader_entrypoints.count(shader_state)) return nullptr;
+
+      return &(_shader_entrypoints.at(shader_state));
+   }
+
+   const Shader_variations* find(const std::string& shader_state) const noexcept
+   {
+      if (!_shader_entrypoints.count(shader_state)) return nullptr;
+
+      return &(_shader_entrypoints.at(shader_state));
+   }
+
    Shader_variations& add(const std::string& shader_state,
                           Shader_variations shader_variations) noexcept
    {
