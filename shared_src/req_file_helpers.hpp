@@ -40,8 +40,6 @@ inline auto parse_req_file(boost::filesystem::path filepath,
    stream >> header;
 
    if (header != "ucft"sv) {
-      __debugbreak();
-
       throw compose_exception<std::runtime_error>("Expected \"ucft\" but found "sv,
                                                   std::quoted(header), '.');
    }
@@ -118,6 +116,95 @@ inline auto parse_req_file(boost::filesystem::path filepath,
    }
 
    return section_values;
+}
+
+template<typename Container>
+inline void parse_files_req_file(boost::filesystem::path filepath, Container& container,
+                                 typename Container::const_iterator insert_after)
+{
+   namespace fs = boost::filesystem;
+   using namespace std::literals;
+
+   if (!fs::exists(filepath) || !fs::is_regular_file(filepath)) {
+      throw std::invalid_argument{"Attempt to open non-existent .req file "s};
+   }
+
+   std::string buffer;
+
+   fs::load_string_file(filepath, buffer);
+
+   // Filter out comments.
+   buffer = std::regex_replace(buffer, std::regex{R"(//.+)"s}, ""s);
+
+   std::istringstream stream{buffer};
+
+   std::string header;
+
+   stream >> header;
+
+   if (header != "ucft"sv) {
+      throw compose_exception<std::runtime_error>("Expected \"ucft\" but found "sv,
+                                                  std::quoted(header), '.');
+   }
+
+   std::string brace;
+
+   stream >> brace;
+
+   if (brace != "{"sv) {
+      if (!stream) return;
+
+      throw compose_exception<std::runtime_error>("Expected opening '{' but found '"sv,
+                                                  brace, "'."sv);
+   }
+
+   std::vector<std::pair<std::string, std::vector<std::string>>> section_values;
+
+   while (stream && !stream.eof()) {
+      stream >> header;
+
+      if (header == "}"sv) {
+         break;
+      }
+      else if (!stream) {
+         throw std::runtime_error{"Unexpected end of .req file."s};
+      }
+      else if (header == "ANIM"sv) {
+         // Really we should keep parsing but ANIM sections always seem to come
+         // after a single FILE section, so to save some dev time we call it
+         // quits here.
+
+         return;
+      }
+      else if (header != "FILE"sv) {
+         throw compose_exception<std::runtime_error>("Unexpected token "sv,
+                                                     std::quoted(header),
+                                                     ", expected \"FILE\"");
+      }
+
+      stream >> brace;
+
+      if (brace != "{"sv) {
+         throw compose_exception<std::runtime_error>("Unexpected token '"sv,
+                                                     brace, "', expected '{'"sv);
+      }
+
+      if (!std::getline(stream >> std::ws, buffer, '}')) {
+         throw std::runtime_error{"Unexpected end of .req file."s};
+      }
+
+      std::istringstream section{buffer};
+
+      while (section && !section.eof()) {
+         std::string value;
+
+         section >> std::quoted(value) >> std::ws;
+
+         if (value.empty()) continue;
+
+         container.insert(insert_after, value);
+      }
+   }
 }
 
 inline void emit_req_file(

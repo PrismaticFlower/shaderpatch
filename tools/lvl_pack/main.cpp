@@ -20,6 +20,7 @@
 #include <utility>
 #include <vector>
 
+#include <boost/algorithm/string/case_conv.hpp>
 #include <boost/filesystem.hpp>
 #include <gsl/gsl>
 
@@ -67,14 +68,34 @@ auto normalize_path(fs::path path) -> fs::path::string_type
    return string;
 }
 
+auto make_extern_files_set(const std::vector<std::string>& extern_files_list_paths)
+   -> std::unordered_set<std::string>
+{
+   std::unordered_set<std::string> extern_files;
+
+   for (fs::path path : extern_files_list_paths) {
+      if (!fs::exists(path) || !fs::is_regular_file(path)) {
+         synced_error_print("Warning extern files list "sv, path, " does not exist!"sv);
+
+         continue;
+      }
+
+      parse_files_req_file(path, extern_files, std::cbegin(extern_files));
+   }
+
+   return extern_files;
+}
+
 void write_file_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
                        std::unordered_set<fs::path::string_type>& added_files,
                        const std::vector<fs::path>& source_dirs,
+                       const std::unordered_set<std::string>& extern_files,
                        const fs::path& filepath);
 
 void write_req_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
                       std::unordered_set<fs::path::string_type>& added_files,
                       const std::vector<fs::path>& source_dirs,
+                      const std::unordered_set<std::string>& extern_files,
                       std::vector<std::pair<std::string, std::vector<std::string>>> req_file_contents);
 
 auto find_file(const std::string& filename, const std::vector<fs::path>& source_dirs)
@@ -110,7 +131,9 @@ auto read_binary_in(const fs::path& path) -> std::vector<std::byte>
 
 void write_file_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
                        std::unordered_set<fs::path::string_type>& added_files,
-                       const std::vector<fs::path>& source_dirs, const fs::path& filepath)
+                       const std::vector<fs::path>& source_dirs,
+                       const std::unordered_set<std::string>& extern_files,
+                       const fs::path& filepath)
 {
    const auto normalized_path = normalize_path(filepath);
 
@@ -121,7 +144,7 @@ void write_file_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
 
    if (fs::exists(req_path) && fs::is_regular_file(req_path)) {
       write_req_to_lvl(req_file_path, writer, added_files, source_dirs,
-                       parse_req_file(req_path));
+                       extern_files, parse_req_file(req_path));
    }
 
    const auto file_data = read_binary_in(filepath);
@@ -144,6 +167,7 @@ void write_file_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
 void write_req_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
                       std::unordered_set<fs::path::string_type>& added_files,
                       const std::vector<fs::path>& source_dirs,
+                      const std::unordered_set<std::string>& extern_files,
                       std::vector<std::pair<std::string, std::vector<std::string>>> req_file_contents)
 {
    for (auto& section : req_file_contents) {
@@ -151,20 +175,20 @@ void write_req_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
          const auto filename = value + "."s + section.first;
 
          if (const auto path = find_file(filename, source_dirs); path) {
-            write_file_to_lvl(req_file_path, writer, added_files, source_dirs, *path);
+            write_file_to_lvl(req_file_path, writer, added_files, source_dirs,
+                              extern_files, *path);
          }
-         else {
+         else if (!extern_files.count(boost::to_lower_copy(filename))) {
             synced_error_print("Warning nonexistent file "sv, std::quoted(filename),
                                " referenced in "sv, req_file_path, '.');
-
-            continue;
          }
       }
    }
 }
 
 void build_lvl_file(const fs::path& req_file_path, const fs::path& output_directory,
-                    const std::vector<fs::path>& source_dirs) noexcept
+                    const std::vector<fs::path>& source_dirs,
+                    const std::unordered_set<std::string>& extern_files) noexcept
 {
    Expects(fs::exists(req_file_path) && fs::exists(output_directory));
 
@@ -185,7 +209,7 @@ void build_lvl_file(const fs::path& req_file_path, const fs::path& output_direct
       std::unordered_set<fs::path::string_type> added_files;
 
       write_req_to_lvl(req_file_path, writer, added_files, source_dirs,
-                       parse_req_file(req_file_path));
+                       extern_files, parse_req_file(req_file_path));
 
       success = true;
    }
@@ -205,6 +229,7 @@ int main(int arg_count, char* args[])
    auto input_dir = "./"s;
    auto input_filter = R"(.+\.req)"s;
    std::vector<std::string> source_directories;
+   std::vector<std::string> extern_files_list_paths;
    bool recursive = false;
 
    // clang-format off
@@ -224,6 +249,11 @@ int main(int arg_count, char* args[])
       ["--inputfilter"s]["-f"s]
       ("Regular Expression (EMCA Script syntax) to test each possible input filename " 
        " against. Default is \".+\\.req\""s)
+      | Opt{extern_files_list_paths, "extern files list"s}
+      ["--externfilelist"s]["-e"s]
+      ("Path to a .req file listing external files no warning will be issued for "
+       "files that can not be found listed in the specified file. Multiple files can be"
+       " provided."s)
       | Opt{recursive, "recursive"s}
       ["-r"s]["--recursive"s]
       ("Search input directory recursively for .req files."s);
@@ -272,6 +302,8 @@ int main(int arg_count, char* args[])
       }
    }
 
+   const auto extern_files = make_extern_files_set(extern_files_list_paths);
+
    const auto process_directory = [&](auto&& iterator) {
       for (auto& entry : std::forward<decltype(iterator)>(iterator)) {
          if (!fs::is_regular_file(entry.path())) continue;
@@ -283,7 +315,7 @@ int main(int arg_count, char* args[])
 
          synced_print("Munging lvl "sv, entry.path().filename().string(), "..."sv);
 
-         build_lvl_file(entry.path(), output_dir, source_directories_paths);
+         build_lvl_file(entry.path(), output_dir, source_directories_paths, extern_files);
       }
    };
 
