@@ -15,9 +15,9 @@
 #include <string_view>
 #include <utility>
 
-#include <gsl/gsl>
-
+#include <boost/algorithm/string/case_conv.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
+#include <gsl/gsl>
 
 namespace sp {
 
@@ -215,7 +215,9 @@ void munge_materials(const fs::path& output_dir,
             const auto flags =
                munge_material(file.second, output_file_path, descriptions);
 
-            munged_materials.emplace_back(file.second.stem().string(), flags);
+            munged_materials.emplace_back(boost::algorithm::to_lower_copy(
+                                             file.second.stem().string()),
+                                          flags);
          }
       }
       catch (std::exception& e) {
