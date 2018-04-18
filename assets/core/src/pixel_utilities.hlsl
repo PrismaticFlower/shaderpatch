@@ -8,6 +8,7 @@
 // check out his article on it. 
 
 #define WITH_NORMALMAP_UNSIGNED
+#define WITH_NORMALMAP_2CHANNEL
 
 float3x3 cotangent_frame(float3 N, float3 p, float2 uv)
 {

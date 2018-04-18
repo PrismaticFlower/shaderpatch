@@ -100,9 +100,6 @@
     <None Include="src\normal.fx">
       <Filter>src</Filter>
     </None>
-    <None Include="src\normal.hlsl">
-      <Filter>src</Filter>
-    </None>
     <None Include="src\normal_terrain.fx">
       <Filter>src</Filter>
     </None>
@@ -164,6 +161,11 @@
       <Filter>src</Filter>
     </None>
     <None Include="core.req" />
+    <None Include="src\normal_entrypoint_defs.hlsl" />
+    <None Include="src\pbr.fx" />
+    <None Include="definitions\patch\pbr-basic.json">
+      <Filter>definitions\patch</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">

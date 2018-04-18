@@ -15,12 +15,15 @@ float4x4 ps_projection_matrix : register(ps, c[54]);
 
 float time : register(vs, c[97]);
 
+float4 material_constants[8] : register(c[128]);
+
 bool directional_lights : register(b0);
 bool point_light_0 : register(b1);
 bool point_light_1 : register(b2);
 bool point_light_23 : register(b3);
 bool spot_light : register(b4);
 bool fog_enabled : register(b5);
+
 bool cube_map_light_projection : register(b6);
 
 uniform samplerCUBE cube_light_texture : register(s15);
