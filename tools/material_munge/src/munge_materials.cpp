@@ -114,7 +114,9 @@ void fixup_munged_model(const fs::path& model_path, std::string_view material_na
          for (auto& tnam : tnam_chunks) {
             tnam.get<std::int32_t>();
 
-            auto string = tnam.read_string();
+            auto string = std::string{tnam.read_string()};
+
+            boost::algorithm::to_lower(string);
 
             edit = edit || (material_name == string);
          }
