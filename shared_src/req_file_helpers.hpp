@@ -1,6 +1,7 @@
 #pragma once
 
 #include "compose_exception.hpp"
+#include "string_utilities.hpp"
 
 #include <fstream>
 #include <iomanip>
@@ -14,7 +15,8 @@
 
 namespace sp {
 
-inline auto parse_req_file(boost::filesystem::path filepath)
+inline auto parse_req_file(boost::filesystem::path filepath,
+                           std::string_view platform = "pc")
    -> std::vector<std::pair<std::string, std::vector<std::string>>>
 {
    namespace fs = boost::filesystem;
@@ -38,15 +40,19 @@ inline auto parse_req_file(boost::filesystem::path filepath)
    stream >> header;
 
    if (header != "ucft"sv) {
+      __debugbreak();
+
       throw compose_exception<std::runtime_error>("Expected \"ucft\" but found "sv,
                                                   std::quoted(header), '.');
    }
 
-   char brace;
+   std::string brace;
 
    stream >> brace;
 
-   if (brace != '{') {
+   if (brace != "{"sv) {
+      if (!stream) return {};
+
       throw compose_exception<std::runtime_error>("Expected opening '{' but found '"sv,
                                                   brace, "'."sv);
    }
@@ -70,7 +76,7 @@ inline auto parse_req_file(boost::filesystem::path filepath)
 
       stream >> brace;
 
-      if (brace != '{') {
+      if (brace != "{"sv) {
          throw compose_exception<std::runtime_error>("Unexpected token '"sv,
                                                      brace, "', expected '{'"sv);
       }
@@ -92,10 +98,20 @@ inline auto parse_req_file(boost::filesystem::path filepath)
       std::vector<std::string> keys;
       keys.reserve(32);
 
-      while (section && !section.eof()) {
-         keys.emplace_back();
+      bool keep_keys = true;
 
-         section >> std::quoted(keys.back()) >> std::ws;
+      while (section && !section.eof()) {
+         std::string key;
+
+         section >> std::quoted(key) >> std::ws;
+
+         if (key.empty()) continue;
+
+         if (const auto split = split_string(key, "="sv); split[0] == "platform"sv) {
+            if (split[1] != platform) keep_keys = false;
+         }
+
+         if (keep_keys) keys.emplace_back(std::move(key));
       }
 
       section_values.emplace_back(std::move(section_type), std::move(keys));
@@ -118,7 +134,7 @@ inline void emit_req_file(
                                                   filepath, " for output."sv);
    }
 
-   file << "uctf\n{\n"sv;
+   file << "ucft\n{\n"sv;
 
    for (const auto& key_section : key_sections) {
       file << "   "sv
