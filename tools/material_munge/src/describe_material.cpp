@@ -57,7 +57,7 @@ void read_prop(const std::string& prop_key, const YAML::Node value,
    const auto offset = read_constant_offset(desc["Constant"s].as<std::string>());
 
    if (type == "scaler"sv) {
-      constants[offset] = std::clamp(value.as<float>(), range[0], range[1]);
+      constants.at(offset) = std::clamp(value.as<float>(), range[0], range[1]);
    }
    else {
       auto count = 0;
@@ -75,7 +75,7 @@ void read_prop(const std::string& prop_key, const YAML::Node value,
       }
 
       for (auto i = 0; i < count; ++i) {
-         constants[offset + i] =
+         constants.at(offset + i) =
             std::clamp(value[i].as<float>(), range[0], range[1]);
       }
    }
@@ -99,7 +99,7 @@ void read_texture_slot(const std::string& texture_key, const YAML::Node value,
                                                   " encountered."sv);
    }
 
-   constants[index - 5] = value.as<std::string>();
+   constants.at(index - 4) = value.as<std::string>();
 }
 
 auto glmify_constants(const std::array<float, 32>& constants)
