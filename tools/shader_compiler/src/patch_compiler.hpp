@@ -3,6 +3,7 @@
 #include "shader_flags.hpp"
 #include "shader_variations.hpp"
 
+#include <mutex>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -61,12 +62,15 @@ private:
 
    std::vector<Shader_variation> _variations;
 
+   std::mutex _vs_mutex;
    std::vector<std::vector<DWORD>> _vs_shaders;
    std::unordered_map<std::size_t, std::size_t> _vs_cache;
 
+   std::mutex _ps_mutex;
    std::vector<std::vector<DWORD>> _ps_shaders;
    std::unordered_map<std::size_t, std::size_t> _ps_cache;
 
+   std::mutex _states_mutex;
    std::vector<State> _states;
 };
 }

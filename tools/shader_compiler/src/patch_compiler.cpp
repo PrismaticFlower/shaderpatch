@@ -8,7 +8,9 @@
 #include "volume_resource.hpp"
 
 #include <algorithm>
+#include <execution>
 #include <functional>
+#include <future>
 #include <iostream>
 #include <sstream>
 #include <unordered_map>
@@ -25,18 +27,20 @@ namespace {
 auto compile_shader_impl(const std::string& entry_point,
                          const std::vector<D3D_SHADER_MACRO>& defines,
                          const boost::filesystem::path& source_path,
+                         std::mutex& shaders_cache_mutex,
                          std::vector<std::vector<DWORD>>& shaders,
                          std::unordered_map<std::size_t, std::size_t>& cache,
                          std::string target) -> std::size_t
 {
-
    const auto key = compiler_cache_hash(entry_point, defines);
+
+   std::unique_lock<std::mutex> lock{shaders_cache_mutex};
 
    const auto cached = cache.find(key);
 
    if (cached != std::end(cache)) return cached->second;
 
-   cache[key] = shaders.size();
+   lock.unlock();
 
    Com_ptr<ID3DBlob> error_message;
    Com_ptr<ID3DBlob> shader;
@@ -56,9 +60,13 @@ auto compile_shader_impl(const std::string& entry_point,
 
    const auto span = make_dword_span(*shader);
 
+   lock.lock();
+
+   const auto shaded_index = cache[key] = shaders.size();
+
    shaders.emplace_back(std::cbegin(span), std::cend(span));
 
-   return cache[key];
+   return shaded_index;
 }
 }
 
@@ -97,9 +105,14 @@ Patch_compiler::Patch_compiler(nlohmann::json definition, const fs::path& defini
    std::vector<std::string> shader_defines =
       definition.value<std::vector<std::string>>("defines"s, {});
 
-   for (const auto& state_def : definition["states"s]) {
-      _states.emplace_back(compile_state(state_def, shader_defines));
-   }
+   std::for_each(std::execution::par_unseq, std::cbegin(definition["states"s]),
+                 std::cend(definition["states"s]), [&](const auto& state_def) {
+                    auto state = compile_state(state_def, shader_defines);
+
+                    std::lock_guard<std::mutex> lock{_states_mutex};
+
+                    _states.emplace_back();
+                 });
 
    optimize_permutations();
    save(output_path);
@@ -246,7 +259,7 @@ auto Patch_compiler::compile_state(const nlohmann::json& state_def,
    state.name = state_def["name"s];
    state.shaders.reserve(_variations.size());
 
-   for (const auto& variation : _variations) {
+   const auto predicate = [&](const auto& variation) {
       Shader shader;
 
       shader.flags = variation.flags;
@@ -272,7 +285,10 @@ auto Patch_compiler::compile_state(const nlohmann::json& state_def,
       shader.ps_index = compile_pixel_shader(ps_entry_point, defines);
 
       state.shaders.emplace_back(std::move(shader));
-   }
+   };
+
+   std::for_each(std::execution::par_unseq, std::cbegin(_variations),
+                 std::cend(_variations), predicate);
 
    return state;
 }
@@ -281,15 +297,15 @@ auto Patch_compiler::compile_vertex_shader(const std::string& entry_point,
                                            const std::vector<D3D_SHADER_MACRO>& defines)
    -> std::size_t
 {
-   return compile_shader_impl(entry_point, defines, _source_path, _vs_shaders,
-                              _vs_cache, "vs_3_0"s);
+   return compile_shader_impl(entry_point, defines, _source_path, _vs_mutex,
+                              _vs_shaders, _vs_cache, "vs_3_0"s);
 }
 
 auto Patch_compiler::compile_pixel_shader(const std::string& entry_point,
                                           const std::vector<D3D_SHADER_MACRO>& defines)
    -> std::size_t
 {
-   return compile_shader_impl(entry_point, defines, _source_path, _ps_shaders,
-                              _ps_cache, "ps_3_0"s);
+   return compile_shader_impl(entry_point, defines, _source_path, _ps_mutex,
+                              _ps_shaders, _ps_cache, "ps_3_0"s);
 }
 }
