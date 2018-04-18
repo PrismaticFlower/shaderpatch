@@ -116,11 +116,6 @@ public:
 
    Shader_group& add(const std::string& rendertype, Shader_group shader_group) noexcept
    {
-      if (_shader_groups.count(rendertype)) {
-         log_and_terminate("Attempt to add shader group for already defined rendertype "sv,
-                           std::quoted(rendertype), '.');
-      }
-
       return _shader_groups[rendertype] = shader_group;
    }
 
