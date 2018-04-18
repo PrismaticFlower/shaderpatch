@@ -249,7 +249,7 @@ HRESULT Device::SetTexture(DWORD stage, IDirect3DBaseTexture9* texture) noexcept
       auto& material_resource = static_cast<Material_resource&>(*texture);
       _material.emplace(material_resource.get_material());
 
-      auto& metadata = _game_pixel_shader->metadata;
+      auto& metadata = _game_vertex_shader->metadata;
 
       if (metadata.rendertype == _material->target_rendertype()) {
          _material->use(metadata.state_name, metadata.shader_flags);
@@ -258,8 +258,10 @@ HRESULT Device::SetTexture(DWORD stage, IDirect3DBaseTexture9* texture) noexcept
       return S_OK;
    }
    else if (_material) {
-      _device->SetVertexShader(_game_vertex_shader.get());
-      _device->SetPixelShader(_game_pixel_shader.get());
+      _device->SetVertexShader(_game_vertex_shader->get());
+      _device->SetPixelShader(_game_pixel_shader->get());
+
+      _material = std::nullopt;
    }
 
    // Projected Cube Texture Workaround
@@ -421,9 +423,16 @@ HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
    if (!shader) return _device->SetVertexShader(nullptr);
 
    auto& vertex_shader = static_cast<Vertex_shader&>(*shader);
+   const auto& metadata = vertex_shader.metadata;
 
    vertex_shader.AddRef();
    _game_vertex_shader.reset(&vertex_shader);
+
+   if (_material && (metadata.rendertype == _material->target_rendertype())) {
+      _material->update(metadata.state_name, metadata.shader_flags);
+
+      return S_OK;
+   }
 
    set_active_light_constants(*_device, vertex_shader.metadata.shader_flags);
 
@@ -441,12 +450,6 @@ HRESULT Device::SetPixelShader(IDirect3DPixelShader9* shader) noexcept
 
    pixel_shader.AddRef();
    _game_pixel_shader.reset(&pixel_shader);
-
-   if (_material && (metadata.rendertype == _material->target_rendertype())) {
-      _material->update(metadata.state_name, metadata.shader_flags);
-
-      return S_OK;
-   }
 
    if (metadata.rendertype == "shield"sv) {
       update_refraction_texture();
