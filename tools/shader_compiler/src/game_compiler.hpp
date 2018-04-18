@@ -74,15 +74,17 @@ private:
                        const nlohmann::json& parent_metadata);
 
    Pass compile_pass(const nlohmann::json& pass_def,
-                     const nlohmann::json& parent_metadata);
+                     const nlohmann::json& parent_metadata,
+                     std::string_view state_name);
 
    auto compile_vertex_shader(const nlohmann::json& parent_metadata,
                               std::string_view entry_point, std::string_view target,
-                              const Shader_variation& variation) -> Vertex_shader_ref;
+                              const Shader_variation& variation,
+                              std::string_view state_name) -> Vertex_shader_ref;
 
    auto compile_pixel_shader(const nlohmann::json& parent_metadata,
-                             std::string_view entry_point,
-                             std::string_view target) -> Pixel_shader_ref;
+                             std::string_view entry_point, std::string_view target,
+                             std::string_view state_name) -> Pixel_shader_ref;
 
    boost::filesystem::path _source_path;
 

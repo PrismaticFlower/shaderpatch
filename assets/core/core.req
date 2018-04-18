@@ -34,4 +34,11 @@ ucft
       "water"
       "zprepass"
    }
+
+   // Patch Material Shaders
+   REQN
+   {
+      "shader"
+      "pbr-basic"
+   }
 }

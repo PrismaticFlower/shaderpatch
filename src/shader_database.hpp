@@ -55,35 +55,35 @@ private:
 
 class Shader_group {
 public:
-   Shader_variations& at(const std::string& entrypoint) noexcept
+   Shader_variations& at(const std::string& shader_state) noexcept
    {
-      if (!_shader_entrypoints.count(entrypoint)) {
-         log_and_terminate("Unable to find shader variation set for entrypoint "sv,
-                           std::quoted(entrypoint), '.');
+      if (!_shader_entrypoints.count(shader_state)) {
+         log_and_terminate("Unable to find shader variation set for shader state "sv,
+                           std::quoted(shader_state), '.');
       }
 
-      return _shader_entrypoints.at(entrypoint);
+      return _shader_entrypoints.at(shader_state);
    }
 
-   const Shader_variations& at(const std::string& entrypoint) const noexcept
+   const Shader_variations& at(const std::string& shader_state) const noexcept
    {
-      if (!_shader_entrypoints.count(entrypoint)) {
-         log_and_terminate("Unable to find shader variation set for entrypoint "sv,
-                           std::quoted(entrypoint), '.');
+      if (!_shader_entrypoints.count(shader_state)) {
+         log_and_terminate("Unable to find shader variation set for shader state "sv,
+                           std::quoted(shader_state), '.');
       }
 
-      return _shader_entrypoints.at(entrypoint);
+      return _shader_entrypoints.at(shader_state);
    }
 
-   Shader_variations& add(const std::string& entrypoint,
+   Shader_variations& add(const std::string& shader_state,
                           Shader_variations shader_variations) noexcept
    {
-      if (_shader_entrypoints.count(entrypoint)) {
-         log_and_terminate("Attempt to add shader variation set for already defined entrypoint "sv,
-                           std::quoted(entrypoint), '.');
+      if (_shader_entrypoints.count(shader_state)) {
+         log_and_terminate("Attempt to add shader variation set for already defined shader state "sv,
+                           std::quoted(shader_state), '.');
       }
 
-      return _shader_entrypoints[entrypoint] = shader_variations;
+      return _shader_entrypoints[shader_state] = shader_variations;
    }
 
 private:

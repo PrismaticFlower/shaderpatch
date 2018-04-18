@@ -251,8 +251,8 @@ HRESULT Device::SetTexture(DWORD stage, IDirect3DBaseTexture9* texture) noexcept
 
       auto& metadata = _game_pixel_shader->metadata;
 
-      if (metadata.name == _material->target_rendertype()) {
-         _material->use(metadata.entry_point, metadata.shader_flags);
+      if (metadata.rendertype == _material->target_rendertype()) {
+         _material->use(metadata.state_name, metadata.shader_flags);
       }
 
       return S_OK;
@@ -442,13 +442,13 @@ HRESULT Device::SetPixelShader(IDirect3DPixelShader9* shader) noexcept
    pixel_shader.AddRef();
    _game_pixel_shader.reset(&pixel_shader);
 
-   if (_material && (metadata.name == _material->target_rendertype())) {
-      _material->update(metadata.entry_point, metadata.shader_flags);
+   if (_material && (metadata.rendertype == _material->target_rendertype())) {
+      _material->update(metadata.state_name, metadata.shader_flags);
 
       return S_OK;
    }
 
-   if (metadata.name == "shield"sv) {
+   if (metadata.rendertype == "shield"sv) {
       update_refraction_texture();
 
       _device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
@@ -461,7 +461,7 @@ HRESULT Device::SetPixelShader(IDirect3DPixelShader9* shader) noexcept
          _on_ps_shader_set = nullptr;
       };
    }
-   else if (!_water_refraction && metadata.name == "water"sv) {
+   else if (!_water_refraction && metadata.rendertype == "water"sv) {
       if ((metadata.entry_point == "normal_map_distorted_reflection_ps") ||
           (metadata.entry_point ==
            "normal_map_distorted_reflection_specular_ps")) {

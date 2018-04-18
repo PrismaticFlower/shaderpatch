@@ -132,16 +132,18 @@ auto Game_compiler::compile_state(const nlohmann::json& state_def,
    auto metadata = state_def.value("metadata", nlohmann::json::object());
    metadata.update(parent_metadata);
 
+   const std::string state_name = state_def["name"s];
+
    for (const auto& pass_def : state_def["passes"]) {
-      passes.emplace_back(compile_pass(pass_def, metadata));
+      passes.emplace_back(compile_pass(pass_def, metadata, state_name));
    }
 
    return state;
 }
 
 auto Game_compiler::compile_pass(const nlohmann::json& pass_def,
-                                 const nlohmann::json& parent_metadata)
-   -> Game_compiler::Pass
+                                 const nlohmann::json& parent_metadata,
+                                 std::string_view state_name) -> Game_compiler::Pass
 {
    Pass pass{};
 
@@ -161,11 +163,12 @@ auto Game_compiler::compile_pass(const nlohmann::json& pass_def,
    const std::string ps_entry_point = pass_def["pixel_shader"];
 
    for (const auto& variation : shader_variations) {
-      pass.vs_shaders.emplace_back(
-         compile_vertex_shader(metadata, vs_entry_point, vs_target, variation));
+      pass.vs_shaders.emplace_back(compile_vertex_shader(metadata, vs_entry_point, vs_target,
+                                                         variation, state_name));
    }
 
-   pass.ps_index = compile_pixel_shader(metadata, ps_entry_point, ps_target);
+   pass.ps_index =
+      compile_pixel_shader(metadata, ps_entry_point, ps_target, state_name);
 
    return pass;
 }
@@ -173,7 +176,8 @@ auto Game_compiler::compile_pass(const nlohmann::json& pass_def,
 auto Game_compiler::compile_vertex_shader(const nlohmann::json& parent_metadata,
                                           std::string_view entry_point,
                                           std::string_view target,
-                                          const Shader_variation& variation) -> Vertex_shader_ref
+                                          const Shader_variation& variation,
+                                          std::string_view state_name) -> Vertex_shader_ref
 {
    const auto key = compiler_cache_hash(entry_point, target, variation.flags);
 
@@ -199,16 +203,17 @@ auto Game_compiler::compile_vertex_shader(const nlohmann::json& parent_metadata,
       std::cout << static_cast<char*>(error_message->GetBufferPointer());
    }
 
-   _vs_shaders.emplace_back(embed_meta_data(parent_metadata, _render_type,
-                                            entry_point, target, variation.flags,
-                                            make_dword_span(*shader)));
+   _vs_shaders.emplace_back(
+      embed_meta_data(parent_metadata, _render_type, state_name, entry_point,
+                      target, variation.flags, make_dword_span(*shader)));
 
    return _vs_cache[key];
 }
 
 auto Game_compiler::compile_pixel_shader(const nlohmann::json& parent_metadata,
                                          std::string_view entry_point,
-                                         std::string_view target) -> Pixel_shader_ref
+                                         std::string_view target,
+                                         std::string_view state_name) -> Pixel_shader_ref
 {
    const auto key = compiler_cache_hash(entry_point, target);
 
@@ -234,8 +239,9 @@ auto Game_compiler::compile_pixel_shader(const nlohmann::json& parent_metadata,
       std::cout << static_cast<char*>(error_message->GetBufferPointer());
    }
 
-   _ps_shaders.emplace_back(embed_meta_data(parent_metadata, _render_type, entry_point,
-                                            target, {}, make_dword_span(*shader)));
+   _ps_shaders.emplace_back(embed_meta_data(parent_metadata, _render_type,
+                                            state_name, entry_point, target, {},
+                                            make_dword_span(*shader)));
 
    return _ps_cache[key];
 }

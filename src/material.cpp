@@ -41,7 +41,7 @@ auto Material::target_rendertype() const noexcept -> std::string_view
    return _overridden_rendertype;
 }
 
-void Material::use(const std::string& entrypoint, const Shader_flags flags) const noexcept
+void Material::use(const std::string& state_name, const Shader_flags flags) const noexcept
 {
    for (auto i = 0; i < material_textures_offset; ++i) {
       _textures[i].bind(material_textures_offset + i);
@@ -54,12 +54,12 @@ void Material::use(const std::string& entrypoint, const Shader_flags flags) cons
    _device->SetPixelShaderConstantF(sp::constants::ps::material_constants_start,
                                     glm::value_ptr(_constants[0]),
                                     max_material_constants);
-   update(entrypoint, flags);
+   update(state_name, flags);
 }
 
-void Material::update(const std::string& entrypoint, const Shader_flags flags) const noexcept
+void Material::update(const std::string& state_name, const Shader_flags flags) const noexcept
 {
-   const auto& program = _shader_group.at(entrypoint)[flags];
+   const auto& program = _shader_group.at(state_name)[flags];
 
    program.bind(*_device);
 }
