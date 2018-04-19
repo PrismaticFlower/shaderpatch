@@ -318,6 +318,10 @@ private:
    constexpr static auto refraction_slot = 13;
    constexpr static auto cubemap_projection_slot = 15;
 
+   void refresh_material() noexcept;
+
+   void clear_material() noexcept;
+
    void bind_water_texture() noexcept;
    void bind_refraction_texture() noexcept;
 
@@ -339,11 +343,13 @@ private:
    glm::ivec2 _resolution;
 
    bool _water_refraction = false;
+   bool _refresh_material = true;
 
    std::optional<Material> _material;
 
-   Com_ptr<Vertex_shader> _game_vertex_shader;
-   Com_ptr<Pixel_shader> _game_pixel_shader;
+   Shader_metadata _vs_metadata;
+   Com_ptr<IDirect3DVertexShader9> _game_vertex_shader;
+   Com_ptr<IDirect3DPixelShader9> _game_pixel_shader;
 
    User_config _config{"shader patch.ini"s};
 

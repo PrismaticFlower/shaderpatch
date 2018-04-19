@@ -394,22 +394,6 @@ float Device::GetNPatchMode() noexcept
    return _device->GetNPatchMode();
 }
 
-HRESULT Device::DrawPrimitive(D3DPRIMITIVETYPE primitive_type,
-                              UINT start_vertex, UINT primitive_count) noexcept
-{
-   return _device->DrawPrimitive(primitive_type, start_vertex, primitive_count);
-}
-
-HRESULT Device::DrawIndexedPrimitive(D3DPRIMITIVETYPE primitive_type,
-                                     INT base_vertex_index,
-                                     UINT min_vertex_index, UINT num_vertices,
-                                     UINT start_Index, UINT prim_Count) noexcept
-{
-   return _device->DrawIndexedPrimitive(primitive_type, base_vertex_index,
-                                        min_vertex_index, num_vertices,
-                                        start_Index, prim_Count);
-}
-
 HRESULT Device::DrawPrimitiveUP(D3DPRIMITIVETYPE primitive_type, UINT primitive_count,
                                 const void* vertexstreamzerodata,
                                 UINT vertexstreamzerostride) noexcept

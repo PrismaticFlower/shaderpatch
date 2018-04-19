@@ -109,6 +109,8 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
    _textures.clean_lost_textures();
 
+   _material = std::nullopt;
+
    // reset device
 
    const auto result = _device->Reset(presentation_parameters);
@@ -119,6 +121,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
    _window_dirty = true;
    _fake_device_loss = false;
+   _refresh_material = true;
 
    _resolution.x = presentation_parameters->BackBufferWidth;
    _resolution.y = presentation_parameters->BackBufferHeight;
@@ -239,29 +242,33 @@ HRESULT Device::CreateDepthStencilSurface(UINT width, UINT height, D3DFORMAT for
 HRESULT Device::SetTexture(DWORD stage, IDirect3DBaseTexture9* texture) noexcept
 {
    if (texture == nullptr) {
+      if (stage == 0 && _material) {
+         clear_material();
+      }
+
       return _device->SetTexture(stage, nullptr);
    }
 
    auto type = texture->GetType();
 
    // Custom Material Handling
-   if (type == Material_resource::id) {
+   if (stage == 0 && type == Material_resource::id) {
       auto& material_resource = static_cast<Material_resource&>(*texture);
       _material.emplace(material_resource.get_material());
 
-      auto& metadata = _game_vertex_shader->metadata;
+      _material->bind();
 
-      if (metadata.rendertype == _material->target_rendertype()) {
-         _material->use(metadata.state_name, metadata.shader_flags);
-      }
+      _refresh_material = true;
 
       return S_OK;
    }
-   else if (_material) {
-      _device->SetVertexShader(_game_vertex_shader->get());
-      _device->SetPixelShader(_game_pixel_shader->get());
+   else if (stage != 0 && type == Material_resource::id) {
+      log(Log_level::warning, "Attempt to bind material to texture slot other than 0."sv);
 
-      _material = std::nullopt;
+      return S_OK;
+   }
+   else if (stage == 0 && _material) {
+      clear_material();
    }
 
    // Projected Cube Texture Workaround
@@ -420,16 +427,19 @@ HRESULT Device::CreatePixelShader(const DWORD* function,
 
 HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
 {
-   if (!shader) return _device->SetVertexShader(nullptr);
+   if (!shader) {
+      _game_vertex_shader = nullptr;
+      return _device->SetVertexShader(nullptr);
+   }
 
    auto& vertex_shader = static_cast<Vertex_shader&>(*shader);
-   const auto& metadata = vertex_shader.metadata;
 
-   vertex_shader.AddRef();
-   _game_vertex_shader.reset(&vertex_shader);
+   _vs_metadata = vertex_shader.metadata;
+   vertex_shader.get()->AddRef();
+   _game_vertex_shader.reset(vertex_shader.get());
 
-   if (_material && (metadata.rendertype == _material->target_rendertype())) {
-      _material->update(metadata.state_name, metadata.shader_flags);
+   if (_material) {
+      _refresh_material = true;
 
       return S_OK;
    }
@@ -443,13 +453,22 @@ HRESULT Device::SetPixelShader(IDirect3DPixelShader9* shader) noexcept
 {
    if (_on_ps_shader_set) _on_ps_shader_set();
 
-   if (!shader) return _device->SetPixelShader(nullptr);
+   if (!shader) {
+      _game_pixel_shader = nullptr;
+      return _device->SetPixelShader(nullptr);
+   }
 
    auto& pixel_shader = static_cast<Pixel_shader&>(*shader);
    const auto& metadata = pixel_shader.metadata;
 
-   pixel_shader.AddRef();
-   _game_pixel_shader.reset(&pixel_shader);
+   pixel_shader.get()->AddRef();
+   _game_pixel_shader.reset(pixel_shader.get());
+
+   if (_material) {
+      _refresh_material = true;
+
+      return S_OK;
+   }
 
    if (metadata.rendertype == "shield"sv) {
       update_refraction_texture();
@@ -549,6 +568,48 @@ HRESULT Device::SetVertexShaderConstantF(UINT start_register, const float* const
 
    return _device->SetVertexShaderConstantF(start_register, constant_data,
                                             vector4f_count);
+}
+
+HRESULT Device::DrawPrimitive(D3DPRIMITIVETYPE primitive_type,
+                              UINT start_vertex, UINT primitive_count) noexcept
+{
+   refresh_material();
+
+   return _device->DrawPrimitive(primitive_type, start_vertex, primitive_count);
+}
+
+HRESULT Device::DrawIndexedPrimitive(D3DPRIMITIVETYPE primitive_type,
+                                     INT base_vertex_index,
+                                     UINT min_vertex_index, UINT num_vertices,
+                                     UINT start_Index, UINT prim_Count) noexcept
+{
+   refresh_material();
+
+   return _device->DrawIndexedPrimitive(primitive_type, base_vertex_index,
+                                        min_vertex_index, num_vertices,
+                                        start_Index, prim_Count);
+}
+
+void Device::refresh_material() noexcept
+{
+   if (std::exchange(_refresh_material, false) && _material) {
+      if (_vs_metadata.rendertype == _material->target_rendertype()) {
+         _material->update(_vs_metadata.state_name, _vs_metadata.shader_flags);
+      }
+   }
+}
+
+void Device::clear_material() noexcept
+{
+   if (_material) {
+      _material = std::nullopt;
+      _refresh_material = false;
+
+      _device->SetVertexShader(_game_vertex_shader.get());
+      _device->SetPixelShader(_game_pixel_shader.get());
+
+      set_active_light_constants(*_device, _vs_metadata.shader_flags);
+   }
 }
 
 void Device::bind_water_texture() noexcept

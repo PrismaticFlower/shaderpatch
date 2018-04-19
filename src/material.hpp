@@ -30,8 +30,7 @@ public:
 
    auto target_rendertype() const noexcept -> std::string_view;
 
-   void use(const std::string& entrypoint,
-            const Shader_flags flags = Shader_flags::none) const noexcept;
+   void bind() const noexcept;
 
    void update(const std::string& entrypoint,
                const Shader_flags flags = Shader_flags::none) const noexcept;
