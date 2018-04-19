@@ -80,10 +80,10 @@ float intensity_spot(float3 world_normal, float3 world_position)
    return intensity * attenuation_spot(world_position);
 }
 
-Lighting calculate(float3 normals, float3 world_position,
+Lighting calculate(float3 normal, float3 world_position,
                    float4 static_diffuse_lighting)
 {
-   float3 world_normal = normals_to_world(normals);
+   float3 world_normal = normals_to_world(normal);
 
    Lighting lighting;
 
@@ -294,7 +294,7 @@ float3 brdf_light(float3 albedo, float3 F0, float roughness, float3 N, float3 L,
 }
 
 float3 calculate(float3 N, float3 V, float3 world_position, float3 albedo,
-                  float metallicness,float roughness, float ao, float shadow)
+                  float metallicness, float roughness, float ao, float shadow)
 {
    const float dielectric = 0.04;
    const float3 F0 = lerp(dielectric, albedo, metallicness);
@@ -302,14 +302,14 @@ float3 calculate(float3 N, float3 V, float3 world_position, float3 albedo,
 
    float3 light = 0.0;
 
-   if (directional_lights) {
+   if (lighting_directional) {
       light += brdf_light(albedo, F0, roughness, N, -light_directional_0_dir.xyz,
                           V, 1.0, light_directional_0_color.rgb);
 
       light += brdf_light(albedo, F0, roughness, N, -light_directional_1_dir.xyz,
                           V, 1.0, light_directional_1_color.rgb);
 
-      if (point_light_0) {
+      if (lighting_point_0) {
          const float3 light_dir = normalize(light_point_0_pos.xyz - world_position);
          const float attenuation = attenuation_point(world_position, light_point_0_pos);
 
@@ -317,7 +317,7 @@ float3 calculate(float3 N, float3 V, float3 world_position, float3 albedo,
                              V, attenuation, light_point_0_color.rgb);
       }
 
-      if (point_light_1) {
+      if (lighting_point_1) {
          const float3 light_dir = normalize(light_point_1_pos.xyz - world_position);
          const float attenuation = attenuation_point(world_position, light_point_1_pos);
 
@@ -325,7 +325,7 @@ float3 calculate(float3 N, float3 V, float3 world_position, float3 albedo,
                              V, attenuation, light_point_1_color.rgb);
       }
 
-      if (point_light_23) {
+      if (lighting_point_23) {
          float3 light_dir = normalize(light_point_2_pos.xyz - world_position);
          float attenuation = attenuation_point(world_position, light_point_2_pos);
 
@@ -338,7 +338,7 @@ float3 calculate(float3 N, float3 V, float3 world_position, float3 albedo,
          light += brdf_light(albedo, F0, roughness, N, light_dir,
                              V, attenuation, light_point_3_color.rgb);
       }
-      else if (spot_light) {
+      else if (lighting_spot_0) {
          const float3 light_dir = normalize(light_spot_pos.xyz - world_position);
          const float attenuation = attenuation_spot(world_position);
 

@@ -17,15 +17,44 @@ float time : register(vs, c[97]);
 
 float4 material_constants[8] : register(c[128]);
 
+// Runtime Lighting Constants
 bool directional_lights : register(b0);
 bool point_light_0 : register(b1);
 bool point_light_1 : register(b2);
 bool point_light_23 : register(b3);
 bool spot_light : register(b4);
-bool fog_enabled : register(b5);
 
+bool fog_enabled : register(b5);
 bool cube_map_light_projection : register(b6);
 
 uniform samplerCUBE cube_light_texture : register(s15);
+
+// Compile Time Lighting Constants 
+
+#ifdef LIGHTING_DIRECTIONAL
+const static bool lighting_directional = true;
+#else
+const static bool lighting_directional = false;
+#endif
+#ifdef LIGHTING_POINT_0
+const static bool lighting_point_0 = true;
+#else
+const static bool lighting_point_0 = false;
+#endif
+#ifdef LIGHTING_POINT_1
+const static bool lighting_point_1 = true;
+#else
+const static bool lighting_point_1 = false;
+#endif
+#ifdef LIGHTING_POINT_23
+const static bool lighting_point_23 = true;
+#else
+const static bool lighting_point_23 = false;
+#endif
+#ifdef LIGHTING_SPOT_0
+const static bool lighting_spot_0 = true;
+#else
+const static bool lighting_spot_0 = false;
+#endif
 
 #endif

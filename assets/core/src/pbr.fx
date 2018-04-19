@@ -110,7 +110,7 @@ struct Ps_input
 
    float fog_eye_distance : DEPTH;
 
-   float vface : VFACE;
+   //float vface : VFACE;
 };
 
 float4 main_opaque_ps(Ps_input input, const Normal_state state) : COLOR
@@ -135,12 +135,11 @@ float4 main_opaque_ps(Ps_input input, const Normal_state state) : COLOR
    // Calculate lighting.
    const float3 V = normalize(world_view_position - input.world_position);
    const float3 N = perturb_normal(normal_map, input.texcoords,
-                                   normalize(input.world_normal * sign(input.vface)), V);
+                                   normalize(input.world_normal), V);
 
    const float shadow =
       state.shadowed ? tex2Dproj(shadow_map, input.shadow_texcoords).a : 1.0;
    const float ao = tex2D(ao_map, input.texcoords).r * ao_strength;
-
 
    float3 color =
       light::pbr::calculate(N, V, input.world_position, albedo, metallicness, roughness, 
@@ -151,6 +150,9 @@ float4 main_opaque_ps(Ps_input input, const Normal_state state) : COLOR
    }
 
    color = fog::apply(color, input.fog_eye_distance);
+
+   // TODO: better solution for gamma handling, hdr, etc
+   color = pow(color, 1.0 / 2.2);
 
    return float4(color, saturate(input.fade * 4.0));
 }

@@ -161,10 +161,14 @@
       <Filter>src</Filter>
     </None>
     <None Include="core.req" />
-    <None Include="src\normal_entrypoint_defs.hlsl" />
-    <None Include="src\pbr.fx" />
     <None Include="definitions\patch\pbr-basic.json">
       <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="src\pbr.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\normal_entrypoint_defs.hlsl">
+      <Filter>src</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
