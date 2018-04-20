@@ -15,7 +15,6 @@
 #include <string_view>
 #include <utility>
 
-#include <boost/algorithm/string/case_conv.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
 #include <gsl/gsl>
 
@@ -33,7 +32,7 @@ struct Hardcoded_material_flags {
 };
 
 auto munge_material(const fs::path& material_path, const fs::path& output_file_path,
-                    const std::unordered_map<std::string, YAML::Node>& descriptions)
+                    const std::unordered_map<Ci_string, YAML::Node>& descriptions)
    -> Hardcoded_material_flags
 {
    auto root_node = YAML::LoadFile(material_path.string());
@@ -56,7 +55,7 @@ auto munge_material(const fs::path& material_path, const fs::path& output_file_p
 
    const auto rendertype = root_node["RenderType"s].as<std::string>();
 
-   const auto desc_name = std::string{split_string(rendertype, "."sv)[0]};
+   const auto desc_name = make_ci_string(split_string(rendertype, "."sv)[0]);
 
    if (!descriptions.count(desc_name)) {
       throw std::runtime_error{"RenderType has no material description."s};
@@ -88,7 +87,7 @@ auto munge_material(const fs::path& material_path, const fs::path& output_file_p
    return flags;
 }
 
-void fixup_munged_model(const fs::path& model_path, std::string_view material_name,
+void fixup_munged_model(const fs::path& model_path, Ci_String_view material_name,
                         Hardcoded_material_flags flags)
 {
    using boost::iostreams::mapped_file;
@@ -114,9 +113,7 @@ void fixup_munged_model(const fs::path& model_path, std::string_view material_na
          for (auto& tnam : tnam_chunks) {
             tnam.get<std::int32_t>();
 
-            auto string = std::string{tnam.read_string()};
-
-            boost::algorithm::to_lower(string);
+            auto string = tnam.read_string();
 
             edit = edit || (material_name == string);
          }
@@ -157,8 +154,8 @@ void fixup_munged_model(const fs::path& model_path, std::string_view material_na
 
 void fixup_munged_models(
    const fs::path& output_dir,
-   const std::unordered_map<std::string, std::vector<fs::path>>& texture_references,
-   std::vector<std::pair<std::string, Hardcoded_material_flags>> munged_materials)
+   const std::unordered_map<Ci_string, std::vector<fs::path>>& texture_references,
+   std::vector<std::pair<Ci_string, Hardcoded_material_flags>> munged_materials)
 {
    for (const auto& [name, flags] : munged_materials) {
       if (!texture_references.count(name)) continue;
@@ -194,11 +191,11 @@ void fixup_munged_models(
 }
 
 void munge_materials(const fs::path& output_dir,
-                     const std::unordered_map<std::string, std::vector<fs::path>>& texture_references,
-                     const std::unordered_map<std::string, fs::path>& files,
-                     const std::unordered_map<std::string, YAML::Node>& descriptions)
+                     const std::unordered_map<Ci_string, std::vector<fs::path>>& texture_references,
+                     const std::unordered_map<Ci_string, fs::path>& files,
+                     const std::unordered_map<Ci_string, YAML::Node>& descriptions)
 {
-   std::vector<std::pair<std::string, Hardcoded_material_flags>> munged_materials;
+   std::vector<std::pair<Ci_string, Hardcoded_material_flags>> munged_materials;
 
    for (auto& file : files) {
       try {
@@ -217,8 +214,7 @@ void munge_materials(const fs::path& output_dir,
             const auto flags =
                munge_material(file.second, output_file_path, descriptions);
 
-            munged_materials.emplace_back(boost::algorithm::to_lower_copy(
-                                             file.second.stem().string()),
+            munged_materials.emplace_back(make_ci_string(file.second.stem().string()),
                                           flags);
          }
       }

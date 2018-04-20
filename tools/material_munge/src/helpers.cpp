@@ -16,11 +16,11 @@ using namespace std::literals;
 namespace fs = boost::filesystem;
 
 auto find_texture_references(const fs::path& from)
-   -> std::unordered_map<std::string, std::vector<fs::path>>
+   -> std::unordered_map<Ci_string, std::vector<fs::path>>
 {
    Expects(fs::is_directory(from));
 
-   std::unordered_map<std::string, std::vector<fs::path>> results;
+   std::unordered_map<Ci_string, std::vector<fs::path>> results;
 
    for (auto& entry : fs::directory_iterator{from}) {
       auto& path = entry.path();
@@ -32,7 +32,8 @@ auto find_texture_references(const fs::path& from)
             if (section.first != "texture"sv) continue;
 
             for (auto& texture : section.second) {
-               results[texture].emplace_back(path.parent_path() / path.stem());
+               results[make_ci_string(texture)].emplace_back(path.parent_path() /
+                                                             path.stem());
             }
          }
       }
@@ -46,26 +47,25 @@ auto find_texture_references(const fs::path& from)
    return results;
 }
 
-auto build_input_file_map(const fs::path& in)
-   -> std::unordered_map<std::string, fs::path>
+auto build_input_file_map(const fs::path& in) -> std::unordered_map<Ci_string, fs::path>
 {
    Expects(fs::is_directory(in));
 
-   std::unordered_map<std::string, fs::path> results;
+   std::unordered_map<Ci_string, fs::path> results;
 
    for (auto& entry : fs::recursive_directory_iterator{in}) {
       if (!fs::is_regular_file(entry.path())) continue;
 
-      results[entry.path().filename().string()] = entry.path();
+      results[make_ci_string(entry.path().filename().string())] = entry.path();
    }
 
    return results;
 }
 
 auto load_material_descriptions(const std::vector<std::string>& directories)
-   -> std::unordered_map<std::string, YAML::Node>
+   -> std::unordered_map<Ci_string, YAML::Node>
 {
-   std::unordered_map<std::string, YAML::Node> results;
+   std::unordered_map<Ci_string, YAML::Node> results;
 
    for (fs::path path : directories) {
       if (!fs::exists(path) || !fs::is_directory(path)) {
@@ -75,7 +75,7 @@ auto load_material_descriptions(const std::vector<std::string>& directories)
 
       for (auto entry : fs::directory_iterator{path}) {
          try {
-            results[entry.path().stem().string()] =
+            results[make_ci_string(entry.path().stem().string())] =
                YAML::LoadFile(entry.path().string());
          }
          catch (std::exception& e) {

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "string_utilities.hpp"
+
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -18,7 +20,7 @@ namespace sp {
 namespace fs = boost::filesystem;
 
 void munge_materials(const fs::path& output_path,
-                     const std::unordered_map<std::string, std::vector<fs::path>>& texture_references,
-                     const std::unordered_map<std::string, fs::path>& files,
-                     const std::unordered_map<std::string, YAML::Node>& descriptions);
+                     const std::unordered_map<Ci_string, std::vector<fs::path>>& texture_references,
+                     const std::unordered_map<Ci_string, fs::path>& files,
+                     const std::unordered_map<Ci_string, YAML::Node>& descriptions);
 }

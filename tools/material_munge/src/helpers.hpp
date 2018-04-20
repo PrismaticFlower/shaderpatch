@@ -1,5 +1,7 @@
 #pragma once
 
+#include "string_utilities.hpp"
+
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -18,11 +20,11 @@ namespace sp {
 namespace fs = boost::filesystem;
 
 auto find_texture_references(const fs::path& from)
-   -> std::unordered_map<std::string, std::vector<fs::path>>;
+   -> std::unordered_map<Ci_string, std::vector<fs::path>>;
 
 auto build_input_file_map(const fs::path& in)
-   -> std::unordered_map<std::string, fs::path>;
+   -> std::unordered_map<Ci_string, fs::path>;
 
 auto load_material_descriptions(const std::vector<std::string>& directories)
-   -> std::unordered_map<std::string, YAML::Node>;
+   -> std::unordered_map<Ci_string, YAML::Node>;
 }
