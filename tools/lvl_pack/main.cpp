@@ -154,7 +154,7 @@ void write_file_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
    if (filepath.extension() == ".lvl"s) {
       auto lvl_writer = writer.emplace_child("lvl_"_mn);
 
-      lvl_writer.emplace_child(lvl_name_hash(filepath.filename().string()))
+      lvl_writer.emplace_child(lvl_name_hash(filepath.stem().string()))
          .write(reader.read_array<std::byte>(reader.size()));
    }
    else {
