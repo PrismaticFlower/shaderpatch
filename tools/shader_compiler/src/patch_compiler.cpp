@@ -1,5 +1,6 @@
 
 #include "patch_compiler.hpp"
+#include "algorithm.hpp"
 #include "com_ptr.hpp"
 #include "compiler_helpers.hpp"
 #include "compose_exception.hpp"
@@ -52,6 +53,10 @@ auto compile_shader_impl(const std::string& entry_point,
                                     error_message.clear_and_assign());
 
    if (result != S_OK) {
+      if (!error_message) {
+         throw std::runtime_error{"Unknown compiler error occured."s};
+      }
+
       throw std::runtime_error{static_cast<char*>(error_message->GetBufferPointer())};
    }
    else if (error_message) {
@@ -105,16 +110,16 @@ Patch_compiler::Patch_compiler(nlohmann::json definition, const fs::path& defini
    std::vector<std::string> shader_defines =
       definition.value<std::vector<std::string>>("defines"s, {});
 
-   std::for_each(std::execution::par_unseq, std::cbegin(definition["states"s]),
-                 std::cend(definition["states"s]), [&](const auto& state_def) {
-                    auto state = compile_state(state_def, shader_defines);
+   for_each_exception_capable(std::execution::par, definition["states"s],
+                              [&](const auto& state_def) {
+                                 auto state = compile_state(state_def, shader_defines);
 
-                    std::lock_guard<std::mutex> lock{_states_mutex};
+                                 std::lock_guard<std::mutex> lock{_states_mutex};
 
-                    _states.emplace_back();
-                 });
+                                 _states.emplace_back(std::move(state));
+                              });
 
-   optimize_permutations();
+   // optimize_permutations();
    save(output_path);
 }
 
@@ -257,6 +262,7 @@ auto Patch_compiler::compile_state(const nlohmann::json& state_def,
    State state;
 
    state.name = state_def["name"s];
+
    state.shaders.reserve(_variations.size());
 
    const auto predicate = [&](const auto& variation) {
@@ -287,8 +293,7 @@ auto Patch_compiler::compile_state(const nlohmann::json& state_def,
       state.shaders.emplace_back(std::move(shader));
    };
 
-   std::for_each(std::execution::par_unseq, std::cbegin(_variations),
-                 std::cend(_variations), predicate);
+   for_each_exception_capable(std::execution::par, _variations, predicate);
 
    return state;
 }

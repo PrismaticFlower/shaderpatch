@@ -41,7 +41,7 @@ struct std::hash<std::vector<D3D_SHADER_MACRO>> {
 
 namespace sp {
 
-const auto compiler_flags = D3DCOMPILE_DEBUG | D3DCOMPILE_OPTIMIZATION_LEVEL3;
+const auto compiler_flags = D3DCOMPILE_OPTIMIZATION_LEVEL3;
 
 using namespace std::literals;
 
