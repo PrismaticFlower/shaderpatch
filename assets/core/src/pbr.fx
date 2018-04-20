@@ -137,12 +137,11 @@ float4 main_opaque_ps(Ps_input input, const Normal_state state) : COLOR
    const float3 N = perturb_normal(normal_map, input.texcoords,
                                    normalize(input.world_normal), V);
 
-   const float shadow =
-      state.shadowed ? tex2Dproj(shadow_map, input.shadow_texcoords).a : 1.0;
+   const float shadow = tex2Dproj(shadow_map, input.shadow_texcoords).a;
    const float ao = tex2D(ao_map, input.texcoords).r * ao_strength;
 
    float3 color =
-      light::pbr::calculate(N, V, input.world_position, albedo, metallicness, roughness, 
+      light::pbr::calculate(N, V, input.world_position, albedo, metallicness, roughness,
                             ao, shadow);
 
    if (use_emissive_map) {
