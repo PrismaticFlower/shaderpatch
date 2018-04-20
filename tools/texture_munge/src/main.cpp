@@ -3,6 +3,7 @@
 #include "synced_io.hpp"
 
 #include <iomanip>
+#include <regex>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -23,16 +24,22 @@ int main(int arg_count, char* args[])
    bool help = false;
    auto output_dir = "./"s;
    auto source_dir = "./"s;
+   auto input_filter = R"(.+\.tex)"s;
 
    // clang-format off
 
    auto cli = Help{help}
       | Opt{output_dir, "output directory"s}
-      ["--outputdir"s]
+      ["--outputdir"s]["-o"s]
       ("Path to place munged files in."s)
       | Opt{source_dir, "source directory"s}
-      ["--sourcedir"s]
-      ("Path to search for input .tga.yml files."s);
+      ["--sourcedir"s]["-s"s]
+      ("Path to search for input texture files."s)
+      | Opt{input_filter, "input filter"s}
+      ["--inputfilter"s]["-f"s]
+      ("Regular Expression (EMCA Script syntax) Filter to test files in the source "
+       "directory against. Any file that passes will be considered a YAML config file "
+       " for a texture. Default is \".+\\.tex\""s);
 
    // clang-format on
 
@@ -66,8 +73,10 @@ int main(int arg_count, char* args[])
    for (auto& entry : fs::recursive_directory_iterator{source_dir}) {
       if (!fs::is_regular_file(entry.path())) continue;
 
-      if (entry.path().extension() != ".yml"s) continue;
-      if (entry.path().stem().extension() != ".tga"s) continue;
+      if (!std::regex_match(entry.path().string(),
+                            std::regex{input_filter, std::regex::ECMAScript})) {
+         continue;
+      }
 
       munge_texture(entry.path(), output_dir);
    }

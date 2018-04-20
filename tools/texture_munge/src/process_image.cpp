@@ -6,6 +6,7 @@
 
 #include <cstring>
 #include <iomanip>
+#include <memory>
 #include <stdexcept>
 #include <string_view>
 
@@ -13,6 +14,9 @@
 #include <DirectXTex.h>
 #include <glm/glm.hpp>
 #include <gsl/gsl>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 namespace sp {
 
@@ -41,14 +45,13 @@ constexpr glm::uint round_next_power_of_2(glm::uint i)
    return i;
 }
 
-void check_image_resolution(const DX::ScratchImage& image)
+void check_loaded_image_size(DX::Image image)
 {
-   if (image.GetMetadata().width > min_resolution) return;
-   if (image.GetMetadata().height > min_resolution) return;
+   if (image.width > min_resolution) return;
+   if (image.height > min_resolution) return;
 
    throw compose_exception<std::invalid_argument>("Image too small is {"sv,
-                                                  image.GetMetadata().width, ',',
-                                                  image.GetMetadata().height,
+                                                  image.width, ',', image.height,
                                                   "} minimum size is {"sv, min_resolution,
                                                   ',', min_resolution, "}."sv);
 }
@@ -90,11 +93,44 @@ auto get_mip_filter_type(YAML::Node config) -> DX::TEX_FILTER_FLAGS
 
 auto load_image(const fs::path& image_file_path, bool srgb) -> DirectX::ScratchImage
 {
-   DirectX::ScratchImage loaded_image;
+   const bool hdr = stbi_is_hdr(image_file_path.string().c_str());
 
-   if (FAILED(DirectX::LoadFromTGAFile(image_file_path.c_str(), nullptr, loaded_image))) {
-      throw std::runtime_error{"Unable to open texture file."s};
+   gsl::owner<void*> image_data = nullptr;
+   const auto image_data_finaly = gsl::finally([&image_data] {
+      if (image_data) stbi_image_free(image_data);
+   });
+
+   int x = 0;
+   int y = 0;
+   int channels = 0;
+
+   if (hdr) {
+      image_data = stbi_loadf(image_file_path.string().c_str(), &x, &y, &channels, 4);
    }
+   else {
+      image_data = stbi_load(image_file_path.string().c_str(), &x, &y, &channels, 4);
+   }
+
+   if (!image_data) {
+      throw compose_exception<std::runtime_error>("Unable to open image file. reason: "sv,
+                                                  stbi_failure_reason());
+   }
+
+   DirectX::Image image;
+
+   image.width = x;
+   image.height = y;
+   image.format = hdr ? DXGI_FORMAT_R16G16B16A16_FLOAT : DXGI_FORMAT_R8G8B8A8_UNORM;
+
+   DX::ComputePitch(image.format, image.width, image.height, image.rowPitch,
+                    image.slicePitch);
+
+   image.pixels = reinterpret_cast<std::uint8_t*>(image_data);
+
+   check_loaded_image_size(image);
+
+   DirectX::ScratchImage loaded_image;
+   loaded_image.InitializeFromImage(image);
 
    if (srgb) {
       loaded_image.OverrideFormat(DX::MakeSRGB(loaded_image.GetMetadata().format));
@@ -271,8 +307,6 @@ auto process_image(YAML::Node config, fs::path image_file_path)
    Expects(fs::exists(image_file_path) && fs::is_regular_file(image_file_path));
 
    auto image = load_image(image_file_path, config["sRGB"s].as<bool>(true));
-
-   check_image_resolution(image);
 
    image = swizzle_pixel_format(std::move(image));
    image = make_image_power_of_2(std::move(image));
