@@ -1,0 +1,41 @@
+Overridden RenderType: "normal"
+
+Property Mappings:
+   BaseColor:
+      Type: vec3
+      Range: [0.0, 1.0]
+      Constant: 0.x
+     
+   Metallicness:
+      Type: scaler
+      Range: [0.0, 1.0]
+      Constant: 0.w
+
+   Roughness:
+      Type: scaler
+      Range: [0.0, 1.0]
+      Constant: 1.x
+      
+   AOStrength:
+      Type: scaler
+      Range: [0.0, 2048.0]
+      Constant: 1.y
+      
+   EmissiveStrength:
+      Type: scaler
+      Range: [0.0, 2048.0]
+      Constant: 1.z
+
+Texture Mappings:
+   AlbedoMap: 
+      Slot: 04
+   NormalMap: 
+      Slot: 05
+   MetallicRoughnessMap: 
+      Slot: 06
+   AOMap:
+      Slot: 07
+   LightMap:
+      Slot: 08
+   EmissiveMap:
+      Slot: 09

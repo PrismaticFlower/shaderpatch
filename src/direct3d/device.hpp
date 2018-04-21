@@ -1,15 +1,26 @@
 #pragma once
 
+#include "../material.hpp"
 #include "../shader_constants.hpp"
+#include "../shader_database.hpp"
+#include "../texture.hpp"
+#include "../texture_database.hpp"
 #include "../user_config.hpp"
 #include "com_ptr.hpp"
 #include "render_state_block.hpp"
+#include "shader.hpp"
 #include "shader_constant.hpp"
+#include "smart_win32_handle.hpp"
 
 #include <atomic>
 #include <chrono>
 #include <functional>
+#include <memory>
+#include <optional>
+#include <unordered_map>
 #include <vector>
+
+#include <boost/smart_ptr/local_shared_ptr.hpp>
 
 #include <d3d9.h>
 
@@ -18,7 +29,7 @@ namespace sp::direct3d {
 class Device : public IDirect3DDevice9 {
 public:
    Device(Com_ptr<IDirect3DDevice9> device, const HWND window,
-          const glm::ivec2 resolution) noexcept;
+          const glm::ivec2 resolution, const D3DCAPS9& caps) noexcept;
 
    HRESULT __stdcall QueryInterface(const IID& iid, void** object) noexcept override;
    ULONG __stdcall AddRef() noexcept override;
@@ -306,9 +317,15 @@ public:
 private:
    ~Device();
 
-   constexpr static auto water_slot = 8;
-   constexpr static auto refraction_slot = 9;
+   constexpr static auto water_slot = 12;
+   constexpr static auto refraction_slot = 13;
    constexpr static auto cubemap_projection_slot = 15;
+
+   void init_sampler_max_anisotropy() noexcept;
+
+   void refresh_material() noexcept;
+
+   void clear_material() noexcept;
 
    void bind_water_texture() noexcept;
    void bind_refraction_texture() noexcept;
@@ -331,18 +348,32 @@ private:
    glm::ivec2 _resolution;
 
    bool _water_refraction = false;
+   bool _refresh_material = true;
 
-   User_config _config{"shader patch.ini"s};
+   boost::local_shared_ptr<Material> _material;
+
+   Shader_metadata _vs_metadata;
+   Com_ptr<IDirect3DVertexShader9> _game_vertex_shader;
+   Com_ptr<IDirect3DPixelShader9> _game_pixel_shader;
+
+   User_config _config{"shader patch.yml"s};
 
    Ps_3f_shader_constant<constants::ps::fog_range> _fog_range_const;
    Ps_3f_shader_constant<constants::ps::fog_color> _fog_color_const;
    Ps_4f_shader_constant<constants::ps::rt_resolution> _rt_resolution_const;
    Vs_1f_shader_constant<constants::vs::time> _time_vs_const;
 
+   Shader_database _shaders;
+   Texture_database _textures;
+
    const std::chrono::steady_clock::time_point _device_start{
       std::chrono::steady_clock::now()};
 
    Render_state_block _state_block;
+
+   win32::Unique_handle _materials_enabled_handle;
+
+   const int _device_max_anisotropy = 1;
 
    std::atomic<ULONG> _ref_count{1};
 };

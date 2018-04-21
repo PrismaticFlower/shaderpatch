@@ -27,9 +27,13 @@ HRESULT __stdcall create_device_hook(IDirect3D9& self, UINT adapter,
    const auto result = create(self, adapter, device_type, focus_window, behavior_flags,
                               presentation_parameters, device.clear_and_assign());
 
+   D3DCAPS9 caps{};
+
+   device->GetDeviceCaps(&caps);
+
    if (result == S_OK) {
       *returned_device_interface =
-         new Device{std::move(device), focus_window, resolution};
+         new Device{std::move(device), focus_window, resolution, caps};
    }
 
    return result;

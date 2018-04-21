@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ctime>
+#include <exception>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
@@ -87,14 +88,26 @@ inline void log(const Log_level level, Args&&... args) noexcept
    // TODO: Switch this to a fold expression once VC++ supports them.
    using std::operator<<;
 
+   const auto write_out = [&](auto&& arg) {
+      stream << std::forward<decltype(arg)>(arg);
+   };
+
    [[maybe_unused]] const bool dummy_list[] = {
-      (operator<<(stream, std::forward<Args>(args)), false)...};
+      (write_out(std::forward<Args>(args)), false)...};
 
    // stream << ... << args;
 
    logger.write(stream.str());
 
    if (level == Log_level::error) logger.flush();
+}
+
+template<typename... Args>
+[[noreturn]] inline void log_and_terminate(Args&&... args)
+{
+   log(Log_level::error, std::forward<Args>(args)...);
+
+   std::terminate();
 }
 }
 

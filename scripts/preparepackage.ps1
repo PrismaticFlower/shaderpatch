@@ -1,4 +1,7 @@
-﻿if (Test-Path .\packaged) {
+﻿# Setup developer environment.
+.\scripts\setupdeveloperenvironment.ps1
+
+if (Test-Path .\packaged) {
   Remove-Item -Path .\packaged -Force -Recurse
 }
 
@@ -7,26 +10,14 @@ md .\packaged
 md .\packaged\data\
 md .\packaged\data\shaderpatch\
 md .\packaged\data\shaderpatch\bin\
-md .\packaged\data\shaderpatch\textures\
-md .\packaged\data\shaderpatch\shaders\
 md .\packaged\data\_lvl_pc\
 
 copy .\LICENSE ".\packaged\shader patch license.txt"
 copy .\third_party.md ".\packaged\shader patch acknowledgements.txt"
 
-# Find and import Developer Command Prompt environment.
-$env:path += ";${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\"
-
+# Copy over redistributable
 $installationPath = vswhere.exe -prerelease -latest -property installationPath
 
-if ($installationPath -and (test-path "$installationPath\Common7\Tools\vsdevcmd.bat")) {
-  & "${env:COMSPEC}" /s /c "`"$installationPath\Common7\Tools\vsdevcmd.bat`" -no_logo && set" | foreach-object {
-    $name, $value = $_ -split '=', 2
-    set-content env:\"$name" $value
-  }
-}
-
-# Copy over redistributable
 copy "${installationPath}\VC\Redist\MSVC\14.*\VCRedist_x86.exe" ".\packaged\data\shaderpatch\bin\VCRedist_x86.exe"
 
 # Build
@@ -38,25 +29,27 @@ copy ".\bin\Release\Microsoft.Expression.Drawing.dll" .\packaged\
 
 # Copy over end-user tools.
 copy ".\bin\Release\lvl_pack.exe" ".\packaged\data\shaderpatch\bin\lvl_pack.exe"
+copy ".\bin\Release\material_munge.exe" ".\packaged\data\shaderpatch\bin\material_munge.exe"
 copy ".\bin\Release\shader_compiler.exe" ".\packaged\data\shaderpatch\bin\shader_compiler.exe"
+copy ".\bin\Release\sp_texture_munge.exe" ".\packaged\data\shaderpatch\bin\sp_texture_munge.exe"
 
 # Copy Assets
-copy '.\assets\shader patch.ini' .\packaged\
+copy '.\assets\material_descriptions\' '.\packaged\data\shaderpatch\bin\material_descriptions\' -Recurse
+copy  '.\assets\textures\' '.\packaged\data\shaderpatch\textures\' -Recurse
+copy '.\assets\shader patch.yml' .\packaged\
 copy '.\assets\shader patch user readme.txt' '.\packaged\shader patch readme.txt'
 
+# Copy core.lvl source files.
+copy '.\assets\core\' '.\packaged\data\shaderpatch\core\' -Recurse
 
-Copy-Item -Path .\assets\textures\* -Destination .\packaged\data\shaderpatch\textures -Recurse
-
-# Copy Shaders.
-Copy-Item -Path .\assets\shaders\* -Destination .\packaged\data\shaderpatch\shaders -Recurse
-
-if (Test-Path -Path ".\packaged\data\shaderpatch\shaders\build") 
+if (Test-Path -Path ".\packaged\data\shaderpatch\core\munged") 
 { 
-   del ".\packaged\data\shaderpatch\shaders\build" -Recurse
+   del ".\packaged\data\shaderpatch\core\munged" -Recurse
 }
 
-del ".\packaged\data\shaderpatch\shaders\.gitignore"
-del ".\packaged\data\shaderpatch\shaders\munged\.gitignore"
-del ".\packaged\data\shaderpatch\shaders\munged\*.shader"
+if (Test-Path -Path ".\packaged\data\shaderpatch\core\build") 
+{ 
+   del ".\packaged\data\shaderpatch\core\build" -Recurse
+}
 
-Move-Item -Path .\packaged\data\shaderpatch\shaders\core.lvl -Destination .\packaged\data\_lvl_pc\core.lvl
+Move-Item -Path .\packaged\data\shaderpatch\core\core.lvl -Destination .\packaged\data\_lvl_pc\core.lvl

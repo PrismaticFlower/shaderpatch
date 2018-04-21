@@ -1,0 +1,194 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <None Include="definitions\decal.json">
+      <Filter>definitions</Filter>
+    </None>
+    <None Include="definitions\filtercopy.json">
+      <Filter>definitions</Filter>
+    </None>
+    <None Include="definitions\flare.json">
+      <Filter>definitions</Filter>
+    </None>
+    <None Include="definitions\hdr.json">
+      <Filter>definitions</Filter>
+    </None>
+    <None Include="definitions\interface.json">
+      <Filter>definitions</Filter>
+    </None>
+    <None Include="definitions\lightbeam.json">
+      <Filter>definitions</Filter>
+    </None>
+    <None Include="definitions\normal.json">
+      <Filter>definitions</Filter>
+    </None>
+    <None Include="definitions\normal_terrain.json">
+      <Filter>definitions</Filter>
+    </None>
+    <None Include="definitions\ocean.json">
+      <Filter>definitions</Filter>
+    </None>
+    <None Include="definitions\particle.json">
+      <Filter>definitions</Filter>
+    </None>
+    <None Include="definitions\perpixeldiffuselighting.json">
+      <Filter>definitions</Filter>
+    </None>
+    <None Include="definitions\prereflection.json">
+      <Filter>definitions</Filter>
+    </None>
+    <None Include="definitions\rain.json">
+      <Filter>definitions</Filter>
+    </None>
+    <None Include="definitions\refraction.json">
+      <Filter>definitions</Filter>
+    </None>
+    <None Include="definitions\sample.json">
+      <Filter>definitions</Filter>
+    </None>
+    <None Include="definitions\shadowquad.json">
+      <Filter>definitions</Filter>
+    </None>
+    <None Include="definitions\shield.json">
+      <Filter>definitions</Filter>
+    </None>
+    <None Include="definitions\skyfog.json">
+      <Filter>definitions</Filter>
+    </None>
+    <None Include="definitions\specularlighting.json">
+      <Filter>definitions</Filter>
+    </None>
+    <None Include="definitions\sprite.json">
+      <Filter>definitions</Filter>
+    </None>
+    <None Include="definitions\stencilshadow.json">
+      <Filter>definitions</Filter>
+    </None>
+    <None Include="definitions\water.json">
+      <Filter>definitions</Filter>
+    </None>
+    <None Include="definitions\zprepass.json">
+      <Filter>definitions</Filter>
+    </None>
+    <None Include="src\decal.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\ext_constants_list.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\filtercopy.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\flare.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\fog_utilities.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\hdr.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\interface.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\lightbeam.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\lighting_utilities.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\normal.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\normal_terrain.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\ocean.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\particle.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\perpixeldiffuselighting.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\pixel_utilities.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\prereflection.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\rain.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\refraction.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\sample.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\shadowquad.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\shield.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\skyfog.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\specularlighting.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\sprite.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\stencilshadow.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\transform_utilities.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\vertex_utilities.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\water.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\zprepass.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\constants_list.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="core.req" />
+    <None Include="definitions\patch\pbr-basic.json">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="src\pbr.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\normal_entrypoint_defs.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="definitions\patch\pbr.json">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="definitions\patch\pbr-emissive.json">
+      <Filter>definitions\patch</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="definitions">
+      <UniqueIdentifier>{160f9fdf-0523-4fb1-a442-5e643a555dbb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{85d5cf72-b134-4bdb-a2fe-8ec546486129}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="definitions\patch">
+      <UniqueIdentifier>{d3186a52-bf6a-47d1-90d2-ad874b6b82dd}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="munge_core.ps1" />
+  </ItemGroup>
+</Project>

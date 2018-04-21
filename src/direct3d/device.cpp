@@ -4,12 +4,16 @@
 #include "../imgui/imgui_impl_dx9.h"
 #include "../input_hooker.hpp"
 #include "../logger.hpp"
+#include "../material_resource.hpp"
+#include "../resource_handle.hpp"
 #include "../shader_constants.hpp"
+#include "../shader_loader.hpp"
 #include "../texture_loader.hpp"
 #include "../window_helpers.hpp"
+#include "patch_texture.hpp"
 #include "sampler_state_block.hpp"
-#include "shader.hpp"
 #include "shader_metadata.hpp"
+#include "volume_resource.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -18,7 +22,6 @@
 #include <string_view>
 #include <vector>
 
-#include <INIReader.h>
 #include <gsl/gsl>
 
 using namespace std::literals;
@@ -56,11 +59,21 @@ void set_active_light_constants(IDirect3DDevice9& device, Shader_flags flags) no
 }
 
 Device::Device(Com_ptr<IDirect3DDevice9> device, const HWND window,
-               const glm::ivec2 resolution) noexcept
-   : _device{std::move(device)}, _window{window}, _resolution{resolution}
+               const glm::ivec2 resolution, const D3DCAPS9& caps) noexcept
+   : _device{std::move(device)},
+     _window{window},
+     _resolution{resolution},
+     _device_max_anisotropy{gsl::narrow_cast<int>(caps.MaxAnisotropy)}
 {
    _water_texture =
       load_dds_from_file(*_device, L"data/shaderpatch/textures/water.dds"s);
+
+   if (_config.rendering.custom_materials) {
+      _materials_enabled_handle = win32::Unique_handle{
+         CreateFileW(L"data/shaderpatch/materials_enabled", GENERIC_READ | GENERIC_WRITE,
+                     FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                     nullptr, OPEN_ALWAYS, FILE_FLAG_DELETE_ON_CLOSE, nullptr)};
+   }
 }
 
 Device::~Device()
@@ -103,6 +116,10 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
    _refraction_texture.reset(nullptr);
 
+   _textures.clean_lost_textures();
+
+   _material = nullptr;
+
    // reset device
 
    const auto result = _device->Reset(presentation_parameters);
@@ -113,6 +130,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
    _window_dirty = true;
    _fake_device_loss = false;
+   _refresh_material = true;
 
    _resolution.x = presentation_parameters->BackBufferWidth;
    _resolution.y = presentation_parameters->BackBufferHeight;
@@ -135,6 +153,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
    bind_water_texture();
    bind_refraction_texture();
+   init_sampler_max_anisotropy();
 
    if (!_imgui_bootstrapped) {
       ImGui_ImplDX9_Init(_window, _device.get());
@@ -146,7 +165,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
       set_input_window(GetCurrentThreadId(), _window);
 
-      set_input_hotkey(_config.debugscreen.activate_key);
+      set_input_hotkey(_config.debug.activate_key);
       set_input_hotkey_func([this] {
          _imgui_active = !_imgui_active;
 
@@ -232,9 +251,38 @@ HRESULT Device::CreateDepthStencilSurface(UINT width, UINT height, D3DFORMAT for
 
 HRESULT Device::SetTexture(DWORD stage, IDirect3DBaseTexture9* texture) noexcept
 {
-   if (texture == nullptr) return _device->SetTexture(stage, nullptr);
+   if (texture == nullptr) {
+      if (stage == 0 && _material) {
+         clear_material();
+      }
 
-   if (auto type = texture->GetType(); type == D3DRTYPE_CUBETEXTURE && stage == 2) {
+      return _device->SetTexture(stage, nullptr);
+   }
+
+   auto type = texture->GetType();
+
+   // Custom Material Handling
+   if (stage == 0 && type == Material_resource::id) {
+      auto& material_resource = static_cast<Material_resource&>(*texture);
+      _material = material_resource.get_material();
+
+      _material->bind();
+
+      _refresh_material = true;
+
+      return S_OK;
+   }
+   else if (stage != 0 && type == Material_resource::id) {
+      log(Log_level::warning, "Attempt to bind material to texture slot other than 0."sv);
+
+      return S_OK;
+   }
+   else if (stage == 0 && _material) {
+      clear_material();
+   }
+
+   // Projected Cube Texture Workaround
+   if (type == D3DRTYPE_CUBETEXTURE) {
       set_ps_bool_constant<constants::ps::cubemap_projection>(*_device, true);
 
       create_filled_sampler_state_block(*_device, 2).apply(*_device, cubemap_projection_slot);
@@ -262,6 +310,73 @@ HRESULT Device::SetRenderTarget(DWORD render_target_index,
    }
 
    return _device->SetRenderTarget(render_target_index, render_target);
+}
+
+HRESULT Device::CreateVolumeTexture(UINT width, UINT height, UINT depth, UINT levels,
+                                    DWORD usage, D3DFORMAT format, D3DPOOL pool,
+                                    IDirect3DVolumeTexture9** volume_texture,
+                                    HANDLE* shared_handle) noexcept
+{
+   if (const auto type = static_cast<Volume_resource_type>(width);
+       type == Volume_resource_type::shader) {
+      auto post_upload = [&, this](gsl::span<std::byte> data) {
+         try {
+            auto [rendertype, shader_group] =
+               load_shader(ucfb::Reader{data}, *_device);
+
+            _shaders.add(rendertype, std::move(shader_group));
+         }
+         catch (std::exception& e) {
+            log(Log_level::error,
+                "Exception occured while loading shader resource: "sv, e.what());
+         }
+      };
+
+      auto uploader =
+         make_resource_uploader(unpack_resource_size(height, depth), post_upload);
+
+      *volume_texture = uploader.release();
+
+      return S_OK;
+   }
+   else if (type == Volume_resource_type::texture) {
+      auto handle_resource =
+         [&, this](gsl::span<std::byte> data) -> std::shared_ptr<Texture> {
+         try {
+            auto [d3d_texture, name, sampler_info] =
+               load_patch_texture(ucfb::Reader{data}, *_device, D3DPOOL_MANAGED);
+
+            auto texture =
+               std::make_shared<Texture>(_device, std::move(d3d_texture), sampler_info);
+
+            _textures.add(name, texture);
+
+            return texture;
+         }
+         catch (std::exception& e) {
+            log(Log_level::error, "Exception occured while loading texture: "sv,
+                e.what());
+
+            return nullptr;
+         }
+      };
+
+      auto handler = make_resource_handler(unpack_resource_size(height, depth),
+                                           handle_resource);
+
+      *volume_texture = handler.release();
+
+      return S_OK;
+   }
+   else if (type == Volume_resource_type::material) {
+      *volume_texture = new Material_resource{unpack_resource_size(height, depth),
+                                              _device, _shaders, _textures};
+
+      return S_OK;
+   }
+
+   return _device->CreateVolumeTexture(width, height, depth, levels, usage, format,
+                                       pool, volume_texture, shared_handle);
 }
 
 HRESULT Device::CreateTexture(UINT width, UINT height, UINT levels, DWORD usage,
@@ -322,24 +437,50 @@ HRESULT Device::CreatePixelShader(const DWORD* function,
 
 HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
 {
-   if (!shader) return _device->SetVertexShader(nullptr);
+   if (!shader) {
+      _game_vertex_shader = nullptr;
+      return _device->SetVertexShader(nullptr);
+   }
 
-   auto* const vertex_shader = static_cast<Vertex_shader*>(shader);
+   auto& vertex_shader = static_cast<Vertex_shader&>(*shader);
 
-   set_active_light_constants(*_device, vertex_shader->metadata.shader_flags);
+   _vs_metadata = vertex_shader.metadata;
+   vertex_shader.get()->AddRef();
+   _game_vertex_shader.reset(vertex_shader.get());
 
-   return _device->SetVertexShader(&vertex_shader->get());
+   if (_material) {
+      _refresh_material = true;
+
+      return S_OK;
+   }
+
+   set_active_light_constants(*_device, vertex_shader.metadata.shader_flags);
+
+   return _device->SetVertexShader(vertex_shader.get());
 }
 
 HRESULT Device::SetPixelShader(IDirect3DPixelShader9* shader) noexcept
 {
    if (_on_ps_shader_set) _on_ps_shader_set();
 
-   if (!shader) return _device->SetPixelShader(nullptr);
+   if (!shader) {
+      _game_pixel_shader = nullptr;
+      return _device->SetPixelShader(nullptr);
+   }
 
-   auto* const pixel_shader = static_cast<Pixel_shader*>(shader);
+   auto& pixel_shader = static_cast<Pixel_shader&>(*shader);
+   const auto& metadata = pixel_shader.metadata;
 
-   if (pixel_shader->metadata.name == "shield"sv) {
+   pixel_shader.get()->AddRef();
+   _game_pixel_shader.reset(pixel_shader.get());
+
+   if (_material) {
+      _refresh_material = true;
+
+      return S_OK;
+   }
+
+   if (metadata.rendertype == "shield"sv) {
       update_refraction_texture();
 
       _device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
@@ -352,10 +493,9 @@ HRESULT Device::SetPixelShader(IDirect3DPixelShader9* shader) noexcept
          _on_ps_shader_set = nullptr;
       };
    }
-   else if (!_water_refraction && pixel_shader->metadata.name == "water"sv) {
-      if ((pixel_shader->metadata.entry_point ==
-           "normal_map_distorted_reflection_ps") ||
-          (pixel_shader->metadata.entry_point ==
+   else if (!_water_refraction && metadata.rendertype == "water"sv) {
+      if ((metadata.entry_point == "normal_map_distorted_reflection_ps") ||
+          (metadata.entry_point ==
            "normal_map_distorted_reflection_specular_ps")) {
          update_refraction_texture();
 
@@ -363,7 +503,7 @@ HRESULT Device::SetPixelShader(IDirect3DPixelShader9* shader) noexcept
       }
    }
 
-   return _device->SetPixelShader(&pixel_shader->get());
+   return _device->SetPixelShader(pixel_shader.get());
 }
 
 HRESULT Device::SetRenderState(D3DRENDERSTATETYPE state, DWORD value) noexcept
@@ -440,6 +580,57 @@ HRESULT Device::SetVertexShaderConstantF(UINT start_register, const float* const
                                             vector4f_count);
 }
 
+HRESULT Device::DrawPrimitive(D3DPRIMITIVETYPE primitive_type,
+                              UINT start_vertex, UINT primitive_count) noexcept
+{
+   refresh_material();
+
+   return _device->DrawPrimitive(primitive_type, start_vertex, primitive_count);
+}
+
+HRESULT Device::DrawIndexedPrimitive(D3DPRIMITIVETYPE primitive_type,
+                                     INT base_vertex_index,
+                                     UINT min_vertex_index, UINT num_vertices,
+                                     UINT start_Index, UINT prim_Count) noexcept
+{
+   refresh_material();
+
+   return _device->DrawIndexedPrimitive(primitive_type, base_vertex_index,
+                                        min_vertex_index, num_vertices,
+                                        start_Index, prim_Count);
+}
+
+void Device::init_sampler_max_anisotropy() noexcept
+{
+   for (int i = 0; i < 16; ++i) {
+      _device->SetSamplerState(i, D3DSAMP_MAXANISOTROPY,
+                               std::clamp(_config.rendering.anisotropic_filtering,
+                                          1, _device_max_anisotropy));
+   }
+}
+
+void Device::refresh_material() noexcept
+{
+   if (std::exchange(_refresh_material, false) && _material) {
+      if (_vs_metadata.rendertype == _material->target_rendertype()) {
+         _material->update(_vs_metadata.state_name, _vs_metadata.shader_flags);
+      }
+   }
+}
+
+void Device::clear_material() noexcept
+{
+   if (_material) {
+      _material = nullptr;
+      _refresh_material = false;
+
+      _device->SetVertexShader(_game_vertex_shader.get());
+      _device->SetPixelShader(_game_pixel_shader.get());
+
+      set_active_light_constants(*_device, _vs_metadata.shader_flags);
+   }
+}
+
 void Device::bind_water_texture() noexcept
 {
    _device->SetTexture(water_slot, _water_texture.get());
@@ -449,7 +640,6 @@ void Device::bind_water_texture() noexcept
    _device->SetSamplerState(water_slot, D3DSAMP_MAGFILTER, D3DTEXF_ANISOTROPIC);
    _device->SetSamplerState(water_slot, D3DSAMP_MINFILTER, D3DTEXF_ANISOTROPIC);
    _device->SetSamplerState(water_slot, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR);
-   _device->SetSamplerState(water_slot, D3DSAMP_MAXANISOTROPY, 0x8);
 }
 
 void Device::bind_refraction_texture() noexcept

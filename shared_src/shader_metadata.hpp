@@ -20,7 +20,8 @@
 namespace sp {
 
 struct Shader_metadata {
-   std::string name;
+   std::string rendertype;
+   std::string state_name;
    std::string entry_point;
    std::string target;
 
@@ -33,7 +34,8 @@ inline auto read_shader_metadata(std::vector<std::uint8_t> msgpack) noexcept -> 
 
    const auto json = nlohmann::json::from_msgpack(msgpack, 0);
 
-   Shader_metadata data{json["name"s], json["entry_point"s], json["target"s]};
+   Shader_metadata data{json["rendertype"s], json["state_name"s],
+                        json["entry_point"s], json["target"s]};
 
    data.shader_flags =
       static_cast<Shader_flags>(std::uint32_t{json["shader_flags"s]});
@@ -70,15 +72,17 @@ inline auto get_shader_metadata(const DWORD* const bytecode) noexcept
 }
 
 inline auto embed_meta_data(const nlohmann::json& extra_metadata,
-                            std::string_view rendertype, std::string_view entry_point,
-                            std::string_view target, Shader_flags flags,
-                            gsl::span<const DWORD> bytecode_span) -> std::vector<DWORD>
+                            std::string_view rendertype, std::string_view state_name,
+                            std::string_view entry_point, std::string_view target,
+                            Shader_flags flags, gsl::span<const DWORD> bytecode_span)
+   -> std::vector<DWORD>
 {
    using namespace std::literals;
 
    nlohmann::json meta = extra_metadata;
 
-   meta["name"s] = std::string{rendertype};
+   meta["rendertype"s] = std::string{rendertype};
+   meta["state_name"s] = std::string{state_name};
    meta["entry_point"s] = std::string{entry_point};
    meta["target"s] = std::string{target};
    meta["shader_flags"s] = static_cast<std::uint32_t>(flags);

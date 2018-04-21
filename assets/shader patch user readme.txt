@@ -35,5 +35,5 @@ To manually uninstall remove the files you copied in and restore your own backup
 
 ### Overriding Display Mode ###
 
-Shader Patch can override the display settings used by the game, see and edit 'shader patch.ini' in you
+Shader Patch can override the display settings used by the game, see and edit 'shader patch.yml' in you
 game directory for more information.

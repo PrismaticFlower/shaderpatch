@@ -1,8 +1,11 @@
 
 #include "game_compiler.hpp"
+#include "compiler_helpers.hpp"
+#include "compose_exception.hpp"
 #include "magic_number.hpp"
 #include "shader_metadata.hpp"
 #include "shader_variations.hpp"
+#include "synced_io.hpp"
 #include "ucfb_writer.hpp"
 
 #include <fstream>
@@ -21,83 +24,50 @@ namespace fs = boost::filesystem;
 
 namespace sp {
 
-namespace {
-
-template<typename... Args>
-std::size_t compiler_cache_hash(Args&&... args)
+Game_compiler::Game_compiler(nlohmann::json definition, const fs::path& definition_path,
+                             const fs::path& source_file_dir, const fs::path& output_dir)
 {
-   const auto hash = [](std::size_t& seed, auto value) {
-      std::hash<std::remove_reference_t<decltype(value)>> hasher{};
-      seed ^= hasher(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-   };
+   Expects(fs::is_directory(source_file_dir) && fs::is_directory(output_dir));
 
-   std::size_t seed = 0;
+   _source_path =
+      source_file_dir /
+      definition.value("source_name"s,
+                       definition_path.stem().replace_extension(".fx"s).string());
 
-   (hash(seed, std::forward<Args>(args)), ...);
-
-   return seed;
-}
-
-gsl::span<DWORD> make_dword_span(ID3DBlob& blob)
-{
-   if (blob.GetBufferSize() % 4) {
-      throw std::runtime_error{"Resulting shader bytecode was bad."s};
+   if (!fs::exists(_source_path)) {
+      throw compose_exception<std::runtime_error>("Source file "sv, _source_path,
+                                                  " does not exist"sv);
    }
 
-   return gsl::make_span<DWORD>(static_cast<DWORD*>(blob.GetBufferPointer()),
-                                static_cast<std::ptrdiff_t>(blob.GetBufferSize()) / 4);
-}
+   const auto output_path =
+      output_dir / definition_path.stem().replace_extension(".shader"s);
 
-auto read_source_file(std::string_view file_name) -> std::string
-{
-   const auto path = fs::path{std::cbegin(file_name), std::cend(file_name)};
-
-   if (!fs::exists(path)) {
-      throw std::runtime_error{"Source file does not exist."s};
+   if (fs::exists(output_path) && (std::max(fs::last_write_time(definition_path),
+                                            date_test_shader_file(_source_path)) <
+                                   fs::last_write_time(output_path))) {
+      return;
    }
 
-   return {std::istreambuf_iterator<char>(std::ifstream{path.string(), std::ios::binary}),
-           std::istreambuf_iterator<char>()};
-}
-
-auto read_definition_file(std::string_view file_name) -> nlohmann::json
-{
-   const auto path = fs::path{std::cbegin(file_name), std::cend(file_name)};
-
-   if (!fs::exists(path)) {
-      throw std::runtime_error{"Source file does not exist."s};
-   }
-
-   std::ifstream file{path.string()};
-
-   nlohmann::json config;
-   file >> config;
-
-   return config;
-}
-}
-
-const auto compiler_flags = D3DCOMPILE_DEBUG | D3DCOMPILE_OPTIMIZATION_LEVEL3;
-
-Game_compiler::Game_compiler(std::string definition_path, std::string source_path)
-   : _definition_path{std::move(definition_path)}, _source_path{std::move(source_path)}
-{
-   _source = read_source_file(_source_path);
-
-   const auto definition = read_definition_file(_definition_path);
+   synced_print("Munging shader "sv, definition_path.filename().string(), "..."sv);
 
    _render_type = definition["rendertype"];
+
+   fs::load_string_file(_source_path, _source);
 
    const auto metadata = definition.value("metadata", nlohmann::json::object());
 
    for (const auto& state_def : definition["states"]) {
       _states.emplace_back(compile_state(state_def, metadata));
    }
+
+   save(output_path);
 }
 
-void Game_compiler::save(std::string_view output_path)
+void Game_compiler::save(const boost::filesystem::path& output_path)
 {
-   Ucfb_writer writer{output_path};
+   auto file = ucfb::open_file_for_output(output_path.string());
+
+   ucfb::Writer writer{file};
 
    auto shdr = writer.emplace_child("SHDR"_mn);
 
@@ -162,16 +132,18 @@ auto Game_compiler::compile_state(const nlohmann::json& state_def,
    auto metadata = state_def.value("metadata", nlohmann::json::object());
    metadata.update(parent_metadata);
 
+   const std::string state_name = state_def["name"s];
+
    for (const auto& pass_def : state_def["passes"]) {
-      passes.emplace_back(compile_pass(pass_def, metadata));
+      passes.emplace_back(compile_pass(pass_def, metadata, state_name));
    }
 
    return state;
 }
 
 auto Game_compiler::compile_pass(const nlohmann::json& pass_def,
-                                 const nlohmann::json& parent_metadata)
-   -> Game_compiler::Pass
+                                 const nlohmann::json& parent_metadata,
+                                 std::string_view state_name) -> Game_compiler::Pass
 {
    Pass pass{};
 
@@ -191,11 +163,12 @@ auto Game_compiler::compile_pass(const nlohmann::json& pass_def,
    const std::string ps_entry_point = pass_def["pixel_shader"];
 
    for (const auto& variation : shader_variations) {
-      pass.vs_shaders.emplace_back(
-         compile_vertex_shader(metadata, vs_entry_point, vs_target, variation));
+      pass.vs_shaders.emplace_back(compile_vertex_shader(metadata, vs_entry_point, vs_target,
+                                                         variation, state_name));
    }
 
-   pass.ps_index = compile_pixel_shader(metadata, ps_entry_point, ps_target);
+   pass.ps_index =
+      compile_pixel_shader(metadata, ps_entry_point, ps_target, state_name);
 
    return pass;
 }
@@ -203,7 +176,8 @@ auto Game_compiler::compile_pass(const nlohmann::json& pass_def,
 auto Game_compiler::compile_vertex_shader(const nlohmann::json& parent_metadata,
                                           std::string_view entry_point,
                                           std::string_view target,
-                                          const Shader_variation& variation) -> Vertex_shader_ref
+                                          const Shader_variation& variation,
+                                          std::string_view state_name) -> Vertex_shader_ref
 {
    const auto key = compiler_cache_hash(entry_point, target, variation.flags);
 
@@ -217,7 +191,7 @@ auto Game_compiler::compile_vertex_shader(const nlohmann::json& parent_metadata,
    Com_ptr<ID3DBlob> shader;
 
    auto result =
-      D3DCompile(_source.data(), _source.length(), _source_path.data(),
+      D3DCompile(_source.data(), _source.length(), _source_path.string().data(),
                  variation.definitions.data(), D3D_COMPILE_STANDARD_FILE_INCLUDE,
                  entry_point.data(), target.data(), compiler_flags, NULL,
                  shader.clear_and_assign(), error_message.clear_and_assign());
@@ -229,16 +203,17 @@ auto Game_compiler::compile_vertex_shader(const nlohmann::json& parent_metadata,
       std::cout << static_cast<char*>(error_message->GetBufferPointer());
    }
 
-   _vs_shaders.emplace_back(embed_meta_data(parent_metadata, _render_type,
-                                            entry_point, target, variation.flags,
-                                            make_dword_span(*shader)));
+   _vs_shaders.emplace_back(
+      embed_meta_data(parent_metadata, _render_type, state_name, entry_point,
+                      target, variation.flags, make_dword_span(*shader)));
 
    return _vs_cache[key];
 }
 
 auto Game_compiler::compile_pixel_shader(const nlohmann::json& parent_metadata,
                                          std::string_view entry_point,
-                                         std::string_view target) -> Pixel_shader_ref
+                                         std::string_view target,
+                                         std::string_view state_name) -> Pixel_shader_ref
 {
    const auto key = compiler_cache_hash(entry_point, target);
 
@@ -252,8 +227,8 @@ auto Game_compiler::compile_pixel_shader(const nlohmann::json& parent_metadata,
    Com_ptr<ID3DBlob> shader;
 
    auto result =
-      D3DCompile(_source.data(), _source.length(), _source_path.data(), nullptr,
-                 D3D_COMPILE_STANDARD_FILE_INCLUDE, entry_point.data(),
+      D3DCompile(_source.data(), _source.length(), _source_path.string().data(),
+                 nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, entry_point.data(),
                  target.data(), compiler_flags, NULL, shader.clear_and_assign(),
                  error_message.clear_and_assign());
 
@@ -264,8 +239,9 @@ auto Game_compiler::compile_pixel_shader(const nlohmann::json& parent_metadata,
       std::cout << static_cast<char*>(error_message->GetBufferPointer());
    }
 
-   _ps_shaders.emplace_back(embed_meta_data(parent_metadata, _render_type, entry_point,
-                                            target, {}, make_dword_span(*shader)));
+   _ps_shaders.emplace_back(embed_meta_data(parent_metadata, _render_type,
+                                            state_name, entry_point, target, {},
+                                            make_dword_span(*shader)));
 
    return _ps_cache[key];
 }

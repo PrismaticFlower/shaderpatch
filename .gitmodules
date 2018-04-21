@@ -4,3 +4,7 @@
 [submodule "submodules/vcpkg"]
 	path = submodules/vcpkg
 	url = https://github.com/Microsoft/vcpkg
+[submodule "submodules/Compressonator"]
+	path = submodules/Compressonator
+	url = https://github.com/SleepKiller/Compressonator
+   shallow = 1

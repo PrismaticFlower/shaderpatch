@@ -15,14 +15,16 @@ constexpr auto rt_resolution = 53u;
 
 constexpr auto projection_matrix = 54u;
 
-// custom shader constants range whose meaning depends on the active shader
-constexpr auto custom_start = 60u;
-constexpr auto custom_end = 223u;
+constexpr auto material_constants_start = 128u;
+constexpr auto material_constants_end = 136u;
 }
 
 // extension vs constants
 namespace vs {
 constexpr auto time = 97u;
+
+constexpr auto material_constants_start = 128u;
+constexpr auto material_constants_end = 136u;
 }
 
 // stock vertex shader constants

@@ -45,6 +45,12 @@
     <ClCompile Include="src\direct3d\check_required_features.cpp">
       <Filter>src\direct3d</Filter>
     </ClCompile>
+    <ClCompile Include="src\shader_loader.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\material.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -77,15 +83,6 @@
     <ClInclude Include="src\imgui\imgui_internal.h">
       <Filter>src\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="src\imgui\stb_rect_pack.h">
-      <Filter>src\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\imgui\stb_textedit.h">
-      <Filter>src\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\imgui\stb_truetype.h">
-      <Filter>src\imgui</Filter>
-    </ClInclude>
     <ClInclude Include="src\input_hooker.hpp">
       <Filter>src</Filter>
     </ClInclude>
@@ -109,6 +106,30 @@
     </ClInclude>
     <ClInclude Include="src\direct3d\sampler_state_block.hpp">
       <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader_database.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader_program.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader_loader.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\texture.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\resource_handle.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\material_resource.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\material.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\texture_database.hpp">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

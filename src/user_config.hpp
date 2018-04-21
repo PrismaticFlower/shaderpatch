@@ -3,50 +3,35 @@
 #include "logger.hpp"
 
 #include <cstdint>
+#include <iomanip>
 #include <string>
+#include <string_view>
 
-#include <INIReader.h>
 #include <glm/glm.hpp>
+
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#pragma warning(disable : 4127)
+
+#include <yaml-cpp/yaml.h>
+#pragma warning(pop)
 
 namespace sp {
 
 struct User_config {
    User_config() = default;
 
-   explicit User_config(std::string path) noexcept
+   explicit User_config(const std::string& path) noexcept
    {
       using namespace std::literals;
 
-      INIReader reader{path};
-
-      if (reader.ParseError() < 0) {
-         log(Log_level::warning, "Failed to parse config file \'",
-             "shader patch.ini"s, '\'');
+      try {
+         parse_file(path);
       }
-
-      display.enabled = reader.GetBoolean("display"s, "Enabled"s, false);
-      display.windowed = reader.GetBoolean("display"s, "Windowed"s, false);
-      display.borderless = reader.GetBoolean("display"s, "Borderless"s, true);
-      display.resolution.x = reader.GetInteger("display"s, "Width"s, 800);
-      display.resolution.y = reader.GetInteger("display"s, "Height"s, 600);
-
-      rendering.high_res_reflections =
-         reader.GetBoolean("rendering", "HighResolutionReflections"s, true);
-
-      auto reflection_scale =
-         reader.GetReal("rendering", "ReflectionBufferScale"s, 1.0);
-
-      rendering.reflection_buffer_factor =
-         static_cast<int>(1.0 / glm::clamp(reflection_scale, 0.01, 1.0));
-
-      auto refraction_scale =
-         reader.GetReal("rendering", "RefractionBufferScale"s, 0.5);
-
-      rendering.refraction_buffer_factor =
-         static_cast<int>(1.0 / glm::clamp(refraction_scale, 0.01, 1.0));
-
-      debugscreen.activate_key =
-         reader.GetInteger("debugscreen"s, "ActivateVirtualKey"s, 0);
+      catch (std::exception& e) {
+         log(Log_level::warning, "Failed to read config file "sv,
+             std::quoted(path), ". reason:"sv, e.what());
+      }
    }
 
    struct {
@@ -59,13 +44,54 @@ struct User_config {
 
    struct {
       bool high_res_reflections = true;
+      bool custom_materials = true;
 
       int reflection_buffer_factor = 1;
       int refraction_buffer_factor = 2;
+
+      int anisotropic_filtering = 1;
    } rendering;
 
    struct {
       std::uintptr_t activate_key{0};
-   } debugscreen;
+   } debug;
+
+private:
+   void parse_file(const std::string& path)
+   {
+      using namespace std::literals;
+
+      const auto config = YAML::LoadFile(path);
+
+      display.enabled = config["Display"s]["Enabled"s].as<bool>();
+      display.windowed = config["Display"s]["Windowed"s].as<bool>();
+      display.windowed = config["Display"s]["Borderless"s].as<bool>();
+      display.resolution.x = config["Display"s]["Resolution"s][0].as<int>();
+      display.resolution.y = config["Display"s]["Resolution"s][1].as<int>();
+
+      rendering.high_res_reflections =
+         config["Rendering"s]["HighResolutionReflections"s].as<bool>();
+
+      const auto reflection_scale =
+         config["Rendering"s]["ReflectionBufferScale"s].as<double>();
+
+      rendering.reflection_buffer_factor =
+         static_cast<int>(1.0 / glm::clamp(reflection_scale, 0.01, 1.0));
+
+      const auto refraction_scale =
+         config["Rendering"s]["RefractionBufferScale"s].as<double>();
+
+      rendering.refraction_buffer_factor =
+         static_cast<int>(1.0 / glm::clamp(refraction_scale, 0.01, 1.0));
+
+      rendering.anisotropic_filtering =
+         config["Rendering"s]["AnisotropicFiltering"s].as<int>();
+
+      rendering.custom_materials =
+         config["Rendering"s]["CustomMaterials"s].as<bool>();
+
+      debug.activate_key =
+         config["Debug"s]["DebugScreenActivateVirtualKey"s].as<int>();
+   }
 };
 }

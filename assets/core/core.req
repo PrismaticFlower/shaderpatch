@@ -1,0 +1,45 @@
+ucft
+{
+   // Premunged Chunk
+   REQN
+   {
+      "chunk"
+      "premunged"
+   }
+   
+   // Game Shaders
+   REQN
+   {
+      "shader"
+      "filtercopy"
+      "flare"
+      "hdr"
+      "interface"
+      "lightbeam"
+      "normal"
+      "normal_terrain"
+      "ocean"
+      "particle"
+      "perpixeldiffuselighting"
+      "prereflection"
+      "rain"
+      "refraction"
+      "sample"
+      "shadowquad"
+      "shield"
+      "skyfog"
+      "specularlighting"
+      "sprite"
+      "stencilshadow"
+      "water"
+      "zprepass"
+   }
+
+   // Patch Material Shaders
+   REQN
+   {
+      "shader"
+      "pbr"
+      "pbr-basic"
+   }
+}
