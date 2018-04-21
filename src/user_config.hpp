@@ -54,7 +54,7 @@ struct User_config {
 
    struct {
       std::uintptr_t activate_key{0};
-   } debugscreen;
+   } debug;
 
 private:
    void parse_file(const std::string& path)
@@ -90,7 +90,8 @@ private:
       rendering.custom_materials =
          config["Rendering"s]["CustomMaterials"s].as<bool>();
 
-      debugscreen.activate_key = config["Debug"s]["ActivateVirtualKey"s].as<int>();
+      debug.activate_key =
+         config["Debug"s]["DebugScreenActivateVirtualKey"s].as<int>();
    }
 };
 }

@@ -165,7 +165,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
       set_input_window(GetCurrentThreadId(), _window);
 
-      set_input_hotkey(_config.debugscreen.activate_key);
+      set_input_hotkey(_config.debug.activate_key);
       set_input_hotkey_func([this] {
          _imgui_active = !_imgui_active;
 
