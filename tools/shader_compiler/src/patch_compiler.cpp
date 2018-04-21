@@ -29,7 +29,7 @@ auto compile_shader_impl(const std::string& entry_point,
                          const std::vector<D3D_SHADER_MACRO>& defines,
                          const boost::filesystem::path& source_path,
                          std::mutex& shaders_cache_mutex,
-                         std::vector<std::vector<DWORD>>& shaders,
+                         std::vector<std::pair<std::size_t, std::vector<DWORD>>>& shaders,
                          std::unordered_map<std::size_t, std::size_t>& cache,
                          std::string target) -> std::size_t
 {
@@ -67,11 +67,12 @@ auto compile_shader_impl(const std::string& entry_point,
 
    lock.lock();
 
-   const auto shaded_index = cache[key] = shaders.size();
+   const auto shader_index = cache[key] = shaders.size();
 
-   shaders.emplace_back(std::cbegin(span), std::cend(span));
+   shaders.emplace_back(shader_index,
+                        std::vector<DWORD>{std::cbegin(span), std::cend(span)});
 
-   return shaded_index;
+   return shader_index;
 }
 }
 
@@ -119,53 +120,32 @@ Patch_compiler::Patch_compiler(nlohmann::json definition, const fs::path& defini
                                  _states.emplace_back(std::move(state));
                               });
 
-   // optimize_permutations();
+   optimize_and_linearize_permutations();
    save(output_path);
 }
 
-void Patch_compiler::optimize_permutations()
+void Patch_compiler::optimize_and_linearize_permutations()
 {
+   std::scoped_lock<std::mutex, std::mutex, std::mutex> lock{_vs_mutex, _ps_mutex,
+                                                             _states_mutex};
+
    _vs_cache.clear();
    _ps_cache.clear();
 
-   const auto optimize = [](std::vector<std::vector<DWORD>>& shaders, auto remapper) {
-      boost::container::flat_map<std::size_t, std::vector<DWORD>> stable_shaders;
-      stable_shaders.reserve(shaders.size());
+   const auto optimize = [](std::vector<std::pair<std::size_t, std::vector<DWORD>>>& shaders,
+                            auto remapper) {
+      for (auto a_it = std::begin(shaders); a_it != std::end(shaders); ++a_it) {
+         for (auto b_it = a_it + 1; b_it != std::end(shaders);) {
+            if (std::equal(std::begin(a_it->second), std::end(a_it->second),
+                           std::begin(b_it->second), std::end(b_it->second))) {
+               remapper(b_it->first, a_it->first);
 
-      for (auto i = 0u; i < shaders.size(); ++i) {
-         stable_shaders[i] = std::move(shaders[i]);
-      }
-
-      const auto remove_next_duplicate = [&] {
-         for (auto& a : stable_shaders) {
-            for (auto& b : stable_shaders) {
-               if (a.first == b.first) continue;
-
-               if (std::equal(std::cbegin(a.second), std::cend(a.second),
-                              std::cbegin(b.second), std::cend(b.second))) {
-                  remapper(b.first, a.first);
-
-                  stable_shaders.erase(b.first);
-
-                  return true;
-               }
+               b_it = shaders.erase(b_it);
+            }
+            else {
+               ++b_it;
             }
          }
-
-         return false;
-      };
-
-      while (remove_next_duplicate())
-         ;
-
-      shaders.clear();
-
-      auto iter = std::begin(stable_shaders);
-
-      for (auto i = 0u; i < stable_shaders.size(); ++i, ++iter) {
-         remapper(iter->first, i);
-
-         std::swap(shaders.emplace_back(), iter->second);
       }
    };
 
@@ -184,8 +164,6 @@ void Patch_compiler::optimize_permutations()
          }
       }
    });
-
-   return;
 }
 
 void Patch_compiler::save(const fs::path& output_path) const
@@ -202,11 +180,15 @@ void Patch_compiler::save(const fs::path& output_path) const
       {
          auto vs_writer = writer.emplace_child("VSHD"_mn);
 
-         vs_writer.emplace_child("INFO"_mn).write(
+         vs_writer.emplace_child("SIZE"_mn).write(
             static_cast<std::uint32_t>(_vs_shaders.size()));
 
          for (const auto& bytecode : _vs_shaders) {
-            vs_writer.emplace_child("VSBC"_mn).write(gsl::make_span(bytecode));
+            auto bc_writer = vs_writer.emplace_child("BC__"_mn);
+
+            bc_writer.emplace_child("ID__"_mn).write(
+               static_cast<std::uint32_t>(bytecode.first));
+            bc_writer.emplace_child("CODE"_mn).write(gsl::make_span(bytecode.second));
          }
       }
 
@@ -214,11 +196,15 @@ void Patch_compiler::save(const fs::path& output_path) const
       {
          auto ps_writer = writer.emplace_child("PSHD"_mn);
 
-         ps_writer.emplace_child("INFO"_mn).write(
+         ps_writer.emplace_child("SIZE"_mn).write(
             static_cast<std::uint32_t>(_ps_shaders.size()));
 
          for (const auto& bytecode : _ps_shaders) {
-            ps_writer.emplace_child("PSBC"_mn).write(gsl::make_span(bytecode));
+            auto bc_writer = ps_writer.emplace_child("BC__"_mn);
+
+            bc_writer.emplace_child("ID__"_mn).write(
+               static_cast<std::uint32_t>(bytecode.first));
+            bc_writer.emplace_child("CODE"_mn).write(gsl::make_span(bytecode.second));
          }
       }
 

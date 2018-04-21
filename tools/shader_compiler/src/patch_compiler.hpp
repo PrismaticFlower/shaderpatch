@@ -42,7 +42,7 @@ private:
       std::vector<Shader> shaders;
    };
 
-   void optimize_permutations();
+   void optimize_and_linearize_permutations();
 
    void save(const boost::filesystem::path& output_path) const;
 
@@ -63,11 +63,11 @@ private:
    std::vector<Shader_variation> _variations;
 
    std::mutex _vs_mutex;
-   std::vector<std::vector<DWORD>> _vs_shaders;
+   std::vector<std::pair<std::size_t, std::vector<DWORD>>> _vs_shaders;
    std::unordered_map<std::size_t, std::size_t> _vs_cache;
 
    std::mutex _ps_mutex;
-   std::vector<std::vector<DWORD>> _ps_shaders;
+   std::vector<std::pair<std::size_t, std::vector<DWORD>>> _ps_shaders;
    std::unordered_map<std::size_t, std::size_t> _ps_cache;
 
    std::mutex _states_mutex;

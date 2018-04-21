@@ -2,6 +2,7 @@
 #include "shader_loader.hpp"
 #include "logger.hpp"
 
+#include <boost/container/flat_map.hpp>
 #include <string>
 #include <vector>
 
@@ -20,27 +21,30 @@ auto read_shaders(ucfb::Reader_strict<mn> reader, IDirect3DDevice9& device,
       std::conditional_t<mn == "VSHD"_mn, IDirect3DVertexShader9, IDirect3DPixelShader9>;
 
    const gsl::index count =
-      reader.read_child_strict<"INFO"_mn>().read_trivial<std::uint32_t>();
+      reader.read_child_strict<"SIZE"_mn>().read_trivial<std::uint32_t>();
 
-   std::vector<Com_ptr<Type>> shaders;
+   boost::container::flat_map<std::uint32_t, Com_ptr<Type>> shaders;
    shaders.reserve(count);
 
    for (gsl::index i = 0; i < count; ++i) {
-      constexpr auto bc_mn = (mn == "VSHD"_mn) ? "VSBC"_mn : "PSBC"_mn;
+      auto bc_reader = reader.read_child_strict<"BC__"_mn>();
+      const auto id =
+         bc_reader.read_child_strict<"ID__"_mn>().read_trivial<std::uint32_t>();
 
-      auto bc_reader = reader.read_child_strict<bc_mn>();
-      const auto bytecode = bc_reader.read_array<DWORD>(bc_reader.size() / 4);
+      auto code_reader = bc_reader.read_child_strict<"CODE"_mn>();
+      const auto bytecode = code_reader.read_array<DWORD>(code_reader.size() / 4);
 
       HRESULT result{E_FAIL};
-      shaders.emplace_back();
+
+      auto& shader = shaders[id];
 
       if constexpr (mn == "VSHD"_mn) {
-         result = device.CreateVertexShader(bytecode.data(),
-                                            shaders.back().clear_and_assign());
+         result =
+            device.CreateVertexShader(bytecode.data(), shader.clear_and_assign());
       }
       else if (mn == "PSHD"_mn) {
-         result = device.CreatePixelShader(bytecode.data(),
-                                           shaders.back().clear_and_assign());
+         result =
+            device.CreatePixelShader(bytecode.data(), shader.clear_and_assign());
       }
 
       if (FAILED(result)) {
