@@ -59,8 +59,11 @@ void set_active_light_constants(IDirect3DDevice9& device, Shader_flags flags) no
 }
 
 Device::Device(Com_ptr<IDirect3DDevice9> device, const HWND window,
-               const glm::ivec2 resolution) noexcept
-   : _device{std::move(device)}, _window{window}, _resolution{resolution}
+               const glm::ivec2 resolution, const D3DCAPS9& caps) noexcept
+   : _device{std::move(device)},
+     _window{window},
+     _resolution{resolution},
+     _device_max_anisotropy{gsl::narrow_cast<int>(caps.MaxAnisotropy)}
 {
    _water_texture =
       load_dds_from_file(*_device, L"data/shaderpatch/textures/water.dds"s);
@@ -150,6 +153,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
    bind_water_texture();
    bind_refraction_texture();
+   init_sampler_max_anisotropy();
 
    if (!_imgui_bootstrapped) {
       ImGui_ImplDX9_Init(_window, _device.get());
@@ -596,6 +600,15 @@ HRESULT Device::DrawIndexedPrimitive(D3DPRIMITIVETYPE primitive_type,
                                         start_Index, prim_Count);
 }
 
+void Device::init_sampler_max_anisotropy() noexcept
+{
+   for (int i = 0; i < 16; ++i) {
+      _device->SetSamplerState(i, D3DSAMP_MAXANISOTROPY,
+                               std::clamp(_config.rendering.anisotropic_filtering,
+                                          1, _device_max_anisotropy));
+   }
+}
+
 void Device::refresh_material() noexcept
 {
    if (std::exchange(_refresh_material, false) && _material) {
@@ -627,7 +640,6 @@ void Device::bind_water_texture() noexcept
    _device->SetSamplerState(water_slot, D3DSAMP_MAGFILTER, D3DTEXF_ANISOTROPIC);
    _device->SetSamplerState(water_slot, D3DSAMP_MINFILTER, D3DTEXF_ANISOTROPIC);
    _device->SetSamplerState(water_slot, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR);
-   _device->SetSamplerState(water_slot, D3DSAMP_MAXANISOTROPY, 0x8);
 }
 
 void Device::bind_refraction_texture() noexcept

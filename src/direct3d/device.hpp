@@ -29,7 +29,7 @@ namespace sp::direct3d {
 class Device : public IDirect3DDevice9 {
 public:
    Device(Com_ptr<IDirect3DDevice9> device, const HWND window,
-          const glm::ivec2 resolution) noexcept;
+          const glm::ivec2 resolution, const D3DCAPS9& caps) noexcept;
 
    HRESULT __stdcall QueryInterface(const IID& iid, void** object) noexcept override;
    ULONG __stdcall AddRef() noexcept override;
@@ -321,6 +321,8 @@ private:
    constexpr static auto refraction_slot = 13;
    constexpr static auto cubemap_projection_slot = 15;
 
+   void init_sampler_max_anisotropy() noexcept;
+
    void refresh_material() noexcept;
 
    void clear_material() noexcept;
@@ -370,6 +372,8 @@ private:
    Render_state_block _state_block;
 
    win32::Unique_handle _materials_enabled_handle;
+
+   const int _device_max_anisotropy = 1;
 
    std::atomic<ULONG> _ref_count{1};
 };

@@ -20,6 +20,11 @@ Rendering:
    # in range [0.01...1.0].
    RefractionBufferScale: 0.5
 
+   # Set the desired max samples for anisotropic filtering. Higher is better, but _may_ come at a performance cost.
+   # Has no effect on textures that do not make use of anisotropic filtering. Will be clamped to [1, DeviceMax], 
+   # typically DeviceMax will be 16.
+   AnisotropicFiltering: 16
+   
    # Enable or disable advertising custom material support to mods.
    CustomMaterials: yes
 

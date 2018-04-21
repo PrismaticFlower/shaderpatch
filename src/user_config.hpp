@@ -49,6 +49,7 @@ struct User_config {
       int reflection_buffer_factor = 1;
       int refraction_buffer_factor = 2;
 
+      int anisotropic_filtering = 1;
    } rendering;
 
    struct {
@@ -82,6 +83,9 @@ private:
 
       rendering.refraction_buffer_factor =
          static_cast<int>(1.0 / glm::clamp(refraction_scale, 0.01, 1.0));
+
+      rendering.anisotropic_filtering =
+         config["Rendering"s]["AnisotropicFiltering"s].as<int>();
 
       rendering.custom_materials =
          config["Rendering"s]["CustomMaterials"s].as<bool>();
