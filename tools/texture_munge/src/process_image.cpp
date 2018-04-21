@@ -73,7 +73,7 @@ auto calculate_mip_count(glm::uvec2 resolution)
 
 auto get_mip_filter_type(YAML::Node config) -> DX::TEX_FILTER_FLAGS
 {
-   int flags = DX::TEX_FILTER_CUBIC | DX::TEX_FILTER_FORCE_NON_WIC;
+   int flags = DX::TEX_FILTER_TRIANGLE | DX::TEX_FILTER_FORCE_NON_WIC;
 
    const auto wrap_mode = config["WrapMode"s].as<std::string>();
 
@@ -163,6 +163,20 @@ auto remap_roughness_channels(DX::ScratchImage image) -> DirectX::ScratchImage
    }
 
    return swapped_image;
+}
+
+auto premultiply_alpha(DX::ScratchImage image) -> DX::ScratchImage
+{
+   DX::ScratchImage converted_image;
+
+   if (DX::PremultiplyAlpha(image.GetImages(), image.GetImageCount(),
+                            image.GetMetadata(),
+                            DX::TEX_FILTER_DEFAULT | DX::TEX_FILTER_FORCE_NON_WIC,
+                            converted_image)) {
+      throw std::runtime_error{"Failed to premultiply alpha."s};
+   }
+
+   return converted_image;
 }
 
 auto convert_pixel_format(DX::ScratchImage image) -> DX::ScratchImage
@@ -336,6 +350,10 @@ auto process_image(YAML::Node config, fs::path image_file_path)
 
    if (config["Type"].as<std::string>() == "roughness"sv) {
       image = remap_roughness_channels(std::move(image));
+   }
+
+   if (!config["PremultiplyAlpha"s].as<bool>(false)) {
+      image = premultiply_alpha(std::move(image));
    }
 
    image = convert_pixel_format(std::move(image));
