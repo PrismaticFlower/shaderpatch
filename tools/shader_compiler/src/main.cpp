@@ -72,7 +72,7 @@ int main(int arg_count, char* args[])
       return 1;
    }
 
-   if (!fs::exists(output_dir_path) && !fs::create_directory(output_dir_path)) {
+   if (!fs::exists(output_dir_path) && !fs::create_directories(output_dir_path)) {
       synced_error_print("Unable to create output directory "sv,
                          std::quoted(output_dir), "."sv);
 
