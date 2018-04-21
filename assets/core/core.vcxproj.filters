@@ -170,6 +170,9 @@
     <None Include="src\normal_entrypoint_defs.hlsl">
       <Filter>src</Filter>
     </None>
+    <None Include="definitions\patch\pbr.json">
+      <Filter>definitions\patch</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">

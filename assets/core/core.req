@@ -39,6 +39,7 @@ ucft
    REQN
    {
       "shader"
+      "pbr"
       "pbr-basic"
    }
 }

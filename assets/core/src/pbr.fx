@@ -8,6 +8,8 @@
 #include "pixel_utilities.hlsl"
 #include "normal_entrypoint_defs.hlsl"
 
+#pragma warning(disable : 3571)
+
 // Samplers
 sampler2D shadow_map : register(ps, s[3]);
 sampler2D albedo_map : register(ps, s[4]);
