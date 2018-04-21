@@ -108,7 +108,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
    _textures.clean_lost_textures();
 
-   _material = std::nullopt;
+   _material = nullptr;
 
    // reset device
 
@@ -253,7 +253,7 @@ HRESULT Device::SetTexture(DWORD stage, IDirect3DBaseTexture9* texture) noexcept
    // Custom Material Handling
    if (stage == 0 && type == Material_resource::id) {
       auto& material_resource = static_cast<Material_resource&>(*texture);
-      _material.emplace(material_resource.get_material());
+      _material = material_resource.get_material();
 
       _material->bind();
 
@@ -601,7 +601,7 @@ void Device::refresh_material() noexcept
 void Device::clear_material() noexcept
 {
    if (_material) {
-      _material = std::nullopt;
+      _material = nullptr;
       _refresh_material = false;
 
       _device->SetVertexShader(_game_vertex_shader.get());

@@ -7,6 +7,8 @@
 
 #include <atomic>
 
+#include <boost/smart_ptr/local_shared_ptr.hpp>
+#include <boost/smart_ptr/make_local_shared.hpp>
 #include <gsl/gsl>
 
 #include <d3d9.h>
@@ -51,9 +53,11 @@ public:
       if (!_data) return D3DERR_INVALIDCALL;
 
       try {
-         _material.emplace(read_patch_material(ucfb::Reader{
-                              gsl::make_span(_data.get(), _resource_size)}),
-                           _device, _shaders, _textures);
+         _material =
+            boost::make_local_shared<Material>(read_patch_material(ucfb::Reader{
+                                                  gsl::make_span(_data.get(),
+                                                                 _resource_size)}),
+                                               _device, _shaders, _textures);
       }
       catch (std::exception& e) {
          log_and_terminate("Failed to read material in from game. Exception message: "sv,
@@ -220,13 +224,13 @@ public:
       return E_NOTIMPL;
    }
 
-   auto get_material() const noexcept -> Material
+   auto get_material() const noexcept -> boost::local_shared_ptr<Material>
    {
       if (!_material) {
-         log_and_terminate("Material bound before being uploaded."sv);
+         log_and_terminate("Material fetched before being uploaded."sv);
       }
 
-      return *_material;
+      return _material;
    }
 
    constexpr static auto id = static_cast<D3DRESOURCETYPE>("mtrl"_mn);
@@ -240,7 +244,7 @@ private:
    const Shader_database& _shaders;
    const Texture_database& _textures;
 
-   std::optional<Material> _material;
+   boost::local_shared_ptr<Material> _material;
 
    std::unique_ptr<std::byte[]> _data;
    std::atomic<ULONG> _ref_count{1};

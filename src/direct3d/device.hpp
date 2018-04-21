@@ -19,6 +19,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include <boost/smart_ptr/local_shared_ptr.hpp>
+
 #include <d3d9.h>
 
 namespace sp::direct3d {
@@ -345,7 +347,7 @@ private:
    bool _water_refraction = false;
    bool _refresh_material = true;
 
-   std::optional<Material> _material;
+   boost::local_shared_ptr<Material> _material;
 
    Shader_metadata _vs_metadata;
    Com_ptr<IDirect3DVertexShader9> _game_vertex_shader;
