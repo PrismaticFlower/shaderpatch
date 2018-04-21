@@ -22,4 +22,8 @@ cd submodules/vcpkg
 ./vcpkg install clara:x86-windows-static-md
 ./vcpkg install yaml-cpp:x86-windows-static-md
 
+
+del ".\buildtrees\" -Recurse -ErrorAction SilentlyContinue
+del ".\packages\" -Recurse -ErrorAction SilentlyContinue
+
 cd ../../
