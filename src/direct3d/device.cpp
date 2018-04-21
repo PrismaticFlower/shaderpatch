@@ -64,6 +64,13 @@ Device::Device(Com_ptr<IDirect3DDevice9> device, const HWND window,
 {
    _water_texture =
       load_dds_from_file(*_device, L"data/shaderpatch/textures/water.dds"s);
+
+   if (_config.rendering.custom_materials) {
+      _materials_enabled_handle = win32::Unique_handle{
+         CreateFileW(L"data/shaderpatch/materials_enabled", GENERIC_READ | GENERIC_WRITE,
+                     FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                     nullptr, OPEN_ALWAYS, FILE_FLAG_DELETE_ON_CLOSE, nullptr)};
+   }
 }
 
 Device::~Device()

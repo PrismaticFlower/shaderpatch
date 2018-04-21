@@ -29,6 +29,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)ucfb_reader.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ucfb_tweaker.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ucfb_writer.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)smart_win32_handle.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)volume_resource.hpp" />
   </ItemGroup>
 </Project>

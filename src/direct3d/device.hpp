@@ -10,6 +10,7 @@
 #include "render_state_block.hpp"
 #include "shader.hpp"
 #include "shader_constant.hpp"
+#include "smart_win32_handle.hpp"
 
 #include <atomic>
 #include <chrono>
@@ -367,6 +368,8 @@ private:
       std::chrono::steady_clock::now()};
 
    Render_state_block _state_block;
+
+   win32::Unique_handle _materials_enabled_handle;
 
    std::atomic<ULONG> _ref_count{1};
 };
