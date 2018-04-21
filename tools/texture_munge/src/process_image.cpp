@@ -139,7 +139,33 @@ auto load_image(const fs::path& image_file_path, bool srgb) -> DirectX::ScratchI
    return loaded_image;
 }
 
-auto swizzle_pixel_format(DX::ScratchImage image) -> DX::ScratchImage
+auto remap_roughness_channels(DX::ScratchImage image) -> DirectX::ScratchImage
+{
+   DX::ScratchImage swapped_image;
+
+   const auto result =
+      TransformImage(image.GetImages(), image.GetImageCount(), image.GetMetadata(),
+                     [](DX::XMVECTOR* out, const DX::XMVECTOR* in,
+                        std::size_t width, std::size_t) {
+                        for (size_t i = 0; i < width; ++i) {
+                           out[i] =
+                              DX::XMVectorSwizzle<DX::XM_SWIZZLE_Y, DX::XM_SWIZZLE_X,
+                                                  DX::XM_SWIZZLE_Z, DX::XM_SWIZZLE_W>(
+                                 in[i]);
+
+                           DX::XMVectorSetByIndex(out[i], 0.0f, DX::XM_SWIZZLE_X);
+                        }
+                     },
+                     swapped_image);
+
+   if (FAILED(result)) {
+      throw std::runtime_error{"Failed to remap colour channels for input roughness map!"s};
+   }
+
+   return swapped_image;
+}
+
+auto convert_pixel_format(DX::ScratchImage image) -> DX::ScratchImage
 {
    DXGI_FORMAT convert_to_format = image.GetMetadata().format;
 
@@ -308,7 +334,11 @@ auto process_image(YAML::Node config, fs::path image_file_path)
 
    auto image = load_image(image_file_path, config["sRGB"s].as<bool>(true));
 
-   image = swizzle_pixel_format(std::move(image));
+   if (config["Type"].as<std::string>() == "roughness"sv) {
+      image = remap_roughness_channels(std::move(image));
+   }
+
+   image = convert_pixel_format(std::move(image));
    image = make_image_power_of_2(std::move(image));
    image = mipmap_image(std::move(image), get_mip_filter_type(config));
 
