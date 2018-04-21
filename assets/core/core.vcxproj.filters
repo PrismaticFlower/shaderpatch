@@ -173,6 +173,9 @@
     <None Include="definitions\patch\pbr.json">
       <Filter>definitions\patch</Filter>
     </None>
+    <None Include="definitions\patch\pbr-emissive.json">
+      <Filter>definitions\patch</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">
