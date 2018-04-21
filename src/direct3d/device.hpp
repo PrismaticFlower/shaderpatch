@@ -351,7 +351,7 @@ private:
    Com_ptr<IDirect3DVertexShader9> _game_vertex_shader;
    Com_ptr<IDirect3DPixelShader9> _game_pixel_shader;
 
-   User_config _config{"shader patch.ini"s};
+   User_config _config{"shader patch.yml"s};
 
    Ps_3f_shader_constant<constants::ps::fog_range> _fog_range_const;
    Ps_3f_shader_constant<constants::ps::fog_color> _fog_color_const;

@@ -36,7 +36,7 @@ copy ".\bin\Release\sp_texture_munge.exe" ".\packaged\data\shaderpatch\bin\sp_te
 # Copy Assets
 copy '.\assets\material_descriptions\' '.\packaged\data\shaderpatch\bin\material_descriptions\' -Recurse
 copy  '.\assets\textures\' '.\packaged\data\shaderpatch\textures\' -Recurse
-copy '.\assets\shader patch.ini' .\packaged\
+copy '.\assets\shader patch.yml' .\packaged\
 copy '.\assets\shader patch user readme.txt' '.\packaged\shader patch readme.txt'
 
 # Copy core.lvl source files.

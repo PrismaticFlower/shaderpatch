@@ -1,0 +1,31 @@
+Display:
+   # Whether or note to override the display settings used by the game.
+   Enabled: no
+   Windowed: no
+   Resolution: [1920, 1080]
+
+   # When running in a window whether or not to make the window borderless, 
+   # works regardless of what Enabled is set to.
+   Borderless: yes
+
+Rendering:
+   # Enable or disable high resolution water reflections.
+   HighResolutionReflections: yes
+
+   # Scale of the water reflection buffer (regardless of HighResolutionReflections), 
+   # in range [0.01...1.0].
+   ReflectionBufferScale: 0.5
+
+   # Scale of the refraction buffer used for effects like water and the Droideka's shield, 
+   # in range [0.01...1.0].
+   RefractionBufferScale: 0.5
+
+   # Enable or disable advertising custom material support to mods.
+   CustomMaterials: yes
+
+Debug:
+   # The debugscreen is intended for assisting development with 
+   # quick simple UIs and is currently empty.
+   # The virtual key that activates the debug screen. See below for some common values.
+   # '~' = 192 '\' = 220
+   DebugScreenActivateVirtualKey: 0

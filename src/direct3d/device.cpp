@@ -22,7 +22,6 @@
 #include <string_view>
 #include <vector>
 
-#include <INIReader.h>
 #include <gsl/gsl>
 
 using namespace std::literals;
