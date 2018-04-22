@@ -42,7 +42,7 @@ int main(int arg_count, char* args[])
       | Opt{description_dirs, "description directory"s}
       ["--descdir"s]
       ("Add a path to search (non recursively) for input *.yml files"
-       " describing munged materials."s);
+       " holding descriptions of rendertypes."s);
 
    // clang-format on
 

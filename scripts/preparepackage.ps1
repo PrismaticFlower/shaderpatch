@@ -34,7 +34,7 @@ copy ".\bin\Release\shader_compiler.exe" ".\packaged\data\shaderpatch\bin\shader
 copy ".\bin\Release\sp_texture_munge.exe" ".\packaged\data\shaderpatch\bin\sp_texture_munge.exe"
 
 # Copy Assets
-copy '.\assets\material_descriptions\' '.\packaged\data\shaderpatch\bin\material_descriptions\' -Recurse
+copy '.\assets\rendertype_descriptions\' '.\packaged\data\shaderpatch\bin\rendertype_descriptions\' -Recurse
 copy  '.\assets\textures\' '.\packaged\data\shaderpatch\textures\' -Recurse
 copy '.\assets\shader patch.yml' .\packaged\
 copy '.\assets\shader patch user readme.txt' '.\packaged\shader patch readme.txt'
