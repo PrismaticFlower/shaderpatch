@@ -31,16 +31,16 @@ int main(int arg_count, char* args[])
 
    auto cli = Help{help}
       | Opt{output_dir, "output directory"s}
-      ["--outputdir"s]
+      ["--outputdir"s]["-o"s]
       ("Path to place munged files in."s)
       | Opt{source_dir, "source directory"s}
-      ["--sourcedir"s]
+      ["--sourcedir"s]["-s"s]
       ("Path to search for input .mtrl files."s)
       | Opt{munged_input_dir, "munged source directory"s}
-      ["--mungedsourcedir"s]
+      ["--mungedsourcedir"s]["-m"s]
       ("Path to input munged files."s)
       | Opt{description_dirs, "description directory"s}
-      ["--descdir"s]
+      ["--descdir"s]["-d"s]
       ("Add a path to search (non recursively) for input *.yml files"
        " holding descriptions of rendertypes."s);
 
