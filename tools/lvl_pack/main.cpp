@@ -239,7 +239,7 @@ int main(int arg_count, char* args[])
       ["--outputdir"s]
       ("Path to place resulting .lvl files in."s)
       | Opt{source_dir, "source directory"s}
-      ["--sourcedir"s]["-i"s]
+      ["--sourcedir"s]["-s"s]
       ("Source directory for .req files"s)
       | Opt{input_directories, "input directory"s}
       ["--inputdir"s]["-i"s]
