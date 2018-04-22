@@ -98,10 +98,10 @@ void write_req_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
                       const std::unordered_set<std::string>& extern_files,
                       std::vector<std::pair<std::string, std::vector<std::string>>> req_file_contents);
 
-auto find_file(const std::string& filename, const std::vector<fs::path>& source_dirs)
+auto find_file(const std::string& filename, const std::vector<fs::path>& input_dirs)
    -> std::optional<fs::path>
 {
-   for (const auto& dir : source_dirs) {
+   for (const auto& dir : input_dirs) {
       const auto path = dir / filename;
 
       if (!fs::exists(path) || !fs::is_regular_file(path)) continue;
@@ -131,7 +131,7 @@ auto read_binary_in(const fs::path& path) -> std::vector<std::byte>
 
 void write_file_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
                        std::unordered_set<fs::path::string_type>& added_files,
-                       const std::vector<fs::path>& source_dirs,
+                       const std::vector<fs::path>& input_dirs,
                        const std::unordered_set<std::string>& extern_files,
                        const fs::path& filepath)
 {
@@ -143,7 +143,7 @@ void write_file_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
       fs::change_extension(filepath, fs::extension(filepath) += ".req"sv);
 
    if (fs::exists(req_path) && fs::is_regular_file(req_path)) {
-      write_req_to_lvl(req_file_path, writer, added_files, source_dirs,
+      write_req_to_lvl(req_file_path, writer, added_files, input_dirs,
                        extern_files, parse_req_file(req_path));
    }
 
@@ -166,7 +166,7 @@ void write_file_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
 
 void write_req_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
                       std::unordered_set<fs::path::string_type>& added_files,
-                      const std::vector<fs::path>& source_dirs,
+                      const std::vector<fs::path>& input_dirs,
                       const std::unordered_set<std::string>& extern_files,
                       std::vector<std::pair<std::string, std::vector<std::string>>> req_file_contents)
 {
@@ -174,8 +174,8 @@ void write_req_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
       for (auto& value : section.second) {
          const auto filename = value + "."s + section.first;
 
-         if (const auto path = find_file(filename, source_dirs); path) {
-            write_file_to_lvl(req_file_path, writer, added_files, source_dirs,
+         if (const auto path = find_file(filename, input_dirs); path) {
+            write_file_to_lvl(req_file_path, writer, added_files, input_dirs,
                               extern_files, *path);
          }
          else if (!extern_files.count(boost::to_lower_copy(filename))) {
@@ -187,7 +187,7 @@ void write_req_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
 }
 
 void build_lvl_file(const fs::path& req_file_path, const fs::path& output_directory,
-                    const std::vector<fs::path>& source_dirs,
+                    const std::vector<fs::path>& input_dirs,
                     const std::unordered_set<std::string>& extern_files) noexcept
 {
    Expects(fs::exists(req_file_path) && fs::exists(output_directory));
@@ -208,7 +208,7 @@ void build_lvl_file(const fs::path& req_file_path, const fs::path& output_direct
 
       std::unordered_set<fs::path::string_type> added_files;
 
-      write_req_to_lvl(req_file_path, writer, added_files, source_dirs,
+      write_req_to_lvl(req_file_path, writer, added_files, input_dirs,
                        extern_files, parse_req_file(req_file_path));
 
       success = true;
@@ -226,9 +226,9 @@ int main(int arg_count, char* args[])
 
    bool help = false;
    auto output_dir = "./"s;
-   auto input_dir = "./"s;
+   auto source_dir = "./"s;
    auto input_filter = R"(.+\.req)"s;
-   std::vector<std::string> source_directories;
+   std::vector<std::string> input_directories;
    std::vector<std::string> extern_files_list_paths;
    bool recursive = false;
 
@@ -238,12 +238,12 @@ int main(int arg_count, char* args[])
       | Opt{output_dir, "output directory"s}
       ["--outputdir"s]
       ("Path to place resulting .lvl files in."s)
-      | Opt{input_dir, "input directory"s}
-      ["--inputdir"s]
-      ("Input directory for .req files"s)
-      | Opt{source_directories, "source directory"s}
-      ["--sourcedir"s]["-s"s]
-      ("Specify a source directory for munged files. Multiple source" 
+      | Opt{source_dir, "source directory"s}
+      ["--sourcedir"s]["-i"s]
+      ("Source directory for .req files"s)
+      | Opt{input_directories, "input directory"s}
+      ["--inputdir"s]["-i"s]
+      ("Specify a input directory for munged files. Multiple input" 
        " directories can be used and should be listed in order of precedence."s)
       | Opt{input_filter, "input filter"s}
       ["--inputfilter"s]["-f"s]
@@ -280,23 +280,23 @@ int main(int arg_count, char* args[])
       return 1;
    }
 
-   if (!fs::exists(input_dir)) {
-      synced_error_print("Input Directory "sv, std::quoted(input_dir),
+   if (!fs::exists(source_dir)) {
+      synced_error_print("Input Directory "sv, std::quoted(source_dir),
                          " does not exist!"sv);
 
       return 1;
    }
 
-   if (source_directories.empty()) {
+   if (input_directories.empty()) {
       synced_error_print("No source directories specified!"sv);
 
       return 1;
    }
 
-   const std::vector<fs::path> source_directories_paths{std::cbegin(source_directories),
-                                                        std::cend(source_directories)};
+   const std::vector<fs::path> input_directories_paths{std::cbegin(input_directories),
+                                                       std::cend(input_directories)};
 
-   for (const auto& path : source_directories_paths) {
+   for (const auto& path : input_directories_paths) {
       if (!fs::exists(path) || !fs::is_directory(path)) {
          synced_error_print("Warning source directory "sv, path, " does not exist!"sv);
       }
@@ -315,14 +315,14 @@ int main(int arg_count, char* args[])
 
          synced_print("Munging lvl "sv, entry.path().filename().string(), "..."sv);
 
-         build_lvl_file(entry.path(), output_dir, source_directories_paths, extern_files);
+         build_lvl_file(entry.path(), output_dir, input_directories_paths, extern_files);
       }
    };
 
    if (recursive) {
-      process_directory(fs::recursive_directory_iterator{input_dir});
+      process_directory(fs::recursive_directory_iterator{source_dir});
    }
    else {
-      process_directory(fs::directory_iterator{input_dir});
+      process_directory(fs::directory_iterator{source_dir});
    }
 }
