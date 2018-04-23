@@ -47,28 +47,28 @@ private:
    void save(const boost::filesystem::path& output_path) const;
 
    auto compile_state(const nlohmann::json& state_def,
-                      const std::vector<std::string>& global_defines) -> State;
+                      const std::vector<Shader_macro>& global_defines,
+                      const std::vector<std::string>& global_undefines) -> State;
 
    auto compile_vertex_shader(const std::string& entry_point,
-                              const std::vector<D3D_SHADER_MACRO>& defines)
-      -> std::size_t;
+                              std::vector<D3D_SHADER_MACRO> defines) -> std::size_t;
 
    auto compile_pixel_shader(const std::string& entry_point,
-                             const std::vector<D3D_SHADER_MACRO>& defines)
-      -> std::size_t;
+                             std::vector<D3D_SHADER_MACRO> defines) -> std::size_t;
 
    std::string _render_type;
    boost::filesystem::path _source_path;
 
    std::vector<Shader_variation> _variations;
+   std::vector<Shader_variation> _ps_variations;
 
    std::mutex _vs_mutex;
    std::vector<std::pair<std::size_t, std::vector<DWORD>>> _vs_shaders;
-   std::unordered_map<std::size_t, std::size_t> _vs_cache;
+   std::unordered_map<Shader_cache_index, std::size_t> _vs_cache;
 
    std::mutex _ps_mutex;
    std::vector<std::pair<std::size_t, std::vector<DWORD>>> _ps_shaders;
-   std::unordered_map<std::size_t, std::size_t> _ps_cache;
+   std::unordered_map<Shader_cache_index, std::size_t> _ps_cache;
 
    std::mutex _states_mutex;
    std::vector<State> _states;

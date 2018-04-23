@@ -17,6 +17,8 @@
 #include <unordered_map>
 
 #include <boost/container/flat_map.hpp>
+#include <boost/container/flat_set.hpp>
+#include <boost/range/algorithm.hpp>
 
 namespace sp {
 
@@ -26,18 +28,18 @@ namespace fs = boost::filesystem;
 namespace {
 
 auto compile_shader_impl(const std::string& entry_point,
-                         const std::vector<D3D_SHADER_MACRO>& defines,
+                         std::vector<D3D_SHADER_MACRO> defines,
                          const boost::filesystem::path& source_path,
-                         std::mutex& shaders_cache_mutex,
+                         std::mutex& shaders_mutex,
                          std::vector<std::pair<std::size_t, std::vector<DWORD>>>& shaders,
-                         std::unordered_map<std::size_t, std::size_t>& cache,
+                         std::unordered_map<Shader_cache_index, std::size_t>& cache,
                          std::string target) -> std::size_t
 {
-   const auto key = compiler_cache_hash(entry_point, defines);
+   std::unique_lock<std::mutex> lock{shaders_mutex};
 
-   std::unique_lock<std::mutex> lock{shaders_cache_mutex};
+   Shader_cache_index cache_index{entry_point, std::move(defines)};
 
-   const auto cached = cache.find(key);
+   const auto cached = cache.find(cache_index);
 
    if (cached != std::end(cache)) return cached->second;
 
@@ -46,11 +48,11 @@ auto compile_shader_impl(const std::string& entry_point,
    Com_ptr<ID3DBlob> error_message;
    Com_ptr<ID3DBlob> shader;
 
-   auto result = D3DCompileFromFile(source_path.c_str(), defines.data(),
-                                    D3D_COMPILE_STANDARD_FILE_INCLUDE,
-                                    entry_point.data(), target.data(),
-                                    compiler_flags, 0, shader.clear_and_assign(),
-                                    error_message.clear_and_assign());
+   auto result =
+      D3DCompileFromFile(source_path.c_str(), cache_index.definitions.data(),
+                         D3D_COMPILE_STANDARD_FILE_INCLUDE, entry_point.data(),
+                         target.data(), compiler_flags, 0, shader.clear_and_assign(),
+                         error_message.clear_and_assign());
 
    if (result != S_OK) {
       if (!error_message) {
@@ -67,12 +69,40 @@ auto compile_shader_impl(const std::string& entry_point,
 
    lock.lock();
 
-   const auto shader_index = cache[key] = shaders.size();
+   const auto shader_index = shaders.size();
 
+   cache.emplace(std::move(cache_index), shader_index);
    shaders.emplace_back(shader_index,
                         std::vector<DWORD>{std::cbegin(span), std::cend(span)});
 
    return shader_index;
+}
+
+auto assemble_definitions(const std::vector<D3D_SHADER_MACRO>& variation_defines,
+                          const std::vector<Shader_macro>& global_defines,
+                          const std::vector<Shader_macro>& state_defines,
+                          const boost::container::flat_set<std::string>& undefines)
+   -> std::vector<D3D_SHADER_MACRO>
+{
+   std::vector<D3D_SHADER_MACRO> defines;
+   defines.reserve(variation_defines.size() + state_defines.size() +
+                   global_defines.size());
+   defines = variation_defines;
+
+   defines.pop_back();
+
+   for (auto& def : global_defines) defines.emplace_back(def);
+   for (auto& def : state_defines) defines.emplace_back(def);
+
+   defines.erase(boost::remove_if(defines,
+                                  [&](auto& entry) {
+                                     return undefines.count(entry.Name) != 0;
+                                  }),
+                 std::end(defines));
+
+   defines.push_back({nullptr, nullptr});
+
+   return defines;
 }
 }
 
@@ -108,12 +138,16 @@ Patch_compiler::Patch_compiler(nlohmann::json definition, const fs::path& defini
    _variations = get_shader_variations(definition["skinned"s], definition["lighting"s],
                                        definition["vertex_color"s]);
 
-   std::vector<std::string> shader_defines =
-      definition.value<std::vector<std::string>>("defines"s, {});
+   std::vector<Shader_macro> shader_defines =
+      definition.value<std::vector<Shader_macro>>("defines"s, {});
+
+   std::vector<std::string> shader_undefines =
+      definition.value<std::vector<std::string>>("undefines"s, {});
 
    for_each_exception_capable(std::execution::par, definition["states"s],
                               [&](const auto& state_def) {
-                                 auto state = compile_state(state_def, shader_defines);
+                                 auto state = compile_state(state_def, shader_defines,
+                                                            shader_undefines);
 
                                  std::lock_guard<std::mutex> lock{_states_mutex};
 
@@ -236,14 +270,21 @@ void Patch_compiler::save(const fs::path& output_path) const
 }
 
 auto Patch_compiler::compile_state(const nlohmann::json& state_def,
-                                   const std::vector<std::string>& global_defines)
+                                   const std::vector<Shader_macro>& global_defines,
+                                   const std::vector<std::string>& global_undefines)
    -> Patch_compiler::State
 {
    const std::string vs_entry_point = state_def["vertex_shader"s];
    const std::string ps_entry_point = state_def["pixel_shader"s];
 
-   std::vector<std::string> state_defines =
-      state_def.value<std::vector<std::string>>("defines"s, {});
+   std::vector<Shader_macro> state_defines =
+      state_def.value<std::vector<Shader_macro>>("defines"s, {});
+
+   boost::container::flat_set<std::string> undefines =
+      state_def.value<boost::container::flat_set<std::string>>("undefines"s, {});
+
+   undefines.reserve(undefines.size() + global_undefines.size());
+   undefines.insert(std::cbegin(global_undefines), std::cend(global_undefines));
 
    State state;
 
@@ -256,25 +297,14 @@ auto Patch_compiler::compile_state(const nlohmann::json& state_def,
 
       shader.flags = variation.flags;
 
-      std::vector<D3D_SHADER_MACRO> defines;
-      defines.reserve(variation.definitions.size() + state_defines.size() +
-                      global_defines.size());
-      defines = variation.definitions;
-
-      defines.pop_back();
-
-      for (auto& def : global_defines) {
-         defines.emplace_back() = {def.c_str(), nullptr};
-      }
-
-      for (auto& def : state_defines) {
-         defines.emplace_back() = {def.c_str(), nullptr};
-      }
-
-      defines.emplace_back() = {nullptr, nullptr};
-
-      shader.vs_index = compile_vertex_shader(vs_entry_point, defines);
-      shader.ps_index = compile_pixel_shader(ps_entry_point, defines);
+      shader.vs_index =
+         compile_vertex_shader(vs_entry_point,
+                               assemble_definitions(variation.definitions, global_defines,
+                                                    state_defines, undefines));
+      shader.ps_index =
+         compile_pixel_shader(ps_entry_point,
+                              assemble_definitions(variation.ps_definitions, global_defines,
+                                                   state_defines, undefines));
 
       state.shaders.emplace_back(std::move(shader));
    };
@@ -285,18 +315,18 @@ auto Patch_compiler::compile_state(const nlohmann::json& state_def,
 }
 
 auto Patch_compiler::compile_vertex_shader(const std::string& entry_point,
-                                           const std::vector<D3D_SHADER_MACRO>& defines)
+                                           std::vector<D3D_SHADER_MACRO> defines)
    -> std::size_t
 {
-   return compile_shader_impl(entry_point, defines, _source_path, _vs_mutex,
-                              _vs_shaders, _vs_cache, "vs_3_0"s);
+   return compile_shader_impl(entry_point, std::move(defines), _source_path,
+                              _vs_mutex, _vs_shaders, _vs_cache, "vs_3_0"s);
 }
 
 auto Patch_compiler::compile_pixel_shader(const std::string& entry_point,
-                                          const std::vector<D3D_SHADER_MACRO>& defines)
+                                          std::vector<D3D_SHADER_MACRO> defines)
    -> std::size_t
 {
-   return compile_shader_impl(entry_point, defines, _source_path, _ps_mutex,
-                              _ps_shaders, _ps_cache, "ps_3_0"s);
+   return compile_shader_impl(entry_point, std::move(defines), _source_path,
+                              _ps_mutex, _ps_shaders, _ps_cache, "ps_3_0"s);
 }
 }

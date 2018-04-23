@@ -7,6 +7,8 @@
   "lighting": true,
   "vertex_color": true,
 
+  "undefines": [ "USE_VERTEX_COLOR" ],
+
   "states": [
     {
       "name": "near opaque",

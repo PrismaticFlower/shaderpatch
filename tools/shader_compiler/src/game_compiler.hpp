@@ -1,6 +1,7 @@
 #pragma once
 
 #include "com_ptr.hpp"
+#include "compiler_helpers.hpp"
 #include "shader_flags.hpp"
 
 #include <string_view>
@@ -78,12 +79,12 @@ private:
                      std::string_view state_name);
 
    auto compile_vertex_shader(const nlohmann::json& parent_metadata,
-                              std::string_view entry_point, std::string_view target,
-                              const Shader_variation& variation,
+                              const std::string& entry_point,
+                              const std::string& target, Shader_variation& variation,
                               std::string_view state_name) -> Vertex_shader_ref;
 
    auto compile_pixel_shader(const nlohmann::json& parent_metadata,
-                             std::string_view entry_point, std::string_view target,
+                             const std::string& entry_point, const std::string& target,
                              std::string_view state_name) -> Pixel_shader_ref;
 
    boost::filesystem::path _source_path;
@@ -92,10 +93,10 @@ private:
    std::string _source;
 
    std::vector<std::vector<DWORD>> _vs_shaders;
-   std::unordered_map<std::size_t, Vertex_shader_ref> _vs_cache;
+   std::unordered_map<Shader_cache_index, Vertex_shader_ref> _vs_cache;
 
    std::vector<std::vector<DWORD>> _ps_shaders;
-   std::unordered_map<std::size_t, Pixel_shader_ref> _ps_cache;
+   std::unordered_map<std::string, Pixel_shader_ref> _ps_cache;
 
    std::vector<State> _states;
 };

@@ -1,9 +1,13 @@
 #pragma once
 
+#include "compiler_helpers.hpp"
 #include "shader_flags.hpp"
 
 #include <initializer_list>
+#include <set>
 #include <vector>
+
+#include <boost/algorithm/cxx11/copy_if.hpp>
 
 #include <d3dcompiler.h>
 
@@ -12,6 +16,7 @@ namespace sp {
 struct Shader_variation {
    Shader_flags flags;
    std::vector<D3D_SHADER_MACRO> definitions;
+   std::vector<D3D_SHADER_MACRO> ps_definitions;
 };
 
 inline auto get_shader_variations(const bool skinned, const bool lighting,
@@ -21,11 +26,22 @@ inline auto get_shader_variations(const bool skinned, const bool lighting,
    std::vector<Shader_variation> variations;
    variations.reserve(36);
 
+   const static std::set<std::string> ps_undefines = {"TRANSFORM_UNSKINNED",
+                                                      "TRANSFORM_SOFT_SKINNED"};
+
    const auto add_variation = [&](const Shader_flags flags,
                                   std::initializer_list<D3D_SHADER_MACRO> defines) {
-      variations.emplace_back();
-      variations.back().flags = flags;
-      variations.back().definitions.assign(std::cbegin(defines), std::cend(defines));
+      auto& vari = variations.emplace_back();
+      vari.flags = flags;
+      vari.definitions.assign(std::cbegin(defines), std::cend(defines));
+
+      vari.ps_definitions.reserve(defines.size());
+      boost::algorithm::copy_if(defines, std::back_inserter(vari.ps_definitions),
+                                [](const D3D_SHADER_MACRO& entry) {
+                                   if (!entry.Name) return true;
+
+                                   return ps_undefines.count(entry.Name) == 0;
+                                });
    };
 
    const D3D_SHADER_MACRO nulldef = {nullptr, nullptr};

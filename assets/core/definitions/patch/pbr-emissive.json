@@ -8,6 +8,7 @@
   "vertex_color": true,
 
   "defines": [ "PBR_USE_METALLIC_ROUGHNESS_MAP", "PBR_USE_EMISSIVE_MAP" ],
+  "undefines": [ "USE_VERTEX_COLOR" ],
 
   "states": [
     {

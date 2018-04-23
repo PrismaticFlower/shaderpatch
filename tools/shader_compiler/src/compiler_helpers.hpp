@@ -8,6 +8,8 @@
 #include <functional>
 #include <stdexcept>
 #include <string>
+#include <string_view>
+#include <tuple>
 #include <unordered_map>
 #include <vector>
 
@@ -17,51 +19,58 @@
 #include <gsl/gsl>
 #include <nlohmann/json.hpp>
 
-template<>
-struct std::hash<std::vector<D3D_SHADER_MACRO>> {
-   using argument_type = std::vector<D3D_SHADER_MACRO>;
-   using result_type = std::size_t;
-
-   result_type operator()(argument_type const& vec) const noexcept
-   {
-      std::size_t seed = 0;
-
-      for (const auto& item : vec) {
-         if (item.Name) {
-            boost::hash_combine(seed, std::hash<std::string_view>{}(item.Name));
-         }
-         if (item.Definition) {
-            boost::hash_combine(seed, std::hash<std::string_view>{}(item.Definition));
-         }
-      }
-
-      return seed;
+inline bool operator==(const D3D_SHADER_MACRO& l, const D3D_SHADER_MACRO& r)
+{
+   if ((!l.Name || !r.Name) || (!l.Definition || !r.Definition)) {
+      return std::tie(l.Name, l.Definition) == std::tie(r.Name, r.Definition);
    }
-};
+
+   using Sv = std::string_view;
+
+   return std::make_tuple(Sv{l.Name}, Sv{l.Definition}) ==
+          std::make_tuple(Sv{r.Name}, Sv{r.Definition});
+}
 
 namespace sp {
 
 const auto compiler_flags = D3DCOMPILE_OPTIMIZATION_LEVEL3;
 
-using namespace std::literals;
+struct Shader_macro {
+   std::string name;
+   std::string definition;
 
-template<typename... Args>
-inline std::size_t compiler_cache_hash(Args&&... args)
-{
-   const auto hash = [](std::size_t& seed, auto value) {
-      boost::hash_combine(seed,
-                          std::hash<std::remove_reference_t<decltype(value)>>{}(value));
+   operator D3D_SHADER_MACRO() const noexcept
+   {
+      return {name.data(), definition.data()};
    };
+};
 
-   std::size_t seed = 0;
+inline void from_json(const nlohmann::json& j, Shader_macro& macro)
+{
+   if (j.is_string()) {
+      macro.name = j;
+   }
+   else {
+      macro.name = j[0];
+      macro.definition = j[1];
+   }
+}
 
-   (hash(seed, std::forward<Args>(args)), ...);
+struct Shader_cache_index {
+   std::string entry_point;
+   std::vector<D3D_SHADER_MACRO> definitions;
+};
 
-   return seed;
+inline bool operator==(const Shader_cache_index& l, const Shader_cache_index& r)
+{
+   return std::tie(l.entry_point, l.definitions) ==
+          std::tie(r.entry_point, r.definitions);
 }
 
 inline gsl::span<DWORD> make_dword_span(ID3DBlob& blob)
 {
+   using namespace std::literals;
+
    if (blob.GetBufferSize() % 4) {
       throw std::runtime_error{"Resulting shader bytecode was bad."s};
    }
@@ -87,6 +96,8 @@ inline auto read_definition_file(const boost::filesystem::path& path) -> nlohman
 inline auto date_test_shader_file(const boost::filesystem::path& file_path) noexcept
    -> std::time_t
 {
+   using namespace std::literals;
+
    namespace fs = boost::filesystem;
 
    Expects(fs::is_regular_file(file_path));
@@ -157,3 +168,27 @@ inline auto date_test_shader_file(const boost::filesystem::path& file_path) noex
    return std::max(includer.newest(), fs::last_write_time(file_path));
 }
 }
+
+template<>
+struct std::hash<sp::Shader_cache_index> {
+   using argument_type = sp::Shader_cache_index;
+   using result_type = std::size_t;
+
+   result_type operator()(argument_type const& entry) const noexcept
+   {
+      std::size_t seed = 0;
+
+      boost::hash_combine(seed, std::hash<std::string>{}(entry.entry_point));
+
+      for (const auto& item : entry.definitions) {
+         if (item.Name) {
+            boost::hash_combine(seed, std::hash<std::string_view>{}(item.Name));
+         }
+         if (item.Definition) {
+            boost::hash_combine(seed, std::hash<std::string_view>{}(item.Definition));
+         }
+      }
+
+      return seed;
+   }
+};
