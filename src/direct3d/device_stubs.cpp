@@ -70,13 +70,6 @@ UINT Device::GetNumberOfSwapChains() noexcept
    return _device->GetNumberOfSwapChains();
 }
 
-HRESULT Device::GetBackBuffer(UINT swap_chain, UINT back_buffer_index,
-                              D3DBACKBUFFER_TYPE type,
-                              IDirect3DSurface9** back_buffer) noexcept
-{
-   return _device->GetBackBuffer(swap_chain, back_buffer_index, type, back_buffer);
-}
-
 HRESULT Device::GetRasterStatus(UINT swap_chain, D3DRASTER_STATUS* raster_status) noexcept
 {
    return _device->GetRasterStatus(swap_chain, raster_status);

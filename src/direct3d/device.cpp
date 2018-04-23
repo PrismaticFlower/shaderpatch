@@ -112,8 +112,14 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
       presentation_parameters->BackBufferHeight = display.resolution.y;
    }
 
+   if (_use_fp_rendertargets) {
+      presentation_parameters->MultiSampleType = D3DMULTISAMPLE_NONE;
+   }
+
    // drop resources
 
+   _fp_backbuffer.reset(nullptr);
+   _backbuffer_override.reset(nullptr);
    _refraction_texture.reset(nullptr);
 
    _textures.clean_lost_textures();
@@ -145,8 +151,9 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
    const auto refraction_res = _resolution / _config.rendering.refraction_buffer_factor;
 
-   _device->CreateTexture(refraction_res.x, refraction_res.y, 1,
-                          D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT,
+   _device->CreateTexture(refraction_res.x, refraction_res.y, 1, D3DUSAGE_RENDERTARGET,
+                          _use_fp_rendertargets ? D3DFMT_A16B16G16R16F : D3DFMT_A8R8G8B8,
+                          D3DPOOL_DEFAULT,
                           _refraction_texture.clear_and_assign(), nullptr);
 
    // rebind textures
@@ -154,6 +161,16 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
    bind_water_texture();
    bind_refraction_texture();
    init_sampler_max_anisotropy();
+
+   // setup floating point rendertargets
+   if (_use_fp_rendertargets) {
+      _device->CreateTexture(_resolution.x, _resolution.y, 1, D3DUSAGE_RENDERTARGET,
+                             D3DFMT_A16B16G16R16F, D3DPOOL_DEFAULT,
+                             _fp_backbuffer.clear_and_assign(), nullptr);
+
+      _fp_backbuffer->GetSurfaceLevel(0, _backbuffer_override.clear_and_assign());
+      _device->SetRenderTarget(0, _backbuffer_override.get());
+   }
 
    if (!_imgui_bootstrapped) {
       ImGui_ImplDX9_Init(_window, _device.get());
@@ -228,25 +245,20 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
    return D3D_OK;
 }
 
-HRESULT Device::CreateDepthStencilSurface(UINT width, UINT height, D3DFORMAT format,
-                                          D3DMULTISAMPLE_TYPE multi_sample,
-                                          DWORD multi_sample_quality, BOOL discard,
-                                          IDirect3DSurface9** surface,
-                                          HANDLE* shared_handle) noexcept
+HRESULT Device::GetBackBuffer(UINT swap_chain, UINT back_buffer_index,
+                              D3DBACKBUFFER_TYPE type,
+                              IDirect3DSurface9** back_buffer) noexcept
 {
-   if (width == 512u && height == 256u) {
-      if (_config.rendering.high_res_reflections) {
-         width = _resolution.y * 2u;
-         height = _resolution.y;
-      }
+   if (swap_chain || back_buffer_index) return D3DERR_INVALIDCALL;
 
-      width /= _config.rendering.reflection_buffer_factor;
-      height /= _config.rendering.reflection_buffer_factor;
+   if (_backbuffer_override) {
+      *back_buffer = _backbuffer_override.get();
+      _backbuffer_override->AddRef();
+
+      return S_OK;
    }
 
-   return _device->CreateDepthStencilSurface(width, height, format,
-                                             multi_sample, multi_sample_quality,
-                                             discard, surface, shared_handle);
+   return _device->GetBackBuffer(swap_chain, back_buffer_index, type, back_buffer);
 }
 
 HRESULT Device::SetTexture(DWORD stage, IDirect3DBaseTexture9* texture) noexcept
@@ -393,10 +405,37 @@ HRESULT Device::CreateTexture(UINT width, UINT height, UINT levels, DWORD usage,
          width /= _config.rendering.reflection_buffer_factor;
          height /= _config.rendering.reflection_buffer_factor;
       }
+
+      if (_use_fp_rendertargets) format = D3DFMT_A16B16G16R16F;
    }
 
    return _device->CreateTexture(width, height, levels, usage, format, pool,
                                  texture, shared_handle);
+}
+
+HRESULT Device::CreateDepthStencilSurface(UINT width, UINT height, D3DFORMAT format,
+                                          D3DMULTISAMPLE_TYPE multi_sample,
+                                          DWORD multi_sample_quality, BOOL discard,
+                                          IDirect3DSurface9** surface,
+                                          HANDLE* shared_handle) noexcept
+{
+   if (width == 512u && height == 256u) {
+      if (_config.rendering.high_res_reflections) {
+         width = _resolution.y * 2u;
+         height = _resolution.y;
+      }
+
+      width /= _config.rendering.reflection_buffer_factor;
+      height /= _config.rendering.reflection_buffer_factor;
+   }
+
+   if (_use_fp_rendertargets) {
+      multi_sample = D3DMULTISAMPLE_NONE;
+   }
+
+   return _device->CreateDepthStencilSurface(width, height, format,
+                                             multi_sample, multi_sample_quality,
+                                             discard, surface, shared_handle);
 }
 
 HRESULT Device::CreateVertexShader(const DWORD* function,

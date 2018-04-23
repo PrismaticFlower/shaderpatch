@@ -335,18 +335,21 @@ private:
    const Com_ptr<IDirect3DDevice9> _device;
    const HWND _window;
 
+   Com_ptr<IDirect3DTexture9> _fp_backbuffer;
+   Com_ptr<IDirect3DSurface9> _backbuffer_override;
+
    Com_ptr<IDirect3DTexture9> _water_texture;
    Com_ptr<IDirect3DTexture9> _refraction_texture;
 
    std::function<void()> _on_ps_shader_set{};
 
+   glm::ivec2 _resolution;
+
    bool _window_dirty = true;
    bool _imgui_bootstrapped = false;
    bool _imgui_active = false;
    bool _fake_device_loss = false;
-
-   glm::ivec2 _resolution;
-
+   const bool _use_fp_rendertargets = true;
    bool _water_refraction = false;
    bool _refresh_material = true;
 
