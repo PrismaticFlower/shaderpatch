@@ -41,5 +41,6 @@ ucft
       "shader"
       "pbr"
       "pbr-basic"
+      "tonemap"
    }
 }

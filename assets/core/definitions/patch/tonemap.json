@@ -1,0 +1,18 @@
+{
+  "patch_shader": true,
+  "source_name": "tonemap.fx",
+  "rendertype": "tonemap",
+
+  "skinned": false,
+  "lighting": false,
+  "vertex_color": false,
+
+  "states": [
+    {
+      "name": "linear",
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "linear_ps"
+    }
+  ]
+}

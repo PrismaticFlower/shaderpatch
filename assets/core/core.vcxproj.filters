@@ -176,6 +176,9 @@
     <None Include="definitions\patch\pbr-emissive.json">
       <Filter>definitions\patch</Filter>
     </None>
+    <None Include="definitions\patch\tonemap.json">
+      <Filter>definitions\patch</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">
@@ -190,5 +193,10 @@
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="munge_core.ps1" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="src\tonemap.fx">
+      <Filter>src</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>
