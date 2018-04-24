@@ -56,6 +56,56 @@ void set_active_light_constants(IDirect3DDevice9& device, Shader_flags flags) no
 
    device.SetPixelShaderConstantB(0, constants.data(), constants.size());
 }
+
+auto create_fs_vertex_buffer(IDirect3DDevice9& device, const glm::ivec2 resolution)
+   -> Com_ptr<IDirect3DVertexBuffer9>
+{
+   const auto offset = 1.f / static_cast<glm::vec2>(resolution);
+
+   const auto vertices = std::array<float, 12>{{
+      -1.f - offset.x, -1.f + offset.y, // pos 0
+      0.f, 1.f,                         // uv 0
+      -1.f - offset.x, 3.f + offset.x,  // pos 1
+      0.f, -1.f,                        // uv 1
+      3.f - offset.x, -1.f + offset.x,  // pos 2
+      2.f, 1.f                          // uv 2
+   }};
+
+   Com_ptr<IDirect3DVertexBuffer9> buffer;
+
+   device.CreateVertexBuffer(sizeof(vertices), D3DUSAGE_WRITEONLY, 0,
+                             D3DPOOL_DEFAULT, buffer.clear_and_assign(), nullptr);
+
+   void* data_ptr{};
+
+   buffer->Lock(0, sizeof(vertices), &data_ptr, 0);
+
+   *static_cast<std::array<float, 12>*>(data_ptr) = vertices;
+
+   buffer->Unlock();
+
+   return buffer;
+}
+
+auto create_fs_vertex_decl(IDirect3DDevice9& device)
+   -> Com_ptr<IDirect3DVertexDeclaration9>
+{
+   constexpr auto declaration = std::array<D3DVERTEXELEMENT9, 3>{
+      {{0, 0, D3DDECLTYPE_FLOAT2, 0, D3DDECLUSAGE_POSITION, 0},
+       {0, 8, D3DDECLTYPE_FLOAT2, 0, D3DDECLUSAGE_TEXCOORD, 0},
+       D3DDECL_END()}};
+
+   Com_ptr<IDirect3DVertexDeclaration9> vertex_decl;
+
+   device.CreateVertexDeclaration(declaration.data(), vertex_decl.clear_and_assign());
+
+   return vertex_decl;
+}
+
+constexpr auto get_fs_buffer_stride()
+{
+   return 16u;
+}
 }
 
 Device::Device(Com_ptr<IDirect3DDevice9> device, const HWND window,
@@ -63,7 +113,8 @@ Device::Device(Com_ptr<IDirect3DDevice9> device, const HWND window,
    : _device{std::move(device)},
      _window{window},
      _resolution{resolution},
-     _device_max_anisotropy{gsl::narrow_cast<int>(caps.MaxAnisotropy)}
+     _device_max_anisotropy{gsl::narrow_cast<int>(caps.MaxAnisotropy)},
+     _fs_vertex_decl{create_fs_vertex_decl(*_device)}
 {
    _water_texture =
       load_dds_from_file(*_device, L"data/shaderpatch/textures/water.dds"s);
@@ -114,6 +165,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
    if (_use_fp_rendertargets) {
       presentation_parameters->MultiSampleType = D3DMULTISAMPLE_NONE;
+      presentation_parameters->MultiSampleQuality = 0;
    }
 
    // drop resources
@@ -121,6 +173,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
    _fp_backbuffer.reset(nullptr);
    _backbuffer_override.reset(nullptr);
    _refraction_texture.reset(nullptr);
+   _fs_vertex_buffer.reset(nullptr);
 
    _textures.clean_lost_textures();
 
@@ -147,7 +200,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
    _state_block = create_filled_render_state_block(*_device);
 
-   // recreate textures
+   // recreate resources
 
    const auto refraction_res = _resolution / _config.rendering.refraction_buffer_factor;
 
@@ -155,6 +208,8 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
                           _use_fp_rendertargets ? D3DFMT_A16B16G16R16F : D3DFMT_A8R8G8B8,
                           D3DPOOL_DEFAULT,
                           _refraction_texture.clear_and_assign(), nullptr);
+
+   _fs_vertex_buffer = create_fs_vertex_buffer(*_device, _resolution);
 
    // rebind textures
 
@@ -197,6 +252,8 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
       _imgui_bootstrapped = true;
    }
 
+   _device->BeginScene();
+
    return result;
 }
 
@@ -212,12 +269,12 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
       _window_dirty = false;
    }
 
+   if (!std::exchange(_fp_rt_resolved, false)) {
+      resolve_fp_rendertarget();
+   }
+
    if (_imgui_active) {
-      _device->BeginScene();
-
       ImGui::Render();
-
-      _device->EndScene();
    }
    else {
       ImGui::EndFrame();
@@ -235,8 +292,12 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
    // update water refraction
    _water_refraction = false;
 
+   _device->EndScene();
+
    const auto result =
       _device->Present(source_rect, dest_rect, dest_window_override, dirty_region);
+
+   _device->BeginScene();
 
    if (result != D3D_OK) return result;
 
@@ -431,6 +492,7 @@ HRESULT Device::CreateDepthStencilSurface(UINT width, UINT height, D3DFORMAT for
 
    if (_use_fp_rendertargets) {
       multi_sample = D3DMULTISAMPLE_NONE;
+      multi_sample_quality = 0;
    }
 
    return _device->CreateDepthStencilSurface(width, height, format,
@@ -646,6 +708,43 @@ void Device::init_sampler_max_anisotropy() noexcept
                                std::clamp(_config.rendering.anisotropic_filtering,
                                           1, _device_max_anisotropy));
    }
+}
+
+void Device::resolve_fp_rendertarget() noexcept
+{
+   Com_ptr<IDirect3DStateBlock9> state;
+
+   _device->CreateStateBlock(D3DSBT_ALL, state.clear_and_assign());
+
+   _device->SetStreamSource(0, _fs_vertex_buffer.get(), 0, get_fs_buffer_stride());
+   _device->SetVertexDeclaration(_fs_vertex_decl.get());
+
+   _device->SetRenderState(D3DRS_ZENABLE, FALSE);
+   _device->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+
+   Com_ptr<IDirect3DSurface9> backbuffer;
+
+   _device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO,
+                          backbuffer.clear_and_assign());
+
+   _device->SetRenderTarget(0, backbuffer.get());
+
+   _device->SetTexture(4, _fp_backbuffer.get());
+
+   _device->SetSamplerState(4, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+   _device->SetSamplerState(4, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+   _device->SetSamplerState(4, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+   _device->SetSamplerState(4, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+   _device->SetSamplerState(4, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
+
+   _shaders.at("tonemap"s).at("linear"s)[Shader_flags::none].bind(*_device);
+
+   _device->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 1);
+
+   _fp_backbuffer->GetSurfaceLevel(0, backbuffer.clear_and_assign());
+   _device->SetRenderTarget(0, backbuffer.get());
+   _device->SetTexture(4, nullptr);
+   state->Apply();
 }
 
 void Device::refresh_material() noexcept

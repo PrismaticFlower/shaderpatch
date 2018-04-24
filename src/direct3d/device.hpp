@@ -323,6 +323,8 @@ private:
 
    void init_sampler_max_anisotropy() noexcept;
 
+   void resolve_fp_rendertarget() noexcept;
+
    void refresh_material() noexcept;
 
    void clear_material() noexcept;
@@ -350,6 +352,7 @@ private:
    bool _imgui_active = false;
    bool _fake_device_loss = false;
    const bool _use_fp_rendertargets = true;
+   bool _fp_rt_resolved = false;
    bool _water_refraction = false;
    bool _refresh_material = true;
 
@@ -368,6 +371,9 @@ private:
 
    Shader_database _shaders;
    Texture_database _textures;
+
+   const Com_ptr<IDirect3DVertexDeclaration9> _fs_vertex_decl;
+   Com_ptr<IDirect3DVertexBuffer9> _fs_vertex_buffer;
 
    const std::chrono::steady_clock::time_point _device_start{
       std::chrono::steady_clock::now()};
