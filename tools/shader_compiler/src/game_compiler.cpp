@@ -198,12 +198,13 @@ auto Game_compiler::compile_vertex_shader(const nlohmann::json& parent_metadata,
       std::cout << static_cast<char*>(error_message->GetBufferPointer());
    }
 
+   const auto shader_index = static_cast<std::uint32_t>(_vs_shaders.size());
+
    _vs_shaders.emplace_back(
       embed_meta_data(parent_metadata, _render_type, state_name, entry_point,
                       target, variation.flags, make_dword_span(*shader)));
 
-   return _vs_cache[cache_index] = {variation.flags,
-                                    static_cast<std::uint32_t>(_vs_shaders.size())};
+   return _vs_cache[cache_index] = {variation.flags, shader_index};
 }
 
 auto Game_compiler::compile_pixel_shader(const nlohmann::json& parent_metadata,
@@ -231,11 +232,13 @@ auto Game_compiler::compile_pixel_shader(const nlohmann::json& parent_metadata,
       std::cout << static_cast<char*>(error_message->GetBufferPointer());
    }
 
+   const auto shader_index = static_cast<std::uint32_t>(_ps_shaders.size());
+
    _ps_shaders.emplace_back(embed_meta_data(parent_metadata, _render_type,
                                             state_name, entry_point, target, {},
                                             make_dword_span(*shader)));
 
-   return _ps_cache[entry_point] = static_cast<Pixel_shader_ref>(_ps_shaders.size());
+   return _ps_cache[entry_point] = shader_index;
 }
 
 auto Game_compiler::get_pass_flags(const nlohmann::json& pass_def) -> Pass_flags
