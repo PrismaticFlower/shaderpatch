@@ -159,7 +159,7 @@
     <None Include="definitions\decal.json" />
     <None Include="definitions\filtercopy.json" />
     <None Include="definitions\flare.json" />
-    <None Include="definitions\hdr.json" />
+    <None Include="definitions\bloom_stock.json" />
     <None Include="definitions\interface.json" />
     <None Include="definitions\lightbeam.json" />
     <None Include="definitions\normal.json" />
@@ -202,7 +202,7 @@
     <None Include="src\fog_utilities.hlsl">
       <FileType>Document</FileType>
     </None>
-    <None Include="src\hdr.fx">
+    <None Include="src\bloom_stock.fx">
       <FileType>Document</FileType>
     </None>
     <None Include="src\interface.fx">
