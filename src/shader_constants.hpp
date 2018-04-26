@@ -25,6 +25,7 @@ constexpr auto material_constants_end = 136u;
 // extension vs constants
 namespace vs {
 constexpr auto time = 97u;
+constexpr auto gamma = 98u;
 
 constexpr auto material_constants_start = 128u;
 constexpr auto material_constants_end = 136u;

@@ -6,6 +6,8 @@
       "name": "textured flare",
       "id": 0,
 
+      "srgb_state": [ true, false, false, false ],
+
       "passes": [
         {
           "skinned": false,

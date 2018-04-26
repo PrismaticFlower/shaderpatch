@@ -176,6 +176,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
    _fs_vertex_buffer.reset(nullptr);
 
    _textures.clean_lost_textures();
+   _color_grading.drop_device_resources();
 
    _material = nullptr;
 
@@ -225,6 +226,8 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
       _fp_backbuffer->GetSurfaceLevel(0, _backbuffer_override.clear_and_assign());
       _device->SetRenderTarget(0, _backbuffer_override.get());
+
+      _linear_rendering = true;
    }
 
    if (!_imgui_bootstrapped) {
@@ -271,6 +274,9 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
 
    if (!std::exchange(_fp_rt_resolved, false)) {
       apply_tonemapping("linear"s);
+   }
+   else if (_use_fp_rendertargets) {
+      set_linear_rendering(true);
    }
 
    if (_imgui_active) {
@@ -555,6 +561,12 @@ HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
    vertex_shader.get()->AddRef();
    _game_vertex_shader.reset(vertex_shader.get());
 
+   if (_linear_rendering) {
+      for (auto i = 0; i < 4; ++i) {
+         _device->SetSamplerState(i, D3DSAMP_SRGBTEXTURE, _vs_metadata.srgb_state[i]);
+      }
+   }
+
    if (_material) {
       _refresh_material = true;
 
@@ -567,6 +579,7 @@ HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
    else if (std::exchange(_game_bloom_pass, false) && _vs_metadata.rendertype != "hdr"sv) {
       if (_use_fp_rendertargets) {
          _fp_rt_resolved = true;
+         set_linear_rendering(false);
 
          constexpr auto pp_start = constants::ps::post_processing_start;
 
@@ -675,6 +688,8 @@ HRESULT Device::SetRenderState(D3DRENDERSTATETYPE state, DWORD value) noexcept
       color.x = static_cast<float>((0x00ff0000 & value) >> 16) / 255.0f;
       color.y = static_cast<float>((0x0000ff00 & value) >> 8) / 255.0f;
       color.z = static_cast<float>((0x000000ff & value)) / 255.0f;
+
+      if (_linear_rendering) color = glm::pow(color, glm::vec3{2.2f});
 
       _fog_color_const.set(*_device, color);
 
@@ -822,4 +837,27 @@ void Device::update_refraction_texture() noexcept
 
    _device->StretchRect(rt.get(), nullptr, dest.get(), nullptr, D3DTEXF_LINEAR);
 }
+
+void Device::set_linear_rendering(bool linear_rendering) noexcept
+{
+   _linear_rendering = linear_rendering;
+
+   if (_linear_rendering) {
+      _gamma_vs_const.set(*_device, 2.2f);
+
+      for (auto i = 0; i < 4; ++i) {
+         _device->SetSamplerState(i, D3DSAMP_SRGBTEXTURE, _vs_metadata.srgb_state[i]);
+      }
+   }
+   else {
+      _gamma_vs_const.set(*_device, 1.0f);
+
+      for (auto i = 0; i < 4; ++i) {
+         _device->SetSamplerState(i, D3DSAMP_SRGBTEXTURE, FALSE);
+      }
+   }
+
+   SetRenderState(D3DRS_FOGCOLOR, _state_block.get(D3DRS_FOGCOLOR));
+}
+
 }

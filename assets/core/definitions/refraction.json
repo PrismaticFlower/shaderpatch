@@ -1,5 +1,6 @@
 {
   "rendertype": "refraction",
+  "srgb_state": [ false, false, true, true ],
 
   "states": [
     {

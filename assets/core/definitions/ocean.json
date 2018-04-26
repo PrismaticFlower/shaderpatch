@@ -1,5 +1,6 @@
 {
   "rendertype": "ocean",
+  "srgb_state": [ true, true, false, false ],
 
   "states": [
     {

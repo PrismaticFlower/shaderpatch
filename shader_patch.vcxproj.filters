@@ -55,7 +55,7 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\effects\color_grading.cpp">
-      <Filter>src</Filter>
+      <Filter>src\effects</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -138,7 +138,7 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\effects\color_grading.hpp">
-      <Filter>src</Filter>
+      <Filter>src\effects</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

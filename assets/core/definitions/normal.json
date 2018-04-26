@@ -1,5 +1,6 @@
 {
   "rendertype": "normal",
+  "srgb_state": [ true, false, true, false ],
 
   "states": [
     {

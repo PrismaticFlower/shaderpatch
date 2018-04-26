@@ -23,7 +23,7 @@ public:
    {
       auto index = static_cast<DWORD>(state);
 
-      if (index & 128u) index >> 1u;
+      if (index & 128u) index >>= 1u;
 
       return reinterpret_cast<const Type&>(_state_block[index]);
    }

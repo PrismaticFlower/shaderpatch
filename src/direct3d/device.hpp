@@ -335,6 +335,8 @@ private:
 
    void update_refraction_texture() noexcept;
 
+   void set_linear_rendering(bool linear_rendering) noexcept;
+
    const Com_ptr<IDirect3DDevice9> _device;
    const HWND _window;
 
@@ -353,6 +355,7 @@ private:
    bool _imgui_active = false;
    bool _fake_device_loss = false;
    const bool _use_fp_rendertargets = true;
+   bool _linear_rendering = false;
    bool _fp_rt_resolved = false;
    bool _game_bloom_pass = false;
    bool _water_refraction = false;
@@ -370,6 +373,7 @@ private:
    Ps_3f_shader_constant<constants::ps::fog_color> _fog_color_const;
    Ps_4f_shader_constant<constants::ps::rt_resolution> _rt_resolution_const;
    Vs_1f_shader_constant<constants::vs::time> _time_vs_const;
+   Vs_1f_shader_constant<constants::vs::gamma> _gamma_vs_const;
 
    Shader_database _shaders;
    Texture_database _textures;

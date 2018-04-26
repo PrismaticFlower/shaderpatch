@@ -230,6 +230,8 @@
       "name": "low quality with specular",
       "id": 8,
 
+      "srgb_state": [ true, true, false, false ],
+
       "passes": [
         {
           "skinned": false,
@@ -247,6 +249,8 @@
     {
       "name": "low quality",
       "id": 9,
+
+      "srgb_state": [ true, true, false, false ],
 
       "passes": [
         {
