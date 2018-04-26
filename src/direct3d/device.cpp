@@ -270,10 +270,12 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
    }
 
    if (!std::exchange(_fp_rt_resolved, false)) {
-      resolve_fp_rendertarget();
+      apply_tonemapping("linear"s);
    }
 
    if (_imgui_active) {
+      _color_grading.show_imgui();
+
       ImGui::Render();
    }
    else {
@@ -298,6 +300,10 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
       _device->Present(source_rect, dest_rect, dest_window_override, dirty_region);
 
    _device->BeginScene();
+
+   Com_ptr<IDirect3DSurface9> rt;
+   _fp_backbuffer->GetSurfaceLevel(0, rt.clear_and_assign());
+   _device->SetRenderTarget(0, rt.get());
 
    if (result != D3D_OK) return result;
 
@@ -555,6 +561,22 @@ HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
       return S_OK;
    }
 
+   if (_vs_metadata.rendertype == "hdr"sv) {
+      _game_bloom_pass = true;
+   }
+   else if (std::exchange(_game_bloom_pass, false) && _vs_metadata.rendertype != "hdr"sv) {
+      if (_use_fp_rendertargets) {
+         _fp_rt_resolved = true;
+
+         constexpr auto pp_start = constants::ps::post_processing_start;
+
+         _color_grading.bind_constants<pp_start, pp_start + 1>();
+         _color_grading.bind_lut(5, 6, 7);
+
+         apply_tonemapping("color grading"s);
+      }
+   }
+
    set_active_light_constants(*_device, vertex_shader.metadata.shader_flags);
 
    return _device->SetVertexShader(vertex_shader.get());
@@ -710,8 +732,15 @@ void Device::init_sampler_max_anisotropy() noexcept
    }
 }
 
-void Device::resolve_fp_rendertarget() noexcept
+void Device::apply_tonemapping(const std::string& shader_state) noexcept
 {
+   Com_ptr<IDirect3DSurface9> backbuffer;
+
+   _device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO,
+                          backbuffer.clear_and_assign());
+
+   _device->SetRenderTarget(0, backbuffer.get());
+
    Com_ptr<IDirect3DStateBlock9> state;
 
    _device->CreateStateBlock(D3DSBT_ALL, state.clear_and_assign());
@@ -722,13 +751,6 @@ void Device::resolve_fp_rendertarget() noexcept
    _device->SetRenderState(D3DRS_ZENABLE, FALSE);
    _device->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
 
-   Com_ptr<IDirect3DSurface9> backbuffer;
-
-   _device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO,
-                          backbuffer.clear_and_assign());
-
-   _device->SetRenderTarget(0, backbuffer.get());
-
    _device->SetTexture(4, _fp_backbuffer.get());
 
    _device->SetSamplerState(4, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
@@ -737,13 +759,10 @@ void Device::resolve_fp_rendertarget() noexcept
    _device->SetSamplerState(4, D3DSAMP_MINFILTER, D3DTEXF_POINT);
    _device->SetSamplerState(4, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
 
-   _shaders.at("tonemap"s).at("linear"s)[Shader_flags::none].bind(*_device);
+   _shaders.at("tonemap"s).at(shader_state)[Shader_flags::none].bind(*_device);
 
    _device->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 1);
 
-   _fp_backbuffer->GetSurfaceLevel(0, backbuffer.clear_and_assign());
-   _device->SetRenderTarget(0, backbuffer.get());
-   _device->SetTexture(4, nullptr);
    state->Apply();
 }
 

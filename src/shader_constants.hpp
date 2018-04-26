@@ -15,6 +15,9 @@ constexpr auto rt_resolution = 53u;
 
 constexpr auto projection_matrix = 54u;
 
+constexpr auto post_processing_start = 60u;
+constexpr auto post_processing_end = 70u;
+
 constexpr auto material_constants_start = 128u;
 constexpr auto material_constants_end = 136u;
 }

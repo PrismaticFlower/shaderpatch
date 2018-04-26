@@ -10,6 +10,9 @@
     <Filter Include="src\imgui">
       <UniqueIdentifier>{88c1d793-343a-4ebb-934a-fdc29d5660de}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\effects">
+      <UniqueIdentifier>{32260bbd-fc9f-42f0-8b2b-d9a327005fb1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -49,6 +52,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\material.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\effects\color_grading.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
@@ -129,6 +135,9 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\texture_database.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\effects\color_grading.hpp">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

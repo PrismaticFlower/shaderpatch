@@ -250,3 +250,7 @@ Used by Compressonator.
 > NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 > SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
+### [John Hable](https://twitter.com/FilmicWorlds) 
+For his incredibly useful posts and examples on [Filmic Tonemapping](http://filmicworlds.com/blog/filmic-tonemapping-with-piecewise-power-curves/)
+and [Color Grading](http://filmicworlds.com/blog/minimal-color-grading-tools/).

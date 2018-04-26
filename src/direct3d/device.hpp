@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../effects/color_grading.hpp"
 #include "../material.hpp"
 #include "../shader_constants.hpp"
 #include "../shader_database.hpp"
@@ -323,7 +324,7 @@ private:
 
    void init_sampler_max_anisotropy() noexcept;
 
-   void resolve_fp_rendertarget() noexcept;
+   void apply_tonemapping(const std::string& shader_state) noexcept;
 
    void refresh_material() noexcept;
 
@@ -353,6 +354,7 @@ private:
    bool _fake_device_loss = false;
    const bool _use_fp_rendertargets = true;
    bool _fp_rt_resolved = false;
+   bool _game_bloom_pass = false;
    bool _water_refraction = false;
    bool _refresh_material = true;
 
@@ -371,6 +373,8 @@ private:
 
    Shader_database _shaders;
    Texture_database _textures;
+
+   effects::Color_grading _color_grading{_device};
 
    const Com_ptr<IDirect3DVertexDeclaration9> _fs_vertex_decl;
    Com_ptr<IDirect3DVertexBuffer9> _fs_vertex_buffer;

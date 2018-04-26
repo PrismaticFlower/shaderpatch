@@ -115,8 +115,7 @@ struct Ps_input
    //float vface : VFACE;
 };
 
-float4 main_opaque_ps(Ps_input input, const Normal_state state, 
-                      const bool gamma_correct = true) : COLOR
+float4 main_opaque_ps(Ps_input input, const Normal_state state) : COLOR
 {
    const float4 albedo_map_color = tex2D(albedo_map, input.texcoords);
    const float3 albedo = albedo_map_color.rgb * base_color;
@@ -153,9 +152,6 @@ float4 main_opaque_ps(Ps_input input, const Normal_state state,
 
    color = fog::apply(color, input.fog_eye_distance);
 
-   // TODO: better solution for gamma handling, hdr, etc
-   if (gamma_correct) color = pow(color, 1.0 / 2.2);
-
    return float4(color, saturate(input.fade * 4.0));
 }
 
@@ -165,10 +161,10 @@ float4 main_transparent_ps(Ps_input input, const Normal_state state) : COLOR
 
    if (state.hardedged && albedo_map_color.a < 0.5) discard;
 
-   float4 color = main_opaque_ps(input, state, false);
+   float4 color = main_opaque_ps(input, state);
 
-   // TODO: better solution for gamma handling, hdr, etc
-   pow(color.rgb / color.a, 1.0 / 2.2);
+   // Divide color by alpha so blending works.
+   color.rgb /= color.a;
 
    return color;
 }

@@ -13,6 +13,13 @@
 
       "vertex_shader": "main_vs",
       "pixel_shader": "linear_ps"
+    },
+
+    {
+      "name": "color grading",
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "color_grading_ps"
     }
   ]
 }

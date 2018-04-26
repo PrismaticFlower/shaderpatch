@@ -126,6 +126,7 @@
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\effects\color_grading.cpp" />
     <ClCompile Include="src\direct3d\check_required_features.cpp" />
     <ClCompile Include="src\direct3d\create_device.cpp" />
     <ClCompile Include="src\direct3d\device.cpp" />
@@ -156,6 +157,7 @@
     <None Include="dinput8.def" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\effects\color_grading.hpp" />
     <ClInclude Include="src\direct3d\check_required_features.hpp" />
     <ClInclude Include="src\direct3d\create_device.hpp" />
     <ClInclude Include="src\direct3d\device.hpp" />
