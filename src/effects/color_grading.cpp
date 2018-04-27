@@ -409,15 +409,15 @@ void Color_grading::show_imgui() noexcept
    if (ImGui::CollapsingHeader("Lift / Gamma / Gain")) {
       ImGui::ColorEdit3("Shadow Colour", &_user_params.shadow_color.x,
                         ImGuiColorEditFlags_Float);
-      ImGui::DragFloat("Shadow Offset", &_user_params.shadow_offset, 0.01f);
+      ImGui::DragFloat("Shadow Offset", &_user_params.shadow_offset, 0.005f);
 
       ImGui::ColorEdit3("Midtone Colour", &_user_params.midtone_color.x,
                         ImGuiColorEditFlags_Float);
-      ImGui::DragFloat("Midtone Offset", &_user_params.midtone_offset, 0.01f);
+      ImGui::DragFloat("Midtone Offset", &_user_params.midtone_offset, 0.005f);
 
       ImGui::ColorEdit3("Hightlight Colour", &_user_params.highlight_color.x,
                         ImGuiColorEditFlags_Float);
-      ImGui::DragFloat("Hightlight Offset", &_user_params.highlight_offset, 0.01f);
+      ImGui::DragFloat("Hightlight Offset", &_user_params.highlight_offset, 0.005f);
    }
 
    ImGui::Separator();
