@@ -355,12 +355,12 @@ private:
    bool _imgui_bootstrapped = false;
    bool _imgui_active = false;
    bool _fake_device_loss = false;
-   bool _use_fp_rendertargets = true;
+   bool _using_fp_rendertargets = false;
 
    // Per-Frame State
    bool _linear_rendering = false;
    bool _fp_rt_resolved = false;
-   bool _game_bloom_pass = false;
+   bool _game_doing_bloom_pass = false;
    bool _water_refraction = false;
    bool _refresh_material = true;
 
