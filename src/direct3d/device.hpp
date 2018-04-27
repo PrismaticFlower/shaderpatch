@@ -350,11 +350,14 @@ private:
 
    glm::ivec2 _resolution;
 
+   // Config State
    bool _window_dirty = true;
    bool _imgui_bootstrapped = false;
    bool _imgui_active = false;
    bool _fake_device_loss = false;
-   const bool _use_fp_rendertargets = true;
+   bool _use_fp_rendertargets = true;
+
+   // Per-Frame State
    bool _linear_rendering = false;
    bool _fp_rt_resolved = false;
    bool _game_bloom_pass = false;
