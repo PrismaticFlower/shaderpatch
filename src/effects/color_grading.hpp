@@ -10,6 +10,13 @@
 #include <glm/glm.hpp>
 #include <gsl/gsl>
 
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#pragma warning(disable : 4127)
+
+#include <yaml-cpp/yaml.h>
+#pragma warning(pop)
+
 #include <d3d9.h>
 
 namespace sp::effects {
@@ -82,6 +89,11 @@ public:
 
    void show_imgui() noexcept;
 
+   auto params() const noexcept -> const Color_grading_params&
+   {
+      return _user_params;
+   }
+
 private:
    void update_eval_params() noexcept;
 
@@ -125,6 +137,92 @@ private:
    const int _curve_size = 256;
 
    Color_grading_params _user_params{};
+
+   bool _open_failure = false;
+   bool _save_failure = false;
 };
 
+}
+
+namespace YAML {
+template<>
+struct convert<sp::effects::Color_grading_params> {
+   static Node encode(const sp::effects::Color_grading_params& params)
+   {
+      using namespace std::literals;
+
+      YAML::Node node;
+
+      node["ColorFilter"s].push_back(params.color_filter.r);
+      node["ColorFilter"s].push_back(params.color_filter.g);
+      node["ColorFilter"s].push_back(params.color_filter.b);
+
+      node["Saturation"s] = params.saturation;
+      node["Exposure"s] = params.exposure;
+      node["Contrast"s] = params.contrast;
+
+      node["FilmicToeStrength"s] = params.filmic_toe_strength;
+      node["FilmicToeLength"s] = params.filmic_toe_length;
+      node["FilmicShoulderStrength"s] = params.filmic_shoulder_strength;
+      node["FilmicShoulderLength"s] = params.filmic_shoulder_length;
+      node["FilmicShoulderAngle"s] = params.filmic_shoulder_angle;
+
+      node["ShadowColor"s].push_back(params.shadow_color.r);
+      node["ShadowColor"s].push_back(params.shadow_color.g);
+      node["ShadowColor"s].push_back(params.shadow_color.b);
+
+      node["MidtoneColor"s].push_back(params.midtone_color.r);
+      node["MidtoneColor"s].push_back(params.midtone_color.g);
+      node["MidtoneColor"s].push_back(params.midtone_color.b);
+
+      node["HighlightColor"s].push_back(params.highlight_color.r);
+      node["HighlightColor"s].push_back(params.highlight_color.g);
+      node["HighlightColor"s].push_back(params.highlight_color.b);
+
+      node["ShadowOffset"s] = params.shadow_offset;
+      node["MidtoneOffset"s] = params.midtone_offset;
+      node["HighlightOffset"s] = params.highlight_offset;
+
+      return node;
+   }
+
+   static bool decode(const Node& node, sp::effects::Color_grading_params& params)
+   {
+      using namespace std::literals;
+
+      params = sp::effects::Color_grading_params{};
+
+      params.color_filter.r = node["ColorFilter"s][0].as<float>();
+      params.color_filter.g = node["ColorFilter"s][1].as<float>();
+      params.color_filter.b = node["ColorFilter"s][2].as<float>();
+
+      params.saturation = node["Saturation"s].as<float>();
+      params.exposure = node["Exposure"s].as<float>();
+      params.contrast = node["Contrast"s].as<float>();
+
+      params.filmic_toe_strength = node["FilmicToeStrength"s].as<float>();
+      params.filmic_toe_length = node["FilmicToeLength"s].as<float>();
+      params.filmic_shoulder_strength = node["FilmicShoulderStrength"s].as<float>();
+      params.filmic_shoulder_length = node["FilmicShoulderLength"s].as<float>();
+      params.filmic_shoulder_angle = node["FilmicShoulderAngle"s].as<float>();
+
+      params.shadow_color.r = node["ShadowColor"s][0].as<float>();
+      params.shadow_color.g = node["ShadowColor"s][1].as<float>();
+      params.shadow_color.b = node["ShadowColor"s][2].as<float>();
+
+      params.midtone_color.r = node["MidtoneColor"s][0].as<float>();
+      params.midtone_color.g = node["MidtoneColor"s][1].as<float>();
+      params.midtone_color.b = node["MidtoneColor"s][2].as<float>();
+
+      params.highlight_color.r = node["HighlightColor"s][0].as<float>();
+      params.highlight_color.g = node["HighlightColor"s][1].as<float>();
+      params.highlight_color.b = node["HighlightColor"s][2].as<float>();
+
+      params.shadow_offset = node["ShadowOffset"s].as<float>();
+      params.midtone_offset = node["MidtoneOffset"s].as<float>();
+      params.highlight_offset = node["HighlightOffset"s].as<float>();
+
+      return true;
+   }
+};
 }

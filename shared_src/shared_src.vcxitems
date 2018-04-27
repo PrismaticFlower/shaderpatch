@@ -17,6 +17,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)algorithm.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)compose_exception.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)com_ptr.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)file_dialogs.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)magic_number.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)material_flags.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)patch_material.hpp" />
@@ -26,6 +27,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)shader_metadata.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)string_utilities.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)synced_io.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)throw_if_failed.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ucfb_reader.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ucfb_tweaker.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ucfb_writer.hpp" />
