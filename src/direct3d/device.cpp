@@ -198,6 +198,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
    const auto fl_res = static_cast<glm::vec2>(_resolution);
 
    _rt_resolution_const.set(*_device, {fl_res, glm::vec2{1.0f} / fl_res});
+   _gamma_vs_const.set(*_device, 1.0f);
 
    _state_block = create_filled_render_state_block(*_device);
 
