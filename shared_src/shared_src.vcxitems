@@ -17,6 +17,8 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)algorithm.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)compose_exception.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)com_ptr.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)config_file.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)exceptions.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)file_dialogs.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)magic_number.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)material_flags.hpp" />
