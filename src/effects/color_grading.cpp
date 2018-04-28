@@ -299,6 +299,8 @@ bool save_params_to_yaml_file(const Color_grading_params& params,
       return false;
    }
 
+   file << "# Auto-Generated Colour Grading Config. May have less than ideal formatting.\n"sv;
+
    file << config;
 
    return true;
