@@ -288,7 +288,7 @@ bool save_params_to_yaml_file(const Color_grading_params& params,
                               const fs::path& save_to) noexcept
 {
    YAML::Node config;
-   config = params;
+   config["ColorGrading"s] = params;
 
    boost::filesystem::ofstream file{save_to};
 
@@ -324,7 +324,7 @@ auto load_params_from_yaml_file(const fs::path& load_from)
    Color_grading_params params{};
 
    try {
-      params = config.as<Color_grading_params>();
+      params = config["ColorGrading"s].as<Color_grading_params>();
    }
    catch (std::exception& e) {
       log(Log_level::warning,
