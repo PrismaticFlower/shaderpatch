@@ -47,21 +47,6 @@ auto find_texture_references(const fs::path& from)
    return results;
 }
 
-auto build_input_file_map(const fs::path& in) -> std::unordered_map<Ci_string, fs::path>
-{
-   Expects(fs::is_directory(in));
-
-   std::unordered_map<Ci_string, fs::path> results;
-
-   for (auto& entry : fs::recursive_directory_iterator{in}) {
-      if (!fs::is_regular_file(entry.path())) continue;
-
-      results[make_ci_string(entry.path().filename().string())] = entry.path();
-   }
-
-   return results;
-}
-
 auto load_material_descriptions(const std::vector<std::string>& directories)
    -> std::unordered_map<Ci_string, YAML::Node>
 {

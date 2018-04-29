@@ -1,5 +1,6 @@
 
 #include "helpers.hpp"
+#include "munge_helpers.hpp"
 #include "munge_materials.hpp"
 #include "synced_io.hpp"
 
