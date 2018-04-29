@@ -15,7 +15,7 @@ enum class Volume_resource_type : std::uint16_t {
    shader = 2048,
    texture = 4096,
    material = 8192,
-   fx_config = 8192
+   fx_config = 16384
 };
 
 constexpr auto unpack_resource_size(std::uint32_t height, std::uint32_t depth) noexcept

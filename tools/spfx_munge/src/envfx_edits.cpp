@@ -71,7 +71,7 @@ void edit_envfx(const fs::path& fx_path, const fs::path& output_dir)
    apply_hdr_edits(fx_cfg);
 
    auto output_path =
-      output_dir / fx_path.filename().replace_extension("_sp.tmpfx");
+      output_dir / fx_path.filename().replace_extension(".tmpfx");
 
    save_fx_cfg(fx_cfg, output_path);
 }

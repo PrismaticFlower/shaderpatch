@@ -18,7 +18,9 @@
 #include <algorithm>
 #include <chrono>
 #include <fstream>
+#include <functional>
 #include <limits>
+#include <memory>
 #include <string_view>
 #include <vector>
 
@@ -443,8 +445,8 @@ HRESULT Device::CreateVolumeTexture(UINT width, UINT height, UINT depth, UINT le
             return texture;
          }
          catch (std::exception& e) {
-            log(Log_level::error, "Exception occured while loading texture: "sv,
-                e.what());
+            log(Log_level::error,
+                "Exception occured while loading FX Config: "sv, e.what());
 
             return nullptr;
          }
@@ -460,6 +462,52 @@ HRESULT Device::CreateVolumeTexture(UINT width, UINT height, UINT depth, UINT le
    else if (type == Volume_resource_type::material) {
       *volume_texture = new Material_resource{unpack_resource_size(height, depth),
                                               _device, _shaders, _textures};
+
+      return S_OK;
+   }
+   else if (type == Volume_resource_type::fx_config) {
+      auto handle_resource = [&, this](gsl::span<std::byte> data)
+         -> std::unique_ptr<gsl::final_action<std::function<void()>>> {
+         try {
+            std::string config_str{reinterpret_cast<char*>(data.data()),
+                                   static_cast<std::size_t>(data.size())};
+
+            while (config_str.back() == '\0') config_str.pop_back();
+
+            auto config = YAML::Load(config_str);
+
+            _using_fp_rendertargets = true;
+            _fake_device_loss = true;
+
+            _color_grading.set_params(
+               config["ColorGrading"s].as<effects::Color_grading_params>());
+
+            auto fx_id = _active_fx_id.fetch_add(1);
+
+            const auto on_destruction = [fx_id, this] {
+               if (fx_id != _active_fx_id.load()) return;
+
+               _using_fp_rendertargets = false;
+               _fake_device_loss = true;
+
+               _color_grading.set_params(effects::Color_grading_params{});
+            };
+
+            return std::make_unique<gsl::final_action<std::function<void()>>>(
+               on_destruction);
+         }
+         catch (std::exception& e) {
+            log(Log_level::error,
+                "Exception occured while loading FX Config: "sv, e.what());
+
+            return nullptr;
+         }
+      };
+
+      auto handler = make_resource_handler(unpack_resource_size(height, depth),
+                                           handle_resource);
+
+      *volume_texture = handler.release();
 
       return S_OK;
    }
@@ -862,5 +910,4 @@ void Device::set_linear_rendering(bool linear_rendering) noexcept
 
    SetRenderState(D3DRS_FOGCOLOR, _state_block.get(D3DRS_FOGCOLOR));
 }
-
 }

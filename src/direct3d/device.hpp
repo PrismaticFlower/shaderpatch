@@ -395,6 +395,7 @@ private:
 
    const int _device_max_anisotropy = 1;
 
+   std::atomic_int_fast32_t _active_fx_id{0};
    std::atomic<ULONG> _ref_count{1};
 };
 }
