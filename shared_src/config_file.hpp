@@ -5,6 +5,7 @@
 #include "string_utilities.hpp"
 
 #include <initializer_list>
+#include <iomanip>
 #include <iostream>
 #include <string>
 #include <string_view>
@@ -177,9 +178,9 @@ public:
    }
 
    template<typename... Args>
-   void emplace_back(Args... args)
+   auto emplace_back(Args... args) -> reference
    {
-      _children.emplace_back(std::forward<Args>(args)...);
+      return _children.emplace_back(std::forward<Args>(args)...);
    }
 
    void push_back(const_reference value)
@@ -197,10 +198,34 @@ public:
       _children.pop_back();
    }
 
-   template<typename Value_type, typename... Args>
-   void emplace_value(Args... args)
+   template<typename First, typename... Args>
+   void emplace_value(First&& first, Args&&... args)
    {
-      _values.emplace_back(Value_type{std::forward<Args>(args)...});
+      if constexpr (sizeof...(args) == 0) {
+         if constexpr (std::is_floating_point_v<First>) {
+            _values.emplace_back(std::in_place_type<double>,
+                                 std::forward<First>(first));
+         }
+         else if constexpr (std::is_integral_v<First>) {
+            _values.emplace_back(std::in_place_type<long long>,
+                                 std::forward<First>(first));
+         }
+         else if constexpr (std::is_same_v<std::decay_t<First>, std::string_view>) {
+            _values.emplace_back(std::in_place_type<std::string>,
+                                 std::forward<First>(first));
+         }
+         else if constexpr (std::is_convertible_v<std::decay_t<First>, std::string>) {
+            _values.emplace_back(std::in_place_type<std::string>,
+                                 std::forward<First>(first));
+         }
+         else {
+            static_assert(false,
+                          "Unable to construct config value from argument.");
+         }
+      }
+      else {
+         _values.emplace_back(std::forward<First>(first), std::forward<Args>(args)...);
+      }
    }
 
    auto values() const noexcept -> const std::vector<Node_value>&
@@ -226,9 +251,16 @@ public:
             return static_cast<Value_type>(std::get<double>(val));
          }
       }
-      else if (std::is_same_v<Value_type, std::string> ||
-               std::is_same_v<Value_type, std::string_view>) {
-         return static_cast<Value_type>(std::get<std::string>(val));
+      else if constexpr (std::is_same_v<Value_type, std::string>) {
+         if (std::holds_alternative<long long>(val)) {
+            return std::to_string(std::get<long long>(val));
+         }
+         else if (std::holds_alternative<double>(val)) {
+            return std::to_string(std::get<double>(val));
+         }
+         else {
+            return static_cast<Value_type>(std::get<std::string>(val));
+         }
       }
       else {
          static_assert(false, "Unknown Value_type.");
@@ -241,11 +273,11 @@ public:
       if constexpr (std::is_floating_point_v<Value_type>) {
          _values.at(index) = static_cast<double>(value);
       }
-      else if (std::is_integral_v<Value_type>) {
+      else if constexpr (std::is_integral_v<Value_type>) {
          _values.at(index) = static_cast<long long>(value);
       }
-      else if (std::is_same_v<Value_type, std::string> ||
-               std::is_same_v<Value_type, std::string_view>) {
+      else if constexpr (std::is_same_v<Value_type, std::string> ||
+                         std::is_same_v<Value_type, std::string_view>) {
          _values.at(index) = static_cast<std::string>(value);
       }
       else {
@@ -447,13 +479,13 @@ inline void parse_value(std::string_view value, Node& node)
       value.remove_prefix(1);
       value.remove_suffix(1);
 
-      node.emplace_value<std::string>(value);
+      node.emplace_value(value);
    }
    else if (contains(value, "."sv)) {
-      node.emplace_value<double>(std::stod(std::string{value}));
+      node.emplace_value(std::stod(std::string{value}));
    }
    else {
-      node.emplace_value<long long>(std::stoll(std::string{value}));
+      node.emplace_value(std::stoll(std::string{value}));
    }
 }
 

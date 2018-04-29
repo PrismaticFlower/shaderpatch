@@ -14,7 +14,8 @@ namespace sp {
 enum class Volume_resource_type : std::uint16_t {
    shader = 2048,
    texture = 4096,
-   material = 8192
+   material = 8192,
+   fx_config = 8192
 };
 
 constexpr auto unpack_resource_size(std::uint32_t height, std::uint32_t depth) noexcept
@@ -45,6 +46,7 @@ inline void save_volume_resource(const std::string& output_path,
 
    if (type == Volume_resource_type::shader) prefix = "_SP_SHADER_"s;
    if (type == Volume_resource_type::texture) prefix = "_SP_TEXTURE_"s;
+   if (type == Volume_resource_type::fx_config) prefix = "_SP_FXCFG_"s;
 
    writer.emplace_child("NAME"_mn).write(prefix += name);
 
