@@ -322,6 +322,8 @@ private:
    constexpr static auto refraction_slot = 13;
    constexpr static auto cubemap_projection_slot = 15;
 
+   constexpr static auto fp_texture_format = D3DFMT_A16B16G16R16F;
+
    void init_sampler_max_anisotropy() noexcept;
 
    void apply_tonemapping(const std::string& shader_state) noexcept;
@@ -363,6 +365,7 @@ private:
    bool _game_doing_bloom_pass = false;
    bool _water_refraction = false;
    bool _refresh_material = true;
+   bool _discard_draw_calls = false;
 
    boost::local_shared_ptr<Material> _material;
 

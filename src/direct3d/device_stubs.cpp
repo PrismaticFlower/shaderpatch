@@ -194,12 +194,12 @@ HRESULT Device::GetDepthStencilSurface(IDirect3DSurface9** z_stencil_surface) no
 
 HRESULT Device::BeginScene() noexcept
 {
-   return _device->BeginScene();
+   return S_OK;
 }
 
 HRESULT Device::EndScene() noexcept
 {
-   return _device->EndScene();
+   return S_OK;
 }
 
 HRESULT Device::Clear(DWORD count, const D3DRECT* rects, DWORD flags,

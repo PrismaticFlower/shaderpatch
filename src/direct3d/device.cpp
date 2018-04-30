@@ -210,17 +210,17 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
    if (_using_fp_rendertargets) {
       _device->CreateTexture(_resolution.x, _resolution.y, 1, D3DUSAGE_RENDERTARGET,
-                             D3DFMT_A16B16G16R16F, D3DPOOL_DEFAULT,
+                             fp_texture_format, D3DPOOL_DEFAULT,
                              _fp_backbuffer.clear_and_assign(), nullptr);
 
       _fp_backbuffer->GetSurfaceLevel(0, _backbuffer_override.clear_and_assign());
       _device->SetRenderTarget(0, _backbuffer_override.get());
 
-      _linear_rendering = true;
+      set_linear_rendering(true);
    }
 
    _device->CreateTexture(refraction_res.x, refraction_res.y, 1, D3DUSAGE_RENDERTARGET,
-                          _using_fp_rendertargets ? D3DFMT_A16B16G16R16F : D3DFMT_A8R8G8B8,
+                          _using_fp_rendertargets ? fp_texture_format : D3DFMT_A8R8G8B8,
                           D3DPOOL_DEFAULT,
                           _refraction_texture.clear_and_assign(), nullptr);
 
@@ -286,6 +286,11 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
       _config.show_imgui(&_fake_device_loss);
       _color_grading.show_imgui();
 
+      ImGui::Begin("Effects Control");
+      ImGui::Checkbox("Enable FP Rendertargets", &_using_fp_rendertargets);
+      _fake_device_loss |= ImGui::Button("Reset Device & Apply");
+      ImGui::End();
+
       ImGui::Render();
    }
    else {
@@ -312,9 +317,8 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
    _device->BeginScene();
 
    if (_using_fp_rendertargets) {
-      Com_ptr<IDirect3DSurface9> rt;
-      _fp_backbuffer->GetSurfaceLevel(0, rt.clear_and_assign());
-      _device->SetRenderTarget(0, rt.get());
+      _fp_backbuffer->GetSurfaceLevel(0, _backbuffer_override.clear_and_assign());
+      _device->SetRenderTarget(0, _backbuffer_override.get());
    }
 
    if (result != D3D_OK) return result;
@@ -531,7 +535,7 @@ HRESULT Device::CreateTexture(UINT width, UINT height, UINT levels, DWORD usage,
          height /= _config.rendering.reflection_buffer_factor;
       }
 
-      if (_using_fp_rendertargets) format = D3DFMT_A16B16G16R16F;
+      if (_using_fp_rendertargets) format = fp_texture_format;
    }
 
    return _device->CreateTexture(width, height, levels, usage, format, pool,
@@ -627,18 +631,17 @@ HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
 
    if (_vs_metadata.rendertype == "hdr"sv) {
       _game_doing_bloom_pass = true;
+      _discard_draw_calls = _using_fp_rendertargets;
    }
    else if (std::exchange(_game_doing_bloom_pass, false) &&
             _vs_metadata.rendertype != "hdr"sv && _using_fp_rendertargets) {
       _fp_rt_resolved = true;
+      _discard_draw_calls = false;
       set_linear_rendering(false);
 
-      constexpr auto pp_start = constants::ps::post_processing_start;
-
-      _color_grading.bind_constants<pp_start, pp_start + 1>();
-      _color_grading.bind_lut(5, 6, 7);
-
       apply_tonemapping("color grading"s);
+
+      _backbuffer_override = nullptr;
    }
 
    set_active_light_constants(*_device, vertex_shader.metadata.shader_flags);
@@ -772,6 +775,8 @@ HRESULT Device::SetVertexShaderConstantF(UINT start_register, const float* const
 HRESULT Device::DrawPrimitive(D3DPRIMITIVETYPE primitive_type,
                               UINT start_vertex, UINT primitive_count) noexcept
 {
+   if (_discard_draw_calls) return S_OK;
+
    refresh_material();
 
    return _device->DrawPrimitive(primitive_type, start_vertex, primitive_count);
@@ -782,6 +787,8 @@ HRESULT Device::DrawIndexedPrimitive(D3DPRIMITIVETYPE primitive_type,
                                      UINT min_vertex_index, UINT num_vertices,
                                      UINT start_Index, UINT prim_Count) noexcept
 {
+   if (_discard_draw_calls) return S_OK;
+
    refresh_material();
 
    return _device->DrawIndexedPrimitive(primitive_type, base_vertex_index,
@@ -824,6 +831,11 @@ void Device::apply_tonemapping(const std::string& shader_state) noexcept
    _device->SetSamplerState(4, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
    _device->SetSamplerState(4, D3DSAMP_MINFILTER, D3DTEXF_POINT);
    _device->SetSamplerState(4, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
+
+   constexpr auto pp_start = constants::ps::post_processing_start;
+
+   _color_grading.bind_constants<pp_start, pp_start + 1>();
+   _color_grading.bind_lut(5, 6, 7);
 
    _shaders.at("tonemap"s).at(shader_state)[Shader_flags::none].bind(*_device);
 
