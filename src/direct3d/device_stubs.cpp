@@ -153,14 +153,6 @@ HRESULT Device::GetFrontBufferData(UINT swap_chain_index,
    return _device->GetFrontBufferData(swap_chain_index, dest_surface);
 }
 
-HRESULT Device::StretchRect(IDirect3DSurface9* source_surface,
-                            const RECT* source_rect, IDirect3DSurface9* dest_surface,
-                            const RECT* dest_rect, D3DTEXTUREFILTERTYPE filter) noexcept
-{
-   return _device->StretchRect(source_surface, source_rect, dest_surface,
-                               dest_rect, filter);
-}
-
 HRESULT Device::ColorFill(IDirect3DSurface9* surface, const RECT* rect,
                           D3DCOLOR color) noexcept
 {

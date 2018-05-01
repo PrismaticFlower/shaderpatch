@@ -32,8 +32,15 @@ HRESULT __stdcall create_device_hook(IDirect3D9& self, UINT adapter,
    device->GetDeviceCaps(&caps);
 
    if (result == S_OK) {
-      *returned_device_interface =
-         new Device{std::move(device), focus_window, resolution, caps};
+      auto stencil_shadow_format = D3DFMT_A8R8G8B8;
+
+      if (self.CheckDeviceFormat(adapter, device_type, D3DFMT_X8R8G8B8, D3DUSAGE_RENDERTARGET,
+                                 D3DRTYPE_TEXTURE, D3DFMT_A8) == S_OK) {
+         stencil_shadow_format = D3DFMT_A8;
+      }
+
+      *returned_device_interface = new Device{std::move(device), focus_window,
+                                              resolution, caps, stencil_shadow_format};
    }
 
    return result;

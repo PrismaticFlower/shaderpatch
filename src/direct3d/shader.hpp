@@ -25,12 +25,12 @@ public:
 
    ULONG __stdcall AddRef() noexcept override
    {
-      return _ref_count.fetch_add(1);
+      return _ref_count += 1;
    }
 
    ULONG __stdcall Release() noexcept override
    {
-      const auto ref_count = _ref_count.fetch_sub(1);
+      const auto ref_count = _ref_count -= 1;
 
       if (ref_count == 0) delete this;
 
