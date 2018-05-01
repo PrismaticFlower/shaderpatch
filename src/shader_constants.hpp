@@ -13,8 +13,6 @@ constexpr auto fog_color = 52u;
 
 constexpr auto rt_resolution = 53u;
 
-constexpr auto projection_matrix = 54u;
-
 constexpr auto post_processing_start = 60u;
 constexpr auto post_processing_end = 70u;
 

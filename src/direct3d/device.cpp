@@ -109,6 +109,12 @@ constexpr auto get_fs_buffer_stride()
 {
    return 16u;
 }
+
+constexpr bool is_constant_being_set(int constant, int start, int count) noexcept
+{
+   return constant >= start && constant < (start + count);
+}
+
 }
 
 Device::Device(Com_ptr<IDirect3DDevice9> device, const HWND window,
@@ -206,7 +212,6 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
    const auto fl_res = static_cast<glm::vec2>(_resolution);
 
    _rt_resolution_const.set(*_device, {fl_res, glm::vec2{1.0f} / fl_res});
-   _gamma_vs_const.set(*_device, 1.0f);
 
    _state_block = create_filled_render_state_block(*_device);
 
@@ -820,9 +825,13 @@ HRESULT Device::SetRenderState(D3DRENDERSTATETYPE state, DWORD value) noexcept
 HRESULT Device::SetVertexShaderConstantF(UINT start_register, const float* constant_data,
                                          UINT vector4f_count) noexcept
 {
+   if (int offset = constants::stock::hdr - start_register;
+       is_constant_being_set(constants::stock::hdr, start_register, vector4f_count) &&
+       offset > -1 && _linear_rendering) {
+      const_cast<float*>(constant_data)[offset * 4 + 2] = 1.0f;
+   }
+
    if (start_register == 2) {
-      _device->SetPixelShaderConstantF(constants::ps::projection_matrix,
-                                       constant_data, 4);
       _device->SetPixelShaderConstantF(6, constant_data + 16, vector4f_count - 4);
    }
    else if (start_register != 2 && start_register != 51) {
