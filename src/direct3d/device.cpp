@@ -668,9 +668,9 @@ HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
       }
    }
 
-   if (_material) {
-      _refresh_material = true;
+   _refresh_material = true;
 
+   if (_material && _material->target_rendertype() == _vs_metadata.rendertype) {
       return S_OK;
    }
 
