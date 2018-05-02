@@ -597,6 +597,7 @@ void Color_grading::setup_lut_samplers(std::initializer_list<int> indices) const
       _device->SetSamplerState(index, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
       _device->SetSamplerState(index, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
       _device->SetSamplerState(index, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
+      _device->SetSamplerState(index, D3DSAMP_SRGBTEXTURE, false);
    }
 }
 
