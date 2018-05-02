@@ -174,18 +174,12 @@ auto Game_compiler::compile_vertex_shader(const std::string& entry_point,
                                           std::string_view state_name,
                                           std::array<bool, 4> srgb_state) -> Vertex_shader_ref
 {
-   Shader_cache_index cache_index{entry_point, std::move(variation.definitions)};
-
-   const auto cached = _vs_cache.find(cache_index);
-
-   if (cached != std::end(_vs_cache)) return cached->second;
-
    Com_ptr<ID3DBlob> error_message;
    Com_ptr<ID3DBlob> shader;
 
    auto result =
       D3DCompile(_source.data(), _source.length(), _source_path.string().data(),
-                 cache_index.definitions.data(), D3D_COMPILE_STANDARD_FILE_INCLUDE,
+                 variation.definitions.data(), D3D_COMPILE_STANDARD_FILE_INCLUDE,
                  entry_point.data(), target.data(), compiler_flags, NULL,
                  shader.clear_and_assign(), error_message.clear_and_assign());
 
@@ -202,7 +196,7 @@ auto Game_compiler::compile_vertex_shader(const std::string& entry_point,
                                             target, variation.flags, srgb_state,
                                             make_dword_span(*shader)));
 
-   return _vs_cache[cache_index] = {variation.flags, shader_index};
+   return {variation.flags, shader_index};
 }
 
 auto Game_compiler::compile_pixel_shader(const std::string& entry_point,
@@ -210,10 +204,6 @@ auto Game_compiler::compile_pixel_shader(const std::string& entry_point,
                                          std::string_view state_name,
                                          std::array<bool, 4> srgb_state) -> Pixel_shader_ref
 {
-   const auto cached = _ps_cache.find(entry_point);
-
-   if (cached != std::end(_ps_cache)) return cached->second;
-
    Com_ptr<ID3DBlob> error_message;
    Com_ptr<ID3DBlob> shader;
 
@@ -236,7 +226,7 @@ auto Game_compiler::compile_pixel_shader(const std::string& entry_point,
                                             entry_point, target, {}, srgb_state,
                                             make_dword_span(*shader)));
 
-   return _ps_cache[entry_point] = shader_index;
+   return shader_index;
 }
 
 auto Game_compiler::get_pass_flags(const nlohmann::json& pass_def) -> Pass_flags

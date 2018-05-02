@@ -91,10 +91,7 @@ private:
    std::string _source;
 
    std::vector<std::vector<DWORD>> _vs_shaders;
-   std::unordered_map<Shader_cache_index, Vertex_shader_ref> _vs_cache;
-
    std::vector<std::vector<DWORD>> _ps_shaders;
-   std::unordered_map<std::string, Pixel_shader_ref> _ps_cache;
 
    std::vector<State> _states;
 };
