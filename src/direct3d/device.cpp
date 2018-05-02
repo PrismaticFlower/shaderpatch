@@ -389,12 +389,12 @@ HRESULT Device::SetTexture(DWORD stage, IDirect3DBaseTexture9* texture) noexcept
    }
 
    // Projected Cube Texture Workaround
-   if (type == D3DRTYPE_CUBETEXTURE) {
+   if (type == D3DRTYPE_CUBETEXTURE && stage == 2) {
       set_ps_bool_constant<constants::ps::cubemap_projection>(*_device, true);
 
       create_filled_sampler_state_block(*_device, 2).apply(*_device, cubemap_projection_slot);
 
-      return _device->SetTexture(cubemap_projection_slot, texture);
+      _device->SetTexture(cubemap_projection_slot, texture);
    }
    else if (stage == 2) {
       set_ps_bool_constant<constants::ps::cubemap_projection>(*_device, false);
