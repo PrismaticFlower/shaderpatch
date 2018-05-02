@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../effects/color_grading.hpp"
+#include "../effects/control.hpp"
 #include "../material.hpp"
 #include "../shader_constants.hpp"
 #include "../shader_database.hpp"
@@ -29,7 +31,8 @@ namespace sp::direct3d {
 class Device : public IDirect3DDevice9 {
 public:
    Device(Com_ptr<IDirect3DDevice9> device, const HWND window,
-          const glm::ivec2 resolution, const D3DCAPS9& caps) noexcept;
+          const glm::ivec2 resolution, const D3DCAPS9& caps,
+          D3DFORMAT stencil_shadow_format) noexcept;
 
    HRESULT __stdcall QueryInterface(const IID& iid, void** object) noexcept override;
    ULONG __stdcall AddRef() noexcept override;
@@ -321,7 +324,11 @@ private:
    constexpr static auto refraction_slot = 13;
    constexpr static auto cubemap_projection_slot = 15;
 
+   constexpr static auto fp_texture_format = D3DFMT_A16B16G16R16F;
+
    void init_sampler_max_anisotropy() noexcept;
+
+   void apply_tonemapping(const std::string& shader_state) noexcept;
 
    void refresh_material() noexcept;
 
@@ -332,23 +339,39 @@ private:
 
    void update_refraction_texture() noexcept;
 
+   void set_linear_rendering(bool linear_rendering) noexcept;
+
    const Com_ptr<IDirect3DDevice9> _device;
    const HWND _window;
 
+   Com_ptr<IDirect3DTexture9> _fp_backbuffer;
+   Com_ptr<IDirect3DSurface9> _backbuffer_override;
+
+   Com_ptr<IDirect3DTexture9> _shadow_texture;
    Com_ptr<IDirect3DTexture9> _water_texture;
    Com_ptr<IDirect3DTexture9> _refraction_texture;
 
+   std::function<HRESULT(IDirect3DSurface9*, const RECT*, IDirect3DSurface9*, const RECT*, D3DTEXTUREFILTERTYPE)>
+      _stretch_rect_hook{};
    std::function<void()> _on_ps_shader_set{};
 
+   glm::ivec2 _resolution;
+
+   // Config State
    bool _window_dirty = true;
    bool _imgui_bootstrapped = false;
    bool _imgui_active = false;
    bool _fake_device_loss = false;
 
-   glm::ivec2 _resolution;
-
+   // Per-Frame State
+   bool _linear_rendering = false;
+   bool _fp_rt_resolved = false;
+   bool _game_doing_bloom_pass = false;
    bool _water_refraction = false;
    bool _refresh_material = true;
+   bool _discard_draw_calls = false;
+
+   int _created_full_rendertargets = 0;
 
    boost::local_shared_ptr<Material> _material;
 
@@ -362,9 +385,16 @@ private:
    Ps_3f_shader_constant<constants::ps::fog_color> _fog_color_const;
    Ps_4f_shader_constant<constants::ps::rt_resolution> _rt_resolution_const;
    Vs_1f_shader_constant<constants::vs::time> _time_vs_const;
+   Vs_1f_shader_constant<constants::vs::gamma> _gamma_vs_const;
 
    Shader_database _shaders;
    Texture_database _textures;
+
+   effects::Control _effects_control;
+   effects::Color_grading _color_grading{_device};
+
+   const Com_ptr<IDirect3DVertexDeclaration9> _fs_vertex_decl;
+   Com_ptr<IDirect3DVertexBuffer9> _fs_vertex_buffer;
 
    const std::chrono::steady_clock::time_point _device_start{
       std::chrono::steady_clock::now()};
@@ -374,7 +404,9 @@ private:
    win32::Unique_handle _materials_enabled_handle;
 
    const int _device_max_anisotropy = 1;
+   const D3DFORMAT _stencil_shadow_format;
 
+   std::atomic_int_fast32_t _active_fx_id{0};
    std::atomic<ULONG> _ref_count{1};
 };
 }

@@ -1,5 +1,6 @@
 {
   "rendertype": "decal",
+  "srgb_state": [ true, false, false, false ],
 
   "states": [
     {

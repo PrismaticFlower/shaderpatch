@@ -54,10 +54,10 @@ Game_compiler::Game_compiler(nlohmann::json definition, const fs::path& definiti
 
    fs::load_string_file(_source_path, _source);
 
-   const auto metadata = definition.value("metadata", nlohmann::json::object());
+   const auto srgb_state = definition.value("srgb_state", std::array<bool, 4>{});
 
    for (const auto& state_def : definition["states"]) {
-      _states.emplace_back(compile_state(state_def, metadata));
+      _states.emplace_back(compile_state(state_def, srgb_state));
    }
 
    save(output_path);
@@ -122,35 +122,32 @@ void Game_compiler::save(const boost::filesystem::path& output_path)
 }
 
 auto Game_compiler::compile_state(const nlohmann::json& state_def,
-                                  const nlohmann::json& parent_metadata)
-   -> Game_compiler::State
+                                  std::array<bool, 4> srgb_state) -> Game_compiler::State
 {
    State state{std::uint32_t{state_def["id"]}};
 
    auto& passes = state.passes;
 
-   auto metadata = state_def.value("metadata", nlohmann::json::object());
-   metadata.update(parent_metadata);
+   srgb_state = state_def.value("srgb_state", srgb_state);
 
    const std::string state_name = state_def["name"s];
 
    for (const auto& pass_def : state_def["passes"]) {
-      passes.emplace_back(compile_pass(pass_def, metadata, state_name));
+      passes.emplace_back(compile_pass(pass_def, state_name, srgb_state));
    }
 
    return state;
 }
 
 auto Game_compiler::compile_pass(const nlohmann::json& pass_def,
-                                 const nlohmann::json& parent_metadata,
-                                 std::string_view state_name) -> Game_compiler::Pass
+                                 std::string_view state_name,
+                                 std::array<bool, 4> srgb_state) -> Game_compiler::Pass
 {
    Pass pass{};
 
    pass.flags = get_pass_flags(pass_def);
 
-   auto metadata = pass_def.value("metadata", nlohmann::json::object());
-   metadata.update(parent_metadata);
+   srgb_state = pass_def.value("srgb_state", srgb_state);
 
    const auto vs_target = pass_def.value("vs_target", "vs_3_0");
    const auto ps_target = pass_def.value("ps_target", "ps_3_0");
@@ -160,21 +157,22 @@ auto Game_compiler::compile_pass(const nlohmann::json& pass_def,
 
    for (auto& variation : get_shader_variations(pass_def["skinned"], pass_def["lighting"],
                                                 pass_def["vertex_color"])) {
-      pass.vs_shaders.emplace_back(compile_vertex_shader(metadata, vs_entry_point, vs_target,
-                                                         variation, state_name));
+      pass.vs_shaders.emplace_back(compile_vertex_shader(vs_entry_point,
+                                                         vs_target, variation,
+                                                         state_name, srgb_state));
    }
 
    pass.ps_index =
-      compile_pixel_shader(metadata, ps_entry_point, ps_target, state_name);
+      compile_pixel_shader(ps_entry_point, ps_target, state_name, srgb_state);
 
    return pass;
 }
 
-auto Game_compiler::compile_vertex_shader(const nlohmann::json& parent_metadata,
-                                          const std::string& entry_point,
+auto Game_compiler::compile_vertex_shader(const std::string& entry_point,
                                           const std::string& target,
                                           Shader_variation& variation,
-                                          std::string_view state_name) -> Vertex_shader_ref
+                                          std::string_view state_name,
+                                          std::array<bool, 4> srgb_state) -> Vertex_shader_ref
 {
    Shader_cache_index cache_index{entry_point, std::move(variation.definitions)};
 
@@ -200,17 +198,17 @@ auto Game_compiler::compile_vertex_shader(const nlohmann::json& parent_metadata,
 
    const auto shader_index = static_cast<std::uint32_t>(_vs_shaders.size());
 
-   _vs_shaders.emplace_back(
-      embed_meta_data(parent_metadata, _render_type, state_name, entry_point,
-                      target, variation.flags, make_dword_span(*shader)));
+   _vs_shaders.emplace_back(embed_meta_data(_render_type, state_name, entry_point,
+                                            target, variation.flags, srgb_state,
+                                            make_dword_span(*shader)));
 
    return _vs_cache[cache_index] = {variation.flags, shader_index};
 }
 
-auto Game_compiler::compile_pixel_shader(const nlohmann::json& parent_metadata,
-                                         const std::string& entry_point,
+auto Game_compiler::compile_pixel_shader(const std::string& entry_point,
                                          const std::string& target,
-                                         std::string_view state_name) -> Pixel_shader_ref
+                                         std::string_view state_name,
+                                         std::array<bool, 4> srgb_state) -> Pixel_shader_ref
 {
    const auto cached = _ps_cache.find(entry_point);
 
@@ -234,8 +232,8 @@ auto Game_compiler::compile_pixel_shader(const nlohmann::json& parent_metadata,
 
    const auto shader_index = static_cast<std::uint32_t>(_ps_shaders.size());
 
-   _ps_shaders.emplace_back(embed_meta_data(parent_metadata, _render_type,
-                                            state_name, entry_point, target, {},
+   _ps_shaders.emplace_back(embed_meta_data(_render_type, state_name,
+                                            entry_point, target, {}, srgb_state,
                                             make_dword_span(*shader)));
 
    return _ps_cache[entry_point] = shader_index;

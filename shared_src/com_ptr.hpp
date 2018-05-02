@@ -121,6 +121,16 @@ public:
       return &_pointer;
    }
 
+   [[nodiscard]] void** void_clear_and_assign() noexcept
+   {
+      Com_ptr discarded{};
+      swap(discarded);
+
+      static_assert(sizeof(void**) == sizeof(Class**));
+
+      return reinterpret_cast<void**>(&_pointer);
+   }
+
    explicit operator bool() const noexcept
    {
       return (_pointer != nullptr);

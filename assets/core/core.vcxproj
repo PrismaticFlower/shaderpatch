@@ -159,7 +159,7 @@
     <None Include="definitions\decal.json" />
     <None Include="definitions\filtercopy.json" />
     <None Include="definitions\flare.json" />
-    <None Include="definitions\hdr.json" />
+    <None Include="definitions\bloom_stock.json" />
     <None Include="definitions\interface.json" />
     <None Include="definitions\lightbeam.json" />
     <None Include="definitions\normal.json" />
@@ -169,6 +169,7 @@
     <None Include="definitions\patch\pbr-basic.json" />
     <None Include="definitions\patch\pbr-emissive.json" />
     <None Include="definitions\patch\pbr.json" />
+    <None Include="definitions\patch\tonemap.json" />
     <None Include="definitions\perpixeldiffuselighting.json" />
     <None Include="definitions\prereflection.json" />
     <None Include="definitions\rain.json" />
@@ -202,7 +203,7 @@
     <None Include="src\fog_utilities.hlsl">
       <FileType>Document</FileType>
     </None>
-    <None Include="src\hdr.fx">
+    <None Include="src\bloom_stock.fx">
       <FileType>Document</FileType>
     </None>
     <None Include="src\interface.fx">
@@ -282,6 +283,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\pbr.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\tonemap.fx">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

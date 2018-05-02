@@ -1,6 +1,7 @@
 #pragma once
 
 #include "compose_exception.hpp"
+#include "exceptions.hpp"
 #include "string_utilities.hpp"
 
 #include <fstream>
@@ -40,8 +41,8 @@ inline auto parse_req_file(boost::filesystem::path filepath,
    stream >> header;
 
    if (header != "ucft"sv) {
-      throw compose_exception<std::runtime_error>("Expected \"ucft\" but found "sv,
-                                                  std::quoted(header), '.');
+      throw compose_exception<Parse_error>("Expected \"ucft\" but found "sv,
+                                           std::quoted(header), '.');
    }
 
    std::string brace;
@@ -51,8 +52,8 @@ inline auto parse_req_file(boost::filesystem::path filepath,
    if (brace != "{"sv) {
       if (!stream) return {};
 
-      throw compose_exception<std::runtime_error>("Expected opening '{' but found '"sv,
-                                                  brace, "'."sv);
+      throw compose_exception<Parse_error>("Expected opening '{' but found '"sv,
+                                           brace, "'."sv);
    }
 
    std::vector<std::pair<std::string, std::vector<std::string>>> section_values;
@@ -67,20 +68,20 @@ inline auto parse_req_file(boost::filesystem::path filepath,
          throw std::runtime_error{"Unexpected end of .req file."s};
       }
       else if (header != "REQN"sv) {
-         throw compose_exception<std::runtime_error>("Unexpected token "sv,
-                                                     std::quoted(header),
-                                                     ", expected \"REQN\"");
+         throw compose_exception<Parse_error>("Unexpected token "sv,
+                                              std::quoted(header),
+                                              ", expected \"REQN\"");
       }
 
       stream >> brace;
 
       if (brace != "{"sv) {
-         throw compose_exception<std::runtime_error>("Unexpected token '"sv,
-                                                     brace, "', expected '{'"sv);
+         throw compose_exception<Parse_error>("Unexpected token '"sv, brace,
+                                              "', expected '{'"sv);
       }
 
       if (!std::getline(stream >> std::ws, buffer, '}')) {
-         throw std::runtime_error{"Unexpected end of .req file."s};
+         throw Parse_error{"Unexpected end of .req file."s};
       }
 
       std::istringstream section{buffer};
@@ -90,7 +91,7 @@ inline auto parse_req_file(boost::filesystem::path filepath,
       section >> std::quoted(section_type);
 
       if (section_type.empty()) {
-         throw std::runtime_error{"Unexpected empty REQN section."s};
+         throw Parse_error{"Unexpected empty REQN section."s};
       }
 
       std::vector<std::string> keys;
@@ -105,7 +106,7 @@ inline auto parse_req_file(boost::filesystem::path filepath,
 
          if (key.empty()) continue;
 
-         if (const auto split = split_string(key, "="sv); split[0] == "platform"sv) {
+         if (const auto split = split_string_on(key, "="sv); split[0] == "platform"sv) {
             if (split[1] != platform) keep_keys = false;
          }
 
@@ -143,8 +144,8 @@ inline void parse_files_req_file(boost::filesystem::path filepath, Container& co
    stream >> header;
 
    if (header != "ucft"sv) {
-      throw compose_exception<std::runtime_error>("Expected \"ucft\" but found "sv,
-                                                  std::quoted(header), '.');
+      throw compose_exception<Parse_error>("Expected \"ucft\" but found "sv,
+                                           std::quoted(header), '.');
    }
 
    std::string brace;
@@ -154,8 +155,8 @@ inline void parse_files_req_file(boost::filesystem::path filepath, Container& co
    if (brace != "{"sv) {
       if (!stream) return;
 
-      throw compose_exception<std::runtime_error>("Expected opening '{' but found '"sv,
-                                                  brace, "'."sv);
+      throw compose_exception<Parse_error>("Expected opening '{' but found '"sv,
+                                           brace, "'."sv);
    }
 
    std::vector<std::pair<std::string, std::vector<std::string>>> section_values;
@@ -167,7 +168,7 @@ inline void parse_files_req_file(boost::filesystem::path filepath, Container& co
          break;
       }
       else if (!stream) {
-         throw std::runtime_error{"Unexpected end of .req file."s};
+         throw Parse_error{"Unexpected end of .req file."s};
       }
       else if (header == "ANIM"sv) {
          // Really we should keep parsing but ANIM sections always seem to come
@@ -177,20 +178,20 @@ inline void parse_files_req_file(boost::filesystem::path filepath, Container& co
          return;
       }
       else if (header != "FILE"sv) {
-         throw compose_exception<std::runtime_error>("Unexpected token "sv,
-                                                     std::quoted(header),
-                                                     ", expected \"FILE\"");
+         throw compose_exception<Parse_error>("Unexpected token "sv,
+                                              std::quoted(header),
+                                              ", expected \"FILE\"");
       }
 
       stream >> brace;
 
       if (brace != "{"sv) {
-         throw compose_exception<std::runtime_error>("Unexpected token '"sv,
-                                                     brace, "', expected '{'"sv);
+         throw compose_exception<Parse_error>("Unexpected token '"sv, brace,
+                                              "', expected '{'"sv);
       }
 
       if (!std::getline(stream >> std::ws, buffer, '}')) {
-         throw std::runtime_error{"Unexpected end of .req file."s};
+         throw Parse_error{"Unexpected end of .req file."s};
       }
 
       std::istringstream section{buffer};

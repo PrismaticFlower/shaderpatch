@@ -4,6 +4,7 @@
 #include "compiler_helpers.hpp"
 #include "shader_flags.hpp"
 
+#include <array>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -71,21 +72,18 @@ private:
 
    void save(const boost::filesystem::path& output_path);
 
-   State compile_state(const nlohmann::json& state_def,
-                       const nlohmann::json& parent_metadata);
+   State compile_state(const nlohmann::json& state_def, std::array<bool, 4> srgb_state);
 
-   Pass compile_pass(const nlohmann::json& pass_def,
-                     const nlohmann::json& parent_metadata,
-                     std::string_view state_name);
+   Pass compile_pass(const nlohmann::json& pass_def, std::string_view state_name,
+                     std::array<bool, 4> srgb_state);
 
-   auto compile_vertex_shader(const nlohmann::json& parent_metadata,
-                              const std::string& entry_point,
-                              const std::string& target, Shader_variation& variation,
-                              std::string_view state_name) -> Vertex_shader_ref;
+   auto compile_vertex_shader(const std::string& entry_point, const std::string& target,
+                              Shader_variation& variation, std::string_view state_name,
+                              std::array<bool, 4> srgb_state) -> Vertex_shader_ref;
 
-   auto compile_pixel_shader(const nlohmann::json& parent_metadata,
-                             const std::string& entry_point, const std::string& target,
-                             std::string_view state_name) -> Pixel_shader_ref;
+   auto compile_pixel_shader(const std::string& entry_point,
+                             const std::string& target, std::string_view state_name,
+                             std::array<bool, 4> srgb_state) -> Pixel_shader_ref;
 
    boost::filesystem::path _source_path;
 

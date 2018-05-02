@@ -1,5 +1,6 @@
 {
   "rendertype": "interface",
+  "srgb_state": [ true, false, false, false ],
 
   "states": [
     {

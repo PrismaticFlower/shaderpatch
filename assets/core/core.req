@@ -11,9 +11,9 @@ ucft
    REQN
    {
       "shader"
+      "bloom_stock"
       "filtercopy"
       "flare"
-      "hdr"
       "interface"
       "lightbeam"
       "normal"
@@ -42,5 +42,6 @@ ucft
       "pbr"
       "pbr-basic"
       "pbr-emissive"
+      "tonemap"
    }
 }

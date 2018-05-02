@@ -26,6 +26,7 @@ struct Shader_metadata {
    std::string target;
 
    Shader_flags shader_flags;
+   std::array<bool, 4> srgb_state;
 };
 
 inline auto read_shader_metadata(std::vector<std::uint8_t> msgpack) noexcept -> Shader_metadata
@@ -39,6 +40,7 @@ inline auto read_shader_metadata(std::vector<std::uint8_t> msgpack) noexcept -> 
 
    data.shader_flags =
       static_cast<Shader_flags>(std::uint32_t{json["shader_flags"s]});
+   data.srgb_state = json["srgb_state"s];
 
    return data;
 }
@@ -71,11 +73,11 @@ inline auto get_shader_metadata(const DWORD* const bytecode) noexcept
    return read_shader_metadata(data);
 }
 
-inline auto embed_meta_data(const nlohmann::json& extra_metadata,
-                            std::string_view rendertype, std::string_view state_name,
+inline auto embed_meta_data(std::string_view rendertype, std::string_view state_name,
                             std::string_view entry_point, std::string_view target,
-                            Shader_flags flags, gsl::span<const DWORD> bytecode_span)
-   -> std::vector<DWORD>
+                            Shader_flags flags, std::array<bool, 4> srgb_state,
+                            gsl::span<const DWORD> bytecode_span,
+                            nlohmann::json extra_metadata = {}) -> std::vector<DWORD>
 {
    using namespace std::literals;
 
@@ -86,6 +88,7 @@ inline auto embed_meta_data(const nlohmann::json& extra_metadata,
    meta["entry_point"s] = std::string{entry_point};
    meta["target"s] = std::string{target};
    meta["shader_flags"s] = static_cast<std::uint32_t>(flags);
+   meta["srgb_state"s] = srgb_state;
 
    auto meta_buffer = nlohmann::json::to_msgpack(meta);
 

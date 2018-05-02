@@ -83,7 +83,7 @@ Vs_lowquality_output lowquality_vs(float4 position : POSITION, float3 normal : N
 
    output.position = position_project(world_position);
    output.hdr_scale_fade.x = hdr_info.z;
-   output.hdr_scale_fade.y = output.position.z * fade_constant.z + fade_constant.w;
+   output.hdr_scale_fade.y = saturate(output.position.z * fade_constant.z + fade_constant.w);
    output.fog = calculate_fog(world_position);
 
    return output;
@@ -113,7 +113,7 @@ Vs_normal_map_output normal_map_vs(float4 position : POSITION, float3 normal : N
    float2 texcoords = world_position.xz * 0.125;
 
    output.texcoords = texcoords * wave_length + time_scale * time * water_direction;
-   output.fade = output.position.z * fade_constant.z + fade_constant.w;
+   output.fade = saturate(output.position.z * fade_constant.z + fade_constant.w);
 
    return output;
 }

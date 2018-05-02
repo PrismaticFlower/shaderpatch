@@ -17,12 +17,29 @@ inline void make_borderless_window(const HWND window)
                    SWP_NOACTIVATE);
 }
 
+inline void make_bordered_window(const HWND window)
+{
+   Expects(IsWindow(window));
+
+   SetWindowLongPtr(window, GWL_STYLE, WS_CAPTION | WS_THICKFRAME | WS_VISIBLE);
+   SetWindowPos(window, nullptr, 0, 0, 0, 0,
+                SWP_FRAMECHANGED | SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER |
+                   SWP_NOACTIVATE);
+}
+
 inline void resize_window(const HWND window, const glm::ivec2 size)
 {
    Expects(IsWindow(window));
 
-   SetWindowPos(window, nullptr, 0, 0, size.x, size.y,
-                SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+   RECT rect{};
+   rect.right = size.x;
+   rect.bottom = size.y;
+
+   AdjustWindowRectEx(&rect, GetWindowLongPtr(window, GWL_STYLE), FALSE,
+                      GetWindowLongPtr(window, GWL_EXSTYLE));
+
+   SetWindowPos(window, nullptr, 0, 0, rect.right - rect.left,
+                rect.bottom - rect.top, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
 }
 
 inline void centre_window(const HWND window)

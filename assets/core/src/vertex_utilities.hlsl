@@ -2,6 +2,9 @@
 #define VERTEX_UTILS_INCLUDED
 
 #include "constants_list.hlsl"
+#include "ext_constants_list.hlsl"
+
+#pragma warning(disable : 3571)
 
 struct Near_scene
 {
@@ -97,16 +100,17 @@ Binormals decompress_binormals(float3 binormal, float3 tangent)
 float4 get_material_color(float4 color)
 {
 #ifdef USE_VERTEX_COLOR
-   return (color * color_state.yyyw + color_state.xxxz) * material_diffuse_color;
+   return pow(color * color_state.yyyw + color_state.xxxz, vs_color_gamma) *
+      pow(material_diffuse_color, vs_color_gamma);
 #else
-   return material_diffuse_color;
+   return pow(material_diffuse_color, vs_color_gamma);
 #endif
 }
 
 float4 get_static_diffuse_color(float4 color)
 {
 #ifdef USE_VERTEX_COLOR
-   return color * color_state.xxxz + color_state.zzzz;
+   return pow(color * color_state.xxxz + color_state.zzzz, vs_color_gamma);
 #else
    return 0.0;
 #endif

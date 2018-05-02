@@ -10,7 +10,7 @@
     <None Include="definitions\flare.json">
       <Filter>definitions</Filter>
     </None>
-    <None Include="definitions\hdr.json">
+    <None Include="definitions\bloom_stock.json">
       <Filter>definitions</Filter>
     </None>
     <None Include="definitions\interface.json">
@@ -85,7 +85,7 @@
     <None Include="src\fog_utilities.hlsl">
       <Filter>src</Filter>
     </None>
-    <None Include="src\hdr.fx">
+    <None Include="src\bloom_stock.fx">
       <Filter>src</Filter>
     </None>
     <None Include="src\interface.fx">
@@ -176,6 +176,9 @@
     <None Include="definitions\patch\pbr-emissive.json">
       <Filter>definitions\patch</Filter>
     </None>
+    <None Include="definitions\patch\tonemap.json">
+      <Filter>definitions\patch</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">
@@ -190,5 +193,10 @@
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="munge_core.ps1" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="src\tonemap.fx">
+      <Filter>src</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

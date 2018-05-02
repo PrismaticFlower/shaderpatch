@@ -28,9 +28,15 @@ Rendering:
    # Enable or disable advertising custom material support to mods.
    CustomMaterials: yes
 
-Debug:
-   # The debugscreen is intended for assisting development with 
-   # quick simple UIs and is currently empty.
-   # The virtual key that activates the debug screen. See below for some common values.
-   # '~' = 192 '\' = 220
-   DebugScreenActivateVirtualKey: 0
+Developer:
+   # Toggle key for the developer screen. Giving access to useful things for mod makers and
+   # Shader Patch developers alike.
+   #
+   # The value identifies the virtual key that activates the debug screen, below are some common values
+   # for you to choose from. (Copy and paste the value on the right of your desired key.)
+   #
+   # '~': 0xC0 
+   # '\': 0xDC 
+   # 'Backspace': 0x08 
+   # 'F12': 0x7B
+   ScreenToggle: 0x00

@@ -74,7 +74,7 @@ Vs_nodistortion_output nodistortion_vs(Vs_input input,
 
    output.color = get_material_color(input.color);
    output.color.rgb *= lighting.diffuse.rgb;
-   output.color.a *= near_scene.fade;
+   output.color.a = saturate(output.color.a * near_scene.fade);
 
    return output;
 }
@@ -139,7 +139,7 @@ Vs_distortion_output distortion_vs(Vs_input input,
    near_scene.fade *= near_scene.fade;
 
    output.color_0.rgb = material_color.rgb * lighting.diffuse.rgb;
-   output.color_0.a = material_color.a * near_scene.fade;
+   output.color_0.a = saturate(material_color.a * near_scene.fade);
 
    return output;
 }

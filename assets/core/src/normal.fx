@@ -234,7 +234,7 @@ float4 unlit_opaque_ps(Ps_input_unlit input) : COLOR
    float4 blended_color = color * blend_factor + color;
    color = blended_color * blend_factor + color;
 
-   color.a = (input.color.a - 0.5) * 4.0;
+   color.a = saturate((input.color.a - 0.5) * 4.0);
 
    color.rgb = fog::apply(color.rgb, input.fog_eye_distance);
 
@@ -255,7 +255,7 @@ float4 unlit_opaque_hardedged_ps(Ps_input_unlit input) : COLOR
    if (diffuse_color.a > 0.5) color.a = input.color.a - 0.5;
    else color.a = 0.0;
 
-   color.a *= 4.0;
+   color.a = saturate(color.a * 4.0);
 
    color.rgb = fog::apply(color.rgb, input.fog_eye_distance);
 

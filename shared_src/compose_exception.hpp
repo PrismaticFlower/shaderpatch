@@ -4,7 +4,7 @@
 namespace sp {
 
 template<typename Exception, typename... Args>
-auto compose_exception(Args&&... args)
+[[nodiscard]] auto compose_exception(Args&&... args)
 {
    std::ostringstream msg;
 

@@ -70,13 +70,6 @@ UINT Device::GetNumberOfSwapChains() noexcept
    return _device->GetNumberOfSwapChains();
 }
 
-HRESULT Device::GetBackBuffer(UINT swap_chain, UINT back_buffer_index,
-                              D3DBACKBUFFER_TYPE type,
-                              IDirect3DSurface9** back_buffer) noexcept
-{
-   return _device->GetBackBuffer(swap_chain, back_buffer_index, type, back_buffer);
-}
-
 HRESULT Device::GetRasterStatus(UINT swap_chain, D3DRASTER_STATUS* raster_status) noexcept
 {
    return _device->GetRasterStatus(swap_chain, raster_status);
@@ -160,14 +153,6 @@ HRESULT Device::GetFrontBufferData(UINT swap_chain_index,
    return _device->GetFrontBufferData(swap_chain_index, dest_surface);
 }
 
-HRESULT Device::StretchRect(IDirect3DSurface9* source_surface,
-                            const RECT* source_rect, IDirect3DSurface9* dest_surface,
-                            const RECT* dest_rect, D3DTEXTUREFILTERTYPE filter) noexcept
-{
-   return _device->StretchRect(source_surface, source_rect, dest_surface,
-                               dest_rect, filter);
-}
-
 HRESULT Device::ColorFill(IDirect3DSurface9* surface, const RECT* rect,
                           D3DCOLOR color) noexcept
 {
@@ -201,12 +186,12 @@ HRESULT Device::GetDepthStencilSurface(IDirect3DSurface9** z_stencil_surface) no
 
 HRESULT Device::BeginScene() noexcept
 {
-   return _device->BeginScene();
+   return S_OK;
 }
 
 HRESULT Device::EndScene() noexcept
 {
-   return _device->EndScene();
+   return S_OK;
 }
 
 HRESULT Device::Clear(DWORD count, const D3DRECT* rects, DWORD flags,

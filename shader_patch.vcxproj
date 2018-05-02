@@ -77,7 +77,7 @@
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libyaml-cppmdd.lib;DirectXTex.lib;dxguid.lib;d3d9.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>boost_system-vc140-mt-gd.lib;boost_filesystem-vc140-mt-gd.lib;libyaml-cppmdd.lib;DirectXTex.lib;dxguid.lib;d3d9.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>dinput8.def</ModuleDefinitionFile>
       <AdditionalLibraryDirectories>submodules/vcpkg/installed/x86-windows-static-md/debug/lib;submodules/vcpkg/installed/x86-windows/debug/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
@@ -111,7 +111,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>libyaml-cppmd.lib;DirectXTex.lib;dxguid.lib;d3d9.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>boost_system-vc140-mt.lib;boost_filesystem-vc140-mt.lib;libyaml-cppmd.lib;DirectXTex.lib;dxguid.lib;d3d9.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>dinput8.def</ModuleDefinitionFile>
       <AdditionalLibraryDirectories>submodules/vcpkg/installed/x86-windows-static-md/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
@@ -126,10 +126,12 @@
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\effects\color_grading.cpp" />
     <ClCompile Include="src\direct3d\check_required_features.cpp" />
     <ClCompile Include="src\direct3d\create_device.cpp" />
     <ClCompile Include="src\direct3d\device.cpp" />
     <ClCompile Include="src\direct3d\device_stubs.cpp" />
+    <ClCompile Include="src\effects\control.cpp" />
     <ClCompile Include="src\imgui\imgui.cpp">
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">TurnOffAllWarnings</WarningLevel>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</TreatWarningAsError>
@@ -156,6 +158,7 @@
     <None Include="dinput8.def" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\effects\color_grading.hpp" />
     <ClInclude Include="src\direct3d\check_required_features.hpp" />
     <ClInclude Include="src\direct3d\create_device.hpp" />
     <ClInclude Include="src\direct3d\device.hpp" />
@@ -163,6 +166,7 @@
     <ClInclude Include="src\direct3d\shader.hpp" />
     <ClInclude Include="src\direct3d\shader_constant.hpp" />
     <ClInclude Include="src\direct3d\render_state_block.hpp" />
+    <ClInclude Include="src\effects\control.hpp" />
     <ClInclude Include="src\hook_vtable.hpp" />
     <ClInclude Include="src\imgui\imconfig.h" />
     <ClInclude Include="src\imgui\imgui.h" />

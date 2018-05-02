@@ -10,6 +10,7 @@
 #include "../shader_loader.hpp"
 #include "../texture_loader.hpp"
 #include "../window_helpers.hpp"
+#include "copyable_finally.hpp"
 #include "patch_texture.hpp"
 #include "sampler_state_block.hpp"
 #include "shader_metadata.hpp"
@@ -18,7 +19,9 @@
 #include <algorithm>
 #include <chrono>
 #include <fstream>
+#include <functional>
 #include <limits>
+#include <memory>
 #include <string_view>
 #include <vector>
 
@@ -56,14 +59,73 @@ void set_active_light_constants(IDirect3DDevice9& device, Shader_flags flags) no
 
    device.SetPixelShaderConstantB(0, constants.data(), constants.size());
 }
+
+auto create_fs_vertex_buffer(IDirect3DDevice9& device, const glm::ivec2 resolution)
+   -> Com_ptr<IDirect3DVertexBuffer9>
+{
+   const auto offset = 1.f / static_cast<glm::vec2>(resolution);
+
+   const auto vertices = std::array<float, 12>{{
+      -1.f - offset.x, -1.f + offset.y, // pos 0
+      0.f, 1.f,                         // uv 0
+      -1.f - offset.x, 3.f + offset.x,  // pos 1
+      0.f, -1.f,                        // uv 1
+      3.f - offset.x, -1.f + offset.x,  // pos 2
+      2.f, 1.f                          // uv 2
+   }};
+
+   Com_ptr<IDirect3DVertexBuffer9> buffer;
+
+   device.CreateVertexBuffer(sizeof(vertices), D3DUSAGE_WRITEONLY, 0,
+                             D3DPOOL_DEFAULT, buffer.clear_and_assign(), nullptr);
+
+   void* data_ptr{};
+
+   buffer->Lock(0, sizeof(vertices), &data_ptr, 0);
+
+   *static_cast<std::array<float, 12>*>(data_ptr) = vertices;
+
+   buffer->Unlock();
+
+   return buffer;
+}
+
+auto create_fs_vertex_decl(IDirect3DDevice9& device)
+   -> Com_ptr<IDirect3DVertexDeclaration9>
+{
+   constexpr auto declaration = std::array<D3DVERTEXELEMENT9, 3>{
+      {{0, 0, D3DDECLTYPE_FLOAT2, 0, D3DDECLUSAGE_POSITION, 0},
+       {0, 8, D3DDECLTYPE_FLOAT2, 0, D3DDECLUSAGE_TEXCOORD, 0},
+       D3DDECL_END()}};
+
+   Com_ptr<IDirect3DVertexDeclaration9> vertex_decl;
+
+   device.CreateVertexDeclaration(declaration.data(), vertex_decl.clear_and_assign());
+
+   return vertex_decl;
+}
+
+constexpr auto get_fs_buffer_stride()
+{
+   return 16u;
+}
+
+constexpr bool is_constant_being_set(int constant, int start, int count) noexcept
+{
+   return constant >= start && constant < (start + count);
+}
+
 }
 
 Device::Device(Com_ptr<IDirect3DDevice9> device, const HWND window,
-               const glm::ivec2 resolution, const D3DCAPS9& caps) noexcept
+               const glm::ivec2 resolution, const D3DCAPS9& caps,
+               D3DFORMAT stencil_shadow_format) noexcept
    : _device{std::move(device)},
      _window{window},
      _resolution{resolution},
-     _device_max_anisotropy{gsl::narrow_cast<int>(caps.MaxAnisotropy)}
+     _device_max_anisotropy{gsl::narrow_cast<int>(caps.MaxAnisotropy)},
+     _fs_vertex_decl{create_fs_vertex_decl(*_device)},
+     _stencil_shadow_format{stencil_shadow_format}
 {
    _water_texture =
       load_dds_from_file(*_device, L"data/shaderpatch/textures/water.dds"s);
@@ -83,12 +145,12 @@ Device::~Device()
 
 ULONG Device::AddRef() noexcept
 {
-   return _ref_count.fetch_add(1);
+   return _ref_count += 1;
 }
 
 ULONG Device::Release() noexcept
 {
-   const auto ref_count = _ref_count.fetch_sub(1);
+   const auto ref_count = _ref_count -= 1;
 
    if (ref_count == 0) delete this;
 
@@ -112,11 +174,21 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
       presentation_parameters->BackBufferHeight = display.resolution.y;
    }
 
+   if (_effects_control.enabled()) {
+      presentation_parameters->MultiSampleType = D3DMULTISAMPLE_NONE;
+      presentation_parameters->MultiSampleQuality = 0;
+   }
+
    // drop resources
 
+   _fp_backbuffer.reset(nullptr);
+   _backbuffer_override.reset(nullptr);
+   _shadow_texture.reset(nullptr);
    _refraction_texture.reset(nullptr);
+   _fs_vertex_buffer.reset(nullptr);
 
    _textures.clean_lost_textures();
+   _color_grading.drop_device_resources();
 
    _material = nullptr;
 
@@ -135,19 +207,40 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
    _resolution.x = presentation_parameters->BackBufferWidth;
    _resolution.y = presentation_parameters->BackBufferHeight;
 
+   _created_full_rendertargets = 0;
+
    const auto fl_res = static_cast<glm::vec2>(_resolution);
 
    _rt_resolution_const.set(*_device, {fl_res, glm::vec2{1.0f} / fl_res});
 
    _state_block = create_filled_render_state_block(*_device);
 
-   // recreate textures
+   // recreate resources
 
    const auto refraction_res = _resolution / _config.rendering.refraction_buffer_factor;
 
-   _device->CreateTexture(refraction_res.x, refraction_res.y, 1,
-                          D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT,
+   if (_effects_control.enabled()) {
+      _device->CreateTexture(_resolution.x, _resolution.y, 1, D3DUSAGE_RENDERTARGET,
+                             fp_texture_format, D3DPOOL_DEFAULT,
+                             _fp_backbuffer.clear_and_assign(), nullptr);
+
+      _fp_backbuffer->GetSurfaceLevel(0, _backbuffer_override.clear_and_assign());
+      _device->SetRenderTarget(0, _backbuffer_override.get());
+
+      set_linear_rendering(true);
+      _effects_control.active(true);
+   }
+   else {
+      set_linear_rendering(false);
+      _effects_control.active(false);
+   }
+
+   _device->CreateTexture(refraction_res.x, refraction_res.y, 1, D3DUSAGE_RENDERTARGET,
+                          _effects_control.enabled() ? fp_texture_format : D3DFMT_A8R8G8B8,
+                          D3DPOOL_DEFAULT,
                           _refraction_texture.clear_and_assign(), nullptr);
+
+   _fs_vertex_buffer = create_fs_vertex_buffer(*_device, _resolution);
 
    // rebind textures
 
@@ -165,7 +258,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
       set_input_window(GetCurrentThreadId(), _window);
 
-      set_input_hotkey(_config.debug.activate_key);
+      set_input_hotkey(_config.developer.toggle_key);
       set_input_hotkey_func([this] {
          _imgui_active = !_imgui_active;
 
@@ -180,27 +273,37 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
       _imgui_bootstrapped = true;
    }
 
+   _device->BeginScene();
+
    return result;
 }
 
 HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
                         HWND dest_window_override, const RGNDATA* dirty_region) noexcept
 {
-   if (_window_dirty) {
-      if (_config.display.borderless) make_borderless_window(_window);
+   if (std::exchange(_window_dirty, false)) {
+      _config.display.borderless ? make_borderless_window(_window)
+                                 : make_bordered_window(_window);
+
       resize_window(_window, _resolution);
       centre_window(_window);
       if (GetFocus() == _window) clip_cursor_to_window(_window);
+   }
 
-      _window_dirty = false;
+   if (_effects_control.active()) {
+      set_linear_rendering(_fp_rt_resolved);
+
+      if (!std::exchange(_fp_rt_resolved, false)) {
+         apply_tonemapping("linear"s);
+      }
    }
 
    if (_imgui_active) {
-      _device->BeginScene();
+      _config.show_imgui(&_fake_device_loss);
+      _effects_control.show_imgui();
+      _color_grading.show_imgui();
 
       ImGui::Render();
-
-      _device->EndScene();
    }
    else {
       ImGui::EndFrame();
@@ -215,38 +318,42 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
    _time_vs_const.set(*_device,
                       std::chrono::duration<float>{time_since_epoch}.count());
 
-   // update water refraction
+   // update per frame state
    _water_refraction = false;
+
+   _device->EndScene();
 
    const auto result =
       _device->Present(source_rect, dest_rect, dest_window_override, dirty_region);
 
-   if (result != D3D_OK) return result;
+   _device->BeginScene();
 
    if (_fake_device_loss) return D3DERR_DEVICELOST;
+
+   if (_effects_control.active()) {
+      _fp_backbuffer->GetSurfaceLevel(0, _backbuffer_override.clear_and_assign());
+      _device->SetRenderTarget(0, _backbuffer_override.get());
+   }
+
+   if (result != D3D_OK) return result;
 
    return D3D_OK;
 }
 
-HRESULT Device::CreateDepthStencilSurface(UINT width, UINT height, D3DFORMAT format,
-                                          D3DMULTISAMPLE_TYPE multi_sample,
-                                          DWORD multi_sample_quality, BOOL discard,
-                                          IDirect3DSurface9** surface,
-                                          HANDLE* shared_handle) noexcept
+HRESULT Device::GetBackBuffer(UINT swap_chain, UINT back_buffer_index,
+                              D3DBACKBUFFER_TYPE type,
+                              IDirect3DSurface9** back_buffer) noexcept
 {
-   if (width == 512u && height == 256u) {
-      if (_config.rendering.high_res_reflections) {
-         width = _resolution.y * 2u;
-         height = _resolution.y;
-      }
+   if (swap_chain || back_buffer_index) return D3DERR_INVALIDCALL;
 
-      width /= _config.rendering.reflection_buffer_factor;
-      height /= _config.rendering.reflection_buffer_factor;
+   if (_backbuffer_override) {
+      *back_buffer = _backbuffer_override.get();
+      _backbuffer_override->AddRef();
+
+      return S_OK;
    }
 
-   return _device->CreateDepthStencilSurface(width, height, format,
-                                             multi_sample, multi_sample_quality,
-                                             discard, surface, shared_handle);
+   return _device->GetBackBuffer(swap_chain, back_buffer_index, type, back_buffer);
 }
 
 HRESULT Device::SetTexture(DWORD stage, IDirect3DBaseTexture9* texture) noexcept
@@ -354,8 +461,8 @@ HRESULT Device::CreateVolumeTexture(UINT width, UINT height, UINT depth, UINT le
             return texture;
          }
          catch (std::exception& e) {
-            log(Log_level::error, "Exception occured while loading texture: "sv,
-                e.what());
+            log(Log_level::error,
+                "Exception occured while loading FX Config: "sv, e.what());
 
             return nullptr;
          }
@@ -371,6 +478,52 @@ HRESULT Device::CreateVolumeTexture(UINT width, UINT height, UINT depth, UINT le
    else if (type == Volume_resource_type::material) {
       *volume_texture = new Material_resource{unpack_resource_size(height, depth),
                                               _device, _shaders, _textures};
+
+      return S_OK;
+   }
+   else if (type == Volume_resource_type::fx_config) {
+      auto handle_resource =
+         [&, this](gsl::span<std::byte> data) -> std::optional<Copyable_finally> {
+         const auto fx_id = _active_fx_id += 1;
+
+         const auto on_destruction = [fx_id, this] {
+            if (fx_id != _active_fx_id.load()) return;
+
+            _effects_control.enabled(false);
+            _fake_device_loss = true;
+
+            set_linear_rendering(false);
+            _color_grading.set_params(effects::Color_grading_params{});
+         };
+
+         try {
+            std::string config_str{reinterpret_cast<char*>(data.data()),
+                                   static_cast<std::size_t>(data.size())};
+
+            while (config_str.back() == '\0') config_str.pop_back();
+
+            auto config = YAML::Load(config_str);
+
+            _effects_control.enabled(true);
+            _fake_device_loss = true;
+
+            _color_grading.set_params(
+               config["ColorGrading"s].as<effects::Color_grading_params>());
+
+            return copyable_finally(on_destruction);
+         }
+         catch (std::exception& e) {
+            log(Log_level::error,
+                "Exception occured while loading FX Config: "sv, e.what());
+
+            return std::nullopt;
+         }
+      };
+
+      auto handler = make_resource_handler(unpack_resource_size(height, depth),
+                                           handle_resource);
+
+      *volume_texture = handler.release();
 
       return S_OK;
    }
@@ -393,10 +546,71 @@ HRESULT Device::CreateTexture(UINT width, UINT height, UINT levels, DWORD usage,
          width /= _config.rendering.reflection_buffer_factor;
          height /= _config.rendering.reflection_buffer_factor;
       }
+
+      if (_effects_control.active()) {
+         format = fp_texture_format;
+      }
+
+      if (glm::ivec2{width, height} == _resolution) {
+         if (++_created_full_rendertargets == 2) {
+            if (_effects_control.active()) format = _stencil_shadow_format;
+
+            const auto result =
+               _device->CreateTexture(width, height, levels, usage, format,
+                                      pool, _shadow_texture.clear_and_assign(),
+                                      shared_handle);
+
+            if (FAILED(result)) return result;
+
+            _shadow_texture->AddRef();
+            *texture = _shadow_texture.get();
+
+            return result;
+         }
+      }
    }
 
    return _device->CreateTexture(width, height, levels, usage, format, pool,
                                  texture, shared_handle);
+}
+
+HRESULT Device::CreateDepthStencilSurface(UINT width, UINT height, D3DFORMAT format,
+                                          D3DMULTISAMPLE_TYPE multi_sample,
+                                          DWORD multi_sample_quality, BOOL discard,
+                                          IDirect3DSurface9** surface,
+                                          HANDLE* shared_handle) noexcept
+{
+   if (width == 512u && height == 256u) {
+      if (_config.rendering.high_res_reflections) {
+         width = _resolution.y * 2u;
+         height = _resolution.y;
+      }
+
+      width /= _config.rendering.reflection_buffer_factor;
+      height /= _config.rendering.reflection_buffer_factor;
+   }
+
+   if (_effects_control.active()) {
+      multi_sample = D3DMULTISAMPLE_NONE;
+      multi_sample_quality = 0;
+   }
+
+   return _device->CreateDepthStencilSurface(width, height, format,
+                                             multi_sample, multi_sample_quality,
+                                             discard, surface, shared_handle);
+}
+
+HRESULT Device::StretchRect(IDirect3DSurface9* source_surface,
+                            const RECT* source_rect, IDirect3DSurface9* dest_surface,
+                            const RECT* dest_rect, D3DTEXTUREFILTERTYPE filter) noexcept
+{
+   if (_stretch_rect_hook) {
+      return _stretch_rect_hook(source_surface, source_rect, dest_surface,
+                                dest_rect, filter);
+   }
+
+   return _device->StretchRect(source_surface, source_rect, dest_surface,
+                               dest_rect, filter);
 }
 
 HRESULT Device::CreateVertexShader(const DWORD* function,
@@ -448,10 +662,50 @@ HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
    vertex_shader.get()->AddRef();
    _game_vertex_shader.reset(vertex_shader.get());
 
+   if (_linear_rendering) {
+      for (auto i = 0; i < 4; ++i) {
+         _device->SetSamplerState(i, D3DSAMP_SRGBTEXTURE, _vs_metadata.srgb_state[i]);
+      }
+   }
+
    if (_material) {
       _refresh_material = true;
 
       return S_OK;
+   }
+
+   if (_effects_control.active() && _vs_metadata.rendertype == "shadowquad"sv) {
+      Com_ptr<IDirect3DSurface9> shadow_rt;
+      Com_ptr<IDirect3DSurface9> rt;
+
+      _shadow_texture->GetSurfaceLevel(0, shadow_rt.clear_and_assign());
+      _device->GetRenderTarget(0, rt.clear_and_assign());
+
+      _device->SetRenderTarget(0, shadow_rt.get());
+      _device->ColorFill(shadow_rt.get(), nullptr, 0xffffffff);
+
+      _stretch_rect_hook = [this, rt{std::move(rt)}](auto...) {
+         _stretch_rect_hook = nullptr;
+
+         _device->SetRenderTarget(0, rt.get());
+
+         return S_OK;
+      };
+   }
+
+   if (_vs_metadata.rendertype == "hdr"sv) {
+      _game_doing_bloom_pass = true;
+      _discard_draw_calls = _effects_control.active();
+   }
+   else if (std::exchange(_game_doing_bloom_pass, false) &&
+            _vs_metadata.rendertype != "hdr"sv && _effects_control.active()) {
+      _fp_rt_resolved = true;
+      _discard_draw_calls = false;
+      set_linear_rendering(false);
+
+      apply_tonemapping("color grading"s);
+
+      _backbuffer_override = nullptr;
    }
 
    set_active_light_constants(*_device, vertex_shader.metadata.shader_flags);
@@ -553,6 +807,8 @@ HRESULT Device::SetRenderState(D3DRENDERSTATETYPE state, DWORD value) noexcept
       color.y = static_cast<float>((0x0000ff00 & value) >> 8) / 255.0f;
       color.z = static_cast<float>((0x000000ff & value)) / 255.0f;
 
+      if (_linear_rendering) color = glm::pow(color, glm::vec3{2.2f});
+
       _fog_color_const.set(*_device, color);
 
       break;
@@ -567,9 +823,13 @@ HRESULT Device::SetRenderState(D3DRENDERSTATETYPE state, DWORD value) noexcept
 HRESULT Device::SetVertexShaderConstantF(UINT start_register, const float* constant_data,
                                          UINT vector4f_count) noexcept
 {
+   if (int offset = constants::stock::hdr - start_register;
+       is_constant_being_set(constants::stock::hdr, start_register, vector4f_count) &&
+       offset > -1 && _linear_rendering) {
+      const_cast<float*>(constant_data)[offset * 4 + 2] = 1.0f;
+   }
+
    if (start_register == 2) {
-      _device->SetPixelShaderConstantF(constants::ps::projection_matrix,
-                                       constant_data, 4);
       _device->SetPixelShaderConstantF(6, constant_data + 16, vector4f_count - 4);
    }
    else if (start_register != 2 && start_register != 51) {
@@ -583,6 +843,8 @@ HRESULT Device::SetVertexShaderConstantF(UINT start_register, const float* const
 HRESULT Device::DrawPrimitive(D3DPRIMITIVETYPE primitive_type,
                               UINT start_vertex, UINT primitive_count) noexcept
 {
+   if (_discard_draw_calls) return S_OK;
+
    refresh_material();
 
    return _device->DrawPrimitive(primitive_type, start_vertex, primitive_count);
@@ -593,6 +855,8 @@ HRESULT Device::DrawIndexedPrimitive(D3DPRIMITIVETYPE primitive_type,
                                      UINT min_vertex_index, UINT num_vertices,
                                      UINT start_Index, UINT prim_Count) noexcept
 {
+   if (_discard_draw_calls) return S_OK;
+
    refresh_material();
 
    return _device->DrawIndexedPrimitive(primitive_type, base_vertex_index,
@@ -607,6 +871,45 @@ void Device::init_sampler_max_anisotropy() noexcept
                                std::clamp(_config.rendering.anisotropic_filtering,
                                           1, _device_max_anisotropy));
    }
+}
+
+void Device::apply_tonemapping(const std::string& shader_state) noexcept
+{
+   Com_ptr<IDirect3DSurface9> backbuffer;
+
+   _device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO,
+                          backbuffer.clear_and_assign());
+
+   _device->SetRenderTarget(0, backbuffer.get());
+
+   Com_ptr<IDirect3DStateBlock9> state;
+
+   _device->CreateStateBlock(D3DSBT_ALL, state.clear_and_assign());
+
+   _device->SetStreamSource(0, _fs_vertex_buffer.get(), 0, get_fs_buffer_stride());
+   _device->SetVertexDeclaration(_fs_vertex_decl.get());
+
+   _device->SetRenderState(D3DRS_ZENABLE, FALSE);
+   _device->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+
+   _device->SetTexture(4, _fp_backbuffer.get());
+
+   _device->SetSamplerState(4, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+   _device->SetSamplerState(4, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+   _device->SetSamplerState(4, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+   _device->SetSamplerState(4, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+   _device->SetSamplerState(4, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
+
+   constexpr auto pp_start = constants::ps::post_processing_start;
+
+   _color_grading.bind_constants<pp_start, pp_start + 1>();
+   _color_grading.bind_lut(5, 6, 7);
+
+   _shaders.at("tonemap"s).at(shader_state)[Shader_flags::none].bind(*_device);
+
+   _device->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 1);
+
+   state->Apply();
 }
 
 void Device::refresh_material() noexcept
@@ -664,5 +967,27 @@ void Device::update_refraction_texture() noexcept
    _refraction_texture->GetSurfaceLevel(0, dest.clear_and_assign());
 
    _device->StretchRect(rt.get(), nullptr, dest.get(), nullptr, D3DTEXF_LINEAR);
+}
+
+void Device::set_linear_rendering(bool linear_rendering) noexcept
+{
+   _linear_rendering = linear_rendering;
+
+   if (_linear_rendering) {
+      _gamma_vs_const.set(*_device, 2.2f);
+
+      for (auto i = 0; i < 4; ++i) {
+         _device->SetSamplerState(i, D3DSAMP_SRGBTEXTURE, _vs_metadata.srgb_state[i]);
+      }
+   }
+   else {
+      _gamma_vs_const.set(*_device, 1.0f);
+
+      for (auto i = 0; i < 4; ++i) {
+         _device->SetSamplerState(i, D3DSAMP_SRGBTEXTURE, FALSE);
+      }
+   }
+
+   SetRenderState(D3DRS_FOGCOLOR, _state_block.get(D3DRS_FOGCOLOR));
 }
 }

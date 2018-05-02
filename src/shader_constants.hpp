@@ -13,7 +13,8 @@ constexpr auto fog_color = 52u;
 
 constexpr auto rt_resolution = 53u;
 
-constexpr auto projection_matrix = 54u;
+constexpr auto post_processing_start = 60u;
+constexpr auto post_processing_end = 70u;
 
 constexpr auto material_constants_start = 128u;
 constexpr auto material_constants_end = 136u;
@@ -22,6 +23,7 @@ constexpr auto material_constants_end = 136u;
 // extension vs constants
 namespace vs {
 constexpr auto time = 97u;
+constexpr auto gamma = 98u;
 
 constexpr auto material_constants_start = 128u;
 constexpr auto material_constants_end = 136u;

@@ -55,7 +55,7 @@ auto munge_material(const fs::path& material_path, const fs::path& output_file_p
 
    const auto rendertype = root_node["RenderType"s].as<std::string>();
 
-   const auto desc_name = make_ci_string(split_string(rendertype, "."sv)[0]);
+   const auto desc_name = make_ci_string(split_string_on(rendertype, "."sv)[0]);
 
    if (!descriptions.count(desc_name)) {
       throw std::runtime_error{"RenderType has no material description."s};

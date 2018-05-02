@@ -6,6 +6,8 @@
       "name": "diffuse blendmap",
       "id": 0,
 
+      "srgb_state": [ true, true, true, false ],
+
       "passes": [
         {
           "skinned": true,
@@ -32,6 +34,8 @@
           "texture_coords": false,
           "transform": "normals",
 
+          "srgb_state": [ true, true, true, false ],
+
           "vertex_shader": "diffuse_blendmap_vs",
           "pixel_shader": "diffuse_blendmap_unlit_ps"
         },
@@ -42,6 +46,8 @@
           "vertex_color": true,
           "texture_coords": false,
           "transform": "normals",
+
+          "srgb_state": [ false, false, true, false ],
 
           "vertex_shader": "detailing_vs",
           "pixel_shader": "detailing_ps"
