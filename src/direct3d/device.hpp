@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../effects/color_grading.hpp"
+#include "../effects/control.hpp"
 #include "../material.hpp"
 #include "../shader_constants.hpp"
 #include "../shader_database.hpp"
@@ -361,7 +362,6 @@ private:
    bool _imgui_bootstrapped = false;
    bool _imgui_active = false;
    bool _fake_device_loss = false;
-   bool _using_fp_rendertargets = false;
 
    // Per-Frame State
    bool _linear_rendering = false;
@@ -390,6 +390,7 @@ private:
    Shader_database _shaders;
    Texture_database _textures;
 
+   effects::Control _effects_control;
    effects::Color_grading _color_grading{_device};
 
    const Com_ptr<IDirect3DVertexDeclaration9> _fs_vertex_decl;

@@ -174,7 +174,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
       presentation_parameters->BackBufferHeight = display.resolution.y;
    }
 
-   if (_using_fp_rendertargets) {
+   if (_effects_control.enabled()) {
       presentation_parameters->MultiSampleType = D3DMULTISAMPLE_NONE;
       presentation_parameters->MultiSampleQuality = 0;
    }
@@ -219,7 +219,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
    const auto refraction_res = _resolution / _config.rendering.refraction_buffer_factor;
 
-   if (_using_fp_rendertargets) {
+   if (_effects_control.enabled()) {
       _device->CreateTexture(_resolution.x, _resolution.y, 1, D3DUSAGE_RENDERTARGET,
                              fp_texture_format, D3DPOOL_DEFAULT,
                              _fp_backbuffer.clear_and_assign(), nullptr);
@@ -228,13 +228,15 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
       _device->SetRenderTarget(0, _backbuffer_override.get());
 
       set_linear_rendering(true);
+      _effects_control.active(true);
    }
    else {
       set_linear_rendering(false);
+      _effects_control.active(false);
    }
 
    _device->CreateTexture(refraction_res.x, refraction_res.y, 1, D3DUSAGE_RENDERTARGET,
-                          _using_fp_rendertargets ? fp_texture_format : D3DFMT_A8R8G8B8,
+                          _effects_control.enabled() ? fp_texture_format : D3DFMT_A8R8G8B8,
                           D3DPOOL_DEFAULT,
                           _refraction_texture.clear_and_assign(), nullptr);
 
@@ -288,7 +290,7 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
       if (GetFocus() == _window) clip_cursor_to_window(_window);
    }
 
-   if (_using_fp_rendertargets) {
+   if (_effects_control.active()) {
       set_linear_rendering(_fp_rt_resolved);
 
       if (!std::exchange(_fp_rt_resolved, false)) {
@@ -298,12 +300,8 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
 
    if (_imgui_active) {
       _config.show_imgui(&_fake_device_loss);
+      _effects_control.show_imgui();
       _color_grading.show_imgui();
-
-      ImGui::Begin("Effects Control");
-      ImGui::Checkbox("Enable FP Rendertargets", &_using_fp_rendertargets);
-      _fake_device_loss |= ImGui::Button("Reset Device & Apply");
-      ImGui::End();
 
       ImGui::Render();
    }
@@ -332,7 +330,7 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
 
    if (_fake_device_loss) return D3DERR_DEVICELOST;
 
-   if (_using_fp_rendertargets) {
+   if (_effects_control.active()) {
       _fp_backbuffer->GetSurfaceLevel(0, _backbuffer_override.clear_and_assign());
       _device->SetRenderTarget(0, _backbuffer_override.get());
    }
@@ -491,7 +489,7 @@ HRESULT Device::CreateVolumeTexture(UINT width, UINT height, UINT depth, UINT le
          const auto on_destruction = [fx_id, this] {
             if (fx_id != _active_fx_id.load()) return;
 
-            _using_fp_rendertargets = false;
+            _effects_control.enabled(false);
             _fake_device_loss = true;
 
             set_linear_rendering(false);
@@ -506,7 +504,7 @@ HRESULT Device::CreateVolumeTexture(UINT width, UINT height, UINT depth, UINT le
 
             auto config = YAML::Load(config_str);
 
-            _using_fp_rendertargets = true;
+            _effects_control.enabled(true);
             _fake_device_loss = true;
 
             _color_grading.set_params(
@@ -549,13 +547,13 @@ HRESULT Device::CreateTexture(UINT width, UINT height, UINT levels, DWORD usage,
          height /= _config.rendering.reflection_buffer_factor;
       }
 
-      if (_using_fp_rendertargets) {
+      if (_effects_control.active()) {
          format = fp_texture_format;
       }
 
       if (glm::ivec2{width, height} == _resolution) {
          if (++_created_full_rendertargets == 2) {
-            if (_using_fp_rendertargets) format = _stencil_shadow_format;
+            if (_effects_control.active()) format = _stencil_shadow_format;
 
             const auto result =
                _device->CreateTexture(width, height, levels, usage, format,
@@ -592,7 +590,7 @@ HRESULT Device::CreateDepthStencilSurface(UINT width, UINT height, D3DFORMAT for
       height /= _config.rendering.reflection_buffer_factor;
    }
 
-   if (_using_fp_rendertargets) {
+   if (_effects_control.active()) {
       multi_sample = D3DMULTISAMPLE_NONE;
       multi_sample_quality = 0;
    }
@@ -676,7 +674,7 @@ HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
       return S_OK;
    }
 
-   if (_using_fp_rendertargets && _vs_metadata.rendertype == "shadowquad"sv) {
+   if (_effects_control.active() && _vs_metadata.rendertype == "shadowquad"sv) {
       Com_ptr<IDirect3DSurface9> shadow_rt;
       Com_ptr<IDirect3DSurface9> rt;
 
@@ -697,10 +695,10 @@ HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
 
    if (_vs_metadata.rendertype == "hdr"sv) {
       _game_doing_bloom_pass = true;
-      _discard_draw_calls = _using_fp_rendertargets;
+      _discard_draw_calls = _effects_control.active();
    }
    else if (std::exchange(_game_doing_bloom_pass, false) &&
-            _vs_metadata.rendertype != "hdr"sv && _using_fp_rendertargets) {
+            _vs_metadata.rendertype != "hdr"sv && _effects_control.active()) {
       _fp_rt_resolved = true;
       _discard_draw_calls = false;
       set_linear_rendering(false);
