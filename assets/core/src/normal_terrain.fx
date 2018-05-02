@@ -226,11 +226,6 @@ float4 detailing_ps(Ps_detail_input input, uniform sampler2D detail_maps[2],
                                                    input.projection_texcoords);
    float shadow_map_color = tex2Dproj(shadow_map, input.shadow_map_texcoords).a;
 
-   // HACK: Ignore projected cube maps.
-   if (input.projection_texcoords.z != 0.0) {
-      projected_color = 1.0;
-   }
-   
    Pixel_lighting light = light::pixel_calculate(normalize(input.world_normal), input.world_position,
                                                  input.precalculated_light);
 
