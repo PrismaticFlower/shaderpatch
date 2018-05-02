@@ -81,99 +81,102 @@ float intensity_spot(float3 world_normal, float3 world_position)
 }
 
 Lighting calculate(float3 normal, float3 world_position,
-                   float4 static_diffuse_lighting)
+                   float3 static_diffuse_lighting)
 {
    float3 world_normal = normals_to_world(normal);
 
    Lighting lighting;
 
    lighting.diffuse = 0.0;
-   lighting.diffuse.rgb = ambient(world_normal) + static_diffuse_lighting.rgb;
+   lighting.diffuse.rgb = ambient(world_normal) + static_diffuse_lighting;
 
-#ifdef LIGHTING_DIRECTIONAL
-   float4 intensity = float4(lighting.diffuse.rgb, 1.0);
+   if (lighting_directional) {
+      float4 intensity = float4(lighting.diffuse.rgb, 1.0);
 
-   intensity.x = intensity_directional(world_normal, light_directional_0_dir);
-   lighting.diffuse += intensity.x * light_directional_0_color;
+      intensity.x = intensity_directional(world_normal, light_directional_0_dir);
+      lighting.diffuse += intensity.x * light_directional_0_color;
 
-   intensity.w = intensity_directional(world_normal, light_directional_1_dir);
-   lighting.diffuse += intensity.w * light_directional_1_color;
+      intensity.w = intensity_directional(world_normal, light_directional_1_dir);
+      lighting.diffuse += intensity.w * light_directional_1_color;
 
-#ifdef LIGHTING_POINT_0
-   intensity.y = intensity_point(world_normal, world_position, light_point_0_pos);
-   lighting.diffuse += intensity.y * light_point_0_color;
-#endif
+      if (lighting_point_0) {
+         intensity.y = intensity_point(world_normal, world_position, light_point_0_pos);
+         lighting.diffuse += intensity.y * light_point_0_color;
+      }
 
-#ifdef LIGHTING_POINT_1
-   intensity.w = intensity_point(world_normal, world_position, light_point_1_pos);
-   lighting.diffuse += intensity.w * light_point_1_color;
-#endif
+      if (lighting_point_1) {
+         intensity.w = intensity_point(world_normal, world_position, light_point_1_pos);
+         lighting.diffuse += intensity.w * light_point_1_color;
+      }
 
-#ifdef LIGHTING_POINT_23
-   intensity.w = intensity_point(world_normal, world_position, light_point_2_pos);
-   lighting.diffuse += intensity.w * light_point_2_color;
+      if (lighting_point_23) {
+         intensity.w = intensity_point(world_normal, world_position, light_point_2_pos);
+         lighting.diffuse += intensity.w * light_point_2_color;
 
-   intensity.w = intensity_point(world_normal, world_position, light_point_3_pos);
-   lighting.diffuse += intensity.w * light_point_3_color;
-#elif defined(LIGHTING_SPOT_0)
-   intensity.z = intensity_spot(world_normal, world_position);
-   lighting.diffuse += intensity.z * light_spot_color;
-#endif
+         intensity.w = intensity_point(world_normal, world_position, light_point_3_pos);
+         lighting.diffuse += intensity.w * light_point_3_color;
+      }
+      else if (lighting_spot_0) {
+         intensity.z = intensity_spot(world_normal, world_position);
+         lighting.diffuse += intensity.z * light_spot_color;
+      }
 
-   lighting.static_diffuse = static_diffuse_lighting;
-   lighting.static_diffuse.w = dot(light_proj_selector, intensity);
-   lighting.diffuse.rgb += -light_proj_color.rgb * lighting.static_diffuse.w;
+      lighting.static_diffuse.rgb = static_diffuse_lighting;
+      lighting.static_diffuse.w = dot(light_proj_selector, intensity);
+      lighting.diffuse.rgb += -light_proj_color.rgb * lighting.static_diffuse.w;
 
-   float scale = max(lighting.diffuse.r, lighting.diffuse.g);
-   scale = max(scale, lighting.diffuse.b);
-   scale = max(scale, 1.0);
-   scale = rcp(scale);
-   lighting.diffuse.rgb *= scale;
-   lighting.diffuse.rgb *= hdr_info.z;
-#else // LIGHTING_DIRECTIONAL
-
-   lighting.diffuse = float4(1.0.xxx, 0.0);
-   lighting.static_diffuse = 0.0;
-#endif
+      float scale = max(lighting.diffuse.r, lighting.diffuse.g);
+      scale = max(scale, lighting.diffuse.b);
+      scale = max(scale, 1.0);
+      scale = rcp(scale);
+      lighting.diffuse.rgb *= scale;
+      lighting.diffuse.rgb *= hdr_info.z;
+   }
+   else {
+      lighting.diffuse = float4(1.0.xxx, 0.0);
+      lighting.static_diffuse = 0.0;
+   }
 
    return lighting;
 }
 
 Lighting vertex_precalculate(float3 world_normal, float3 world_position,
-                             float4 static_diffuse_lighting)
+                             float3 static_diffuse_lighting)
 {
    Lighting lighting;
 
    lighting.diffuse = 0.0;
-   lighting.diffuse.rgb = ambient(world_normal) + static_diffuse_lighting.rgb;
+   lighting.diffuse.rgb = ambient(world_normal) + static_diffuse_lighting;
 
-#ifdef LIGHTING_DIRECTIONAL
-   float4 intensity = float4(lighting.diffuse.rgb, 1.0);
+   if (lighting_directional) {
+      float4 intensity = float4(lighting.diffuse.rgb, 1.0);
 
-   intensity.x = intensity_directional(world_normal, light_directional_0_dir);
-   intensity.w = intensity_directional(world_normal, light_directional_1_dir);
-#ifdef LIGHTING_POINT_0
-   intensity.y = intensity_point(world_normal, world_position, light_point_0_pos);
-#endif
+      intensity.x = intensity_directional(world_normal, light_directional_0_dir);
+      intensity.w = intensity_directional(world_normal, light_directional_1_dir);
 
-#ifdef LIGHTING_POINT_1
-   intensity.w = intensity_point(world_normal, world_position, light_point_1_pos);
-#endif
+      if (lighting_point_0) {
+         intensity.y = intensity_point(world_normal, world_position, light_point_0_pos);
+      }
 
-#ifdef LIGHTING_POINT_23
-   intensity.w = intensity_point(world_normal, world_position, light_point_3_pos);
-#elif defined(LIGHTING_SPOT_0)
-   intensity.z = intensity_spot(world_normal, world_position);
-#endif
-   lighting.static_diffuse = static_diffuse_lighting;
-   lighting.static_diffuse.w = dot(light_proj_selector, intensity);
-   lighting.diffuse.rgb += -light_proj_color.rgb * lighting.static_diffuse.w;
+      if (lighting_point_1) {
+         intensity.w = intensity_point(world_normal, world_position, light_point_1_pos);
+      }
 
-#else // LIGHTING_DIRECTIONAL
+      if (lighting_point_23) {
+         intensity.w = intensity_point(world_normal, world_position, light_point_3_pos);
+      }
+      else if (lighting_spot_0) {
+         intensity.z = intensity_spot(world_normal, world_position);
+      }
 
-   lighting.diffuse = float4(1.0.xxx, 0.0);
-   lighting.static_diffuse = 0.0;
-#endif
+      lighting.static_diffuse.rgb = static_diffuse_lighting;
+      lighting.static_diffuse.w = dot(light_proj_selector, intensity);
+      lighting.diffuse.rgb += -light_proj_color.rgb * lighting.static_diffuse.w;
+   }
+   else {
+      lighting.diffuse = float4(1.0.xxx, 0.0);
+      lighting.static_diffuse = 0.0;
+   }
 
    return lighting;
 }

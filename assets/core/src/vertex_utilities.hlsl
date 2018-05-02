@@ -107,10 +107,10 @@ float4 get_material_color(float4 color)
 #endif
 }
 
-float4 get_static_diffuse_color(float4 color)
+float3 get_static_diffuse_color(float4 color)
 {
 #ifdef USE_VERTEX_COLOR
-   return pow(color * color_state.xxxz + color_state.zzzz, vs_color_gamma);
+   return pow(color.rgb * color_state.xxx + color_state.zzz, vs_color_gamma);
 #else
    return 0.0;
 #endif

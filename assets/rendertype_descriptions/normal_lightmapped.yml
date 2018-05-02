@@ -1,0 +1,9 @@
+Overridden RenderType: "normal"
+
+Property Mappings:
+
+Texture Mappings:
+   DiffuseMap: 
+      Slot: 04
+   LightMap: 
+      Slot: 05

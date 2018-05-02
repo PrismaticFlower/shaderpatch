@@ -39,6 +39,7 @@ ucft
    REQN
    {
       "shader"
+      "normal_lightmapped"
       "pbr"
       "pbr-basic"
       "pbr-emissive"

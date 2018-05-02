@@ -95,10 +95,10 @@ Vs_3lights_output lights_3_vs(Vs_input input)
    output.binormal = world_binormals.s;
    output.tangent = world_binormals.t;
 
-   float4 static_diffuse_color = get_static_diffuse_color(input.color);
+   float3 static_diffuse_color = get_static_diffuse_color(input.color);
 
    float3 ambient_light = light::ambient(world_normals);
-   ambient_light += static_diffuse_color.rgb;
+   ambient_light += static_diffuse_color;
    output.ambient_color = ambient_light * light_ambient_color_top.a;
 
    return output;
@@ -181,7 +181,7 @@ Vs_spotlight_output spotlight_vs(Vs_input input)
    output.binormal = world_binormals.s;
    output.tangent = world_binormals.t;
 
-   float4 static_diffuse_color = get_static_diffuse_color(input.color);
+   float3 static_diffuse_color = get_static_diffuse_color(input.color);
 
    float3 ambient_light = light::ambient(world_normals);
    ambient_light += static_diffuse_color.rgb;
