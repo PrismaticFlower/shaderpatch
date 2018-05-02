@@ -40,7 +40,8 @@ Vs_normal_output normal_vs(Vs_normal_input input,
    fade_scale = position.w * fade_factor.x + fade_factor.y;
    fade_scale = saturate(fade_scale);
 
-   output.color.a = (near_scene.fade * fade_scale) * get_material_color(input.color).a;
+   output.color.a = 
+      saturate((near_scene.fade * fade_scale) * get_material_color(input.color).a);
 
    float2 texcoords = decompress_texcoords(input.texcoords);
    output.texcoords = texcoords * texcoord_transform.xy + texcoord_transform.zw;
@@ -89,7 +90,8 @@ Vs_blur_output blur_vs(Vs_blur_input input,
    fade_scale = position.w * fade_factor.x + fade_factor.y;
    fade_scale = saturate(fade_scale);
 
-   output.color.a = (near_scene.fade * fade_scale) * get_material_color(input.color).a;
+   output.color.a = 
+      saturate((near_scene.fade * fade_scale) * get_material_color(input.color).a);
 
    float2 texcoords = decompress_texcoords(input.texcoords);
    output.texcoords = texcoords * texcoord_transform.xy + texcoord_transform.zw;

@@ -64,7 +64,7 @@ Vs_output shield_vs(Vs_input input)
    near_scene = clamp_near_scene_fade(near_scene);
    near_scene.fade = near_scene.fade * angle_alpha_factor;
 
-   output.fade = near_scene.fade * angle_alpha_factor;
+   output.fade = saturate(near_scene.fade * angle_alpha_factor);
 
    output.color.rgb = material_diffuse_color.rgb;
    output.color.a = material_diffuse_color.a;

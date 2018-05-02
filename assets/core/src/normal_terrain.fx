@@ -159,7 +159,7 @@ float4 diffuse_blendmap_ps(Ps_blendmap_input input, uniform sampler2D diffuse_ma
    color.rgb *= light.color;
 
    color.rgb = (color.rgb * detail_color) * 2.0;
-   color.a = (input.fade - 0.5) * 4.0;
+   color.a = saturate((input.fade - 0.5) * 4.0);
 
    color.rgb = fog::apply(color.rgb, input.fog_eye_distance);
 
@@ -194,7 +194,7 @@ float4 diffuse_blendmap_unlit_ps(Ps_blendmap_input input, uniform sampler2D diff
    color.rgb *= light_color;
 
    color.rgb = (color.rgb * detail_color) * 2.0;
-   color.a = (input.fade - 0.5) * 4.0;
+   color.a = saturate((input.fade - 0.5) * 4.0);
 
    color.rgb = fog::apply(color.rgb, input.fog_eye_distance);
 

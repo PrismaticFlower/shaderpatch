@@ -90,7 +90,7 @@ float4 near_ps(Ps_input input) : COLOR
 
    color.rgb = lerp(color.rgb, foam_color.rgb, foam_level.rrr);
 
-   color.a = (input.color.a - 0.5) * 4.0;
+   color.a = saturate((input.color.a - 0.5) * 4.0);
 
    return color;
 }
@@ -99,7 +99,7 @@ float4 far_ps(Ps_input input) : COLOR
 {
    float4 color = near_ps(input);
 
-   color.a = tex2D(foam_sampler, input.base_texcoords).a * input.color.a;
+   color.a = saturate(tex2D(foam_sampler, input.base_texcoords).a * input.color.a);
 
    return color;
 }

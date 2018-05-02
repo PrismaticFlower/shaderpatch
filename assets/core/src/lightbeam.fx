@@ -32,7 +32,7 @@ Vs_output lightbeam_vs(Vs_input input)
    float4 material_color = get_material_color(input.color);
 
    output.color.rgb = material_color.rgb * hdr_info.zzz;
-   output.color.a = material_color.a * near_scene.fade;
+   output.color.a = saturate(material_color.a * near_scene.fade);
 
    return output;
 }

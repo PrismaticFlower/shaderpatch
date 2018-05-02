@@ -84,7 +84,7 @@ float4 diffuse_bump_ps(Ps_input input) : COLOR
    color.rgb = clamp(color.rgb, float3(0, 0, 0), float3(1, 1, 1));
 
    color.a *= diffuse_color.a;
-   color.a = clamp(color.a, 0.0, 1.0);
+   color.a = saturate(color.a);
 
    color.rgb = lerp(decal_constants[0].rgb, color.rgb, color.aaa);
 
