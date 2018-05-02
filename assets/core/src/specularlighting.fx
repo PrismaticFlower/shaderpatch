@@ -5,12 +5,8 @@
 #include "transform_utilities.hlsl"
 #include "lighting_utilities.hlsl"
 
-static const float specular_exponent = 16.0;
-
-// I personally feel a high exponent gives nicer results
-// for normal mapped models. You might very reasonably
-// disagree, in which case feel free to change this!
-static const float normal_map_specular_exponent = 128.0;
+static const float specular_threshold = 0.04;
+static const float specular_exponent = 128.0; 
 
 float4 texture_transforms[2] : register(vs, c[CUSTOM_CONST_MIN]);
 
@@ -84,13 +80,11 @@ struct Vs_blinn_phong_ouput
    float3 normal : TEXCOORD3;
 
    float3 envmap_coords : TEXCOORD4;
-   float envmapped : TEXCOORD5;
 
    float1 fog_eye_distance : DEPTH;
 };
 
-Vs_blinn_phong_ouput blinn_phong_vs(Vs_input input,
-                                    uniform float4 specular_state : register(vs, c[CUSTOM_CONST_MIN + 2]))
+Vs_blinn_phong_ouput blinn_phong_vs(Vs_input input)
 {
    Vs_blinn_phong_ouput output;
 
@@ -114,7 +108,6 @@ Vs_blinn_phong_ouput blinn_phong_vs(Vs_input input,
 
    float3 camera_direction = normalize(world_view_position - world_position.xyz);
    output.envmap_coords = normalize(reflect(world_normal, camera_direction));
-   output.envmapped = (specular_state.x == 1.0);
 
    return output;
 }
@@ -164,9 +157,9 @@ Vs_normalmapped_envmap_ouput normalmapped_envmap_vs(Vs_input input)
    return output;
 }
 
-float3 calculate_blinn_phong(float3 normal, float3 view_normal, float3 world_position,
-                             float4 light_position, float3 light_color, 
-                             float3 specular_color, float exponent)
+float3 calculate_gaussian_specular(float3 normal, float3 view_normal, float3 world_position,
+                                   float4 light_position, float3 light_color, 
+                                   float3 specular_color)
 {
    float3 light_direction = light_position.xyz - world_position;
 
@@ -183,9 +176,13 @@ float3 calculate_blinn_phong(float3 normal, float3 view_normal, float3 world_pos
 
    light_direction = normalize(light_direction);
 
-   float3 half_vector = normalize(light_direction + view_normal);
-   float specular_angle = max(dot(half_vector, normal), 0.0);
-   float specular = pow(specular_angle, exponent);
+   const float3 H = normalize(light_direction + view_normal);
+   const float NdotH = saturate(dot(normal, H));
+   const float NdotL = saturate(dot(normal, light_direction));
+
+   const float cos_angle = pow(specular_threshold, 1 / specular_exponent);
+   const float norm_angle = (NdotH - 1) / (cos_angle - 1);
+   const float specular = exp(-norm_angle * norm_angle) * NdotL;
 
    return attenuation * (specular_color * light_color * specular);
 }
@@ -218,10 +215,9 @@ float4 normalmapped_ps(Ps_normalmapped_input input,
 
    float3 view_normal = normalize(input.world_view_position - input.world_position);
 
-   float3 spec_color = calculate_blinn_phong(texel_normal, view_normal, input.world_position,
-                                             light_position, light_color,
-                                             specular_color.rgb, 
-                                             normal_map_specular_exponent);
+   float3 spec_color = calculate_gaussian_specular(texel_normal, view_normal, 
+                                                   input.world_position, light_position, 
+                                                   light_color, specular_color.rgb);
 
    float gloss = lerp(1.0, normal_map_color.a, specular_color.a);
    float3 color = gloss * spec_color;
@@ -247,7 +243,7 @@ struct Ps_blinn_phong_input
 
 float4 blinn_phong_ps(Ps_blinn_phong_input input, sampler2D diffuse_map,
                       samplerCUBE envmap, float4 specular_color, float3 light_colors[3],
-                      float4 light_positions[3], const int light_count)
+                      float4 light_positions[3], float envmap_state, const int light_count)
 {
    float diffuse_alpha = tex2D(diffuse_map, input.texcoords).a;
    float gloss = lerp(1.0, diffuse_alpha, specular_color.a);
@@ -255,29 +251,31 @@ float4 blinn_phong_ps(Ps_blinn_phong_input input, sampler2D diffuse_map,
    float3 normal = normalize(input.normal);
    float3 view_normal = normalize(input.world_view_position - input.world_position);
 
-   float3 spec_color = float3(0.0, 0.0, 0.0);
+   float3 color = float3(0.0, 0.0, 0.0);
 
-   if (light_count >= 1 && !input.envmapped) {
-      spec_color += calculate_blinn_phong(normal, view_normal, input.world_position,
-                                          light_positions[0], light_colors[0], 
-                                          specular_color.rgb, specular_exponent);
+   [flatten] if (light_count >= 1) {
+      float3 spec_contrib =  calculate_gaussian_specular(normal, view_normal, 
+                                                         input.world_position,
+                                                         light_positions[0], light_colors[0], 
+                                                         specular_color.rgb);
+      const float3 env_color = texCUBE(envmap, input.envmap_coords).rgb * specular_color.rgb;
+
+      color += lerp(spec_contrib, env_color, envmap_state);
    }
    
    if (light_count >= 2) {
-      spec_color += calculate_blinn_phong(normal, view_normal, input.world_position,
-                                          light_positions[1], light_colors[1], 
-                                          specular_color.rgb, specular_exponent);
+      color += calculate_gaussian_specular(normal, view_normal, input.world_position,
+                                           light_positions[1], light_colors[1], 
+                                           specular_color.rgb);
    }
    
    if (light_count >= 3) {
-      spec_color += calculate_blinn_phong(normal, view_normal, input.world_position,
-                                          light_positions[2], light_colors[2], 
-                                          specular_color.rgb, specular_exponent);
+      color += calculate_gaussian_specular(normal, view_normal, input.world_position,
+                                           light_positions[2], light_colors[2], 
+                                           specular_color.rgb);
    }
 
-   float3 envmap_color = texCUBE(envmap, input.envmap_coords).rgb * specular_color.rgb;
-   float3 color = saturate(gloss * (envmap_color + spec_color));
-
+   color *= gloss;
    color = fog::apply(color, input.fog_eye_distance);
 
    return float4(color, diffuse_alpha);
@@ -287,30 +285,33 @@ float4 blinn_phong_lights_3_ps(Ps_blinn_phong_input input,
                                uniform sampler2D diffuse_map, uniform samplerCUBE envmap,
                                uniform float4 specular_color : register(ps, c[0]),
                                uniform float3 light_colors[3] : register(ps, c[2]),
+                               uniform float envmap_state : register(c[CUSTOM_CONST_MIN + 2]),
                                uniform float4 light_positions[3] : register(c[CUSTOM_CONST_MIN + 3])) : COLOR
 {
    return blinn_phong_ps(input, diffuse_map, envmap, specular_color, light_colors,  
-                         light_positions, 3);
+                         light_positions, envmap_state, 3);
 }
 
 float4 blinn_phong_lights_2_ps(Ps_blinn_phong_input input,
                                uniform sampler2D diffuse_map, uniform samplerCUBE envmap,
                                uniform float4 specular_color : register(ps, c[0]),
                                uniform float3 light_colors[3] : register(ps, c[2]),
+                               uniform float envmap_state : register(c[CUSTOM_CONST_MIN + 2]),
                                uniform float4 light_positions[3] : register(c[CUSTOM_CONST_MIN + 3])) : COLOR
 {
    return blinn_phong_ps(input, diffuse_map, envmap, specular_color, light_colors,  
-                         light_positions, 2);
+                         light_positions, envmap_state, 2);
 }
 
 float4 blinn_phong_lights_1_ps(Ps_blinn_phong_input input,
                                uniform sampler2D diffuse_map, uniform samplerCUBE envmap,
                                uniform float4 specular_color : register(ps, c[0]),
                                uniform float3 light_colors[3] : register(ps, c[2]),
+                               uniform float envmap_state : register(c[CUSTOM_CONST_MIN + 2]),
                                uniform float4 light_positions[3] : register(c[CUSTOM_CONST_MIN + 3])) : COLOR
 {
    return blinn_phong_ps(input, diffuse_map, envmap, specular_color, light_colors,  
-                         light_positions, 1);
+                         light_positions, envmap_state, 1);
 }
 
 struct Ps_normalmapped_envmap_input
@@ -355,3 +356,4 @@ float4 debug_vertexlit_ps() : COLOR
 {
    return float4(1.0, 1.0, 0.0, 1.0);
 }
+
