@@ -166,6 +166,7 @@
     <None Include="definitions\normal_terrain.json" />
     <None Include="definitions\ocean.json" />
     <None Include="definitions\particle.json" />
+    <None Include="definitions\patch\bloom.json" />
     <None Include="definitions\patch\normal_lightmapped.json" />
     <None Include="definitions\patch\pbr-basic.json" />
     <None Include="definitions\patch\pbr-emissive.json" />
@@ -294,6 +295,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\normal_lightmapped.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\bloom.fx">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

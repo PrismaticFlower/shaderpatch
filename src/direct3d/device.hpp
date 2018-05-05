@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../effects/color_grading.hpp"
 #include "../effects/control.hpp"
+#include "../effects/rendertarget_allocator.hpp"
 #include "../material.hpp"
 #include "../shader_constants.hpp"
 #include "../shader_database.hpp"
@@ -390,8 +390,9 @@ private:
    Shader_database _shaders;
    Texture_database _textures;
 
-   effects::Control _effects_control;
-   effects::Color_grading _color_grading{_device};
+   effects::Control _effects{_device};
+
+   effects::Rendertarget_allocator _rt_allocator{_device};
 
    const Com_ptr<IDirect3DVertexDeclaration9> _fs_vertex_decl;
    Com_ptr<IDirect3DVertexBuffer9> _fs_vertex_buffer;

@@ -45,7 +45,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>bin\$(Configuration)\</OutDir>
+    <OutDir>D:\Program Files (x86)\LucasArts\Star Wars Battlefront II\GameData\</OutDir>
     <IntDir>build\$(Configuration)\</IntDir>
     <TargetName>dinput8</TargetName>
     <TargetExt>.dll</TargetExt>
@@ -54,7 +54,7 @@
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>bin\$(Configuration)\</OutDir>
+    <OutDir>D:\Program Files (x86)\LucasArts\Star Wars Battlefront II\GameData\</OutDir>
     <IntDir>build\$(Configuration)\</IntDir>
     <TargetName>dinput8</TargetName>
     <TargetExt>.dll</TargetExt>
@@ -126,6 +126,7 @@
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\effects\bloom.cpp" />
     <ClCompile Include="src\effects\color_grading.cpp" />
     <ClCompile Include="src\direct3d\check_required_features.cpp" />
     <ClCompile Include="src\direct3d\create_device.cpp" />
@@ -158,6 +159,7 @@
     <None Include="dinput8.def" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\effects\bloom.hpp" />
     <ClInclude Include="src\effects\color_grading.hpp" />
     <ClInclude Include="src\direct3d\check_required_features.hpp" />
     <ClInclude Include="src\direct3d\create_device.hpp" />
@@ -167,6 +169,8 @@
     <ClInclude Include="src\direct3d\shader_constant.hpp" />
     <ClInclude Include="src\direct3d\render_state_block.hpp" />
     <ClInclude Include="src\effects\control.hpp" />
+    <ClInclude Include="src\effects\helpers.hpp" />
+    <ClInclude Include="src\effects\rendertarget_allocator.hpp" />
     <ClInclude Include="src\hook_vtable.hpp" />
     <ClInclude Include="src\imgui\imconfig.h" />
     <ClInclude Include="src\imgui\imgui.h" />

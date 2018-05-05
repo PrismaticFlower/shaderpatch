@@ -179,11 +179,16 @@
     <None Include="definitions\patch\tonemap.json">
       <Filter>definitions\patch</Filter>
     </None>
-    <None Include="src\tonemap.fx" />
     <None Include="definitions\patch\normal_lightmapped.json">
       <Filter>definitions\patch</Filter>
     </None>
     <None Include="src\normal_lightmapped.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="definitions\patch\bloom.json">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="src\tonemap.fx">
       <Filter>src</Filter>
     </None>
   </ItemGroup>
@@ -200,5 +205,10 @@
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="munge_core.ps1" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="src\bloom.fx">
+      <Filter>src</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

@@ -70,10 +70,15 @@ public:
    Color_grading(gsl::not_null<Com_ptr<IDirect3DDevice9>> device)
       : _device(std::move(device))
    {
-      set_params(Color_grading_params{});
+      params(Color_grading_params{});
    }
 
-   void set_params(const Color_grading_params& params) noexcept;
+   void params(const Color_grading_params& params) noexcept;
+
+   auto params() const noexcept -> const Color_grading_params&
+   {
+      return _user_params;
+   }
 
    void bind_lut(int r_slot, int g_slot, int b_slot) noexcept;
 
@@ -88,11 +93,6 @@ public:
    void drop_device_resources() noexcept;
 
    void show_imgui() noexcept;
-
-   auto params() const noexcept -> const Color_grading_params&
-   {
-      return _user_params;
-   }
 
 private:
    void update_eval_params() noexcept;
@@ -137,9 +137,6 @@ private:
    const int _curve_size = 256;
 
    Color_grading_params _user_params{};
-
-   bool _open_failure = false;
-   bool _save_failure = false;
 };
 
 }

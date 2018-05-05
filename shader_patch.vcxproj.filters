@@ -60,6 +60,9 @@
     <ClCompile Include="src\effects\control.cpp">
       <Filter>src\effects</Filter>
     </ClCompile>
+    <ClCompile Include="src\effects\bloom.cpp">
+      <Filter>src\effects</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -144,6 +147,15 @@
       <Filter>src\effects</Filter>
     </ClInclude>
     <ClInclude Include="src\effects\control.hpp">
+      <Filter>src\effects</Filter>
+    </ClInclude>
+    <ClInclude Include="src\effects\bloom.hpp">
+      <Filter>src\effects</Filter>
+    </ClInclude>
+    <ClInclude Include="src\effects\rendertarget_allocator.hpp">
+      <Filter>src\effects</Filter>
+    </ClInclude>
+    <ClInclude Include="src\effects\helpers.hpp">
       <Filter>src\effects</Filter>
     </ClInclude>
   </ItemGroup>

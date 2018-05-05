@@ -35,10 +35,11 @@ ucft
       "zprepass"
    }
 
-   // Patch Material Shaders
+   // Patch Shaders
    REQN
    {
       "shader"
+      "bloom"
       "normal_lightmapped"
       "pbr"
       "pbr-basic"

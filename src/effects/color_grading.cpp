@@ -2,21 +2,18 @@
 #include "color_grading.hpp"
 #include "../imgui/imgui.h"
 #include "../logger.hpp"
-#include "file_dialogs.hpp"
 
 #include <algorithm>
 #include <cstring>
 #include <limits>
 #include <optional>
 
-#include <boost/filesystem.hpp>
 #include <glm/gtc/packing.hpp>
 #include <gsl/gsl>
 
 namespace sp::effects {
 
 using namespace std::literals;
-namespace fs = boost::filesystem;
 
 namespace {
 
@@ -284,60 +281,9 @@ glm::vec3 linear_to_srgb(glm::vec3 v) noexcept
    return v;
 }
 
-bool save_params_to_yaml_file(const Color_grading_params& params,
-                              const fs::path& save_to) noexcept
-{
-   YAML::Node config;
-   config["ColorGrading"s] = params;
-
-   boost::filesystem::ofstream file{save_to};
-
-   if (!file) {
-      log(Log_level::error, "Failed to open file "sv, save_to,
-          " to write colour grading config."sv);
-
-      return false;
-   }
-
-   file << "# Auto-Generated Colour Grading Config. May have less than ideal formatting.\n"sv;
-
-   file << config;
-
-   return true;
 }
 
-auto load_params_from_yaml_file(const fs::path& load_from)
-   -> std::optional<Color_grading_params>
-{
-   YAML::Node config;
-
-   try {
-      config = YAML::LoadFile(load_from.string());
-   }
-   catch (std::exception& e) {
-      log(Log_level::error, "Failed to open file "sv, load_from,
-          " to read colour grading config. Reason: "sv, e.what());
-
-      return std::nullopt;
-   }
-
-   Color_grading_params params{};
-
-   try {
-      params = config["ColorGrading"s].as<Color_grading_params>();
-   }
-   catch (std::exception& e) {
-      log(Log_level::warning,
-          "Exception occured while reading colour grading config from "sv,
-          load_from, " Reason: "sv, e.what());
-   }
-
-   return params;
-}
-
-}
-
-void Color_grading::set_params(const Color_grading_params& params) noexcept
+void Color_grading::params(const Color_grading_params& params) noexcept
 {
    _user_params = params;
 
@@ -424,42 +370,7 @@ void Color_grading::show_imgui() noexcept
 
    ImGui::Separator();
 
-   if (ImGui::Button("Open Config")) {
-      if (auto path =
-             win32::open_file_dialog({{L"Colour Grading Config", L"*.clrfx"}}, nullptr,
-                                     fs::current_path(), L"mod_config.clrfx"s);
-          path) {
-         auto params = load_params_from_yaml_file(*path);
-
-         _open_failure = !params;
-         _user_params = params.value_or(_user_params);
-      }
-   }
-
-   if (_open_failure) {
-      ImGui::SameLine();
-      ImGui::TextColored({1.0f, 0.2f, 0.33f, 1.0f}, "Open Failed!");
-   }
-
-   ImGui::SameLine();
-
-   if (ImGui::Button("Save Config")) {
-      if (auto path =
-             win32::save_file_dialog({{L"Colour Grading Config", L"*.clrfx"}}, nullptr,
-                                     fs::current_path(), L"mod_config.clrfx"s);
-          path) {
-         _save_failure = !save_params_to_yaml_file(_user_params, *path);
-      }
-   }
-
-   if (_save_failure) {
-      ImGui::SameLine();
-      ImGui::TextColored({1.0f, 0.2f, 0.33f, 1.0f}, "Save Failed!");
-   }
-
-   ImGui::SameLine();
-
-   if (ImGui::Button("Reset Config")) {
+   if (ImGui::Button("Reset Settings")) {
       _user_params = Color_grading_params{};
    }
 

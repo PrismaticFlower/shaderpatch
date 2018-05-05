@@ -36,6 +36,12 @@ public:
       return _variations[index(flags)] = std::move(program);
    }
 
+   void bind(IDirect3DDevice9& device,
+             const Shader_flags flags = Shader_flags::none) const noexcept
+   {
+      (*this)[flags].bind(device);
+   }
+
 private:
    static constexpr int index(const Shader_flags flags) noexcept
    {

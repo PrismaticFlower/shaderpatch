@@ -1,5 +1,6 @@
 
 #include "device.hpp"
+#include "../effects/helpers.hpp"
 #include "../imgui/imgui.h"
 #include "../imgui/imgui_impl_dx9.h"
 #include "../input_hooker.hpp"
@@ -60,56 +61,6 @@ void set_active_light_constants(IDirect3DDevice9& device, Shader_flags flags) no
    device.SetPixelShaderConstantB(0, constants.data(), constants.size());
 }
 
-auto create_fs_vertex_buffer(IDirect3DDevice9& device, const glm::ivec2 resolution)
-   -> Com_ptr<IDirect3DVertexBuffer9>
-{
-   const auto offset = 1.f / static_cast<glm::vec2>(resolution);
-
-   const auto vertices = std::array<float, 12>{{
-      -1.f - offset.x, -1.f + offset.y, // pos 0
-      0.f, 1.f,                         // uv 0
-      -1.f - offset.x, 3.f + offset.x,  // pos 1
-      0.f, -1.f,                        // uv 1
-      3.f - offset.x, -1.f + offset.x,  // pos 2
-      2.f, 1.f                          // uv 2
-   }};
-
-   Com_ptr<IDirect3DVertexBuffer9> buffer;
-
-   device.CreateVertexBuffer(sizeof(vertices), D3DUSAGE_WRITEONLY, 0,
-                             D3DPOOL_DEFAULT, buffer.clear_and_assign(), nullptr);
-
-   void* data_ptr{};
-
-   buffer->Lock(0, sizeof(vertices), &data_ptr, 0);
-
-   *static_cast<std::array<float, 12>*>(data_ptr) = vertices;
-
-   buffer->Unlock();
-
-   return buffer;
-}
-
-auto create_fs_vertex_decl(IDirect3DDevice9& device)
-   -> Com_ptr<IDirect3DVertexDeclaration9>
-{
-   constexpr auto declaration = std::array<D3DVERTEXELEMENT9, 3>{
-      {{0, 0, D3DDECLTYPE_FLOAT2, 0, D3DDECLUSAGE_POSITION, 0},
-       {0, 8, D3DDECLTYPE_FLOAT2, 0, D3DDECLUSAGE_TEXCOORD, 0},
-       D3DDECL_END()}};
-
-   Com_ptr<IDirect3DVertexDeclaration9> vertex_decl;
-
-   device.CreateVertexDeclaration(declaration.data(), vertex_decl.clear_and_assign());
-
-   return vertex_decl;
-}
-
-constexpr auto get_fs_buffer_stride()
-{
-   return 16u;
-}
-
 constexpr bool is_constant_being_set(int constant, int start, int count) noexcept
 {
    return constant >= start && constant < (start + count);
@@ -124,7 +75,7 @@ Device::Device(Com_ptr<IDirect3DDevice9> device, const HWND window,
      _window{window},
      _resolution{resolution},
      _device_max_anisotropy{gsl::narrow_cast<int>(caps.MaxAnisotropy)},
-     _fs_vertex_decl{create_fs_vertex_decl(*_device)},
+     _fs_vertex_decl{effects::create_fs_triangle_decl(*_device)},
      _stencil_shadow_format{stencil_shadow_format}
 {
    _water_texture =
@@ -174,7 +125,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
       presentation_parameters->BackBufferHeight = display.resolution.y;
    }
 
-   if (_effects_control.enabled()) {
+   if (_effects.enabled()) {
       presentation_parameters->MultiSampleType = D3DMULTISAMPLE_NONE;
       presentation_parameters->MultiSampleQuality = 0;
    }
@@ -188,7 +139,8 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
    _fs_vertex_buffer.reset(nullptr);
 
    _textures.clean_lost_textures();
-   _color_grading.drop_device_resources();
+   _effects.drop_device_resources();
+   _rt_allocator.reset();
 
    _material = nullptr;
 
@@ -219,7 +171,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
    const auto refraction_res = _resolution / _config.rendering.refraction_buffer_factor;
 
-   if (_effects_control.enabled()) {
+   if (_effects.enabled()) {
       _device->CreateTexture(_resolution.x, _resolution.y, 1, D3DUSAGE_RENDERTARGET,
                              fp_texture_format, D3DPOOL_DEFAULT,
                              _fp_backbuffer.clear_and_assign(), nullptr);
@@ -228,19 +180,19 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
       _device->SetRenderTarget(0, _backbuffer_override.get());
 
       set_linear_rendering(true);
-      _effects_control.active(true);
+      _effects.active(true);
    }
    else {
       set_linear_rendering(false);
-      _effects_control.active(false);
+      _effects.active(false);
    }
 
    _device->CreateTexture(refraction_res.x, refraction_res.y, 1, D3DUSAGE_RENDERTARGET,
-                          _effects_control.enabled() ? fp_texture_format : D3DFMT_A8R8G8B8,
+                          _effects.enabled() ? fp_texture_format : D3DFMT_A8R8G8B8,
                           D3DPOOL_DEFAULT,
                           _refraction_texture.clear_and_assign(), nullptr);
 
-   _fs_vertex_buffer = create_fs_vertex_buffer(*_device, _resolution);
+   _fs_vertex_buffer = effects::create_fs_triangle_buffer(*_device, _resolution);
 
    // rebind textures
 
@@ -290,18 +242,17 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
       if (GetFocus() == _window) clip_cursor_to_window(_window);
    }
 
-   if (_effects_control.active()) {
+   if (_effects.active()) {
       set_linear_rendering(_fp_rt_resolved);
 
       if (!std::exchange(_fp_rt_resolved, false)) {
-         apply_tonemapping("linear"s);
+         post_process("linear"s);
       }
    }
 
    if (_imgui_active) {
       _config.show_imgui(&_fake_device_loss);
-      _effects_control.show_imgui();
-      _color_grading.show_imgui();
+      _effects.show_imgui();
 
       ImGui::Render();
    }
@@ -330,7 +281,7 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
 
    if (_fake_device_loss) return D3DERR_DEVICELOST;
 
-   if (_effects_control.active()) {
+   if (_effects.active()) {
       _fp_backbuffer->GetSurfaceLevel(0, _backbuffer_override.clear_and_assign());
       _device->SetRenderTarget(0, _backbuffer_override.get());
    }
@@ -489,11 +440,10 @@ HRESULT Device::CreateVolumeTexture(UINT width, UINT height, UINT depth, UINT le
          const auto on_destruction = [fx_id, this] {
             if (fx_id != _active_fx_id.load()) return;
 
-            _effects_control.enabled(false);
+            _effects.enabled(false);
             _fake_device_loss = true;
 
             set_linear_rendering(false);
-            _color_grading.set_params(effects::Color_grading_params{});
          };
 
          try {
@@ -502,13 +452,9 @@ HRESULT Device::CreateVolumeTexture(UINT width, UINT height, UINT depth, UINT le
 
             while (config_str.back() == '\0') config_str.pop_back();
 
-            auto config = YAML::Load(config_str);
-
-            _effects_control.enabled(true);
+            _effects.read_config(YAML::Load(config_str));
+            _effects.enabled(true);
             _fake_device_loss = true;
-
-            _color_grading.set_params(
-               config["ColorGrading"s].as<effects::Color_grading_params>());
 
             return copyable_finally(on_destruction);
          }
@@ -547,13 +493,13 @@ HRESULT Device::CreateTexture(UINT width, UINT height, UINT levels, DWORD usage,
          height /= _config.rendering.reflection_buffer_factor;
       }
 
-      if (_effects_control.active()) {
+      if (_effects.active()) {
          format = fp_texture_format;
       }
 
       if (glm::ivec2{width, height} == _resolution) {
          if (++_created_full_rendertargets == 2) {
-            if (_effects_control.active()) format = _stencil_shadow_format;
+            if (_effects.active()) format = _stencil_shadow_format;
 
             const auto result =
                _device->CreateTexture(width, height, levels, usage, format,
@@ -590,7 +536,7 @@ HRESULT Device::CreateDepthStencilSurface(UINT width, UINT height, D3DFORMAT for
       height /= _config.rendering.reflection_buffer_factor;
    }
 
-   if (_effects_control.active()) {
+   if (_effects.active()) {
       multi_sample = D3DMULTISAMPLE_NONE;
       multi_sample_quality = 0;
    }
@@ -674,7 +620,7 @@ HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
       return S_OK;
    }
 
-   if (_effects_control.active() && _vs_metadata.rendertype == "shadowquad"sv) {
+   if (_effects.active() && _vs_metadata.rendertype == "shadowquad"sv) {
       Com_ptr<IDirect3DSurface9> shadow_rt;
       Com_ptr<IDirect3DSurface9> rt;
 
@@ -695,15 +641,15 @@ HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
 
    if (_vs_metadata.rendertype == "hdr"sv) {
       _game_doing_bloom_pass = true;
-      _discard_draw_calls = _effects_control.active();
+      _discard_draw_calls = _effects.active();
    }
    else if (std::exchange(_game_doing_bloom_pass, false) &&
-            _vs_metadata.rendertype != "hdr"sv && _effects_control.active()) {
+            _vs_metadata.rendertype != "hdr"sv && _effects.active()) {
       _fp_rt_resolved = true;
       _discard_draw_calls = false;
       set_linear_rendering(false);
 
-      apply_tonemapping("color grading"s);
+      post_process("color grading"s);
 
       _backbuffer_override = nullptr;
    }
@@ -873,24 +819,27 @@ void Device::init_sampler_max_anisotropy() noexcept
    }
 }
 
-void Device::apply_tonemapping(const std::string& shader_state) noexcept
+void Device::post_process(const std::string& shader_state) noexcept
 {
    Com_ptr<IDirect3DSurface9> backbuffer;
-
    _device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO,
                           backbuffer.clear_and_assign());
-
    _device->SetRenderTarget(0, backbuffer.get());
 
    Com_ptr<IDirect3DStateBlock9> state;
 
    _device->CreateStateBlock(D3DSBT_ALL, state.clear_and_assign());
-
-   _device->SetStreamSource(0, _fs_vertex_buffer.get(), 0, get_fs_buffer_stride());
-   _device->SetVertexDeclaration(_fs_vertex_decl.get());
-
    _device->SetRenderState(D3DRS_ZENABLE, FALSE);
    _device->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+
+   _effects.bloom.apply(_shaders.at("bloom"s), _rt_allocator, *_fp_backbuffer);
+
+   // TODO: Fixer upper lack of tonemapping abstraction.
+   _device->SetRenderState(D3DRS_ALPHABLENDENABLE, false);
+   _device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO);
+   _device->SetStreamSource(0, _fs_vertex_buffer.get(), 0, effects::fs_triangle_stride);
+   _device->SetVertexDeclaration(_fs_vertex_decl.get());
+   _device->SetRenderTarget(0, backbuffer.get());
 
    _device->SetTexture(4, _fp_backbuffer.get());
 
@@ -902,8 +851,8 @@ void Device::apply_tonemapping(const std::string& shader_state) noexcept
 
    constexpr auto pp_start = constants::ps::post_processing_start;
 
-   _color_grading.bind_constants<pp_start, pp_start + 1>();
-   _color_grading.bind_lut(5, 6, 7);
+   _effects.color_grading.bind_constants<pp_start, pp_start + 1>();
+   _effects.color_grading.bind_lut(5, 6, 7);
 
    _shaders.at("tonemap"s).at(shader_state)[Shader_flags::none].bind(*_device);
 

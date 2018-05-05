@@ -1,11 +1,29 @@
 #pragma once
 
+#include "../effects/bloom.hpp"
+#include "../effects/color_grading.hpp"
+
+#include <utility>
+
+#include <boost/filesystem.hpp>
 #include <gsl/gsl>
+
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#pragma warning(disable : 4127)
+
+#include <yaml-cpp/yaml.h>
+#pragma warning(pop)
 
 namespace sp::effects {
 
 class Control {
+private:
+   Com_ptr<IDirect3DDevice9> _device;
+
 public:
+   Control(Com_ptr<IDirect3DDevice9> device) : _device{std::move(device)} {}
+
    bool enabled(bool enable) noexcept
    {
       return _enabled = enable;
@@ -28,9 +46,22 @@ public:
 
    void show_imgui() noexcept;
 
+   void drop_device_resources() noexcept;
+
+   void read_config(YAML::Node config);
+
+   effects::Color_grading color_grading{_device};
+   effects::Bloom bloom{_device};
+
 private:
+   void save_params_to_yaml_file(const boost::filesystem::path& save_to) noexcept;
+
+   void load_params_from_yaml_file(const boost::filesystem::path& load_from) noexcept;
+
    bool _enabled = false;
    bool _active = false;
+   bool _open_failure = false;
+   bool _save_failure = false;
 };
 
 }
