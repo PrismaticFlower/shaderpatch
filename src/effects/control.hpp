@@ -22,7 +22,10 @@ private:
    Com_ptr<IDirect3DDevice9> _device;
 
 public:
-   Control(Com_ptr<IDirect3DDevice9> device) : _device{std::move(device)} {}
+   Control(gsl::not_null<Com_ptr<IDirect3DDevice9>> device)
+      : _device{std::move(device)}
+   {
+   }
 
    bool enabled(bool enable) noexcept
    {

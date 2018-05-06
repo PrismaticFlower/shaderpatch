@@ -923,14 +923,16 @@ void Device::set_linear_rendering(bool linear_rendering) noexcept
    _linear_rendering = linear_rendering;
 
    if (_linear_rendering) {
-      _gamma_vs_const.set(*_device, 2.2f);
+      _linear_state_vs_const.set(*_device, {2.2f, 1.0f});
+      _linear_state_ps_const.set(*_device, {2.2f, 1.0f});
 
       for (auto i = 0; i < 4; ++i) {
          _device->SetSamplerState(i, D3DSAMP_SRGBTEXTURE, _vs_metadata.srgb_state[i]);
       }
    }
    else {
-      _gamma_vs_const.set(*_device, 1.0f);
+      _linear_state_vs_const.set(*_device, {1.0f, 0.0f});
+      _linear_state_ps_const.set(*_device, {1.0f, 0.0f});
 
       for (auto i = 0; i < 4; ++i) {
          _device->SetSamplerState(i, D3DSAMP_SRGBTEXTURE, FALSE);
