@@ -112,7 +112,7 @@ struct convert<sp::effects::Bloom_params> {
       node["Enable"s] = params.enabled;
 
       node["Threshold"s] = params.threshold;
-      node["Intensitys"s] = params.intensity;
+      node["Intensity"s] = params.intensity;
 
       node["Tint"s].push_back(params.tint.r);
       node["Tint"s].push_back(params.tint.g);
@@ -155,7 +155,7 @@ struct convert<sp::effects::Bloom_params> {
       params.enabled = node["Enable"s];
 
       params.threshold = node["Threshold"s].as<float>();
-      params.intensity = node["Intensitys"s].as<float>();
+      params.intensity = node["Intensity"s].as<float>();
 
       params.tint[0] = node["Tint"s][0].as<float>();
       params.tint[1] = node["Tint"s][1].as<float>();
