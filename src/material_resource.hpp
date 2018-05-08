@@ -1,6 +1,6 @@
 #pragma once
 
-#include "com_ptr.hpp"
+#include "com_ref.hpp"
 #include "logger.hpp"
 #include "magic_number.hpp"
 #include "material.hpp"
@@ -17,10 +17,9 @@ namespace sp {
 
 class Material_resource final : public IDirect3DVolumeTexture9 {
 public:
-   Material_resource(std::uint32_t resource_size,
-                     gsl::not_null<Com_ptr<IDirect3DDevice9>> device,
+   Material_resource(std::uint32_t resource_size, Com_ref<IDirect3DDevice9> device,
                      const Shader_database& shaders, const Texture_database& textures)
-      : _resource_size{resource_size}, _device{std::move(device)}, _shaders{shaders}, _textures{textures}
+      : _resource_size{resource_size}, _device{device}, _shaders{shaders}, _textures{textures}
    {
    }
 
@@ -240,7 +239,7 @@ private:
 
    const std::uint32_t _resource_size;
 
-   const Com_ptr<IDirect3DDevice9> _device;
+   Com_ref<IDirect3DDevice9> _device;
    const Shader_database& _shaders;
    const Texture_database& _textures;
 

@@ -19,13 +19,10 @@ namespace sp::effects {
 
 class Control {
 private:
-   Com_ptr<IDirect3DDevice9> _device;
+   Com_ref<IDirect3DDevice9> _device;
 
 public:
-   Control(gsl::not_null<Com_ptr<IDirect3DDevice9>> device)
-      : _device{std::move(device)}
-   {
-   }
+   Control(Com_ref<IDirect3DDevice9> device) : _device{device} {}
 
    bool enabled(bool enable) noexcept
    {

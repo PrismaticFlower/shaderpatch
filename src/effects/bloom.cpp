@@ -34,7 +34,7 @@ auto get_surface_metrics(IDirect3DSurface9& from) -> std::tuple<D3DFORMAT, glm::
 
 }
 
-Bloom::Bloom(Com_ptr<IDirect3DDevice9> device) : _device{std::move(device)}
+Bloom::Bloom(Com_ref<IDirect3DDevice9> device) : _device{device}
 {
    params(Bloom_params{});
 }

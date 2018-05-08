@@ -15,9 +15,8 @@ class Texture {
 public:
    Texture() = default;
 
-   Texture(gsl::not_null<Com_ptr<IDirect3DDevice9>> device,
-           gsl::not_null<Com_ptr<IDirect3DBaseTexture9>> d3d_texture,
-           Sampler_info sampler_info)
+   Texture(Com_ptr<IDirect3DDevice9> device,
+           Com_ptr<IDirect3DBaseTexture9> d3d_texture, Sampler_info sampler_info)
       : _device{std::move(device)}, _texture{std::move(d3d_texture)}, _sampler{sampler_info} {};
 
    void bind(DWORD slot) const noexcept

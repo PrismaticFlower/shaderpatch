@@ -2,6 +2,7 @@
 
 #include "../direct3d/shader_constant.hpp"
 #include "com_ptr.hpp"
+#include "com_ref.hpp"
 
 #include <array>
 #include <initializer_list>
@@ -67,8 +68,7 @@ struct Filmic_curve {
 
 class Color_grading {
 public:
-   Color_grading(gsl::not_null<Com_ptr<IDirect3DDevice9>> device)
-      : _device(std::move(device))
+   Color_grading(Com_ref<IDirect3DDevice9> device) : _device{device}
    {
       params(Color_grading_params{});
    }
@@ -107,7 +107,7 @@ private:
 
    void setup_lut_samplers(std::initializer_list<int> indices) const noexcept;
 
-   const Com_ptr<IDirect3DDevice9> _device;
+   Com_ref<IDirect3DDevice9> _device;
 
    Com_ptr<IDirect3DTexture9> _r_texture;
    Com_ptr<IDirect3DTexture9> _g_texture;
@@ -138,7 +138,6 @@ private:
 
    Color_grading_params _user_params{};
 };
-
 }
 
 namespace YAML {

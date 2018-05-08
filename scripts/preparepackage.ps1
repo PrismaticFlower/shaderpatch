@@ -32,6 +32,7 @@ copy ".\bin\Release\lvl_pack.exe" ".\packaged\data\shaderpatch\bin\lvl_pack.exe"
 copy ".\bin\Release\material_munge.exe" ".\packaged\data\shaderpatch\bin\material_munge.exe"
 copy ".\bin\Release\shader_compiler.exe" ".\packaged\data\shaderpatch\bin\shader_compiler.exe"
 copy ".\bin\Release\sp_texture_munge.exe" ".\packaged\data\shaderpatch\bin\sp_texture_munge.exe"
+copy ".\bin\Release\spfx_munge.exe" ".\packaged\data\shaderpatch\bin\spfx_munge.exe"
 
 # Copy Assets
 copy '.\assets\rendertype_descriptions\' '.\packaged\data\shaderpatch\bin\rendertype_descriptions\' -Recurse

@@ -25,10 +25,9 @@ auto resolve_textures(const Material_info& info, const Texture_database& texture
 }
 }
 
-Material::Material(const Material_info& info,
-                   gsl::not_null<Com_ptr<IDirect3DDevice9>> device,
+Material::Material(const Material_info& info, Com_ref<IDirect3DDevice9> device,
                    const Shader_database& shaders, const Texture_database& textures) noexcept
-   : _device{std::move(device)},
+   : _device{device},
      _overridden_rendertype{info.overridden_rendertype},
      _constants{info.constants},
      _textures{resolve_textures(info, textures)},

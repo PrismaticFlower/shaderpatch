@@ -1,6 +1,6 @@
 #pragma once
 
-#include "com_ptr.hpp"
+#include "com_ref.hpp"
 #include "patch_material.hpp"
 #include "shader_database.hpp"
 #include "texture.hpp"
@@ -19,7 +19,7 @@ namespace sp {
 
 class Material {
 public:
-   Material(const Material_info& info, gsl::not_null<Com_ptr<IDirect3DDevice9>> device,
+   Material(const Material_info& info, Com_ref<IDirect3DDevice9> device,
             const Shader_database& shaders, const Texture_database& textures) noexcept;
 
    Material(const Material&) = default;
@@ -42,7 +42,7 @@ public:
 private:
    const std::string _overridden_rendertype;
 
-   const Com_ptr<IDirect3DDevice9> _device;
+   Com_ref<IDirect3DDevice9> _device;
 
    const std::array<glm::vec4, max_material_constants> _constants{};
    const std::array<Texture, max_material_textures> _textures;

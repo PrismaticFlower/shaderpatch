@@ -1,6 +1,7 @@
 #pragma once
 
 #include "com_ptr.hpp"
+#include "com_ref.hpp"
 #include "throw_if_failed.hpp"
 
 #include <memory>
@@ -24,8 +25,7 @@ private:
    using Container = boost::container::flat_multimap<Key, Value>;
 
 public:
-   Rendertarget_allocator(Com_ptr<IDirect3DDevice9> device)
-      : _device{std::move(device)}
+   Rendertarget_allocator(Com_ref<IDirect3DDevice9> device) : _device{device}
    {
       _cache = {boost::make_local_shared<
          Container<std::tuple<D3DFORMAT, int, int>, Com_ptr<IDirect3DTexture9>>>()};
@@ -50,12 +50,12 @@ public:
 
       gsl::not_null<IDirect3DTexture9*> texture() const noexcept
       {
-         return _rt_texture.get();
+         return gsl::not_null<IDirect3DTexture9*>{_rt_texture.get()};
       }
 
       gsl::not_null<IDirect3DSurface9*> surface() const noexcept
       {
-         return _rt_surface.get();
+         return gsl::not_null<IDirect3DSurface9*>{_rt_surface.get()};
       }
 
    private:
@@ -81,7 +81,8 @@ public:
          Com_ptr<IDirect3DTexture9> rt = std::move(cached->second);
          _cache->erase(cached);
 
-         return {std::move(rt), _cache};
+         return {gsl::not_null<decltype(rt)>{std::move(rt)},
+                 gsl::not_null<decltype(_cache)>{_cache}};
       }
 
       return create(format, resolution);
@@ -101,12 +102,12 @@ private:
                                              D3DUSAGE_RENDERTARGET, format, D3DPOOL_DEFAULT,
                                              rt.clear_and_assign(), nullptr));
 
-      return {std::move(rt), _cache};
+      return {gsl::not_null<decltype(rt)>{std::move(rt)},
+              gsl::not_null<decltype(_cache)>{_cache}};
    }
 
-   Com_ptr<IDirect3DDevice9> _device;
+   Com_ref<IDirect3DDevice9> _device;
 
    Local_ptr<Container<std::tuple<D3DFORMAT, int, int>, Com_ptr<IDirect3DTexture9>>> _cache;
 };
-
 }

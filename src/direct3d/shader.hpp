@@ -49,12 +49,12 @@ public:
 
    gsl::not_null<Type*> get() noexcept
    {
-      return _interface.get();
+      return gsl::not_null<Type*>{_interface.get()};
    }
 
    gsl::not_null<const Type*> get() const noexcept
    {
-      return _interface.get();
+      return gsl::not_null<const Type*>{_interface.get()};
    }
 
    const Shader_metadata metadata;

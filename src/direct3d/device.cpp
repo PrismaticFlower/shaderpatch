@@ -68,10 +68,9 @@ constexpr bool is_constant_being_set(int constant, int start, int count) noexcep
 
 }
 
-Device::Device(Com_ptr<IDirect3DDevice9> device, const HWND window,
-               const glm::ivec2 resolution, const D3DCAPS9& caps,
-               D3DFORMAT stencil_shadow_format) noexcept
-   : _device{std::move(device)},
+Device::Device(IDirect3DDevice9& device, const HWND window, const glm::ivec2 resolution,
+               const D3DCAPS9& caps, D3DFORMAT stencil_shadow_format) noexcept
+   : _device{device},
      _window{window},
      _resolution{resolution},
      _device_max_anisotropy{gsl::narrow_cast<int>(caps.MaxAnisotropy)},
@@ -405,7 +404,8 @@ HRESULT Device::CreateVolumeTexture(UINT width, UINT height, UINT depth, UINT le
                load_patch_texture(ucfb::Reader{data}, *_device, D3DPOOL_MANAGED);
 
             auto texture =
-               std::make_shared<Texture>(_device, std::move(d3d_texture), sampler_info);
+               std::make_shared<Texture>(static_cast<Com_ptr<IDirect3DDevice9>>(_device),
+                                         std::move(d3d_texture), sampler_info);
 
             _textures.add(name, texture);
 

@@ -5,6 +5,7 @@
 #include "device.hpp"
 
 namespace sp::direct3d {
+
 std::atomic<Create_type*> create_device = nullptr;
 
 HRESULT __stdcall create_device_hook(IDirect3D9& self, UINT adapter,
@@ -39,8 +40,8 @@ HRESULT __stdcall create_device_hook(IDirect3D9& self, UINT adapter,
          stencil_shadow_format = D3DFMT_A8;
       }
 
-      *returned_device_interface = new Device{std::move(device), focus_window,
-                                              resolution, caps, stencil_shadow_format};
+      *returned_device_interface =
+         new Device{*device, focus_window, resolution, caps, stencil_shadow_format};
    }
 
    return result;

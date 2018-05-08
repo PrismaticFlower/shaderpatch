@@ -1,6 +1,8 @@
 #pragma once
 
 #include "../shader_database.hpp"
+#include "com_ptr.hpp"
+#include "com_ref.hpp"
 #include "rendertarget_allocator.hpp"
 
 #include <optional>
@@ -45,7 +47,7 @@ struct Bloom_params {
 
 class Bloom {
 public:
-   Bloom(Com_ptr<IDirect3DDevice9> device);
+   Bloom(Com_ref<IDirect3DDevice9> device);
 
    void params(const Bloom_params& params) noexcept;
 
@@ -84,7 +86,7 @@ private:
 
    void create_resources() noexcept;
 
-   Com_ptr<IDirect3DDevice9> _device;
+   Com_ref<IDirect3DDevice9> _device;
    Com_ptr<IDirect3DVertexDeclaration9> _vertex_decl;
    Com_ptr<IDirect3DVertexBuffer9> _vertex_buffer;
 

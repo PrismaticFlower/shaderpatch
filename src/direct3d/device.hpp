@@ -9,6 +9,7 @@
 #include "../texture_database.hpp"
 #include "../user_config.hpp"
 #include "com_ptr.hpp"
+#include "com_ref.hpp"
 #include "render_state_block.hpp"
 #include "shader.hpp"
 #include "shader_constant.hpp"
@@ -30,9 +31,8 @@ namespace sp::direct3d {
 
 class Device : public IDirect3DDevice9 {
 public:
-   Device(Com_ptr<IDirect3DDevice9> device, const HWND window,
-          const glm::ivec2 resolution, const D3DCAPS9& caps,
-          D3DFORMAT stencil_shadow_format) noexcept;
+   Device(IDirect3DDevice9& device, const HWND window, const glm::ivec2 resolution,
+          const D3DCAPS9& caps, D3DFORMAT stencil_shadow_format) noexcept;
 
    HRESULT __stdcall QueryInterface(const IID& iid, void** object) noexcept override;
    ULONG __stdcall AddRef() noexcept override;
@@ -341,7 +341,7 @@ private:
 
    void set_linear_rendering(bool linear_rendering) noexcept;
 
-   const Com_ptr<IDirect3DDevice9> _device;
+   Com_ref<IDirect3DDevice9> _device;
    const HWND _window;
 
    Com_ptr<IDirect3DTexture9> _fp_backbuffer;
