@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <filesystem>
 #include <iomanip>
 #include <sstream>
 #include <string>
@@ -17,7 +18,6 @@
 #include <tuple>
 #include <vector>
 
-#include <boost/filesystem.hpp>
 #include <gsl/gsl>
 
 #include <d3d9.h>
@@ -100,13 +100,13 @@ inline auto load_patch_texture(ucfb::Reader reader, IDirect3DDevice9& device, D3
            sampler_info};
 }
 
-inline void write_patch_texture(boost::filesystem::path save_path,
+inline void write_patch_texture(const std::filesystem::path& save_path,
                                 const Texture_info& texture_info,
                                 const Sampler_info& sampler_info,
                                 const std::vector<std::vector<std::byte>>& mip_levels)
 {
    using namespace std::literals;
-   namespace fs = boost::filesystem;
+   namespace fs = std::filesystem;
 
    std::ostringstream ostream;
 

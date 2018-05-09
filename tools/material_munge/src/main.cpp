@@ -4,6 +4,7 @@
 #include "munge_materials.hpp"
 #include "synced_io.hpp"
 
+#include <filesystem>
 #include <future>
 #include <iomanip>
 #include <iostream>
@@ -15,8 +16,9 @@
 #include <clara.hpp>
 
 using namespace std::literals;
-
 using namespace sp;
+
+namespace fs = std::filesystem;
 
 int main(int arg_count, char* args[])
 {

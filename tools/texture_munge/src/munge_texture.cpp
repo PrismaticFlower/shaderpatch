@@ -5,12 +5,12 @@
 #include "synced_io.hpp"
 
 #include <algorithm>
+#include <filesystem>
 #include <iomanip>
 #include <stdexcept>
 #include <string_view>
 #include <utility>
 
-#include <boost/filesystem.hpp>
 #include <gsl/gsl>
 
 #pragma warning(push)
@@ -23,7 +23,7 @@
 namespace sp {
 
 using namespace std::literals;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace {
 
@@ -80,12 +80,12 @@ auto get_sampler_info(YAML::Node config) -> Sampler_info
 }
 }
 
-void munge_texture(fs::path config_file_path,
-                   const boost::filesystem::path& output_dir) noexcept
+void munge_texture(fs::path config_file_path, const fs::path& output_dir) noexcept
 {
    Expects(fs::is_directory(output_dir) && fs::is_regular_file(config_file_path));
 
-   const auto image_file_path = fs::change_extension(config_file_path, ""s);
+   auto image_file_path = config_file_path;
+   image_file_path.replace_extension(""sv);
 
    if (!fs::exists(image_file_path) || !fs::is_regular_file(image_file_path)) {
       synced_print("Warning freestanding texture config file "sv,

@@ -4,11 +4,11 @@
 #include "throw_if_failed.hpp"
 
 #include <array>
+#include <filesystem>
 #include <initializer_list>
 #include <optional>
 #include <string>
 
-#include <boost/filesystem.hpp>
 #include <gsl/gsl>
 
 #include <Windows.h>
@@ -16,7 +16,7 @@
 
 namespace sp::win32 {
 
-using Path = boost::filesystem::path;
+using Path = std::filesystem::path;
 
 template<typename Dialog_class, const CLSID& clsid, const IID& iid>
 std::optional<Path> file_dialog(std::initializer_list<COMDLG_FILTERSPEC> filters = {},
@@ -64,7 +64,7 @@ std::optional<Path> file_dialog(std::initializer_list<COMDLG_FILTERSPEC> filters
 
 std::optional<Path> open_file_dialog(
    std::initializer_list<COMDLG_FILTERSPEC> filters = {}, HWND owner = nullptr,
-   Path starting_dir = boost::filesystem::current_path(),
+   Path starting_dir = std::filesystem::current_path(),
    const std::wstring& filename = L""s)
 {
    return file_dialog<IFileOpenDialog, CLSID_FileOpenDialog, IID_IFileOpenDialog>(
@@ -73,11 +73,10 @@ std::optional<Path> open_file_dialog(
 
 std::optional<Path> save_file_dialog(
    std::initializer_list<COMDLG_FILTERSPEC> filters = {}, HWND owner = nullptr,
-   Path starting_dir = boost::filesystem::current_path(),
+   Path starting_dir = std::filesystem::current_path(),
    const std::wstring& filename = L""s)
 {
    return file_dialog<IFileSaveDialog, CLSID_FileSaveDialog, IID_IFileSaveDialog>(
       filters, owner, std::move(starting_dir), filename);
 }
-
 }

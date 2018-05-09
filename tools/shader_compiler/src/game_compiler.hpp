@@ -5,11 +5,11 @@
 #include "shader_flags.hpp"
 
 #include <array>
+#include <filesystem>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
 
-#include <boost/filesystem.hpp>
 #include <d3dcompiler.h>
 #include <nlohmann/json.hpp>
 
@@ -19,10 +19,9 @@ struct Shader_variation;
 
 class Game_compiler {
 public:
-   Game_compiler(nlohmann::json definition,
-                 const boost::filesystem::path& definition_path,
-                 const boost::filesystem::path& source_file_dir,
-                 const boost::filesystem::path& output_dir);
+   Game_compiler(nlohmann::json definition, const std::filesystem::path& definition_path,
+                 const std::filesystem::path& source_file_dir,
+                 const std::filesystem::path& output_dir);
 
    Game_compiler(const Game_compiler&) = delete;
    Game_compiler& operator=(const Game_compiler&) = delete;
@@ -70,7 +69,7 @@ private:
       std::vector<Pass> passes;
    };
 
-   void save(const boost::filesystem::path& output_path);
+   void save(const std::filesystem::path& output_path);
 
    State compile_state(const nlohmann::json& state_def, std::array<bool, 4> srgb_state);
 
@@ -85,7 +84,7 @@ private:
                              const std::string& target, std::string_view state_name,
                              std::array<bool, 4> srgb_state) -> Pixel_shader_ref;
 
-   boost::filesystem::path _source_path;
+   std::filesystem::path _source_path;
 
    std::string _render_type;
    std::string _source;

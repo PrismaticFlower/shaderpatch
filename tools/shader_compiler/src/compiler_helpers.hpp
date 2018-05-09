@@ -1,9 +1,11 @@
 #pragma once
 
 #include "com_ptr.hpp"
+#include "file_helpers.hpp"
 
 #include <algorithm>
 #include <ctime>
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <stdexcept>
@@ -13,7 +15,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include <boost/filesystem.hpp>
 #include <boost/functional/hash.hpp>
 #include <d3dcompiler.h>
 #include <gsl/gsl>
@@ -79,9 +80,9 @@ inline gsl::span<DWORD> make_dword_span(ID3DBlob& blob)
                                 static_cast<std::ptrdiff_t>(blob.GetBufferSize()) / 4);
 }
 
-inline auto read_definition_file(const boost::filesystem::path& path) -> nlohmann::json
+inline auto read_definition_file(const std::filesystem::path& path) -> nlohmann::json
 {
-   namespace fs = boost::filesystem;
+   namespace fs = std::filesystem;
 
    Expects(fs::exists(path));
 
@@ -93,12 +94,12 @@ inline auto read_definition_file(const boost::filesystem::path& path) -> nlohman
    return config;
 }
 
-inline auto date_test_shader_file(const boost::filesystem::path& file_path) noexcept
-   -> std::time_t
+inline auto date_test_shader_file(const std::filesystem::path& file_path) noexcept
+   -> std::filesystem::file_time_type
 {
    using namespace std::literals;
 
-   namespace fs = boost::filesystem;
+   namespace fs = std::filesystem;
 
    Expects(fs::is_regular_file(file_path));
 
@@ -130,7 +131,7 @@ inline auto date_test_shader_file(const boost::filesystem::path& file_path) noex
 
          _newest_time = std::max(_newest_time, fs::last_write_time(file_path));
 
-         fs::load_string_file(file_path, _opened_files[file_name]);
+         _opened_files[file_name] = load_string_file(file_path);
 
          *out_data = _opened_files[file_name].data();
          *out_size = _opened_files[file_name].size();
@@ -143,22 +144,20 @@ inline auto date_test_shader_file(const boost::filesystem::path& file_path) noex
          return S_OK;
       }
 
-      std::time_t newest() const noexcept
+      fs::file_time_type newest() const noexcept
       {
          return _newest_time;
       }
 
    private:
       fs::path _relative_path{};
-      std::time_t _newest_time{0};
+      fs::file_time_type _newest_time = fs::file_time_type::min();
       std::unordered_map<std::string, std::string> _opened_files;
    };
 
    Includer includer{file_path.parent_path()};
 
-   std::string file_contents;
-
-   fs::load_string_file(file_path, file_contents);
+   auto file_contents = load_string_file(file_path);
 
    Com_ptr<ID3DBlob> blob;
 

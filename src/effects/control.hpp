@@ -3,9 +3,9 @@
 #include "../effects/bloom.hpp"
 #include "../effects/color_grading.hpp"
 
+#include <filesystem>
 #include <utility>
 
-#include <boost/filesystem.hpp>
 #include <gsl/gsl>
 
 #pragma warning(push)
@@ -54,14 +54,13 @@ public:
    effects::Bloom bloom{_device};
 
 private:
-   void save_params_to_yaml_file(const boost::filesystem::path& save_to) noexcept;
+   void save_params_to_yaml_file(const std::filesystem::path& save_to) noexcept;
 
-   void load_params_from_yaml_file(const boost::filesystem::path& load_from) noexcept;
+   void load_params_from_yaml_file(const std::filesystem::path& load_from) noexcept;
 
    bool _enabled = false;
    bool _active = false;
    bool _open_failure = false;
    bool _save_failure = false;
 };
-
 }

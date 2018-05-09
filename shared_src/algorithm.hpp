@@ -11,15 +11,15 @@
 namespace sp {
 
 template<class ExecutionPolicy, class ForwardIterable, class Function>
-void for_each(ExecutionPolicy&& policy, ForwardIterable& iterable, Function&& func)
+inline void for_each(ExecutionPolicy&& policy, ForwardIterable& iterable, Function&& func)
 {
    std::for_each(std::forward<ExecutionPolicy>(policy), std::begin(iterable),
                  std::end(iterable), std::forward<Function>(func));
 }
 
 template<class ExecutionPolicy, class ForwardIterable, class Function>
-void for_each_exception_capable(ExecutionPolicy&& policy,
-                                ForwardIterable&& iterable, Function&& func)
+inline void for_each_exception_capable(ExecutionPolicy&& policy,
+                                       ForwardIterable&& iterable, Function&& func)
 {
    std::atomic_bool exception_occured{false};
    std::exception_ptr exception_ptr;

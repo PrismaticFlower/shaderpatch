@@ -2,25 +2,25 @@
 #include "game_compiler.hpp"
 #include "compiler_helpers.hpp"
 #include "compose_exception.hpp"
+#include "file_helpers.hpp"
 #include "magic_number.hpp"
 #include "shader_metadata.hpp"
 #include "shader_variations.hpp"
 #include "synced_io.hpp"
 #include "ucfb_writer.hpp"
 
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <iostream>
 #include <iterator>
-
-#include <boost/filesystem.hpp>
 
 #include <d3dcompiler.h>
 #include <gsl/gsl>
 
 using namespace std::literals;
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace sp {
 
@@ -52,7 +52,7 @@ Game_compiler::Game_compiler(nlohmann::json definition, const fs::path& definiti
 
    _render_type = definition["rendertype"];
 
-   fs::load_string_file(_source_path, _source);
+   _source = load_string_file(_source_path);
 
    const auto srgb_state = definition.value("srgb_state", std::array<bool, 4>{});
 
@@ -63,7 +63,7 @@ Game_compiler::Game_compiler(nlohmann::json definition, const fs::path& definiti
    save(output_path);
 }
 
-void Game_compiler::save(const boost::filesystem::path& output_path)
+void Game_compiler::save(const fs::path& output_path)
 {
    auto file = ucfb::open_file_for_output(output_path.string());
 

@@ -6,10 +6,10 @@
 
 #include <array>
 #include <cstdint>
+#include <filesystem>
 #include <sstream>
 #include <string>
 
-#include <boost/filesystem.hpp>
 #include <glm/glm.hpp>
 #include <gsl/gsl>
 
@@ -24,11 +24,11 @@ struct Material_info {
    std::array<std::string, 8> textures{};
 };
 
-inline void write_patch_material(boost::filesystem::path save_path,
+inline void write_patch_material(const std::filesystem::path& save_path,
                                  const Material_info& info)
 {
    using namespace std::literals;
-   namespace fs = boost::filesystem;
+   namespace fs = std::filesystem;
 
    std::ostringstream ostream;
 

@@ -5,18 +5,18 @@
 #include "synced_io.hpp"
 
 #include <execution>
+#include <filesystem>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <vector>
 
-#include <boost/filesystem.hpp>
 #include <clara.hpp>
 
 using namespace std::literals;
 using namespace sp;
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 int main(int arg_count, char* args[])
 {

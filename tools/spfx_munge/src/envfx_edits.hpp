@@ -1,10 +1,10 @@
 #pragma once
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 namespace sp {
 
-void edit_envfx(const boost::filesystem::path& fx_path,
-                const boost::filesystem::path& output_dir);
+void edit_envfx(const std::filesystem::path& fx_path,
+                const std::filesystem::path& output_dir);
 
 }

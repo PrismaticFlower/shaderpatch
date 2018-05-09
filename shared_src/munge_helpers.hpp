@@ -2,17 +2,17 @@
 
 #include "string_utilities.hpp"
 
+#include <filesystem>
 #include <unordered_map>
 
-#include <boost/filesystem.hpp>
 #include <gsl/gsl>
 
 namespace sp {
 
-inline auto build_input_file_map(const boost::filesystem::path& in)
-   -> std::unordered_map<Ci_string, boost::filesystem::path>
+inline auto build_input_file_map(const std::filesystem::path& in)
+   -> std::unordered_map<Ci_string, std::filesystem::path>
 {
-   namespace fs = boost::filesystem;
+   namespace fs = std::filesystem;
 
    Expects(fs::is_directory(in));
 
@@ -26,5 +26,4 @@ inline auto build_input_file_map(const boost::filesystem::path& in)
 
    return results;
 }
-
 }

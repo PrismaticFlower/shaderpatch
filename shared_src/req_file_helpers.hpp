@@ -2,8 +2,10 @@
 
 #include "compose_exception.hpp"
 #include "exceptions.hpp"
+#include "file_helpers.hpp"
 #include "string_utilities.hpp"
 
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <regex>
@@ -12,24 +14,20 @@
 #include <string_view>
 #include <vector>
 
-#include <boost/filesystem.hpp>
-
 namespace sp {
 
-inline auto parse_req_file(boost::filesystem::path filepath,
+inline auto parse_req_file(const std::filesystem::path& filepath,
                            std::string_view platform = "pc")
    -> std::vector<std::pair<std::string, std::vector<std::string>>>
 {
-   namespace fs = boost::filesystem;
+   namespace fs = std::filesystem;
    using namespace std::literals;
 
    if (!fs::exists(filepath) || !fs::is_regular_file(filepath)) {
       throw std::invalid_argument{"Attempt to open non-existent .req file "s};
    }
 
-   std::string buffer;
-
-   fs::load_string_file(filepath, buffer);
+   auto buffer = load_string_file(filepath);
 
    // Filter out comments.
    buffer = std::regex_replace(buffer, std::regex{R"(//.+)"s}, ""s);
@@ -120,19 +118,18 @@ inline auto parse_req_file(boost::filesystem::path filepath,
 }
 
 template<typename Container>
-inline void parse_files_req_file(boost::filesystem::path filepath, Container& container,
+inline void parse_files_req_file(const std::filesystem::path& filepath,
+                                 Container& container,
                                  typename Container::const_iterator insert_after)
 {
-   namespace fs = boost::filesystem;
+   namespace fs = std::filesystem;
    using namespace std::literals;
 
    if (!fs::exists(filepath) || !fs::is_regular_file(filepath)) {
       throw std::invalid_argument{"Attempt to open non-existent .req file "s};
    }
 
-   std::string buffer;
-
-   fs::load_string_file(filepath, buffer);
+   auto buffer = load_string_file(filepath);
 
    // Filter out comments.
    buffer = std::regex_replace(buffer, std::regex{R"(//.+)"s}, ""s);
@@ -209,13 +206,13 @@ inline void parse_files_req_file(boost::filesystem::path filepath, Container& co
 }
 
 inline void emit_req_file(
-   boost::filesystem::path filepath,
+   const std::filesystem::path& filepath,
    const std::vector<std::pair<std::string, std::vector<std::string>>>& key_sections)
 {
-   namespace fs = boost::filesystem;
+   namespace fs = std::filesystem;
    using namespace std::literals;
 
-   std::ofstream file{filepath.string()};
+   std::ofstream file{filepath};
 
    if (!file) {
       throw compose_exception<std::runtime_error>("Unable to open file "sv,

@@ -5,6 +5,7 @@
 #include "format_helpers.hpp"
 
 #include <cstring>
+#include <filesystem>
 #include <iomanip>
 #include <memory>
 #include <stdexcept>
@@ -21,7 +22,7 @@
 namespace sp {
 
 using namespace std::literals;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace DX = DirectX;
 
 namespace {

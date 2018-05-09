@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <execution>
+#include <filesystem>
 #include <functional>
 #include <future>
 #include <iostream>
@@ -23,14 +24,13 @@
 namespace sp {
 
 using namespace std::literals;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace {
 
 auto compile_shader_impl(const std::string& entry_point,
                          std::vector<D3D_SHADER_MACRO> defines,
-                         const boost::filesystem::path& source_path,
-                         std::mutex& shaders_mutex,
+                         const fs::path& source_path, std::mutex& shaders_mutex,
                          std::vector<std::pair<std::size_t, std::vector<DWORD>>>& shaders,
                          std::unordered_map<Shader_cache_index, std::size_t>& cache,
                          std::string target) -> std::size_t

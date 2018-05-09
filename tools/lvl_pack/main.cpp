@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cstring>
 #include <cwctype>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -21,12 +22,11 @@
 #include <vector>
 
 #include <boost/algorithm/string/case_conv.hpp>
-#include <boost/filesystem.hpp>
 #include <gsl/gsl>
 
 #include <clara.hpp>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 using namespace sp;
 using namespace std::literals;
@@ -139,8 +139,8 @@ void write_file_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
 
    if (added_files.count(normalized_path)) return;
 
-   const auto req_path =
-      fs::change_extension(filepath, fs::extension(filepath) += ".req"sv);
+   auto req_path = filepath;
+   req_path.replace_extension(filepath.extension() += ".req"sv);
 
    if (fs::exists(req_path) && fs::is_regular_file(req_path)) {
       write_req_to_lvl(req_file_path, writer, added_files, input_dirs,
@@ -193,12 +193,12 @@ void build_lvl_file(const fs::path& req_file_path, const fs::path& output_direct
    Expects(fs::exists(req_file_path) && fs::exists(output_directory));
 
    const auto output_path =
-      output_directory / fs::change_extension(req_file_path.filename(), ".lvl"s);
+      output_directory / req_file_path.filename().replace_extension(".lvl"sv);
 
    try {
       bool success = false;
       auto file_cleaner = gsl::finally([&success, &output_path] {
-         boost::system::error_code err;
+         std::error_code err;
 
          if (!success) fs::remove(output_path, err);
       });

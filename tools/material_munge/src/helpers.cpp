@@ -3,6 +3,7 @@
 #include "req_file_helpers.hpp"
 #include "synced_io.hpp"
 
+#include <filesystem>
 #include <iostream>
 #include <string_view>
 
@@ -13,7 +14,7 @@
 namespace sp {
 
 using namespace std::literals;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 auto find_texture_references(const fs::path& from)
    -> std::unordered_map<Ci_string, std::vector<fs::path>>

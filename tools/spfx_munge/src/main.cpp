@@ -3,6 +3,7 @@
 #include "string_utilities.hpp"
 #include "synced_io.hpp"
 
+#include <filesystem>
 #include <future>
 #include <iomanip>
 #include <iostream>
@@ -13,12 +14,10 @@
 
 #include <clara.hpp>
 
-#include <boost/filesystem.hpp>
-
 using namespace std::literals;
 using namespace sp;
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 int main(int arg_count, char* args[])
 {
@@ -69,7 +68,7 @@ int main(int arg_count, char* args[])
 
    for (const auto& entry : fs::recursive_directory_iterator{source_dir}) {
       if (!fs::is_regular_file(entry.path())) continue;
-      if (fs::extension(entry.path()) != ".spfx"_svci) continue;
+      if (entry.path().extension() != ".spfx"_svci) continue;
 
       munge_spfx(entry.path(), output_dir);
    }

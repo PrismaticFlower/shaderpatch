@@ -61,7 +61,7 @@
       <AdditionalIncludeDirectories>$(SolutionDir)/submodules/vcpkg/installed/x86-windows-static-md/include;%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>boost_system-vc140-mt-gd.lib;boost_filesystem-vc140-mt-gd.lib;D3dcompiler.lib</AdditionalDependencies>
+      <AdditionalDependencies>boost_system-vc140-mt-gd.lib;D3dcompiler.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)/submodules/vcpkg/installed/x86-windows-static-md/debug/lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -79,7 +79,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>boost_system-vc140-mt.lib;boost_filesystem-vc140-mt.lib;D3dcompiler.lib</AdditionalDependencies>
+      <AdditionalDependencies>boost_system-vc140-mt.lib;D3dcompiler.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)/submodules/vcpkg/installed/x86-windows-static-md/lib</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference />

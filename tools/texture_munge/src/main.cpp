@@ -2,6 +2,7 @@
 #include "munge_texture.hpp"
 #include "synced_io.hpp"
 
+#include <filesystem>
 #include <iomanip>
 #include <regex>
 #include <stdexcept>
@@ -10,12 +11,10 @@
 
 #include <clara.hpp>
 
-#include <boost/filesystem.hpp>
-
 using namespace std::literals;
 using namespace sp;
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 int main(int arg_count, char* args[])
 {

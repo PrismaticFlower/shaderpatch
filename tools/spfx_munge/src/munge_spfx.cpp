@@ -6,6 +6,8 @@
 #include "synced_io.hpp"
 #include "volume_resource.hpp"
 
+#include <filesystem>
+#include <fstream>
 #include <string_view>
 
 #include <gsl/gsl>
@@ -19,17 +21,17 @@
 
 namespace sp {
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 using namespace std::literals;
 
 namespace {
 
-auto read_spfx_yaml(const boost::filesystem::path& spfx_path) -> std::vector<std::byte>
+auto read_spfx_yaml(const fs::path& spfx_path) -> std::vector<std::byte>
 {
    // Test that the file is valid YAML.
    YAML::LoadFile(spfx_path.string());
 
-   fs::ifstream file{spfx_path, std::ios::ate};
+   std::ifstream file{spfx_path, std::ios::ate};
 
    std::vector<std::byte> data;
    data.resize(static_cast<std::size_t>(file.tellg()));
@@ -40,20 +42,22 @@ auto read_spfx_yaml(const boost::filesystem::path& spfx_path) -> std::vector<std
    return data;
 }
 
-void generate_spfx_req_file(const boost::filesystem::path& save_path)
+void generate_spfx_req_file(const fs::path& save_path)
 {
-   const auto req_path = fs::change_extension(save_path, ".envfx.req"s);
+   auto req_path = save_path;
+   req_path.replace_extension(".envfx.req"sv);
 
    emit_req_file(req_path, {{"game_envfx"s, {save_path.stem().string()}}});
 }
 
 }
 
-void munge_spfx(const boost::filesystem::path& spfx_path, const fs::path& output_dir)
+void munge_spfx(const fs::path& spfx_path, const fs::path& output_dir)
 {
    Expects(fs::exists(spfx_path) && fs::is_regular_file(spfx_path));
 
-   const auto envfx_path = fs::change_extension(spfx_path, ".fx"s);
+   auto envfx_path = spfx_path;
+   envfx_path.replace_extension(".fx"sv);
 
    if (!fs::exists(envfx_path) || !fs::is_regular_file(envfx_path)) {
       throw compose_exception<std::runtime_error>("Freestanding .spfx file "sv,

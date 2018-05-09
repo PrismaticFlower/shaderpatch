@@ -22,6 +22,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)copyable_finally.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)exceptions.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)file_dialogs.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)file_helpers.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)magic_number.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)material_flags.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)munge_helpers.hpp" />

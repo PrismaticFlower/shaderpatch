@@ -1,10 +1,10 @@
 #pragma once
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 namespace sp {
 
-void munge_spfx(const boost::filesystem::path& spfx_path,
-                const boost::filesystem::path& output_dir);
+void munge_spfx(const std::filesystem::path& spfx_path,
+                const std::filesystem::path& output_dir);
 
 }

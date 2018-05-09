@@ -4,12 +4,13 @@
 #include "../logger.hpp"
 #include "file_dialogs.hpp"
 
+#include <fstream>
 #include <string_view>
 
 namespace sp::effects {
 
 using namespace std::literals;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 void Control::show_imgui() noexcept
 {
@@ -78,7 +79,7 @@ void Control::save_params_to_yaml_file(const fs::path& save_to) noexcept
    config["ColorGrading"s] = color_grading.params();
    config["Bloom"s] = bloom.params();
 
-   boost::filesystem::ofstream file{save_to};
+   std::ofstream file{save_to};
 
    if (!file) {
       log(Log_level::error, "Failed to open file "sv, save_to,

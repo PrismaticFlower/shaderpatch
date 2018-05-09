@@ -5,19 +5,19 @@
 #include "synced_io.hpp"
 
 #include <cstdlib>
-
-#include <boost/filesystem.hpp>
+#include <filesystem>
+#include <fstream>
 
 namespace sp {
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 using namespace std::literals;
 
 namespace {
 
 auto load_fx_cfg(const fs::path& fx_path) -> cfg::Node
 {
-   fs::ifstream file{fx_path};
+   std::ifstream file{fx_path};
 
    try {
       return cfg::from_istream(file);
@@ -30,7 +30,7 @@ auto load_fx_cfg(const fs::path& fx_path) -> cfg::Node
 
 auto save_fx_cfg(const cfg::Node& fx_node, const fs::path& path)
 {
-   fs::ofstream file{path};
+   std::ofstream file{path};
 
    file << fx_node;
 }

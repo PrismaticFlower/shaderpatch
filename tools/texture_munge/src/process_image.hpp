@@ -3,10 +3,9 @@
 #include "patch_texture.hpp"
 
 #include <cstddef>
+#include <filesystem>
 #include <tuple>
 #include <vector>
-
-#include <boost/filesystem.hpp>
 
 #pragma warning(push)
 #pragma warning(disable : 4996)
@@ -17,6 +16,6 @@
 
 namespace sp {
 
-auto process_image(YAML::Node config, boost::filesystem::path image_file_path)
+auto process_image(YAML::Node config, std::filesystem::path image_file_path)
    -> std::tuple<Texture_info, std::vector<std::vector<std::byte>>>;
 }

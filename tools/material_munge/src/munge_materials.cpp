@@ -10,6 +10,7 @@
 
 #include <array>
 #include <cstdint>
+#include <filesystem>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -21,6 +22,7 @@
 namespace sp {
 
 using namespace std::literals;
+namespace fs = std::filesystem;
 
 namespace {
 
@@ -82,7 +84,11 @@ auto munge_material(const fs::path& material_path, const fs::path& output_file_p
    }
 
    write_patch_material(output_file_path, material);
-   emit_req_file(fs::change_extension(output_file_path, ".texture.req"s), required_files);
+
+   auto req_path = output_file_path;
+   req_path.replace_extension(".texture.req"sv);
+
+   emit_req_file(req_path, required_files);
 
    return flags;
 }
@@ -92,7 +98,7 @@ void fixup_munged_model(const fs::path& model_path, Ci_String_view material_name
 {
    using boost::iostreams::mapped_file;
 
-   mapped_file file{model_path, mapped_file::readwrite};
+   mapped_file file{model_path.u8string(), mapped_file::readwrite};
 
    auto file_span =
       gsl::make_span(reinterpret_cast<std::byte*>(file.data()), file.size());
@@ -166,18 +172,19 @@ void fixup_munged_models(
          if (!fs::exists(output_file_path) ||
              (fs::last_write_time(output_file_path) < fs::last_write_time(file_ref))) {
             fs::copy_file(file_ref, output_file_path,
-                          fs::copy_option::overwrite_if_exists);
+                          fs::copy_options::overwrite_existing);
 
-            const auto ext = fs::extension(file_ref);
+            const auto extension = file_ref.extension() += ".req"sv;
 
-            auto req_file_path = fs::change_extension(file_ref, ext + ".req"s);
+            auto req_file_path = file_ref;
+            req_file_path.replace_extension(extension);
 
             if (fs::exists(req_file_path)) {
-               auto output_req_file_path =
-                  fs::change_extension(output_file_path, ext + ".req"s);
+               auto output_req_file_path = output_file_path;
+               output_req_file_path.replace_extension(extension);
 
                fs::copy_file(req_file_path, output_req_file_path,
-                             fs::copy_option::overwrite_if_exists);
+                             fs::copy_options::overwrite_existing);
             }
          }
 

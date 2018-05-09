@@ -2,11 +2,10 @@
 
 #include "string_utilities.hpp"
 
+#include <filesystem>
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-#include <boost/filesystem.hpp>
 
 #pragma warning(push)
 #pragma warning(disable : 4996)
@@ -17,10 +16,9 @@
 
 namespace sp {
 
-namespace fs = boost::filesystem;
-
-void munge_materials(const fs::path& output_path,
-                     const std::unordered_map<Ci_string, std::vector<fs::path>>& texture_references,
-                     const std::unordered_map<Ci_string, fs::path>& files,
-                     const std::unordered_map<Ci_string, YAML::Node>& descriptions);
+void munge_materials(
+   const std::filesystem::path& output_path,
+   const std::unordered_map<Ci_string, std::vector<std::filesystem::path>>& texture_references,
+   const std::unordered_map<Ci_string, std::filesystem::path>& files,
+   const std::unordered_map<Ci_string, YAML::Node>& descriptions);
 }
