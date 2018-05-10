@@ -36,6 +36,7 @@
   </ImportGroup>
   <ImportGroup Label="Shared">
     <Import Project="shared_src\shared_src.vcxitems" Label="Shared" />
+    <Import Project="submodules\imgui\imgui.vcxitems" Label="Shared" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -133,22 +134,7 @@
     <ClCompile Include="src\direct3d\device.cpp" />
     <ClCompile Include="src\direct3d\device_stubs.cpp" />
     <ClCompile Include="src\effects\control.cpp" />
-    <ClCompile Include="src\imgui\imgui.cpp">
-      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">TurnOffAllWarnings</WarningLevel>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</TreatWarningAsError>
-    </ClCompile>
-    <ClCompile Include="src\imgui\imgui_demo.cpp">
-      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">TurnOffAllWarnings</WarningLevel>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</TreatWarningAsError>
-    </ClCompile>
-    <ClCompile Include="src\imgui\imgui_draw.cpp">
-      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">TurnOffAllWarnings</WarningLevel>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</TreatWarningAsError>
-    </ClCompile>
-    <ClCompile Include="src\imgui\imgui_impl_dx9.cpp">
-      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">TurnOffAllWarnings</WarningLevel>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</TreatWarningAsError>
-    </ClCompile>
+    <ClCompile Include="src\imgui\imgui_impl_dx9.cpp" />
     <ClCompile Include="src\input_hooker.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\material.cpp" />
@@ -172,10 +158,7 @@
     <ClInclude Include="src\effects\helpers.hpp" />
     <ClInclude Include="src\effects\rendertarget_allocator.hpp" />
     <ClInclude Include="src\hook_vtable.hpp" />
-    <ClInclude Include="src\imgui\imconfig.h" />
-    <ClInclude Include="src\imgui\imgui.h" />
     <ClInclude Include="src\imgui\imgui_impl_dx9.h" />
-    <ClInclude Include="src\imgui\imgui_internal.h" />
     <ClInclude Include="src\input_hooker.hpp" />
     <ClInclude Include="src\logger.hpp" />
     <ClInclude Include="src\material.hpp" />

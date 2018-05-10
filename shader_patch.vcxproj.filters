@@ -7,11 +7,11 @@
     <Filter Include="src\direct3d">
       <UniqueIdentifier>{3c0ea71c-25d6-43f7-95a1-0246ff97c699}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\imgui">
-      <UniqueIdentifier>{88c1d793-343a-4ebb-934a-fdc29d5660de}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\effects">
       <UniqueIdentifier>{32260bbd-fc9f-42f0-8b2b-d9a327005fb1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\imgui">
+      <UniqueIdentifier>{995a280b-cfa2-4de5-82b7-596f17701cc0}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -26,18 +26,6 @@
     </ClCompile>
     <ClCompile Include="src\direct3d\device_stubs.cpp">
       <Filter>src\direct3d</Filter>
-    </ClCompile>
-    <ClCompile Include="src\imgui\imgui_impl_dx9.cpp">
-      <Filter>src\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\imgui\imgui.cpp">
-      <Filter>src\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\imgui\imgui_demo.cpp">
-      <Filter>src\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\imgui\imgui_draw.cpp">
-      <Filter>src\imgui</Filter>
     </ClCompile>
     <ClCompile Include="src\input_hooker.cpp">
       <Filter>src</Filter>
@@ -63,6 +51,9 @@
     <ClCompile Include="src\effects\bloom.cpp">
       <Filter>src\effects</Filter>
     </ClCompile>
+    <ClCompile Include="src\imgui\imgui_impl_dx9.cpp">
+      <Filter>src\imgui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -82,18 +73,6 @@
     </ClInclude>
     <ClInclude Include="src\shader_constants.hpp">
       <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\imgui\imconfig.h">
-      <Filter>src\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\imgui\imgui.h">
-      <Filter>src\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\imgui\imgui_impl_dx9.h">
-      <Filter>src\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\imgui\imgui_internal.h">
-      <Filter>src\imgui</Filter>
     </ClInclude>
     <ClInclude Include="src\input_hooker.hpp">
       <Filter>src</Filter>
@@ -157,6 +136,9 @@
     </ClInclude>
     <ClInclude Include="src\effects\helpers.hpp">
       <Filter>src\effects</Filter>
+    </ClInclude>
+    <ClInclude Include="src\imgui\imgui_impl_dx9.h">
+      <Filter>src\imgui</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

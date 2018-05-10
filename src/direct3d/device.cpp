@@ -1,7 +1,6 @@
 
 #include "device.hpp"
 #include "../effects/helpers.hpp"
-#include "../imgui/imgui.h"
 #include "../imgui/imgui_impl_dx9.h"
 #include "../input_hooker.hpp"
 #include "../logger.hpp"
@@ -27,6 +26,7 @@
 #include <vector>
 
 #include <gsl/gsl>
+#include <imgui.h>
 
 using namespace std::literals;
 
@@ -65,13 +65,13 @@ constexpr bool is_constant_being_set(int constant, int start, int count) noexcep
 {
    return constant >= start && constant < (start + count);
 }
-
 }
 
 Device::Device(IDirect3DDevice9& device, const HWND window, const glm::ivec2 resolution,
                const D3DCAPS9& caps, D3DFORMAT stencil_shadow_format) noexcept
    : _device{device},
      _window{window},
+     _imgui_context{ImGui::CreateContext(), &ImGui::DestroyContext},
      _resolution{resolution},
      _device_max_anisotropy{gsl::narrow_cast<int>(caps.MaxAnisotropy)},
      _fs_vertex_decl{effects::create_fs_triangle_decl(*_device)},
@@ -200,6 +200,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
    init_sampler_max_anisotropy();
 
    if (!_imgui_bootstrapped) {
+      ImGui::SetCurrentContext(_imgui_context.get());
       ImGui_ImplDX9_Init(_window, _device.get());
       ImGui_ImplDX9_CreateDeviceObjects();
       ImGui_ImplDX9_NewFrame();
@@ -254,6 +255,7 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
       _effects.show_imgui();
 
       ImGui::Render();
+      ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
    }
    else {
       ImGui::EndFrame();

@@ -3,12 +3,13 @@
 #include "input_hooker.hpp"
 #include "com_ptr.hpp"
 #include "hook_vtable.hpp"
-#include "imgui/imgui.h"
 #include "window_helpers.hpp"
 
 #include <dinput.h>
 
 #include <array>
+
+#include <imgui.h>
 
 IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg,
                                                  WPARAM wParam, LPARAM lParam);

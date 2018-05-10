@@ -1,11 +1,12 @@
 
 #include "bloom.hpp"
 #include "../direct3d/shader_constant.hpp"
-#include "../imgui/imgui.h"
 #include "../shader_constants.hpp"
 #include "helpers.hpp"
 
 #include <tuple>
+
+#include <imgui.h>
 
 namespace sp::effects {
 

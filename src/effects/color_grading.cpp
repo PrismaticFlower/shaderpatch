@@ -1,6 +1,5 @@
 
 #include "color_grading.hpp"
-#include "../imgui/imgui.h"
 #include "../logger.hpp"
 
 #include <algorithm>
@@ -10,6 +9,7 @@
 
 #include <glm/gtc/packing.hpp>
 #include <gsl/gsl>
+#include <imgui.h>
 
 namespace sp::effects {
 

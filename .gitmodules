@@ -5,3 +5,6 @@
 	path = submodules/Compressonator
 	url = https://github.com/SleepKiller/Compressonator
    shallow = 1
+[submodule "submodules/imgui"]
+	path = submodules/imgui
+	url = https://github.com/ocornut/imgui

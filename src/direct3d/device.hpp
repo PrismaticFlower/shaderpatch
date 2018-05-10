@@ -343,6 +343,7 @@ private:
 
    Com_ref<IDirect3DDevice9> _device;
    const HWND _window;
+   const std::unique_ptr<ImGuiContext, void (*)(ImGuiContext*)> _imgui_context;
 
    Com_ptr<IDirect3DTexture9> _fp_backbuffer;
    Com_ptr<IDirect3DSurface9> _backbuffer_override;

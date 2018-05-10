@@ -1,6 +1,5 @@
 #pragma once
 
-#include "imgui/imgui.h"
 #include "logger.hpp"
 
 #include <cstdint>
@@ -9,6 +8,7 @@
 #include <string_view>
 
 #include <glm/glm.hpp>
+#include <imgui.h>
 
 #pragma warning(push)
 #pragma warning(disable : 4996)
