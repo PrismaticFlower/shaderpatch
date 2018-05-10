@@ -252,7 +252,7 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
 
    if (_imgui_active) {
       _config.show_imgui(&_fake_device_loss);
-      _effects.show_imgui();
+      _effects.show_imgui(_window);
 
       ImGui::Render();
       ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());

@@ -13,7 +13,7 @@ namespace sp::effects {
 using namespace std::literals;
 namespace fs = std::filesystem;
 
-void Control::show_imgui() noexcept
+void Control::show_imgui(HWND game_window) noexcept
 {
    color_grading.show_imgui();
    bloom.show_imgui();
@@ -29,9 +29,9 @@ void Control::show_imgui() noexcept
    ImGui::Separator();
 
    if (ImGui::Button("Open Config")) {
-      if (auto path =
-             win32::open_file_dialog({{L"Effects Config", L"*.spfx"}}, nullptr,
-                                     fs::current_path(), L"mod_config.spfx"s);
+      if (auto path = win32::open_file_dialog({{L"Effects Config", L"*.spfx"}},
+                                              game_window, fs::current_path(),
+                                              L"mod_config.spfx"s);
           path) {
          load_params_from_yaml_file(*path);
       }
@@ -45,9 +45,9 @@ void Control::show_imgui() noexcept
    ImGui::SameLine();
 
    if (ImGui::Button("Save Config")) {
-      if (auto path =
-             win32::save_file_dialog({{L"Effects Config", L"*.spfx"}}, nullptr,
-                                     fs::current_path(), L"mod_config.spfx"s);
+      if (auto path = win32::save_file_dialog({{L"Effects Config", L"*.spfx"}},
+                                              game_window, fs::current_path(),
+                                              L"mod_config.spfx"s);
           path) {
          save_params_to_yaml_file(*path);
       }

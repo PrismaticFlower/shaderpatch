@@ -6,6 +6,8 @@
 #include <filesystem>
 #include <utility>
 
+#include <Windows.h>
+
 #include <gsl/gsl>
 
 #pragma warning(push)
@@ -44,7 +46,7 @@ public:
       return _active;
    }
 
-   void show_imgui() noexcept;
+   void show_imgui(HWND game_window = nullptr) noexcept;
 
    void drop_device_resources() noexcept;
 
