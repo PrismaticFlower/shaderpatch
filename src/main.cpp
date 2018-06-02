@@ -31,6 +31,23 @@ HMODULE load_dinput_dll() noexcept
    return handle;
 }
 
+HMODULE load_d3d_dll() noexcept
+{
+   std::wstring buffer;
+   buffer.resize(512u);
+
+   const auto size = GetSystemDirectoryW(buffer.data(), buffer.size());
+   buffer.resize(size);
+
+   buffer += LR"(\d3d9.dll)";
+
+   const static auto handle = LoadLibraryW(buffer.c_str());
+
+   if (handle == nullptr) std::terminate();
+
+   return handle;
+}
+
 template<typename Func, typename Func_ptr = std::add_pointer_t<Func>>
 Func_ptr get_dinput_export(const char* name)
 {
@@ -43,9 +60,21 @@ Func_ptr get_dinput_export(const char* name)
    return proc;
 }
 
+auto get_d3d9_create()
+{
+   const static auto lib_handle = load_d3d_dll();
+
+   const auto proc = reinterpret_cast<std::add_pointer_t<decltype(Direct3DCreate9)>>(
+      GetProcAddress(lib_handle, "Direct3DCreate9"));
+
+   if (proc == nullptr) std::terminate();
+
+   return proc;
+}
+
 void hook_direct3d() noexcept
 {
-   Com_ptr<IDirect3D9> d3d{Direct3DCreate9(D3D_SDK_VERSION)};
+   Com_ptr<IDirect3D9> d3d{get_d3d9_create()(D3D_SDK_VERSION)};
 
    if (!d3d) std::terminate();
 
@@ -55,7 +84,7 @@ void hook_direct3d() noexcept
 
 void check_direct3d() noexcept
 {
-   Com_ptr<IDirect3D9> d3d{Direct3DCreate9(D3D_SDK_VERSION)};
+   Com_ptr<IDirect3D9> d3d{get_d3d9_create()(D3D_SDK_VERSION)};
 
    direct3d::check_required_features(*d3d);
 }
