@@ -767,6 +767,19 @@ HRESULT Device::SetRenderState(D3DRENDERSTATETYPE state, DWORD value) noexcept
    return _device->SetRenderState(state, value);
 }
 
+HRESULT Device::SetSamplerState(DWORD sampler, D3DSAMPLERSTATETYPE type, DWORD value) noexcept
+{
+   switch (type) {
+   case D3DSAMP_MINFILTER:
+      return _device->SetSamplerState(sampler, type,
+                                      _config.rendering.force_anisotropic_filtering
+                                         ? D3DTEXF_ANISOTROPIC
+                                         : value);
+   default:
+      return _device->SetSamplerState(sampler, type, value);
+   }
+}
+
 HRESULT Device::SetVertexShaderConstantF(UINT start_register, const float* constant_data,
                                          UINT vector4f_count) noexcept
 {

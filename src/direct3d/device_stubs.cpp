@@ -319,11 +319,6 @@ HRESULT Device::GetSamplerState(DWORD sampler, D3DSAMPLERSTATETYPE type, DWORD* 
    return _device->GetSamplerState(sampler, type, value);
 }
 
-HRESULT Device::SetSamplerState(DWORD sampler, D3DSAMPLERSTATETYPE type, DWORD value) noexcept
-{
-   return _device->SetSamplerState(sampler, type, value);
-}
-
 HRESULT Device::ValidateDevice(DWORD* num_passes) noexcept
 {
    return _device->ValidateDevice(num_passes);

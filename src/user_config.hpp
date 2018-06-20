@@ -46,6 +46,7 @@ struct User_config {
    struct {
       bool high_res_reflections = true;
       bool custom_materials = true;
+      bool force_anisotropic_filtering = true;
 
       int reflection_buffer_factor = 1;
       int refraction_buffer_factor = 2;
@@ -73,11 +74,15 @@ struct User_config {
 
       if (ImGui::CollapsingHeader("Rendering", ImGuiTreeNodeFlags_DefaultOpen)) {
          ImGui::Checkbox("High Resolution Reflections", &rendering.high_res_reflections);
+
          ImGui::Checkbox("Custom Materials", &rendering.custom_materials);
 
          if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("Will not take effect on Apply.");
          }
+
+         ImGui::Checkbox("Force Anisotropic Filtering",
+                         &rendering.force_anisotropic_filtering);
 
          ImGui::DragInt("Reflection Buffer Factor",
                         &rendering.reflection_buffer_factor, 1, 1, 32);
@@ -128,6 +133,9 @@ private:
 
       rendering.anisotropic_filtering =
          config["Rendering"s]["AnisotropicFiltering"s].as<int>();
+
+      rendering.force_anisotropic_filtering =
+         config["Rendering"s]["ForceAnisotropicFiltering"s].as<bool>();
 
       rendering.custom_materials =
          config["Rendering"s]["CustomMaterials"s].as<bool>();

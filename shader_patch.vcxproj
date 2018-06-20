@@ -46,7 +46,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>D:\Program Files (x86)\LucasArts\Star Wars Battlefront II\GameData\</OutDir>
+    <OutDir>bin\$(Configuration)\</OutDir>
     <IntDir>build\$(Configuration)\</IntDir>
     <TargetName>dinput8</TargetName>
     <TargetExt>.dll</TargetExt>
