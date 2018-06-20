@@ -687,10 +687,12 @@ HRESULT Device::SetPixelShader(IDirect3DPixelShader9* shader) noexcept
 
       _device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
       _device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+      _device->SetRenderState(D3DRS_CULLMODE, D3DCULL_CW);
 
       _on_ps_shader_set = [this] {
          _device->SetRenderState(D3DRS_SRCBLEND, _state_block.at(D3DRS_SRCBLEND));
          _device->SetRenderState(D3DRS_DESTBLEND, _state_block.at(D3DRS_DESTBLEND));
+         _device->SetRenderState(D3DRS_CULLMODE, _state_block.at(D3DRS_CULLMODE));
 
          _on_ps_shader_set = nullptr;
       };
