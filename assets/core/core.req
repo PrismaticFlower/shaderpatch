@@ -46,4 +46,11 @@ ucft
       "pbr-emissive"
       "tonemap"
    }
+   
+   // Patch Textures
+   REQN
+   {
+      "sptex"
+      "_SP_BUILTIN_water"
+   }
 }

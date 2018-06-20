@@ -30,9 +30,6 @@
     <ClCompile Include="src\input_hooker.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\texture_loader.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\direct3d\check_required_features.cpp">
       <Filter>src\direct3d</Filter>
     </ClCompile>
@@ -75,9 +72,6 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\input_hooker.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\texture_loader.hpp">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\window_helpers.hpp">

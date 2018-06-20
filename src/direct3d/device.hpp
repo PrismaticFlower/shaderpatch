@@ -349,7 +349,7 @@ private:
    Com_ptr<IDirect3DSurface9> _backbuffer_override;
 
    Com_ptr<IDirect3DTexture9> _shadow_texture;
-   Com_ptr<IDirect3DTexture9> _water_texture;
+   Texture _water_texture;
    Com_ptr<IDirect3DTexture9> _refraction_texture;
 
    std::function<HRESULT(IDirect3DSurface9*, const RECT*, IDirect3DSurface9*, const RECT*, D3DTEXTUREFILTERTYPE)>

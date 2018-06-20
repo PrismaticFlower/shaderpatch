@@ -8,7 +8,6 @@
 #include "../resource_handle.hpp"
 #include "../shader_constants.hpp"
 #include "../shader_loader.hpp"
-#include "../texture_loader.hpp"
 #include "../window_helpers.hpp"
 #include "copyable_finally.hpp"
 #include "patch_texture.hpp"
@@ -77,9 +76,6 @@ Device::Device(IDirect3DDevice9& device, const HWND window, const glm::ivec2 res
      _fs_vertex_decl{effects::create_fs_triangle_decl(*_device)},
      _stencil_shadow_format{stencil_shadow_format}
 {
-   _water_texture =
-      load_dds_from_file(*_device, L"data/shaderpatch/textures/water.dds"s);
-
    if (_config.rendering.custom_materials) {
       _materials_enabled_handle = win32::Unique_handle{
          CreateFileW(L"data/shaderpatch/materials_enabled", GENERIC_READ | GENERIC_WRITE,
@@ -136,6 +132,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
    _shadow_texture.reset(nullptr);
    _refraction_texture.reset(nullptr);
    _fs_vertex_buffer.reset(nullptr);
+   _water_texture = Texture{};
 
    _textures.clean_lost_textures();
    _effects.drop_device_resources();
@@ -193,10 +190,6 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
    _fs_vertex_buffer = effects::create_fs_triangle_buffer(*_device, _resolution);
 
-   // rebind textures
-
-   bind_water_texture();
-   bind_refraction_texture();
    init_sampler_max_anisotropy();
 
    if (!_imgui_bootstrapped) {
@@ -684,6 +677,8 @@ HRESULT Device::SetPixelShader(IDirect3DPixelShader9* shader) noexcept
 
    if (metadata.rendertype == "shield"sv) {
       update_refraction_texture();
+      bind_refraction_texture();
+      bind_water_texture();
 
       _device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
       _device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
@@ -702,6 +697,8 @@ HRESULT Device::SetPixelShader(IDirect3DPixelShader9* shader) noexcept
           (metadata.entry_point ==
            "normal_map_distorted_reflection_specular_ps")) {
          update_refraction_texture();
+         bind_refraction_texture();
+         bind_water_texture();
 
          _water_refraction = true;
       }
@@ -889,13 +886,11 @@ void Device::clear_material() noexcept
 
 void Device::bind_water_texture() noexcept
 {
-   _device->SetTexture(water_slot, _water_texture.get());
+   if (!_water_texture) {
+      _water_texture = _textures.get("_SP_BUILTIN_water"s);
+   }
 
-   _device->SetSamplerState(water_slot, D3DSAMP_ADDRESSU, D3DTADDRESS_WRAP);
-   _device->SetSamplerState(water_slot, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP);
-   _device->SetSamplerState(water_slot, D3DSAMP_MAGFILTER, D3DTEXF_ANISOTROPIC);
-   _device->SetSamplerState(water_slot, D3DSAMP_MINFILTER, D3DTEXF_ANISOTROPIC);
-   _device->SetSamplerState(water_slot, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR);
+   _water_texture.bind(water_slot);
 }
 
 void Device::bind_refraction_texture() noexcept

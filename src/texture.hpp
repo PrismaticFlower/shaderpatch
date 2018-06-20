@@ -21,7 +21,7 @@ public:
 
    void bind(DWORD slot) const noexcept
    {
-      if (!_device || !_texture) return;
+      if (empty()) return;
 
       _device->SetSamplerState(slot, D3DSAMP_ADDRESSU, _sampler.address_mode_u);
       _device->SetSamplerState(slot, D3DSAMP_ADDRESSV, _sampler.address_mode_v);
@@ -34,6 +34,16 @@ public:
       _device->SetSamplerState(slot, D3DSAMP_SRGBTEXTURE, _sampler.srgb);
 
       _device->SetTexture(slot, _texture.get());
+   }
+
+   bool empty() const noexcept
+   {
+      return (!_device || !_texture);
+   }
+
+   explicit operator bool() const noexcept
+   {
+      return !empty();
    }
 
 private:
