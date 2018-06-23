@@ -846,7 +846,7 @@ void Device::post_process(const std::string& shader_state) noexcept
    _device->SetRenderState(D3DRS_ZENABLE, FALSE);
    _device->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
 
-   _effects.bloom.apply(_shaders.at("bloom"s), _rt_allocator, *_fp_backbuffer);
+   _effects.bloom.apply(_shaders.at("bloom"s), _rt_allocator, _textures, *_fp_backbuffer);
 
    // TODO: Fixer upper lack of tonemapping abstraction.
    _device->SetRenderState(D3DRS_ALPHABLENDENABLE, false);

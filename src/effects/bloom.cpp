@@ -3,6 +3,7 @@
 #include "../direct3d/shader_constant.hpp"
 #include "../shader_constants.hpp"
 #include "helpers.hpp"
+#include "imgui_ext.hpp"
 
 #include <tuple>
 
@@ -44,16 +45,17 @@ void Bloom::params(const Bloom_params& params) noexcept
 {
    _user_params = params;
 
-   _global_scale = params.tint * params.intensity;
-   _inner_scale = params.inner_tint * params.inner_scale;
-   _inner_mid_scale = (params.inner_mid_scale * params.inner_mid_tint) / _inner_scale;
-   _mid_scale = (params.mid_scale * params.mid_tint) / _inner_mid_scale;
-   _outer_mid_scale = (params.outer_mid_scale * params.outer_mid_tint) / _mid_scale;
-   _outer_scale = (params.outer_scale * params.outer_tint) / _outer_mid_scale;
+   _scales.global = params.tint * params.intensity;
+   _scales.inner = params.inner_tint * params.inner_scale;
+   _scales.inner_mid = params.inner_mid_scale * params.inner_mid_tint;
+   _scales.mid = params.mid_scale * params.mid_tint;
+   _scales.outer_mid = params.outer_mid_scale * params.outer_mid_tint;
+   _scales.outer = params.outer_scale * params.outer_tint;
+   _scales.dirt = params.dirt_scale * params.dirt_tint;
 }
 
 void Bloom::apply(const Shader_group& shaders, Rendertarget_allocator& allocator,
-                  IDirect3DTexture9& from_to) noexcept
+                  const Texture_database& textures, IDirect3DTexture9& from_to) noexcept
 {
    setup_blur_stage_blendstate();
    set_bloom_constants();
@@ -64,60 +66,69 @@ void Bloom::apply(const Shader_group& shaders, Rendertarget_allocator& allocator
    auto [format, res] = get_texture_metrics(from_to);
 
    setup_buffer_sampler(0);
+   setup_buffer_sampler(1);
+   setup_buffer_sampler(2);
+   setup_buffer_sampler(3);
+   setup_buffer_sampler(4);
+
+   auto threshold = allocator.allocate(format, res);
+   do_pass(*threshold.surface(), from_to, shaders.at("threshold"s));
 
    auto rt_a_x = allocator.allocate(format, res);
    auto rt_a_y = allocator.allocate(format, res);
 
-   do_pass(*rt_a_x.surface(), from_to, shaders.at("threshold and blur x 13"s));
-   do_pass(*rt_a_y.surface(), *rt_a_x.texture(), shaders.at("blur y 13"s));
+   do_pass(*rt_a_y.surface(), *threshold.texture(), shaders.at("blur 5"s));
+   do_pass(*rt_a_x.surface(), *rt_a_y.texture(), shaders.at("blur x 25"s));
+   do_pass(*rt_a_y.surface(), *rt_a_x.texture(), shaders.at("blur y 25"s));
 
-   auto rt_b_x = allocator.allocate(format, res / 2);
-   auto rt_b_y = allocator.allocate(format, res / 2);
+   auto rt_b_x = allocator.allocate(format, res / 4);
+   auto rt_b_y = allocator.allocate(format, res / 4);
 
-   downsample(*rt_b_y.surface(), *rt_a_y.surface());
-   do_pass(*rt_b_x.surface(), *rt_b_y.texture(), shaders.at("blur x 13"s));
-   do_pass(*rt_b_y.surface(), *rt_b_x.texture(), shaders.at("blur y 13"s));
+   do_pass(*rt_b_y.surface(), *rt_a_y.texture(), shaders.at("blur 5"s));
+   do_pass(*rt_b_x.surface(), *rt_b_y.texture(), shaders.at("blur x 25"s));
+   do_pass(*rt_b_y.surface(), *rt_b_x.texture(), shaders.at("blur y 25"s));
 
-   auto rt_c_x = allocator.allocate(format, res / 4);
-   auto rt_c_y = allocator.allocate(format, res / 4);
+   auto rt_c_x = allocator.allocate(format, res / 8);
+   auto rt_c_y = allocator.allocate(format, res / 8);
 
-   downsample(*rt_c_y.surface(), *rt_b_y.surface());
-   do_pass(*rt_c_x.surface(), *rt_c_y.texture(), shaders.at("blur x 17"s));
-   do_pass(*rt_c_y.surface(), *rt_c_x.texture(), shaders.at("blur y 17"s));
+   do_pass(*rt_c_y.surface(), *rt_b_y.texture(), shaders.at("blur 5"s));
+   do_pass(*rt_c_x.surface(), *rt_c_y.texture(), shaders.at("blur x 25"s));
+   do_pass(*rt_c_y.surface(), *rt_c_x.texture(), shaders.at("blur y 25"s));
 
-   auto rt_d_x = allocator.allocate(format, res / 8);
-   auto rt_d_y = allocator.allocate(format, res / 8);
+   auto rt_d_x = allocator.allocate(format, res / 16);
+   auto rt_d_y = allocator.allocate(format, res / 16);
 
-   downsample(*rt_d_y.surface(), *rt_c_y.surface());
+   do_pass(*rt_d_y.surface(), *rt_c_y.texture(), shaders.at("blur 5"s));
    do_pass(*rt_d_x.surface(), *rt_d_y.texture(), shaders.at("blur x 25"s));
    do_pass(*rt_d_y.surface(), *rt_d_x.texture(), shaders.at("blur y 25"s));
 
-   auto rt_e_x = allocator.allocate(format, res / 16);
-   auto rt_e_y = allocator.allocate(format, res / 16);
+   auto rt_e_x = allocator.allocate(format, res / 32);
+   auto rt_e_y = allocator.allocate(format, res / 32);
 
-   downsample(*rt_e_y.surface(), *rt_d_y.surface());
+   do_pass(*rt_e_y.surface(), *rt_d_y.texture(), shaders.at("blur 5"s));
    do_pass(*rt_e_x.surface(), *rt_e_y.texture(), shaders.at("blur x 25"s));
    do_pass(*rt_e_y.surface(), *rt_e_x.texture(), shaders.at("blur y 25"s));
 
    setup_combine_stage_blendstate();
 
-   set_scale_constant(_outer_scale);
-   do_pass(*rt_d_y.surface(), *rt_e_y.texture(), shaders.at("combine"s));
+   set_scale_constants();
 
-   set_scale_constant(_outer_mid_scale);
-   do_pass(*rt_c_y.surface(), *rt_d_y.texture(), shaders.at("combine"s));
-
-   set_scale_constant(_mid_scale);
-   do_pass(*rt_b_y.surface(), *rt_c_y.texture(), shaders.at("combine"s));
-
-   set_scale_constant(_inner_mid_scale);
-   do_pass(*rt_a_y.surface(), *rt_b_y.texture(), shaders.at("combine"s));
+   _device->SetTexture(1, rt_b_y.texture());
+   _device->SetTexture(2, rt_c_y.texture());
+   _device->SetTexture(3, rt_d_y.texture());
+   _device->SetTexture(4, rt_e_y.texture());
 
    Com_ptr<IDirect3DSurface9> target;
    from_to.GetSurfaceLevel(0, target.clear_and_assign());
 
-   set_scale_constant(_inner_scale * _global_scale);
-   do_pass(*target, *rt_a_y.texture(), shaders.at("apply"s));
+   if (_user_params.use_dirt) {
+      textures.get(_user_params.dirt_name).bind(5);
+
+      do_pass(*target, *rt_a_y.texture(), shaders.at("dirt combine"s));
+   }
+   else {
+      do_pass(*target, *rt_a_y.texture(), shaders.at("combine"s));
+   }
 }
 
 void Bloom::drop_device_resources() noexcept
@@ -162,6 +173,16 @@ void Bloom::show_imgui() noexcept
                         ImGuiColorEditFlags_Float);
       ImGui::ColorEdit3("Outer Tint", &_user_params.outer_tint.x,
                         ImGuiColorEditFlags_Float);
+   }
+
+   if (ImGui::CollapsingHeader("Dirt")) {
+      ImGui::Checkbox("Use Dirt", &_user_params.use_dirt);
+      ImGui::DragFloat("Dirt Scale", &_user_params.dirt_scale, 0.025f, 0.0f,
+                       std::numeric_limits<float>::max());
+      ImGui::ColorEdit3("Dirt Tint", &_user_params.dirt_tint.x,
+                        ImGuiColorEditFlags_Float);
+
+      ImGui::InputText<256>("Dirt Texture", _user_params.dirt_name);
    }
 
    ImGui::Separator();
@@ -224,16 +245,16 @@ void Bloom::set_bloom_constants() const noexcept
       .set(*_device, _user_params.threshold);
 }
 
-void Bloom::set_scale_constant(const glm::vec3 scale) const noexcept
+void Bloom::set_scale_constants() const noexcept
 {
-   direct3d::Ps_3f_shader_constant<constants::ps::post_processing_start + 2>{}.set(*_device,
-                                                                                   scale);
+   _device->SetPixelShaderConstantF(constants::ps::post_processing_start + 2,
+                                    &_scales.global.x, sizeof(_scales) / 16);
 }
 
 void Bloom::setup_buffer_sampler(int index) const noexcept
 {
-   _device->SetSamplerState(index, D3DSAMP_ADDRESSU, D3DPTADDRESSCAPS_CLAMP);
-   _device->SetSamplerState(index, D3DSAMP_ADDRESSV, D3DPTADDRESSCAPS_CLAMP);
+   _device->SetSamplerState(index, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+   _device->SetSamplerState(index, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
    _device->SetSamplerState(index, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
    _device->SetSamplerState(index, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
    _device->SetSamplerState(index, D3DSAMP_MIPFILTER, D3DTEXF_NONE);

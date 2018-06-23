@@ -9,24 +9,31 @@
 
   "states": [
     {
-      "name": "threshold and blur x 13",
+      "name": "threshold",
 
       "vertex_shader": "main_vs",
-      "pixel_shader": "threshold_blur_13_x_ps"
+      "pixel_shader": "threshold_ps"
     },
 
     {
-      "name": "blur x 13",
+      "name": "blur 5",
 
       "vertex_shader": "main_vs",
-      "pixel_shader": "blur_13_x_ps"
+      "pixel_shader": "blur_5_ps"
     },
 
     {
-      "name": "blur y 13",
+      "name": "blur x 9",
 
       "vertex_shader": "main_vs",
-      "pixel_shader": "blur_13_y_ps"
+      "pixel_shader": "blur_9_x_ps"
+    },
+
+    {
+      "name": "blur y 9",
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "blur_9_y_ps"
     },
 
     {
@@ -58,6 +65,34 @@
     },
 
     {
+      "name": "blur x 33",
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "blur_33_x_ps"
+    },
+
+    {
+      "name": "blur y 33",
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "blur_33_y_ps"
+    },
+
+    {
+      "name": "blur x 41",
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "blur_41_x_ps"
+    },
+
+    {
+      "name": "blur y 41",
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "blur_41_y_ps"
+    },
+
+    {
       "name": "combine",
 
       "vertex_shader": "main_vs",
@@ -65,10 +100,10 @@
     },
 
     {
-      "name": "apply",
+      "name": "dirt combine",
 
       "vertex_shader": "main_vs",
-      "pixel_shader": "combine_ps"
+      "pixel_shader": "dirt_combine_ps"
     }
   ]
 }

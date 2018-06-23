@@ -1,10 +1,12 @@
 #pragma once
 
 #include "../shader_database.hpp"
+#include "../texture_database.hpp"
 #include "com_ptr.hpp"
 #include "com_ref.hpp"
 #include "rendertarget_allocator.hpp"
 
+#include <array>
 #include <optional>
 #include <string>
 
@@ -43,6 +45,11 @@ struct Bloom_params {
 
    float outer_scale = 1.0f;
    glm::vec3 outer_tint{1.0f, 1.0f, 1.0f};
+
+   bool use_dirt = false;
+   float dirt_scale = 1.0f;
+   glm::vec3 dirt_tint{1.0f, 1.0f, 1.0f};
+   std::string dirt_name;
 };
 
 class Bloom {
@@ -57,7 +64,7 @@ public:
    }
 
    void apply(const Shader_group& shaders, Rendertarget_allocator& allocator,
-              IDirect3DTexture9& from_to) noexcept;
+              const Texture_database& textures, IDirect3DTexture9& from_to) noexcept;
 
    void drop_device_resources() noexcept;
 
@@ -74,7 +81,7 @@ private:
 
    void set_bloom_constants() const noexcept;
 
-   void set_scale_constant(const glm::vec3 scale) const noexcept;
+   void set_scale_constants() const noexcept;
 
    void setup_buffer_sampler(int index) const noexcept;
 
@@ -90,12 +97,30 @@ private:
    Com_ptr<IDirect3DVertexDeclaration9> _vertex_decl;
    Com_ptr<IDirect3DVertexBuffer9> _vertex_buffer;
 
-   glm::vec3 _global_scale{1.0f, 1.0f, 1.0f};
-   glm::vec3 _inner_scale{1.0f, 1.0f, 1.0f};
-   glm::vec3 _inner_mid_scale{1.0f, 1.0f, 1.0f};
-   glm::vec3 _mid_scale{1.0f, 1.0f, 1.0f};
-   glm::vec3 _outer_mid_scale{1.0f, 1.0f, 1.0f};
-   glm::vec3 _outer_scale{1.0f, 1.0f, 1.0f};
+   struct {
+      alignas(16) glm::vec3 global{1.0f, 1.0f, 1.0f};
+      float _pad0{};
+
+      alignas(16) glm::vec3 inner{1.0f, 1.0f, 1.0f};
+      float _pad1{};
+
+      alignas(16) glm::vec3 inner_mid{1.0f, 1.0f, 1.0f};
+      float _pad2{};
+
+      alignas(16) glm::vec3 mid{1.0f, 1.0f, 1.0f};
+      float _pad3{};
+
+      alignas(16) glm::vec3 outer_mid{1.0f, 1.0f, 1.0f};
+      float _pad4{};
+
+      alignas(16) glm::vec3 outer{1.0f, 1.0f, 1.0f};
+      float _pad5{};
+
+      alignas(16) glm::vec3 dirt{1.0f, 1.0f, 1.0f};
+      float _pad6{};
+   } _scales;
+
+   static_assert(sizeof(decltype(_scales)) == 112);
 
    Bloom_params _user_params{};
 };
@@ -145,6 +170,13 @@ struct convert<sp::effects::Bloom_params> {
       node["OuterTint"s].push_back(params.outer_tint.g);
       node["OuterTint"s].push_back(params.outer_tint.b);
 
+      node["UseDirt"s] = params.use_dirt;
+      node["DirtScale"s] = params.dirt_scale;
+      node["DirtTint"s].push_back(params.dirt_tint[0]);
+      node["DirtTint"s].push_back(params.dirt_tint[1]);
+      node["DirtTint"s].push_back(params.dirt_tint[2]);
+      node["DirtName"s] = params.dirt_name;
+
       return node;
    }
 
@@ -187,6 +219,13 @@ struct convert<sp::effects::Bloom_params> {
       params.outer_tint[0] = node["OuterTint"s][0].as<float>();
       params.outer_tint[1] = node["OuterTint"s][1].as<float>();
       params.outer_tint[2] = node["OuterTint"s][2].as<float>();
+
+      params.use_dirt = node["UseDirt"s].as<bool>();
+      params.dirt_scale = node["DirtScale"s].as<float>();
+      params.dirt_tint[0] = node["DirtTint"s][0].as<float>();
+      params.dirt_tint[1] = node["DirtTint"s][1].as<float>();
+      params.dirt_tint[2] = node["DirtTint"s][2].as<float>();
+      params.dirt_name = node["DirtName"s].as<std::string>();
 
       return true;
    }
