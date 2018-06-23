@@ -48,8 +48,7 @@ constexpr glm::uint round_next_power_of_2(glm::uint i)
 
 void check_loaded_image_size(DX::Image image)
 {
-   if (image.width > min_resolution) return;
-   if (image.height > min_resolution) return;
+   if (image.width >= min_resolution && image.height >= min_resolution) return;
 
    throw compose_exception<std::invalid_argument>("Image too small is {"sv,
                                                   image.width, ',', image.height,
@@ -358,8 +357,14 @@ auto process_image(YAML::Node config, fs::path image_file_path)
    }
 
    image = convert_pixel_format(std::move(image));
-   image = make_image_power_of_2(std::move(image));
-   image = mipmap_image(std::move(image), get_mip_filter_type(config));
+
+   if (!config["Uncompressed"s].as<bool>(false)) {
+      image = make_image_power_of_2(std::move(image));
+   }
+
+   if (!config["NoMips"s].as<bool>(false)) {
+      image = mipmap_image(std::move(image), get_mip_filter_type(config));
+   }
 
    auto texture_info = get_texture_info(image);
    std::vector<std::vector<std::byte>> mip_levels;
