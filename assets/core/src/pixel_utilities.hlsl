@@ -59,4 +59,40 @@ float3 sample_projected_light(sampler2D light_texture, float4 texcoords)
    }
 }
 
+float4 tex2Dlod(sampler2D samp, float2 texcoord, float lod)
+{
+   return tex2Dlod(samp, float4(texcoord, 0.0, lod));
+}
+
+float4 tex2Dgaussian(sampler2D samp, float2 texcoord, float2 texel_size)
+{
+   const static float centre_weight = 0.083355;
+   const static float mid_weight = 0.10267899999999999;
+   const static float mid_offset = 1.3446761265692109;
+   const static float corner_weight = 0.126482;
+   const static float2 corner_offset = { 1.3446735503866163, 1.3446735503866163 };
+
+   float4 color = tex2Dlod(samp, texcoord, 0) * centre_weight;
+
+   color += 
+      tex2Dlod(samp, texcoord + (mid_offset * texel_size) * float2(1, 0), 0) * mid_weight;
+   color += 
+      tex2Dlod(samp, texcoord - (mid_offset * texel_size) * float2(1, 0), 0) * mid_weight;
+   color += 
+      tex2Dlod(samp, texcoord + (mid_offset * texel_size) * float2(0, 1), 0) * mid_weight;
+   color += 
+      tex2Dlod(samp, texcoord - (mid_offset * texel_size) * float2(0, 1), 0) * mid_weight;
+
+   color += 
+      tex2Dlod(samp, texcoord + (corner_offset * texel_size), 0) * corner_weight;
+   color += 
+      tex2Dlod(samp, texcoord + (corner_offset * texel_size) * float2(-1, 1), 0) * corner_weight;
+   color += 
+      tex2Dlod(samp, texcoord + (corner_offset * texel_size) * float2(-1, -1), 0) * corner_weight;
+   color += 
+      tex2Dlod(samp, texcoord + (corner_offset * texel_size) * float2(1, -1), 0) * corner_weight;
+
+   return color;
+}
+
 #endif

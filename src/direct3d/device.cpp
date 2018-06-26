@@ -703,6 +703,15 @@ HRESULT Device::SetPixelShader(IDirect3DPixelShader9* shader) noexcept
          _water_refraction = true;
       }
    }
+   else if (_config.rendering.smooth_bloom && !_effects.active() &&
+            metadata.rendertype == "hdr"sv) {
+      if (auto ext_shader = _shaders.at("stock bloom ext"s).find(metadata.state_name);
+          ext_shader != nullptr) {
+         ext_shader->bind(*_device);
+
+         return S_OK;
+      }
+   }
 
    return _device->SetPixelShader(pixel_shader.get());
 }

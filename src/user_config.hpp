@@ -47,6 +47,7 @@ struct User_config {
       bool high_res_reflections = true;
       bool custom_materials = true;
       bool force_anisotropic_filtering = true;
+      bool smooth_bloom = true;
 
       int reflection_buffer_factor = 1;
       int refraction_buffer_factor = 2;
@@ -74,6 +75,8 @@ struct User_config {
 
       if (ImGui::CollapsingHeader("Rendering", ImGuiTreeNodeFlags_DefaultOpen)) {
          ImGui::Checkbox("High Resolution Reflections", &rendering.high_res_reflections);
+
+         ImGui::Checkbox("Smooth Bloom", &rendering.smooth_bloom);
 
          ImGui::Checkbox("Custom Materials", &rendering.custom_materials);
 
@@ -118,6 +121,8 @@ private:
 
       rendering.high_res_reflections =
          config["Rendering"s]["HighResolutionReflections"s].as<bool>();
+
+      rendering.smooth_bloom = config["Rendering"s]["SmoothBloom"s].as<bool>();
 
       const auto reflection_scale =
          config["Rendering"s]["ReflectionBufferScale"s].as<double>();

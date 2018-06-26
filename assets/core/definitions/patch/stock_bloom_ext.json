@@ -1,0 +1,25 @@
+{
+  "patch_shader": true,
+  "source_name": "bloom_stock.fx",
+  "rendertype": "stock bloom ext",
+
+  "skinned": false,
+  "lighting": false,
+  "vertex_color": false,
+
+  "states": [
+    {
+      "name": "screenspace",
+
+      "vertex_shader": "screenspace_vs",
+      "pixel_shader": "screenspace_ex_ps"
+    },
+
+    {
+      "name": "bloomfilter",
+
+      "vertex_shader": "bloomfilter_vs",
+      "pixel_shader": "bloomfilter_ex_ps"
+    }
+  ]
+}

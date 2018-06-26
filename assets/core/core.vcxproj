@@ -171,6 +171,7 @@
     <None Include="definitions\patch\pbr-basic.json" />
     <None Include="definitions\patch\pbr-emissive.json" />
     <None Include="definitions\patch\pbr.json" />
+    <None Include="definitions\patch\stock_bloom_ext.json" />
     <None Include="definitions\patch\tonemap.json" />
     <None Include="definitions\perpixeldiffuselighting.json" />
     <None Include="definitions\prereflection.json" />

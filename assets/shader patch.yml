@@ -12,6 +12,10 @@ Rendering:
    # Enable or disable high resolution water reflections.
    HighResolutionReflections: yes
 
+   # Enable or disable replacing the stock bloom effect with one that gives smoother,
+   # less blocky results while maintaining radius and intensity.
+   SmoothBloom: yes
+   
    # Scale of the water reflection buffer (regardless of HighResolutionReflections), 
    # in range [0.01...1.0].
    ReflectionBufferScale: 0.5
