@@ -10,6 +10,7 @@
 #include <fstream>
 #include <string_view>
 
+#include <boost/algorithm/string.hpp>
 #include <gsl/gsl>
 
 #pragma warning(push)
@@ -26,7 +27,7 @@ using namespace std::literals;
 
 namespace {
 
-auto read_spfx_yaml(const fs::path& spfx_path) -> std::vector<std::byte>
+auto read_spfx_yaml_raw(const fs::path& spfx_path) -> std::vector<std::byte>
 {
    // Test that the file is valid YAML.
    YAML::LoadFile(spfx_path.string());
@@ -42,12 +43,35 @@ auto read_spfx_yaml(const fs::path& spfx_path) -> std::vector<std::byte>
    return data;
 }
 
-void generate_spfx_req_file(const fs::path& save_path)
+void generate_spfx_req_file(YAML::Node spfx, const fs::path& save_path)
 {
    auto req_path = save_path;
    req_path.replace_extension(".envfx.req"sv);
 
-   emit_req_file(req_path, {{"game_envfx"s, {save_path.stem().string()}}});
+   std::vector<std::pair<std::string, std::vector<std::string>>> key_sections{
+      {"game_envfx"s, {save_path.stem().string()}}};
+
+   std::vector<std::string> textures;
+
+   for (auto section : spfx) {
+      if (!section.second.IsMap()) continue;
+
+      for (auto key : section.second) {
+         if (!key.second.IsScalar()) continue;
+
+         if (boost::icontains(key.first.as<std::string>(), "texture"s)) {
+            auto texture = key.second.as<std::string>();
+
+            if (texture.empty()) continue;
+
+            textures.emplace_back(std::move(texture));
+         }
+      }
+   }
+
+   key_sections.emplace_back("sptex"s, std::move(textures));
+
+   emit_req_file(req_path, key_sections);
 }
 
 }
@@ -68,13 +92,25 @@ void munge_spfx(const fs::path& spfx_path, const fs::path& output_dir)
 
    synced_print("Munging "sv, spfx_path.filename().string(), "..."sv);
 
-   const auto data = read_spfx_yaml(spfx_path);
+   YAML::Node spfx_node;
+
+   try {
+      spfx_node = YAML::LoadFile(spfx_path.string());
+   }
+   catch (std::exception& e) {
+      synced_error_print("Error parsing "sv, spfx_path, " message was: "sv, e.what());
+
+      return;
+   }
+
+   const auto data = read_spfx_yaml_raw(spfx_path);
 
    const auto save_path =
       output_dir / spfx_path.filename().replace_extension(".envfx");
 
    save_volume_resource(save_path.string(), spfx_path.stem().string(),
                         Volume_resource_type::fx_config, data);
-   generate_spfx_req_file(save_path);
+
+   generate_spfx_req_file(spfx_node, save_path);
 }
 }
