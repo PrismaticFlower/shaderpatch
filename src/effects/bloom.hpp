@@ -49,7 +49,7 @@ struct Bloom_params {
    bool use_dirt = false;
    float dirt_scale = 1.0f;
    glm::vec3 dirt_tint{1.0f, 1.0f, 1.0f};
-   std::string dirt_name;
+   std::string dirt_texture_name;
 };
 
 class Bloom {
@@ -175,7 +175,7 @@ struct convert<sp::effects::Bloom_params> {
       node["DirtTint"s].push_back(params.dirt_tint[0]);
       node["DirtTint"s].push_back(params.dirt_tint[1]);
       node["DirtTint"s].push_back(params.dirt_tint[2]);
-      node["DirtName"s] = params.dirt_name;
+      node["DirtTextureName"s] = params.dirt_texture_name;
 
       return node;
    }
@@ -225,7 +225,7 @@ struct convert<sp::effects::Bloom_params> {
       params.dirt_tint[0] = node["DirtTint"s][0].as<float>();
       params.dirt_tint[1] = node["DirtTint"s][1].as<float>();
       params.dirt_tint[2] = node["DirtTint"s][2].as<float>();
-      params.dirt_name = node["DirtName"s].as<std::string>();
+      params.dirt_texture_name = node["DirtTextureName"s].as<std::string>();
 
       return true;
    }

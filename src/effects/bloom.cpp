@@ -122,7 +122,7 @@ void Bloom::apply(const Shader_group& shaders, Rendertarget_allocator& allocator
    from_to.GetSurfaceLevel(0, target.clear_and_assign());
 
    if (_user_params.use_dirt) {
-      textures.get(_user_params.dirt_name).bind(5);
+      textures.get(_user_params.dirt_texture_name).bind(5);
 
       do_pass(*target, *rt_a_y.texture(), shaders.at("dirt combine"s));
    }
@@ -182,7 +182,7 @@ void Bloom::show_imgui() noexcept
       ImGui::ColorEdit3("Dirt Tint", &_user_params.dirt_tint.x,
                         ImGuiColorEditFlags_Float);
 
-      ImGui::InputText<256>("Dirt Texture", _user_params.dirt_name);
+      ImGui::InputText<256>("Dirt Texture", _user_params.dirt_texture_name);
    }
 
    ImGui::Separator();
