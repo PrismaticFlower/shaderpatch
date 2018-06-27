@@ -17,11 +17,11 @@ Rendering:
    SmoothBloom: yes
    
    # Scale of the water reflection buffer (regardless of HighResolutionReflections), 
-   # in range [0.01...1.0].
+   # in range [0.01...1.0]. Higher is better but may come at a cost in performance.
    ReflectionBufferScale: 0.5
 
    # Scale of the refraction buffer used for effects like water and the Droideka's shield, 
-   # in range [0.01...1.0].
+   # in range [0.01...1.0].  Higher is better but may come at a cost in performance.
    RefractionBufferScale: 0.5
 
    # Set the desired max samples for anisotropic filtering. Higher is better, but _may_ come at a performance cost.
