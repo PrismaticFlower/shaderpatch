@@ -173,6 +173,7 @@
     <None Include="definitions\patch\pbr-basic.json" />
     <None Include="definitions\patch\pbr-emissive.json" />
     <None Include="definitions\patch\pbr.json" />
+    <None Include="definitions\patch\shadows_blur.json" />
     <None Include="definitions\patch\stock_bloom_ext.json" />
     <None Include="definitions\perpixeldiffuselighting.json" />
     <None Include="definitions\prereflection.json" />
@@ -320,6 +321,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\postprocess_common.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="src\shadows_blur.fx">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
