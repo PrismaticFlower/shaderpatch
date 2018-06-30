@@ -51,6 +51,9 @@
     <ClCompile Include="src\imgui\imgui_impl_dx9.cpp">
       <Filter>src\imgui</Filter>
     </ClCompile>
+    <ClCompile Include="src\effects\blur_shadows.cpp">
+      <Filter>src\effects</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -133,6 +136,9 @@
     </ClInclude>
     <ClInclude Include="src\imgui\imgui_impl_dx9.h">
       <Filter>src\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="src\effects\blur_shadows.hpp">
+      <Filter>src\effects</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

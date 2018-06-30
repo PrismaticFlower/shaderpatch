@@ -86,4 +86,26 @@ inline auto create_fs_triangle_decl(IDirect3DDevice9& device)
 
 inline constexpr int fs_triangle_stride = 16;
 
+inline auto get_texture_metrics(IDirect3DTexture9& from)
+   -> std::tuple<D3DFORMAT, glm::ivec2>
+{
+
+   D3DSURFACE_DESC desc;
+   from.GetLevelDesc(0, &desc);
+
+   return std::make_tuple(desc.Format, glm::ivec2{static_cast<int>(desc.Width),
+                                                  static_cast<int>(desc.Height)});
+}
+
+inline auto get_surface_metrics(IDirect3DSurface9& from)
+   -> std::tuple<D3DFORMAT, glm::ivec2>
+{
+
+   D3DSURFACE_DESC desc;
+   from.GetDesc(&desc);
+
+   return std::make_tuple(desc.Format, glm::ivec2{static_cast<int>(desc.Width),
+                                                  static_cast<int>(desc.Height)});
+}
+
 }

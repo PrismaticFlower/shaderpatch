@@ -130,6 +130,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\effects\bloom.cpp" />
+    <ClCompile Include="src\effects\blur_shadows.cpp" />
     <ClCompile Include="src\effects\color_grading.cpp" />
     <ClCompile Include="src\direct3d\check_required_features.cpp" />
     <ClCompile Include="src\direct3d\create_device.cpp" />
@@ -147,6 +148,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\effects\bloom.hpp" />
+    <ClInclude Include="src\effects\blur_shadows.hpp" />
     <ClInclude Include="src\effects\color_grading.hpp" />
     <ClInclude Include="src\direct3d\check_required_features.hpp" />
     <ClInclude Include="src\direct3d\create_device.hpp" />

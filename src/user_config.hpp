@@ -48,6 +48,7 @@ struct User_config {
       bool custom_materials = true;
       bool force_anisotropic_filtering = true;
       bool smooth_bloom = true;
+      bool soft_shadows = true;
 
       int reflection_buffer_factor = 1;
       int refraction_buffer_factor = 2;
@@ -77,6 +78,8 @@ struct User_config {
          ImGui::Checkbox("High Resolution Reflections", &rendering.high_res_reflections);
 
          ImGui::Checkbox("Smooth Bloom", &rendering.smooth_bloom);
+
+         ImGui::Checkbox("Fake Soft Shadows", &rendering.soft_shadows);
 
          ImGui::Checkbox("Custom Materials", &rendering.custom_materials);
 
@@ -123,6 +126,8 @@ private:
          config["Rendering"s]["HighResolutionReflections"s].as<bool>();
 
       rendering.smooth_bloom = config["Rendering"s]["SmoothBloom"s].as<bool>();
+
+      rendering.soft_shadows = config["Rendering"s]["SoftShadows"s].as<bool>();
 
       const auto reflection_scale =
          config["Rendering"s]["ReflectionBufferScale"s].as<double>();

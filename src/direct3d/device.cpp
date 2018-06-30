@@ -129,6 +129,8 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
    _fp_backbuffer.reset(nullptr);
    _backbuffer_override.reset(nullptr);
+   _linear_depth_surface.reset(nullptr);
+   _linear_depth_texture.reset(nullptr);
    _shadow_texture.reset(nullptr);
    _refraction_texture.reset(nullptr);
    _fs_vertex_buffer.reset(nullptr);
@@ -151,6 +153,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
    _window_dirty = true;
    _fake_device_loss = false;
    _refresh_material = true;
+   _multisample_active = presentation_parameters->MultiSampleType != D3DMULTISAMPLE_NONE;
 
    _resolution.x = presentation_parameters->BackBufferWidth;
    _resolution.y = presentation_parameters->BackBufferHeight;
@@ -187,6 +190,19 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
                           _effects.enabled() ? fp_texture_format : D3DFMT_A8R8G8B8,
                           D3DPOOL_DEFAULT,
                           _refraction_texture.clear_and_assign(), nullptr);
+   _device->CreateTexture(_resolution.x, _resolution.y, 1,
+                          D3DUSAGE_RENDERTARGET, D3DFMT_R32F, D3DPOOL_DEFAULT,
+                          _linear_depth_texture.clear_and_assign(), nullptr);
+
+   if (_multisample_active) {
+      _device->CreateRenderTarget(_resolution.x, _resolution.y, D3DFMT_R32F,
+                                  presentation_parameters->MultiSampleType,
+                                  presentation_parameters->MultiSampleQuality, false,
+                                  _linear_depth_surface.clear_and_assign(), nullptr);
+   }
+   else {
+      _linear_depth_texture->GetSurfaceLevel(0, _linear_depth_surface.clear_and_assign());
+   }
 
    _fs_vertex_buffer = effects::create_fs_triangle_buffer(*_device, _resolution);
 
@@ -256,6 +272,13 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
 
    ImGui_ImplDX9_NewFrame();
 
+   _device->EndScene();
+
+   const auto result =
+      _device->Present(source_rect, dest_rect, dest_window_override, dirty_region);
+
+   _device->BeginScene();
+
    // update time
    const auto now = std::chrono::steady_clock{}.now();
    const auto time_since_epoch = now - _device_start;
@@ -265,13 +288,7 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
 
    // update per frame state
    _water_refraction = false;
-
-   _device->EndScene();
-
-   const auto result =
-      _device->Present(source_rect, dest_rect, dest_window_override, dirty_region);
-
-   _device->BeginScene();
+   _render_depth_texture = _config.rendering.soft_shadows;
 
    if (_fake_device_loss) return D3DERR_DEVICELOST;
 
@@ -494,7 +511,7 @@ HRESULT Device::CreateTexture(UINT width, UINT height, UINT levels, DWORD usage,
 
       if (glm::ivec2{width, height} == _resolution) {
          if (++_created_full_rendertargets == 2) {
-            if (_effects.active()) format = _stencil_shadow_format;
+            if (!_multisample_active) format = _stencil_shadow_format;
 
             const auto result =
                _device->CreateTexture(width, height, levels, usage, format,
@@ -615,26 +632,61 @@ HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
       return S_OK;
    }
 
-   if (_effects.active() && _vs_metadata.rendertype == "shadowquad"sv) {
-      Com_ptr<IDirect3DSurface9> shadow_rt;
+   if (_render_depth_texture && !_zprepass && _vs_metadata.rendertype == "zprepass"sv) {
+      _device->SetRenderTarget(0, _linear_depth_surface.get());
+      _device->Clear(0, nullptr, D3DCLEAR_TARGET, 0, 0.0, 0);
+      _device->SetRenderState(D3DRS_COLORWRITEENABLE, D3DCOLORWRITEENABLE_RED);
+      _zprepass = true;
+   }
+   else if (_render_depth_texture && _zprepass &&
+            _vs_metadata.rendertype != "zprepass"sv) {
+      Com_ptr<IDirect3DSurface9> backbuffer;
+      this->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO,
+                          backbuffer.clear_and_assign());
+      _device->SetRenderTarget(0, backbuffer.get());
+      _device->SetRenderState(D3DRS_COLORWRITEENABLE,
+                              _state_block.get(D3DRS_COLORWRITEENABLE));
+      _zprepass = false;
+
+      if (_multisample_active) {
+         Com_ptr<IDirect3DSurface9> resolved_surface;
+         _linear_depth_texture->GetSurfaceLevel(0, resolved_surface.clear_and_assign());
+
+         _device->StretchRect(_linear_depth_surface.get(), nullptr,
+                              resolved_surface.get(), nullptr, D3DTEXF_POINT);
+      }
+   }
+   else if (_vs_metadata.rendertype == "shadowquad"sv) {
+      Com_ptr<IDirect3DSurface9> shadow_surface;
       Com_ptr<IDirect3DSurface9> rt;
 
-      _shadow_texture->GetSurfaceLevel(0, shadow_rt.clear_and_assign());
-      _device->GetRenderTarget(0, rt.clear_and_assign());
+      if (!_multisample_active) {
+         _shadow_texture->GetSurfaceLevel(0, shadow_surface.clear_and_assign());
+         _device->GetRenderTarget(0, rt.clear_and_assign());
 
-      _device->SetRenderTarget(0, shadow_rt.get());
-      _device->ColorFill(shadow_rt.get(), nullptr, 0xffffffff);
+         _device->SetRenderTarget(0, shadow_surface.get());
+         _device->ColorFill(shadow_surface.get(), nullptr, 0xffffffff);
+      }
 
-      _stretch_rect_hook = [this, rt{std::move(rt)}](auto...) {
-         _stretch_rect_hook = nullptr;
+      _stretch_rect_hook =
+         [this, rt{std::move(rt)}](IDirect3DSurface9* src, const RECT*,
+                                   IDirect3DSurface9* dest, const RECT*,
+                                   D3DTEXTUREFILTERTYPE) {
+            _stretch_rect_hook = nullptr;
 
-         _device->SetRenderTarget(0, rt.get());
+            if (_multisample_active) {
+               _device->StretchRect(src, nullptr, dest, nullptr, D3DTEXF_LINEAR);
+            }
+            else {
+               _device->SetRenderTarget(0, rt.get());
+            }
 
-         return S_OK;
-      };
+            if (_config.rendering.soft_shadows) blur_shadows();
+
+            return S_OK;
+         };
    }
-
-   if (_vs_metadata.rendertype == "hdr"sv) {
+   else if (_vs_metadata.rendertype == "hdr"sv) {
       _game_doing_bloom_pass = true;
       _discard_draw_calls = _effects.active();
    }
@@ -882,6 +934,18 @@ void Device::post_process(const std::string& shader_state) noexcept
    _device->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 1);
 
    state->Apply();
+}
+
+void Device::blur_shadows() noexcept
+{
+   Com_ptr<IDirect3DSurface9> rt;
+   _device->GetRenderTarget(0, rt.clear_and_assign());
+
+   _device->SetRenderState(D3DRS_STENCILENABLE, FALSE);
+   _effects.blur_shadows.apply(_shaders.at("shadows blur"s), _rt_allocator,
+                               *_linear_depth_texture, *_shadow_texture);
+
+   _device->SetRenderTarget(0, rt.get());
 }
 
 void Device::refresh_material() noexcept

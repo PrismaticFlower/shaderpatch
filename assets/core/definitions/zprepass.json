@@ -14,7 +14,7 @@
           "texture_coords": false,
           "transform": "position",
 
-          "vertex_shader": "opaque_vs",
+          "vertex_shader": "prepass_vs",
           "pixel_shader": "opaque_ps"
         }
       ]
@@ -32,7 +32,7 @@
           "texture_coords": true,
           "transform": "position",
 
-          "vertex_shader": "hardedged_vs",
+          "vertex_shader": "prepass_vs",
           "pixel_shader": "hardedged_ps"
         }
       ]

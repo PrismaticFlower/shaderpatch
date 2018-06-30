@@ -171,6 +171,7 @@
     <None Include="definitions\patch\pbr-basic.json" />
     <None Include="definitions\patch\pbr-emissive.json" />
     <None Include="definitions\patch\pbr.json" />
+    <None Include="definitions\patch\shadows_blur.json" />
     <None Include="definitions\patch\stock_bloom_ext.json" />
     <None Include="definitions\patch\tonemap.json" />
     <None Include="definitions\perpixeldiffuselighting.json" />
@@ -301,6 +302,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\bloom.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\shadows_blur.fx">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

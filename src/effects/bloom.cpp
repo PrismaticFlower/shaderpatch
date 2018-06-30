@@ -13,29 +13,6 @@ namespace sp::effects {
 
 using namespace std::literals;
 
-namespace {
-auto get_texture_metrics(IDirect3DTexture9& from) -> std::tuple<D3DFORMAT, glm::ivec2>
-{
-
-   D3DSURFACE_DESC desc;
-   from.GetLevelDesc(0, &desc);
-
-   return std::make_tuple(desc.Format, glm::ivec2{static_cast<int>(desc.Width),
-                                                  static_cast<int>(desc.Height)});
-}
-
-auto get_surface_metrics(IDirect3DSurface9& from) -> std::tuple<D3DFORMAT, glm::ivec2>
-{
-
-   D3DSURFACE_DESC desc;
-   from.GetDesc(&desc);
-
-   return std::make_tuple(desc.Format, glm::ivec2{static_cast<int>(desc.Width),
-                                                  static_cast<int>(desc.Height)});
-}
-
-}
-
 Bloom::Bloom(Com_ref<IDirect3DDevice9> device) : _device{device}
 {
    params(Bloom_params{});

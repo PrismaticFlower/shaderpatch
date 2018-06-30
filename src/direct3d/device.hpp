@@ -330,6 +330,8 @@ private:
 
    void post_process(const std::string& shader_state) noexcept;
 
+   void blur_shadows() noexcept;
+
    void refresh_material() noexcept;
 
    void clear_material() noexcept;
@@ -348,6 +350,8 @@ private:
    Com_ptr<IDirect3DTexture9> _fp_backbuffer;
    Com_ptr<IDirect3DSurface9> _backbuffer_override;
 
+   Com_ptr<IDirect3DSurface9> _linear_depth_surface;
+   Com_ptr<IDirect3DTexture9> _linear_depth_texture;
    Com_ptr<IDirect3DTexture9> _shadow_texture;
    Texture _water_texture;
    Com_ptr<IDirect3DTexture9> _refraction_texture;
@@ -363,14 +367,17 @@ private:
    bool _imgui_bootstrapped = false;
    bool _imgui_active = false;
    bool _fake_device_loss = false;
+   bool _multisample_active = false;
 
    // Per-Frame State
    bool _linear_rendering = false;
+   bool _zprepass = false;
    bool _fp_rt_resolved = false;
    bool _game_doing_bloom_pass = false;
    bool _water_refraction = false;
    bool _refresh_material = true;
    bool _discard_draw_calls = false;
+   bool _render_depth_texture = false;
 
    int _created_full_rendertargets = 0;
 

@@ -16,6 +16,9 @@ Rendering:
    # less blocky results while maintaining radius and intensity.
    SmoothBloom: yes
    
+   # Enable or disable fake soft shadows.
+   SoftShadows: yes
+   
    # Scale of the water reflection buffer (regardless of HighResolutionReflections), 
    # in range [0.01...1.0]. Higher is better but may come at a cost in performance.
    ReflectionBufferScale: 0.5

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../effects/bloom.hpp"
+#include "../effects/blur_shadows.hpp"
 #include "../effects/color_grading.hpp"
 
 #include <filesystem>
@@ -54,6 +55,7 @@ public:
 
    effects::Color_grading color_grading{_device};
    effects::Bloom bloom{_device};
+   effects::Blur_shadows blur_shadows{_device};
 
 private:
    void save_params_to_yaml_file(const std::filesystem::path& save_to) noexcept;
