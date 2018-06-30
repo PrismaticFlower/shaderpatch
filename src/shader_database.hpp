@@ -63,36 +63,44 @@ class Shader_group {
 public:
    Shader_variations& at(const std::string& shader_state) noexcept
    {
-      if (!_shader_entrypoints.count(shader_state)) {
+      if (auto shader = find(shader_state); shader) {
+         return *shader;
+      }
+      else {
          log_and_terminate("Unable to find shader variation set for shader state "sv,
                            std::quoted(shader_state), '.');
       }
-
-      return _shader_entrypoints.at(shader_state);
    }
 
    const Shader_variations& at(const std::string& shader_state) const noexcept
    {
-      if (!_shader_entrypoints.count(shader_state)) {
+      if (auto shader = find(shader_state); shader) {
+         return *shader;
+      }
+      else {
          log_and_terminate("Unable to find shader variation set for shader state "sv,
                            std::quoted(shader_state), '.');
       }
-
-      return _shader_entrypoints.at(shader_state);
    }
 
    Shader_variations* find(const std::string& shader_state) noexcept
    {
-      if (!_shader_entrypoints.count(shader_state)) return nullptr;
+      if (auto result = _shader_entrypoints.find(shader_state);
+          result != std::end(_shader_entrypoints)) {
+         return &result->second;
+      }
 
-      return &(_shader_entrypoints.at(shader_state));
+      return nullptr;
    }
 
    const Shader_variations* find(const std::string& shader_state) const noexcept
    {
-      if (!_shader_entrypoints.count(shader_state)) return nullptr;
+      if (auto result = _shader_entrypoints.find(shader_state);
+          result != std::cend(_shader_entrypoints)) {
+         return &result->second;
+      }
 
-      return &(_shader_entrypoints.at(shader_state));
+      return nullptr;
    }
 
    Shader_variations& add(const std::string& shader_state,
@@ -116,22 +124,26 @@ class Shader_database {
 public:
    Shader_group& at(const std::string& rendertype) noexcept
    {
-      if (!_shader_groups.count(rendertype)) {
+      if (auto group = _shader_groups.find(rendertype);
+          group != std::end(_shader_groups)) {
+         return group->second;
+      }
+      else {
          log_and_terminate("Unable to find shader group for rendertype "sv,
                            std::quoted(rendertype), '.');
       }
-
-      return _shader_groups.at(rendertype);
    }
 
    const Shader_group& at(const std::string& rendertype) const noexcept
    {
-      if (!_shader_groups.count(rendertype)) {
+      if (auto group = _shader_groups.find(rendertype);
+          group != std::cend(_shader_groups)) {
+         return group->second;
+      }
+      else {
          log_and_terminate("Unable to find shader group for rendertype "sv,
                            std::quoted(rendertype), '.');
       }
-
-      return _shader_groups.at(rendertype);
    }
 
    Shader_group& add(const std::string& rendertype, Shader_group shader_group) noexcept
