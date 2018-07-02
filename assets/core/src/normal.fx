@@ -323,17 +323,18 @@ struct Ps_input
 
 float4 main_opaque_ps(Ps_input input, const Normal_state state) : COLOR
 {
-   const float4 diffuse_color = tex2D(diffuse_map, input.diffuse_texcoords);
    const float3 detail_color = tex2D(detail_map, input.detail_texcoords).rgb;
    const float3 projected_color = sample_projected_light(projected_texture, 
                                                          input.projection_texcoords);
    const float shadow_map_color = tex2Dproj(shadow_map, input.shadow_texcoords).a;
 
+   float3 diffuse_color = tex2D(diffuse_map, input.diffuse_texcoords).rgb * input.color.rgb;
+   diffuse_color = diffuse_color * detail_color * 2.0;
+
    // Calculate lighting.
    Pixel_lighting light = light::pixel_calculate(normalize(input.world_normal), input.world_position,
                                                  input.precalculated_light.rgb);
    light.color = light.color * lighting_factor.x + lighting_factor.y;
-   light.color *= input.color.rgb;
 
    float4 color = 0.0;
 
@@ -349,19 +350,22 @@ float4 main_opaque_ps(Ps_input input, const Normal_state state) : COLOR
 
    // Apply lighting to diffuse colour.
    color.rgb += light.color;
-   color.rgb *= diffuse_color.rgb; 
+   color.rgb *= diffuse_color; 
 
    if (state.shadowed) {
-      float shadow_value = light.intensity * (1 - shadow_map_color);
+      float shadow = 1.0 - (light.intensity * (1.0 - shadow_map_color));
 
-      color.rgb *= (1 - shadow_value);
+      // Linear Rendering Normalmap Hack
+      color.rgb = lerp(color.rgb * shadow, diffuse_color * hdr_info.z * shadow, rt_multiply_blending);
+   }
+   else {
+
+      // Linear Rendering Normalmap Hack
+      color.rgb = lerp(color.rgb, diffuse_color * hdr_info.z, rt_multiply_blending);
    }
 
-   // Apply blend in detail texture.
-   color.rgb = (color.rgb * detail_color) * 2.0;
-
    if (state.hardedged) {
-      if (diffuse_color.a > 0.5) color.a = input.color.a - 0.5;
+      if (tex2D(diffuse_map, input.diffuse_texcoords).a > 0.5) color.a = input.color.a - 0.5;
       else color.a = -0.01;
 
       color.a *= 4.0;
@@ -379,22 +383,20 @@ float4 main_opaque_ps(Ps_input input, const Normal_state state) : COLOR
 
 float4 main_transparent_ps(Ps_input input, const Normal_state state) : COLOR
 {
-   const float4 diffuse_color = tex2D(diffuse_map, input.diffuse_texcoords);
-
-   float4 color = main_opaque_ps(input, state);
+   float alpha = tex2D(diffuse_map, input.diffuse_texcoords).a;
 
    if (state.hardedged) {
-      if (diffuse_color.a > 0.5) color.a = (diffuse_color.a * input.color.a);
-      else color.a = 0.0;
+      if (alpha > 0.5) alpha = (alpha * input.color.a);
+      else alpha = 0.0;
    }
    else {
-      color.a = lerp(1.0, diffuse_color.a, blend_constant.b);
-      color.a *= input.color.a;
+      alpha = lerp(1.0, alpha, blend_constant.b);
+      alpha *= input.color.a;
    }
 
-   color.a = saturate(color.a);
+   alpha = saturate(alpha);
 
-   return color;
+   return float4(main_opaque_ps(input, state).rgb, alpha);
 }
 
 DEFINE_NORMAL_QPAQUE_PS_ENTRYPOINTS(Ps_input, main_opaque_ps)

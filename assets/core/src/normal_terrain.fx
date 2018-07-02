@@ -143,27 +143,28 @@ float4 diffuse_blendmap_ps(Ps_blendmap_input input, uniform sampler2D diffuse_ma
    float blend_weights[3];
 
    blend_weights[1] = input.blend_values.b;
-   blend_weights[2] = saturate(dot(input.blend_values, float3(0, 1, 0)));
+   blend_weights[2] = input.blend_values.g;
    blend_weights[0] = (1.0 - blend_weights[2]) - blend_weights[1];
 
-   float4 color = 0.0;
+   float3 diffuse_color = 0.0;
 
    for (i = 0; i < 3; ++i) {
-      color.rgb += diffuse_colors[i] * blend_weights[i];
+      diffuse_color += diffuse_colors[i] * blend_weights[i];
    }
-   
+
+   diffuse_color = (diffuse_color * detail_color) * 2.0;
+
    Pixel_lighting light = light::pixel_calculate(normalize(input.world_normal), input.world_position,
                                                  input.precalculated_light);
    light.color = light.color * terrain_constant.x + terrain_constant.y;
 
-   color.rgb *= light.color;
+   float3 color = diffuse_color * light.color;
 
-   color.rgb = (color.rgb * detail_color) * 2.0;
-   color.a = saturate((input.fade - 0.5) * 4.0);
+   // Linear Rendering Normalmap Hack
+   color = lerp(color, diffuse_color * hdr_info.z, rt_multiply_blending);
+   color = fog::apply(color, input.fog_eye_distance);
 
-   color.rgb = fog::apply(color.rgb, input.fog_eye_distance);
-
-   return color;
+   return float4(color, saturate((input.fade - 0.5) * 4.0));
 }
 
 float4 diffuse_blendmap_unlit_ps(Ps_blendmap_input input, uniform sampler2D diffuse_maps[3],
@@ -180,25 +181,25 @@ float4 diffuse_blendmap_unlit_ps(Ps_blendmap_input input, uniform sampler2D diff
    float blend_weights[3];
 
    blend_weights[1] = input.blend_values.b;
-   blend_weights[2] = saturate(dot(input.blend_values, float3(0, 1, 0)));
+   blend_weights[2] = input.blend_values.g;
    blend_weights[0] = (1.0 - blend_weights[2]) - blend_weights[1];
 
-   float4 color = 0.0;
+   float3 diffuse_color = 0.0;
 
    for (i = 0; i < 3; ++i) {
-      color.rgb += diffuse_colors[i] * blend_weights[i];
+      diffuse_color += diffuse_colors[i] * blend_weights[i];
    }
+
+   diffuse_color = (diffuse_color * detail_color) * 2.0;
    
-   float3 light_color = hdr_info.zzz * terrain_constant.x + terrain_constant.y;
+   float3 color = hdr_info.z * terrain_constant.x + terrain_constant.y;
+   color *= diffuse_color;
 
-   color.rgb *= light_color;
-
-   color.rgb = (color.rgb * detail_color) * 2.0;
-   color.a = saturate((input.fade - 0.5) * 4.0);
-
+   // Linear Rendering Normalmap Hack
+   color = lerp(color, diffuse_color * hdr_info.z, rt_multiply_blending);
    color.rgb = fog::apply(color.rgb, input.fog_eye_distance);
 
-   return color;
+   return float4(color, saturate((input.fade - 0.5) * 4.0));
 }
 
 struct Ps_detail_input
@@ -243,6 +244,8 @@ float4 detailing_ps(Ps_detail_input input, uniform sampler2D detail_maps[2],
   
    color *= blended_detail_color;
 
+   // Linear Rendering Normalmap Hack
+   color = lerp(color, blended_detail_color, rt_multiply_blending);
    color = fog::apply(color, input.fog_eye_distance);
 
    return float4(color, 1.0);

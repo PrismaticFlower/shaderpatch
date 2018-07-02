@@ -17,6 +17,7 @@ constexpr auto post_processing_start = 60u;
 constexpr auto post_processing_end = 70u;
 
 constexpr auto linear_state = 98u;
+constexpr auto rt_multiply_blending = 99u;
 
 constexpr auto material_constants_start = 128u;
 constexpr auto material_constants_end = 136u;

@@ -100,17 +100,17 @@ Binormals decompress_binormals(float3 binormal, float3 tangent)
 float4 get_material_color(float4 color)
 {
 #ifdef USE_VERTEX_COLOR
-   return pow(color * color_state.yyyw + color_state.xxxz, vs_color_gamma) *
-      pow(material_diffuse_color, vs_color_gamma);
+   return pow(color * color_state.yyyw + color_state.xxxz, color_gamma) *
+      pow(material_diffuse_color, color_gamma);
 #else
-   return pow(material_diffuse_color, vs_color_gamma);
+   return pow(material_diffuse_color, color_gamma);
 #endif
 }
 
 float3 get_static_diffuse_color(float4 color)
 {
 #ifdef USE_VERTEX_COLOR
-   return pow(color.rgb * color_state.xxx + color_state.zzz, vs_color_gamma);
+   return pow(color.rgb * color_state.xxx + color_state.zzz, color_gamma);
 #else
    return 0.0;
 #endif

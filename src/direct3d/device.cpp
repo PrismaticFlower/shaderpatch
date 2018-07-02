@@ -769,6 +769,16 @@ HRESULT Device::SetRenderState(D3DRENDERSTATETYPE state, DWORD value) noexcept
 
       break;
    }
+   case D3DRS_SRCBLEND: {
+      if (_linear_rendering && value == D3DBLEND_DESTCOLOR) {
+         _multiply_blendstate_ps_const.set(_device, 1.0f);
+      }
+      else if (_multiply_blendstate_ps_const.get() != 0.0f) {
+         _multiply_blendstate_ps_const.set(_device, 0.0f);
+      }
+
+      break;
+   }
    }
 
    _state_block.set(state, value);

@@ -23,7 +23,9 @@ bool fog_enabled : register(b5);
 bool cube_map_light_projection : register(b6);
 
 float2 linear_state: register(c[98]);
-const static float vs_color_gamma = linear_state.x;
+const static float color_gamma = linear_state.x;
+
+float rt_multiply_blending : register(ps, c[99]);
 
 uniform samplerCUBE cube_light_texture : register(s15);
 

@@ -275,8 +275,6 @@ float4 lights_normalmap_ps(Ps_3lights_input input, sampler2D normal_map,
                                get_light_radius(light_params[i]));
    }
 
-   color = saturate(color);
-
    color = fog::apply(color, input.fog_eye_distance);
 
    return float4(color, 1.0);
@@ -310,8 +308,6 @@ float4 lights_ps(Ps_3lights_input input, const int light_count)
                                light_positions[i], light_colors[i], 
                                get_light_radius(light_params[i]));
    }
-
-   color = saturate(color);
 
    color = fog::apply(color, input.fog_eye_distance);
 
@@ -383,7 +379,6 @@ float4 spotlight_normalmap_ps(Ps_spotlight_input input,
    color += calculate_spotlight(input.world_position, texel_normal, spotlight_position,
                                 spotlight_direction, light_colors[0],
                                 get_light_radius(spotlight_params), projection_color);
-   color = saturate(color);
 
    color = fog::apply(color, input.fog_eye_distance);
 
@@ -401,7 +396,6 @@ float4 spotlight_ps(Ps_spotlight_input input,
    color += calculate_spotlight(input.world_position, input.normal, spotlight_position,
                                 spotlight_direction, light_colors[0],
                                 get_light_radius(spotlight_params), projection_color);
-   color = saturate(color);
 
    color = fog::apply(color, input.fog_eye_distance);
 
