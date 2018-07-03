@@ -16,80 +16,38 @@
     },
 
     {
-      "name": "blur 5",
+      "name": "blur 9",
 
       "vertex_shader": "main_vs",
-      "pixel_shader": "blur_5_ps"
+      "pixel_shader": "blur_9_ps"
     },
 
     {
-      "name": "blur x 9",
+      "name": "blur 17",
 
       "vertex_shader": "main_vs",
-      "pixel_shader": "blur_9_x_ps"
+      "pixel_shader": "blur_17_ps"
     },
 
     {
-      "name": "blur y 9",
+      "name": "blur 25",
 
       "vertex_shader": "main_vs",
-      "pixel_shader": "blur_9_y_ps"
+      "pixel_shader": "blur_25_ps"
     },
 
     {
-      "name": "blur x 17",
+      "name": "blur 33",
 
       "vertex_shader": "main_vs",
-      "pixel_shader": "blur_17_x_ps"
+      "pixel_shader": "blur_33_ps"
     },
 
     {
-      "name": "blur y 17",
+      "name": "blur 41",
 
       "vertex_shader": "main_vs",
-      "pixel_shader": "blur_17_y_ps"
-    },
-
-    {
-      "name": "blur x 25",
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "blur_25_x_ps"
-    },
-
-    {
-      "name": "blur y 25",
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "blur_25_y_ps"
-    },
-
-    {
-      "name": "blur x 33",
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "blur_33_x_ps"
-    },
-
-    {
-      "name": "blur y 33",
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "blur_33_y_ps"
-    },
-
-    {
-      "name": "blur x 41",
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "blur_41_x_ps"
-    },
-
-    {
-      "name": "blur y 41",
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "blur_41_y_ps"
+      "pixel_shader": "blur_41_ps"
     },
 
     {

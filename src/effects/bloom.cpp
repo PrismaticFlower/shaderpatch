@@ -72,42 +72,42 @@ void Bloom::apply(const Shader_group& shaders, Rendertarget_allocator& allocator
    setup_buffer_sampler(4);
 
    auto threshold = allocator.allocate(format, res);
-   do_pass(*threshold.surface(), from_to, shaders.at("threshold"s));
+   do_pass(*threshold.surface(), from_to, shaders.at("threshold"s), {1.f, 1.f});
 
    auto rt_a_x = allocator.allocate(format, res);
    auto rt_a_y = allocator.allocate(format, res);
 
-   do_pass(*rt_a_y.surface(), *threshold.texture(), shaders.at("blur 5"s));
-   do_pass(*rt_a_x.surface(), *rt_a_y.texture(), shaders.at("blur x 25"s));
-   do_pass(*rt_a_y.surface(), *rt_a_x.texture(), shaders.at("blur y 25"s));
+   downsample(*rt_a_y.surface(), *threshold.surface());
+   do_pass(*rt_a_x.surface(), *rt_a_y.texture(), shaders.at("blur 25"s), {1.f, 0.f});
+   do_pass(*rt_a_y.surface(), *rt_a_x.texture(), shaders.at("blur 25"s), {0.f, 1.f});
 
    auto rt_b_x = allocator.allocate(format, res / 4);
    auto rt_b_y = allocator.allocate(format, res / 4);
 
-   do_pass(*rt_b_y.surface(), *rt_a_y.texture(), shaders.at("blur 5"s));
-   do_pass(*rt_b_x.surface(), *rt_b_y.texture(), shaders.at("blur x 25"s));
-   do_pass(*rt_b_y.surface(), *rt_b_x.texture(), shaders.at("blur y 25"s));
+   downsample(*rt_b_y.surface(), *rt_a_y.surface());
+   do_pass(*rt_b_x.surface(), *rt_b_y.texture(), shaders.at("blur 25"s), {1.f, 0.f});
+   do_pass(*rt_b_y.surface(), *rt_b_x.texture(), shaders.at("blur 25"s), {0.f, 1.f});
 
    auto rt_c_x = allocator.allocate(format, res / 8);
    auto rt_c_y = allocator.allocate(format, res / 8);
 
-   do_pass(*rt_c_y.surface(), *rt_b_y.texture(), shaders.at("blur 5"s));
-   do_pass(*rt_c_x.surface(), *rt_c_y.texture(), shaders.at("blur x 25"s));
-   do_pass(*rt_c_y.surface(), *rt_c_x.texture(), shaders.at("blur y 25"s));
+   downsample(*rt_c_y.surface(), *rt_b_y.surface());
+   do_pass(*rt_c_x.surface(), *rt_c_y.texture(), shaders.at("blur 25"s), {1.f, 0.f});
+   do_pass(*rt_c_y.surface(), *rt_c_x.texture(), shaders.at("blur 25"s), {0.f, 1.f});
 
    auto rt_d_x = allocator.allocate(format, res / 16);
    auto rt_d_y = allocator.allocate(format, res / 16);
 
-   do_pass(*rt_d_y.surface(), *rt_c_y.texture(), shaders.at("blur 5"s));
-   do_pass(*rt_d_x.surface(), *rt_d_y.texture(), shaders.at("blur x 25"s));
-   do_pass(*rt_d_y.surface(), *rt_d_x.texture(), shaders.at("blur y 25"s));
+   downsample(*rt_d_y.surface(), *rt_c_y.surface());
+   do_pass(*rt_d_x.surface(), *rt_d_y.texture(), shaders.at("blur 25"s), {1.f, 0.f});
+   do_pass(*rt_d_y.surface(), *rt_d_x.texture(), shaders.at("blur 25"s), {0.f, 1.f});
 
    auto rt_e_x = allocator.allocate(format, res / 32);
    auto rt_e_y = allocator.allocate(format, res / 32);
 
-   do_pass(*rt_e_y.surface(), *rt_d_y.texture(), shaders.at("blur 5"s));
-   do_pass(*rt_e_x.surface(), *rt_e_y.texture(), shaders.at("blur x 25"s));
-   do_pass(*rt_e_y.surface(), *rt_e_x.texture(), shaders.at("blur y 25"s));
+   downsample(*rt_e_y.surface(), *rt_d_y.surface());
+   do_pass(*rt_e_x.surface(), *rt_e_y.texture(), shaders.at("blur 25"s), {1.f, 0.f});
+   do_pass(*rt_e_y.surface(), *rt_e_x.texture(), shaders.at("blur 25"s), {0.f, 1.f});
 
    setup_combine_stage_blendstate();
 
@@ -124,10 +124,10 @@ void Bloom::apply(const Shader_group& shaders, Rendertarget_allocator& allocator
    if (_user_params.use_dirt) {
       textures.get(_user_params.dirt_texture_name).bind(5);
 
-      do_pass(*target, *rt_a_y.texture(), shaders.at("dirt combine"s));
+      do_pass(*target, *rt_a_y.texture(), shaders.at("dirt combine"s), {1.f, 1.f});
    }
    else {
-      do_pass(*target, *rt_a_y.texture(), shaders.at("combine"s));
+      do_pass(*target, *rt_a_y.texture(), shaders.at("combine"s), {1.f, 1.f});
    }
 }
 
@@ -199,19 +199,19 @@ void Bloom::show_imgui() noexcept
 }
 
 void Bloom::do_pass(IDirect3DSurface9& dest, IDirect3DTexture9& source,
-                    const Shader_variations& state) const noexcept
+                    const Shader_variations& state, glm::vec2 direction) const noexcept
 {
    _device->SetTexture(0, &source);
    _device->SetRenderTarget(0, &dest);
-   set_bloom_pass_state(source, dest);
+   set_bloom_pass_state(source, dest, direction);
 
    state.bind(*_device);
 
    _device->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 1);
 }
 
-void Bloom::set_bloom_pass_state(IDirect3DTexture9& source,
-                                 IDirect3DSurface9& dest) const noexcept
+void Bloom::set_bloom_pass_state(IDirect3DTexture9& source, IDirect3DSurface9& dest,
+                                 glm::vec2 direction) const noexcept
 {
    auto dest_size = std::get<glm::ivec2>(get_surface_metrics(dest));
 
@@ -231,7 +231,7 @@ void Bloom::set_bloom_pass_state(IDirect3DTexture9& source,
       static_cast<glm::vec2>(std::get<glm::ivec2>(get_texture_metrics(source)));
 
    direct3d::Ps_4f_shader_constant<constants::ps::post_processing_start>{}
-      .set(*_device, {1.0f / src_size, 0.5f / src_size});
+      .set(*_device, {1.0f / src_size * direction, 1.0f / src_size});
 }
 
 void Bloom::downsample(IDirect3DSurface9& dest, IDirect3DSurface9& source) const noexcept

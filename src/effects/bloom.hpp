@@ -72,10 +72,10 @@ public:
 
 private:
    void do_pass(IDirect3DSurface9& dest, IDirect3DTexture9& source,
-                const Shader_variations& state) const noexcept;
+                const Shader_variations& state, glm::vec2 direction) const noexcept;
 
-   void set_bloom_pass_state(IDirect3DTexture9& source, IDirect3DSurface9& dest) const
-      noexcept;
+   void set_bloom_pass_state(IDirect3DTexture9& source, IDirect3DSurface9& dest,
+                             glm::vec2 direction) const noexcept;
 
    void downsample(IDirect3DSurface9& dest, IDirect3DSurface9& source) const noexcept;
 
