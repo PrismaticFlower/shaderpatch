@@ -130,7 +130,7 @@ Lighting calculate(float3 normal, float3 world_position,
       scale = max(scale, 1.0);
       scale = rcp(scale);
       lighting.diffuse.rgb = lerp(lighting.diffuse.rgb * scale, 
-                                  lighting.diffuse.rgb, linear_state.y);
+                                  lighting.diffuse.rgb, tonemap_state);
       lighting.diffuse.rgb *= hdr_info.z;
    }
    else {
@@ -224,7 +224,7 @@ Pixel_lighting pixel_calculate(float3 world_normal, float3 world_position,
       scale = max(scale, light.b);
       scale = max(scale, 1.0);
       scale = rcp(scale);
-      light.rgb = lerp(light.rgb * scale, light.rgb, linear_state.y);
+      light.rgb = lerp(light.rgb * scale, light.rgb, tonemap_state);
       light.rgb *= hdr_info.z;
    }
    else {

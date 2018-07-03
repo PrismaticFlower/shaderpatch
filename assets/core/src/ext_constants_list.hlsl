@@ -1,7 +1,6 @@
 #ifndef EXT_CONSTANTS_LIST_INCLUDED
 #define EXT_CONSTANTS_LIST_INCLUDED
 
-
 // x fog start, y = fog end, z = 1 / (fog end - fog start)
 float3 fog_range : register(ps, c[51]);
 float3 fog_color : register(ps, c[52]);
@@ -23,7 +22,9 @@ bool fog_enabled : register(b5);
 bool cube_map_light_projection : register(b6);
 
 float2 linear_state: register(c[98]);
+
 const static float color_gamma = linear_state.x;
+const static float tonemap_state = linear_state.y;
 
 float rt_multiply_blending : register(ps, c[99]);
 
