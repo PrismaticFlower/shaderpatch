@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../direct3d/shader_constant.hpp"
+#include "../shader_constants.hpp"
 #include "com_ptr.hpp"
 
 #include <array>
@@ -18,9 +20,9 @@ inline auto create_fs_triangle_buffer(IDirect3DDevice9& device, const glm::ivec2
    const auto vertices = std::array<float, 12>{{
       -1.f - offset.x, -1.f + offset.y, // pos 0
       0.f, 1.f,                         // uv 0
-      -1.f - offset.x, 3.f + offset.x,  // pos 1
+      -1.f - offset.x, 3.f + offset.y,  // pos 1
       0.f, -1.f,                        // uv 1
-      3.f - offset.x, -1.f + offset.x,  // pos 2
+      3.f - offset.x, -1.f + offset.y,  // pos 2
       2.f, 1.f                          // uv 2
    }};
 
@@ -85,5 +87,54 @@ inline auto create_fs_triangle_decl(IDirect3DDevice9& device)
 }
 
 inline constexpr int fs_triangle_stride = 16;
+
+inline auto get_texture_metrics(IDirect3DTexture9& from)
+   -> std::tuple<D3DFORMAT, glm::ivec2>
+{
+
+   D3DSURFACE_DESC desc;
+   from.GetLevelDesc(0, &desc);
+
+   return std::make_tuple(desc.Format, glm::ivec2{static_cast<int>(desc.Width),
+                                                  static_cast<int>(desc.Height)});
+}
+
+inline auto get_surface_metrics(IDirect3DSurface9& from)
+   -> std::tuple<D3DFORMAT, glm::ivec2>
+{
+
+   D3DSURFACE_DESC desc;
+   from.GetDesc(&desc);
+
+   return std::make_tuple(desc.Format, glm::ivec2{static_cast<int>(desc.Width),
+                                                  static_cast<int>(desc.Height)});
+}
+
+inline void set_fs_pass_state(IDirect3DDevice9& device, IDirect3DSurface9& dest) noexcept
+{
+   auto dest_size = std::get<glm::ivec2>(get_surface_metrics(dest));
+
+   direct3d::Vs_2f_shader_constant<constants::vs::post_processing_start>{}
+      .set(device, {-1.0f / dest_size.x, 1.0f / dest_size.y});
+
+   D3DVIEWPORT9 viewport{0,
+                         0,
+                         static_cast<DWORD>(dest_size.x),
+                         static_cast<DWORD>(dest_size.y),
+                         0.0f,
+                         1.0f};
+
+   device.SetViewport(&viewport);
+}
+
+inline void set_blur_pass_state(IDirect3DDevice9& device, IDirect3DTexture9& source,
+                                glm::vec2 direction) noexcept
+{
+   auto src_size =
+      static_cast<glm::vec2>(std::get<glm::ivec2>(get_texture_metrics(source)));
+
+   direct3d::Ps_4f_shader_constant<constants::ps::post_processing_start>{}
+      .set(device, {1.0f / src_size * direction, 1.0f / src_size});
+}
 
 }

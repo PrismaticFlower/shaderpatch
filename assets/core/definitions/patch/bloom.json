@@ -16,41 +16,6 @@
     },
 
     {
-      "name": "blur 9",
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "blur_9_ps"
-    },
-
-    {
-      "name": "blur 17",
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "blur_17_ps"
-    },
-
-    {
-      "name": "blur 25",
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "blur_25_ps"
-    },
-
-    {
-      "name": "blur 33",
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "blur_33_ps"
-    },
-
-    {
-      "name": "blur 41",
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "blur_41_ps"
-    },
-
-    {
       "name": "combine",
 
       "vertex_shader": "main_vs",

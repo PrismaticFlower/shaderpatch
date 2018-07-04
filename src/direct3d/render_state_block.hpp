@@ -167,4 +167,20 @@ inline Render_state_block create_filled_render_state_block(IDirect3DDevice9& dev
 
    return block;
 }
+
+inline void apply_blend_state(IDirect3DDevice9& device, const Render_state_block& block)
+{
+   device.SetRenderState(D3DRS_SRCBLEND, block.at(D3DRS_SRCBLEND));
+   device.SetRenderState(D3DRS_DESTBLEND, block.at(D3DRS_DESTBLEND));
+   device.SetRenderState(D3DRS_BLENDOP, block.at(D3DRS_BLENDOP));
+   device.SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE,
+                         block.at(D3DRS_SEPARATEALPHABLENDENABLE));
+   device.SetRenderState(D3DRS_ALPHABLENDENABLE, block.at(D3DRS_ALPHABLENDENABLE));
+   device.SetRenderState(D3DRS_SRCBLENDALPHA, block.at(D3DRS_SRCBLENDALPHA));
+   device.SetRenderState(D3DRS_DESTBLENDALPHA, block.at(D3DRS_DESTBLENDALPHA));
+   device.SetRenderState(D3DRS_BLENDOPALPHA, block.at(D3DRS_BLENDOPALPHA));
+   device.SetRenderState(D3DRS_COLORWRITEENABLE, block.at(D3DRS_COLORWRITEENABLE));
+   device.SetRenderState(D3DRS_SRGBWRITEENABLE, block.at(D3DRS_SRGBWRITEENABLE));
+}
+
 }

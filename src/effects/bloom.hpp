@@ -63,7 +63,7 @@ public:
       return _user_params;
    }
 
-   void apply(const Shader_group& shaders, Rendertarget_allocator& allocator,
+   void apply(const Shader_database& shaders, Rendertarget_allocator& allocator,
               const Texture_database& textures, IDirect3DTexture9& from_to) noexcept;
 
    void drop_device_resources() noexcept;
@@ -73,9 +73,6 @@ public:
 private:
    void do_pass(IDirect3DSurface9& dest, IDirect3DTexture9& source,
                 const Shader_variations& state, glm::vec2 direction) const noexcept;
-
-   void set_bloom_pass_state(IDirect3DTexture9& source, IDirect3DSurface9& dest,
-                             glm::vec2 direction) const noexcept;
 
    void downsample(IDirect3DSurface9& dest, IDirect3DSurface9& source) const noexcept;
 

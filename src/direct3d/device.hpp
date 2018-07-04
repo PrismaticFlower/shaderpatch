@@ -11,9 +11,11 @@
 #include "com_ptr.hpp"
 #include "com_ref.hpp"
 #include "render_state_block.hpp"
+#include "sampler_state_block.hpp"
 #include "shader.hpp"
 #include "shader_constant.hpp"
 #include "smart_win32_handle.hpp"
+#include "texture_state_block.hpp"
 
 #include <atomic>
 #include <chrono>
@@ -325,6 +327,8 @@ private:
    constexpr static auto cubemap_projection_slot = 15;
 
    constexpr static auto fp_texture_format = D3DFMT_A16B16G16R16F;
+   constexpr static auto blur_resolve_factor = 2;
+   constexpr static auto blur_buffer_factor = 4;
 
    void init_sampler_max_anisotropy() noexcept;
 
@@ -339,6 +343,10 @@ private:
 
    void update_refraction_texture() noexcept;
 
+   void resolve_blur_surface(IDirect3DSurface9& backbuffer) noexcept;
+
+   void prepapre_gaussian_scene_blur() noexcept;
+
    void set_linear_rendering(bool linear_rendering) noexcept;
 
    Com_ref<IDirect3DDevice9> _device;
@@ -350,6 +358,8 @@ private:
 
    Com_ptr<IDirect3DTexture9> _shadow_texture;
    Texture _water_texture;
+   Com_ptr<IDirect3DTexture9> _blur_texture;
+   Com_ptr<IDirect3DSurface9> _blur_surface;
    Com_ptr<IDirect3DTexture9> _refraction_texture;
 
    std::function<HRESULT(IDirect3DSurface9*, const RECT*, IDirect3DSurface9*, const RECT*, D3DTEXTUREFILTERTYPE)>
@@ -369,10 +379,13 @@ private:
    bool _fp_rt_resolved = false;
    bool _game_doing_bloom_pass = false;
    bool _water_refraction = false;
+   bool _blur_resolved = false;
    bool _refresh_material = true;
    bool _discard_draw_calls = false;
+   bool _discard_next_nonindexed_draw = false;
 
    int _created_full_rendertargets = 0;
+   int _created_2_to_1_rendertargets = 0;
 
    boost::local_shared_ptr<Material> _material;
 
@@ -404,6 +417,8 @@ private:
       std::chrono::steady_clock::now()};
 
    Render_state_block _state_block;
+   std::array<Sampler_state_block, 16> _sampler_states;
+   std::array<Texture_state_block, 8> _texture_states;
 
    win32::Unique_handle _materials_enabled_handle;
 

@@ -136,6 +136,7 @@
     <ClCompile Include="src\direct3d\device.cpp" />
     <ClCompile Include="src\direct3d\device_stubs.cpp" />
     <ClCompile Include="src\effects\control.cpp" />
+    <ClCompile Include="src\effects\scene_blur.cpp" />
     <ClCompile Include="src\imgui\imgui_impl_dx9.cpp" />
     <ClCompile Include="src\input_hooker.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -146,6 +147,7 @@
     <None Include="dinput8.def" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\direct3d\texture_state_block.hpp" />
     <ClInclude Include="src\effects\bloom.hpp" />
     <ClInclude Include="src\effects\color_grading.hpp" />
     <ClInclude Include="src\direct3d\check_required_features.hpp" />
@@ -158,6 +160,7 @@
     <ClInclude Include="src\effects\control.hpp" />
     <ClInclude Include="src\effects\helpers.hpp" />
     <ClInclude Include="src\effects\rendertarget_allocator.hpp" />
+    <ClInclude Include="src\effects\scene_blur.hpp" />
     <ClInclude Include="src\hook_vtable.hpp" />
     <ClInclude Include="src\imgui\imgui_impl_dx9.h" />
     <ClInclude Include="src\input_hooker.hpp" />

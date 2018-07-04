@@ -1,0 +1,53 @@
+{
+  "patch_shader": true,
+  "source_name": "gaussian_blur.fx",
+  "rendertype": "gaussian blur",
+
+  "skinned": false,
+  "lighting": false,
+  "vertex_color": false,
+
+  "states": [
+    {
+      "name": "blur 9",
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "blur_9_ps"
+    },
+
+    {
+      "name": "blur 13",
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "blur_13_ps"
+    },
+
+    {
+      "name": "blur 17",
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "blur_17_ps"
+    },
+
+    {
+      "name": "blur 25",
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "blur_25_ps"
+    },
+
+    {
+      "name": "blur 33",
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "blur_33_ps"
+    },
+
+    {
+      "name": "blur 41",
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "blur_41_ps"
+    }
+  ]
+}

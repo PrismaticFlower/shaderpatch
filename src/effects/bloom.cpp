@@ -1,7 +1,6 @@
 
 #include "bloom.hpp"
 #include "../direct3d/shader_constant.hpp"
-#include "../shader_constants.hpp"
 #include "helpers.hpp"
 #include "imgui_ext.hpp"
 
@@ -12,29 +11,6 @@
 namespace sp::effects {
 
 using namespace std::literals;
-
-namespace {
-auto get_texture_metrics(IDirect3DTexture9& from) -> std::tuple<D3DFORMAT, glm::ivec2>
-{
-
-   D3DSURFACE_DESC desc;
-   from.GetLevelDesc(0, &desc);
-
-   return std::make_tuple(desc.Format, glm::ivec2{static_cast<int>(desc.Width),
-                                                  static_cast<int>(desc.Height)});
-}
-
-auto get_surface_metrics(IDirect3DSurface9& from) -> std::tuple<D3DFORMAT, glm::ivec2>
-{
-
-   D3DSURFACE_DESC desc;
-   from.GetDesc(&desc);
-
-   return std::make_tuple(desc.Format, glm::ivec2{static_cast<int>(desc.Width),
-                                                  static_cast<int>(desc.Height)});
-}
-
-}
 
 Bloom::Bloom(Com_ref<IDirect3DDevice9> device) : _device{device}
 {
@@ -54,7 +30,7 @@ void Bloom::params(const Bloom_params& params) noexcept
    _scales.dirt = params.dirt_scale * params.dirt_tint;
 }
 
-void Bloom::apply(const Shader_group& shaders, Rendertarget_allocator& allocator,
+void Bloom::apply(const Shader_database& shaders, Rendertarget_allocator& allocator,
                   const Texture_database& textures, IDirect3DTexture9& from_to) noexcept
 {
    setup_blur_stage_blendstate();
@@ -71,43 +47,46 @@ void Bloom::apply(const Shader_group& shaders, Rendertarget_allocator& allocator
    setup_buffer_sampler(3);
    setup_buffer_sampler(4);
 
+   auto& bloom_shaders = shaders.at("bloom"s);
+   auto& blurs = shaders.at("gaussian blur"s);
+
    auto threshold = allocator.allocate(format, res);
-   do_pass(*threshold.surface(), from_to, shaders.at("threshold"s), {1.f, 1.f});
+   do_pass(*threshold.surface(), from_to, bloom_shaders.at("threshold"s), {1.f, 1.f});
 
    auto rt_a_x = allocator.allocate(format, res);
    auto rt_a_y = allocator.allocate(format, res);
 
    downsample(*rt_a_y.surface(), *threshold.surface());
-   do_pass(*rt_a_x.surface(), *rt_a_y.texture(), shaders.at("blur 25"s), {1.f, 0.f});
-   do_pass(*rt_a_y.surface(), *rt_a_x.texture(), shaders.at("blur 25"s), {0.f, 1.f});
+   do_pass(*rt_a_x.surface(), *rt_a_y.texture(), blurs.at("blur 25"s), {1.f, 0.f});
+   do_pass(*rt_a_y.surface(), *rt_a_x.texture(), blurs.at("blur 25"s), {0.f, 1.f});
 
    auto rt_b_x = allocator.allocate(format, res / 4);
    auto rt_b_y = allocator.allocate(format, res / 4);
 
    downsample(*rt_b_y.surface(), *rt_a_y.surface());
-   do_pass(*rt_b_x.surface(), *rt_b_y.texture(), shaders.at("blur 25"s), {1.f, 0.f});
-   do_pass(*rt_b_y.surface(), *rt_b_x.texture(), shaders.at("blur 25"s), {0.f, 1.f});
+   do_pass(*rt_b_x.surface(), *rt_b_y.texture(), blurs.at("blur 25"s), {1.f, 0.f});
+   do_pass(*rt_b_y.surface(), *rt_b_x.texture(), blurs.at("blur 25"s), {0.f, 1.f});
 
    auto rt_c_x = allocator.allocate(format, res / 8);
    auto rt_c_y = allocator.allocate(format, res / 8);
 
    downsample(*rt_c_y.surface(), *rt_b_y.surface());
-   do_pass(*rt_c_x.surface(), *rt_c_y.texture(), shaders.at("blur 25"s), {1.f, 0.f});
-   do_pass(*rt_c_y.surface(), *rt_c_x.texture(), shaders.at("blur 25"s), {0.f, 1.f});
+   do_pass(*rt_c_x.surface(), *rt_c_y.texture(), blurs.at("blur 25"s), {1.f, 0.f});
+   do_pass(*rt_c_y.surface(), *rt_c_x.texture(), blurs.at("blur 25"s), {0.f, 1.f});
 
    auto rt_d_x = allocator.allocate(format, res / 16);
    auto rt_d_y = allocator.allocate(format, res / 16);
 
    downsample(*rt_d_y.surface(), *rt_c_y.surface());
-   do_pass(*rt_d_x.surface(), *rt_d_y.texture(), shaders.at("blur 25"s), {1.f, 0.f});
-   do_pass(*rt_d_y.surface(), *rt_d_x.texture(), shaders.at("blur 25"s), {0.f, 1.f});
+   do_pass(*rt_d_x.surface(), *rt_d_y.texture(), blurs.at("blur 25"s), {1.f, 0.f});
+   do_pass(*rt_d_y.surface(), *rt_d_x.texture(), blurs.at("blur 25"s), {0.f, 1.f});
 
    auto rt_e_x = allocator.allocate(format, res / 32);
    auto rt_e_y = allocator.allocate(format, res / 32);
 
    downsample(*rt_e_y.surface(), *rt_d_y.surface());
-   do_pass(*rt_e_x.surface(), *rt_e_y.texture(), shaders.at("blur 25"s), {1.f, 0.f});
-   do_pass(*rt_e_y.surface(), *rt_e_x.texture(), shaders.at("blur 25"s), {0.f, 1.f});
+   do_pass(*rt_e_x.surface(), *rt_e_y.texture(), blurs.at("blur 25"s), {1.f, 0.f});
+   do_pass(*rt_e_y.surface(), *rt_e_x.texture(), blurs.at("blur 25"s), {0.f, 1.f});
 
    setup_combine_stage_blendstate();
 
@@ -124,10 +103,11 @@ void Bloom::apply(const Shader_group& shaders, Rendertarget_allocator& allocator
    if (_user_params.use_dirt) {
       textures.get(_user_params.dirt_texture_name).bind(5);
 
-      do_pass(*target, *rt_a_y.texture(), shaders.at("dirt combine"s), {1.f, 1.f});
+      do_pass(*target, *rt_a_y.texture(), bloom_shaders.at("dirt combine"s),
+              {1.f, 1.f});
    }
    else {
-      do_pass(*target, *rt_a_y.texture(), shaders.at("combine"s), {1.f, 1.f});
+      do_pass(*target, *rt_a_y.texture(), bloom_shaders.at("combine"s), {1.f, 1.f});
    }
 }
 
@@ -203,35 +183,13 @@ void Bloom::do_pass(IDirect3DSurface9& dest, IDirect3DTexture9& source,
 {
    _device->SetTexture(0, &source);
    _device->SetRenderTarget(0, &dest);
-   set_bloom_pass_state(source, dest, direction);
+
+   set_fs_pass_state(*_device, dest);
+   set_blur_pass_state(*_device, source, direction);
 
    state.bind(*_device);
 
    _device->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 1);
-}
-
-void Bloom::set_bloom_pass_state(IDirect3DTexture9& source, IDirect3DSurface9& dest,
-                                 glm::vec2 direction) const noexcept
-{
-   auto dest_size = std::get<glm::ivec2>(get_surface_metrics(dest));
-
-   direct3d::Vs_2f_shader_constant<constants::vs::post_processing_start>{}
-      .set(*_device, {-1.0f / dest_size.x, 1.0f / dest_size.y});
-
-   D3DVIEWPORT9 viewport{0,
-                         0,
-                         static_cast<DWORD>(dest_size.x),
-                         static_cast<DWORD>(dest_size.y),
-                         0.0f,
-                         1.0f};
-
-   _device->SetViewport(&viewport);
-
-   auto src_size =
-      static_cast<glm::vec2>(std::get<glm::ivec2>(get_texture_metrics(source)));
-
-   direct3d::Ps_4f_shader_constant<constants::ps::post_processing_start>{}
-      .set(*_device, {1.0f / src_size * direction, 1.0f / src_size});
 }
 
 void Bloom::downsample(IDirect3DSurface9& dest, IDirect3DSurface9& source) const noexcept

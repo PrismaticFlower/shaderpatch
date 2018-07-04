@@ -308,12 +308,6 @@ HRESULT Device::GetTextureStageState(DWORD stage, D3DTEXTURESTAGESTATETYPE type,
    return _device->GetTextureStageState(stage, type, value);
 }
 
-HRESULT Device::SetTextureStageState(DWORD stage, D3DTEXTURESTAGESTATETYPE type,
-                                     DWORD value) noexcept
-{
-   return _device->SetTextureStageState(stage, type, value);
-}
-
 HRESULT Device::GetSamplerState(DWORD sampler, D3DSAMPLERSTATETYPE type, DWORD* value) noexcept
 {
    return _device->GetSamplerState(sampler, type, value);

@@ -40,6 +40,7 @@ ucft
    {
       "shader"
       "bloom"
+      "gaussian_blur"
       "normal_lightmapped"
       "pbr"
       "pbr-basic"

@@ -36,23 +36,6 @@ public:
       return at<Type>(state) = value;
    }
 
-   void apply(IDirect3DDevice9& device, int sampler) const noexcept
-   {
-      device.SetSamplerState(sampler, D3DSAMP_ADDRESSU, at(D3DSAMP_ADDRESSU));
-      device.SetSamplerState(sampler, D3DSAMP_ADDRESSV, at(D3DSAMP_ADDRESSV));
-      device.SetSamplerState(sampler, D3DSAMP_ADDRESSW, at(D3DSAMP_ADDRESSW));
-      device.SetSamplerState(sampler, D3DSAMP_BORDERCOLOR, at(D3DSAMP_BORDERCOLOR));
-      device.SetSamplerState(sampler, D3DSAMP_MAGFILTER, at(D3DSAMP_MAGFILTER));
-      device.SetSamplerState(sampler, D3DSAMP_MINFILTER, at(D3DSAMP_MINFILTER));
-      device.SetSamplerState(sampler, D3DSAMP_MIPFILTER, at(D3DSAMP_MIPFILTER));
-      device.SetSamplerState(sampler, D3DSAMP_MIPMAPLODBIAS, at(D3DSAMP_MIPMAPLODBIAS));
-      device.SetSamplerState(sampler, D3DSAMP_MAXMIPLEVEL, at(D3DSAMP_MAXMIPLEVEL));
-      device.SetSamplerState(sampler, D3DSAMP_MAXANISOTROPY, at(D3DSAMP_MAXANISOTROPY));
-      device.SetSamplerState(sampler, D3DSAMP_SRGBTEXTURE, at(D3DSAMP_SRGBTEXTURE));
-      device.SetSamplerState(sampler, D3DSAMP_ELEMENTINDEX, at(D3DSAMP_ELEMENTINDEX));
-      device.SetSamplerState(sampler, D3DSAMP_DMAPOFFSET, at(D3DSAMP_DMAPOFFSET));
-   }
-
 private:
    std::array<DWORD, 13> _state_block;
 };
@@ -92,4 +75,26 @@ inline auto create_filled_sampler_state_blocks(IDirect3DDevice9& device) noexcep
 
    return blocks;
 }
+
+inline void apply_sampler_state(IDirect3DDevice9& device,
+                                const Sampler_state_block& block, int sampler) noexcept
+{
+   device.SetSamplerState(sampler, D3DSAMP_ADDRESSU, block.at(D3DSAMP_ADDRESSU));
+   device.SetSamplerState(sampler, D3DSAMP_ADDRESSV, block.at(D3DSAMP_ADDRESSV));
+   device.SetSamplerState(sampler, D3DSAMP_ADDRESSW, block.at(D3DSAMP_ADDRESSW));
+   device.SetSamplerState(sampler, D3DSAMP_BORDERCOLOR, block.at(D3DSAMP_BORDERCOLOR));
+   device.SetSamplerState(sampler, D3DSAMP_MAGFILTER, block.at(D3DSAMP_MAGFILTER));
+   device.SetSamplerState(sampler, D3DSAMP_MINFILTER, block.at(D3DSAMP_MINFILTER));
+   device.SetSamplerState(sampler, D3DSAMP_MIPFILTER, block.at(D3DSAMP_MIPFILTER));
+   device.SetSamplerState(sampler, D3DSAMP_MIPMAPLODBIAS,
+                          block.at(D3DSAMP_MIPMAPLODBIAS));
+   device.SetSamplerState(sampler, D3DSAMP_MAXMIPLEVEL, block.at(D3DSAMP_MAXMIPLEVEL));
+   device.SetSamplerState(sampler, D3DSAMP_MAXANISOTROPY,
+                          block.at(D3DSAMP_MAXANISOTROPY));
+   device.SetSamplerState(sampler, D3DSAMP_SRGBTEXTURE, block.at(D3DSAMP_SRGBTEXTURE));
+   device.SetSamplerState(sampler, D3DSAMP_ELEMENTINDEX,
+                          block.at(D3DSAMP_ELEMENTINDEX));
+   device.SetSamplerState(sampler, D3DSAMP_DMAPOFFSET, block.at(D3DSAMP_DMAPOFFSET));
+}
+
 }

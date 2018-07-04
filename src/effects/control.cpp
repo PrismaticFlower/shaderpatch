@@ -65,6 +65,7 @@ void Control::drop_device_resources() noexcept
 {
    color_grading.drop_device_resources();
    bloom.drop_device_resources();
+   scene_blur.drop_device_resources();
 }
 
 void Control::read_config(YAML::Node config)
