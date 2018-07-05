@@ -252,15 +252,20 @@ float4 near_ps(Ps_near_input input) : COLOR
    return float4(color, input.color.a);
 }
 
+float3 sample_distort_scene(float4 distort_texcoords, float2 bump)
+{
+   const static float2x2 bump_transform = {0.002f, -0.015f, 0.015f, 0.002f};
+
+   float2 texcoords = distort_texcoords.xy / distort_texcoords.w;
+   texcoords += mul(bump, bump_transform);
+
+   return tex2D(refraction_map, texcoords).rgb;
+}
+
 float4 near_bump_ps(Ps_near_input input) : COLOR
 {
-   float2 bump_offset = tex2D(bump_map, input.bump_texcoords).xy;
-   bump_offset = (bump_offset * 2.0) - 1.0;
-
-   float4 distortion_texcoords = input.distortion_texcoords;
-   distortion_texcoords.xy += (bump_offset.xy * 0.1);
-
-   float3 distortion_color = tex2Dproj(refraction_map, distortion_texcoords).rgb;
+   float2 bump = tex2D(bump_map, input.bump_texcoords).xy;
+   float3 distortion_color = sample_distort_scene(input.distortion_texcoords, bump);
    float3 projection_color = tex2Dproj(projection_map, input.projection_texcoords).rgb;
 
    Pixel_lighting light = light::pixel_calculate(normalize(input.world_normal), input.world_position,
@@ -278,13 +283,8 @@ float4 near_bump_ps(Ps_near_input input) : COLOR
 
 float4 near_diffuse_bump_ps(Ps_near_input input) : COLOR
 {
-   float2 bump_offset = tex2D(bump_map, input.bump_texcoords).xy;
-   bump_offset = (bump_offset * 2.0) - 1.0;
-
-   float4 distortion_texcoords = input.distortion_texcoords;
-   distortion_texcoords.xy += (bump_offset.xy * 0.1);
-
-   float3 distortion_color = tex2Dproj(refraction_map, distortion_texcoords).rgb;
+   float2 bump = tex2D(bump_map, input.bump_texcoords).xy;
+   float3 distortion_color = sample_distort_scene(input.distortion_texcoords, bump);
    float4 diffuse_color = tex2D(diffuse_map, input.diffuse_texcoords);
    float3 projection_color = tex2Dproj(projection_map, input.projection_texcoords).rgb;
 
