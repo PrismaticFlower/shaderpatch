@@ -151,17 +151,17 @@ struct Ps_far_input
 };
 
 float4 far_ps(Ps_far_input input,
-              uniform sampler diffuse_map) : COLOR
+              uniform sampler2D diffuse_map : register(ps, s0)) : COLOR
 {
    return tex2D(diffuse_map, input.texcoords) * input.color;
 }
 
 float4 distort_alpha_constant : register(ps, c[0]);
 
-sampler bump_map : register(ps, s[0]);
-sampler distortion_map : register(ps, s[1]);
-sampler diffuse_map : register(ps, s[2]);
-sampler projection_map : register(ps, s[3]);
+sampler2D bump_map : register(ps, s0);
+sampler2D refraction_map : register(ps, s13);
+sampler2D diffuse_map : register(ps, s2);
+sampler2D projection_map : register(ps, s3);
 
 struct Ps_near_input
 {
@@ -175,7 +175,7 @@ struct Ps_near_input
 
 float4 near_diffuse_ps(Ps_near_input input) : COLOR
 {
-   float4 distortion_color = tex2Dproj(distortion_map, input.distortion_texcoords);
+   float4 distortion_color = tex2Dproj(refraction_map, input.distortion_texcoords);
    float4 diffuse_color = tex2D(diffuse_map, input.diffuse_texcoords);
    float4 projection_color = tex2Dproj(projection_map, input.projection_texcoords);
 
@@ -192,7 +192,7 @@ float4 near_diffuse_ps(Ps_near_input input) : COLOR
 
 float4 near_ps(Ps_near_input input) : COLOR
 {
-   float4 distortion_color = tex2Dproj(distortion_map, input.distortion_texcoords);
+   float4 distortion_color = tex2Dproj(refraction_map, input.distortion_texcoords);
    float4 projection_color = tex2Dproj(projection_map, input.projection_texcoords);
 
    float3 color;
@@ -214,7 +214,7 @@ float4 near_bump_ps(Ps_near_input input) : COLOR
    float4 distortion_texcoords = input.distortion_texcoords;
    distortion_texcoords.xy += (bump_offset.xy * 0.1);
 
-   float4 distortion_color = tex2Dproj(distortion_map, distortion_texcoords);
+   float4 distortion_color = tex2Dproj(refraction_map, distortion_texcoords);
 
    float3 color = projection_color.rgb * input.color_1.rgb + input.color_0.rgb;
 
@@ -234,7 +234,7 @@ float4 near_diffuse_bump_ps(Ps_near_input input) : COLOR
    float4 distortion_texcoords = input.distortion_texcoords;
    distortion_texcoords.xy += (bump_offset.xy * 0.1);
 
-   float4 distortion_color = tex2Dproj(distortion_map, distortion_texcoords);
+   float4 distortion_color = tex2Dproj(refraction_map, distortion_texcoords);
 
    float3 color;
 

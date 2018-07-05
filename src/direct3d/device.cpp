@@ -293,6 +293,7 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
 
    // update per frame state
    _water_refraction = false;
+   _ice_refraction = false;
    _blur_resolved = false;
 
    _device->EndScene();
@@ -749,6 +750,12 @@ HRESULT Device::SetPixelShader(IDirect3DPixelShader9* shader) noexcept
 
          _water_refraction = true;
       }
+   }
+   else if (metadata.rendertype == "refraction"sv && metadata.state_name != "far"sv &&
+            metadata.state_name != "nodistortion"sv) {
+      if (!std::exchange(_ice_refraction, true)) update_refraction_texture();
+
+      bind_refraction_texture();
    }
    else if (_config.rendering.smooth_bloom && !_effects.active() &&
             metadata.rendertype == "hdr"sv) {

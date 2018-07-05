@@ -4,7 +4,7 @@
 
   "states": [
     {
-      "name": "refraction far",
+      "name": "far",
       "id": 0,
 
       "passes": [
@@ -22,7 +22,7 @@
     },
 
     {
-      "name": "refraction nodistortion",
+      "name": "nodistortion",
       "id": 1,
 
       "passes": [
@@ -40,7 +40,7 @@
     },
 
     {
-      "name": "refraction near",
+      "name": "near",
       "id": 2,
 
       "passes": [
@@ -58,7 +58,7 @@
     },
 
     {
-      "name": "refraction near bump",
+      "name": "near bump",
       "id": 3,
 
       "passes": [
@@ -76,7 +76,7 @@
     },
 
     {
-      "name": "refraction near diffuse",
+      "name": "near diffuse",
       "id": 4,
 
       "passes": [
@@ -94,7 +94,7 @@
     },
 
     {
-      "name": "refraction near diffuse bump",
+      "name": "near diffuse bump",
       "id": 5,
 
       "passes": [

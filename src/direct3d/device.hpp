@@ -379,6 +379,7 @@ private:
    bool _fp_rt_resolved = false;
    bool _game_doing_bloom_pass = false;
    bool _water_refraction = false;
+   bool _ice_refraction = false;
    bool _blur_resolved = false;
    bool _refresh_material = true;
    bool _discard_draw_calls = false;
