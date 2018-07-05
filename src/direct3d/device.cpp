@@ -585,7 +585,7 @@ HRESULT Device::StretchRect(IDirect3DSurface9* source_surface,
    }
 
    if (_config.rendering.gaussian_blur_blur_particles &&
-       dest_surface == _blur_surface.get()) {
+       dest_surface == _blur_surface.get() && std::exchange(_blur_resolved, true)) {
       resolve_blur_surface(*source_surface);
 
       return S_OK;
