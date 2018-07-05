@@ -21,10 +21,7 @@ void Scene_blur::apply(const Shader_database& shaders, Rendertarget_allocator& a
 
    shaders.at("gaussian blur"s).at("blur 13"s).bind(*_device);
 
-   _device->ColorFill(rt_a_x.surface(), nullptr, 0x0);
    do_pass(*rt_a_x.surface(), from_to, {1.f, 0.f});
-
-   _device->ColorFill(to.get(), nullptr, 0x0);
    do_pass(*to.get(), *rt_a_x.texture(), {0.f, 1.f});
 }
 
