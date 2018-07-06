@@ -162,7 +162,7 @@ void Bloom::show_imgui() noexcept
       ImGui::ColorEdit3("Dirt Tint", &_user_params.dirt_tint.x,
                         ImGuiColorEditFlags_Float);
 
-      ImGui::InputText<256>("Dirt Texture", _user_params.dirt_texture_name);
+      ImGui::InputText("Dirt Texture", _user_params.dirt_texture_name);
    }
 
    ImGui::Separator();
