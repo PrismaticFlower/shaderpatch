@@ -9,45 +9,45 @@
 
   "states": [
     {
-      "name": "blur 9",
+      "name": "blur 4",
 
       "vertex_shader": "main_vs",
-      "pixel_shader": "blur_9_ps"
+      "pixel_shader": "blur_4_ps"
     },
 
     {
-      "name": "blur 13",
+      "name": "blur 6",
 
       "vertex_shader": "main_vs",
-      "pixel_shader": "blur_13_ps"
+      "pixel_shader": "blur_6_ps"
     },
 
     {
-      "name": "blur 17",
+      "name": "blur 8",
 
       "vertex_shader": "main_vs",
-      "pixel_shader": "blur_17_ps"
+      "pixel_shader": "blur_8_ps"
     },
 
     {
-      "name": "blur 25",
+      "name": "blur 12",
 
       "vertex_shader": "main_vs",
-      "pixel_shader": "blur_25_ps"
+      "pixel_shader": "blur_12_ps"
     },
 
     {
-      "name": "blur 33",
+      "name": "blur 16",
 
       "vertex_shader": "main_vs",
-      "pixel_shader": "blur_33_ps"
+      "pixel_shader": "blur_16_ps"
     },
 
     {
-      "name": "blur 41",
+      "name": "blur 20",
 
       "vertex_shader": "main_vs",
-      "pixel_shader": "blur_41_ps"
+      "pixel_shader": "blur_20_ps"
     }
   ]
 }

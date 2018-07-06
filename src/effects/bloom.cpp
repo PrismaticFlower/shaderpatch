@@ -57,36 +57,36 @@ void Bloom::apply(const Shader_database& shaders, Rendertarget_allocator& alloca
    auto rt_a_y = allocator.allocate(format, res);
 
    downsample(*rt_a_y.surface(), *threshold.surface());
-   do_pass(*rt_a_x.surface(), *rt_a_y.texture(), blurs.at("blur 25"s), {1.f, 0.f});
-   do_pass(*rt_a_y.surface(), *rt_a_x.texture(), blurs.at("blur 25"s), {0.f, 1.f});
+   do_pass(*rt_a_x.surface(), *rt_a_y.texture(), blurs.at("blur 12"s), {1.f, 0.f});
+   do_pass(*rt_a_y.surface(), *rt_a_x.texture(), blurs.at("blur 12"s), {0.f, 1.f});
 
    auto rt_b_x = allocator.allocate(format, res / 4);
    auto rt_b_y = allocator.allocate(format, res / 4);
 
    downsample(*rt_b_y.surface(), *rt_a_y.surface());
-   do_pass(*rt_b_x.surface(), *rt_b_y.texture(), blurs.at("blur 25"s), {1.f, 0.f});
-   do_pass(*rt_b_y.surface(), *rt_b_x.texture(), blurs.at("blur 25"s), {0.f, 1.f});
+   do_pass(*rt_b_x.surface(), *rt_b_y.texture(), blurs.at("blur 12"s), {1.f, 0.f});
+   do_pass(*rt_b_y.surface(), *rt_b_x.texture(), blurs.at("blur 12"s), {0.f, 1.f});
 
    auto rt_c_x = allocator.allocate(format, res / 8);
    auto rt_c_y = allocator.allocate(format, res / 8);
 
    downsample(*rt_c_y.surface(), *rt_b_y.surface());
-   do_pass(*rt_c_x.surface(), *rt_c_y.texture(), blurs.at("blur 25"s), {1.f, 0.f});
-   do_pass(*rt_c_y.surface(), *rt_c_x.texture(), blurs.at("blur 25"s), {0.f, 1.f});
+   do_pass(*rt_c_x.surface(), *rt_c_y.texture(), blurs.at("blur 12"s), {1.f, 0.f});
+   do_pass(*rt_c_y.surface(), *rt_c_x.texture(), blurs.at("blur 12"s), {0.f, 1.f});
 
    auto rt_d_x = allocator.allocate(format, res / 16);
    auto rt_d_y = allocator.allocate(format, res / 16);
 
    downsample(*rt_d_y.surface(), *rt_c_y.surface());
-   do_pass(*rt_d_x.surface(), *rt_d_y.texture(), blurs.at("blur 25"s), {1.f, 0.f});
-   do_pass(*rt_d_y.surface(), *rt_d_x.texture(), blurs.at("blur 25"s), {0.f, 1.f});
+   do_pass(*rt_d_x.surface(), *rt_d_y.texture(), blurs.at("blur 12"s), {1.f, 0.f});
+   do_pass(*rt_d_y.surface(), *rt_d_x.texture(), blurs.at("blur 12"s), {0.f, 1.f});
 
    auto rt_e_x = allocator.allocate(format, res / 32);
    auto rt_e_y = allocator.allocate(format, res / 32);
 
    downsample(*rt_e_y.surface(), *rt_d_y.surface());
-   do_pass(*rt_e_x.surface(), *rt_e_y.texture(), blurs.at("blur 25"s), {1.f, 0.f});
-   do_pass(*rt_e_y.surface(), *rt_e_x.texture(), blurs.at("blur 25"s), {0.f, 1.f});
+   do_pass(*rt_e_x.surface(), *rt_e_y.texture(), blurs.at("blur 12"s), {1.f, 0.f});
+   do_pass(*rt_e_y.surface(), *rt_e_x.texture(), blurs.at("blur 12"s), {0.f, 1.f});
 
    setup_combine_stage_blendstate();
 

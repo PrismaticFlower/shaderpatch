@@ -19,7 +19,7 @@ void Scene_blur::apply(const Shader_database& shaders, Rendertarget_allocator& a
    Com_ptr<IDirect3DSurface9> to;
    from_to.GetSurfaceLevel(0, to.clear_and_assign());
 
-   shaders.at("gaussian blur"s).at("blur 13"s).bind(*_device);
+   shaders.at("gaussian blur"s).at("blur 6"s).bind(*_device);
 
    do_pass(*rt_a_x.surface(), from_to, {1.f, 0.f});
    do_pass(*to.get(), *rt_a_x.texture(), {0.f, 1.f});
