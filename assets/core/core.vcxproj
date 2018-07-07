@@ -210,6 +210,7 @@
       <FileType>Document</FileType>
     </None>
     <None Include="src\fullscreen_tri_vs.hlsl" />
+    <None Include="src\FXAA3_11.h" />
     <None Include="src\interface.fx">
       <FileType>Document</FileType>
     </None>
@@ -302,6 +303,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\postprocess.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\aa_quality_levels.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

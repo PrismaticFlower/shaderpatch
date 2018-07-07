@@ -28,4 +28,24 @@ inline bool InputText(const char* label, std::string& string,
    return result;
 }
 
+template<typename Strings>
+inline auto StringPicker(const char* label, const std::string& current, Strings strings)
+   -> std::string
+{
+   std::string selected_str = current;
+
+   if (BeginCombo(label, current.c_str(), ImGuiComboFlags_HeightRegular)) {
+      for (const auto& str : strings) {
+         bool selected = str == current;
+
+         if (Selectable(str.c_str(), &selected)) selected_str = str;
+         if (selected) SetItemDefaultFocus();
+      }
+
+      EndCombo();
+   }
+
+   return selected_str;
+}
+
 }

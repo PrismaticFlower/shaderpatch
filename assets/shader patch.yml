@@ -37,6 +37,12 @@ Rendering:
    # Will be clamped to [1, DeviceMax],  typically DeviceMax will be 16.
    AnisotropicFiltering: 16
    
+   # Set the quality of AA done on maps where the Effects system is active. 
+   # Can be "fastest", "fast", "slower", or "slowest". 
+   # Pessimistically set to "fastest" by default. If you feel confident in your GPU's capabilities you 
+   # can probably go ahead and set this to "slow" ot "slowest", obivously setting it back if you get lag.
+   PostAAQuality: fastest
+   
    # Force anisotropic filtering on for stock textures that use linear downsampling.
    # This has no affect on Shader Patch custom materials.
    ForceAnisotropicFiltering: yes

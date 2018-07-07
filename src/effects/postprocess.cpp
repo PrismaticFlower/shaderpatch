@@ -5,10 +5,11 @@
 
 namespace sp::effects {
 
-Postprocess::Postprocess(Com_ref<IDirect3DDevice9> device)
+Postprocess::Postprocess(Com_ref<IDirect3DDevice9> device, Post_aa_quality aa_quality)
    : _device{device}, _vertex_decl{create_fs_triangle_decl(*_device)}
 {
    bloom_params(Bloom_params{});
+   this->aa_quality(aa_quality);
 }
 
 void Postprocess::bloom_params(const Bloom_params& params) noexcept
@@ -55,6 +56,11 @@ void Postprocess::hdr_state(Hdr_state state) noexcept
    _hdr_state = state;
 }
 
+void Postprocess::aa_quality(Post_aa_quality quality) noexcept
+{
+   _aa_suffix = to_string(quality);
+}
+
 void Postprocess::apply(const Shader_database& shaders, Rendertarget_allocator& allocator,
                         const Texture_database& textures,
                         IDirect3DTexture9& input, IDirect3DSurface9& output) noexcept
@@ -65,12 +71,17 @@ void Postprocess::apply(const Shader_database& shaders, Rendertarget_allocator& 
 
    auto [format, res] = get_surface_metrics(output);
 
+   auto scratch_rt = allocator.allocate(format, res);
+
    if (_bloom_params.enabled) {
-      do_bloom_and_color_grading(shaders, allocator, textures, input, output);
+      do_bloom_and_color_grading(shaders, allocator, textures, input,
+                                 *scratch_rt.surface());
    }
    else {
-      do_color_grading(shaders, input, output);
+      do_color_grading(shaders, input, *scratch_rt.surface());
    }
+
+   do_finalize(shaders, textures, *scratch_rt.texture(), output);
 }
 
 void Postprocess::do_bloom_and_color_grading(const Shader_database& shaders,
@@ -163,6 +174,18 @@ void Postprocess::do_color_grading(const Shader_database& shaders,
    _device->SetRenderState(D3DRS_SRGBWRITEENABLE, true);
 
    shaders.at("postprocess"s).at("colorgrade"s + _hdr_suffix).bind(*_device);
+
+   do_pass(input, output);
+}
+
+void Postprocess::do_finalize(const Shader_database& shaders, const Texture_database&,
+                              IDirect3DTexture9& input, IDirect3DSurface9& output)
+{
+   set_fs_pass_ps_state(*_device, input);
+   set_linear_clamp_sampler(*_device, 0, false);
+   _device->SetRenderState(D3DRS_SRGBWRITEENABLE, false);
+
+   shaders.at("postprocess"s).at("finalize "s + _aa_suffix).bind(*_device);
 
    do_pass(input, output);
 }

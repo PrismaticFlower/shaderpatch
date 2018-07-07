@@ -2,6 +2,7 @@
 
 #include "../shader_database.hpp"
 #include "../texture_database.hpp"
+#include "../user_config.hpp"
 #include "com_ptr.hpp"
 #include "com_ref.hpp"
 #include "rendertarget_allocator.hpp"
@@ -77,7 +78,7 @@ enum class Hdr_state { hdr, stock };
 
 class Postprocess {
 public:
-   Postprocess(Com_ref<IDirect3DDevice9> device);
+   Postprocess(Com_ref<IDirect3DDevice9> device, Post_aa_quality aa_quality);
 
    void bloom_params(const Bloom_params& params) noexcept;
 
@@ -101,6 +102,8 @@ public:
 
    void hdr_state(Hdr_state state) noexcept;
 
+   void aa_quality(Post_aa_quality quality) noexcept;
+
 private:
    void do_bloom_and_color_grading(const Shader_database& shaders,
                                    Rendertarget_allocator& allocator,
@@ -110,6 +113,9 @@ private:
 
    void do_color_grading(const Shader_database& shaders, IDirect3DTexture9& input,
                          IDirect3DSurface9& output) noexcept;
+
+   void do_finalize(const Shader_database& shaders, const Texture_database& textures,
+                    IDirect3DTexture9& input, IDirect3DSurface9& output);
 
    void do_pass(IDirect3DTexture9& input, IDirect3DSurface9& output) noexcept;
 
@@ -170,6 +176,7 @@ private:
 
    Hdr_state _hdr_state = Hdr_state::hdr;
    std::string _hdr_suffix = ""s;
+   std::string _aa_suffix = "fastest"s;
 
    constexpr static auto bloom_sampler_slots_start = 1;
    constexpr static auto dirt_sampler_slot_start = 6;

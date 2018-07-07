@@ -28,7 +28,10 @@ private:
    Com_ref<IDirect3DDevice9> _device;
 
 public:
-   Control(Com_ref<IDirect3DDevice9> device) : _device{device} {}
+   Control(Com_ref<IDirect3DDevice9> device, Post_aa_quality aa_quality)
+      : _device{device}, postprocess{device, aa_quality}
+   {
+   }
 
    bool enabled(bool enable) noexcept
    {
@@ -68,7 +71,7 @@ public:
 
    void read_config(YAML::Node config);
 
-   effects::Postprocess postprocess{_device};
+   effects::Postprocess postprocess;
    effects::Scene_blur scene_blur{_device};
 
 private:

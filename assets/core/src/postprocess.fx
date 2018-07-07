@@ -1,5 +1,8 @@
 
+#include "aa_quality_levels.hlsl"
 #include "fullscreen_tri_vs.hlsl"
+
+#include "FXAA3_11.h"
 
 #pragma warning(disable : 3571)
 
@@ -10,6 +13,7 @@ sampler2D red_lut : register(s7);
 sampler2D green_lut : register(s8);
 sampler2D blue_lut : register(s9);
 
+float2 pixel_size : register(c60);
 float4 bloom_global_scale_threshold : register(c61);
 float3 bloom_local_scales[5] : register(c62);
 float3 bloom_dirt_scale : register(c67);
@@ -79,6 +83,28 @@ float4 postprocess_ps(float2 texcoords : TEXCOORD) : COLOR
    color = apply_color_grading(color);
 
    return float4(color, fxaa_luma(color));
+}
+
+float4 postprocess_finalize_ps(float2 texcoords : TEXCOORD) : COLOR
+{
+   float4 color = FxaaPixelShader(texcoords,
+                                  0.0,
+                                  scene_sampler,
+                                  scene_sampler,
+                                  scene_sampler,
+                                  pixel_size,
+                                  0.0,
+                                  0.0,
+                                  0.0,
+                                  fxaa_quality_subpix,
+                                  fxaa_quality_edge_threshold,
+                                  fxaa_quality_edge_threshold_min,
+                                  0.0,
+                                  0.0,
+                                  0.0,
+                                  0.0);
+
+   return color;
 }
 
 float4 bloom_threshold_ps(float2 texcoords : TEXCOORD) : COLOR

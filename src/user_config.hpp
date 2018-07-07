@@ -1,5 +1,6 @@
 #pragma once
 
+#include "imgui_ext.hpp"
 #include "logger.hpp"
 
 #include <cstdint>
@@ -18,6 +19,45 @@
 #pragma warning(pop)
 
 namespace sp {
+
+enum class Post_aa_quality { fastest, fast, slower, slowest };
+
+inline std::string to_string(Post_aa_quality quality) noexcept
+{
+   using namespace std::literals;
+
+   switch (quality) {
+   case Post_aa_quality::fastest:
+      return "fastest"s;
+   case Post_aa_quality::fast:
+      return "fast"s;
+   case Post_aa_quality::slower:
+      return "slower"s;
+   case Post_aa_quality::slowest:
+      return "slowest"s;
+   }
+
+   std::terminate();
+}
+
+inline Post_aa_quality aa_quality_from_string(std::string_view string) noexcept
+{
+   if (string == to_string(Post_aa_quality::fastest)) {
+      return Post_aa_quality::fastest;
+   }
+   else if (string == to_string(Post_aa_quality::fast)) {
+      return Post_aa_quality::fast;
+   }
+   else if (string == to_string(Post_aa_quality::slower)) {
+      return Post_aa_quality::slower;
+   }
+   else if (string == to_string(Post_aa_quality::slowest)) {
+      return Post_aa_quality::slowest;
+   }
+   else {
+      return Post_aa_quality::fastest;
+   }
+}
 
 struct User_config {
    User_config() = default;
@@ -55,6 +95,8 @@ struct User_config {
       int refraction_buffer_factor = 2;
 
       int anisotropic_filtering = 1;
+
+      Post_aa_quality post_aa_quality = Post_aa_quality::fastest;
    } rendering;
 
    struct {
@@ -94,6 +136,13 @@ struct User_config {
          if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("Will not take effect on Apply.");
          }
+
+         rendering.post_aa_quality = aa_quality_from_string(ImGui::StringPicker(
+            "Post AA Quality", std::string{to_string(rendering.post_aa_quality)},
+            std::initializer_list<std::string>{to_string(Post_aa_quality::fastest),
+                                               to_string(Post_aa_quality::fast),
+                                               to_string(Post_aa_quality::slower),
+                                               to_string(Post_aa_quality::slowest)}));
 
          ImGui::Checkbox("Force Anisotropic Filtering",
                          &rendering.force_anisotropic_filtering);
@@ -156,6 +205,9 @@ private:
       rendering.anisotropic_filtering =
          config["Rendering"s]["AnisotropicFiltering"s].as<int>();
 
+      rendering.post_aa_quality = aa_quality_from_string(
+         config["Rendering"s]["PostAAQuality"s].as<std::string>());
+
       rendering.force_anisotropic_filtering =
          config["Rendering"s]["ForceAnisotropicFiltering"s].as<bool>();
 
@@ -165,4 +217,5 @@ private:
       developer.toggle_key = config["Developer"s]["ScreenToggle"s].as<int>();
    }
 };
+
 }

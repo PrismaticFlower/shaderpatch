@@ -200,6 +200,12 @@
     <None Include="src\postprocess.fx">
       <Filter>src</Filter>
     </None>
+    <None Include="src\FXAA3_11.h">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\aa_quality_levels.hlsl">
+      <Filter>src</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">
