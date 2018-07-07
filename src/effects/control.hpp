@@ -72,7 +72,11 @@ public:
    effects::Scene_blur scene_blur{_device};
 
 private:
+   auto output_params_to_yaml_string() noexcept -> std::string;
+
    void save_params_to_yaml_file(const std::filesystem::path& save_to) noexcept;
+
+   void save_params_to_munged_file(const std::filesystem::path& save_to) noexcept;
 
    void load_params_from_yaml_file(const std::filesystem::path& load_from) noexcept;
 

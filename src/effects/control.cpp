@@ -3,8 +3,10 @@
 #include "../logger.hpp"
 #include "file_dialogs.hpp"
 #include "imgui_ext.hpp"
+#include "volume_resource.hpp"
 
 #include <fstream>
+#include <sstream>
 #include <string_view>
 
 #include <imgui.h>
@@ -66,6 +68,24 @@ void Control::show_imgui(HWND game_window) noexcept
       }
    }
 
+   ImGui::SameLine();
+
+   if (ImGui::Button("Save Munged Config")) {
+      if (auto path =
+             win32::save_file_dialog({{L"Munged Effects Config", L"*.mspfx"}}, game_window,
+                                     fs::current_path(), L"mod_config.mspfx"s);
+          path) {
+         save_params_to_munged_file(*path);
+      }
+   }
+
+   if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip(
+         "Save out a munged config to be loaded from a map script. Keep in "
+         "mind Shader "
+         "Patch can not reload these files from the debug screen.");
+   }
+
    if (_save_failure) {
       ImGui::SameLine();
       ImGui::TextColored({1.0f, 0.2f, 0.33f, 1.0f}, "Save Failed!");
@@ -89,7 +109,7 @@ void Control::read_config(YAML::Node config)
    postprocess.bloom_params(config["Bloom"s].as<Bloom_params>(Bloom_params{}));
 }
 
-void Control::save_params_to_yaml_file(const fs::path& save_to) noexcept
+auto Control::output_params_to_yaml_string() noexcept -> std::string
 {
    YAML::Node config;
 
@@ -97,22 +117,53 @@ void Control::save_params_to_yaml_file(const fs::path& save_to) noexcept
    config["ColorGrading"s] = postprocess.color_grading_params();
    config["Bloom"s] = postprocess.bloom_params();
 
+   std::stringstream stream;
+   ;
+   stream << "# Auto-Generated Effects Config. May have less than ideal formatting.\n"sv;
+
+   stream << config;
+
+   return stream.str();
+}
+
+void Control::save_params_to_yaml_file(const fs::path& save_to) noexcept
+{
+   auto config = output_params_to_yaml_string();
+
    std::ofstream file{save_to};
 
    if (!file) {
       log(Log_level::error, "Failed to open file "sv, save_to,
-          " to write colour grading config."sv);
+          " to write effects config."sv);
 
       _save_failure = true;
 
       return;
    }
 
-   file << "# Auto-Generated Effects Config. May have less than ideal formatting.\n"sv;
-
    file << config;
 
    _save_failure = false;
+}
+
+void Control::save_params_to_munged_file(const fs::path& save_to) noexcept
+{
+   auto config = output_params_to_yaml_string();
+
+   try {
+      save_volume_resource(save_to.u8string(), save_to.stem().u8string(),
+                           Volume_resource_type::fx_config,
+                           gsl::span{reinterpret_cast<std::byte*>(config.data()),
+                                     gsl::narrow_cast<gsl::index>(config.size())});
+
+      _save_failure = false;
+   }
+   catch (std::exception& e) {
+      log(Log_level::warning, "Exception occured while writing effects config tp "sv,
+          save_to, " Reason: "sv, e.what());
+
+      _save_failure = true;
+   }
 }
 
 void Control::load_params_from_yaml_file(const fs::path& load_from) noexcept
@@ -124,7 +175,7 @@ void Control::load_params_from_yaml_file(const fs::path& load_from) noexcept
    }
    catch (std::exception& e) {
       log(Log_level::error, "Failed to open file "sv, load_from,
-          " to read colour grading config. Reason: "sv, e.what());
+          " to read effects config. Reason: "sv, e.what());
 
       _open_failure = true;
    }
@@ -133,8 +184,7 @@ void Control::load_params_from_yaml_file(const fs::path& load_from) noexcept
       read_config(config);
    }
    catch (std::exception& e) {
-      log(Log_level::warning,
-          "Exception occured while reading colour grading config from "sv,
+      log(Log_level::warning, "Exception occured while reading effects config from "sv,
           load_from, " Reason: "sv, e.what());
 
       _open_failure = true;
