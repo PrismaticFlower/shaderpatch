@@ -39,14 +39,13 @@ ucft
    REQN
    {
       "shader"
-      "bloom"
       "gaussian_blur"
       "normal_lightmapped"
       "pbr"
       "pbr-basic"
       "pbr-emissive"
+      "postprocess"
       "stock_bloom_ext"
-      "tonemap"
    }
    
    // Patch Textures

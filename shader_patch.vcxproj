@@ -15,7 +15,7 @@
     <ProjectGuid>{77065F00-E7E4-4EDF-8C98-6EB87BC49C4D}</ProjectGuid>
     <RootNamespace>dll</RootNamespace>
     <ProjectName>shader_patch</ProjectName>
-    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -129,13 +129,13 @@
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\effects\bloom.cpp" />
-    <ClCompile Include="src\effects\color_grading.cpp" />
     <ClCompile Include="src\direct3d\check_required_features.cpp" />
     <ClCompile Include="src\direct3d\create_device.cpp" />
     <ClCompile Include="src\direct3d\device.cpp" />
     <ClCompile Include="src\direct3d\device_stubs.cpp" />
+    <ClCompile Include="src\effects\color_grading_lut_baker.cpp" />
     <ClCompile Include="src\effects\control.cpp" />
+    <ClCompile Include="src\effects\postprocess.cpp" />
     <ClCompile Include="src\effects\scene_blur.cpp" />
     <ClCompile Include="src\imgui\imgui_impl_dx9.cpp" />
     <ClCompile Include="src\input_hooker.cpp" />
@@ -148,8 +148,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\direct3d\texture_state_block.hpp" />
-    <ClInclude Include="src\effects\bloom.hpp" />
-    <ClInclude Include="src\effects\color_grading.hpp" />
     <ClInclude Include="src\direct3d\check_required_features.hpp" />
     <ClInclude Include="src\direct3d\create_device.hpp" />
     <ClInclude Include="src\direct3d\device.hpp" />
@@ -157,8 +155,10 @@
     <ClInclude Include="src\direct3d\shader.hpp" />
     <ClInclude Include="src\direct3d\shader_constant.hpp" />
     <ClInclude Include="src\direct3d\render_state_block.hpp" />
+    <ClInclude Include="src\effects\color_grading_lut_baker.hpp" />
     <ClInclude Include="src\effects\control.hpp" />
     <ClInclude Include="src\effects\helpers.hpp" />
+    <ClInclude Include="src\effects\postprocess.hpp" />
     <ClInclude Include="src\effects\rendertarget_allocator.hpp" />
     <ClInclude Include="src\effects\scene_blur.hpp" />
     <ClInclude Include="src\hook_vtable.hpp" />

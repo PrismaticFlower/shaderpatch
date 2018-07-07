@@ -137,4 +137,31 @@ inline void set_blur_pass_state(IDirect3DDevice9& device, IDirect3DTexture9& sou
       .set(device, {1.0f / src_size * direction, 1.0f / src_size});
 }
 
+inline constexpr auto colorwrite_all =
+   D3DCOLORWRITEENABLE_RED | D3DCOLORWRITEENABLE_GREEN |
+   D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_ALPHA;
+
+inline void set_fs_pass_blend_state(IDirect3DDevice9& device) noexcept
+{
+   device.SetRenderState(D3DRS_ALPHABLENDENABLE, true);
+   device.SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, true);
+   device.SetRenderState(D3DRS_COLORWRITEENABLE, colorwrite_all);
+   device.SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);
+   device.SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO);
+   device.SetRenderState(D3DRS_SRCBLENDALPHA, D3DBLEND_ONE);
+   device.SetRenderState(D3DRS_DESTBLENDALPHA, D3DBLEND_ZERO);
+   device.SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_ADD);
+}
+
+inline void set_linear_clamp_sampler(IDirect3DDevice9& device, int slot,
+                                     bool srgb = false) noexcept
+{
+   device.SetSamplerState(slot, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+   device.SetSamplerState(slot, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+   device.SetSamplerState(slot, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+   device.SetSamplerState(slot, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+   device.SetSamplerState(slot, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
+   device.SetSamplerState(slot, D3DSAMP_SRGBTEXTURE, srgb);
+}
+
 }

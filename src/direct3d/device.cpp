@@ -266,9 +266,7 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
    if (_effects.active()) {
       set_linear_rendering(_fp_rt_resolved);
 
-      if (!std::exchange(_fp_rt_resolved, false)) {
-         post_process("linear"s);
-      }
+      if (!(_fp_rt_resolved, false)) late_fp_resolve();
    }
 
    if (_imgui_active) {
@@ -686,7 +684,7 @@ HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
       _discard_draw_calls = false;
       set_linear_rendering(false);
 
-      post_process("color grading"s);
+      post_process();
 
       _backbuffer_override = nullptr;
    }
@@ -921,7 +919,7 @@ void Device::init_sampler_max_anisotropy() noexcept
    }
 }
 
-void Device::post_process(const std::string& shader_state) noexcept
+void Device::post_process() noexcept
 {
    Com_ptr<IDirect3DSurface9> backbuffer;
    _device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO,
@@ -934,33 +932,21 @@ void Device::post_process(const std::string& shader_state) noexcept
    _device->SetRenderState(D3DRS_ZENABLE, FALSE);
    _device->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
 
-   _effects.bloom.apply(_shaders, _rt_allocator, _textures, *_fp_backbuffer);
-
-   // TODO: Fixer upper lack of tonemapping abstraction.
-   _device->SetRenderState(D3DRS_ALPHABLENDENABLE, false);
-   _device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO);
-   _device->SetStreamSource(0, _fs_vertex_buffer.get(), 0, effects::fs_triangle_stride);
-   _device->SetVertexDeclaration(_fs_vertex_decl.get());
-   _device->SetRenderTarget(0, backbuffer.get());
-
-   _device->SetTexture(4, _fp_backbuffer.get());
-
-   _device->SetSamplerState(4, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
-   _device->SetSamplerState(4, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
-   _device->SetSamplerState(4, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
-   _device->SetSamplerState(4, D3DSAMP_MINFILTER, D3DTEXF_POINT);
-   _device->SetSamplerState(4, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
-
-   constexpr auto pp_start = constants::ps::post_processing_start;
-
-   _effects.color_grading.bind_constants<pp_start, pp_start + 1>();
-   _effects.color_grading.bind_lut(5, 6, 7);
-
-   _shaders.at("tonemap"s).at(shader_state)[Shader_flags::none].bind(*_device);
-
-   _device->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 1);
+   _effects.postprocess.apply(_shaders, _rt_allocator, _textures,
+                              *_fp_backbuffer, *backbuffer);
 
    state->Apply();
+}
+
+void Device::late_fp_resolve() noexcept
+{
+   Com_ptr<IDirect3DSurface9> backbuffer;
+   _device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO,
+                          backbuffer.clear_and_assign());
+   _device->SetRenderTarget(0, backbuffer.get());
+
+   _device->StretchRect(_backbuffer_override.get(), nullptr, backbuffer.get(),
+                        nullptr, D3DTEXF_NONE);
 }
 
 void Device::refresh_material() noexcept

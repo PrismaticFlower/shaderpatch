@@ -1,0 +1,59 @@
+{
+  "patch_shader": true,
+  "source_name": "postprocess.fx",
+  "rendertype": "postprocess",
+
+  "skinned": false,
+  "lighting": false,
+  "vertex_color": false,
+
+  "states": [
+    {
+      "name": "colorgrade",
+
+      "defines": [
+        [ "BLOOM_ACTIVE", "false" ],
+        [ "BLOOM_USE_DIRT", "false" ]
+      ],
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "postprocess_ps"
+    },
+
+    {
+      "name": "bloom colorgrade",
+
+      "defines": [
+        [ "BLOOM_ACTIVE", "true" ],
+        [ "BLOOM_USE_DIRT", "false" ]
+      ],
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "postprocess_ps"
+    },
+
+    {
+      "name": "bloom dirt colorgrade",
+
+      "defines": [
+        [ "BLOOM_ACTIVE", "true" ],
+        [ "BLOOM_USE_DIRT", "true" ]
+      ],
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "postprocess_ps"
+    },
+
+    {
+      "name": "bloom threshold",
+
+      "defines": [
+        [ "BLOOM_ACTIVE", "false" ],
+        [ "BLOOM_USE_DIRT", "false" ]
+      ],
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "bloom_threshold_ps"
+    }
+  ]
+}

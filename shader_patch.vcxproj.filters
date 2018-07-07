@@ -39,19 +39,19 @@
     <ClCompile Include="src\material.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\effects\color_grading.cpp">
-      <Filter>src\effects</Filter>
-    </ClCompile>
     <ClCompile Include="src\effects\control.cpp">
-      <Filter>src\effects</Filter>
-    </ClCompile>
-    <ClCompile Include="src\effects\bloom.cpp">
       <Filter>src\effects</Filter>
     </ClCompile>
     <ClCompile Include="src\imgui\imgui_impl_dx9.cpp">
       <Filter>src\imgui</Filter>
     </ClCompile>
     <ClCompile Include="src\effects\scene_blur.cpp">
+      <Filter>src\effects</Filter>
+    </ClCompile>
+    <ClCompile Include="src\effects\postprocess.cpp">
+      <Filter>src\effects</Filter>
+    </ClCompile>
+    <ClCompile Include="src\effects\color_grading_lut_baker.cpp">
       <Filter>src\effects</Filter>
     </ClCompile>
   </ItemGroup>
@@ -119,13 +119,7 @@
     <ClInclude Include="src\texture_database.hpp">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\effects\color_grading.hpp">
-      <Filter>src\effects</Filter>
-    </ClInclude>
     <ClInclude Include="src\effects\control.hpp">
-      <Filter>src\effects</Filter>
-    </ClInclude>
-    <ClInclude Include="src\effects\bloom.hpp">
       <Filter>src\effects</Filter>
     </ClInclude>
     <ClInclude Include="src\effects\rendertarget_allocator.hpp">
@@ -141,6 +135,12 @@
       <Filter>src\direct3d</Filter>
     </ClInclude>
     <ClInclude Include="src\effects\scene_blur.hpp">
+      <Filter>src\effects</Filter>
+    </ClInclude>
+    <ClInclude Include="src\effects\postprocess.hpp">
+      <Filter>src\effects</Filter>
+    </ClInclude>
+    <ClInclude Include="src\effects\color_grading_lut_baker.hpp">
       <Filter>src\effects</Filter>
     </ClInclude>
   </ItemGroup>

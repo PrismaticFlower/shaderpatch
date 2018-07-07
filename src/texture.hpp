@@ -51,4 +51,5 @@ private:
    Com_ptr<IDirect3DBaseTexture9> _texture;
    Sampler_info _sampler{};
 };
+
 }

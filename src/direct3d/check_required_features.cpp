@@ -63,6 +63,8 @@ void check_required_features(IDirect3D9& d3d) noexcept
                 "Device does not support ATI1 (BC4) textures."sv);
    feature_test(supports_texture_format(d3d, ati2_format),
                 "Device does not support ATI2 textures."sv);
+   feature_test(supports_texture_format(d3d, D3DFMT_L16),
+                "Device does not support L16 (R16) textures."sv);
 
    if (!supported) {
       const auto action = MessageBoxA(nullptr, failed_message, "Device Unsupported",

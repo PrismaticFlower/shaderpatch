@@ -2,6 +2,7 @@
 #include "control.hpp"
 #include "../logger.hpp"
 #include "file_dialogs.hpp"
+#include "imgui_ext.hpp"
 
 #include <fstream>
 #include <string_view>
@@ -13,10 +14,19 @@ namespace sp::effects {
 using namespace std::literals;
 namespace fs = std::filesystem;
 
+namespace {
+
+Bloom_params show_bloom_imgui(Bloom_params params) noexcept;
+
+Color_grading_params show_color_grading_imgui(Color_grading_params params) noexcept;
+
+}
+
 void Control::show_imgui(HWND game_window) noexcept
 {
-   color_grading.show_imgui();
-   bloom.show_imgui();
+   postprocess.color_grading_params(
+      show_color_grading_imgui(postprocess.color_grading_params()));
+   postprocess.bloom_params(show_bloom_imgui(postprocess.bloom_params()));
 
    ImGui::Begin("Effects Control", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
@@ -63,23 +73,22 @@ void Control::show_imgui(HWND game_window) noexcept
 
 void Control::drop_device_resources() noexcept
 {
-   color_grading.drop_device_resources();
-   bloom.drop_device_resources();
+   postprocess.drop_device_resources();
    scene_blur.drop_device_resources();
 }
 
 void Control::read_config(YAML::Node config)
 {
-   color_grading.params(config["ColorGrading"s].as<Color_grading_params>());
-   bloom.params(config["Bloom"s].as<Bloom_params>());
+   postprocess.color_grading_params(config["ColorGrading"s].as<Color_grading_params>());
+   postprocess.bloom_params(config["Bloom"s].as<Bloom_params>());
 }
 
 void Control::save_params_to_yaml_file(const fs::path& save_to) noexcept
 {
    YAML::Node config;
 
-   config["ColorGrading"s] = color_grading.params();
-   config["Bloom"s] = bloom.params();
+   config["ColorGrading"s] = postprocess.color_grading_params();
+   config["Bloom"s] = postprocess.bloom_params();
 
    std::ofstream file{save_to};
 
@@ -127,4 +136,142 @@ void Control::load_params_from_yaml_file(const fs::path& load_from) noexcept
    _open_failure = false;
 }
 
+namespace {
+
+Bloom_params show_bloom_imgui(Bloom_params params) noexcept
+{
+
+   ImGui::Begin("Bloom", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+
+   const auto max_float = std::numeric_limits<float>::max();
+
+   if (ImGui::CollapsingHeader("Basic Controls", ImGuiTreeNodeFlags_DefaultOpen)) {
+      ImGui::Checkbox("Enabled", &params.enabled);
+
+      ImGui::DragFloat("Threshold", &params.threshold, 0.025f);
+      ImGui::DragFloat("Intensity", &params.intensity, 0.025f, 0.0f,
+                       std::numeric_limits<float>::max());
+      ImGui::ColorEdit3("Tint", &params.tint.x, ImGuiColorEditFlags_Float);
+   }
+
+   if (ImGui::CollapsingHeader("Individual Scales & Tints")) {
+      ImGui::DragFloat("Inner Scale", &params.inner_scale, 0.025f, 0.0f,
+                       std::numeric_limits<float>::max());
+      ImGui::DragFloat("Inner Mid Scale", &params.inner_mid_scale, 0.025f, 0.0f,
+                       std::numeric_limits<float>::max());
+      ImGui::DragFloat("Mid Scale", &params.mid_scale, 0.025f, 0.0f,
+                       std::numeric_limits<float>::max());
+      ImGui::DragFloat("Outer Mid Scale", &params.outer_mid_scale, 0.025f, 0.0f,
+                       std::numeric_limits<float>::max());
+      ImGui::DragFloat("Outer Scale", &params.outer_scale, 0.025f, 0.0f,
+                       std::numeric_limits<float>::max());
+
+      ImGui::ColorEdit3("Inner Tint", &params.inner_tint.x, ImGuiColorEditFlags_Float);
+      ImGui::ColorEdit3("Inner Mid Tint", &params.inner_mid_tint.x,
+                        ImGuiColorEditFlags_Float);
+      ImGui::ColorEdit3("Mid Tint", &params.mid_tint.x, ImGuiColorEditFlags_Float);
+      ImGui::ColorEdit3("Outer Mid Tint", &params.outer_mid_tint.x,
+                        ImGuiColorEditFlags_Float);
+      ImGui::ColorEdit3("Outer Tint", &params.outer_tint.x, ImGuiColorEditFlags_Float);
+   }
+
+   if (ImGui::CollapsingHeader("Dirt")) {
+      ImGui::Checkbox("Use Dirt", &params.use_dirt);
+      ImGui::DragFloat("Dirt Scale", &params.dirt_scale, 0.025f, 0.0f,
+                       std::numeric_limits<float>::max());
+      ImGui::ColorEdit3("Dirt Tint", &params.dirt_tint.x, ImGuiColorEditFlags_Float);
+
+      ImGui::InputText("Dirt Texture", params.dirt_texture_name);
+   }
+
+   ImGui::Separator();
+
+   if (ImGui::Button("Reset Settings")) params = Bloom_params{};
+
+   if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip("Reset bloom params to default settings.");
+   }
+
+   ImGui::End();
+
+   return params;
+}
+
+Color_grading_params show_color_grading_imgui(Color_grading_params params) noexcept
+{
+   ImGui::Begin("Colour Grading", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+
+   if (ImGui::CollapsingHeader("Basic Controls", ImGuiTreeNodeFlags_DefaultOpen)) {
+      ImGui::ColorEdit3("Colour Filter", &params.color_filter.x,
+                        ImGuiColorEditFlags_Float);
+      ImGui::DragFloat("Exposure", &params.exposure, 0.01f);
+      ImGui::DragFloat("Saturation", &params.saturation, 0.01f, 0.0f, 5.0f);
+      ImGui::DragFloat("Contrast", &params.contrast, 0.01f, 0.01f, 5.0f);
+   }
+
+   if (ImGui::CollapsingHeader("Filmic Tonemapping")) {
+      // filmic::show_imgui_curve(params);
+
+      ImGui::DragFloat("Toe Strength", &params.filmic_toe_strength, 0.01f, 0.0f, 1.0f);
+      ImGui::DragFloat("Toe Length", &params.filmic_toe_length, 0.01f, 0.0f, 1.0f);
+      ImGui::DragFloat("Shoulder Strength", &params.filmic_shoulder_strength,
+                       0.01f, 0.0f, 100.0f);
+      ImGui::DragFloat("Shoulder Length", &params.filmic_shoulder_length, 0.01f,
+                       0.0f, 1.0f);
+      ImGui::DragFloat("Shoulder Angle", &params.filmic_shoulder_angle, 0.01f,
+                       0.0f, 1.0f);
+
+      if (ImGui::Button("Reset To Linear")) {
+         params.filmic_toe_strength = 0.0f;
+         params.filmic_toe_length = 0.5f;
+         params.filmic_shoulder_strength = 0.0f;
+         params.filmic_shoulder_length = 0.5f;
+         params.filmic_shoulder_angle = 0.0f;
+      }
+
+      if (ImGui::IsItemHovered()) {
+         ImGui::SetTooltip("Reset the curve to linear values.");
+      }
+
+      ImGui::SameLine();
+
+      if (ImGui::Button("Reset To Example")) {
+         params.filmic_toe_strength = 0.5f;
+         params.filmic_toe_length = 0.5f;
+         params.filmic_shoulder_strength = 2.0f;
+         params.filmic_shoulder_length = 0.5f;
+         params.filmic_shoulder_angle = 1.0f;
+      }
+
+      if (ImGui::IsItemHovered()) {
+         ImGui::SetTooltip("Reset the curve to example starting point values.");
+      }
+   }
+
+   if (ImGui::CollapsingHeader("Lift / Gamma / Gain")) {
+      ImGui::ColorEdit3("Shadow Colour", &params.shadow_color.x,
+                        ImGuiColorEditFlags_Float);
+      ImGui::DragFloat("Shadow Offset", &params.shadow_offset, 0.005f);
+
+      ImGui::ColorEdit3("Midtone Colour", &params.midtone_color.x,
+                        ImGuiColorEditFlags_Float);
+      ImGui::DragFloat("Midtone Offset", &params.midtone_offset, 0.005f);
+
+      ImGui::ColorEdit3("Hightlight Colour", &params.highlight_color.x,
+                        ImGuiColorEditFlags_Float);
+      ImGui::DragFloat("Hightlight Offset", &params.highlight_offset, 0.005f);
+   }
+
+   ImGui::Separator();
+
+   if (ImGui::Button("Reset Settings")) {
+      params = Color_grading_params{};
+   }
+
+   ImGui::End();
+
+   return params;
+}
+
+}
 }

@@ -166,14 +166,13 @@
     <None Include="definitions\normal_terrain.json" />
     <None Include="definitions\ocean.json" />
     <None Include="definitions\particle.json" />
-    <None Include="definitions\patch\bloom.json" />
+    <None Include="definitions\patch\postprocess.json" />
     <None Include="definitions\patch\gaussian_blur.json" />
     <None Include="definitions\patch\normal_lightmapped.json" />
     <None Include="definitions\patch\pbr-basic.json" />
     <None Include="definitions\patch\pbr-emissive.json" />
     <None Include="definitions\patch\pbr.json" />
     <None Include="definitions\patch\stock_bloom_ext.json" />
-    <None Include="definitions\patch\tonemap.json" />
     <None Include="definitions\perpixeldiffuselighting.json" />
     <None Include="definitions\prereflection.json" />
     <None Include="definitions\rain.json" />
@@ -210,6 +209,7 @@
     <None Include="src\bloom_stock.fx">
       <FileType>Document</FileType>
     </None>
+    <None Include="src\fullscreen_tri_vs.hlsl" />
     <None Include="src\interface.fx">
       <FileType>Document</FileType>
     </None>
@@ -291,22 +291,17 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\tonemap.fx">
-      <FileType>Document</FileType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="src\normal_lightmapped.fx">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\bloom.fx">
+    <None Include="src\gaussian_blur.fx">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\gaussian_blur.fx">
+    <None Include="src\postprocess.fx">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

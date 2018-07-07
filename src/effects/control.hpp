@@ -1,7 +1,6 @@
 #pragma once
 
-#include "../effects/bloom.hpp"
-#include "../effects/color_grading.hpp"
+#include "../effects/postprocess.hpp"
 #include "../effects/scene_blur.hpp"
 
 #include <filesystem>
@@ -53,8 +52,7 @@ public:
 
    void read_config(YAML::Node config);
 
-   effects::Color_grading color_grading{_device};
-   effects::Bloom bloom{_device};
+   effects::Postprocess postprocess{_device};
    effects::Scene_blur scene_blur{_device};
 
 private:

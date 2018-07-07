@@ -332,7 +332,9 @@ private:
 
    void init_sampler_max_anisotropy() noexcept;
 
-   void post_process(const std::string& shader_state) noexcept;
+   void post_process() noexcept;
+
+   void late_fp_resolve() noexcept;
 
    void refresh_material() noexcept;
 
