@@ -92,7 +92,19 @@ auto assemble_definitions(const std::vector<D3D_SHADER_MACRO>& variation_defines
    defines.pop_back();
 
    for (auto& def : global_defines) defines.emplace_back(def);
-   for (auto& def : state_defines) defines.emplace_back(def);
+
+   for (auto& def : state_defines) {
+      if (auto it = std::find_if(std::begin(defines), std::end(defines),
+                                 [&](const D3D_SHADER_MACRO& macro) {
+                                    return std::string_view{macro.Name} == def.name;
+                                 });
+          it != std::end(defines)) {
+         it->Definition = def.definition.c_str();
+      }
+      else {
+         defines.emplace_back(def);
+      }
+   }
 
    defines.erase(boost::remove_if(defines,
                                   [&](auto& entry) {
