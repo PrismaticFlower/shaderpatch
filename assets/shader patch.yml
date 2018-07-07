@@ -61,4 +61,4 @@ Developer:
    # '\': 0xDC 
    # 'Backspace': 0x08 
    # 'F12': 0x7B
-   ScreenToggle: 0x00
+   ScreenToggle: 0xDC
