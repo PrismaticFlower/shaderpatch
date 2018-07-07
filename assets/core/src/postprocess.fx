@@ -1,6 +1,8 @@
 
 #include "fullscreen_tri_vs.hlsl"
 
+#pragma warning(disable : 3571)
+
 sampler2D scene_sampler : register(s0);
 sampler2D bloom_stages[5] : register(s1);
 sampler2D dirt_sampler : register(s6);
@@ -25,6 +27,7 @@ const static float saturation = exposure_color_filter_saturation.w;
 
 const static bool bloom = BLOOM_ACTIVE;
 const static bool bloom_use_dirt = BLOOM_USE_DIRT;
+const static bool stock_hdr = STOCK_HDR_STATE;
 
 float3 combine_bloom(float2 texcoords)
 {
@@ -69,6 +72,8 @@ float4 postprocess_ps(float2 texcoords : TEXCOORD) : COLOR
 {
    float3 color = tex2D(scene_sampler, texcoords).rgb;
 
+   if (stock_hdr) color = pow(color + color, 2.2);
+
    if (bloom) color += combine_bloom(texcoords);
 
    color = apply_color_grading(color);
@@ -79,8 +84,8 @@ float4 postprocess_ps(float2 texcoords : TEXCOORD) : COLOR
 float4 bloom_threshold_ps(float2 texcoords : TEXCOORD) : COLOR
 {
    float3 color = tex2D(scene_sampler, texcoords).rgb;
-
-   if (dot(luma_weights, color) < bloom_threshold) return 0.0;
+   
+   if (dot(stock_hdr ? fxaa_luma_weights : luma_weights, color) < bloom_threshold) return 0.0;
 
    return float4(color, 1.0);
 }

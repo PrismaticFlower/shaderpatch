@@ -143,7 +143,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
    // drop resources
 
-   _fp_backbuffer.reset(nullptr);
+   _effects_backbuffer.reset(nullptr);
    _backbuffer_override.reset(nullptr);
    _shadow_texture.reset(nullptr);
    _blur_texture.reset(nullptr);
@@ -176,6 +176,8 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
    _created_full_rendertargets = 0;
    _created_2_to_1_rendertargets = 0;
 
+   _rt_format = presentation_parameters->BackBufferFormat;
+
    const auto fl_res = static_cast<glm::vec2>(_resolution);
 
    _rt_resolution_const.set(*_device, {fl_res, glm::vec2{1.0f} / fl_res});
@@ -189,33 +191,37 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
    // recreate resources
 
    if (_effects.enabled()) {
-      _device->CreateTexture(_resolution.x, _resolution.y, 1, D3DUSAGE_RENDERTARGET,
-                             fp_texture_format, D3DPOOL_DEFAULT,
-                             _fp_backbuffer.clear_and_assign(), nullptr);
+      if (_effects.config().hdr_rendering) {
+         _rt_format = fp_texture_format;
 
-      _fp_backbuffer->GetSurfaceLevel(0, _backbuffer_override.clear_and_assign());
+         set_hdr_rendering(true);
+      }
+
+      _device->CreateTexture(_resolution.x, _resolution.y, 1,
+                             D3DUSAGE_RENDERTARGET, _rt_format, D3DPOOL_DEFAULT,
+                             _effects_backbuffer.clear_and_assign(), nullptr);
+
+      _effects_backbuffer->GetSurfaceLevel(0, _backbuffer_override.clear_and_assign());
       _device->SetRenderTarget(0, _backbuffer_override.get());
 
-      set_linear_rendering(true);
       _effects.active(true);
    }
    else {
-      set_linear_rendering(false);
+      set_hdr_rendering(false);
       _effects.active(false);
    }
 
    const auto blur_res = _resolution / blur_buffer_factor;
 
    _device->CreateTexture(blur_res.x, blur_res.y, 1, D3DUSAGE_RENDERTARGET,
-                          _effects.enabled() ? fp_texture_format : D3DFMT_A8R8G8B8,
-                          D3DPOOL_DEFAULT, _blur_texture.clear_and_assign(), nullptr);
+                          _rt_format, D3DPOOL_DEFAULT,
+                          _blur_texture.clear_and_assign(), nullptr);
    _blur_texture->GetSurfaceLevel(0, _blur_surface.clear_and_assign());
 
    const auto refraction_res = _resolution / _config.rendering.refraction_buffer_factor;
 
-   _device->CreateTexture(refraction_res.x, refraction_res.y, 1, D3DUSAGE_RENDERTARGET,
-                          _effects.enabled() ? fp_texture_format : D3DFMT_A8R8G8B8,
-                          D3DPOOL_DEFAULT,
+   _device->CreateTexture(refraction_res.x, refraction_res.y, 1,
+                          D3DUSAGE_RENDERTARGET, _rt_format, D3DPOOL_DEFAULT,
                           _refraction_texture.clear_and_assign(), nullptr);
 
    _fs_vertex_buffer = effects::create_fs_triangle_buffer(*_device, _resolution);
@@ -264,9 +270,7 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
    }
 
    if (_effects.active()) {
-      set_linear_rendering(_fp_rt_resolved);
-
-      if (!(_fp_rt_resolved, false)) late_fp_resolve();
+      if (!(_effects_rt_resolved, false)) late_fp_resolve();
    }
 
    if (_imgui_active) {
@@ -304,7 +308,9 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
    if (_fake_device_loss) return D3DERR_DEVICELOST;
 
    if (_effects.active()) {
-      _fp_backbuffer->GetSurfaceLevel(0, _backbuffer_override.clear_and_assign());
+      set_hdr_rendering(_effects.config().hdr_rendering);
+
+      _effects_backbuffer->GetSurfaceLevel(0, _backbuffer_override.clear_and_assign());
       _device->SetRenderTarget(0, _backbuffer_override.get());
    }
 
@@ -464,7 +470,7 @@ HRESULT Device::CreateVolumeTexture(UINT width, UINT height, UINT depth, UINT le
             _effects.enabled(false);
             _fake_device_loss = true;
 
-            set_linear_rendering(false);
+            set_hdr_rendering(false);
          };
 
          try {
@@ -541,7 +547,7 @@ HRESULT Device::CreateTexture(UINT width, UINT height, UINT levels, DWORD usage,
          }
       }
 
-      if (_effects.active()) format = fp_texture_format;
+      format = _rt_format;
    }
 
    return _device->CreateTexture(size.x, size.y, levels, usage, format, pool,
@@ -643,7 +649,7 @@ HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
    vertex_shader.get()->AddRef();
    _game_vertex_shader.reset(vertex_shader.get());
 
-   if (_linear_rendering) {
+   if (_hdr_rendering) {
       for (auto i = 0; i < 4; ++i) {
          _device->SetSamplerState(i, D3DSAMP_SRGBTEXTURE, _vs_metadata.srgb_state[i]);
       }
@@ -680,9 +686,9 @@ HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
    }
    else if (std::exchange(_game_doing_bloom_pass, false) &&
             _vs_metadata.rendertype != "hdr"sv && _effects.active()) {
-      _fp_rt_resolved = true;
+      _effects_rt_resolved = true;
       _discard_draw_calls = false;
-      set_linear_rendering(false);
+      set_hdr_rendering(false);
 
       post_process();
 
@@ -815,14 +821,14 @@ HRESULT Device::SetRenderState(D3DRENDERSTATETYPE state, DWORD value) noexcept
       color.y = static_cast<float>((0x0000ff00 & value) >> 8) / 255.0f;
       color.z = static_cast<float>((0x000000ff & value)) / 255.0f;
 
-      if (_linear_rendering) color = glm::pow(color, glm::vec3{2.2f});
+      if (_hdr_rendering) color = glm::pow(color, glm::vec3{2.2f});
 
       _fog_color_const.set(*_device, color);
 
       break;
    }
    case D3DRS_SRCBLEND: {
-      if (_linear_rendering && value == D3DBLEND_DESTCOLOR) {
+      if (_hdr_rendering && value == D3DBLEND_DESTCOLOR) {
          _multiply_blendstate_ps_const.set(_device, 1.0f);
       }
       else if (_multiply_blendstate_ps_const.get() != 0.0f) {
@@ -869,7 +875,7 @@ HRESULT Device::SetVertexShaderConstantF(UINT start_register, const float* const
 {
    if (int offset = constants::stock::hdr - start_register;
        is_constant_being_set(constants::stock::hdr, start_register, vector4f_count) &&
-       offset > -1 && _linear_rendering) {
+       offset > -1 && _hdr_rendering) {
       const_cast<float*>(constant_data)[offset * 4 + 2] = 1.0f;
    }
 
@@ -933,7 +939,7 @@ void Device::post_process() noexcept
    _device->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
 
    _effects.postprocess.apply(_shaders, _rt_allocator, _textures,
-                              *_fp_backbuffer, *backbuffer);
+                              *_effects_backbuffer, *backbuffer);
 
    state->Apply();
 }
@@ -1052,21 +1058,21 @@ void Device::prepapre_gaussian_scene_blur() noexcept
    _discard_next_nonindexed_draw = true;
 }
 
-void Device::set_linear_rendering(bool linear_rendering) noexcept
+void Device::set_hdr_rendering(bool hdr_rendering) noexcept
 {
-   _linear_rendering = linear_rendering;
+   _hdr_rendering = hdr_rendering;
 
-   if (_linear_rendering) {
-      _linear_state_vs_const.set(*_device, {2.2f, 1.0f});
-      _linear_state_ps_const.set(*_device, {2.2f, 1.0f});
+   if (_hdr_rendering) {
+      _hdr_state_vs_const.set(*_device, {2.2f, 1.0f});
+      _hdr_state_ps_const.set(*_device, {2.2f, 1.0f});
 
       for (auto i = 0; i < 4; ++i) {
          _device->SetSamplerState(i, D3DSAMP_SRGBTEXTURE, _vs_metadata.srgb_state[i]);
       }
    }
    else {
-      _linear_state_vs_const.set(*_device, {1.0f, 0.0f});
-      _linear_state_ps_const.set(*_device, {1.0f, 0.0f});
+      _hdr_state_vs_const.set(*_device, {1.0f, 0.0f});
+      _hdr_state_ps_const.set(*_device, {1.0f, 0.0f});
 
       for (auto i = 0; i < 4; ++i) {
          _device->SetSamplerState(i, D3DSAMP_SRGBTEXTURE, FALSE);

@@ -349,13 +349,13 @@ private:
 
    void prepapre_gaussian_scene_blur() noexcept;
 
-   void set_linear_rendering(bool linear_rendering) noexcept;
+   void set_hdr_rendering(bool hdr_rendering) noexcept;
 
    Com_ref<IDirect3DDevice9> _device;
    const HWND _window;
    const std::unique_ptr<ImGuiContext, void (*)(ImGuiContext*)> _imgui_context;
 
-   Com_ptr<IDirect3DTexture9> _fp_backbuffer;
+   Com_ptr<IDirect3DTexture9> _effects_backbuffer;
    Com_ptr<IDirect3DSurface9> _backbuffer_override;
 
    Com_ptr<IDirect3DTexture9> _shadow_texture;
@@ -377,8 +377,9 @@ private:
    bool _fake_device_loss = false;
 
    // Per-Frame State
-   bool _linear_rendering = false;
-   bool _fp_rt_resolved = false;
+   // bool _linear_rendering = false;
+   bool _hdr_rendering = false;
+   bool _effects_rt_resolved = false;
    bool _game_doing_bloom_pass = false;
    bool _water_refraction = false;
    bool _ice_refraction = false;
@@ -402,8 +403,8 @@ private:
    Ps_3f_shader_constant<constants::ps::fog_color> _fog_color_const;
    Ps_4f_shader_constant<constants::ps::rt_resolution> _rt_resolution_const;
    Vs_1f_shader_constant<constants::vs::time> _time_vs_const;
-   Vs_2f_shader_constant<constants::vs::linear_state> _linear_state_vs_const;
-   Ps_2f_shader_constant<constants::ps::linear_state> _linear_state_ps_const;
+   Vs_2f_shader_constant<constants::vs::linear_state> _hdr_state_vs_const;
+   Ps_2f_shader_constant<constants::ps::linear_state> _hdr_state_ps_const;
    Ps_1f_shader_constant<constants::ps::rt_multiply_blending> _multiply_blendstate_ps_const;
 
    Shader_database _shaders;
@@ -427,6 +428,7 @@ private:
 
    const int _device_max_anisotropy = 1;
    const D3DFORMAT _stencil_shadow_format;
+   D3DFORMAT _rt_format;
 
    std::atomic_int_fast32_t _active_fx_id{0};
    std::atomic<ULONG> _ref_count{1};

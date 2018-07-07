@@ -32,7 +32,7 @@ void Postprocess::color_grading_params(const Color_grading_params& params) noexc
    _color_grading_params = params;
 
    _constants.color_grading.color_filter_exposure =
-      get_lut_exposure_color_filter(params);
+      get_lut_exposure_color_filter(_color_grading_params);
    _constants.color_grading.saturation = params.saturation;
    _color_luts = std::nullopt;
 }
@@ -41,6 +41,18 @@ void Postprocess::drop_device_resources() noexcept
 {
    _vertex_buffer = nullptr;
    _color_luts = std::nullopt;
+}
+
+void Postprocess::hdr_state(Hdr_state state) noexcept
+{
+   if (state == Hdr_state::hdr) {
+      _hdr_suffix = ""s;
+   }
+   else {
+      _hdr_suffix = " stock hdr"s;
+   }
+
+   _hdr_state = state;
 }
 
 void Postprocess::apply(const Shader_database& shaders, Rendertarget_allocator& allocator,
@@ -67,7 +79,12 @@ void Postprocess::do_bloom_and_color_grading(const Shader_database& shaders,
                                              IDirect3DTexture9& input,
                                              IDirect3DSurface9& output) noexcept
 {
-   for (int i = 0; i < 6; ++i) set_linear_clamp_sampler(*_device, i);
+   for (int i = 0; i < 6; ++i) {
+      set_linear_clamp_sampler(*_device, i, _hdr_state != Hdr_state::hdr);
+   }
+
+   _device->SetRenderState(D3DRS_SRGBWRITEENABLE, _hdr_state != Hdr_state::hdr);
+   _device->SetSamplerState(0, D3DSAMP_SRGBTEXTURE, false);
 
    auto [format, res] = get_texture_metrics(input);
 
@@ -77,9 +94,11 @@ void Postprocess::do_bloom_and_color_grading(const Shader_database& shaders,
    auto rt_a_x = allocator.allocate(format, res / 2);
    auto rt_a_y = allocator.allocate(format, res / 2);
 
-   post_shaders.at("bloom threshold"s).bind(*_device);
+   post_shaders.at("bloom threshold"s + _hdr_suffix).bind(*_device);
 
    do_pass(input, *rt_a_y.surface());
+
+   _device->SetSamplerState(0, D3DSAMP_SRGBTEXTURE, _hdr_state != Hdr_state::hdr);
 
    blurs.at("blur 12"s).bind(*_device);
 
@@ -120,14 +139,16 @@ void Postprocess::do_bloom_and_color_grading(const Shader_database& shaders,
    _device->SetTexture(bloom_sampler_slots_start + 3, rt_d_y.texture());
    _device->SetTexture(bloom_sampler_slots_start + 4, rt_e_y.texture());
    bind_color_grading_luts();
+
    _device->SetRenderState(D3DRS_SRGBWRITEENABLE, true);
+   _device->SetSamplerState(0, D3DSAMP_SRGBTEXTURE, false);
 
    if (_bloom_params.use_dirt) {
       textures.get(_bloom_params.dirt_texture_name).bind(dirt_sampler_slot_start);
-      post_shaders.at("bloom dirt colorgrade"s).bind(*_device);
+      post_shaders.at("bloom dirt colorgrade"s + _hdr_suffix).bind(*_device);
    }
    else {
-      post_shaders.at("bloom colorgrade"s).bind(*_device);
+      post_shaders.at("bloom colorgrade"s + _hdr_suffix).bind(*_device);
    }
 
    do_pass(input, output);
@@ -137,11 +158,11 @@ void Postprocess::do_color_grading(const Shader_database& shaders,
                                    IDirect3DTexture9& input,
                                    IDirect3DSurface9& output) noexcept
 {
-   set_linear_clamp_sampler(*_device, 0);
+   set_linear_clamp_sampler(*_device, 0, _hdr_state != Hdr_state::hdr);
    bind_color_grading_luts();
    _device->SetRenderState(D3DRS_SRGBWRITEENABLE, true);
 
-   shaders.at("postprocess"s).at("colorgrade"s).bind(*_device);
+   shaders.at("postprocess"s).at("colorgrade"s + _hdr_suffix).bind(*_device);
 
    do_pass(input, output);
 }

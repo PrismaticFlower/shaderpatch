@@ -7,14 +7,15 @@
   "lighting": false,
   "vertex_color": false,
 
+  "defines": [
+    [ "BLOOM_ACTIVE", "false" ],
+    [ "BLOOM_USE_DIRT", "false" ],
+    [ "STOCK_HDR_STATE", "false" ]
+  ],
+
   "states": [
     {
       "name": "colorgrade",
-
-      "defines": [
-        [ "BLOOM_ACTIVE", "false" ],
-        [ "BLOOM_USE_DIRT", "false" ]
-      ],
 
       "vertex_shader": "main_vs",
       "pixel_shader": "postprocess_ps"
@@ -24,8 +25,7 @@
       "name": "bloom colorgrade",
 
       "defines": [
-        [ "BLOOM_ACTIVE", "true" ],
-        [ "BLOOM_USE_DIRT", "false" ]
+        [ "BLOOM_ACTIVE", "true" ]
       ],
 
       "vertex_shader": "main_vs",
@@ -45,11 +45,53 @@
     },
 
     {
-      "name": "bloom threshold",
+      "name": "colorgrade stock hdr",
 
       "defines": [
-        [ "BLOOM_ACTIVE", "false" ],
-        [ "BLOOM_USE_DIRT", "false" ]
+        [ "STOCK_HDR_STATE", "true" ]
+      ],
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "postprocess_ps"
+    },
+
+    {
+      "name": "bloom colorgrade stock hdr",
+
+      "defines": [
+        [ "BLOOM_ACTIVE", "true" ],
+        [ "STOCK_HDR_STATE", "true" ]
+      ],
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "postprocess_ps"
+    },
+
+    {
+      "name": "bloom dirt colorgrade stock hdr",
+
+      "defines": [
+        [ "BLOOM_ACTIVE", "true" ],
+        [ "BLOOM_USE_DIRT", "true" ],
+        [ "STOCK_HDR_STATE", "true" ]
+      ],
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "postprocess_ps"
+    },
+
+    {
+      "name": "bloom threshold",
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "bloom_threshold_ps"
+    },
+
+    {
+      "name": "bloom threshold stock hdr",
+
+      "defines": [
+        [ "STOCK_HDR_STATE", "true" ]
       ],
 
       "vertex_shader": "main_vs",

@@ -19,6 +19,10 @@
 
 namespace sp::effects {
 
+struct Effects_control_config {
+   bool hdr_rendering = false;
+};
+
 class Control {
 private:
    Com_ref<IDirect3DDevice9> _device;
@@ -38,12 +42,24 @@ public:
 
    bool active(bool active) noexcept
    {
+      postprocess.hdr_state(_config.hdr_rendering ? Hdr_state::hdr : Hdr_state::stock);
+
       return _active = active;
    }
 
    bool active() const noexcept
    {
       return _active;
+   }
+
+   void config(const Effects_control_config& config) noexcept
+   {
+      _config = config;
+   }
+
+   auto config() const noexcept -> Effects_control_config
+   {
+      return _config;
    }
 
    void show_imgui(HWND game_window = nullptr) noexcept;
@@ -64,5 +80,35 @@ private:
    bool _active = false;
    bool _open_failure = false;
    bool _save_failure = false;
+
+   Effects_control_config _config{};
 };
+}
+
+namespace YAML {
+template<>
+struct convert<sp::effects::Effects_control_config> {
+   static Node encode(const sp::effects::Effects_control_config& config)
+   {
+      using namespace std::literals;
+
+      YAML::Node node;
+
+      node["HDRRendering"s] = config.hdr_rendering;
+
+      return node;
+   }
+
+   static bool decode(const Node& node, sp::effects::Effects_control_config& config)
+   {
+      using namespace std::literals;
+
+      config = sp::effects::Effects_control_config{};
+
+      config.hdr_rendering = node["HDRRendering"s].as<bool>(config.hdr_rendering);
+
+      return true;
+   }
+};
+
 }

@@ -73,6 +73,8 @@ struct Color_grading_params {
    float highlight_offset = 0.0f;
 };
 
+enum class Hdr_state { hdr, stock };
+
 class Postprocess {
 public:
    Postprocess(Com_ref<IDirect3DDevice9> device);
@@ -96,6 +98,8 @@ public:
               IDirect3DSurface9& output) noexcept;
 
    void drop_device_resources() noexcept;
+
+   void hdr_state(Hdr_state state) noexcept;
 
 private:
    void do_bloom_and_color_grading(const Shader_database& shaders,
@@ -163,6 +167,9 @@ private:
 
    Bloom_params _bloom_params{};
    Color_grading_params _color_grading_params{};
+
+   Hdr_state _hdr_state = Hdr_state::hdr;
+   std::string _hdr_suffix = ""s;
 
    constexpr static auto bloom_sampler_slots_start = 1;
    constexpr static auto dirt_sampler_slot_start = 6;

@@ -30,10 +30,13 @@ void Control::show_imgui(HWND game_window) noexcept
 
    ImGui::Begin("Effects Control", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
+   ImGui::Text("Device must be reset for effects control settings to be "
+               "applied correctly!");
+
    ImGui::Checkbox("Enable Effects", &_enabled);
 
-   if (ImGui::IsItemHovered()) {
-      ImGui::SetTooltip("Device must be reset before this will take efect.");
+   if (ImGui::CollapsingHeader("Effects Config", ImGuiTreeNodeFlags_DefaultOpen)) {
+      ImGui::Checkbox("HDR Rendering", &_config.hdr_rendering);
    }
 
    ImGui::Separator();
@@ -79,14 +82,18 @@ void Control::drop_device_resources() noexcept
 
 void Control::read_config(YAML::Node config)
 {
-   postprocess.color_grading_params(config["ColorGrading"s].as<Color_grading_params>());
-   postprocess.bloom_params(config["Bloom"s].as<Bloom_params>());
+   this->config(
+      config["Control"s].as<Effects_control_config>(Effects_control_config{}));
+   postprocess.color_grading_params(
+      config["ColorGrading"s].as<Color_grading_params>(Color_grading_params{}));
+   postprocess.bloom_params(config["Bloom"s].as<Bloom_params>(Bloom_params{}));
 }
 
 void Control::save_params_to_yaml_file(const fs::path& save_to) noexcept
 {
    YAML::Node config;
 
+   config["Control"s] = _config;
    config["ColorGrading"s] = postprocess.color_grading_params();
    config["Bloom"s] = postprocess.bloom_params();
 
