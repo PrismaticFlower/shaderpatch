@@ -18,9 +18,6 @@
     <ClCompile Include="src\main.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\direct3d\create_device.cpp">
-      <Filter>src\direct3d</Filter>
-    </ClCompile>
     <ClCompile Include="src\direct3d\device.cpp">
       <Filter>src\direct3d</Filter>
     </ClCompile>
@@ -54,13 +51,16 @@
     <ClCompile Include="src\effects\color_grading_lut_baker.cpp">
       <Filter>src\effects</Filter>
     </ClCompile>
+    <ClCompile Include="src\direct3d\creator.cpp">
+      <Filter>src\direct3d</Filter>
+    </ClCompile>
+    <ClCompile Include="src\direct3d\hook.cpp">
+      <Filter>src\direct3d</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
       <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\direct3d\create_device.hpp">
-      <Filter>src\direct3d</Filter>
     </ClInclude>
     <ClInclude Include="src\direct3d\device.hpp">
       <Filter>src\direct3d</Filter>
@@ -142,6 +142,12 @@
     </ClInclude>
     <ClInclude Include="src\effects\color_grading_lut_baker.hpp">
       <Filter>src\effects</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\creator.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\hook.hpp">
+      <Filter>src\direct3d</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -21,6 +21,7 @@ cd submodules/vcpkg
 ./vcpkg install boost:x86-windows-static-md
 ./vcpkg install clara:x86-windows-static-md
 ./vcpkg install yaml-cpp:x86-windows-static-md
+./vcpkg install mhook:x86-windows-static-md
 
 
 del ".\buildtrees\" -Recurse -ErrorAction SilentlyContinue
