@@ -1,6 +1,7 @@
 #pragma once
 
 #include "com_ptr.hpp"
+#include "smart_win32_handle.hpp"
 
 #include <atomic>
 

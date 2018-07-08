@@ -424,7 +424,7 @@ private:
    std::array<Sampler_state_block, 16> _sampler_states;
    std::array<Texture_state_block, 8> _texture_states;
 
-   win32::Unique_handle _materials_enabled_handle;
+   win32::Unique_handle _sp_advertise_handle;
 
    const int _device_max_anisotropy = 1;
    const D3DFORMAT _stencil_shadow_format;

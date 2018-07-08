@@ -85,7 +85,7 @@ struct User_config {
 
    struct {
       bool high_res_reflections = true;
-      bool custom_materials = true;
+      bool advertise_presence = true;
       bool force_anisotropic_filtering = true;
       bool smooth_bloom = true;
       bool gaussian_blur_blur_particles = true;
@@ -131,7 +131,7 @@ struct User_config {
 
          ImGui::Checkbox("Gaussian Scene Blur", &rendering.gaussian_scene_blur);
 
-         ImGui::Checkbox("Custom Materials", &rendering.custom_materials);
+         ImGui::Checkbox("Advertise Presence", &rendering.advertise_presence);
 
          if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("Will not take effect on Apply.");
@@ -211,8 +211,8 @@ private:
       rendering.force_anisotropic_filtering =
          config["Rendering"s]["ForceAnisotropicFiltering"s].as<bool>();
 
-      rendering.custom_materials =
-         config["Rendering"s]["CustomMaterials"s].as<bool>();
+      rendering.advertise_presence =
+         config["Rendering"s]["AdvertisePresence"s].as<bool>();
 
       developer.toggle_key = config["Developer"s]["ScreenToggle"s].as<int>();
    }

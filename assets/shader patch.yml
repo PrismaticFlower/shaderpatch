@@ -47,8 +47,8 @@ Rendering:
    # This has no affect on Shader Patch custom materials.
    ForceAnisotropicFiltering: yes
    
-   # Enable or disable advertising custom material support to mods.
-   CustomMaterials: yes
+   # Enable or disable advertising Shader Patch's presence to mods.
+   AdvertisePresence: yes
 
 Developer:
    # Toggle key for the developer screen. Giving access to useful things for mod makers and

@@ -92,9 +92,9 @@ Device::Device(IDirect3DDevice9& device, const HWND window, const glm::ivec2 res
      _fs_vertex_decl{effects::create_fs_triangle_decl(*_device)},
      _stencil_shadow_format{stencil_shadow_format}
 {
-   if (_config.rendering.custom_materials) {
-      _materials_enabled_handle = win32::Unique_handle{
-         CreateFileW(L"data/shaderpatch/materials_enabled", GENERIC_READ | GENERIC_WRITE,
+   if (_config.rendering.advertise_presence) {
+      _sp_advertise_handle = win32::Unique_handle{
+         CreateFileW(L"data/shaderpatch/installed", GENERIC_READ | GENERIC_WRITE,
                      FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                      nullptr, OPEN_ALWAYS, FILE_FLAG_DELETE_ON_CLOSE, nullptr)};
    }
