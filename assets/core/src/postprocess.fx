@@ -116,7 +116,7 @@ float4 postprocess_finalize_ps(float2 texcoords : TEXCOORD, float2 position : VP
                                   0.0,
                                   0.0);
 
-   color.rgb = tex2Dlod(blue_noise_sampler, (position / 64.0) + randomness.xy, 0).rgb; //apply_dithering(color.rgb, position);
+   color.rgb = apply_dithering(color.rgb, position);
 
    return color;
 }
