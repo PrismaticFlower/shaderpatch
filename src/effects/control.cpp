@@ -262,6 +262,7 @@ Color_grading_params show_color_grading_imgui(Color_grading_params params) noexc
       ImGui::ColorEdit3("Colour Filter", &params.color_filter.x,
                         ImGuiColorEditFlags_Float);
       ImGui::DragFloat("Exposure", &params.exposure, 0.01f);
+      ImGui::DragFloat("Brightness", &params.brightness, 0.01f);
       ImGui::DragFloat("Saturation", &params.saturation, 0.01f, 0.0f, 5.0f);
       ImGui::DragFloat("Contrast", &params.contrast, 0.01f, 0.01f, 5.0f);
    }

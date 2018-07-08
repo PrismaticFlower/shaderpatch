@@ -11,8 +11,8 @@ using namespace std::literals;
 
 namespace {
 
-const auto contrast_midpoint = glm::log2(.18f);
-constexpr auto contrast_epsilon = 1e-5f;
+const auto log_contrast_midpoint = glm::log2(.18f);
+constexpr auto log_contrast_epsilon = 1e-5f;
 constexpr auto lut_size = 256;
 
 constexpr Sampler_info lut_sampler_info = {D3DTADDRESS_CLAMP,
@@ -260,20 +260,20 @@ glm::vec3 eval(glm::vec3 v, const Filmic_curve& curve)
 }
 }
 
-glm::vec3 eval_log_contrast(glm::vec3 v, float eps, float log_midpoint, float contrast)
+glm::vec3 eval_log_contrast(glm::vec3 v, float contrast)
 {
-   glm::vec3 log_v = glm::log2(v + eps);
-   glm::vec3 adj_v = log_midpoint + (log_v - log_midpoint) * contrast;
+   glm::vec3 log_v = glm::log2(v + log_contrast_epsilon);
+   glm::vec3 adj_v = log_contrast_midpoint + (log_v - log_contrast_midpoint) * contrast;
 
-   return glm::max(glm::vec3{0.0f}, glm::exp2(adj_v) - eps);
+   return glm::max(glm::vec3{0.0f}, glm::exp2(adj_v) - log_contrast_epsilon);
 }
 
-float eval_log_contrast_reverse(float v, float eps, float log_midpoint, float contrast)
+float eval_log_contrast_reverse(float v, float contrast)
 {
-   float log_v = glm::log2(v + eps);
-   float adj_v = (log_v - log_midpoint) / contrast + log_midpoint;
+   float log_v = glm::log2(v + log_contrast_epsilon);
+   float adj_v = (log_v - log_contrast_midpoint) / contrast + log_contrast_midpoint;
 
-   return glm::max(0.0f, glm::exp2(adj_v) - eps);
+   return glm::max(0.0f, glm::exp2(adj_v) - log_contrast_epsilon);
 }
 
 glm::vec3 eval_lift_gamma_gain(glm::vec3 v, glm::vec3 lift_adjust,
@@ -310,9 +310,7 @@ auto get_eval_params(const Color_grading_params& params) noexcept -> Eval_params
 
    eval.filmic = filmic::color_grading_params_to_curve(params);
 
-   eval.max_table_value =
-      eval_log_contrast_reverse(eval.filmic.w, contrast_epsilon,
-                                contrast_midpoint, eval.contrast);
+   eval.max_table_value = eval_log_contrast_reverse(eval.filmic.w, eval.contrast);
 
    return eval;
 }
@@ -367,13 +365,13 @@ auto create_lut(IDirect3DDevice9& device, const std::vector<glm::u16>& texels) n
 
 glm::vec3 get_lut_exposure_color_filter(const Color_grading_params& params) noexcept
 {
-   const auto color_filter_exposure = params.color_filter * glm::exp2(params.exposure);
+   const auto color_filter_exposure =
+      params.color_filter * glm::exp2(params.exposure) * params.brightness;
 
    const auto filmic_curve = filmic::color_grading_params_to_curve(params);
 
    const auto max_table_value =
-      eval_log_contrast_reverse(filmic_curve.w, contrast_epsilon,
-                                contrast_midpoint, params.contrast);
+      eval_log_contrast_reverse(filmic_curve.w, params.contrast);
 
    return color_filter_exposure * (1.0f / max_table_value);
 }
@@ -397,7 +395,7 @@ auto bake_color_grading_luts(IDirect3DDevice9& device,
       t = (t * t) * eval.max_table_value;
 
       glm::vec3 rgb{t};
-      rgb = eval_log_contrast(rgb, contrast_epsilon, contrast_midpoint, eval.contrast);
+      rgb = eval_log_contrast(rgb, eval.contrast);
       rgb = eval_lift_gamma_gain(rgb, eval.lift_adjust, eval.inv_gamma_adjust,
                                  eval.gain_adjust);
       rgb = filmic::eval(rgb, eval.filmic);

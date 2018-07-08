@@ -58,6 +58,7 @@ struct Color_grading_params {
    glm::vec3 color_filter = {1.0f, 1.0f, 1.0f};
    float saturation = 1.0f;
    float exposure = 0.0f;
+   float brightness = 1.0f;
    float contrast = 1.0f;
 
    float filmic_toe_strength = 0.0f;
@@ -324,6 +325,7 @@ struct convert<sp::effects::Color_grading_params> {
 
       node["Saturation"s] = params.saturation;
       node["Exposure"s] = params.exposure;
+      node["Brightness"s] = params.brightness;
       node["Contrast"s] = params.contrast;
 
       node["FilmicToeStrength"s] = params.filmic_toe_strength;
@@ -366,6 +368,7 @@ struct convert<sp::effects::Color_grading_params> {
 
       params.saturation = node["Saturation"s].as<float>(params.saturation);
       params.exposure = node["Exposure"s].as<float>(params.exposure);
+      params.brightness = node["Brightness"s].as<float>(params.brightness);
       params.contrast = node["Contrast"s].as<float>(params.contrast);
 
       params.filmic_toe_strength =
