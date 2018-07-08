@@ -3,6 +3,8 @@
 #include "color_grading_lut_baker.hpp"
 #include "helpers.hpp"
 
+#include <random>
+
 namespace sp::effects {
 
 Postprocess::Postprocess(Com_ref<IDirect3DDevice9> device, Post_aa_quality aa_quality)
@@ -178,9 +180,11 @@ void Postprocess::do_color_grading(const Shader_database& shaders,
    do_pass(input, output);
 }
 
-void Postprocess::do_finalize(const Shader_database& shaders, const Texture_database&,
+void Postprocess::do_finalize(const Shader_database& shaders,
+                              const Texture_database& textures,
                               IDirect3DTexture9& input, IDirect3DSurface9& output)
 {
+   bind_blue_noise_texture(textures);
    set_fs_pass_ps_state(*_device, input);
    set_linear_clamp_sampler(*_device, 0, false);
    _device->SetRenderState(D3DRS_SRGBWRITEENABLE, false);
@@ -218,11 +222,21 @@ void Postprocess::linear_resample(IDirect3DSurface9& input,
    _device->StretchRect(&input, nullptr, &output, nullptr, D3DTEXF_LINEAR);
 }
 
-void Postprocess::set_shader_constants() const noexcept
+void Postprocess::set_shader_constants() noexcept
 {
+   update_randomness();
+
    _device->SetPixelShaderConstantF(constants::ps::post_processing_start + 1,
                                     reinterpret_cast<const float*>(&_constants),
                                     sizeof(_constants) / 16);
+}
+
+void Postprocess::update_randomness() noexcept
+{
+   _constants.randomness = {_random_real_dist(_random_engine),
+                            _random_real_dist(_random_engine),
+                            _random_real_dist(_random_engine),
+                            _random_real_dist(_random_engine)};
 }
 
 void Postprocess::bind_color_grading_luts() noexcept
@@ -234,6 +248,14 @@ void Postprocess::bind_color_grading_luts() noexcept
    for (int i = 0; i < gsl::narrow_cast<int>(_color_luts->size()); ++i) {
       (*_color_luts)[i].bind(lut_sampler_slots_start + i);
    }
+}
+
+void Postprocess::bind_blue_noise_texture(const Texture_database& textures) noexcept
+{
+   auto texture = textures.get("_SP_BUILTIN_blue_noise_rgb_"s +
+                               std::to_string(_random_int_dist(_random_engine)));
+
+   texture.bind(blue_noise_sampler_slot);
 }
 
 void Postprocess::setup_vetrex_stream() noexcept

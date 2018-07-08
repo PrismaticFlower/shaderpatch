@@ -9,6 +9,7 @@
 
 #include <array>
 #include <optional>
+#include <random>
 #include <string>
 
 #include <glm/glm.hpp>
@@ -125,9 +126,13 @@ private:
    void linear_resample(IDirect3DSurface9& input, IDirect3DSurface9& output) const
       noexcept;
 
-   void set_shader_constants() const noexcept;
+   void set_shader_constants() noexcept;
+
+   void update_randomness() noexcept;
 
    void bind_color_grading_luts() noexcept;
+
+   void bind_blue_noise_texture(const Texture_database& textures) noexcept;
 
    void setup_vetrex_stream() noexcept;
 
@@ -165,9 +170,11 @@ private:
          alignas(16) glm::vec3 color_filter_exposure{1.0f, 1.0f, 1.0f};
          float saturation{1.0f};
       } color_grading;
+
+      alignas(16) glm::vec4 randomness{1.0f, 1.0f, 1.0f, 1.0f};
    } _constants;
 
-   static_assert(sizeof(decltype(_constants)) == 128);
+   static_assert(sizeof(decltype(_constants)) == 144);
 
    std::optional<std::array<Texture, 3>> _color_luts;
 
@@ -178,9 +185,14 @@ private:
    std::string _hdr_suffix = ""s;
    std::string _aa_suffix = "fastest"s;
 
+   std::mt19937 _random_engine{std::random_device{}()};
+   std::uniform_real_distribution<float> _random_real_dist{0.0f, 1024.f};
+   std::uniform_int<int> _random_int_dist{0, 63};
+
    constexpr static auto bloom_sampler_slots_start = 1;
    constexpr static auto dirt_sampler_slot_start = 6;
    constexpr static auto lut_sampler_slots_start = 7;
+   constexpr static auto blue_noise_sampler_slot = 10;
 };
 
 }
