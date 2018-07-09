@@ -11,7 +11,7 @@ struct Vs_input
 struct Vs_output
 {
    float4 position : POSITION;
-   float4 color : COLOR;
+   float4 color : TEXCOORD;
    float fog : FOG;
 };
 
@@ -37,7 +37,7 @@ Vs_output lightbeam_vs(Vs_input input)
    return output;
 }
 
-float4 lightbeam_ps(float4 color : COLOR) : COLOR
+float4 lightbeam_ps(float4 color : TEXCOORD) : COLOR
 {
    return color;
 }

@@ -12,8 +12,8 @@ struct Vs_input
 struct Vs_output
 {
    float4 position : POSITION;
-   float4 color : COLOR;
-   float2 texcoords : TEXCOORD;
+   float2 texcoords : TEXCOORD0;
+   float4 color : TEXCOORD1;
 };
 
 sampler diffuse_map;
@@ -44,8 +44,8 @@ Vs_output decal_vs(Vs_input input)
 
 struct Ps_input
 {
-   float4 color : COLOR;
-   float2 texcoords : TEXCOORD;
+   float2 texcoords : TEXCOORD0;
+   float4 color : TEXCOORD1;
 };
 
 float4 diffuse_ps(Ps_input input) : COLOR

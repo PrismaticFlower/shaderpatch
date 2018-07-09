@@ -48,8 +48,8 @@ struct Vs_lowquality_output
    float fog : FOG;
    float2 diffuse_texcoords[2] : TEXCOORD0;
    float2 spec_texcoords[2] : TEXCOORD2;
-   float2 hdr_scale_fade : COLOR0;
-   float specular : COLOR1;
+   float2 hdr_scale_fade : TEXCOORD4;
+   float specular : TEXCOORD5;
 };
 
 Vs_lowquality_output lowquality_vs(float4 position : POSITION, float3 normal : NORMAL,
@@ -92,9 +92,9 @@ struct Vs_normal_map_output
 {
    float4 position : POSITION;
    float fog_eye_distance : DEPTH;
-   float fade : COLOR0;
    float3 view_normal : TEXCOORD0;
    float2 texcoords[4] : TEXCOORD1;
+   float fade : TEXCOORD5;
 };
 
 Vs_normal_map_output normal_map_vs(float4 position : POSITION, float3 normal : NORMAL)
@@ -146,9 +146,9 @@ struct Ps_normal_map_input
 {
    float2 position : VPOS;
    float fog_eye_distance : DEPTH;
-   float fade : COLOR0;
    float3 view_normal : TEXCOORD0;
    float2 texcoords[4] : TEXCOORD1;
+   float fade : TEXCOORD5;
 };
 
 float3 sample_normal_map(sampler2D normal_map, float2 texcoords)
@@ -324,8 +324,8 @@ struct Ps_lowquality_input
 {
    float2 diffuse_texcoords[2] : TEXCOORD0;
    float2 spec_texcoords[2] : TEXCOORD2;
-   float2 hdr_scale_fade : COLOR0;
-   float specular : COLOR1;
+   float2 hdr_scale_fade : TEXCOORD4;
+   float specular : TEXCOORD5;
 };
 
 float4 lowquality_ps(Ps_lowquality_input input,

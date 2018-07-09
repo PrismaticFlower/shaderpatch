@@ -21,12 +21,11 @@ struct Vs_output
    float4 position : POSITION;
    float fog : FOG;
 
-   float fade : COLOR0;
-
    float2 texcoords : TEXCOORD0;
    float3 normal_texcoords : TEXCOORD1;
    float3 world_normal : TEXCOORD2;
    float3 view_normal : TEXCOORD3;
+   float fade : TEXCOORD4;
 };
 
 float3 animate_normal(float3 normal)
@@ -96,12 +95,11 @@ sampler2D refraction_texture : register(ps, s13);
 
 struct Ps_input
 {
-   float fade : COLOR0;
-
    float2 texcoords : TEXCOORD0;
    float3 normal_texcoords : TEXCOORD1;
    float3 world_normal : TEXCOORD2;
    float3 view_normal : TEXCOORD3;
+   float fade : TEXCOORD4;
 };
 
 float2 map_xyz_to_uv(float3 pos)

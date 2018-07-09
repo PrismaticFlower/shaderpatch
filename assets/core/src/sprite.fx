@@ -15,14 +15,14 @@ struct Vs_input
 struct Vs_output
 {
    float4 position : POSITION;
-   float2 texcoord : TEXCOORD;
-   float4 color : COLOR;
+   float2 texcoord : TEXCOORD0;
+   float4 color : TEXCOORD1;
 };
 
 struct Ps_input
 {
-   float2 texcoord : TEXCOORD;
-   float4 color : COLOR;
+   float2 texcoord : TEXCOORD0;
+   float4 color : TEXCOORD1;
 };
 
 sampler diffuse_map_sampler;

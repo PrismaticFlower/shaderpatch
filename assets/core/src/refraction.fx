@@ -23,8 +23,8 @@ struct Vs_nodistortion_output
    float3 world_position : TEXCOORD1;
    float3 world_normal : TEXCOORD2;
 
-   float4 color : COLOR;
-   float3 precalculated_light : COLOR1;
+   float4 color : TEXCOORD3;
+   float3 precalculated_light : TEXCOORD4;
 
    float fog_eye_distance : DEPTH;
 };
@@ -99,9 +99,9 @@ struct Vs_distortion_output
    float3 world_position : TEXCOORD4;
    float3 world_normal : TEXCOORD5;
 
-   float4 color : COLOR0;
-   float3 precalculated_light : COLOR1;
-   float3 projection_color : COLOR2;
+   float4 color : TEXCOORD6;
+   float3 precalculated_light : TEXCOORD7;
+   float3 projection_color : TEXCOORD8;
 
    float fog_eye_distance : DEPTH;
 };
@@ -169,8 +169,8 @@ struct Ps_far_input
    float3 world_position : TEXCOORD1;
    float3 world_normal : TEXCOORD2;
 
-   float4 color : COLOR;
-   float3 precalculated_light : COLOR1;
+   float4 color : TEXCOORD3;
+   float3 precalculated_light : TEXCOORD4;
 
    float fog_eye_distance : DEPTH;
 };
@@ -207,9 +207,9 @@ struct Ps_near_input
    float3 world_position : TEXCOORD4;
    float3 world_normal : TEXCOORD5;
 
-   float4 color : COLOR0;
-   float3 precalculated_light : COLOR1;
-   float3 projection_color : COLOR2;
+   float4 color : TEXCOORD6;
+   float3 precalculated_light : TEXCOORD7;
+   float3 projection_color : TEXCOORD8;
 
    float fog_eye_distance : DEPTH;
 };

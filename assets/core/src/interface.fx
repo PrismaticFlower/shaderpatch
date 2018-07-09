@@ -69,7 +69,7 @@ struct Vs_vector_input
 struct Vs_vector_output
 {
    float4 position : POSITION;
-   float4 color : COLOR;
+   float4 color : TEXCOORD;
 };
 
 Vs_vector_output vector_vs(Vs_vector_input input)
@@ -82,7 +82,7 @@ Vs_vector_output vector_vs(Vs_vector_input input)
    return output;
 }
 
-float4 vector_ps(float4 color : COLOR) : COLOR
+float4 vector_ps(float4 color : TEXCOORD) : COLOR
 {
    return color * ps_constant;
 }

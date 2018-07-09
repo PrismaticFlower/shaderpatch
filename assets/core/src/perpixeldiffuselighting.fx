@@ -56,8 +56,6 @@ struct Vs_3lights_output
    float4 position : POSITION;
    float1 fog_eye_distance : DEPTH;
 
-   float3 ambient_color : COLOR;
-
    float2 texcoords : TEXCOORD0;
 
    float3 normal : TEXCOORD1;
@@ -65,6 +63,8 @@ struct Vs_3lights_output
    float3 tangent : TEXCOORD3;
 
    float3 world_position : TEXCOORD4;
+
+   float3 ambient_color : TEXCOORD5;
 };
 
 Vs_3lights_output lights_3_vs(Vs_input input)
@@ -142,7 +142,6 @@ struct Vs_spotlight_output
 {
    float4 position : POSITION;
    float1 fog_eye_distance : DEPTH;
-   float3 ambient_color : COLOR;
    float2 texcoords : TEXCOORD0;
 
    float3 normal : TEXCOORD1;
@@ -151,6 +150,8 @@ struct Vs_spotlight_output
 
    float3 world_position : TEXCOORD4;
    float4 projection_coords : TEXCOORD5;
+
+   float3 ambient_color : TEXCOORD6;
 };
 
 Vs_spotlight_output spotlight_vs(Vs_input input)
@@ -216,8 +217,6 @@ Vs_spotlight_output spotlight_genbinormals_terrain_vs(Vs_input input)
 
 struct Ps_3lights_input
 {
-   float3 ambient_color : COLOR;
-
    float2 texcoords : TEXCOORD0;
 
    float3 normal : TEXCOORD1;
@@ -225,6 +224,8 @@ struct Ps_3lights_input
    float3 tangent : TEXCOORD3;
 
    float3 world_position : TEXCOORD4;
+
+   float3 ambient_color : TEXCOORD5;
 
    float1 fog_eye_distance : DEPTH;
 };
@@ -331,7 +332,6 @@ float4 lights_1_ps(Ps_3lights_input input) : COLOR
 
 struct Ps_spotlight_input
 {
-   float3 ambient_color : COLOR;
    float2 texcoords : TEXCOORD0;
 
    float3 normal : TEXCOORD1;
@@ -340,6 +340,8 @@ struct Ps_spotlight_input
 
    float3 world_position : TEXCOORD4;
    float4 projection_coords : TEXCOORD5;
+
+   float3 ambient_color : TEXCOORD6;
 
    float1 fog_eye_distance : DEPTH;
 };

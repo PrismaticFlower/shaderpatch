@@ -30,8 +30,8 @@ struct Vs_hardedged_input
 struct Vs_hardedged_output
 {
    float4 position : POSITION;
-   float2 texcoords : TEXCOORD;
-   float4 color : COLOR;
+   float2 texcoords : TEXCOORD0;
+   float4 color : TEXCOORD1;
 };
 
 Vs_hardedged_output hardedged_vs(Vs_hardedged_input input)
@@ -56,8 +56,8 @@ float4 opaque_ps() : COLOR
 
 struct Ps_hardedged_input
 {
-   float2 texcoords : TEXCOORD;
-   float4 color : COLOR;
+   float2 texcoords : TEXCOORD0;
+   float4 color : TEXCOORD1;
 };
 
 float4 hardedged_ps(Ps_hardedged_input input) : COLOR

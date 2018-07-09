@@ -25,7 +25,7 @@ struct Vs_input
    float3 normals : NORMAL;
    uint4 blend_indices : BLENDINDICES;
    float4 weights : BLENDWEIGHT;
-   float4 texcoords : TEXCOORD;
+   float4 texcoords : TEXCOORD0;
    float4 color : COLOR;
 };
 
@@ -34,7 +34,7 @@ struct Vs_output_unlit
    float4 position : POSITION;
    float2 diffuse_texcoords : TEXCOORD0;
    float2 detail_texcoords : TEXCOORD1;
-   float4 color : COLOR;
+   float4 color : TEXCOORD2;
    float fog_eye_distance : DEPTH;
 };
 
@@ -90,8 +90,8 @@ struct Vs_output
    float3 world_position : TEXCOORD4;
    float3 world_normal : TEXCOORD5;
 
-   float4 color : COLOR0;
-   float3 precalculated_light : COLOR1;
+   float4 color : TEXCOORD6;
+   float3 precalculated_light : TEXCOORD7;
 
    float fog_eye_distance : DEPTH;
 };
@@ -143,9 +143,9 @@ struct Vs_full_output
    float3 world_position : TEXCOORD4;
    float3 world_normal : TEXCOORD5;
 
-   float4 color : COLOR0;
-   float3 precalculated_light : COLOR1;
-   float3 projection_color : COLOR2;
+   float4 color : TEXCOORD6;
+   float3 precalculated_light : TEXCOORD7;
+   float3 projection_color : TEXCOORD8;
 
    float fog_eye_distance : DEPTH;
 };
@@ -217,7 +217,7 @@ struct Ps_input_unlit
 {
    float2 diffuse_texcoords : TEXCOORD0;
    float2 detail_texcoords : TEXCOORD1;
-   float4 color : COLOR0;
+   float4 color : TEXCOORD2;
    float fog_eye_distance : DEPTH;
 };
 
@@ -314,9 +314,9 @@ struct Ps_input
    float3 world_position : TEXCOORD4;
    float3 world_normal : TEXCOORD5;
 
-   float4 color : COLOR0;
-   float3 precalculated_light : COLOR1;
-   float3 projection_color : COLOR2;
+   float4 color : TEXCOORD6;
+   float3 precalculated_light : TEXCOORD7;
+   float3 projection_color : TEXCOORD8;
 
    float fog_eye_distance : DEPTH;
 };

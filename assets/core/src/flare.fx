@@ -12,14 +12,14 @@ struct Vs_textured_input
 struct Vs_textured_output
 {
    float4 position : POSITION;
-   float4 color : COLOR;
-   float2 texcoord : TEXCOORD;
+   float2 texcoord : TEXCOORD0;
+   float4 color : TEXCOORD1;
 };
 
 struct Ps_textured_input
 {
-   float4 color : COLOR;
-   float2 texcoord : TEXCOORD;
+   float2 texcoord : TEXCOORD0;
+   float4 color : TEXCOORD1;
 };
 
 sampler2D diffuse_map;
@@ -47,13 +47,13 @@ float4 flare_textured_ps(Ps_textured_input input) : COLOR
 struct Vs_untextured_input
 {
    float4 position : POSITION;
-   float4 color : COLOR;
+   float4 color : TEXCOORD;
 };
 
 struct Vs_untextured_output
 {
    float4 position : POSITION;
-   float4 color : COLOR;
+   float4 color : TEXCOORD;
 };
 
 Vs_untextured_output flare_untextured_vs(Vs_untextured_input input)
@@ -66,7 +66,7 @@ Vs_untextured_output flare_untextured_vs(Vs_untextured_input input)
    return output;
 }
 
-float4 flare_untextured_ps(float4 color : COLOR) : COLOR
+float4 flare_untextured_ps(float4 color : TEXCOORD) : COLOR
 {
    return color;
 }

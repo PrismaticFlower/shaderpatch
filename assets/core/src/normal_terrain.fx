@@ -27,8 +27,8 @@ struct Vs_blendmap_output
    float3 world_position : TEXCOORD5;
    float3 world_normal : TEXCOORD6;
 
-   float3 precalculated_light : COLOR0;
-   float fade : COLOR1;
+   float3 precalculated_light : TEXCOORD7;
+   float fade : TEXCOORD8;
    float fog_eye_distance : DEPTH;
 };
 
@@ -73,9 +73,9 @@ struct Vs_detail_output
    float3 world_position : TEXCOORD4;
    float3 world_normal : TEXCOORD5;
 
-   float3 precalculated_light : COLOR0;
-   float3 projection_color : COLOR1;
-   float fade : COLOR2;
+   float3 precalculated_light : TEXCOORD6;
+   float3 projection_color : TEXCOORD7;
+   float fade : TEXCOORD8;
 
    float fog_eye_distance : DEPTH;
 };
@@ -124,8 +124,8 @@ struct Ps_blendmap_input
    float3 world_position : TEXCOORD5;
    float3 world_normal : TEXCOORD6;
 
-   float3 precalculated_light : COLOR0;
-   float fade : COLOR1;
+   float3 precalculated_light : TEXCOORD7;
+   float fade : TEXCOORD8;
    float fog_eye_distance : DEPTH;
 };
 
@@ -210,9 +210,9 @@ struct Ps_detail_input
    float3 world_position : TEXCOORD4;
    float3 world_normal : TEXCOORD5;
 
-   float3 precalculated_light : COLOR0;
-   float3 projection_color : COLOR1;
-   float fade : COLOR2;
+   float3 precalculated_light : TEXCOORD6;
+   float3 projection_color : TEXCOORD7;
+   float fade : TEXCOORD8;
 
    float fog_eye_distance : DEPTH;
 };

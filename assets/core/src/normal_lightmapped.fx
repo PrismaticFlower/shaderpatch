@@ -42,7 +42,7 @@ struct Vs_output
    float3 world_position : TEXCOORD4;
    float3 world_normal : TEXCOORD5;
 
-   float4 color : COLOR0;
+   float4 color : TEXCOORD6;
 
    float fog_eye_distance : DEPTH;
 };
@@ -106,7 +106,7 @@ struct Ps_input
    float3 world_position : TEXCOORD4;
    float3 world_normal : TEXCOORD5;
 
-   float4 material_color : COLOR0;
+   float4 material_color : TEXCOORD6;
 
    float fog_eye_distance : DEPTH;
 };

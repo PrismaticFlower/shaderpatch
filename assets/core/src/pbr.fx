@@ -71,7 +71,7 @@ struct Vs_output
    float3 world_position : TEXCOORD2;
    float3 world_normal : TEXCOORD3;
 
-   float fade : COLOR0;
+   float fade : TEXCOORD4;
 
    float fog_eye_distance : DEPTH;
 };
@@ -108,7 +108,7 @@ struct Ps_input
    float3 world_position : TEXCOORD2;
    float3 world_normal : TEXCOORD3;
 
-   float fade : COLOR0;
+   float fade : TEXCOORD4;
 
    float fog_eye_distance : DEPTH;
 

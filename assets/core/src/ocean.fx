@@ -16,7 +16,7 @@ struct Vs_output
    float2 base_texcoords : TEXCOORD0;
    float2 foam_texcoords : TEXCOORD1;
    float3 normal_texcoords : TEXCOORD2;
-   float4 color : COLOR;
+   float4 color : TEXCOORD3;
    float1 fog : FOG;
 };
 
@@ -62,7 +62,7 @@ struct Ps_input
    float2 base_texcoords : TEXCOORD0;
    float2 foam_texcoords : TEXCOORD1;
    float3 normal_texcoords : TEXCOORD2;
-   float4 color : COLOR;
+   float4 color : TEXCOORD3;
 };
 
 float4 light_vector : register(ps, c[0]);

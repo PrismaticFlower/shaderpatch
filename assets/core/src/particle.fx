@@ -11,9 +11,9 @@ struct Vs_normal_input
 struct Vs_normal_output
 {
    float4 position : POSITION;
-   float4 color : COLOR;
    float fog : FOG;
-   float2 texcoords : TEXCOORD;
+   float2 texcoords : TEXCOORD0;
+   float4 color : TEXCOORD1;
 };
 
 Vs_normal_output normal_vs(Vs_normal_input input,
@@ -60,10 +60,10 @@ struct Vs_blur_input
 struct Vs_blur_output
 {
    float4 position : POSITION;
-   float4 color : COLOR;
    float  fog : FOG;
    float2 texcoords : TEXCOORD0;
    float4 blur_texcoords : TEXCOORD1;
+   float4 color : TEXCOORD2;
 };
 
 Vs_blur_output blur_vs(Vs_blur_input input,
@@ -107,8 +107,8 @@ Vs_blur_output blur_vs(Vs_blur_input input,
 
 struct Ps_normal_input
 {
-   float4 color : COLOR;
-   float2 texcoords : TEXCOORD;
+   float2 texcoords : TEXCOORD0;
+   float4 color : TEXCOORD1;
 };
 
 float4 normal_ps(Ps_normal_input input,
@@ -121,9 +121,9 @@ float4 normal_ps(Ps_normal_input input,
 
 struct Ps_blur_input
 {
-   float4 color : COLOR;
    float2 texcoords : TEXCOORD0;
    float4 blur_texcoords : TEXCOORD1;
+   float4 color : TEXCOORD2;
 };
 
 float4 blur_ps(Ps_blur_input input,
