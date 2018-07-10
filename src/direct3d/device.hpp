@@ -16,6 +16,8 @@
 #include "shader_constant.hpp"
 #include "smart_win32_handle.hpp"
 #include "texture_state_block.hpp"
+#include "transform_state_block.hpp"
+#include "vertex_input_state.hpp"
 
 #include <atomic>
 #include <chrono>
@@ -423,6 +425,8 @@ private:
    Render_state_block _state_block;
    std::array<Sampler_state_block, 16> _sampler_states;
    std::array<Texture_state_block, 8> _texture_states;
+   Transform_state_block _transform_state;
+   Vertex_input_state _vertex_input_state;
 
    win32::Unique_handle _sp_advertise_handle;
 

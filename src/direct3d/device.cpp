@@ -151,6 +151,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
    _refraction_texture.reset(nullptr);
    _fs_vertex_buffer.reset(nullptr);
    _water_texture = Texture{};
+   _vertex_input_state = {};
 
    _textures.clean_lost_textures();
    _effects.drop_device_resources();
@@ -187,6 +188,8 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
    _state_block = create_filled_render_state_block(*_device);
    _sampler_states = create_filled_sampler_state_blocks(*_device);
    _texture_states = create_filled_texture_state_blocks(*_device);
+   _transform_state = create_filled_transform_state_block(*_device);
+   _vertex_input_state = create_filled_vertex_input_state(*_device);
 
    // recreate resources
 
@@ -320,82 +323,7 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
    return D3D_OK;
 }
 
-HRESULT Device::GetBackBuffer(UINT swap_chain, UINT back_buffer_index,
-                              D3DBACKBUFFER_TYPE type,
-                              IDirect3DSurface9** back_buffer) noexcept
-{
-   if (swap_chain || back_buffer_index) return D3DERR_INVALIDCALL;
-
-   if (_backbuffer_override) {
-      *back_buffer = _backbuffer_override.get();
-      _backbuffer_override->AddRef();
-
-      return S_OK;
-   }
-
-   return _device->GetBackBuffer(swap_chain, back_buffer_index, type, back_buffer);
-}
-
-HRESULT Device::SetTexture(DWORD stage, IDirect3DBaseTexture9* texture) noexcept
-{
-   if (texture == nullptr) {
-      if (stage == 0 && _material) {
-         clear_material();
-      }
-
-      return _device->SetTexture(stage, nullptr);
-   }
-
-   auto type = texture->GetType();
-
-   // Custom Material Handling
-   if (stage == 0 && type == Material_resource::id) {
-      auto& material_resource = static_cast<Material_resource&>(*texture);
-      _material = material_resource.get_material();
-
-      _material->bind();
-
-      _refresh_material = true;
-
-      return S_OK;
-   }
-   else if (stage != 0 && type == Material_resource::id) {
-      log(Log_level::warning, "Attempt to bind material to texture slot other than 0."sv);
-
-      return S_OK;
-   }
-   else if (stage == 0 && _material) {
-      clear_material();
-   }
-
-   // Projected Cube Texture Workaround
-   if (type == D3DRTYPE_CUBETEXTURE && stage == 2) {
-      set_ps_bool_constant<constants::ps::cubemap_projection>(*_device, true);
-
-      apply_sampler_state(*_device, _sampler_states[2], cubemap_projection_slot);
-
-      _device->SetTexture(cubemap_projection_slot, texture);
-   }
-   else if (stage == 2) {
-      set_ps_bool_constant<constants::ps::cubemap_projection>(*_device, false);
-   }
-
-   return _device->SetTexture(stage, texture);
-}
-
-HRESULT Device::SetRenderTarget(DWORD render_target_index,
-                                IDirect3DSurface9* render_target) noexcept
-{
-   if (render_target != nullptr) {
-      auto [_, res] = effects::get_surface_metrics(*render_target);
-
-      const auto fl_res = static_cast<glm::vec2>(res);
-
-      _rt_resolution_const.set(*_device, {fl_res, glm::vec2{1.0f} / fl_res});
-   }
-
-   return _device->SetRenderTarget(render_target_index, render_target);
-}
+// Device Resource Creators
 
 HRESULT Device::CreateVolumeTexture(UINT width, UINT height, UINT depth, UINT levels,
                                     DWORD usage, D3DFORMAT format, D3DPOOL pool,
@@ -581,26 +509,6 @@ HRESULT Device::CreateDepthStencilSurface(UINT width, UINT height, D3DFORMAT for
                                              discard, surface, shared_handle);
 }
 
-HRESULT Device::StretchRect(IDirect3DSurface9* source_surface,
-                            const RECT* source_rect, IDirect3DSurface9* dest_surface,
-                            const RECT* dest_rect, D3DTEXTUREFILTERTYPE filter) noexcept
-{
-   if (_stretch_rect_hook) {
-      return _stretch_rect_hook(source_surface, source_rect, dest_surface,
-                                dest_rect, filter);
-   }
-
-   if (_config.rendering.gaussian_blur_blur_particles &&
-       dest_surface == _blur_surface.get() && std::exchange(_blur_resolved, true)) {
-      resolve_blur_surface(*source_surface);
-
-      return S_OK;
-   }
-
-   return _device->StretchRect(source_surface, source_rect, dest_surface,
-                               dest_rect, D3DTEXF_LINEAR);
-}
-
 HRESULT Device::CreateVertexShader(const DWORD* function,
                                    IDirect3DVertexShader9** shader) noexcept
 {
@@ -635,6 +543,69 @@ HRESULT Device::CreatePixelShader(const DWORD* function,
                               metadata.value_or(Shader_metadata{})};
 
    return S_OK;
+}
+
+// Device State Setters
+
+HRESULT Device::SetTexture(DWORD stage, IDirect3DBaseTexture9* texture) noexcept
+{
+   if (texture == nullptr) {
+      if (stage == 0 && _material) {
+         clear_material();
+      }
+
+      return _device->SetTexture(stage, nullptr);
+   }
+
+   auto type = texture->GetType();
+
+   // Custom Material Handling
+   if (stage == 0 && type == Material_resource::id) {
+      auto& material_resource = static_cast<Material_resource&>(*texture);
+      _material = material_resource.get_material();
+
+      _material->bind();
+
+      _refresh_material = true;
+
+      return S_OK;
+   }
+   else if (stage != 0 && type == Material_resource::id) {
+      log(Log_level::warning, "Attempt to bind material to texture slot other than 0."sv);
+
+      return S_OK;
+   }
+   else if (stage == 0 && _material) {
+      clear_material();
+   }
+
+   // Projected Cube Texture Workaround
+   if (type == D3DRTYPE_CUBETEXTURE && stage == 2) {
+      set_ps_bool_constant<constants::ps::cubemap_projection>(*_device, true);
+
+      apply_sampler_state(*_device, _sampler_states[2], cubemap_projection_slot);
+
+      _device->SetTexture(cubemap_projection_slot, texture);
+   }
+   else if (stage == 2) {
+      set_ps_bool_constant<constants::ps::cubemap_projection>(*_device, false);
+   }
+
+   return _device->SetTexture(stage, texture);
+}
+
+HRESULT Device::SetRenderTarget(DWORD render_target_index,
+                                IDirect3DSurface9* render_target) noexcept
+{
+   if (render_target != nullptr) {
+      auto [_, res] = effects::get_surface_metrics(*render_target);
+
+      const auto fl_res = static_cast<glm::vec2>(res);
+
+      _rt_resolution_const.set(*_device, {fl_res, glm::vec2{1.0f} / fl_res});
+   }
+
+   return _device->SetRenderTarget(render_target_index, render_target);
 }
 
 HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
@@ -871,6 +842,34 @@ HRESULT Device::SetTextureStageState(DWORD stage, D3DTEXTURESTAGESTATETYPE type,
    return _device->SetTextureStageState(stage, type, value);
 }
 
+HRESULT Device::SetTransform(D3DTRANSFORMSTATETYPE state, const D3DMATRIX* matrix) noexcept
+{
+   _transform_state.set(state, *matrix);
+
+   return _device->SetTransform(state, matrix);
+}
+
+HRESULT Device::SetStreamSource(UINT stream_number, IDirect3DVertexBuffer9* stream_data,
+                                UINT offset_in_bytes, UINT stride) noexcept
+{
+   if (stream_data != nullptr) stream_data->AddRef();
+
+   _vertex_input_state.buffer = Com_ptr{stream_data};
+   _vertex_input_state.offset = offset_in_bytes;
+   _vertex_input_state.stride = stride;
+
+   return _device->SetStreamSource(stream_number, stream_data, offset_in_bytes, stride);
+}
+
+HRESULT Device::SetVertexDeclaration(IDirect3DVertexDeclaration9* decl) noexcept
+{
+   if (decl != nullptr) decl->AddRef();
+
+   _vertex_input_state.declaration = Com_ptr{decl};
+
+   return _device->SetVertexDeclaration(decl);
+}
+
 HRESULT Device::SetVertexShaderConstantF(UINT start_register, const float* constant_data,
                                          UINT vector4f_count) noexcept
 {
@@ -889,6 +888,46 @@ HRESULT Device::SetVertexShaderConstantF(UINT start_register, const float* const
 
    return _device->SetVertexShaderConstantF(start_register, constant_data,
                                             vector4f_count);
+}
+
+// Device State Getters
+
+HRESULT Device::GetBackBuffer(UINT swap_chain, UINT back_buffer_index,
+                              D3DBACKBUFFER_TYPE type,
+                              IDirect3DSurface9** back_buffer) noexcept
+{
+   if (swap_chain || back_buffer_index) return D3DERR_INVALIDCALL;
+
+   if (_backbuffer_override) {
+      *back_buffer = _backbuffer_override.get();
+      _backbuffer_override->AddRef();
+
+      return S_OK;
+   }
+
+   return _device->GetBackBuffer(swap_chain, back_buffer_index, type, back_buffer);
+}
+
+// Device Command Issuers
+
+HRESULT Device::StretchRect(IDirect3DSurface9* source_surface,
+                            const RECT* source_rect, IDirect3DSurface9* dest_surface,
+                            const RECT* dest_rect, D3DTEXTUREFILTERTYPE filter) noexcept
+{
+   if (_stretch_rect_hook) {
+      return _stretch_rect_hook(source_surface, source_rect, dest_surface,
+                                dest_rect, filter);
+   }
+
+   if (_config.rendering.gaussian_blur_blur_particles &&
+       dest_surface == _blur_surface.get() && std::exchange(_blur_resolved, true)) {
+      resolve_blur_surface(*source_surface);
+
+      return S_OK;
+   }
+
+   return _device->StretchRect(source_surface, source_rect, dest_surface,
+                               dest_rect, D3DTEXF_LINEAR);
 }
 
 HRESULT Device::DrawPrimitive(D3DPRIMITIVETYPE primitive_type,
@@ -916,6 +955,8 @@ HRESULT Device::DrawIndexedPrimitive(D3DPRIMITIVETYPE primitive_type,
                                         min_vertex_index, num_vertices,
                                         start_Index, prim_Count);
 }
+
+// Shader Patch Functions
 
 void Device::init_sampler_max_anisotropy() noexcept
 {
@@ -1020,21 +1061,19 @@ void Device::resolve_blur_surface(IDirect3DSurface9& backbuffer) noexcept
    _device->StretchRect(resolve.surface(), nullptr, _blur_surface.get(),
                         nullptr, D3DTEXF_LINEAR);
 
-   Com_ptr<IDirect3DStateBlock9> state;
    Com_ptr<IDirect3DSurface9> rt;
 
    _device->GetRenderTarget(0, rt.clear_and_assign());
-   _device->CreateStateBlock(D3DSBT_VERTEXSTATE, state.clear_and_assign());
 
    _effects.scene_blur.apply(_shaders, _rt_allocator, *_blur_texture);
 
-   state->Apply();
-
+   _device->SetVertexShader(_game_vertex_shader.get());
    _device->SetPixelShader(_game_pixel_shader.get());
    _device->SetRenderTarget(0, rt.get());
 
    apply_sampler_state(*_device, _sampler_states[0], 0);
    apply_blend_state(*_device, _state_block);
+   apply_vertex_input_state(*_device, _vertex_input_state);
 }
 
 void Device::prepapre_gaussian_scene_blur() noexcept
@@ -1055,6 +1094,9 @@ void Device::prepapre_gaussian_scene_blur() noexcept
    _device->SetTransform(D3DTS_VIEW, &transform);
 
    _device->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 1);
+
+   apply_transform_state_block_partial(*_device, _transform_state);
+   apply_vertex_input_state(*_device, _vertex_input_state);
 
    _discard_next_nonindexed_draw = true;
 }

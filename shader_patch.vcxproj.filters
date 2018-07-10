@@ -149,6 +149,12 @@
     <ClInclude Include="src\direct3d\hook.hpp">
       <Filter>src\direct3d</Filter>
     </ClInclude>
+    <ClInclude Include="src\direct3d\transform_state_block.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\vertex_input_state.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="dinput8.def" />

@@ -200,11 +200,6 @@ HRESULT Device::Clear(DWORD count, const D3DRECT* rects, DWORD flags,
    return _device->Clear(count, rects, flags, color, z, stencil);
 }
 
-HRESULT Device::SetTransform(D3DTRANSFORMSTATETYPE state, const D3DMATRIX* matrix) noexcept
-{
-   return _device->SetTransform(state, matrix);
-}
-
 HRESULT Device::GetTransform(D3DTRANSFORMSTATETYPE state, D3DMATRIX* matrix) noexcept
 {
    return _device->GetTransform(state, matrix);
@@ -404,11 +399,6 @@ HRESULT Device::CreateVertexDeclaration(const D3DVERTEXELEMENT9* vertex_elements
    return _device->CreateVertexDeclaration(vertex_elements, decl);
 }
 
-HRESULT Device::SetVertexDeclaration(IDirect3DVertexDeclaration9* decl) noexcept
-{
-   return _device->SetVertexDeclaration(decl);
-}
-
 HRESULT Device::GetVertexDeclaration(IDirect3DVertexDeclaration9** decl) noexcept
 {
    return _device->GetVertexDeclaration(decl);
@@ -460,12 +450,6 @@ HRESULT Device::GetVertexShaderConstantB(UINT start_register, BOOL* constant_dat
                                          UINT bool_count) noexcept
 {
    return _device->GetVertexShaderConstantB(start_register, constant_data, bool_count);
-}
-
-HRESULT Device::SetStreamSource(UINT stream_number, IDirect3DVertexBuffer9* stream_data,
-                                UINT offset_in_bytes, UINT stride) noexcept
-{
-   return _device->SetStreamSource(stream_number, stream_data, offset_in_bytes, stride);
 }
 
 HRESULT Device::GetStreamSource(UINT stream_number, IDirect3DVertexBuffer9** stream_data,

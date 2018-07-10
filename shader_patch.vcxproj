@@ -152,6 +152,7 @@
   <ItemGroup>
     <ClInclude Include="src\direct3d\creator.hpp" />
     <ClInclude Include="src\direct3d\hook.hpp" />
+    <ClInclude Include="src\direct3d\vertex_input_state.hpp" />
     <ClInclude Include="src\direct3d\texture_state_block.hpp" />
     <ClInclude Include="src\direct3d\check_required_features.hpp" />
     <ClInclude Include="src\direct3d\device.hpp" />
@@ -159,6 +160,7 @@
     <ClInclude Include="src\direct3d\shader.hpp" />
     <ClInclude Include="src\direct3d\shader_constant.hpp" />
     <ClInclude Include="src\direct3d\render_state_block.hpp" />
+    <ClInclude Include="src\direct3d\transform_state_block.hpp" />
     <ClInclude Include="src\effects\color_grading_lut_baker.hpp" />
     <ClInclude Include="src\effects\control.hpp" />
     <ClInclude Include="src\effects\helpers.hpp" />
