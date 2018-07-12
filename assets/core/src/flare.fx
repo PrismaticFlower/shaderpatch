@@ -47,7 +47,7 @@ float4 flare_textured_ps(Ps_textured_input input) : COLOR
 struct Vs_untextured_input
 {
    float4 position : POSITION;
-   float4 color : TEXCOORD;
+   float4 color : COLOR;
 };
 
 struct Vs_untextured_output
