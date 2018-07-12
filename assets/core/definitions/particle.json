@@ -3,7 +3,7 @@
 
   "states": [
     {
-      "name": "normal particle",
+      "name": "normal",
       "id": 0,
 
       "srgb_state": [ true, false, false, false ],
@@ -23,7 +23,7 @@
     },
 
     {
-      "name": "blur particle",
+      "name": "blur",
       "id": 1,
 
       "passes": [

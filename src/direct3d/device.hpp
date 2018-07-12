@@ -347,7 +347,7 @@ private:
 
    void update_refraction_texture() noexcept;
 
-   void resolve_blur_surface(IDirect3DSurface9& backbuffer) noexcept;
+   void resolve_blur_surface() noexcept;
 
    void prepapre_gaussian_scene_blur() noexcept;
 
@@ -385,7 +385,7 @@ private:
    bool _game_doing_bloom_pass = false;
    bool _water_refraction = false;
    bool _ice_refraction = false;
-   bool _blur_resolved = false;
+   bool _particles_blur = false;
    bool _refresh_material = true;
    bool _discard_draw_calls = false;
    bool _discard_next_nonindexed_draw = false;

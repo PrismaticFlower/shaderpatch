@@ -300,7 +300,7 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
    // update per frame state
    _water_refraction = false;
    _ice_refraction = false;
-   _blur_resolved = false;
+   _particles_blur = false;
 
    _device->EndScene();
 
@@ -449,13 +449,6 @@ HRESULT Device::CreateTexture(UINT width, UINT height, UINT levels, DWORD usage,
          }
 
          size /= _config.rendering.reflection_buffer_factor;
-      }
-      // Blur/Refraction Buffer Enhancement
-      else if (size == glm::ivec2{256, 256}) {
-         _blur_texture->AddRef();
-         *texture = _blur_texture.get();
-
-         return S_OK;
       }
       // Shadow Buffer Optimization
       else if (size == _resolution) {
@@ -733,6 +726,12 @@ HRESULT Device::SetPixelShader(IDirect3DPixelShader9* shader) noexcept
 
       bind_refraction_texture();
    }
+   else if (_config.rendering.gaussian_blur_blur_particles &&
+            metadata.rendertype == "particle"sv && metadata.state_name == "blur"sv) {
+      if (!std::exchange(_particles_blur, true)) resolve_blur_surface();
+
+      _device->SetTexture(1, _blur_texture.get());
+   }
    else if (_config.rendering.smooth_bloom && !_effects.active() &&
             metadata.rendertype == "hdr"sv) {
       if (auto ext_shader = _shaders.at("stock bloom ext"s).find(metadata.state_name);
@@ -806,7 +805,6 @@ HRESULT Device::SetRenderState(D3DRENDERSTATETYPE state, DWORD value) noexcept
       else if (_multiply_blendstate_ps_const.get() != 0.0f) {
          _multiply_blendstate_ps_const.set(_device, 0.0f);
       }
-
       break;
    }
    }
@@ -919,15 +917,8 @@ HRESULT Device::StretchRect(IDirect3DSurface9* source_surface,
                                 dest_rect, filter);
    }
 
-   if (_config.rendering.gaussian_blur_blur_particles &&
-       dest_surface == _blur_surface.get() && std::exchange(_blur_resolved, true)) {
-      resolve_blur_surface(*source_surface);
-
-      return S_OK;
-   }
-
    return _device->StretchRect(source_surface, source_rect, dest_surface,
-                               dest_rect, D3DTEXF_LINEAR);
+                               dest_rect, filter);
 }
 
 HRESULT Device::DrawPrimitive(D3DPRIMITIVETYPE primitive_type,
@@ -1052,12 +1043,16 @@ void Device::update_refraction_texture() noexcept
    _device->StretchRect(rt.get(), nullptr, dest.get(), nullptr, D3DTEXF_LINEAR);
 }
 
-void Device::resolve_blur_surface(IDirect3DSurface9& backbuffer) noexcept
+void Device::resolve_blur_surface() noexcept
 {
+   Com_ptr<IDirect3DSurface9> backbuffer;
+   GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, backbuffer.clear_and_assign());
+
    const auto [format, _] = effects::get_surface_metrics(*_blur_surface);
    auto resolve = _rt_allocator.allocate(format, _resolution / blur_resolve_factor);
 
-   _device->StretchRect(&backbuffer, nullptr, resolve.surface(), nullptr, D3DTEXF_LINEAR);
+   _device->StretchRect(backbuffer.get(), nullptr, resolve.surface(), nullptr,
+                        D3DTEXF_LINEAR);
    _device->StretchRect(resolve.surface(), nullptr, _blur_surface.get(),
                         nullptr, D3DTEXF_LINEAR);
 
@@ -1078,17 +1073,14 @@ void Device::resolve_blur_surface(IDirect3DSurface9& backbuffer) noexcept
 
 void Device::prepapre_gaussian_scene_blur() noexcept
 {
-   Com_ptr<IDirect3DSurface9> backbuffer;
-   GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, backbuffer.clear_and_assign());
-
-   resolve_blur_surface(*backbuffer);
+   resolve_blur_surface();
 
    _device->SetTexture(0, _blur_texture.get());
    _device->SetStreamSource(0, _fs_vertex_buffer.get(), 0, effects::fs_triangle_stride);
    _device->SetVertexDeclaration(_fs_vertex_decl.get());
 
-   D3DMATRIX transform = {1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f,
-                          0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f};
+   constexpr D3DMATRIX transform = {1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f,
+                                    0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f};
 
    _device->SetTransform(D3DTS_PROJECTION, &transform);
    _device->SetTransform(D3DTS_VIEW, &transform);
