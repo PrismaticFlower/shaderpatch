@@ -22,12 +22,15 @@ void Postprocess::bloom_params(const Bloom_params& params) noexcept
 
    bloom.threshold = params.threshold;
    bloom.global = params.tint * params.intensity;
-   bloom.inner = params.inner_tint * params.inner_scale;
-   bloom.inner_mid = params.inner_mid_scale * params.inner_mid_tint;
-   bloom.mid = params.mid_scale * params.mid_tint;
-   bloom.outer_mid = params.outer_mid_scale * params.outer_mid_tint;
-   bloom.outer = params.outer_scale * params.outer_tint;
    bloom.dirt = params.dirt_scale * params.dirt_tint;
+
+   _bloom_inner_scale = params.inner_tint * params.inner_scale;
+   _bloom_inner_mid_scale =
+      (params.inner_mid_scale * params.inner_mid_tint) / _bloom_inner_scale;
+   _bloom_mid_scale = (params.mid_scale * params.mid_tint) / _bloom_inner_mid_scale;
+   _bloom_outer_mid_scale =
+      params.outer_mid_scale * params.outer_mid_tint / _bloom_mid_scale;
+   _bloom_outer_scale = params.outer_scale * params.outer_tint / _bloom_outer_mid_scale;
 }
 
 void Postprocess::color_grading_params(const Color_grading_params& params) noexcept
@@ -102,55 +105,49 @@ void Postprocess::do_bloom_and_color_grading(const Shader_database& shaders,
    auto [format, res] = get_texture_metrics(input);
 
    auto& post_shaders = shaders.at("postprocess"s);
-   auto& blurs = shaders.at("gaussian blur"s);
+   auto& bloom_shaders = shaders.at("bloom"s);
 
-   auto rt_a_x = allocator.allocate(format, res / 2);
-   auto rt_a_y = allocator.allocate(format, res / 2);
+   auto rt_a = allocator.allocate(format, res / 2);
+   auto rt_b = allocator.allocate(format, res / 4);
+   auto rt_c = allocator.allocate(format, res / 8);
+   auto rt_d = allocator.allocate(format, res / 16);
+   auto rt_e = allocator.allocate(format, res / 32);
 
-   post_shaders.at("bloom threshold"s + _hdr_suffix).bind(*_device);
-
-   do_pass(input, *rt_a_y.surface());
+   bloom_shaders.at("downsample threshold"s + _hdr_suffix).bind(*_device);
 
    _device->SetSamplerState(0, D3DSAMP_SRGBTEXTURE, _hdr_state != Hdr_state::hdr);
 
-   blurs.at("blur 12"s).bind(*_device);
+   do_bloom_pass(input, *rt_a.surface());
 
-   do_blur_pass(*rt_a_y.texture(), *rt_a_x.surface(), {1.f, 0.f});
-   do_blur_pass(*rt_a_x.texture(), *rt_a_y.surface(), {0.f, 1.f});
+   bloom_shaders.at("downsample"s).bind(*_device);
 
-   auto rt_b_x = allocator.allocate(format, res / 4);
-   auto rt_b_y = allocator.allocate(format, res / 4);
+   do_bloom_pass(*rt_a.texture(), *rt_b.surface());
+   do_bloom_pass(*rt_b.texture(), *rt_c.surface());
+   do_bloom_pass(*rt_c.texture(), *rt_d.surface());
+   do_bloom_pass(*rt_d.texture(), *rt_e.surface());
 
-   linear_resample(*rt_a_y.surface(), *rt_b_y.surface());
-   do_blur_pass(*rt_b_y.texture(), *rt_b_x.surface(), {1.f, 0.f});
-   do_blur_pass(*rt_b_x.texture(), *rt_b_y.surface(), {0.f, 1.f});
+   bloom_shaders.at("upsample"s).bind(*_device);
+   set_fs_pass_additive_blend_state(*_device);
 
-   auto rt_c_x = allocator.allocate(format, res / 8);
-   auto rt_c_y = allocator.allocate(format, res / 8);
+   direct3d::Ps_3f_shader_constant<constants::ps::post_processing_start + 6>{}
+      .set(*_device, _bloom_outer_scale);
+   do_bloom_pass(*rt_e.texture(), *rt_d.surface());
 
-   linear_resample(*rt_b_y.surface(), *rt_c_y.surface());
-   do_blur_pass(*rt_c_y.texture(), *rt_c_x.surface(), {1.f, 0.f});
-   do_blur_pass(*rt_c_x.texture(), *rt_c_y.surface(), {0.f, 1.f});
+   direct3d::Ps_3f_shader_constant<constants::ps::post_processing_start + 6>{}
+      .set(*_device, _bloom_outer_mid_scale);
+   do_bloom_pass(*rt_d.texture(), *rt_c.surface());
 
-   auto rt_d_x = allocator.allocate(format, res / 16);
-   auto rt_d_y = allocator.allocate(format, res / 16);
+   direct3d::Ps_3f_shader_constant<constants::ps::post_processing_start + 6>{}
+      .set(*_device, _bloom_mid_scale);
+   do_bloom_pass(*rt_c.texture(), *rt_b.surface());
 
-   linear_resample(*rt_c_y.surface(), *rt_d_y.surface());
-   do_blur_pass(*rt_d_y.texture(), *rt_d_x.surface(), {1.f, 0.f});
-   do_blur_pass(*rt_d_x.texture(), *rt_d_y.surface(), {0.f, 1.f});
+   direct3d::Ps_3f_shader_constant<constants::ps::post_processing_start + 6>{}
+      .set(*_device, _bloom_inner_mid_scale);
+   do_bloom_pass(*rt_b.texture(), *rt_a.surface());
 
-   auto rt_e_x = allocator.allocate(format, res / 32);
-   auto rt_e_y = allocator.allocate(format, res / 32);
+   set_fs_pass_blend_state(*_device);
 
-   linear_resample(*rt_d_y.surface(), *rt_e_y.surface());
-   do_blur_pass(*rt_e_y.texture(), *rt_e_x.surface(), {1.f, 0.f});
-   do_blur_pass(*rt_e_x.texture(), *rt_e_y.surface(), {0.f, 1.f});
-
-   _device->SetTexture(bloom_sampler_slots_start, rt_a_y.texture());
-   _device->SetTexture(bloom_sampler_slots_start + 1, rt_b_y.texture());
-   _device->SetTexture(bloom_sampler_slots_start + 2, rt_c_y.texture());
-   _device->SetTexture(bloom_sampler_slots_start + 3, rt_d_y.texture());
-   _device->SetTexture(bloom_sampler_slots_start + 4, rt_e_y.texture());
+   _device->SetTexture(bloom_sampler_slots_start, rt_a.texture());
    bind_color_grading_luts();
 
    _device->SetRenderState(D3DRS_SRGBWRITEENABLE, true);
@@ -163,6 +160,14 @@ void Postprocess::do_bloom_and_color_grading(const Shader_database& shaders,
    else {
       post_shaders.at("bloom colorgrade"s + _hdr_suffix).bind(*_device);
    }
+
+   const auto input_size = static_cast<glm::vec2>(
+      std::get<glm::ivec2>(get_surface_metrics(*rt_a.surface())));
+
+   direct3d::Ps_2f_shader_constant<constants::ps::post_processing_start + 1>{}
+      .set(*_device, {1.0f / input_size});
+   direct3d::Ps_3f_shader_constant<constants::ps::post_processing_start + 6>{}
+      .set(*_device, _bloom_inner_scale);
 
    do_pass(input, output);
 }
@@ -204,14 +209,18 @@ void Postprocess::do_pass(IDirect3DTexture9& input, IDirect3DSurface9& output) n
    _device->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 1);
 }
 
-void Postprocess::do_blur_pass(IDirect3DTexture9& input, IDirect3DSurface9& output,
-                               glm::vec2 direction) noexcept
+void Postprocess::do_bloom_pass(IDirect3DTexture9& input, IDirect3DSurface9& output) noexcept
 {
    _device->SetTexture(0, &input);
    _device->SetRenderTarget(0, &output);
 
    set_fs_pass_state(*_device, output);
-   set_blur_pass_state(*_device, input, direction);
+
+   const auto input_size =
+      static_cast<glm::vec2>(std::get<glm::ivec2>(get_texture_metrics(input)));
+
+   direct3d::Ps_2f_shader_constant<constants::ps::post_processing_start + 1>{}
+      .set(*_device, {1.0f / input_size});
 
    _device->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 1);
 }
@@ -226,7 +235,7 @@ void Postprocess::set_shader_constants() noexcept
 {
    update_randomness();
 
-   _device->SetPixelShaderConstantF(constants::ps::post_processing_start + 1,
+   _device->SetPixelShaderConstantF(constants::ps::post_processing_start + 2,
                                     reinterpret_cast<const float*>(&_constants),
                                     sizeof(_constants) / 16);
 }
@@ -270,5 +279,4 @@ void Postprocess::create_resources() noexcept
 {
    _vertex_buffer = create_fs_triangle_buffer(*_device);
 }
-
 }

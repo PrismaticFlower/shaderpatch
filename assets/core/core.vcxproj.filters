@@ -206,6 +206,12 @@
     <None Include="src\aa_quality_levels.hlsl">
       <Filter>src</Filter>
     </None>
+    <None Include="definitions\patch\bloom.json">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="src\bloom.fx">
+      <Filter>src</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">
@@ -220,5 +226,10 @@
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="munge_core.ps1" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="src\postprocess_common.hlsl">
+      <Filter>src</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

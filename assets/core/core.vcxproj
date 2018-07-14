@@ -166,6 +166,7 @@
     <None Include="definitions\normal_terrain.json" />
     <None Include="definitions\ocean.json" />
     <None Include="definitions\particle.json" />
+    <None Include="definitions\patch\bloom.json" />
     <None Include="definitions\patch\postprocess.json" />
     <None Include="definitions\patch\gaussian_blur.json" />
     <None Include="definitions\patch\normal_lightmapped.json" />
@@ -308,6 +309,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\aa_quality_levels.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\bloom.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\postprocess_common.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

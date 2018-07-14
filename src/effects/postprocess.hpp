@@ -121,8 +121,7 @@ private:
 
    void do_pass(IDirect3DTexture9& input, IDirect3DSurface9& output) noexcept;
 
-   void do_blur_pass(IDirect3DTexture9& input, IDirect3DSurface9& output,
-                     glm::vec2 direction) noexcept;
+   void do_bloom_pass(IDirect3DTexture9& input, IDirect3DSurface9& output) noexcept;
 
    void linear_resample(IDirect3DSurface9& input, IDirect3DSurface9& output) const
       noexcept;
@@ -148,21 +147,6 @@ private:
          alignas(16) glm::vec3 global{1.0f, 1.0f, 1.0f};
          float threshold{1.0f};
 
-         alignas(16) glm::vec3 inner{1.0f, 1.0f, 1.0f};
-         float _pad1{};
-
-         alignas(16) glm::vec3 inner_mid{1.0f, 1.0f, 1.0f};
-         float _pad2{};
-
-         alignas(16) glm::vec3 mid{1.0f, 1.0f, 1.0f};
-         float _pad3{};
-
-         alignas(16) glm::vec3 outer_mid{1.0f, 1.0f, 1.0f};
-         float _pad4{};
-
-         alignas(16) glm::vec3 outer{1.0f, 1.0f, 1.0f};
-         float _pad5{};
-
          alignas(16) glm::vec3 dirt{1.0f, 1.0f, 1.0f};
          float _pad6{};
       } bloom;
@@ -175,7 +159,13 @@ private:
       alignas(16) glm::vec4 randomness{1.0f, 1.0f, 1.0f, 1.0f};
    } _constants;
 
-   static_assert(sizeof(decltype(_constants)) == 144);
+   static_assert(sizeof(decltype(_constants)) == 64);
+
+   glm::vec3 _bloom_inner_scale;
+   glm::vec3 _bloom_inner_mid_scale;
+   glm::vec3 _bloom_mid_scale;
+   glm::vec3 _bloom_outer_mid_scale;
+   glm::vec3 _bloom_outer_scale;
 
    std::optional<std::array<Texture, 3>> _color_luts;
 
@@ -191,9 +181,9 @@ private:
    std::uniform_int<int> _random_int_dist{0, 63};
 
    constexpr static auto bloom_sampler_slots_start = 1;
-   constexpr static auto dirt_sampler_slot_start = 6;
-   constexpr static auto lut_sampler_slots_start = 7;
-   constexpr static auto blue_noise_sampler_slot = 10;
+   constexpr static auto dirt_sampler_slot_start = 2;
+   constexpr static auto lut_sampler_slots_start = 3;
+   constexpr static auto blue_noise_sampler_slot = 6;
 };
 
 }

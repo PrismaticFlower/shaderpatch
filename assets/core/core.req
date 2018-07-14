@@ -39,6 +39,7 @@ ucft
    REQN
    {
       "shader"
+      "bloom"
       "gaussian_blur"
       "normal_lightmapped"
       "pbr"

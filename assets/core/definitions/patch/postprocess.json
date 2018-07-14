@@ -112,6 +112,7 @@
       "vertex_shader": "main_vs",
       "pixel_shader": "postprocess_finalize_ps"
     },
+
     {
       "name": "finalize slowest",
 
@@ -121,24 +122,6 @@
 
       "vertex_shader": "main_vs",
       "pixel_shader": "postprocess_finalize_ps"
-    },
-
-    {
-      "name": "bloom threshold",
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "bloom_threshold_ps"
-    },
-
-    {
-      "name": "bloom threshold stock hdr",
-
-      "defines": [
-        [ "STOCK_HDR_STATE", "true" ]
-      ],
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "bloom_threshold_ps"
     }
   ]
 }
