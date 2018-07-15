@@ -8,15 +8,22 @@
 
 #pragma warning(disable : 3571)
 
-float3 combine_bloom(float2 texcoords)
+void apply_bloom(float2 texcoords, inout float3 color)
 {
-   float3 color = bloom_tent9_upsample(bloom_sampler, texcoords);
+   float3 bloom_color = bloom_tent9_upsample(bloom_sampler, texcoords);
    
    if (bloom_use_dirt) {
-      color += color * (tex2D(dirt_sampler, texcoords).rgb * bloom_dirt_scale);
+      bloom_color += (bloom_color * (tex2D(dirt_sampler, texcoords).rgb * bloom_dirt_scale));
    }
    
-   return color * bloom_global_scale;
+   color += (bloom_color * bloom_global_scale);
+}
+
+void apply_vignette(float2 texcoords, inout float3 color)
+{
+   float dist = distance(texcoords, float2(0.5, 0.5));
+
+   color *= smoothstep(vignette_end, vignette_start, dist);
 }
 
 float sample_lut(sampler2D lut, float v)
@@ -24,7 +31,7 @@ float sample_lut(sampler2D lut, float v)
    return tex2D(lut, float2(sqrt(v) + 1.0 / 256.0, 0.0)).x;
 }
 
-float3 apply_color_grading(float3 color)
+void apply_color_grading(inout float3 color)
 {
    color *= exposure_color_filter;
 
@@ -34,8 +41,6 @@ float3 apply_color_grading(float3 color)
    color.r = sample_lut(red_lut, color.r);
    color.g = sample_lut(green_lut, color.g);
    color.b = sample_lut(blue_lut, color.b);
-
-   return color;
 }
 
 float fxaa_luma(float3 color)
@@ -49,9 +54,11 @@ float4 postprocess_ps(float2 texcoords : TEXCOORD) : COLOR
 
    if (stock_hdr) color = pow(color + color, 2.2);
 
-   if (bloom) color += combine_bloom(texcoords);
+   if (bloom) apply_bloom(texcoords, color);
 
-   color = apply_color_grading(color);
+   if (vignette) apply_vignette(texcoords, color);
+
+   apply_color_grading(color);
 
    return float4(color, fxaa_luma(color));
 }

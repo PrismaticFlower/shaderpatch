@@ -20,6 +20,8 @@ namespace {
 
 Bloom_params show_bloom_imgui(Bloom_params params) noexcept;
 
+Vignette_params show_vignette_imgui(Vignette_params params) noexcept;
+
 Color_grading_params show_color_grading_imgui(Color_grading_params params) noexcept;
 
 }
@@ -29,6 +31,7 @@ void Control::show_imgui(HWND game_window) noexcept
    postprocess.color_grading_params(
       show_color_grading_imgui(postprocess.color_grading_params()));
    postprocess.bloom_params(show_bloom_imgui(postprocess.bloom_params()));
+   postprocess.vignette_params(show_vignette_imgui(postprocess.vignette_params()));
 
    ImGui::Begin("Effects Control", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
@@ -107,6 +110,8 @@ void Control::read_config(YAML::Node config)
    postprocess.color_grading_params(
       config["ColorGrading"s].as<Color_grading_params>(Color_grading_params{}));
    postprocess.bloom_params(config["Bloom"s].as<Bloom_params>(Bloom_params{}));
+   postprocess.vignette_params(
+      config["Vignette"s].as<Vignette_params>(Vignette_params{}));
 }
 
 auto Control::output_params_to_yaml_string() noexcept -> std::string
@@ -116,6 +121,7 @@ auto Control::output_params_to_yaml_string() noexcept -> std::string
    config["Control"s] = _config;
    config["ColorGrading"s] = postprocess.color_grading_params();
    config["Bloom"s] = postprocess.bloom_params();
+   config["Vignette"s] = postprocess.vignette_params();
 
    std::stringstream stream;
    ;
@@ -248,6 +254,23 @@ Bloom_params show_bloom_imgui(Bloom_params params) noexcept
    if (ImGui::IsItemHovered()) {
       ImGui::SetTooltip("Reset bloom params to default settings.");
    }
+
+   ImGui::End();
+
+   return params;
+}
+
+Vignette_params show_vignette_imgui(Vignette_params params) noexcept
+{
+
+   ImGui::Begin("Vignette", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+
+   const auto max_float = std::numeric_limits<float>::max();
+
+   ImGui::Checkbox("Enabled", &params.enabled);
+
+   ImGui::DragFloat("End", &params.end, 0.05f, 0.0f, 2.0f);
+   ImGui::DragFloat("Start", &params.start, 0.05f, 0.0f, 2.0f);
 
    ImGui::End();
 

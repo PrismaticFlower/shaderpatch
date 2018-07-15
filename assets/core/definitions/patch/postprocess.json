@@ -10,12 +10,24 @@
   "defines": [
     [ "BLOOM_ACTIVE", "false" ],
     [ "BLOOM_USE_DIRT", "false" ],
-    [ "STOCK_HDR_STATE", "false" ]
+    [ "STOCK_HDR_STATE", "false" ],
+    [ "VIGNETTE_ACTIVE", "false" ]
   ],
 
   "states": [
     {
       "name": "colorgrade",
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "postprocess_ps"
+    },
+
+    {
+      "name": "vignette colorgrade",
+
+      "defines": [
+        [ "VIGNETTE_ACTIVE", "true" ]
+      ],
 
       "vertex_shader": "main_vs",
       "pixel_shader": "postprocess_ps"
@@ -45,10 +57,47 @@
     },
 
     {
+      "name": "bloom vignette colorgrade",
+
+      "defines": [
+        [ "BLOOM_ACTIVE", "true" ],
+        [ "VIGNETTE_ACTIVE", "true" ]
+      ],
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "postprocess_ps"
+    },
+
+    {
+      "name": "bloom dirt vignette colorgrade",
+
+      "defines": [
+        [ "BLOOM_ACTIVE", "true" ],
+        [ "BLOOM_USE_DIRT", "true" ],
+        [ "VIGNETTE_ACTIVE", "true" ]
+      ],
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "postprocess_ps"
+    },
+
+    {
       "name": "colorgrade stock hdr",
 
       "defines": [
         [ "STOCK_HDR_STATE", "true" ]
+      ],
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "postprocess_ps"
+    },
+
+    {
+      "name": "vignette colorgrade stock hdr",
+
+      "defines": [
+        [ "STOCK_HDR_STATE", "true" ],
+        [ "VIGNETTE_ACTIVE", "true" ]
       ],
 
       "vertex_shader": "main_vs",
@@ -74,6 +123,33 @@
         [ "BLOOM_ACTIVE", "true" ],
         [ "BLOOM_USE_DIRT", "true" ],
         [ "STOCK_HDR_STATE", "true" ]
+      ],
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "postprocess_ps"
+    },
+
+    {
+      "name": "bloom vignette colorgrade stock hdr",
+
+      "defines": [
+        [ "BLOOM_ACTIVE", "true" ],
+        [ "STOCK_HDR_STATE", "true" ],
+        [ "VIGNETTE_ACTIVE", "true" ]
+      ],
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "postprocess_ps"
+    },
+
+    {
+      "name": "bloom dirt vignette colorgrade stock hdr",
+
+      "defines": [
+        [ "BLOOM_ACTIVE", "true" ],
+        [ "BLOOM_USE_DIRT", "true" ],
+        [ "STOCK_HDR_STATE", "true" ],
+        [ "VIGNETTE_ACTIVE", "true" ]
       ],
 
       "vertex_shader": "main_vs",

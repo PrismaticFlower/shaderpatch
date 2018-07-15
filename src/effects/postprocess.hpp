@@ -54,6 +54,13 @@ struct Bloom_params {
    std::string dirt_texture_name;
 };
 
+struct Vignette_params {
+   bool enabled = true;
+
+   float end = 1.0f;
+   float start = 0.25f;
+};
+
 struct Color_grading_params {
    glm::vec3 color_filter = {1.0f, 1.0f, 1.0f};
    float saturation = 1.0f;
@@ -87,6 +94,13 @@ public:
    auto bloom_params() const noexcept -> const Bloom_params&
    {
       return _bloom_params;
+   }
+
+   void vignette_params(const Vignette_params& params) noexcept;
+
+   auto vignette_params() const noexcept -> const Vignette_params&
+   {
+      return _vignette_params;
    }
 
    void color_grading_params(const Color_grading_params& params) noexcept;
@@ -138,6 +152,8 @@ private:
 
    void create_resources() noexcept;
 
+   void update_shaders_names() noexcept;
+
    Com_ref<IDirect3DDevice9> _device;
    Com_ptr<IDirect3DVertexDeclaration9> _vertex_decl;
    Com_ptr<IDirect3DVertexBuffer9> _vertex_buffer;
@@ -148,7 +164,7 @@ private:
          float threshold{1.0f};
 
          alignas(16) glm::vec3 dirt{1.0f, 1.0f, 1.0f};
-         float _pad6{};
+         float _pad{};
       } bloom;
 
       struct {
@@ -156,10 +172,16 @@ private:
          float saturation{1.0f};
       } color_grading;
 
+      struct {
+         alignas(16) float end;
+         float start;
+         std::array<float, 2> _pad{};
+      } vignette;
+
       alignas(16) glm::vec4 randomness{1.0f, 1.0f, 1.0f, 1.0f};
    } _constants;
 
-   static_assert(sizeof(decltype(_constants)) == 64);
+   static_assert(sizeof(decltype(_constants)) == 80);
 
    glm::vec3 _bloom_inner_scale;
    glm::vec3 _bloom_inner_mid_scale;
@@ -170,11 +192,15 @@ private:
    std::optional<std::array<Texture, 3>> _color_luts;
 
    Bloom_params _bloom_params{};
+   Vignette_params _vignette_params{};
    Color_grading_params _color_grading_params{};
 
    Hdr_state _hdr_state = Hdr_state::hdr;
-   std::string _hdr_suffix = ""s;
-   std::string _aa_suffix = "fastest"s;
+
+   std::string _threshold_shader = "downsample threshold"s;
+   std::string _uber_shader = "bloom vignette colorgrade"s;
+   std::string _aa_quality = "fastest"s;
+   std::string _finalize_shader = "finalize fastest"s;
 
    std::mt19937 _random_engine{std::random_device{}()};
    std::uniform_real_distribution<float> _random_real_dist{0.0f, 1024.f};
@@ -296,6 +322,37 @@ struct convert<sp::effects::Bloom_params> {
       params.dirt_tint[2] = node["DirtTint"s][2].as<float>(params.dirt_tint[2]);
       params.dirt_texture_name =
          node["DirtTextureName"s].as<std::string>(params.dirt_texture_name);
+
+      return true;
+   }
+};
+
+template<>
+struct convert<sp::effects::Vignette_params> {
+   static Node encode(const sp::effects::Vignette_params& params)
+   {
+      using namespace std::literals;
+
+      YAML::Node node;
+
+      node["Enable"s] = params.enabled;
+
+      node["End"s] = params.end;
+      node["Start"s] = params.start;
+
+      return node;
+   }
+
+   static bool decode(const Node& node, sp::effects::Vignette_params& params)
+   {
+      using namespace std::literals;
+
+      params = sp::effects::Vignette_params{};
+
+      params.enabled = node["Enable"s].as<bool>(params.enabled);
+
+      params.end = node["Threshold"s].as<float>(params.end);
+      params.start = node["Intensity"s].as<float>(params.start);
 
       return true;
    }

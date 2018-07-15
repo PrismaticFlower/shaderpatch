@@ -11,6 +11,7 @@ Postprocess::Postprocess(Com_ref<IDirect3DDevice9> device, Post_aa_quality aa_qu
    : _device{device}, _vertex_decl{create_fs_triangle_decl(*_device)}
 {
    bloom_params(Bloom_params{});
+   color_grading_params(Color_grading_params{});
    this->aa_quality(aa_quality);
 }
 
@@ -33,6 +34,14 @@ void Postprocess::bloom_params(const Bloom_params& params) noexcept
    _bloom_outer_scale = params.outer_scale * params.outer_tint / _bloom_outer_mid_scale;
 }
 
+void Postprocess::vignette_params(const Vignette_params& params) noexcept
+{
+   _vignette_params = params;
+
+   _constants.vignette.end = _vignette_params.end;
+   _constants.vignette.start = _vignette_params.start;
+}
+
 void Postprocess::color_grading_params(const Color_grading_params& params) noexcept
 {
    _color_grading_params = params;
@@ -51,19 +60,12 @@ void Postprocess::drop_device_resources() noexcept
 
 void Postprocess::hdr_state(Hdr_state state) noexcept
 {
-   if (state == Hdr_state::hdr) {
-      _hdr_suffix = ""s;
-   }
-   else {
-      _hdr_suffix = " stock hdr"s;
-   }
-
    _hdr_state = state;
 }
 
 void Postprocess::aa_quality(Post_aa_quality quality) noexcept
 {
-   _aa_suffix = to_string(quality);
+   _aa_quality = to_string(quality);
 }
 
 void Postprocess::apply(const Shader_database& shaders, Rendertarget_allocator& allocator,
@@ -73,6 +75,7 @@ void Postprocess::apply(const Shader_database& shaders, Rendertarget_allocator& 
    set_fs_pass_blend_state(*_device);
    set_shader_constants();
    setup_vetrex_stream();
+   update_shaders_names();
 
    auto [format, res] = get_surface_metrics(output);
 
@@ -113,7 +116,7 @@ void Postprocess::do_bloom_and_color_grading(const Shader_database& shaders,
    auto rt_d = allocator.allocate(format, res / 16);
    auto rt_e = allocator.allocate(format, res / 32);
 
-   bloom_shaders.at("downsample threshold"s + _hdr_suffix).bind(*_device);
+   bloom_shaders.at(_threshold_shader).bind(*_device);
 
    _device->SetSamplerState(0, D3DSAMP_SRGBTEXTURE, _hdr_state != Hdr_state::hdr);
 
@@ -129,19 +132,19 @@ void Postprocess::do_bloom_and_color_grading(const Shader_database& shaders,
    bloom_shaders.at("upsample"s).bind(*_device);
    set_fs_pass_additive_blend_state(*_device);
 
-   direct3d::Ps_3f_shader_constant<constants::ps::post_processing_start + 6>{}
+   direct3d::Ps_3f_shader_constant<constants::ps::post_processing_start + 10>{}
       .set(*_device, _bloom_outer_scale);
    do_bloom_pass(*rt_e.texture(), *rt_d.surface());
 
-   direct3d::Ps_3f_shader_constant<constants::ps::post_processing_start + 6>{}
+   direct3d::Ps_3f_shader_constant<constants::ps::post_processing_start + 10>{}
       .set(*_device, _bloom_outer_mid_scale);
    do_bloom_pass(*rt_d.texture(), *rt_c.surface());
 
-   direct3d::Ps_3f_shader_constant<constants::ps::post_processing_start + 6>{}
+   direct3d::Ps_3f_shader_constant<constants::ps::post_processing_start + 10>{}
       .set(*_device, _bloom_mid_scale);
    do_bloom_pass(*rt_c.texture(), *rt_b.surface());
 
-   direct3d::Ps_3f_shader_constant<constants::ps::post_processing_start + 6>{}
+   direct3d::Ps_3f_shader_constant<constants::ps::post_processing_start + 10>{}
       .set(*_device, _bloom_inner_mid_scale);
    do_bloom_pass(*rt_b.texture(), *rt_a.surface());
 
@@ -155,18 +158,16 @@ void Postprocess::do_bloom_and_color_grading(const Shader_database& shaders,
 
    if (_bloom_params.use_dirt) {
       textures.get(_bloom_params.dirt_texture_name).bind(dirt_sampler_slot_start);
-      post_shaders.at("bloom dirt colorgrade"s + _hdr_suffix).bind(*_device);
    }
-   else {
-      post_shaders.at("bloom colorgrade"s + _hdr_suffix).bind(*_device);
-   }
+
+   post_shaders.at(_uber_shader).bind(*_device);
 
    const auto input_size = static_cast<glm::vec2>(
       std::get<glm::ivec2>(get_surface_metrics(*rt_a.surface())));
 
    direct3d::Ps_2f_shader_constant<constants::ps::post_processing_start + 1>{}
       .set(*_device, {1.0f / input_size});
-   direct3d::Ps_3f_shader_constant<constants::ps::post_processing_start + 6>{}
+   direct3d::Ps_3f_shader_constant<constants::ps::post_processing_start + 10>{}
       .set(*_device, _bloom_inner_scale);
 
    do_pass(input, output);
@@ -180,7 +181,7 @@ void Postprocess::do_color_grading(const Shader_database& shaders,
    bind_color_grading_luts();
    _device->SetRenderState(D3DRS_SRGBWRITEENABLE, true);
 
-   shaders.at("postprocess"s).at("colorgrade"s + _hdr_suffix).bind(*_device);
+   shaders.at("postprocess"s).at(_uber_shader).bind(*_device);
 
    do_pass(input, output);
 }
@@ -194,7 +195,7 @@ void Postprocess::do_finalize(const Shader_database& shaders,
    set_linear_clamp_sampler(*_device, 0, false);
    _device->SetRenderState(D3DRS_SRGBWRITEENABLE, false);
 
-   shaders.at("postprocess"s).at("finalize "s + _aa_suffix).bind(*_device);
+   shaders.at("postprocess"s).at(_finalize_shader).bind(*_device);
 
    do_pass(input, output);
 }
@@ -278,5 +279,28 @@ void Postprocess::setup_vetrex_stream() noexcept
 void Postprocess::create_resources() noexcept
 {
    _vertex_buffer = create_fs_triangle_buffer(*_device);
+}
+
+void Postprocess::update_shaders_names() noexcept
+{
+   if (_bloom_params.enabled) {
+      _uber_shader = "bloom"s;
+
+      if (_bloom_params.use_dirt) _uber_shader += " dirt"sv;
+      if (_vignette_params.enabled) _uber_shader += " vignette"sv;
+
+      _uber_shader += " colorgrade"sv;
+   }
+   else {
+      _uber_shader = _vignette_params.enabled ? "vignette colorgrade"sv : "colorgrade"sv;
+   }
+
+   _threshold_shader = "downsample threshold"s;
+   _finalize_shader = "finalize "s + _aa_quality;
+
+   if (_hdr_state == Hdr_state::stock) {
+      _threshold_shader += " stock hdr"sv;
+      _uber_shader += " stock hdr"sv;
+   }
 }
 }

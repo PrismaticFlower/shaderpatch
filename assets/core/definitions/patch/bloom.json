@@ -10,7 +10,8 @@
   "defines": [
     [ "BLOOM_ACTIVE", "false" ],
     [ "BLOOM_USE_DIRT", "false" ],
-    [ "STOCK_HDR_STATE", "false" ]
+    [ "STOCK_HDR_STATE", "false" ],
+    [ "VIGNETTE_ACTIVE", "false" ]
   ],
 
   "states": [
