@@ -8,7 +8,8 @@ float3 fog_color : register(ps, c[52]);
 // x = width, y = height, z = 1 / width, w = 1 / height
 float4 rt_resolution : register(ps, c[53]);;
 
-float time : register(vs, c[97]);
+float time : register(vs, c[97])
+           : register(ps, c[54]);
 
 float4 material_constants[8] : register(c[128]);
 

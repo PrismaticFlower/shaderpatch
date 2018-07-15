@@ -11,7 +11,9 @@
     [ "BLOOM_ACTIVE", "false" ],
     [ "BLOOM_USE_DIRT", "false" ],
     [ "STOCK_HDR_STATE", "false" ],
-    [ "VIGNETTE_ACTIVE", "false" ]
+    [ "VIGNETTE_ACTIVE", "false" ],
+    [ "FILM_GRAIN_ACTIVE", "false" ],
+    [ "FILM_GRAIN_COLORED", "false" ]
   ],
 
   "states": [

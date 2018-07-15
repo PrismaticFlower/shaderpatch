@@ -11,7 +11,9 @@
     [ "BLOOM_ACTIVE", "false" ],
     [ "BLOOM_USE_DIRT", "false" ],
     [ "STOCK_HDR_STATE", "false" ],
-    [ "VIGNETTE_ACTIVE", "false" ]
+    [ "VIGNETTE_ACTIVE", "false" ],
+    [ "FILM_GRAIN_ACTIVE", "false" ],
+    [ "FILM_GRAIN_COLORED", "false" ]
   ],
 
   "states": [
@@ -194,6 +196,106 @@
 
       "defines": [
         [ "AA_SLOWEST", "1" ]
+      ],
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "postprocess_finalize_ps"
+    },
+
+    {
+      "name": "finalize fastest film grain",
+
+      "defines": [
+        [ "AA_FASTEST", "1" ],
+        [ "FILM_GRAIN_ACTIVE", "true" ]
+      ],
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "postprocess_finalize_ps"
+    },
+
+    {
+      "name": "finalize fast film grain",
+
+      "defines": [
+        [ "AA_FAST", "1" ],
+        [ "FILM_GRAIN_ACTIVE", "true" ]
+      ],
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "postprocess_finalize_ps"
+    },
+
+    {
+      "name": "finalize slower film grain",
+
+      "defines": [
+        [ "AA_SLOWER", "1" ],
+        [ "FILM_GRAIN_ACTIVE", "true" ]
+      ],
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "postprocess_finalize_ps"
+    },
+
+    {
+      "name": "finalize slowest film grain",
+
+      "defines": [
+        [ "AA_SLOWEST", "1" ],
+        [ "FILM_GRAIN_ACTIVE", "true" ]
+      ],
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "postprocess_finalize_ps"
+    },
+
+    {
+      "name": "finalize fastest film grain colored",
+
+      "defines": [
+        [ "AA_FASTEST", "1" ],
+        [ "FILM_GRAIN_ACTIVE", "true" ],
+        [ "FILM_GRAIN_COLORED", "true" ]
+      ],
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "postprocess_finalize_ps"
+    },
+
+    {
+      "name": "finalize fast film grain colored",
+
+      "defines": [
+        [ "AA_FAST", "1" ],
+        [ "FILM_GRAIN_ACTIVE", "true" ],
+        [ "FILM_GRAIN_COLORED", "true" ]
+      ],
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "postprocess_finalize_ps"
+    },
+
+    {
+      "name": "finalize slower film grain colored",
+
+      "defines": [
+        [ "AA_SLOWER", "1" ],
+        [ "FILM_GRAIN_ACTIVE", "true" ],
+        [ "FILM_GRAIN_COLORED", "true" ]
+      ],
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "postprocess_finalize_ps"
+    },
+
+    {
+      "name": "finalize slowest film grain colored",
+
+      "defines": [
+        [ "AA_SLOWEST", "1" ],
+        [ "FILM_GRAIN_ACTIVE", "true" ],
+        [ "FILM_GRAIN_COLORED", "true" ]
       ],
 
       "vertex_shader": "main_vs",

@@ -213,6 +213,12 @@ someone want? It's license is as follows.
 > (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 > OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+### [Martins Upitis's Film Grain Shader](http://devlog-martinsh.blogspot.com/2013/05/image-imperfections-and-film-grain-post.html) 
+Nifty as Film Grain shader present in Shader Patch's Effects system. It has been modified slightly for use in HLSL and SP, 
+but remains largely unchanged. Used under the Creative Commons Attribution 3.0 Unported License which you can see 
+bygoing here https://creativecommons.org/licenses/by/3.0/
+
+
 ### [mhook](https://github.com/apriorit/mhook) 
 Used to hook Direct3D 9 in a polite manner in order to play nice with other things that
 also hook D3D9.

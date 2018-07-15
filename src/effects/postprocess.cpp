@@ -12,6 +12,7 @@ Postprocess::Postprocess(Com_ref<IDirect3DDevice9> device, Post_aa_quality aa_qu
 {
    bloom_params(Bloom_params{});
    color_grading_params(Color_grading_params{});
+   film_grain_params(Film_grain_params{});
    this->aa_quality(aa_quality);
 }
 
@@ -50,6 +51,16 @@ void Postprocess::color_grading_params(const Color_grading_params& params) noexc
       get_lut_exposure_color_filter(_color_grading_params);
    _constants.color_grading.saturation = params.saturation;
    _color_luts = std::nullopt;
+}
+
+void Postprocess::film_grain_params(const Film_grain_params& params) noexcept
+{
+   _film_grain_params = params;
+
+   _constants.film_grain.amount = params.amount;
+   _constants.film_grain.size = params.size;
+   _constants.film_grain.color_amount = params.color_amount;
+   _constants.film_grain.luma_amount = params.luma_amount;
 }
 
 void Postprocess::drop_device_resources() noexcept
@@ -164,6 +175,8 @@ void Postprocess::do_bloom_and_color_grading(const Shader_database& shaders,
 
    const auto input_size = static_cast<glm::vec2>(
       std::get<glm::ivec2>(get_surface_metrics(*rt_a.surface())));
+   const auto output_size =
+      static_cast<glm::vec2>(std::get<glm::ivec2>(get_surface_metrics(output)));
 
    direct3d::Ps_2f_shader_constant<constants::ps::post_processing_start + 1>{}
       .set(*_device, {1.0f / input_size});
@@ -296,11 +309,17 @@ void Postprocess::update_shaders_names() noexcept
    }
 
    _threshold_shader = "downsample threshold"s;
-   _finalize_shader = "finalize "s + _aa_quality;
 
    if (_hdr_state == Hdr_state::stock) {
       _threshold_shader += " stock hdr"sv;
       _uber_shader += " stock hdr"sv;
+   }
+
+   _finalize_shader = "finalize "s + _aa_quality;
+
+   if (_film_grain_params.enabled) {
+      _finalize_shader += " film grain"sv;
+      if (_film_grain_params.colored) _finalize_shader += " colored"sv;
    }
 }
 }

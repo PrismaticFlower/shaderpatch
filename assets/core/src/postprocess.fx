@@ -1,5 +1,6 @@
 
 #include "aa_quality_levels.hlsl"
+#include "film_grain.hlsl"
 #include "fullscreen_tri_vs.hlsl"
 #include "pixel_utilities.hlsl"
 #include "postprocess_common.hlsl"
@@ -63,18 +64,18 @@ float4 postprocess_ps(float2 texcoords : TEXCOORD) : COLOR
    return float4(color, fxaa_luma(color));
 }
 
-float3 apply_dithering(float3 color, float2 position)
+void apply_dithering(inout float3 color, float2 position)
 {
    float3 blue_noise = tex2Dlod(blue_noise_sampler, (position / 64.0) + randomness.xy, 0).rgb;
    blue_noise = blue_noise * 2.0 - 1.0;
    blue_noise = sign(blue_noise) * (1.0 - sqrt(1.0 - abs(blue_noise)));
 
-   return color + blue_noise / 255.0;
+   color += (blue_noise / 255.0);
 }
 
 float4 postprocess_finalize_ps(float2 texcoords : TEXCOORD, float2 position : VPOS) : COLOR
 {
-   float4 color = FxaaPixelShader(texcoords,
+   float3 color = FxaaPixelShader(texcoords,
                                   0.0,
                                   scene_sampler,
                                   scene_sampler,
@@ -89,9 +90,10 @@ float4 postprocess_finalize_ps(float2 texcoords : TEXCOORD, float2 position : VP
                                   0.0,
                                   0.0,
                                   0.0,
-                                  0.0);
+                                  0.0).rgb;
 
-   color.rgb = apply_dithering(color.rgb, position);
+   if (film_grain) filmgrain::apply(texcoords, color);
+   else apply_dithering(color, position);
 
-   return color;
+   return float4(color, 1.0);
 }

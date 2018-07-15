@@ -12,6 +12,7 @@ constexpr auto fog_range = 51u;
 constexpr auto fog_color = 52u;
 
 constexpr auto rt_resolution = 53u;
+constexpr auto time = 54u;
 
 constexpr auto post_processing_start = 60u;
 constexpr auto post_processing_end = 70u;

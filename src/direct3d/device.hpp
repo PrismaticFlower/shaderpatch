@@ -405,6 +405,7 @@ private:
    Ps_3f_shader_constant<constants::ps::fog_color> _fog_color_const;
    Ps_4f_shader_constant<constants::ps::rt_resolution> _rt_resolution_const;
    Vs_1f_shader_constant<constants::vs::time> _time_vs_const;
+   Ps_1f_shader_constant<constants::ps::time> _time_ps_const;
    Vs_2f_shader_constant<constants::vs::linear_state> _hdr_state_vs_const;
    Ps_2f_shader_constant<constants::ps::linear_state> _hdr_state_ps_const;
    Ps_1f_shader_constant<constants::ps::rt_multiply_blending> _multiply_blendstate_ps_const;

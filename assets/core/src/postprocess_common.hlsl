@@ -9,14 +9,18 @@ sampler2D green_lut : register(s4);
 sampler2D blue_lut : register(s5);
 sampler2D blue_noise_sampler : register(s6);
 
-float2 scene_pixel_size : register(c60);
+float4 scene_pixel_metrics : register(c60);
 float2 bloom_texel_size : register(c61);
 float4 bloom_global_scale_threshold : register(c62);
 float3 bloom_dirt_scale : register(c63);
 float4 exposure_color_filter_saturation : register(c64);
 float2 vignette_end_start : register(c65);
-float4 randomness : register(c66);
+float4 film_grain_params : register(c66);
+float4 randomness : register(c67);
 float3 bloom_local_scale : register(c70);
+
+const static float2 scene_pixel_size = scene_pixel_metrics.xy;
+const static float2 scene_resolution = scene_pixel_metrics.zw;
 
 const static float3 luma_weights = {0.2126, 0.7152, 0.0722};
 const static float3 fxaa_luma_weights = {0.299, 0.587, 0.114};
@@ -32,10 +36,17 @@ const static float vignette_start = vignette_end_start.y;
 const static float3 exposure_color_filter = exposure_color_filter_saturation.xyz;
 const static float saturation = exposure_color_filter_saturation.w;
 
+const static float film_grain_amount = film_grain_params.x;
+const static float film_grain_size = film_grain_params.y;
+const static float film_grain_color_amount = film_grain_params.z;
+const static float film_grain_luma_amount = film_grain_params.w;
+
 const static bool bloom = BLOOM_ACTIVE;
 const static bool bloom_use_dirt = BLOOM_USE_DIRT;
 const static bool stock_hdr = STOCK_HDR_STATE;
 const static bool vignette = VIGNETTE_ACTIVE;
+const static bool film_grain = FILM_GRAIN_ACTIVE;
+const static bool film_grain_colored = FILM_GRAIN_COLORED;
 
 float3 bloom_box13_downsample(sampler2D samp, float2 texcoords)
 {

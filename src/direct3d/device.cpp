@@ -296,6 +296,8 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
 
    _time_vs_const.set(*_device,
                       std::chrono::duration<float>{time_since_epoch}.count());
+   _time_ps_const.set(*_device,
+                      std::chrono::duration<float>{time_since_epoch}.count());
 
    // update per frame state
    _water_refraction = false;

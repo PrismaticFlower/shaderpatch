@@ -24,6 +24,8 @@ Vignette_params show_vignette_imgui(Vignette_params params) noexcept;
 
 Color_grading_params show_color_grading_imgui(Color_grading_params params) noexcept;
 
+Film_grain_params show_film_grain_imgui(Film_grain_params params) noexcept;
+
 }
 
 void Control::show_imgui(HWND game_window) noexcept
@@ -32,6 +34,8 @@ void Control::show_imgui(HWND game_window) noexcept
       show_color_grading_imgui(postprocess.color_grading_params()));
    postprocess.bloom_params(show_bloom_imgui(postprocess.bloom_params()));
    postprocess.vignette_params(show_vignette_imgui(postprocess.vignette_params()));
+   postprocess.film_grain_params(
+      show_film_grain_imgui(postprocess.film_grain_params()));
 
    ImGui::Begin("Effects Control", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
@@ -112,6 +116,8 @@ void Control::read_config(YAML::Node config)
    postprocess.bloom_params(config["Bloom"s].as<Bloom_params>(Bloom_params{}));
    postprocess.vignette_params(
       config["Vignette"s].as<Vignette_params>(Vignette_params{}));
+   postprocess.film_grain_params(
+      config["FilmGrain"s].as<Film_grain_params>(Film_grain_params{}));
 }
 
 auto Control::output_params_to_yaml_string() noexcept -> std::string
@@ -122,6 +128,7 @@ auto Control::output_params_to_yaml_string() noexcept -> std::string
    config["ColorGrading"s] = postprocess.color_grading_params();
    config["Bloom"s] = postprocess.bloom_params();
    config["Vignette"s] = postprocess.vignette_params();
+   config["FilmGrain"s] = postprocess.film_grain_params();
 
    std::stringstream stream;
    ;
@@ -265,8 +272,6 @@ Vignette_params show_vignette_imgui(Vignette_params params) noexcept
 
    ImGui::Begin("Vignette", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
-   const auto max_float = std::numeric_limits<float>::max();
-
    ImGui::Checkbox("Enabled", &params.enabled);
 
    ImGui::DragFloat("End", &params.end, 0.05f, 0.0f, 2.0f);
@@ -348,6 +353,23 @@ Color_grading_params show_color_grading_imgui(Color_grading_params params) noexc
    if (ImGui::Button("Reset Settings")) {
       params = Color_grading_params{};
    }
+
+   ImGui::End();
+
+   return params;
+}
+
+Film_grain_params show_film_grain_imgui(Film_grain_params params) noexcept
+{
+   ImGui::Begin("Film Grain", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+
+   ImGui::Checkbox("Enabled", &params.enabled);
+   ImGui::Checkbox("Colored", &params.colored);
+
+   ImGui::DragFloat("Amount", &params.amount, 0.001f, 0.0f, 1.0f);
+   ImGui::DragFloat("Size", &params.size, 0.05f, 1.6f, 3.0f);
+   ImGui::DragFloat("Color Amount", &params.color_amount, 0.05f, 0.0f, 1.0f);
+   ImGui::DragFloat("Luma Amount", &params.luma_amount, 0.05f, 0.0f, 1.0f);
 
    ImGui::End();
 

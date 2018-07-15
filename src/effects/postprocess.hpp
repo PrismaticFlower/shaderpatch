@@ -83,6 +83,16 @@ struct Color_grading_params {
    float highlight_offset = 0.0f;
 };
 
+struct Film_grain_params {
+   bool enabled = false;
+   bool colored = false;
+
+   float amount = 0.035f;
+   float size = 1.65f;
+   float color_amount = 0.6f;
+   float luma_amount = 1.0f;
+};
+
 enum class Hdr_state { hdr, stock };
 
 class Postprocess {
@@ -108,6 +118,13 @@ public:
    auto color_grading_params() const noexcept -> const Color_grading_params&
    {
       return _color_grading_params;
+   }
+
+   void film_grain_params(const Film_grain_params& params) noexcept;
+
+   auto film_grain_params() const noexcept -> const Film_grain_params&
+   {
+      return _film_grain_params;
    }
 
    void apply(const Shader_database& shaders, Rendertarget_allocator& allocator,
@@ -178,10 +195,17 @@ private:
          std::array<float, 2> _pad{};
       } vignette;
 
+      struct {
+         alignas(16) float amount;
+         float size;
+         float color_amount;
+         float luma_amount;
+      } film_grain;
+
       alignas(16) glm::vec4 randomness{1.0f, 1.0f, 1.0f, 1.0f};
    } _constants;
 
-   static_assert(sizeof(decltype(_constants)) == 80);
+   static_assert(sizeof(decltype(_constants)) == 96);
 
    glm::vec3 _bloom_inner_scale;
    glm::vec3 _bloom_inner_mid_scale;
@@ -194,6 +218,7 @@ private:
    Bloom_params _bloom_params{};
    Vignette_params _vignette_params{};
    Color_grading_params _color_grading_params{};
+   Film_grain_params _film_grain_params{};
 
    Hdr_state _hdr_state = Hdr_state::hdr;
 
@@ -458,4 +483,42 @@ struct convert<sp::effects::Color_grading_params> {
       return true;
    }
 };
+
+template<>
+struct convert<sp::effects::Film_grain_params> {
+   static Node encode(const sp::effects::Film_grain_params& params)
+   {
+      using namespace std::literals;
+
+      YAML::Node node;
+
+      node["Enable"s] = params.enabled;
+      node["Colored"s] = params.colored;
+
+      node["Amount"s] = params.amount;
+      node["Size"s] = params.size;
+      node["ColorAmount"s] = params.color_amount;
+      node["LumaAmount"s] = params.luma_amount;
+
+      return node;
+   }
+
+   static bool decode(const Node& node, sp::effects::Film_grain_params& params)
+   {
+      using namespace std::literals;
+
+      params = sp::effects::Film_grain_params{};
+
+      params.enabled = node["Enable"s].as<bool>(params.enabled);
+      params.colored = node["Colored"s].as<bool>(params.colored);
+
+      params.amount = node["Amount"s].as<float>(params.amount);
+      params.size = node["Size"s].as<float>(params.size);
+      params.color_amount = node["ColorAmount"s].as<float>(params.color_amount);
+      params.luma_amount = node["LumaAmount"s].as<float>(params.luma_amount);
+
+      return true;
+   }
+};
+
 }

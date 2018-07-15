@@ -132,8 +132,8 @@ inline void set_fs_pass_ps_state(IDirect3DDevice9& device, IDirect3DTexture9& so
    auto src_size =
       static_cast<glm::vec2>(std::get<glm::ivec2>(get_texture_metrics(source)));
 
-   direct3d::Ps_2f_shader_constant<constants::ps::post_processing_start>{}
-      .set(device, {1.0f / src_size});
+   direct3d::Ps_4f_shader_constant<constants::ps::post_processing_start>{}
+      .set(device, {1.0f / src_size, src_size});
 }
 
 inline void set_blur_pass_state(IDirect3DDevice9& device, IDirect3DTexture9& source,
