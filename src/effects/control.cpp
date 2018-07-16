@@ -304,9 +304,21 @@ Color_grading_params show_color_grading_imgui(Color_grading_params params) noexc
       ImGui::DragFloat("Contrast", &params.contrast, 0.01f, 0.01f, 5.0f);
    }
 
-   if (ImGui::CollapsingHeader("Filmic Tonemapping")) {
-      // filmic::show_imgui_curve(params);
+   if (ImGui::CollapsingHeader("Lift / Gamma / Gain")) {
+      ImGui::ColorEdit3("Shadow Colour", &params.shadow_color.x,
+                        ImGuiColorEditFlags_Float);
+      ImGui::DragFloat("Shadow Offset", &params.shadow_offset, 0.005f);
 
+      ImGui::ColorEdit3("Midtone Colour", &params.midtone_color.x,
+                        ImGuiColorEditFlags_Float);
+      ImGui::DragFloat("Midtone Offset", &params.midtone_offset, 0.005f);
+
+      ImGui::ColorEdit3("Hightlight Colour", &params.highlight_color.x,
+                        ImGuiColorEditFlags_Float);
+      ImGui::DragFloat("Hightlight Offset", &params.highlight_offset, 0.005f);
+   }
+
+   if (ImGui::CollapsingHeader("Filmic Tonemapping")) {
       ImGui::DragFloat("Toe Strength", &params.filmic_toe_strength, 0.01f, 0.0f, 1.0f);
       ImGui::DragFloat("Toe Length", &params.filmic_toe_length, 0.01f, 0.0f, 1.0f);
       ImGui::DragFloat("Shoulder Strength", &params.filmic_shoulder_strength,
@@ -341,20 +353,6 @@ Color_grading_params show_color_grading_imgui(Color_grading_params params) noexc
       if (ImGui::IsItemHovered()) {
          ImGui::SetTooltip("Reset the curve to example starting point values.");
       }
-   }
-
-   if (ImGui::CollapsingHeader("Lift / Gamma / Gain")) {
-      ImGui::ColorEdit3("Shadow Colour", &params.shadow_color.x,
-                        ImGuiColorEditFlags_Float);
-      ImGui::DragFloat("Shadow Offset", &params.shadow_offset, 0.005f);
-
-      ImGui::ColorEdit3("Midtone Colour", &params.midtone_color.x,
-                        ImGuiColorEditFlags_Float);
-      ImGui::DragFloat("Midtone Offset", &params.midtone_offset, 0.005f);
-
-      ImGui::ColorEdit3("Hightlight Colour", &params.highlight_color.x,
-                        ImGuiColorEditFlags_Float);
-      ImGui::DragFloat("Hightlight Offset", &params.highlight_offset, 0.005f);
    }
 
    ImGui::Separator();
