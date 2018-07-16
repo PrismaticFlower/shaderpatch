@@ -3,6 +3,7 @@
 #include "../logger.hpp"
 #include "file_dialogs.hpp"
 #include "imgui_ext.hpp"
+#include "imgui_tabs.h"
 #include "volume_resource.hpp"
 
 #include <fstream>
@@ -30,74 +31,94 @@ Film_grain_params show_film_grain_imgui(Film_grain_params params) noexcept;
 
 void Control::show_imgui(HWND game_window) noexcept
 {
-   postprocess.color_grading_params(
-      show_color_grading_imgui(postprocess.color_grading_params()));
-   postprocess.bloom_params(show_bloom_imgui(postprocess.bloom_params()));
-   postprocess.vignette_params(show_vignette_imgui(postprocess.vignette_params()));
-   postprocess.film_grain_params(
-      show_film_grain_imgui(postprocess.film_grain_params()));
+   ImGui::Begin("Effects", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
-   ImGui::Begin("Effects Control", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+   ImGui::BeginTabBar("Effects Config", ImGuiTabBarFlags_SizingPolicyEqual |
+                                           ImGuiTabBarFlags_NoSelectionOnAppearing);
 
-   ImGui::Text("Device must be reset for effects control settings to be "
-               "applied correctly!");
+   static bool first_open = true;
+   if (ImGui::TabItem("Control", nullptr,
+                      std::exchange(first_open, false) ? ImGuiTabItemFlags_SetSelected
+                                                       : ImGuiTabItemFlags_None)) {
+      ImGui::Text("Device must be reset for effects control settings to be "
+                  "applied correctly!");
 
-   ImGui::Checkbox("Enable Effects", &_enabled);
+      ImGui::Checkbox("Enable Effects", &_enabled);
 
-   if (ImGui::CollapsingHeader("Effects Config", ImGuiTreeNodeFlags_DefaultOpen)) {
-      ImGui::Checkbox("HDR Rendering", &_config.hdr_rendering);
-   }
-
-   ImGui::Separator();
-
-   if (ImGui::Button("Open Config")) {
-      if (auto path = win32::open_file_dialog({{L"Effects Config", L"*.spfx"}},
-                                              game_window, fs::current_path(),
-                                              L"mod_config.spfx"s);
-          path) {
-         load_params_from_yaml_file(*path);
+      if (ImGui::CollapsingHeader("Effects Config", ImGuiTreeNodeFlags_DefaultOpen)) {
+         ImGui::Checkbox("HDR Rendering", &_config.hdr_rendering);
       }
-   }
 
-   if (_open_failure) {
+      ImGui::Separator();
+
+      if (ImGui::Button("Open Config")) {
+         if (auto path =
+                win32::open_file_dialog({{L"Effects Config", L"*.spfx"}}, game_window,
+                                        fs::current_path(), L"mod_config.spfx"s);
+             path) {
+            load_params_from_yaml_file(*path);
+         }
+      }
+
+      if (_open_failure) {
+         ImGui::SameLine();
+         ImGui::TextColored({1.0f, 0.2f, 0.33f, 1.0f}, "Open Failed!");
+      }
+
       ImGui::SameLine();
-      ImGui::TextColored({1.0f, 0.2f, 0.33f, 1.0f}, "Open Failed!");
-   }
 
-   ImGui::SameLine();
-
-   if (ImGui::Button("Save Config")) {
-      if (auto path = win32::save_file_dialog({{L"Effects Config", L"*.spfx"}},
-                                              game_window, fs::current_path(),
-                                              L"mod_config.spfx"s);
-          path) {
-         save_params_to_yaml_file(*path);
+      if (ImGui::Button("Save Config")) {
+         if (auto path =
+                win32::save_file_dialog({{L"Effects Config", L"*.spfx"}}, game_window,
+                                        fs::current_path(), L"mod_config.spfx"s);
+             path) {
+            save_params_to_yaml_file(*path);
+         }
       }
-   }
 
-   ImGui::SameLine();
-
-   if (ImGui::Button("Save Munged Config")) {
-      if (auto path =
-             win32::save_file_dialog({{L"Munged Effects Config", L"*.mspfx"}}, game_window,
-                                     fs::current_path(), L"mod_config.mspfx"s);
-          path) {
-         save_params_to_munged_file(*path);
-      }
-   }
-
-   if (ImGui::IsItemHovered()) {
-      ImGui::SetTooltip(
-         "Save out a munged config to be loaded from a map script. Keep in "
-         "mind Shader "
-         "Patch can not reload these files from the debug screen.");
-   }
-
-   if (_save_failure) {
       ImGui::SameLine();
-      ImGui::TextColored({1.0f, 0.2f, 0.33f, 1.0f}, "Save Failed!");
+
+      if (ImGui::Button("Save Munged Config")) {
+         if (auto path = win32::save_file_dialog({{L"Munged Effects Config", L"*.mspfx"}},
+                                                 game_window, fs::current_path(),
+                                                 L"mod_config.mspfx"s);
+             path) {
+            save_params_to_munged_file(*path);
+         }
+      }
+
+      if (ImGui::IsItemHovered()) {
+         ImGui::SetTooltip(
+            "Save out a munged config to be loaded from a map script. Keep in "
+            "mind Shader "
+            "Patch can not reload these files from the debug screen.");
+      }
+
+      if (_save_failure) {
+         ImGui::SameLine();
+         ImGui::TextColored({1.0f, 0.2f, 0.33f, 1.0f}, "Save Failed!");
+      }
    }
 
+   if (ImGui::TabItem("Color Grading")) {
+      postprocess.color_grading_params(
+         show_color_grading_imgui(postprocess.color_grading_params()));
+   }
+
+   if (ImGui::TabItem("Bloom")) {
+      postprocess.bloom_params(show_bloom_imgui(postprocess.bloom_params()));
+   }
+
+   if (ImGui::TabItem("Vignette")) {
+      postprocess.vignette_params(show_vignette_imgui(postprocess.vignette_params()));
+   }
+
+   if (ImGui::TabItem("Film Grain")) {
+      postprocess.film_grain_params(
+         show_film_grain_imgui(postprocess.film_grain_params()));
+   }
+
+   ImGui::EndTabBar();
    ImGui::End();
 }
 
@@ -210,9 +231,6 @@ namespace {
 
 Bloom_params show_bloom_imgui(Bloom_params params) noexcept
 {
-
-   ImGui::Begin("Bloom", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-
    const auto max_float = std::numeric_limits<float>::max();
 
    if (ImGui::CollapsingHeader("Basic Controls", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -262,30 +280,21 @@ Bloom_params show_bloom_imgui(Bloom_params params) noexcept
       ImGui::SetTooltip("Reset bloom params to default settings.");
    }
 
-   ImGui::End();
-
    return params;
 }
 
 Vignette_params show_vignette_imgui(Vignette_params params) noexcept
 {
-
-   ImGui::Begin("Vignette", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-
    ImGui::Checkbox("Enabled", &params.enabled);
 
    ImGui::DragFloat("End", &params.end, 0.05f, 0.0f, 2.0f);
    ImGui::DragFloat("Start", &params.start, 0.05f, 0.0f, 2.0f);
-
-   ImGui::End();
 
    return params;
 }
 
 Color_grading_params show_color_grading_imgui(Color_grading_params params) noexcept
 {
-   ImGui::Begin("Colour Grading", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-
    if (ImGui::CollapsingHeader("Basic Controls", ImGuiTreeNodeFlags_DefaultOpen)) {
       ImGui::ColorEdit3("Colour Filter", &params.color_filter.x,
                         ImGuiColorEditFlags_Float);
@@ -354,15 +363,11 @@ Color_grading_params show_color_grading_imgui(Color_grading_params params) noexc
       params = Color_grading_params{};
    }
 
-   ImGui::End();
-
    return params;
 }
 
 Film_grain_params show_film_grain_imgui(Film_grain_params params) noexcept
 {
-   ImGui::Begin("Film Grain", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-
    ImGui::Checkbox("Enabled", &params.enabled);
    ImGui::Checkbox("Colored", &params.colored);
 
@@ -370,8 +375,6 @@ Film_grain_params show_film_grain_imgui(Film_grain_params params) noexcept
    ImGui::DragFloat("Size", &params.size, 0.05f, 1.6f, 3.0f);
    ImGui::DragFloat("Color Amount", &params.color_amount, 0.05f, 0.0f, 1.0f);
    ImGui::DragFloat("Luma Amount", &params.luma_amount, 0.05f, 0.0f, 1.0f);
-
-   ImGui::End();
 
    return params;
 }

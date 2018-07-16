@@ -37,6 +37,7 @@ Global
 		shared_src\shared_src.vcxitems*{3e809000-e8d9-4c1b-8a1a-738587477265}*SharedItemsImports = 4
 		shared_src\shared_src.vcxitems*{55ede7a5-d7bb-476b-84a2-85b962bbc36a}*SharedItemsImports = 4
 		shared_src\shared_src.vcxitems*{77065f00-e7e4-4edf-8c98-6eb87bc49c4d}*SharedItemsImports = 4
+		submodules\imgui\imgui.vcxitems*{77065f00-e7e4-4edf-8c98-6eb87bc49c4d}*SharedItemsImports = 4
 		shared_src\shared_src.vcxitems*{84beaab2-dd0c-4298-aa34-22773b8d44bd}*SharedItemsImports = 4
 		shared_src\shared_src.vcxitems*{f1810f20-c9cc-43df-981f-9df8e60ae6eb}*SharedItemsImports = 9
 	EndGlobalSection
