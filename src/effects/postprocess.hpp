@@ -28,7 +28,7 @@ namespace sp::effects {
 struct Bloom_params {
    bool enabled = true;
 
-   float threshold = 1.0f;
+   float threshold = 0.5f;
 
    float intensity = 1.0f;
    glm::vec3 tint{1.0f, 1.0f, 1.0f};
