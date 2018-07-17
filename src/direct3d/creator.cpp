@@ -1,13 +1,18 @@
 
 #include "creator.hpp"
+#include "../fps_unlock.hpp"
 #include "check_required_features.hpp"
 #include "device.hpp"
 
 namespace sp::direct3d {
 
+using namespace std::literals;
+
 Com_ptr<Creator> Creator::create(Com_ptr<IDirect3D9> actual) noexcept
 {
    check_required_features(*actual);
+
+   if (User_config{"shader patch.yml"s}.game.unlock_fps) fps_unlock();
 
    return Com_ptr{new Creator{std::move(actual)}};
 }

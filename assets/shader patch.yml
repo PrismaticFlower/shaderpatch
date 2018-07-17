@@ -50,6 +50,11 @@ Rendering:
    # Enable or disable advertising Shader Patch's presence to mods.
    AdvertisePresence: yes
 
+Game:
+   # Controls whether or not Shader Patch will attempt to remove the game's FPS cap. 
+   # The animation speed of certain UI elements is stuffed up by this, but the game itself is stable.
+   UnlockFPS: yes
+   
 Developer:
    # Toggle key for the developer screen. Giving access to useful things for mod makers and
    # Shader Patch developers alike.

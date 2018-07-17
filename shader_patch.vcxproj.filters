@@ -57,6 +57,9 @@
     <ClCompile Include="src\direct3d\hook.cpp">
       <Filter>src\direct3d</Filter>
     </ClCompile>
+    <ClCompile Include="src\fps_unlock.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -154,6 +157,12 @@
     </ClInclude>
     <ClInclude Include="src\direct3d\vertex_input_state.hpp">
       <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\fps_unlock.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\unlock_memory.hpp">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

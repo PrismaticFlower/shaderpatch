@@ -100,6 +100,10 @@ struct User_config {
    } rendering;
 
    struct {
+      bool unlock_fps = true;
+   } game;
+
+   struct {
       std::uintptr_t toggle_key{0};
    } developer;
 
@@ -134,7 +138,7 @@ struct User_config {
          ImGui::Checkbox("Advertise Presence", &rendering.advertise_presence);
 
          if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("Will not take effect on Apply.");
+            ImGui::SetTooltip("Will not take effect on Device Reset.");
          }
 
          rendering.post_aa_quality = aa_quality_from_string(ImGui::StringPicker(
@@ -155,6 +159,14 @@ struct User_config {
 
          ImGui::DragInt("Anisotropic Filtering",
                         &rendering.anisotropic_filtering, 1, 1, 16);
+      }
+
+      if (ImGui::CollapsingHeader("Game")) {
+         ImGui::Checkbox("Unlock FPS", &game.unlock_fps);
+
+         if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Will not take effect on Device Reset.");
+         }
       }
 
       if (apply) {
@@ -213,6 +225,8 @@ private:
 
       rendering.advertise_presence =
          config["Rendering"s]["AdvertisePresence"s].as<bool>();
+
+      game.unlock_fps = config["Game"s]["UnlockFPS"s].as<bool>();
 
       developer.toggle_key = config["Developer"s]["ScreenToggle"s].as<int>();
    }

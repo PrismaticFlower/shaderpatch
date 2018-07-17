@@ -36,6 +36,7 @@ copy ".\bin\Release\spfx_munge.exe" ".\packaged\data\shaderpatch\bin\spfx_munge.
 
 # Copy Assets
 copy '.\assets\rendertype_descriptions\' '.\packaged\data\shaderpatch\bin\rendertype_descriptions\' -Recurse
+copy '.\assets\fps limit info.yml' .\packaged\data\shaderpatch\
 copy '.\assets\shader patch.yml' .\packaged\
 copy '.\assets\shader patch user readme.txt' '.\packaged\shader patch readme.txt'
 

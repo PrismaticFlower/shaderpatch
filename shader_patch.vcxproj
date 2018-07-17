@@ -78,7 +78,7 @@
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>mhook.lib;boost_system-vc140-mt-gd.lib;libyaml-cppmdd.lib;DirectXTex.lib;dxguid.lib;d3d9.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>mhook.lib;Bcrypt.lib	;boost_system-vc140-mt-gd.lib;libyaml-cppmdd.lib;DirectXTex.lib;dxguid.lib;d3d9.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>dinput8.def</ModuleDefinitionFile>
       <AdditionalLibraryDirectories>submodules/vcpkg/installed/x86-windows-static-md/debug/lib;submodules/vcpkg/installed/x86-windows/debug/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <DelayLoadDLLs>
@@ -114,7 +114,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>mhook.lib;boost_system-vc140-mt.lib;libyaml-cppmd.lib;DirectXTex.lib;dxguid.lib;d3d9.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>mhook.lib;Bcrypt.lib	;boost_system-vc140-mt.lib;libyaml-cppmd.lib;DirectXTex.lib;dxguid.lib;d3d9.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>dinput8.def</ModuleDefinitionFile>
       <AdditionalLibraryDirectories>submodules/vcpkg/installed/x86-windows-static-md/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <DelayLoadDLLs>
@@ -140,6 +140,7 @@
     <ClCompile Include="src\effects\control.cpp" />
     <ClCompile Include="src\effects\postprocess.cpp" />
     <ClCompile Include="src\effects\scene_blur.cpp" />
+    <ClCompile Include="src\fps_unlock.cpp" />
     <ClCompile Include="src\imgui\imgui_impl_dx9.cpp" />
     <ClCompile Include="src\input_hooker.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -167,6 +168,7 @@
     <ClInclude Include="src\effects\postprocess.hpp" />
     <ClInclude Include="src\effects\rendertarget_allocator.hpp" />
     <ClInclude Include="src\effects\scene_blur.hpp" />
+    <ClInclude Include="src\fps_unlock.hpp" />
     <ClInclude Include="src\hook_vtable.hpp" />
     <ClInclude Include="src\imgui\imgui_impl_dx9.h" />
     <ClInclude Include="src\input_hooker.hpp" />
@@ -180,6 +182,7 @@
     <ClInclude Include="src\shader_program.hpp" />
     <ClInclude Include="src\texture.hpp" />
     <ClInclude Include="src\texture_database.hpp" />
+    <ClInclude Include="src\unlock_memory.hpp" />
     <ClInclude Include="src\user_config.hpp" />
     <ClInclude Include="src\window_helpers.hpp" />
   </ItemGroup>
