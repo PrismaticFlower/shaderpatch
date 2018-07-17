@@ -1,5 +1,7 @@
 #pragma once
 
+#include "unlock_memory.hpp"
+
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>
@@ -19,14 +21,9 @@ auto hook_vtable(Class& object, const std::size_t index, Function* function) noe
 
    const auto original_function = vtable[index];
 
-   DWORD old_protect{};
-
-   VirtualProtect(&vtable[index], sizeof(std::uintptr_t),
-                  PAGE_EXECUTE_READWRITE, &old_protect);
+   auto memory_lock = unlock_memory(&vtable[index], sizeof(std::uintptr_t));
 
    vtable[index] = reinterpret_cast<std::uintptr_t>(function);
-
-   VirtualProtect(&vtable[index], sizeof(std::uintptr_t), old_protect, nullptr);
 
    return reinterpret_cast<Function*>(original_function);
 }
