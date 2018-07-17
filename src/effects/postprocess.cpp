@@ -11,6 +11,7 @@ Postprocess::Postprocess(Com_ref<IDirect3DDevice9> device, Post_aa_quality aa_qu
    : _device{device}, _vertex_decl{create_fs_triangle_decl(*_device)}
 {
    bloom_params(Bloom_params{});
+   vignette_params(Vignette_params{});
    color_grading_params(Color_grading_params{});
    film_grain_params(Film_grain_params{});
    this->aa_quality(aa_quality);
