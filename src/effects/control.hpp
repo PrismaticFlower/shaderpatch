@@ -85,6 +85,8 @@ private:
 
    void load_params_from_yaml_file(const std::filesystem::path& load_from) noexcept;
 
+   void show_post_processing_imgui() noexcept;
+
    bool _enabled = false;
    bool _active = false;
    bool _open_failure = false;

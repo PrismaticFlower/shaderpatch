@@ -33,7 +33,8 @@ Shadows_blur_params show_shadows_blur_imgui(Shadows_blur_params params) noexcept
 
 void Control::show_imgui(HWND game_window) noexcept
 {
-   ImGui::Begin("Effects", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+   ImGui::SetNextWindowSize({533, 591}, ImGuiCond_FirstUseEver);
+   ImGui::Begin("Effects", nullptr);
 
    ImGui::BeginTabBar("Effects Config", ImGuiTabBarFlags_SizingPolicyEqual |
                                            ImGuiTabBarFlags_NoSelectionOnAppearing);
@@ -62,6 +63,10 @@ void Control::show_imgui(HWND game_window) noexcept
          }
       }
 
+      if (ImGui::IsItemHovered()) {
+         ImGui::SetTooltip("Open a previously saved config.");
+      }
+
       if (_open_failure) {
          ImGui::SameLine();
          ImGui::TextColored({1.0f, 0.2f, 0.33f, 1.0f}, "Open Failed!");
@@ -76,6 +81,11 @@ void Control::show_imgui(HWND game_window) noexcept
              path) {
             save_params_to_yaml_file(*path);
          }
+      }
+
+      if (ImGui::IsItemHovered()) {
+         ImGui::SetTooltip("Save out a config to be passed to `spfx_munge` or "
+                           "loaded back up from the developer screen.");
       }
 
       ImGui::SameLine();
@@ -93,7 +103,7 @@ void Control::show_imgui(HWND game_window) noexcept
          ImGui::SetTooltip(
             "Save out a munged config to be loaded from a map script. Keep in "
             "mind Shader "
-            "Patch can not reload these files from the debug screen.");
+            "Patch can not reload these files from the developer screen.");
       }
 
       if (_save_failure) {
@@ -102,22 +112,14 @@ void Control::show_imgui(HWND game_window) noexcept
       }
    }
 
-   if (ImGui::TabItem("Color Grading")) {
-      postprocess.color_grading_params(
-         show_color_grading_imgui(postprocess.color_grading_params()));
-   }
+   static bool post_processing_visable = false;
 
-   if (ImGui::TabItem("Bloom")) {
-      postprocess.bloom_params(show_bloom_imgui(postprocess.bloom_params()));
-   }
+   if (post_processing_visable = ImGui::TabItem("Post Processing");
+       post_processing_visable) {
+      ImGui::BeginChild("##post_processing", {}, false,
+                        ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 
-   if (ImGui::TabItem("Vignette")) {
-      postprocess.vignette_params(show_vignette_imgui(postprocess.vignette_params()));
-   }
-
-   if (ImGui::TabItem("Film Grain")) {
-      postprocess.film_grain_params(
-         show_film_grain_imgui(postprocess.film_grain_params()));
+      ImGui::EndChild();
    }
 
    if (ImGui::TabItem("Soft Shadows")) {
@@ -125,6 +127,16 @@ void Control::show_imgui(HWND game_window) noexcept
    }
 
    ImGui::EndTabBar();
+
+   if (post_processing_visable) {
+      ImGui::BeginChild("##post_processing", {}, false,
+                        ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+
+      show_post_processing_imgui();
+
+      ImGui::EndChild();
+   }
+
    ImGui::End();
 }
 
@@ -235,6 +247,35 @@ void Control::load_params_from_yaml_file(const fs::path& load_from) noexcept
    }
 
    _open_failure = false;
+}
+
+void Control::show_post_processing_imgui() noexcept
+{
+   ImGui::BeginTabBar("Post Processing", ImGuiTabBarFlags_SizingPolicyEqual |
+                                            ImGuiTabBarFlags_NoSelectionOnAppearing);
+
+   static bool first_open = true;
+   if (ImGui::TabItem("Color Grading", nullptr,
+                      std::exchange(first_open, false) ? ImGuiTabItemFlags_SetSelected
+                                                       : ImGuiTabItemFlags_None)) {
+      postprocess.color_grading_params(
+         show_color_grading_imgui(postprocess.color_grading_params()));
+   }
+
+   if (ImGui::TabItem("Bloom")) {
+      postprocess.bloom_params(show_bloom_imgui(postprocess.bloom_params()));
+   }
+
+   if (ImGui::TabItem("Vignette")) {
+      postprocess.vignette_params(show_vignette_imgui(postprocess.vignette_params()));
+   }
+
+   if (ImGui::TabItem("Film Grain")) {
+      postprocess.film_grain_params(
+         show_film_grain_imgui(postprocess.film_grain_params()));
+   }
+
+   ImGui::EndTabBar();
 }
 
 namespace {
