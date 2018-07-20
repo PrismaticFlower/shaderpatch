@@ -111,11 +111,9 @@ struct User_config {
    Effects_user_config effects{};
 
    struct {
-      bool unlock_fps = true;
-   } game;
-
-   struct {
       std::uintptr_t toggle_key{0};
+
+      bool unlock_fps = true;
    } developer;
 
    void show_imgui(bool* apply = nullptr) noexcept
@@ -180,14 +178,6 @@ struct User_config {
          ImGui::Checkbox("Vignette", &effects.vignette);
          ImGui::Checkbox("Film Grain", &effects.film_grain);
          ImGui::Checkbox("Allow Colored Film Grain", &effects.colored_film_grain);
-      }
-
-      if (ImGui::CollapsingHeader("Game")) {
-         ImGui::Checkbox("Unlock FPS", &game.unlock_fps);
-
-         if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("Will not take effect on Device Reset.");
-         }
       }
 
       if (apply) {
@@ -260,9 +250,9 @@ private:
       effects.colored_film_grain =
          config["Effects"s]["AllowColoredFilmGrain"s].as<bool>();
 
-      game.unlock_fps = config["Game"s]["UnlockFPS"s].as<bool>();
-
       developer.toggle_key = config["Developer"s]["ScreenToggle"s].as<int>();
+
+      developer.unlock_fps = config["Developer"s]["UnlockFPS"s].as<bool>();
    }
 };
 

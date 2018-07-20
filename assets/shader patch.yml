@@ -80,12 +80,7 @@ Effects:
    # use it colored film grain can definitely looks nicer. However it is more costly to performance to evaluate
    # it and on low-end GPUs you may wish to switch this off.
    AllowColoredFilmGrain: yes
-   
-Game:
-   # Controls whether or not Shader Patch will attempt to remove the game's FPS cap. 
-   # The animation speed of certain UI elements is stuffed up by this, but the game itself is stable.
-   UnlockFPS: yes
-   
+
 Developer:
    # Toggle key for the developer screen. Giving access to useful things for mod makers and
    # Shader Patch developers alike.
@@ -98,3 +93,9 @@ Developer:
    # 'Backspace': 0x08 
    # 'F12': 0x7B
    ScreenToggle: 0xDC
+   
+   # Controls whether or not Shader Patch will attempt to remove the game's FPS cap. This is in part mostly here
+   # for people going on performance testing adventures.  As there are certain parts of the game whose simulation 
+   # is tied to framerate, in particular UI animation, cloth and bizarrely the physics of hover vehicles.
+   # If those downsides sounds acceptable to you then feel free to switch this on.
+   UnlockFPS: no

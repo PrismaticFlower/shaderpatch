@@ -12,7 +12,7 @@ Com_ptr<Creator> Creator::create(Com_ptr<IDirect3D9> actual) noexcept
 {
    check_required_features(*actual);
 
-   if (User_config{"shader patch.yml"s}.game.unlock_fps) fps_unlock();
+   if (User_config{"shader patch.yml"s}.developer.unlock_fps) fps_unlock();
 
    return Com_ptr{new Creator{std::move(actual)}};
 }
