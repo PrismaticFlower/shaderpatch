@@ -29,19 +29,22 @@ private:
    Com_ref<IDirect3DDevice9> _device;
 
 public:
-   Control(Com_ref<IDirect3DDevice9> device, Post_aa_quality aa_quality)
-      : _device{device}, postprocess{device, aa_quality}
+   Control(Com_ref<IDirect3DDevice9> device, const Effects_user_config& user_config)
+      : _device{device}, postprocess{device}
    {
+      this->user_config(user_config);
    }
 
    bool enabled(bool enable) noexcept
    {
-      return _enabled = enable;
+      _enabled = enable;
+
+      return _enabled && _user_config.enabled;
    }
 
    bool enabled() const noexcept
    {
-      return _enabled;
+      return _enabled && _user_config.enabled;
    }
 
    bool active(bool active) noexcept
@@ -65,6 +68,8 @@ public:
    {
       return _config;
    }
+
+   void user_config(const Effects_user_config& config) noexcept;
 
    void show_imgui(HWND game_window = nullptr) noexcept;
 
@@ -93,6 +98,7 @@ private:
    bool _save_failure = false;
 
    Effects_control_config _config{};
+   Effects_user_config _user_config{};
 };
 }
 

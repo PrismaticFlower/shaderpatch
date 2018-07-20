@@ -287,7 +287,7 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
    if (_imgui_active) {
       _config.show_imgui(&_fake_device_loss);
       _effects.show_imgui(_window);
-      _effects.postprocess.aa_quality(_config.rendering.post_aa_quality);
+      _effects.user_config(_config.effects);
 
       ImGui::Render();
       ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
@@ -318,7 +318,7 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
    _water_refraction = false;
    _ice_refraction = false;
    _particles_blur = false;
-   _render_depth_texture = _effects.active() && _effects.shadows_blur.params().enabled;
+   _render_depth_texture = _effects.active() && _effects.shadows_blur.enabled();
 
    if (_fake_device_loss) return D3DERR_DEVICELOST;
 
@@ -671,7 +671,7 @@ HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
                                                   D3DTEXTUREFILTERTYPE) {
             _stretch_rect_hook = nullptr;
 
-            if (_effects.shadows_blur.params().enabled) blur_shadows();
+            if (_effects.shadows_blur.enabled()) blur_shadows();
 
             _device->SetRenderTarget(0, rt.get());
 

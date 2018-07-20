@@ -59,6 +59,17 @@ inline Post_aa_quality aa_quality_from_string(std::string_view string) noexcept
    }
 }
 
+struct Effects_user_config {
+   bool enabled = true;
+   bool soft_shadows = true;
+   bool bloom = true;
+   bool vignette = true;
+   bool film_grain = true;
+   bool colored_film_grain = true;
+
+   Post_aa_quality post_aa_quality = Post_aa_quality::fastest;
+};
+
 struct User_config {
    User_config() = default;
 
@@ -95,9 +106,9 @@ struct User_config {
       int refraction_buffer_factor = 2;
 
       int anisotropic_filtering = 1;
-
-      Post_aa_quality post_aa_quality = Post_aa_quality::fastest;
    } rendering;
+
+   Effects_user_config effects{};
 
    struct {
       bool unlock_fps = true;
@@ -141,13 +152,6 @@ struct User_config {
             ImGui::SetTooltip("Will not take effect on Device Reset.");
          }
 
-         rendering.post_aa_quality = aa_quality_from_string(ImGui::StringPicker(
-            "Post AA Quality", std::string{to_string(rendering.post_aa_quality)},
-            std::initializer_list<std::string>{to_string(Post_aa_quality::fastest),
-                                               to_string(Post_aa_quality::fast),
-                                               to_string(Post_aa_quality::slower),
-                                               to_string(Post_aa_quality::slowest)}));
-
          ImGui::Checkbox("Force Anisotropic Filtering",
                          &rendering.force_anisotropic_filtering);
 
@@ -159,6 +163,23 @@ struct User_config {
 
          ImGui::DragInt("Anisotropic Filtering",
                         &rendering.anisotropic_filtering, 1, 1, 16);
+      }
+
+      if (ImGui::CollapsingHeader("Effects", ImGuiTreeNodeFlags_DefaultOpen)) {
+         ImGui::Checkbox("Enabled", &effects.enabled);
+
+         effects.post_aa_quality = aa_quality_from_string(ImGui::StringPicker(
+            "Post AA Quality", std::string{to_string(effects.post_aa_quality)},
+            std::initializer_list<std::string>{to_string(Post_aa_quality::fastest),
+                                               to_string(Post_aa_quality::fast),
+                                               to_string(Post_aa_quality::slower),
+                                               to_string(Post_aa_quality::slowest)}));
+
+         ImGui::Checkbox("Soft Shadows", &effects.soft_shadows);
+         ImGui::Checkbox("Bloom", &effects.bloom);
+         ImGui::Checkbox("Vignette", &effects.vignette);
+         ImGui::Checkbox("Film Grain", &effects.film_grain);
+         ImGui::Checkbox("Allow Colored Film Grain", &effects.colored_film_grain);
       }
 
       if (ImGui::CollapsingHeader("Game")) {
@@ -217,14 +238,27 @@ private:
       rendering.anisotropic_filtering =
          config["Rendering"s]["AnisotropicFiltering"s].as<int>();
 
-      rendering.post_aa_quality = aa_quality_from_string(
-         config["Rendering"s]["PostAAQuality"s].as<std::string>());
-
       rendering.force_anisotropic_filtering =
          config["Rendering"s]["ForceAnisotropicFiltering"s].as<bool>();
 
       rendering.advertise_presence =
          config["Rendering"s]["AdvertisePresence"s].as<bool>();
+
+      effects.enabled = config["Effects"s]["Enabled"s].as<bool>();
+
+      effects.post_aa_quality = aa_quality_from_string(
+         config["Effects"s]["PostAAQuality"s].as<std::string>());
+
+      effects.soft_shadows = config["Effects"s]["SoftShadows"s].as<bool>();
+
+      effects.bloom = config["Effects"s]["Bloom"s].as<bool>();
+
+      effects.vignette = config["Effects"s]["Vignette"s].as<bool>();
+
+      effects.film_grain = config["Effects"s]["FilmGrain"s].as<bool>();
+
+      effects.colored_film_grain =
+         config["Effects"s]["AllowColoredFilmGrain"s].as<bool>();
 
       game.unlock_fps = config["Game"s]["UnlockFPS"s].as<bool>();
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../shader_database.hpp"
+#include "../user_config.hpp"
 #include "com_ptr.hpp"
 #include "com_ref.hpp"
 #include "rendertarget_allocator.hpp"
@@ -36,6 +37,16 @@ public:
       return _params;
    }
 
+   void user_config(const Effects_user_config& config) noexcept
+   {
+      _user_enabled = config.soft_shadows;
+   }
+
+   bool enabled() const noexcept
+   {
+      return _params.enabled && _user_enabled;
+   }
+
    void apply(const Shader_group& shaders, Rendertarget_allocator& allocator,
               IDirect3DTexture9& depth, IDirect3DTexture9& from_to) noexcept;
 
@@ -57,6 +68,8 @@ private:
    Com_ptr<IDirect3DVertexBuffer9> _vertex_buffer;
 
    Shadows_blur_params _params{};
+
+   bool _user_enabled = true;
 };
 
 }

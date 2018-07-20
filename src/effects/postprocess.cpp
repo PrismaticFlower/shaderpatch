@@ -7,14 +7,14 @@
 
 namespace sp::effects {
 
-Postprocess::Postprocess(Com_ref<IDirect3DDevice9> device, Post_aa_quality aa_quality)
+Postprocess::Postprocess(Com_ref<IDirect3DDevice9> device)
    : _device{device}, _vertex_decl{create_fs_triangle_decl(*_device)}
 {
    bloom_params(Bloom_params{});
    vignette_params(Vignette_params{});
    color_grading_params(Color_grading_params{});
    film_grain_params(Film_grain_params{});
-   this->aa_quality(aa_quality);
+   user_config(Effects_user_config{});
 }
 
 void Postprocess::bloom_params(const Bloom_params& params) noexcept
@@ -42,6 +42,8 @@ void Postprocess::vignette_params(const Vignette_params& params) noexcept
 
    _constants.vignette.end = _vignette_params.end;
    _constants.vignette.start = _vignette_params.start;
+
+   _vignette_enabled = _user_config.vignette && _vignette_params.enabled;
 }
 
 void Postprocess::color_grading_params(const Color_grading_params& params) noexcept
@@ -62,6 +64,10 @@ void Postprocess::film_grain_params(const Film_grain_params& params) noexcept
    _constants.film_grain.size = params.size;
    _constants.film_grain.color_amount = params.color_amount;
    _constants.film_grain.luma_amount = params.luma_amount;
+
+   _film_grain_enabled = _user_config.film_grain && _film_grain_params.enabled;
+   _colored_film_grain_enabled =
+      _user_config.colored_film_grain && _film_grain_params.colored;
 }
 
 void Postprocess::drop_device_resources() noexcept
@@ -75,9 +81,16 @@ void Postprocess::hdr_state(Hdr_state state) noexcept
    _hdr_state = state;
 }
 
-void Postprocess::aa_quality(Post_aa_quality quality) noexcept
+void Postprocess::user_config(const Effects_user_config& config) noexcept
 {
-   _aa_quality = to_string(quality);
+   _user_config = config;
+   _aa_quality = to_string(config.post_aa_quality);
+
+   _bloom_enabled = _user_config.bloom && _bloom_params.enabled;
+   _vignette_enabled = _user_config.vignette && _vignette_params.enabled;
+   _film_grain_enabled = _user_config.film_grain && _film_grain_params.enabled;
+   _colored_film_grain_enabled =
+      _user_config.colored_film_grain && _film_grain_params.colored;
 }
 
 void Postprocess::apply(const Shader_database& shaders, Rendertarget_allocator& allocator,
@@ -297,16 +310,16 @@ void Postprocess::create_resources() noexcept
 
 void Postprocess::update_shaders_names() noexcept
 {
-   if (_bloom_params.enabled) {
+   if (_bloom_enabled) {
       _uber_shader = "bloom"s;
 
       if (_bloom_params.use_dirt) _uber_shader += " dirt"sv;
-      if (_vignette_params.enabled) _uber_shader += " vignette"sv;
+      if (_vignette_enabled) _uber_shader += " vignette"sv;
 
       _uber_shader += " colorgrade"sv;
    }
    else {
-      _uber_shader = _vignette_params.enabled ? "vignette colorgrade"sv : "colorgrade"sv;
+      _uber_shader = _vignette_enabled ? "vignette colorgrade"sv : "colorgrade"sv;
    }
 
    _threshold_shader = "downsample threshold"s;
@@ -318,9 +331,10 @@ void Postprocess::update_shaders_names() noexcept
 
    _finalize_shader = "finalize "s + _aa_quality;
 
-   if (_film_grain_params.enabled) {
+   if (_film_grain_enabled) {
       _finalize_shader += " film grain"sv;
-      if (_film_grain_params.colored) _finalize_shader += " colored"sv;
+      if (_colored_film_grain_enabled) _finalize_shader += " colored"sv;
    }
 }
+
 }

@@ -418,7 +418,7 @@ private:
    Shader_database _shaders;
    Texture_database _textures;
 
-   effects::Control _effects{_device, _config.rendering.post_aa_quality};
+   effects::Control _effects{_device, _config.effects};
 
    effects::Rendertarget_allocator _rt_allocator{_device};
 

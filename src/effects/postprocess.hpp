@@ -97,7 +97,7 @@ enum class Hdr_state { hdr, stock };
 
 class Postprocess {
 public:
-   Postprocess(Com_ref<IDirect3DDevice9> device, Post_aa_quality aa_quality);
+   Postprocess(Com_ref<IDirect3DDevice9> device);
 
    void bloom_params(const Bloom_params& params) noexcept;
 
@@ -135,7 +135,7 @@ public:
 
    void hdr_state(Hdr_state state) noexcept;
 
-   void aa_quality(Post_aa_quality quality) noexcept;
+   void user_config(const Effects_user_config& config) noexcept;
 
 private:
    void do_bloom_and_color_grading(const Shader_database& shaders,
@@ -219,8 +219,14 @@ private:
    Vignette_params _vignette_params{};
    Color_grading_params _color_grading_params{};
    Film_grain_params _film_grain_params{};
+   Effects_user_config _user_config{};
 
    Hdr_state _hdr_state = Hdr_state::hdr;
+
+   bool _bloom_enabled = true;
+   bool _vignette_enabled = true;
+   bool _film_grain_enabled = true;
+   bool _colored_film_grain_enabled = true;
 
    std::string _threshold_shader = "downsample threshold"s;
    std::string _uber_shader = "bloom vignette colorgrade"s;

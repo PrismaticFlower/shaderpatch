@@ -37,12 +37,6 @@ Rendering:
    # Will be clamped to [1, DeviceMax],  typically DeviceMax will be 16.
    AnisotropicFiltering: 16
    
-   # Set the quality of AA done on maps where the Effects system is active. 
-   # Can be "fastest", "fast", "slower", or "slowest". 
-   # Pessimistically set to "fastest" by default. If you feel confident in your GPU's capabilities you 
-   # can probably go ahead and set this to "slow" ot "slowest", obivously setting it back if you get lag.
-   PostAAQuality: fastest
-   
    # Force anisotropic filtering on for stock textures that use linear downsampling.
    # This has no affect on Shader Patch custom materials.
    ForceAnisotropicFiltering: yes
@@ -50,6 +44,43 @@ Rendering:
    # Enable or disable advertising Shader Patch's presence to mods.
    AdvertisePresence: yes
 
+# Settings for the Effects system, which allows modders to apply various effects
+# to their mods at their discretion and configuration. Below are options provided to 
+# tweak the performance of this system for low-end/older GPUs.
+Effects:
+   # For some _very_ old or _very_ low-end GPUs the Effects system may prove too much to handle
+   # at an acceptable framerate and in this case this can be used to switch them off.
+   Enabled: yes
+   
+   # Set the quality of AA done on maps where the Effects system is active. 
+   # Can be "fastest", "fast", "slower", or "slowest". 
+   # Pessimistically set to "fastest" by default. If you feel confident in your GPU's capabilities you 
+   # can probably go ahead and set this to "slow" ot "slowest", obivously setting it back if you get lag.
+   PostAAQuality: fastest
+   
+   # Enable or disable a mod using the Soft Shadows effect. This is the most expensive effect and 
+   # the first you should switch off.
+   SoftShadows: yes
+   
+   # Enable or disable a mod using the Bloom effect. This effect is cheap and there is likely
+   # little FPS to be gained from switching it off. Still if you're hitting really low FPS (let's say under 40) having 
+   # it off can increase the framerate by afew a second.
+   Bloom: yes
+   
+   # Enable or disable a mod using the Vignette effect. This effect is really cheap and there is likely
+   # no FPS to be gained from switching it off. But if you're in truely dire need... (Though it is probably better to 
+   # just set Enabled to 'no'.)
+   Vignette: yes
+   
+   # Enable or disable a mod using the Film Grain effect. This either falls in the same baskest as Bloom or can 
+   # actually be worse when Colored Film Grain is being used. (A mod controls if it is or not.) 
+   FilmGrain: yes
+   
+   # Enable or disable a mod using being allowed to use Colored Film Grain. For mods that 
+   # use it colored film grain can definitely looks nicer. However it is more costly to performance to evaluate
+   # it and on low-end GPUs you may wish to switch this off.
+   AllowColoredFilmGrain: yes
+   
 Game:
    # Controls whether or not Shader Patch will attempt to remove the game's FPS cap. 
    # The animation speed of certain UI elements is stuffed up by this, but the game itself is stable.

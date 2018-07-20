@@ -31,6 +31,14 @@ Shadows_blur_params show_shadows_blur_imgui(Shadows_blur_params params) noexcept
 
 }
 
+void Control::user_config(const Effects_user_config& config) noexcept
+{
+   _user_config = config;
+
+   postprocess.user_config(config);
+   shadows_blur.user_config(config);
+}
+
 void Control::show_imgui(HWND game_window) noexcept
 {
    ImGui::SetNextWindowSize({533, 591}, ImGuiCond_FirstUseEver);
