@@ -55,7 +55,17 @@ Effects:
    # Set the quality of AA done on maps where the Effects system is active. 
    # Can be "fastest", "fast", "slower", or "slowest". 
    # Pessimistically set to "fastest" by default. If you feel confident in your GPU's capabilities you 
-   # can probably go ahead and set this to "slow" ot "slowest", obivously setting it back if you get lag.
+   # can probably go ahead and set this to "slower" ot "slowest", obivously setting it back if you get lag.
+   #
+   # It can also be set to "none" to disable post processing AA outright. The exact on speedup gained by
+   # this will likely vary based on GPU, resolution, etc 
+   #
+   # As a point of reference I tested on my Nvidia GPU and got a slight speedup by setting this to "none". But the game's 
+   # FPS was already in the hundreds so it mattered little. 
+   #
+   # While on my Intel GPU I observed no change in performance between "none" and "fastest". (The FPS went 
+   # from ~32 to... ~32). But by all means set this to "none" if you need the best performance possible, just don't
+   # be surprised if it has less impact than you'd like.
    PostAAQuality: fastest
    
    # Enable or disable a mod using the Soft Shadows effect. This is the most expensive effect and 

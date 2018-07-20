@@ -75,22 +75,29 @@ void apply_dithering(inout float3 color, float2 position)
 
 float4 postprocess_finalize_ps(float2 texcoords : TEXCOORD, float2 position : VPOS) : COLOR
 {
-   float3 color = FxaaPixelShader(texcoords,
-                                  0.0,
-                                  scene_sampler,
-                                  scene_sampler,
-                                  scene_sampler,
-                                  scene_pixel_size,
-                                  0.0,
-                                  0.0,
-                                  0.0,
-                                  fxaa_quality_subpix,
-                                  fxaa_quality_edge_threshold,
-                                  fxaa_quality_edge_threshold_min,
-                                  0.0,
-                                  0.0,
-                                  0.0,
-                                  0.0).rgb;
+   float3 color = 0.0;
+   
+   if (fxaa_enabled) {
+      color = FxaaPixelShader(texcoords,
+                              0.0,
+                              scene_sampler,
+                              scene_sampler,
+                              scene_sampler,
+                              scene_pixel_size,
+                              0.0,
+                              0.0,
+                              0.0,
+                              fxaa_quality_subpix,
+                              fxaa_quality_edge_threshold,
+                              fxaa_quality_edge_threshold_min,
+                              0.0,
+                              0.0,
+                              0.0,
+                              0.0).rgb;
+   }
+   else {
+      color = tex2D(scene_sampler, texcoords).rgb;
+   }
 
    if (film_grain) filmgrain::apply(texcoords, color);
    else apply_dithering(color, position);

@@ -20,13 +20,15 @@
 
 namespace sp {
 
-enum class Post_aa_quality { fastest, fast, slower, slowest };
+enum class Post_aa_quality { none, fastest, fast, slower, slowest };
 
 inline std::string to_string(Post_aa_quality quality) noexcept
 {
    using namespace std::literals;
 
    switch (quality) {
+   case Post_aa_quality::none:
+      return "none"s;
    case Post_aa_quality::fastest:
       return "fastest"s;
    case Post_aa_quality::fast:
@@ -42,7 +44,10 @@ inline std::string to_string(Post_aa_quality quality) noexcept
 
 inline Post_aa_quality aa_quality_from_string(std::string_view string) noexcept
 {
-   if (string == to_string(Post_aa_quality::fastest)) {
+   if (string == to_string(Post_aa_quality::none)) {
+      return Post_aa_quality::none;
+   }
+   else if (string == to_string(Post_aa_quality::fastest)) {
       return Post_aa_quality::fastest;
    }
    else if (string == to_string(Post_aa_quality::fast)) {
@@ -168,7 +173,8 @@ struct User_config {
 
          effects.post_aa_quality = aa_quality_from_string(ImGui::StringPicker(
             "Post AA Quality", std::string{to_string(effects.post_aa_quality)},
-            std::initializer_list<std::string>{to_string(Post_aa_quality::fastest),
+            std::initializer_list<std::string>{to_string(Post_aa_quality::none),
+                                               to_string(Post_aa_quality::fastest),
                                                to_string(Post_aa_quality::fast),
                                                to_string(Post_aa_quality::slower),
                                                to_string(Post_aa_quality::slowest)}));
