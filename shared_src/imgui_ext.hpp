@@ -15,7 +15,8 @@ inline bool InputText(const char* label, std::string& string,
                       ImGuiTextEditCallback callback = nullptr, void* user_data = nullptr)
 {
    constexpr auto max_length = 4096;
-   string.resize(max_length);
+
+   Expects(string.size() < max_length);
 
    thread_local std::array<char, max_length> buffer{};
    *std::copy(std::cbegin(string), std::cend(string), std::begin(buffer)) = '\0';
