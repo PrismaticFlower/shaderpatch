@@ -27,6 +27,8 @@ Color_grading_params show_color_grading_imgui(Color_grading_params params) noexc
 
 Film_grain_params show_film_grain_imgui(Film_grain_params params) noexcept;
 
+Shadows_blur_params show_shadows_blur_imgui(Shadows_blur_params params) noexcept;
+
 }
 
 void Control::show_imgui(HWND game_window) noexcept
@@ -118,6 +120,10 @@ void Control::show_imgui(HWND game_window) noexcept
          show_film_grain_imgui(postprocess.film_grain_params()));
    }
 
+   if (ImGui::TabItem("Soft Shadows")) {
+      shadows_blur.params(show_shadows_blur_imgui(shadows_blur.params()));
+   }
+
    ImGui::EndTabBar();
    ImGui::End();
 }
@@ -126,6 +132,7 @@ void Control::drop_device_resources() noexcept
 {
    postprocess.drop_device_resources();
    scene_blur.drop_device_resources();
+   shadows_blur.drop_device_resources();
 }
 
 void Control::read_config(YAML::Node config)
@@ -139,6 +146,8 @@ void Control::read_config(YAML::Node config)
       config["Vignette"s].as<Vignette_params>(Vignette_params{}));
    postprocess.film_grain_params(
       config["FilmGrain"s].as<Film_grain_params>(Film_grain_params{}));
+   shadows_blur.params(
+      config["SoftShadows"s].as<Shadows_blur_params>(Shadows_blur_params{}));
 }
 
 auto Control::output_params_to_yaml_string() noexcept -> std::string
@@ -150,6 +159,7 @@ auto Control::output_params_to_yaml_string() noexcept -> std::string
    config["Bloom"s] = postprocess.bloom_params();
    config["Vignette"s] = postprocess.vignette_params();
    config["FilmGrain"s] = postprocess.film_grain_params();
+   config["SoftShadows"s] = shadows_blur.params();
 
    std::stringstream stream;
    ;
@@ -373,6 +383,16 @@ Film_grain_params show_film_grain_imgui(Film_grain_params params) noexcept
    ImGui::DragFloat("Size", &params.size, 0.05f, 1.6f, 3.0f);
    ImGui::DragFloat("Color Amount", &params.color_amount, 0.05f, 0.0f, 1.0f);
    ImGui::DragFloat("Luma Amount", &params.luma_amount, 0.05f, 0.0f, 1.0f);
+
+   return params;
+}
+
+Shadows_blur_params show_shadows_blur_imgui(Shadows_blur_params params) noexcept
+{
+
+   ImGui::Checkbox("Enabled", &params.enabled);
+
+   ImGui::DragFloat("Radius Scale", &params.radius_scale, 0.1f, 1.5f, 16.0f);
 
    return params;
 }

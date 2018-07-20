@@ -1,45 +1,89 @@
 
-float4 main_vs(float2 position : POSITION, inout float2 texcoords : TEXCOORD,
-               uniform float2 pixel_offset : register(c110)) : POSITION
-{
-   return float4(position + pixel_offset, 0.0, 1.0);
-}
+#include "fullscreen_tri_vs.hlsl"
+#include "pixel_utilities.hlsl"
 
 sampler2D buffer_sampler : register(s4);
 sampler2D depth_sampler : register(s5);
 
-static const float blur_radius = BLUR_RADIUS;
-static const float blur_sigma = blur_radius * 0.5;
-static const float blur_falloff = 1.0 / (2.0 * blur_sigma * blur_sigma);
-float2 direction_inv_res : register(c60);
-float depth_sharpness : register(c61);
 
-float blur_function(float2 texcoords, float r, float centre_v, float centre_d, inout float w_total)
+static const uint SAMPLE_NUM = 32;
+
+static const float2 POISSON_SAMPLES[SAMPLE_NUM] =
 {
-   float v = tex2D(buffer_sampler, texcoords).a;
-   float d = tex2D(depth_sampler, texcoords).r;
+   float2(-0.2791822891137698f, 0.4062567546708375f),
+   float2(-0.19995295555583473f, 0.7240894131651954f),
+   float2(-0.3897554154525151f, 0.048752433671575515f),
+   float2(-0.7941653846046869f, 0.5226389266597269f),
+   float2(-0.7087398274068326f, 0.23699678345357753f),
+   float2(-0.0005315934230399086f, 0.3030196331178548f),
+   float2(-0.5960809749199095f, 0.7972953391738834f),
+   float2(0.8648539007043492f, 0.4483595541939763f),
+   float2(0.028584831515869054f, 0.9272382872682036f),
+   float2(0.5277787255290286f, 0.24396028966174835f),
+   float2(0.5871579716943437f, 0.5151228941064709f),
+   float2(0.34554700147319906f, 0.9289079363110085f),
+   float2(0.19350865400912212f, 0.5589927483532224f),
+   float2(0.9880997081599587f, 0.005023901022158773f),
+   float2(0.6072341504857947f, 0.7925756070526573f),
+   float2(-0.19942705854068615f, -0.5344510598757078f),
+   float2(-0.9429809317213993f, -0.00705991893637376f),
+   float2(-0.26479654839094224f, -0.8934290673340078f),
+   float2(-0.40667576792951926f, -0.3567416884013182f),
+   float2(-0.9345727918104664f, -0.31846690517409726f),
+   float2(-0.6764870070709892f, -0.2391133913513607f),
+   float2(-0.6961889285559116f, -0.7118709870423396f),
+   float2(0.8621173443188956f, -0.33994046124535626f),
+   float2(0.7085030604646408f, -0.07884950018190454f),
+   float2(0.3938922154477268f, -0.5926090392958616f),
+   float2(0.11819781034701447f, -0.9111503913361952f),
+   float2(0.7845337749306952f, -0.6173695031985156f),
+   float2(0.08340128466639019f, -0.558717684474538f),
+   float2(0.559570819915191f, -0.33204162605826915f),
+   float2(0.4735060371441681f, -0.8748025691220752f),
+   float2(0.4105952859714034f, -0.07989419329213943f),
+   float2(0.19455459584340226f, -0.26937094700460246f),
+};
 
-   float d_diff = (d - centre_d);
-   float w = exp2(-r * r * blur_falloff - d_diff * d_diff);
-   w_total += w;
-   
-   return v * w;
-}
+float2 scale : register(ps, c[60]);
 
 float4 blur_ps(float2 texcoords : TEXCOORD) : COLOR
 {
-   float centre_v = tex2D(buffer_sampler, texcoords).a;
-   float centre_d = tex2D(depth_sampler, texcoords).r;
-   
+   float2 centre_sample = tex2Dlod(buffer_sampler, texcoords, 0).rg;
+   float centre_v = centre_sample.r;
+   float centre_d = centre_sample.g;
+
    float v_total = centre_v;
    float w_total = 1.0;
-   
-   [unroll] for (float r = 1; r <= blur_radius; ++r) {
-      v_total += blur_function(texcoords + (direction_inv_res * r), r,
-         centre_v, centre_d, w_total);
-      v_total += blur_function(texcoords - (direction_inv_res * r), r,
-                               centre_v, centre_d, w_total);
+
+   [unroll] for (uint i = 0; i < SAMPLE_NUM; i += 4) {
+      float2 samples[4];
+
+      samples[0] = tex2Dlod(buffer_sampler, texcoords + (POISSON_SAMPLES[i] * scale), 0).rg;
+      samples[1] = tex2Dlod(buffer_sampler, texcoords + (POISSON_SAMPLES[i + 1] * scale), 0).rg;
+      samples[2] = tex2Dlod(buffer_sampler, texcoords + (POISSON_SAMPLES[i + 2] * scale), 0).rg;
+      samples[3] = tex2Dlod(buffer_sampler, texcoords + (POISSON_SAMPLES[i + 3] * scale), 0).rg;
+
+      float4 v;
+      float4 d;
+      
+      [unroll] for (uint s = 0; s < 4; ++s) {
+         v[s] = samples[s].r;
+         d[s] = samples[s].g;
+      }
+
+      float4 w = saturate(1.0 - abs(centre_d - d));
+
+      v_total += dot(v, w);
+      w_total += dot(1.0, w);
    }
    
    return v_total / w_total;
+}
+
+float4 combine_ps(float2 texcoords : TEXCOORD) : COLOR
+{
+   float v = tex2Dlod(buffer_sampler, texcoords, 0).a;
+   float d = tex2Dlod(depth_sampler, texcoords, 0).r;
+
+   return float4(v, d, v, d);
 }

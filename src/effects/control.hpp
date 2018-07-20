@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../effects/blur_shadows.hpp"
 #include "../effects/postprocess.hpp"
 #include "../effects/scene_blur.hpp"
+#include "../effects/shadows_blur.hpp"
 
 #include <filesystem>
 #include <utility>
@@ -74,7 +74,7 @@ public:
 
    effects::Postprocess postprocess;
    effects::Scene_blur scene_blur{_device};
-   effects::Blur_shadows blur_shadows{_device};
+   effects::Shadows_blur shadows_blur{_device};
 
 private:
    auto output_params_to_yaml_string() noexcept -> std::string;

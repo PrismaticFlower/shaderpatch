@@ -9,11 +9,15 @@
 
   "states": [
     {
-      "name": "blur 7",
-      "defines": [ [ "BLUR_RADIUS", "4" ] ],
-
+      "name": "blur",
       "vertex_shader": "main_vs",
       "pixel_shader": "blur_ps"
+    },
+
+    {
+      "name": "combine depth",
+      "vertex_shader": "main_vs",
+      "pixel_shader": "combine_ps"
     }
   ]
 }

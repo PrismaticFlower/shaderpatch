@@ -66,6 +66,11 @@ void check_required_features(IDirect3D9& d3d) noexcept
    feature_test(supports_texture_format(d3d, D3DFMT_L16),
                 "Device does not support L16 (R16) textures."sv);
 
+   feature_test(supports_render_texture_format(d3d, D3DFMT_R32F),
+                "Device does not support rendering to R32F textures."sv);
+   feature_test(supports_render_texture_format(d3d, D3DFMT_G16R16F),
+                "Device does not support rendering to G16R16F (R16G16F) textures."sv);
+
    if (!supported) {
       const auto action = MessageBoxA(nullptr, failed_message, "Device Unsupported",
                                       MB_CANCELTRYCONTINUE | MB_ICONERROR |

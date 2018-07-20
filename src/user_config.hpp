@@ -90,7 +90,6 @@ struct User_config {
       bool smooth_bloom = true;
       bool gaussian_blur_blur_particles = true;
       bool gaussian_scene_blur = true;
-      bool soft_shadows = true;
 
       int reflection_buffer_factor = 1;
       int refraction_buffer_factor = 2;
@@ -135,8 +134,6 @@ struct User_config {
          }
 
          ImGui::Checkbox("Gaussian Scene Blur", &rendering.gaussian_scene_blur);
-
-         ImGui::Checkbox("Fake Soft Shadows", &rendering.soft_shadows);
 
          ImGui::Checkbox("Advertise Presence", &rendering.advertise_presence);
 
@@ -204,8 +201,6 @@ private:
 
       rendering.gaussian_scene_blur =
          config["Rendering"s]["GaussianSceneBlur"s].as<bool>();
-
-      rendering.soft_shadows = config["Rendering"s]["SoftShadows"s].as<bool>();
 
       const auto reflection_scale =
          config["Rendering"s]["ReflectionBufferScale"s].as<double>();

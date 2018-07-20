@@ -60,7 +60,7 @@
     <ClCompile Include="src\fps_unlock.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\effects\blur_shadows.cpp">
+    <ClCompile Include="src\effects\shadows_blur.cpp">
       <Filter>src\effects</Filter>
     </ClCompile>
   </ItemGroup>
@@ -167,7 +167,7 @@
     <ClInclude Include="src\unlock_memory.hpp">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\effects\blur_shadows.hpp">
+    <ClInclude Include="src\effects\shadows_blur.hpp">
       <Filter>src\effects</Filter>
     </ClInclude>
   </ItemGroup>

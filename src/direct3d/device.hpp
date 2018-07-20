@@ -338,14 +338,14 @@ private:
 
    void late_fp_resolve() noexcept;
 
-   void blur_shadows() noexcept;
-
    void refresh_material() noexcept;
 
    void clear_material() noexcept;
 
    void bind_water_texture() noexcept;
    void bind_refraction_texture() noexcept;
+
+   void blur_shadows() noexcept;
 
    void update_refraction_texture() noexcept;
 
@@ -381,10 +381,8 @@ private:
    bool _imgui_bootstrapped = false;
    bool _imgui_active = false;
    bool _fake_device_loss = false;
-   bool _multisample_active = false;
 
    // Per-Frame State
-   // bool _linear_rendering = false;
    bool _hdr_rendering = false;
    bool _effects_rt_resolved = false;
    bool _zprepass = false;
