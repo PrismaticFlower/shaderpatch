@@ -145,6 +145,8 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
    _effects_backbuffer.reset(nullptr);
    _backbuffer_override.reset(nullptr);
+   _linear_depth_surface.reset(nullptr);
+   _linear_depth_texture.reset(nullptr);
    _shadow_texture.reset(nullptr);
    _blur_texture.reset(nullptr);
    _blur_surface.reset(nullptr);
@@ -199,6 +201,12 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
          set_hdr_rendering(true);
       }
+
+      _device->CreateTexture(_resolution.x, _resolution.y, 1,
+                             D3DUSAGE_RENDERTARGET, D3DFMT_R32F, D3DPOOL_DEFAULT,
+                             _linear_depth_texture.clear_and_assign(), nullptr);
+
+      _linear_depth_texture->GetSurfaceLevel(0, _linear_depth_surface.clear_and_assign());
 
       _device->CreateTexture(_resolution.x, _resolution.y, 1,
                              D3DUSAGE_RENDERTARGET, _rt_format, D3DPOOL_DEFAULT,
@@ -290,6 +298,13 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
 
    ImGui_ImplDX9_NewFrame();
 
+   _device->EndScene();
+
+   const auto result =
+      _device->Present(source_rect, dest_rect, dest_window_override, dirty_region);
+
+   _device->BeginScene();
+
    // update time
    const auto now = std::chrono::steady_clock{}.now();
    const auto time_since_epoch = now - _device_start;
@@ -303,13 +318,7 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
    _water_refraction = false;
    _ice_refraction = false;
    _particles_blur = false;
-
-   _device->EndScene();
-
-   const auto result =
-      _device->Present(source_rect, dest_rect, dest_window_override, dirty_region);
-
-   _device->BeginScene();
+   _render_depth_texture = _effects.active() && _effects.shadows_blur.params().enabled;
 
    if (_fake_device_loss) return D3DERR_DEVICELOST;
 
@@ -628,38 +637,61 @@ HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
       return S_OK;
    }
 
-   if (_effects.active() && _vs_metadata.rendertype == "shadowquad"sv) {
-      Com_ptr<IDirect3DSurface9> shadow_rt;
-      Com_ptr<IDirect3DSurface9> rt;
+   if (_effects.active()) {
+      if (_render_depth_texture && !_zprepass && _vs_metadata.rendertype == "zprepass"sv) {
+         _device->SetRenderTarget(0, _linear_depth_surface.get());
+         _device->Clear(0, nullptr, D3DCLEAR_TARGET, 0, 0.0, 0);
+         _device->SetRenderState(D3DRS_COLORWRITEENABLE, D3DCOLORWRITEENABLE_RED);
+         _zprepass = true;
+      }
+      else if (_render_depth_texture && _zprepass &&
+               _vs_metadata.rendertype != "zprepass"sv) {
+         Com_ptr<IDirect3DSurface9> backbuffer;
+         this->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO,
+                             backbuffer.clear_and_assign());
+         _device->SetRenderTarget(0, backbuffer.get());
+         _device->SetRenderState(D3DRS_COLORWRITEENABLE,
+                                 _state_block.get(D3DRS_COLORWRITEENABLE));
+         _zprepass = false;
+      }
+      else if (_vs_metadata.rendertype == "shadowquad"sv) {
 
-      _shadow_texture->GetSurfaceLevel(0, shadow_rt.clear_and_assign());
-      _device->GetRenderTarget(0, rt.clear_and_assign());
+         Com_ptr<IDirect3DSurface9> shadow_surface;
+         Com_ptr<IDirect3DSurface9> rt;
 
-      _device->SetRenderTarget(0, shadow_rt.get());
-      _device->ColorFill(shadow_rt.get(), nullptr, 0xffffffff);
+         _shadow_texture->GetSurfaceLevel(0, shadow_surface.clear_and_assign());
+         _device->GetRenderTarget(0, rt.clear_and_assign());
 
-      _stretch_rect_hook = [this, rt{std::move(rt)}](auto...) {
-         _stretch_rect_hook = nullptr;
+         _device->SetRenderTarget(0, shadow_surface.get());
+         _device->ColorFill(shadow_surface.get(), nullptr, 0xffffffff);
 
-         _device->SetRenderTarget(0, rt.get());
+         _stretch_rect_hook = [this,
+                               rt{std::move(rt)}](IDirect3DSurface9*, const RECT*,
+                                                  IDirect3DSurface9*, const RECT*,
+                                                  D3DTEXTUREFILTERTYPE) {
+            _stretch_rect_hook = nullptr;
 
-         return S_OK;
-      };
-   }
+            if (_effects.shadows_blur.params().enabled) blur_shadows();
 
-   if (_vs_metadata.rendertype == "hdr"sv) {
-      _game_doing_bloom_pass = true;
-      _discard_draw_calls = _effects.active();
-   }
-   else if (std::exchange(_game_doing_bloom_pass, false) &&
-            _vs_metadata.rendertype != "hdr"sv && _effects.active()) {
-      _effects_rt_resolved = true;
-      _discard_draw_calls = false;
-      set_hdr_rendering(false);
+            _device->SetRenderTarget(0, rt.get());
 
-      post_process();
+            return S_OK;
+         };
+      }
+      else if (_vs_metadata.rendertype == "hdr"sv) {
+         _game_doing_bloom_pass = true;
+         _discard_draw_calls = _effects.active();
+      }
+      else if (std::exchange(_game_doing_bloom_pass, false) &&
+               _vs_metadata.rendertype != "hdr"sv) {
+         _effects_rt_resolved = true;
+         _discard_draw_calls = false;
+         set_hdr_rendering(false);
 
-      _backbuffer_override = nullptr;
+         post_process();
+
+         _backbuffer_override = nullptr;
+      }
    }
 
    set_active_light_constants(*_device, vertex_shader.metadata.shader_flags);
@@ -1043,6 +1075,19 @@ void Device::update_refraction_texture() noexcept
    _refraction_texture->GetSurfaceLevel(0, dest.clear_and_assign());
 
    _device->StretchRect(rt.get(), nullptr, dest.get(), nullptr, D3DTEXF_LINEAR);
+}
+
+void Device::blur_shadows() noexcept
+{
+   _device->SetRenderState(D3DRS_STENCILENABLE, FALSE);
+
+   _effects.shadows_blur.apply(_shaders.at("shadows blur"s), _rt_allocator,
+                               *_linear_depth_texture, *_shadow_texture);
+
+   apply_sampler_state(*_device, _sampler_states[0], 0);
+   apply_sampler_state(*_device, _sampler_states[1], 1);
+   apply_blend_state(*_device, _state_block);
+   apply_vertex_input_state(*_device, _vertex_input_state);
 }
 
 void Device::resolve_blur_surface() noexcept

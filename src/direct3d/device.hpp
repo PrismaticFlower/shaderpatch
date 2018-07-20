@@ -345,6 +345,8 @@ private:
    void bind_water_texture() noexcept;
    void bind_refraction_texture() noexcept;
 
+   void blur_shadows() noexcept;
+
    void update_refraction_texture() noexcept;
 
    void resolve_blur_surface() noexcept;
@@ -360,6 +362,8 @@ private:
    Com_ptr<IDirect3DTexture9> _effects_backbuffer;
    Com_ptr<IDirect3DSurface9> _backbuffer_override;
 
+   Com_ptr<IDirect3DSurface9> _linear_depth_surface;
+   Com_ptr<IDirect3DTexture9> _linear_depth_texture;
    Com_ptr<IDirect3DTexture9> _shadow_texture;
    Texture _water_texture;
    Com_ptr<IDirect3DTexture9> _blur_texture;
@@ -379,9 +383,9 @@ private:
    bool _fake_device_loss = false;
 
    // Per-Frame State
-   // bool _linear_rendering = false;
    bool _hdr_rendering = false;
    bool _effects_rt_resolved = false;
+   bool _zprepass = false;
    bool _game_doing_bloom_pass = false;
    bool _water_refraction = false;
    bool _ice_refraction = false;
@@ -389,6 +393,7 @@ private:
    bool _refresh_material = true;
    bool _discard_draw_calls = false;
    bool _discard_next_nonindexed_draw = false;
+   bool _render_depth_texture = false;
 
    int _created_full_rendertargets = 0;
    int _created_2_to_1_rendertargets = 0;

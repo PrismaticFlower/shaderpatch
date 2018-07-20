@@ -185,4 +185,15 @@ inline void set_linear_clamp_sampler(IDirect3DDevice9& device, int slot,
    device.SetSamplerState(slot, D3DSAMP_SRGBTEXTURE, srgb);
 }
 
+inline void set_point_clamp_sampler(IDirect3DDevice9& device, int slot,
+                                    bool srgb = false) noexcept
+{
+   device.SetSamplerState(slot, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+   device.SetSamplerState(slot, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+   device.SetSamplerState(slot, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+   device.SetSamplerState(slot, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+   device.SetSamplerState(slot, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
+   device.SetSamplerState(slot, D3DSAMP_SRGBTEXTURE, srgb);
+}
+
 }

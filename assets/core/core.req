@@ -46,6 +46,7 @@ ucft
       "pbr-basic"
       "pbr-emissive"
       "postprocess"
+      "shadows_blur"
       "stock_bloom_ext"
    }
    

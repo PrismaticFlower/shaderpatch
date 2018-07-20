@@ -5,21 +5,9 @@
 float4 x_texcoord_transform : register(vs, c[CUSTOM_CONST_MIN + 0]);
 float4 y_texcoord_transform : register(vs, c[CUSTOM_CONST_MIN + 1]);
 
-sampler diffuse_map_sampler;
+sampler2D diffuse_map_sampler;
 
-struct Vs_opaque_input
-{
-   float4 position : POSITION;
-   float4 weights : BLENDWEIGHT;
-   uint4 blend_indices : BLENDINDICES;
-};
-
-float4 opaque_vs(Vs_opaque_input input) : POSITION
-{
-   return transform::position_project(input.position, input.blend_indices, input.weights);
-}
-
-struct Vs_hardedged_input
+struct Vs_input
 {
    float4 position : POSITION;
    float4 weights : BLENDWEIGHT;
@@ -27,40 +15,44 @@ struct Vs_hardedged_input
    float4 texcoords : TEXCOORD;
 };
 
-struct Vs_hardedged_output
+struct Vs_output
 {
    float4 position : POSITION;
    float2 texcoords : TEXCOORD0;
-   float4 color : TEXCOORD1;
+   float camera_distance : TEXCOORD1;
 };
 
-Vs_hardedged_output hardedged_vs(Vs_hardedged_input input)
+Vs_output prepass_vs(Vs_input input)
 {
-   Vs_hardedged_output output;
+   Vs_output output;
 
-   output.position = transform::position_project(input.position, input.blend_indices, 
-                                                 input.weights);
+   float4 world_position = transform::position(input.position, input.blend_indices, 
+                                               input.weights);
+
+   output.position = position_project(world_position);
    output.texcoords = decompress_transform_texcoords(input.texcoords, x_texcoord_transform,
                                                      y_texcoord_transform);
-   output.color = material_diffuse_color;
+   output.camera_distance = distance(world_view_position, world_position.xyz);
 
    return output;
 }
 
-// Pixel Shaders
-
-float4 opaque_ps() : COLOR
-{
-   return float4(0.0, 0.0, 0.0, 1.0);
-}
-
-struct Ps_hardedged_input
+struct Ps_input
 {
    float2 texcoords : TEXCOORD0;
-   float4 color : TEXCOORD1;
+   float camera_distance : TEXCOORD1;
 };
 
-float4 hardedged_ps(Ps_hardedged_input input) : COLOR
+float4 opaque_ps(Ps_input input) : COLOR
 {
-   return tex2D(diffuse_map_sampler, input.texcoords) * input.color;
+   return input.camera_distance;
+}
+
+float4 hardedged_ps(Ps_input input) : COLOR
+{
+   float alpha = (tex2D(diffuse_map_sampler, input.texcoords) * material_diffuse_color).a;
+
+   if (alpha < 0.5) discard;
+
+   return input.camera_distance;
 }

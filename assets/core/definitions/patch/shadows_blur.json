@@ -1,0 +1,23 @@
+{
+  "patch_shader": true,
+  "source_name": "shadows_blur.fx",
+  "rendertype": "shadows blur",
+
+  "skinned": false,
+  "lighting": false,
+  "vertex_color": false,
+
+  "states": [
+    {
+      "name": "blur",
+      "vertex_shader": "main_vs",
+      "pixel_shader": "blur_ps"
+    },
+
+    {
+      "name": "combine depth",
+      "vertex_shader": "main_vs",
+      "pixel_shader": "combine_ps"
+    }
+  ]
+}

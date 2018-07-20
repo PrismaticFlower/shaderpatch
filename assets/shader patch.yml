@@ -15,7 +15,7 @@ Rendering:
    # Enable or disable replacing the stock bloom effect with one that gives smoother,
    # less blocky results while maintaining radius and intensity.
    SmoothBloom: yes
-   
+
    # Enable or disable replacing the blur that blur particles use with a gaussian blur.
    # This may come at a slight performance cost but may give nicer results.
    GaussianBlurBlurParticles: yes
@@ -24,7 +24,7 @@ Rendering:
    # Once again this may come at a slight performance cost but is definitely 
    # capable of giving nicer results. In some rare cases it may break the art style of a map.
    GaussianSceneBlur: yes
-   
+
    # Scale of the water reflection buffer (regardless of HighResolutionReflections), 
    # in range [0.01...1.0]. Higher is better but may come at a cost in performance.
    ReflectionBufferScale: 0.5
