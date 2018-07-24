@@ -78,8 +78,6 @@ struct Vs_blinn_phong_ouput
    float3 world_view_position : TEXCOORD2;
    float3 normal : TEXCOORD3;
 
-   float3 envmap_coords : TEXCOORD4;
-
    float1 fog_eye_distance : DEPTH;
 };
 
@@ -104,9 +102,6 @@ Vs_blinn_phong_ouput blinn_phong_vs(Vs_input input)
                                                              input.weights));
 
    output.normal = world_normal;
-
-   float3 camera_direction = normalize(world_view_position - world_position.xyz);
-   output.envmap_coords = normalize(reflect(world_normal, camera_direction));
 
    return output;
 }
@@ -182,6 +177,15 @@ float3 calculate_blinn_specular(float3 normal, float3 view_normal, float3 world_
    return attenuation * (specular_color * light_color * specular);
 }
 
+float3 calculate_reflection(float3 world_normal, float3 view_normal)
+{
+   float NdotN = dot(world_normal, world_normal);
+   float NdotV = dot(world_normal, view_normal);
+
+   float3 refl = world_normal * (NdotV * 2.0);
+   return -view_normal * NdotN + refl;
+}
+
 struct Ps_normalmapped_input
 {
    float2 texcoords : TEXCOORD0;
@@ -230,9 +234,6 @@ struct Ps_blinn_phong_input
    float3 world_view_position : TEXCOORD2;
    float3 normal : TEXCOORD3;
 
-   float3 envmap_coords : TEXCOORD4;
-   float envmapped : TEXCOORD5;
-
    float1 fog_eye_distance : DEPTH;
 };
 
@@ -253,7 +254,8 @@ float4 blinn_phong_ps(Ps_blinn_phong_input input, sampler2D diffuse_map,
                                                      input.world_position,
                                                      light_positions[0], light_colors[0], 
                                                      specular_color.rgb);
-      const float3 env_color = texCUBE(envmap, input.envmap_coords).rgb * specular_color.rgb;
+      const float3 env_color = 
+         texCUBE(envmap, calculate_reflection(normal, view_normal)).rgb * specular_color.rgb;
 
       color += lerp(spec_contrib, env_color, envmap_state);
    }
@@ -329,15 +331,14 @@ float4 normalmapped_envmap_ps(Ps_normalmapped_envmap_input input,
 {
    float4 normal_map_color = tex2D(normal_map, input.texcoords);
 
-   float3 texel_normal = normal_map_color.rgb * 2.0 - 1.0;
+   float3 normal = normal_map_color.rgb * 2.0 - 1.0;
 
-   texel_normal = normalize(texel_normal.x * input.tangent -
-                            texel_normal.y * input.binormal +
-                            texel_normal.z * input.normal);
+   normal = normalize(normal.x * input.tangent -
+                      normal.y * input.binormal +
+                      normal.z * input.normal);
 
-   float3 camera_direction = normalize(input.world_view_position - input.world_position);
-   float3 envmap_coords = normalize(reflect(texel_normal, camera_direction));
-   float3 envmap_color = texCUBE(envmap, envmap_coords).rgb;
+   float3 view_normal = normalize(input.world_view_position - input.world_position);
+   float3 envmap_color = texCUBE(envmap, calculate_reflection(normal, view_normal)).rgb;
 
    float gloss = lerp(1.0, normal_map_color.a, specular_color.a);
    float3 color = light_color * envmap_color * gloss;
