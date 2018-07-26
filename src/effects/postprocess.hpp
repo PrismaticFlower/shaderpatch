@@ -234,7 +234,7 @@ private:
    std::string _finalize_shader = "finalize fastest"s;
 
    std::mt19937 _random_engine{std::random_device{}()};
-   std::uniform_real_distribution<float> _random_real_dist{0.0f, 1024.f};
+   std::uniform_real_distribution<float> _random_real_dist{0.0f, 256.0f};
    std::uniform_int<int> _random_int_dist{0, 63};
 
    constexpr static auto bloom_sampler_slots_start = 1;

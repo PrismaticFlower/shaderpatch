@@ -1,7 +1,6 @@
 #ifndef FILMGRAIN_INCLUDED
 #define FILMGRAIN_INCLUDED
 
-#include "ext_constants_list.hlsl"
 #include "postprocess_common.hlsl"
 
 namespace filmgrain
@@ -29,7 +28,7 @@ http://machinesdontcare.wordpress.com/2009/06/25/3d-perlin-noise-sphere-vertex-s
 
 float4 rnm(float2 tc)
 {
-   float noise = sin(dot(tc + time, float2(12.9898, 78.233))) * 43758.5453;
+   float noise = sin(dot(tc + randomness.w, float2(12.9898, 78.233))) * 43758.5453;
 
    float R = frac(noise) * 2.0 - 1.0;
    float G = frac(noise * 1.2154) * 2.0 - 1.0;
@@ -111,15 +110,15 @@ float2 coord_rot(float2 tc, float angle)
 void apply(float2 texcoords, inout float3 color)
 {
    const static float3 rot_offset = {1.425, 3.892, 5.835}; // rotation offset values	
-   float2 rot_coords_r = coord_rot(texcoords, time + rot_offset.x);
+   float2 rot_coords_r = coord_rot(texcoords, randomness.r + rot_offset.x);
    
    const float2 grainsize = scene_resolution / film_grain_size;
    
    float3 noise = pnoise3D(float3(rot_coords_r *  grainsize, 0.0));
 
    if (film_grain_colored) {
-      float2 rot_coords_g = coord_rot(texcoords, time + rot_offset.y);
-      float2 rot_coords_b = coord_rot(texcoords, time + rot_offset.z);
+      float2 rot_coords_g = coord_rot(texcoords, randomness.g + rot_offset.y);
+      float2 rot_coords_b = coord_rot(texcoords, randomness.b + rot_offset.z);
       noise.g = 
          lerp(noise.r, pnoise3D(float3(rot_coords_g * grainsize, 1.0)), film_grain_color_amount);
       noise.b =
