@@ -1,6 +1,10 @@
 {
   "rendertype": "specularlighting",
 
+  "defines": [
+    [ "LIGHT_COUNT", "0" ]
+  ],
+
   "states": [
     {
       "name": "vertex lit specular",
@@ -21,9 +25,13 @@
     },
 
     {
-      "name": "specular spot 3 lights",
+      "name": "specular 3 lights",
       "id": 1,
 
+      "defines": [
+        [ "LIGHT_COUNT", "3" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
@@ -33,15 +41,19 @@
           "transform": "normals",
 
           "vertex_shader": "blinn_phong_vs",
-          "pixel_shader": "blinn_phong_lights_3_ps"
+          "pixel_shader": "blinn_phong_ps"
         }
       ]
     },
 
     {
-      "name": "specular spot 2 lights",
+      "name": "specular 2 lights",
       "id": 2,
 
+      "defines": [
+        [ "LIGHT_COUNT", "2" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
@@ -51,15 +63,19 @@
           "transform": "normals",
 
           "vertex_shader": "blinn_phong_vs",
-          "pixel_shader": "blinn_phong_lights_2_ps"
+          "pixel_shader": "blinn_phong_ps"
         }
       ]
     },
 
     {
-      "name": "specular spot 1 lights",
+      "name": "specular 1 lights",
       "id": 3,
 
+      "defines": [
+        [ "LIGHT_COUNT", "1" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
@@ -69,13 +85,13 @@
           "transform": "normals",
 
           "vertex_shader": "blinn_phong_vs",
-          "pixel_shader": "blinn_phong_lights_1_ps"
+          "pixel_shader": "blinn_phong_ps"
         }
       ]
     },
 
     {
-      "name": "normal mapped specular",
+      "name": "specular normalmapped",
       "id": 4,
 
       "passes": [
@@ -93,7 +109,7 @@
     },
 
     {
-      "name": "environment mapped specular",
+      "name": "normalmapped reflection",
       "id": 5,
 
       "passes": [
@@ -104,14 +120,14 @@
           "texture_coords": true,
           "transform": "binormals",
 
-          "vertex_shader": "normalmapped_envmap_vs",
+          "vertex_shader": "normalmapped_vs",
           "pixel_shader": "normalmapped_envmap_ps"
         }
       ]
     },
 
     {
-      "name": "normal mapped & environment mapped specular",
+      "name": "specular normalmapped & reflection normalmapped",
       "id": 6,
 
       "passes": [
@@ -133,7 +149,7 @@
           "texture_coords": true,
           "transform": "binormals",
 
-          "vertex_shader": "normalmapped_envmap_vs",
+          "vertex_shader": "normalmapped_vs",
           "pixel_shader": "normalmapped_envmap_ps"
         }
       ]

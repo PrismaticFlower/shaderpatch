@@ -36,17 +36,17 @@ float3 normals(float3 normal, uint4 indices, float4 weights)
    return decompress_normals(normal);
 }
 
-//! \brief Decompress unskinned vertex binormals.
+//! \brief Decompress unskinned vertex tangents.
 //!
-//! \param binormal The (potentially compressed) vertex binormal.
 //! \param tangent The (potentially compressed) vertex tangent.
+//! \param bitangent The (potentially compressed) vertex bitangent.
 //! \param indices Ignored.
 //! \param weights Ignored.
 //!
 //! \return The object space binormals of the vertex.
-Binormals binormals(float3 binormal, float3 tangent, uint4 indices, float4 weights)
+void tangents(float3 tangent, float3 bitangent, uint4 indices, float4 weights)
 {
-   return decompress_binormals(binormal, tangent);
+   decompress_tangents(tangent, bitangent);
 }
 
 }
@@ -131,30 +131,21 @@ float3 normals(float3 normal, uint4 indices, float4 weights)
    return normalize(obj_normal);
 }
 
-//! \brief Decompress and transform skinned vertex binormals to object
+//! \brief Decompress and transform skinned vertex tangents to object
 //! space.
 //!
-//! \param binormal The (potentially compressed) vertex binormal.
 //! \param tangent The (potentially compressed) vertex tangent.
+//! \param bitangent The (potentially compressed) vertex bitangent.
 //! \param indices The (potentially compressed) vertex blend indices.
 //! \param weights The vertex weights.
 //!
 //! \return The object space binormals of the vertex.
-Binormals binormals(float3 binormal, float3 tangent, uint4 indices, float4 weights)
+void tangents(inout float3 tangent, inout float3 bitangent, uint4 indices, float4 weights)
 {
-   Binormals binormals = decompress_binormals(binormal, tangent);
-
    float3x4 skin = calculate_skin(weights, indices);
 
-   Binormals obj_binormals;
-
-   obj_binormals.s = mul(skin, binormals.s);
-   obj_binormals.t = mul(skin, binormals.t);
-
-   obj_binormals.s = normalize(obj_binormals.s);
-   obj_binormals.t = normalize(obj_binormals.t);
-   
-   return obj_binormals;
+   tangent = mul(skin, tangent);
+   bitangent = mul(skin, bitangent);
 }
 
 }
@@ -200,43 +191,16 @@ float3 normals(float3 normals, uint4 indices)
    return normalize(obj_normal);
 }
 
-//! \brief Decompress and transform hard skinned vertex binormals
-//! to object space.
-//!
-//! \param binormal The (potentially compressed) vertex binormal
-//! \param tangent The (potentially compressed) vertex tangent.
-//! \param indices The (potentially compressed) vertex blend indices.
-//!
-//! \return The object space binormals of the vertex.
-Binormals binormals(float3 binormal, float3 tangent, uint4 indices)
-{
-   int index = indices.x * 765.001;
-
-   Binormals binormals = decompress_binormals(binormal, tangent);
-
-   float3x4 skin = soft_skinned::get_bone_matrix(index);
-
-   Binormals obj_binormals;
-
-   obj_binormals.s = mul(skin, binormals.s);
-   obj_binormals.t = mul(skin, binormals.t);
-
-   obj_binormals.s = normalize(obj_binormals.s);
-   obj_binormals.t = normalize(obj_binormals.t);
-
-   return obj_binormals;
-}
-
 }
 
 #if defined(TRANSFORM_SOFT_SKINNED)
 #define skin_type_position soft_skinned::position
 #define skin_type_normals soft_skinned::normals
-#define skin_type_binormals soft_skinned::binormals
+#define skin_type_tangents soft_skinned::tangents
 #else
 #define skin_type_position unskinned::position
 #define skin_type_normals unskinned::normals
-#define skin_type_binormals unskinned::binormals
+#define skin_type_tangents unskinned::tangents
 #endif
 
 //! \brief Decompress and transform a skinned or unskinned vertex
@@ -298,23 +262,26 @@ float3 normals(float3 normal, uint4 indices, float4 weights)
 }
 
 //! \brief Decompress and transform a skinned or unskinned vertex's
-//! binormals to object space; which operation is taken depends on
+//! tangents to world space; which operation is taken depends on
 //! if TRANSFORM_SOFT_SKINNED is defined or not.
 //!
-//! \param binormal The (potentially compressed) vertex binormal.
 //! \param tangent The (potentially compressed) vertex tangent.
+//! \param bitangent The (potentially compressed) vertex bitangent.
 //! \param indices The (potentially compressed) vertex blend indices.
 //! \param weights The vertex weights.
 //!
 //! \return The object space binormals of the vertex.
-Binormals binormals(float3 binormal, float3 tangent, uint4 indices, float4 weights)
+void tangents(inout float3 tangent, inout float3 bitangent, uint4 indices, float4 weights)
 {
-   return skin_type_binormals(binormal, tangent, indices, weights);
+   skin_type_tangents(tangent, bitangent, indices, weights);
+   
+   tangent = normalize(mul(tangent, world_matrix));
+   bitangent = normalize(mul(bitangent, world_matrix));
 }
+
 
 #undef skin_type_position
 #undef skin_type_normals
-#undef skin_type_binormals
 
 //! \brief Decompress and transform an unskinned vertex.
 //!

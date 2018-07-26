@@ -1,11 +1,21 @@
 {
   "rendertype": "perpixeldiffuselighting",
 
+  "defines": [
+    [ "GENERATE_TEXCOORDS", "false" ],
+    [ "GENERATE_TANGENTS", "false" ],
+    [ "LIGHT_COUNT", "0" ]
+  ],
+
   "states": [
     {
-      "name": "opaque no normal map 3 lights",
+      "name": "perpixel 3 lights",
       "id": 0,
 
+      "defines": [
+        [ "LIGHT_COUNT", "3" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
@@ -14,16 +24,20 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "lights_3_vs",
-          "pixel_shader": "lights_3_ps"
+          "vertex_shader": "perpixel_vs",
+          "pixel_shader": "perpixel_ps"
         }
       ]
     },
 
     {
-      "name": "opaque no normal map 2 lights",
+      "name": "perpixel 2 lights",
       "id": 1,
 
+      "defines": [
+        [ "LIGHT_COUNT", "2" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
@@ -32,16 +46,20 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "lights_3_vs",
-          "pixel_shader": "lights_2_ps"
+          "vertex_shader": "perpixel_vs",
+          "pixel_shader": "perpixel_ps"
         }
       ]
     },
 
     {
-      "name": "opaque no normal map 1 lights",
+      "name": "perpixel 1 lights",
       "id": 2,
 
+      "defines": [
+        [ "LIGHT_COUNT", "1" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
@@ -50,16 +68,20 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "lights_3_vs",
-          "pixel_shader": "lights_1_ps"
+          "vertex_shader": "perpixel_vs",
+          "pixel_shader": "perpixel_ps"
         }
       ]
     },
 
     {
-      "name": "opaque 3 lights with spotlight/projection no normal map",
+      "name": "perpixel 3 lights with spotlight/projection",
       "id": 3,
 
+      "defines": [
+        [ "LIGHT_COUNT", "3" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
@@ -68,8 +90,8 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "lights_3_vs",
-          "pixel_shader": "lights_3_ps"
+          "vertex_shader": "perpixel_vs",
+          "pixel_shader": "perpixel_ps"
         },
 
         {
@@ -79,16 +101,20 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "spotlight_vs",
-          "pixel_shader": "spotlight_ps"
+          "vertex_shader": "perpixel_spotlight_vs",
+          "pixel_shader": "perpixel_spotlight_ps"
         }
       ]
     },
 
     {
-      "name": "opaque 2 lights with spotlight/projection no normal map",
+      "name": "perpixel 2 lights with spotlight/projection",
       "id": 4,
 
+      "defines": [
+        [ "LIGHT_COUNT", "2" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
@@ -97,8 +123,8 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "lights_3_vs",
-          "pixel_shader": "lights_2_ps"
+          "vertex_shader": "perpixel_vs",
+          "pixel_shader": "perpixel_ps"
         },
 
         {
@@ -108,16 +134,20 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "spotlight_vs",
-          "pixel_shader": "spotlight_ps"
+          "vertex_shader": "perpixel_spotlight_vs",
+          "pixel_shader": "perpixel_spotlight_ps"
         }
       ]
     },
 
     {
-      "name": "opaque 1 light with spotlight/projection no normal map",
+      "name": "perpixel 1 lights with spotlight/projection",
       "id": 5,
 
+      "defines": [
+        [ "LIGHT_COUNT", "1" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
@@ -126,8 +156,8 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "lights_3_vs",
-          "pixel_shader": "lights_1_ps"
+          "vertex_shader": "perpixel_vs",
+          "pixel_shader": "perpixel_ps"
         },
 
         {
@@ -137,16 +167,20 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "spotlight_vs",
-          "pixel_shader": "spotlight_ps"
+          "vertex_shader": "perpixel_spotlight_vs",
+          "pixel_shader": "perpixel_spotlight_ps"
         }
       ]
     },
 
     {
-      "name": "opaque with normal map 3 lights",
+      "name": "normalmapped 3 lights",
       "id": 6,
 
+      "defines": [
+        [ "LIGHT_COUNT", "3" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
@@ -155,16 +189,20 @@
           "texture_coords": true,
           "transform": "binormals",
 
-          "vertex_shader": "lights_3_vs",
-          "pixel_shader": "lights_3_normalmap_ps"
+          "vertex_shader": "normalmapped_vs",
+          "pixel_shader": "normalmapped_ps"
         }
       ]
     },
 
     {
-      "name": "opaque with normal map 2 lights",
+      "name": "normalmapped 2 lights",
       "id": 7,
 
+      "defines": [
+        [ "LIGHT_COUNT", "2" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
@@ -173,16 +211,20 @@
           "texture_coords": true,
           "transform": "binormals",
 
-          "vertex_shader": "lights_3_vs",
-          "pixel_shader": "lights_2_normalmap_ps"
+          "vertex_shader": "normalmapped_vs",
+          "pixel_shader": "normalmapped_ps"
         }
       ]
     },
 
     {
-      "name": "opaque with normal map 1 light",
+      "name": "normalmapped 1 lights",
       "id": 8,
 
+      "defines": [
+        [ "LIGHT_COUNT", "1" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
@@ -191,16 +233,20 @@
           "texture_coords": true,
           "transform": "binormals",
 
-          "vertex_shader": "lights_3_vs",
-          "pixel_shader": "lights_1_normalmap_ps"
+          "vertex_shader": "normalmapped_vs",
+          "pixel_shader": "normalmapped_ps"
         }
       ]
     },
 
     {
-      "name": "opaque 3 lights with spotlight/projection with normal map",
+      "name": "normalmapped 3 lights with spotlight/projection",
       "id": 9,
 
+      "defines": [
+        [ "LIGHT_COUNT", "3" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
@@ -209,8 +255,8 @@
           "texture_coords": true,
           "transform": "binormals",
 
-          "vertex_shader": "lights_3_vs",
-          "pixel_shader": "lights_3_normalmap_ps"
+          "vertex_shader": "normalmapped_vs",
+          "pixel_shader": "normalmapped_ps"
         },
 
         {
@@ -220,16 +266,20 @@
           "texture_coords": true,
           "transform": "binormals",
 
-          "vertex_shader": "spotlight_vs",
-          "pixel_shader": "spotlight_normalmap_ps"
+          "vertex_shader": "normalmapped_spotlight_vs",
+          "pixel_shader": "normalmapped_spotlight_ps"
         }
       ]
     },
 
     {
-      "name": "opaque 2 lights with spotlight/projection with normal map",
+      "name": "normalmapped 2 lights with spotlight/projection",
       "id": 10,
 
+      "defines": [
+        [ "LIGHT_COUNT", "2" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
@@ -238,8 +288,8 @@
           "texture_coords": true,
           "transform": "binormals",
 
-          "vertex_shader": "lights_3_vs",
-          "pixel_shader": "lights_2_normalmap_ps"
+          "vertex_shader": "normalmapped_vs",
+          "pixel_shader": "normalmapped_ps"
         },
 
         {
@@ -249,16 +299,20 @@
           "texture_coords": true,
           "transform": "binormals",
 
-          "vertex_shader": "spotlight_vs",
-          "pixel_shader": "spotlight_normalmap_ps"
+          "vertex_shader": "normalmapped_spotlight_vs",
+          "pixel_shader": "normalmapped_spotlight_ps"
         }
       ]
     },
 
     {
-      "name": "opaque 1 light with spotlight/projection with normal map",
+      "name": "normalmapped 1 lights with spotlight/projection",
       "id": 11,
 
+      "defines": [
+        [ "LIGHT_COUNT", "1" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
@@ -267,8 +321,8 @@
           "texture_coords": true,
           "transform": "binormals",
 
-          "vertex_shader": "lights_3_vs",
-          "pixel_shader": "lights_1_normalmap_ps"
+          "vertex_shader": "normalmapped_vs",
+          "pixel_shader": "normalmapped_ps"
         },
 
         {
@@ -278,16 +332,21 @@
           "texture_coords": true,
           "transform": "binormals",
 
-          "vertex_shader": "spotlight_vs",
-          "pixel_shader": "spotlight_normalmap_ps"
+          "vertex_shader": "normalmapped_spotlight_vs",
+          "pixel_shader": "normalmapped_spotlight_ps"
         }
       ]
     },
 
     {
-      "name": "opaque with normal map (generate binormals) 3 lights",
+      "name": "normalmapped 3 lights (generate tangents)",
       "id": 12,
 
+      "defines": [
+        [ "LIGHT_COUNT", "3" ],
+        [ "GENERATE_TANGENTS", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
@@ -296,16 +355,21 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "lights_3_genbinormals_vs",
-          "pixel_shader": "lights_3_ps"
+          "vertex_shader": "normalmapped_vs",
+          "pixel_shader": "normalmapped_ps"
         }
       ]
     },
 
     {
-      "name": "opaque with normal map (generate binormals) 2 lights",
+      "name": "normalmapped 2 lights (generate tangents)",
       "id": 13,
 
+      "defines": [
+        [ "LIGHT_COUNT", "2" ],
+        [ "GENERATE_TANGENTS", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
@@ -314,16 +378,21 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "lights_3_genbinormals_vs",
-          "pixel_shader": "lights_2_ps"
+          "vertex_shader": "normalmapped_vs",
+          "pixel_shader": "normalmapped_ps"
         }
       ]
     },
 
     {
-      "name": "opaque with normal map (generate binormals) 1 lights",
+      "name": "normalmapped 1 lights (generate tangents)",
       "id": 14,
 
+      "defines": [
+        [ "LIGHT_COUNT", "1" ],
+        [ "GENERATE_TANGENTS", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
@@ -332,16 +401,21 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "lights_3_genbinormals_vs",
-          "pixel_shader": "lights_1_ps"
+          "vertex_shader": "normalmapped_vs",
+          "pixel_shader": "normalmapped_ps"
         }
       ]
     },
 
     {
-      "name": "opaque 3 lights with spotlight/projection with normal map (generate binormals)",
+      "name": "normalmapped 3 lights with spotlight/projection (generate tangents)",
       "id": 15,
 
+      "defines": [
+        [ "LIGHT_COUNT", "3" ],
+        [ "GENERATE_TANGENTS", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
@@ -350,8 +424,8 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "lights_3_genbinormals_vs",
-          "pixel_shader": "lights_3_normalmap_ps"
+          "vertex_shader": "normalmapped_vs",
+          "pixel_shader": "normalmapped_ps"
         },
 
         {
@@ -361,16 +435,21 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "spotlight_genbinormals_vs",
-          "pixel_shader": "spotlight_normalmap_ps"
+          "vertex_shader": "normalmapped_spotlight_vs",
+          "pixel_shader": "normalmapped_spotlight_ps"
         }
       ]
     },
 
     {
-      "name": "opaque 2 lights with spotlight/projection with normal map (generate binormals)",
+      "name": "normalmapped 2 lights with spotlight/projection (generate tangents)",
       "id": 16,
 
+      "defines": [
+        [ "LIGHT_COUNT", "2" ],
+        [ "GENERATE_TANGENTS", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
@@ -379,8 +458,8 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "lights_3_genbinormals_vs",
-          "pixel_shader": "lights_2_normalmap_ps"
+          "vertex_shader": "normalmapped_vs",
+          "pixel_shader": "normalmapped_ps"
         },
 
         {
@@ -390,16 +469,21 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "spotlight_genbinormals_vs",
-          "pixel_shader": "spotlight_normalmap_ps"
+          "vertex_shader": "normalmapped_spotlight_vs",
+          "pixel_shader": "normalmapped_spotlight_ps"
         }
       ]
     },
 
     {
-      "name": "opaque 1 light with spotlight/projection with normal map (generate binormals)",
+      "name": "normalmapped 1 lights with spotlight/projection (generate tangents)",
       "id": 17,
 
+      "defines": [
+        [ "LIGHT_COUNT", "1" ],
+        [ "GENERATE_TANGENTS", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
@@ -408,8 +492,8 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "lights_3_genbinormals_vs",
-          "pixel_shader": "lights_1_normalmap_ps"
+          "vertex_shader": "normalmapped_vs",
+          "pixel_shader": "normalmapped_ps"
         },
 
         {
@@ -419,16 +503,22 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "spotlight_genbinormals_vs",
-          "pixel_shader": "spotlight_normalmap_ps"
+          "vertex_shader": "normalmapped_spotlight_vs",
+          "pixel_shader": "normalmapped_spotlight_ps"
         }
       ]
     },
 
     {
-      "name": "terrain with normal map (generate binormals) 3 lights",
+      "name": "normalmapped 3 lights (generate tangents & texcoords)",
       "id": 18,
 
+      "defines": [
+        [ "LIGHT_COUNT", "3" ],
+        [ "GENERATE_TANGENTS", "true" ],
+        [ "GENERATE_TEXCOORDS", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
@@ -437,16 +527,22 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "lights_3_genbinormals_terrain_vs",
-          "pixel_shader": "lights_3_normalmap_ps"
+          "vertex_shader": "normalmapped_vs",
+          "pixel_shader": "normalmapped_ps"
         }
       ]
     },
 
     {
-      "name": "terrain with normal map (generate binormals) 2 lights",
+      "name": "normalmapped 2 lights (generate tangents & texcoords)",
       "id": 19,
 
+      "defines": [
+        [ "LIGHT_COUNT", "2" ],
+        [ "GENERATE_TANGENTS", "true" ],
+        [ "GENERATE_TEXCOORDS", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
@@ -455,16 +551,22 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "lights_3_genbinormals_terrain_vs",
-          "pixel_shader": "lights_2_normalmap_ps"
+          "vertex_shader": "normalmapped_vs",
+          "pixel_shader": "normalmapped_ps"
         }
       ]
     },
 
     {
-      "name": "terrain with normal map (generate binormals) 1 lights",
+      "name": "normalmapped 1 lights (generate tangents & texcoords)",
       "id": 20,
 
+      "defines": [
+        [ "LIGHT_COUNT", "1" ],
+        [ "GENERATE_TANGENTS", "true" ],
+        [ "GENERATE_TEXCOORDS", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
@@ -473,16 +575,22 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "lights_3_genbinormals_terrain_vs",
-          "pixel_shader": "lights_1_normalmap_ps"
+          "vertex_shader": "normalmapped_vs",
+          "pixel_shader": "normalmapped_ps"
         }
       ]
     },
 
     {
-      "name": "terrain 3 lights with spotlight/projection with normal map (generate binormals)",
+      "name": "normalmapped 3 lights with spotlight/projection (generate tangents & texcoords)",
       "id": 21,
 
+      "defines": [
+        [ "LIGHT_COUNT", "3" ],
+        [ "GENERATE_TANGENTS", "true" ],
+        [ "GENERATE_TEXCOORDS", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
@@ -491,8 +599,8 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "lights_3_genbinormals_terrain_vs",
-          "pixel_shader": "lights_3_normalmap_ps"
+          "vertex_shader": "normalmapped_vs",
+          "pixel_shader": "normalmapped_ps"
         },
 
         {
@@ -502,16 +610,22 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "spotlight_genbinormals_terrain_vs",
-          "pixel_shader": "spotlight_normalmap_ps"
+          "vertex_shader": "normalmapped_spotlight_vs",
+          "pixel_shader": "normalmapped_spotlight_ps"
         }
       ]
     },
 
     {
-      "name": "terrain 2 lights with spotlight/projection with normal map (generate binormals)",
+      "name": "normalmapped 2 lights with spotlight/projection (generate tangents & texcoords)",
       "id": 22,
 
+      "defines": [
+        [ "LIGHT_COUNT", "2" ],
+        [ "GENERATE_TANGENTS", "true" ],
+        [ "GENERATE_TEXCOORDS", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
@@ -520,8 +634,8 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "lights_3_genbinormals_terrain_vs",
-          "pixel_shader": "lights_2_normalmap_ps"
+          "vertex_shader": "normalmapped_vs",
+          "pixel_shader": "normalmapped_ps"
         },
 
         {
@@ -531,15 +645,21 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "spotlight_genbinormals_terrain_vs",
-          "pixel_shader": "spotlight_normalmap_ps"
+          "vertex_shader": "normalmapped_spotlight_vs",
+          "pixel_shader": "normalmapped_spotlight_ps"
         }
       ]
     },
 
     {
-      "name": "terrain 1 lights with spotlight/projection with normal map (generate binormals)",
+      "name": "normalmapped 1 lights with spotlight/projection (generate tangents & texcoords)",
       "id": 23,
+
+      "defines": [
+        [ "LIGHT_COUNT", "1" ],
+        [ "GENERATE_TANGENTS", "true" ],
+        [ "GENERATE_TEXCOORDS", "true" ]
+      ],
 
       "passes": [
         {
@@ -549,8 +669,8 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "lights_3_genbinormals_terrain_vs",
-          "pixel_shader": "lights_1_normalmap_ps"
+          "vertex_shader": "normalmapped_vs",
+          "pixel_shader": "normalmapped_ps"
         },
 
         {
@@ -560,8 +680,8 @@
           "texture_coords": true,
           "transform": "normals",
 
-          "vertex_shader": "spotlight_genbinormals_terrain_vs",
-          "pixel_shader": "spotlight_normalmap_ps"
+          "vertex_shader": "normalmapped_spotlight_vs",
+          "pixel_shader": "normalmapped_spotlight_ps"
         }
       ]
     }

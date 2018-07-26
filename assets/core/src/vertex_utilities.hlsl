@@ -12,12 +12,6 @@ struct Near_scene
    float fade;
 };
 
-struct Binormals
-{
-   float3 s;
-   float3 t;
-};
-
 float4 get_projection_matrix_row(const uint i)
 {
    if (i == 0) {
@@ -87,14 +81,10 @@ float3 decompress_normals(float3 normals)
    return normals.xyz * normaltex_decompress.xxx + normaltex_decompress.yyy;
 }
 
-Binormals decompress_binormals(float3 binormal, float3 tangent)
+void decompress_tangents(inout float3 tangent, inout float3 bitangent)
 {
-   Binormals binormals;
-
-   binormals.s = binormal.xyz * normaltex_decompress.xxx + normaltex_decompress.yyy;
-   binormals.t = tangent.xyz * normaltex_decompress.xxx + normaltex_decompress.yyy;
-
-   return binormals;
+   tangent = tangent * normaltex_decompress.xxx + normaltex_decompress.yyy;
+   bitangent = bitangent * normaltex_decompress.xxx + normaltex_decompress.yyy;
 }
 
 float4 get_material_color(float4 color)
@@ -142,21 +132,6 @@ float3 normals_to_world(float3 normals)
    return world_normals;
 }
 
-Binormals binormals_to_world(Binormals binormals)
-{
-   Binormals world_binormals;
-
-   world_binormals.s.x = dot(binormals.s, get_world_matrix_row(0).xyz);
-   world_binormals.s.y = dot(binormals.s, get_world_matrix_row(1).xyz);
-   world_binormals.s.z = dot(binormals.s, get_world_matrix_row(2).xyz);
-
-   world_binormals.t.x = dot(binormals.t, get_world_matrix_row(0).xyz);
-   world_binormals.t.y = dot(binormals.t, get_world_matrix_row(1).xyz);
-   world_binormals.t.z = dot(binormals.t, get_world_matrix_row(2).xyz);
-
-   return world_binormals;
-}
-
 float4 transform_shadowmap_coords(float4 world_position)
 {
    float4 coords;
@@ -168,6 +143,18 @@ float4 transform_shadowmap_coords(float4 world_position)
 
    return coords;
 }
+
+void generate_terrain_tangents(float3 world_normal, out float3 tangent, 
+                               out float3 bitangent)
+{
+   //Pandemic's note: we rely on the fact that the object is world axis aligned
+   tangent = -world_normal.x * world_normal + float3(1.0, 0.0, 0.0);
+   tangent *= rsqrt(tangent.x);
+
+   bitangent = -world_normal.z * world_normal + float3(0.0, 0.0, 1.0);
+   bitangent *= rsqrt(bitangent);
+}
+
 
 Near_scene calculate_near_scene_fade(float4 world_position)
 {
