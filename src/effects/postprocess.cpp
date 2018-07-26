@@ -34,6 +34,8 @@ void Postprocess::bloom_params(const Bloom_params& params) noexcept
    _bloom_outer_mid_scale =
       params.outer_mid_scale * params.outer_mid_tint / _bloom_mid_scale;
    _bloom_outer_scale = params.outer_scale * params.outer_tint / _bloom_outer_mid_scale;
+
+   _bloom_enabled = _user_config.bloom && _bloom_params.enabled;
 }
 
 void Postprocess::vignette_params(const Vignette_params& params) noexcept
@@ -106,7 +108,7 @@ void Postprocess::apply(const Shader_database& shaders, Rendertarget_allocator& 
 
    auto scratch_rt = allocator.allocate(format, res);
 
-   if (_bloom_params.enabled) {
+   if (_bloom_enabled) {
       do_bloom_and_color_grading(shaders, allocator, textures, input,
                                  *scratch_rt.surface());
    }
@@ -204,7 +206,7 @@ void Postprocess::do_color_grading(const Shader_database& shaders,
                                    IDirect3DTexture9& input,
                                    IDirect3DSurface9& output) noexcept
 {
-   set_linear_clamp_sampler(*_device, 0, _hdr_state != Hdr_state::hdr);
+   set_linear_clamp_sampler(*_device, 0);
    bind_color_grading_luts();
    _device->SetRenderState(D3DRS_SRGBWRITEENABLE, true);
 
