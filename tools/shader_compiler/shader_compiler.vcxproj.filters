@@ -29,5 +29,8 @@
     <ClInclude Include="src\patch_compiler.hpp">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="src\preprocessor_defines.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

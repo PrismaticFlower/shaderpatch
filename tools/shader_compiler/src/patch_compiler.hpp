@@ -45,14 +45,15 @@ private:
    void save(const std::filesystem::path& output_path) const;
 
    auto compile_state(const nlohmann::json& state_def,
-                      const std::vector<Shader_macro>& global_defines,
-                      const std::vector<std::string>& global_undefines) -> State;
+                      const Preprocessor_defines& global_defines) -> State;
 
    auto compile_vertex_shader(const std::string& entry_point,
-                              std::vector<D3D_SHADER_MACRO> defines) -> std::size_t;
+                              const std::vector<D3D_SHADER_MACRO>& defines)
+      -> std::size_t;
 
    auto compile_pixel_shader(const std::string& entry_point,
-                             std::vector<D3D_SHADER_MACRO> defines) -> std::size_t;
+                             const std::vector<D3D_SHADER_MACRO>& defines)
+      -> std::size_t;
 
    std::string _render_type;
    std::filesystem::path _source_path;

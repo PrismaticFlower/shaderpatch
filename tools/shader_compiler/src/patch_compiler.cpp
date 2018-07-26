@@ -8,6 +8,8 @@
 #include "ucfb_writer.hpp"
 #include "volume_resource.hpp"
 
+#include "preprocessor_defines.hpp"
+
 #include <algorithm>
 #include <execution>
 #include <filesystem>
@@ -77,45 +79,6 @@ auto compile_shader_impl(const std::string& entry_point,
 
    return shader_index;
 }
-
-auto assemble_definitions(const std::vector<D3D_SHADER_MACRO>& variation_defines,
-                          const std::vector<Shader_macro>& global_defines,
-                          const std::vector<Shader_macro>& state_defines,
-                          const boost::container::flat_set<std::string>& undefines)
-   -> std::vector<D3D_SHADER_MACRO>
-{
-   std::vector<D3D_SHADER_MACRO> defines;
-   defines.reserve(variation_defines.size() + state_defines.size() +
-                   global_defines.size());
-   defines = variation_defines;
-
-   defines.pop_back();
-
-   for (auto& def : global_defines) defines.emplace_back(def);
-
-   for (auto& def : state_defines) {
-      if (auto it = std::find_if(std::begin(defines), std::end(defines),
-                                 [&](const D3D_SHADER_MACRO& macro) {
-                                    return std::string_view{macro.Name} == def.name;
-                                 });
-          it != std::end(defines)) {
-         it->Definition = def.definition.c_str();
-      }
-      else {
-         defines.emplace_back(def);
-      }
-   }
-
-   defines.erase(boost::remove_if(defines,
-                                  [&](auto& entry) {
-                                     return undefines.count(entry.Name) != 0;
-                                  }),
-                 std::end(defines));
-
-   defines.push_back({nullptr, nullptr});
-
-   return defines;
-}
 }
 
 Patch_compiler::Patch_compiler(nlohmann::json definition, const fs::path& definition_path,
@@ -150,16 +113,16 @@ Patch_compiler::Patch_compiler(nlohmann::json definition, const fs::path& defini
    _variations = get_shader_variations(definition["skinned"s], definition["lighting"s],
                                        definition["vertex_color"s]);
 
-   std::vector<Shader_macro> shader_defines =
-      definition.value<std::vector<Shader_macro>>("defines"s, {});
+   Preprocessor_defines shader_defines;
 
-   std::vector<std::string> shader_undefines =
-      definition.value<std::vector<std::string>>("undefines"s, {});
+   shader_defines.add_defines(
+      definition.value<std::vector<Shader_define>>("defines"s, {}));
+   shader_defines.add_undefines(
+      definition.value<std::vector<std::string>>("undefines"s, {}));
 
    for_each_exception_capable(std::execution::par, definition["states"s],
                               [&](const auto& state_def) {
-                                 auto state = compile_state(state_def, shader_defines,
-                                                            shader_undefines);
+                                 auto state = compile_state(state_def, shader_defines);
 
                                  std::lock_guard<std::mutex> lock{_states_mutex};
 
@@ -282,21 +245,19 @@ void Patch_compiler::save(const fs::path& output_path) const
 }
 
 auto Patch_compiler::compile_state(const nlohmann::json& state_def,
-                                   const std::vector<Shader_macro>& global_defines,
-                                   const std::vector<std::string>& global_undefines)
+                                   const Preprocessor_defines& global_defines)
    -> Patch_compiler::State
 {
    const std::string vs_entry_point = state_def["vertex_shader"s];
    const std::string ps_entry_point = state_def["pixel_shader"s];
 
-   std::vector<Shader_macro> state_defines =
-      state_def.value<std::vector<Shader_macro>>("defines"s, {});
+   Preprocessor_defines state_defines;
 
-   boost::container::flat_set<std::string> undefines =
-      state_def.value<boost::container::flat_set<std::string>>("undefines"s, {});
-
-   undefines.reserve(undefines.size() + global_undefines.size());
-   undefines.insert(std::cbegin(global_undefines), std::cend(global_undefines));
+   state_defines.combine_with(global_defines);
+   state_defines.add_defines(
+      state_def.value<std::vector<Shader_define>>("defines"s, {}));
+   state_defines.add_undefines(
+      state_def.value<std::vector<std::string>>("undefines"s, {}));
 
    State state;
 
@@ -311,12 +272,9 @@ auto Patch_compiler::compile_state(const nlohmann::json& state_def,
 
       shader.vs_index =
          compile_vertex_shader(vs_entry_point,
-                               assemble_definitions(variation.definitions, global_defines,
-                                                    state_defines, undefines));
-      shader.ps_index =
-         compile_pixel_shader(ps_entry_point,
-                              assemble_definitions(variation.ps_definitions, global_defines,
-                                                   state_defines, undefines));
+                               combine_defines(variation.defines, state_defines).get());
+      shader.ps_index = compile_pixel_shader(
+         ps_entry_point, combine_defines(variation.ps_defines, state_defines).get());
 
       state.shaders.emplace_back(std::move(shader));
    };
@@ -327,7 +285,7 @@ auto Patch_compiler::compile_state(const nlohmann::json& state_def,
 }
 
 auto Patch_compiler::compile_vertex_shader(const std::string& entry_point,
-                                           std::vector<D3D_SHADER_MACRO> defines)
+                                           const std::vector<D3D_SHADER_MACRO>& defines)
    -> std::size_t
 {
    return compile_shader_impl(entry_point, std::move(defines), _source_path,
@@ -335,7 +293,7 @@ auto Patch_compiler::compile_vertex_shader(const std::string& entry_point,
 }
 
 auto Patch_compiler::compile_pixel_shader(const std::string& entry_point,
-                                          std::vector<D3D_SHADER_MACRO> defines)
+                                          const std::vector<D3D_SHADER_MACRO>& defines)
    -> std::size_t
 {
    return compile_shader_impl(entry_point, std::move(defines), _source_path,

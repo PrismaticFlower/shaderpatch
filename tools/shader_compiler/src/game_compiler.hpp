@@ -2,6 +2,7 @@
 
 #include "com_ptr.hpp"
 #include "compiler_helpers.hpp"
+#include "preprocessor_defines.hpp"
 #include "shader_flags.hpp"
 
 #include <array>
@@ -71,17 +72,23 @@ private:
 
    void save(const std::filesystem::path& output_path);
 
-   State compile_state(const nlohmann::json& state_def, std::array<bool, 4> srgb_state);
+   State compile_state(const nlohmann::json& state_def,
+                       const Preprocessor_defines& global_defines,
+                       std::array<bool, 4> srgb_state);
 
    Pass compile_pass(const nlohmann::json& pass_def, std::string_view state_name,
+                     const Preprocessor_defines& state_defines,
                      std::array<bool, 4> srgb_state);
 
    auto compile_vertex_shader(const std::string& entry_point, const std::string& target,
-                              Shader_variation& variation, std::string_view state_name,
+                              const Shader_variation& variation,
+                              const Preprocessor_defines& pass_defines,
+                              std::string_view state_name,
                               std::array<bool, 4> srgb_state) -> Vertex_shader_ref;
 
-   auto compile_pixel_shader(const std::string& entry_point,
-                             const std::string& target, std::string_view state_name,
+   auto compile_pixel_shader(const std::string& entry_point, const std::string& target,
+                             const Preprocessor_defines& pass_defines,
+                             std::string_view state_name,
                              std::array<bool, 4> srgb_state) -> Pixel_shader_ref;
 
    std::filesystem::path _source_path;

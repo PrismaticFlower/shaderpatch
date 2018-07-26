@@ -36,27 +36,6 @@ namespace sp {
 
 const auto compiler_flags = D3DCOMPILE_OPTIMIZATION_LEVEL3;
 
-struct Shader_macro {
-   std::string name;
-   std::string definition;
-
-   operator D3D_SHADER_MACRO() const noexcept
-   {
-      return {name.data(), definition.data()};
-   };
-};
-
-inline void from_json(const nlohmann::json& j, Shader_macro& macro)
-{
-   if (j.is_string()) {
-      macro.name = j;
-   }
-   else {
-      macro.name = j[0];
-      macro.definition = j[1];
-   }
-}
-
 struct Shader_cache_index {
    std::string entry_point;
    std::vector<D3D_SHADER_MACRO> definitions;

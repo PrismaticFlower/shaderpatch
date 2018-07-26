@@ -93,6 +93,7 @@
   <ItemGroup>
     <ClInclude Include="src\compiler_helpers.hpp" />
     <ClInclude Include="src\game_compiler.hpp" />
+    <ClInclude Include="src\preprocessor_defines.hpp" />
     <ClInclude Include="src\shader_variations.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

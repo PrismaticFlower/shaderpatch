@@ -52,12 +52,19 @@ Game_compiler::Game_compiler(nlohmann::json definition, const fs::path& definiti
 
    _render_type = definition["rendertype"];
 
+   Preprocessor_defines shader_defines;
+
+   shader_defines.add_defines(
+      definition.value<std::vector<Shader_define>>("defines"s, {}));
+   shader_defines.add_undefines(
+      definition.value<std::vector<std::string>>("undefines"s, {}));
+
    _source = load_string_file(_source_path);
 
    const auto srgb_state = definition.value("srgb_state", std::array<bool, 4>{});
 
    for (const auto& state_def : definition["states"]) {
-      _states.emplace_back(compile_state(state_def, srgb_state));
+      _states.emplace_back(compile_state(state_def, shader_defines, srgb_state));
    }
 
    save(output_path);
@@ -122,9 +129,18 @@ void Game_compiler::save(const fs::path& output_path)
 }
 
 auto Game_compiler::compile_state(const nlohmann::json& state_def,
+                                  const Preprocessor_defines& global_defines,
                                   std::array<bool, 4> srgb_state) -> Game_compiler::State
 {
    State state{std::uint32_t{state_def["id"]}};
+
+   Preprocessor_defines state_defines;
+
+   state_defines.combine_with(global_defines);
+   state_defines.add_defines(
+      state_def.value<std::vector<Shader_define>>("defines"s, {}));
+   state_defines.add_undefines(
+      state_def.value<std::vector<std::string>>("undefines"s, {}));
 
    auto& passes = state.passes;
 
@@ -133,7 +149,7 @@ auto Game_compiler::compile_state(const nlohmann::json& state_def,
    const std::string state_name = state_def["name"s];
 
    for (const auto& pass_def : state_def["passes"]) {
-      passes.emplace_back(compile_pass(pass_def, state_name, srgb_state));
+      passes.emplace_back(compile_pass(pass_def, state_name, state_defines, srgb_state));
    }
 
    return state;
@@ -141,6 +157,7 @@ auto Game_compiler::compile_state(const nlohmann::json& state_def,
 
 auto Game_compiler::compile_pass(const nlohmann::json& pass_def,
                                  std::string_view state_name,
+                                 const Preprocessor_defines& state_defines,
                                  std::array<bool, 4> srgb_state) -> Game_compiler::Pass
 {
    Pass pass{};
@@ -148,6 +165,13 @@ auto Game_compiler::compile_pass(const nlohmann::json& pass_def,
    pass.flags = get_pass_flags(pass_def);
 
    srgb_state = pass_def.value("srgb_state", srgb_state);
+
+   Preprocessor_defines pass_defines;
+
+   pass_defines.combine_with(state_defines);
+   pass_defines.add_defines(pass_def.value<std::vector<Shader_define>>("defines"s, {}));
+   pass_defines.add_undefines(
+      pass_def.value<std::vector<std::string>>("undefines"s, {}));
 
    const auto vs_target = pass_def.value("vs_target", "vs_3_0");
    const auto ps_target = pass_def.value("ps_target", "ps_3_0");
@@ -157,20 +181,21 @@ auto Game_compiler::compile_pass(const nlohmann::json& pass_def,
 
    for (auto& variation : get_shader_variations(pass_def["skinned"], pass_def["lighting"],
                                                 pass_def["vertex_color"])) {
-      pass.vs_shaders.emplace_back(compile_vertex_shader(vs_entry_point,
-                                                         vs_target, variation,
-                                                         state_name, srgb_state));
+      pass.vs_shaders.emplace_back(
+         compile_vertex_shader(vs_entry_point, vs_target, variation,
+                               pass_defines, state_name, srgb_state));
    }
 
-   pass.ps_index =
-      compile_pixel_shader(ps_entry_point, ps_target, state_name, srgb_state);
+   pass.ps_index = compile_pixel_shader(ps_entry_point, ps_target, pass_defines,
+                                        state_name, srgb_state);
 
    return pass;
 }
 
 auto Game_compiler::compile_vertex_shader(const std::string& entry_point,
                                           const std::string& target,
-                                          Shader_variation& variation,
+                                          const Shader_variation& variation,
+                                          const Preprocessor_defines& pass_defines,
                                           std::string_view state_name,
                                           std::array<bool, 4> srgb_state) -> Vertex_shader_ref
 {
@@ -179,9 +204,10 @@ auto Game_compiler::compile_vertex_shader(const std::string& entry_point,
 
    auto result =
       D3DCompile(_source.data(), _source.length(), _source_path.string().data(),
-                 variation.definitions.data(), D3D_COMPILE_STANDARD_FILE_INCLUDE,
-                 entry_point.data(), target.data(), compiler_flags, NULL,
-                 shader.clear_and_assign(), error_message.clear_and_assign());
+                 combine_defines(pass_defines, variation.defines).get().data(),
+                 D3D_COMPILE_STANDARD_FILE_INCLUDE, entry_point.data(),
+                 target.data(), compiler_flags, NULL, shader.clear_and_assign(),
+                 error_message.clear_and_assign());
 
    if (result != S_OK) {
       throw std::runtime_error{static_cast<char*>(error_message->GetBufferPointer())};
@@ -201,6 +227,7 @@ auto Game_compiler::compile_vertex_shader(const std::string& entry_point,
 
 auto Game_compiler::compile_pixel_shader(const std::string& entry_point,
                                          const std::string& target,
+                                         const Preprocessor_defines& pass_defines,
                                          std::string_view state_name,
                                          std::array<bool, 4> srgb_state) -> Pixel_shader_ref
 {
@@ -209,9 +236,9 @@ auto Game_compiler::compile_pixel_shader(const std::string& entry_point,
 
    auto result =
       D3DCompile(_source.data(), _source.length(), _source_path.string().data(),
-                 nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, entry_point.data(),
-                 target.data(), compiler_flags, NULL, shader.clear_and_assign(),
-                 error_message.clear_and_assign());
+                 pass_defines.get().data(), D3D_COMPILE_STANDARD_FILE_INCLUDE,
+                 entry_point.data(), target.data(), compiler_flags, NULL,
+                 shader.clear_and_assign(), error_message.clear_and_assign());
 
    if (result != S_OK) {
       throw std::runtime_error{static_cast<char*>(error_message->GetBufferPointer())};
