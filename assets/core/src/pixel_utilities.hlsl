@@ -95,4 +95,12 @@ float4 tex2Dgaussian(sampler2D samp, float2 texcoord, float2 texel_size)
    return color;
 }
 
+float3 linear_to_srgb(float3 color) {
+   return (color <= 0.0031308) ? (12.92 * color) : mad(1.055, pow(color, 1.0 / 2.4), -0.055);
+}
+
+float3 srgb_to_linear(float3 color) {
+   return (color <= 0.04045) ? (color / 12.92) : pow(mad(color, 1.0 / 1.055, 0.055 / 1.055), 2.4);
+}
+
 #endif

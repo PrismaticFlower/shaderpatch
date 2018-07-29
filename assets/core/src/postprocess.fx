@@ -53,7 +53,7 @@ float4 postprocess_ps(float2 texcoords : TEXCOORD) : COLOR
 {
    float3 color = tex2D(scene_sampler, texcoords).rgb;
 
-   if (stock_hdr) color = pow(color + color, 2.2);
+   if (stock_hdr) color = srgb_to_linear(color + color);
 
    if (bloom) apply_bloom(texcoords, color);
 

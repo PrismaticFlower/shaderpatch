@@ -35,8 +35,8 @@ namespace sp::direct3d {
 
 class Device : public IDirect3DDevice9 {
 public:
-   Device(IDirect3DDevice9& device, const HWND window, const glm::ivec2 resolution,
-          const D3DCAPS9& caps, D3DFORMAT stencil_shadow_format) noexcept;
+   Device(IDirect3DDevice9& device, const HWND window,
+          const glm::ivec2 resolution, DWORD max_anisotropy) noexcept;
 
    HRESULT __stdcall QueryInterface(const IID& iid, void** object) noexcept override;
    ULONG __stdcall AddRef() noexcept override;
@@ -334,6 +334,8 @@ private:
 
    void init_sampler_max_anisotropy() noexcept;
 
+   void init_optional_format_types() noexcept;
+
    void post_process() noexcept;
 
    void late_fp_resolve() noexcept;
@@ -437,7 +439,9 @@ private:
    win32::Unique_handle _sp_advertise_handle;
 
    const int _device_max_anisotropy = 1;
-   const D3DFORMAT _stencil_shadow_format;
+   D3DFORMAT _stencil_shadow_format;
+   D3DFORMAT _effects_high_stock_hdr_format;
+   D3DFORMAT _effects_ultra_stock_hdr_format;
    D3DFORMAT _rt_format;
 
    std::atomic_int_fast32_t _active_fx_id{0};

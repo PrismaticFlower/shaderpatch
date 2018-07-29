@@ -7,10 +7,8 @@ struct Vs_output
    float2 texcoord : TEXCOORD;
 };
 
-sampler texture_sampler;
-
-float4 sample_const_0 : register(vs, c[CUSTOM_CONST_MIN]);
-float4 sample_const_1 : register(vs, c[CUSTOM_CONST_MIN + 1]);
+float4 sample_scale_offset : register(vs, c[CUSTOM_CONST_MIN]);
+float4 sample_position : register(vs, c[CUSTOM_CONST_MIN + 1]);
 
 Vs_output sample_vs(float4 position : POSITION)
 {
@@ -18,16 +16,23 @@ Vs_output sample_vs(float4 position : POSITION)
 
    position = decompress_position(position);
 
-   output.position = sample_const_1;
-   output.texcoord = (position.xy + sample_const_0.zw) * sample_const_0.xy;
+   output.position = sample_position;
+   output.texcoord = (position.xy + sample_scale_offset.zw) * sample_scale_offset.xy;
 
    return output;
 }
 
-float4 sample_ps(float2 texcoord : TEXCOORD,
-                 uniform float4 constant : register(ps, c[0])) : COLOR
-{
-   float4 color = tex2D(texture_sampler, texcoord);
+uniform float4 sample_alpha_scale : register(ps, c[0]);
+sampler2D source;
 
-   return color.aaaa * constant;
+const static float min_value = 1.0 / 3.0;
+const static float cutoff = 1.0 / 255.0;
+
+float4 sample_ps(float2 texcoord : TEXCOORD) : COLOR
+{
+   float alpha = tex2D(source, texcoord).a;
+   alpha  *= sample_alpha_scale.a;
+
+   // Min alpha test for RT formats with only 2 alpha bits.
+   return alpha >= cutoff ? max(alpha, min_value) : 0.0;
 }

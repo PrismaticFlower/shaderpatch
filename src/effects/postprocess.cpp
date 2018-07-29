@@ -125,14 +125,11 @@ void Postprocess::do_bloom_and_color_grading(const Shader_database& shaders,
                                              IDirect3DTexture9& input,
                                              IDirect3DSurface9& output) noexcept
 {
-   for (int i = 0; i < 6; ++i) {
-      set_linear_clamp_sampler(*_device, i, _hdr_state != Hdr_state::hdr);
-   }
-
-   _device->SetRenderState(D3DRS_SRGBWRITEENABLE, _hdr_state != Hdr_state::hdr);
-   _device->SetSamplerState(0, D3DSAMP_SRGBTEXTURE, false);
-
    auto [format, res] = get_texture_metrics(input);
+
+   set_linear_clamp_sampler(*_device, 0);
+   _device->SetRenderState(D3DRS_SRGBWRITEENABLE, format == D3DFMT_A8R8G8B8);
+   _device->SetSamplerState(0, D3DSAMP_SRGBTEXTURE, false);
 
    auto& post_shaders = shaders.at("postprocess"s);
    auto& bloom_shaders = shaders.at("bloom"s);
@@ -145,7 +142,7 @@ void Postprocess::do_bloom_and_color_grading(const Shader_database& shaders,
 
    bloom_shaders.at(_threshold_shader).bind(*_device);
 
-   _device->SetSamplerState(0, D3DSAMP_SRGBTEXTURE, _hdr_state != Hdr_state::hdr);
+   _device->SetSamplerState(0, D3DSAMP_SRGBTEXTURE, format == D3DFMT_A8R8G8B8);
 
    do_bloom_pass(input, *rt_a.surface());
 
@@ -182,6 +179,8 @@ void Postprocess::do_bloom_and_color_grading(const Shader_database& shaders,
 
    _device->SetRenderState(D3DRS_SRGBWRITEENABLE, true);
    _device->SetSamplerState(0, D3DSAMP_SRGBTEXTURE, false);
+   set_linear_clamp_sampler(*_device, bloom_sampler_slots_start,
+                            format == D3DFMT_A8R8G8B8);
 
    if (_bloom_params.use_dirt) {
       textures.get(_bloom_params.dirt_texture_name).bind(dirt_sampler_slot_start);

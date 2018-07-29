@@ -22,6 +22,8 @@ namespace sp {
 
 enum class Post_aa_quality { none, fastest, fast, slower, slowest };
 
+enum class Color_quality { normal, high, ultra };
+
 inline std::string to_string(Post_aa_quality quality) noexcept
 {
    using namespace std::literals;
@@ -64,6 +66,38 @@ inline Post_aa_quality aa_quality_from_string(std::string_view string) noexcept
    }
 }
 
+inline std::string to_string(Color_quality detail) noexcept
+{
+   using namespace std::literals;
+
+   switch (detail) {
+   case Color_quality::normal:
+      return "normal"s;
+   case Color_quality::high:
+      return "high"s;
+   case Color_quality::ultra:
+      return "ultra"s;
+   }
+
+   std::terminate();
+}
+
+inline Color_quality color_quality_from_string(std::string_view string) noexcept
+{
+   if (string == to_string(Color_quality::normal)) {
+      return Color_quality::normal;
+   }
+   else if (string == to_string(Color_quality::high)) {
+      return Color_quality::high;
+   }
+   else if (string == to_string(Color_quality::ultra)) {
+      return Color_quality::ultra;
+   }
+   else {
+      return Color_quality::normal;
+   }
+}
+
 struct Effects_user_config {
    bool enabled = true;
    bool soft_shadows = true;
@@ -73,6 +107,7 @@ struct Effects_user_config {
    bool colored_film_grain = true;
 
    Post_aa_quality post_aa_quality = Post_aa_quality::fastest;
+   Color_quality color_quality = Color_quality::high;
 };
 
 struct User_config {
@@ -171,6 +206,17 @@ struct User_config {
       if (ImGui::CollapsingHeader("Effects", ImGuiTreeNodeFlags_DefaultOpen)) {
          ImGui::Checkbox("Enabled", &effects.enabled);
 
+         effects.color_quality = color_quality_from_string(ImGui::StringPicker(
+            "Color Quality", std::string{to_string(effects.color_quality)},
+            std::initializer_list<std::string>{to_string(Color_quality::normal),
+                                               to_string(Color_quality::high),
+                                               to_string(Color_quality::ultra)}));
+
+         if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip(
+               "Does not have any effect when HDR Rendering is enabled.");
+         }
+
          effects.post_aa_quality = aa_quality_from_string(ImGui::StringPicker(
             "Post AA Quality", std::string{to_string(effects.post_aa_quality)},
             std::initializer_list<std::string>{to_string(Post_aa_quality::none),
@@ -241,6 +287,9 @@ private:
          config["Rendering"s]["AdvertisePresence"s].as<bool>();
 
       effects.enabled = config["Effects"s]["Enabled"s].as<bool>();
+
+      effects.color_quality = color_quality_from_string(
+         config["Effects"s]["ColorQuality"].as<std::string>());
 
       effects.post_aa_quality = aa_quality_from_string(
          config["Effects"s]["PostAAQuality"s].as<std::string>());

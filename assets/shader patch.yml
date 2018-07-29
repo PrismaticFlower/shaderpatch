@@ -52,6 +52,13 @@ Effects:
    # at an acceptable framerate and in this case this can be used to switch them off.
    Enabled: yes
    
+   # Sets quality of the color depth used for render targets when Effects system is active and HDR Rendering isn't
+   # enabled. 
+   # Can be "normal", "high" or "ultra".
+   # There is likely a definite performance cost to having this set to "ultra" and a possible slight performance 
+   # cost to "high". If in dire need of better performance try out "normal" and see if it helps.
+   ColorQuality: high
+   
    # Set the quality of AA done on maps where the Effects system is active. 
    # Can be "fastest", "fast", "slower", or "slowest". 
    # Pessimistically set to "fastest" by default. If you feel confident in your GPU's capabilities you 

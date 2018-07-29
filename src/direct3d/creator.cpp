@@ -33,19 +33,11 @@ HRESULT Creator::CreateDevice(UINT adapter, D3DDEVTYPE device_type,
    device->GetDeviceCaps(&caps);
 
    if (result == S_OK) {
-      auto stencil_shadow_format = D3DFMT_A8R8G8B8;
-
-      if (_creator->CheckDeviceFormat(adapter, device_type, D3DFMT_X8R8G8B8,
-                                      D3DUSAGE_RENDERTARGET, D3DRTYPE_TEXTURE,
-                                      D3DFMT_A8) == S_OK) {
-         stencil_shadow_format = D3DFMT_A8;
-      }
-
       const auto resolution = glm::ivec2{presentation_parameters->BackBufferWidth,
                                          presentation_parameters->BackBufferHeight};
 
       *returned_device_interface =
-         new Device{*device, focus_window, resolution, caps, stencil_shadow_format};
+         new Device{*device, focus_window, resolution, caps.MaxAnisotropy};
    }
 
    return result;

@@ -82,16 +82,17 @@ bool is_blur_blend_state(const std::array<Texture_state_block, 8>& texture_state
 
 }
 
-Device::Device(IDirect3DDevice9& device, const HWND window, const glm::ivec2 resolution,
-               const D3DCAPS9& caps, D3DFORMAT stencil_shadow_format) noexcept
+Device::Device(IDirect3DDevice9& device, const HWND window,
+               const glm::ivec2 resolution, DWORD max_anisotropy) noexcept
    : _device{device},
      _window{window},
      _imgui_context{ImGui::CreateContext(), &ImGui::DestroyContext},
      _resolution{resolution},
-     _device_max_anisotropy{gsl::narrow_cast<int>(caps.MaxAnisotropy)},
-     _fs_vertex_decl{effects::create_fs_triangle_decl(*_device)},
-     _stencil_shadow_format{stencil_shadow_format}
+     _device_max_anisotropy{gsl::narrow_cast<int>(max_anisotropy)},
+     _fs_vertex_decl{effects::create_fs_triangle_decl(*_device)}
 {
+   init_optional_format_types();
+
    if (_config.rendering.advertise_presence) {
       _sp_advertise_handle = win32::Unique_handle{
          CreateFileW(L"data/shaderpatch/installed", GENERIC_READ | GENERIC_WRITE,
@@ -200,6 +201,12 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
          _rt_format = fp_texture_format;
 
          set_hdr_rendering(true);
+      }
+      else if (_config.effects.color_quality == Color_quality::high) {
+         _rt_format = _effects_high_stock_hdr_format;
+      }
+      else if (_config.effects.color_quality == Color_quality::ultra) {
+         _rt_format = _effects_ultra_stock_hdr_format;
       }
 
       _device->CreateTexture(_resolution.x, _resolution.y, 1,
@@ -989,6 +996,44 @@ void Device::init_sampler_max_anisotropy() noexcept
       _device->SetSamplerState(i, D3DSAMP_MAXANISOTROPY,
                                std::clamp(_config.rendering.anisotropic_filtering,
                                           1, _device_max_anisotropy));
+   }
+}
+
+void Device::init_optional_format_types() noexcept
+{
+   Com_ptr<IDirect3D9> d3d;
+   _device->GetDirect3D(d3d.clear_and_assign());
+
+   if (d3d->CheckDeviceFormat(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL,
+                              D3DFMT_X8R8G8B8, D3DUSAGE_RENDERTARGET,
+                              D3DRTYPE_TEXTURE, D3DFMT_A8) == S_OK) {
+      _stencil_shadow_format = D3DFMT_A8;
+   }
+   else {
+      _stencil_shadow_format = D3DFMT_A8R8G8B8;
+   }
+
+   if (d3d->CheckDeviceFormat(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL,
+                              D3DFMT_X8R8G8B8, D3DUSAGE_RENDERTARGET,
+                              D3DRTYPE_TEXTURE, D3DFMT_A2B10G10R10) == S_OK) {
+      _effects_high_stock_hdr_format = D3DFMT_A2B10G10R10;
+   }
+   else if (d3d->CheckDeviceFormat(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL,
+                                   D3DFMT_X8R8G8B8, D3DUSAGE_RENDERTARGET,
+                                   D3DRTYPE_TEXTURE, D3DFMT_A2R10G10B10) == S_OK) {
+      _effects_high_stock_hdr_format = D3DFMT_A2R10G10B10;
+   }
+   else {
+      _effects_high_stock_hdr_format = D3DFMT_A8R8G8B8;
+   }
+
+   if (d3d->CheckDeviceFormat(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL,
+                              D3DFMT_X8R8G8B8, D3DUSAGE_RENDERTARGET,
+                              D3DRTYPE_TEXTURE, D3DFMT_A16B16G16R16) == S_OK) {
+      _effects_ultra_stock_hdr_format = D3DFMT_A16B16G16R16;
+   }
+   else {
+      _effects_ultra_stock_hdr_format = D3DFMT_A16B16G16R16F;
    }
 }
 
