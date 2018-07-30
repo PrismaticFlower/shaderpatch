@@ -148,7 +148,7 @@ float4 diffuse_blendmap_ps(Ps_blendmap_input input, uniform sampler2D diffuse_ma
 
    float3 diffuse_color = 0.0;
 
-   for (i = 0; i < 3; ++i) {
+   [unroll] for (i = 0; i < 3; ++i) {
       diffuse_color += diffuse_colors[i] * blend_weights[i];
    }
 
@@ -186,7 +186,7 @@ float4 diffuse_blendmap_unlit_ps(Ps_blendmap_input input, uniform sampler2D diff
 
    float3 diffuse_color = 0.0;
 
-   for (i = 0; i < 3; ++i) {
+   [unroll] for (i = 0; i < 3; ++i) {
       diffuse_color += diffuse_colors[i] * blend_weights[i];
    }
 

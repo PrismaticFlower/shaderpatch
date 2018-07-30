@@ -20,7 +20,8 @@ struct Shader_variation;
 
 class Game_compiler {
 public:
-   Game_compiler(nlohmann::json definition, const std::filesystem::path& definition_path,
+   Game_compiler(DWORD compiler_flags, nlohmann::json definition,
+                 const std::filesystem::path& definition_path,
                  const std::filesystem::path& source_file_dir,
                  const std::filesystem::path& output_dir);
 
@@ -92,6 +93,7 @@ private:
                              std::array<bool, 4> srgb_state) -> Pixel_shader_ref;
 
    std::filesystem::path _source_path;
+   DWORD _compiler_flags;
 
    std::string _render_type;
    std::string _source;

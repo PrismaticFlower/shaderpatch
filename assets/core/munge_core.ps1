@@ -1,12 +1,13 @@
-﻿param([string]$binpath=";" + (Resolve-Path "../bin/").Path)
+﻿param([string]$BinPath=(Resolve-Path "../bin/").Path,
+      [string]$CompilerArgs)
 
 $old_path = $env:Path
 
-$env:Path += $binpath
+$env:Path += ";" + $BinPath
 
-shader_compiler --outputdir "munged\" --definitioninputdir "definitions\" --hlslinputdir "src\"
+$compile_expression =  "shader_compiler --outputdir munged\ --definitioninputdir definitions\ --hlslinputdir src\" + " $CompilerArgs"
+Invoke-Expression $compile_expression | Write-Host
 sp_texture_munge --outputdir "munged\" --sourcedir "textures\"
-
 lvl_pack -i "munged\" -i "premunged\" --sourcedir ".\" --outputdir ".\"
 
 $env:Path = $old_path

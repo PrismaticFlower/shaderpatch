@@ -24,8 +24,10 @@ namespace fs = std::filesystem;
 
 namespace sp {
 
-Game_compiler::Game_compiler(nlohmann::json definition, const fs::path& definition_path,
+Game_compiler::Game_compiler(DWORD compiler_flags, nlohmann::json definition,
+                             const fs::path& definition_path,
                              const fs::path& source_file_dir, const fs::path& output_dir)
+   : _compiler_flags{compiler_flags}
 {
    Expects(fs::is_directory(source_file_dir) && fs::is_directory(output_dir));
 
@@ -206,8 +208,8 @@ auto Game_compiler::compile_vertex_shader(const std::string& entry_point,
       D3DCompile(_source.data(), _source.length(), _source_path.string().data(),
                  combine_defines(pass_defines, variation.defines).get().data(),
                  D3D_COMPILE_STANDARD_FILE_INCLUDE, entry_point.data(),
-                 target.data(), compiler_flags, NULL, shader.clear_and_assign(),
-                 error_message.clear_and_assign());
+                 target.data(), _compiler_flags, NULL,
+                 shader.clear_and_assign(), error_message.clear_and_assign());
 
    if (result != S_OK) {
       throw std::runtime_error{static_cast<char*>(error_message->GetBufferPointer())};
@@ -237,7 +239,7 @@ auto Game_compiler::compile_pixel_shader(const std::string& entry_point,
    auto result =
       D3DCompile(_source.data(), _source.length(), _source_path.string().data(),
                  pass_defines.get().data(), D3D_COMPILE_STANDARD_FILE_INCLUDE,
-                 entry_point.data(), target.data(), compiler_flags, NULL,
+                 entry_point.data(), target.data(), _compiler_flags, NULL,
                  shader.clear_and_assign(), error_message.clear_and_assign());
 
    if (result != S_OK) {

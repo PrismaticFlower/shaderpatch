@@ -26,6 +26,31 @@ int main(int arg_count, char* args[])
    auto def_file_dir = "./"s;
    auto source_file_dir = "./"s;
    auto output_dir = "./"s;
+   DWORD optimization_flag = 0;
+   bool debug_info = false;
+   bool fatal_warnings = false;
+
+   const auto parse_optimization_level = [&](int i) {
+      switch (i) {
+      case 0:
+         optimization_flag = D3DCOMPILE_OPTIMIZATION_LEVEL0;
+         break;
+      case 1:
+         optimization_flag = D3DCOMPILE_OPTIMIZATION_LEVEL1;
+         break;
+      case 2:
+         optimization_flag = D3DCOMPILE_OPTIMIZATION_LEVEL2;
+         break;
+      case 3:
+         optimization_flag = D3DCOMPILE_OPTIMIZATION_LEVEL3;
+         break;
+      default:
+         return ParserResult::runtimeError(
+            "optimization level must be 0, 1, 2 or 3.");
+      }
+
+      return ParserResult::ok(ParseResultType::Matched);
+   };
 
    // clang-format off
 
@@ -38,7 +63,16 @@ int main(int arg_count, char* args[])
       ("Input directory for shader definition files."s)
       | Opt{source_file_dir, "hlsl source directory"s}
       ["--hlslinputdir"s]
-      ("Input directory for HLSL source files."s);
+      ("Input directory for HLSL source files."s) 
+      | Opt{parse_optimization_level, "optimization level"s}
+      ["-o"]["--optimizationlevel"]
+      ("Optimization level passed to D3DCompile."s)
+      | Opt{debug_info, "include debug info"s}
+      ["-d"]["--debuginfo"]
+      ("Include debug info in compiled shaders."s)
+      | Opt{fatal_warnings, "fatal warnings"s}
+      ["-f"]["--fatalwarnings"]
+      ("Warnings will be treated as errors."s);
 
    // clang-format on
 
@@ -89,15 +123,22 @@ int main(int arg_count, char* args[])
       definition_files.emplace_back(entry.path());
    }
 
+   auto compiler_flags = optimization_flag;
+
+   if (debug_info) compiler_flags |= D3DCOMPILE_DEBUG;
+   if (fatal_warnings) compiler_flags |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
+
    auto predicate = [&](const fs::path& path) {
       try {
          auto definition = read_definition_file(path);
 
          if (definition.value("patch_shader"s, false)) {
-            sp::Patch_compiler{definition, path, source_file_dir_path, output_dir_path};
+            sp::Patch_compiler{compiler_flags, definition, path,
+                               source_file_dir_path, output_dir_path};
          }
          else {
-            sp::Game_compiler{definition, path, source_file_dir_path, output_dir_path};
+            sp::Game_compiler{compiler_flags, definition, path,
+                              source_file_dir_path, output_dir_path};
          }
       }
       catch (std::exception& e) {

@@ -142,20 +142,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CustomBuild Include="munge_core.ps1">
+    <CustomBuild Include="core.req">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%SYSTEMROOT%/System32/WindowsPowerShell/v1.0/powershell -File munge_core.ps1 -ExecutionPolicy Bypass -binpath ;$(SolutionDir)\bin\$(Configuration)\</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compiling shaders...</Message>
-      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</LinkObjects>
-      <TreatOutputAsContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</TreatOutputAsContent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%SYSTEMROOT%/System32/WindowsPowerShell/v1.0/powershell -File munge_core.ps1 -ExecutionPolicy Bypass -binpath ;$(SolutionDir)\bin\$(Configuration)\</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compiling shaders...</Message>
-      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkObjects>
-      <TreatOutputAsContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</TreatOutputAsContent>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">All the shaders, in the world.</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">All the shaders, in the world.</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Core Files</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Core Files</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">powershell -Command  ./munge_core.ps1  -BinPath ../../bin/$(Configuration)/ -CompilerArgs:'-o:0 -d:true'</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">powershell -Command  ./munge_core.ps1  -BinPath ../../bin/$(Configuration)/ -CompilerArgs:'-o:3 -f:true'</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Building core.lvl...</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Building core.lvl...</Message>
     </CustomBuild>
-    <None Include="core.req" />
     <None Include="definitions\decal.json" />
     <None Include="definitions\filtercopy.json" />
     <None Include="definitions\flare.json" />

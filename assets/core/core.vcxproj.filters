@@ -215,12 +215,13 @@
     <None Include="src\bloom.fx">
       <Filter>src</Filter>
     </None>
-    <None Include="src\postprocess_common.hlsl" >
+    <None Include="src\postprocess_common.hlsl">
       <Filter>src</Filter>
     </None>
     <None Include="src\film_grain.hlsl">
       <Filter>src</Filter>
     </None>
+    <None Include="src\shadows_blur.fx" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">
@@ -232,13 +233,5 @@
     <Filter Include="definitions\patch">
       <UniqueIdentifier>{d3186a52-bf6a-47d1-90d2-ad874b6b82dd}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <CustomBuild Include="munge_core.ps1" />
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="src\shadows_blur.fx">
-      <Filter>src</Filter>
-    </FxCompile>
   </ItemGroup>
 </Project>

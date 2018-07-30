@@ -16,7 +16,8 @@ namespace sp {
 
 class Patch_compiler {
 public:
-   Patch_compiler(nlohmann::json definition, const std::filesystem::path& definition_path,
+   Patch_compiler(DWORD compiler_flags, nlohmann::json definition,
+                  const std::filesystem::path& definition_path,
                   const std::filesystem::path& source_file_dir,
                   const std::filesystem::path& output_dir);
 
@@ -54,6 +55,8 @@ private:
    auto compile_pixel_shader(const std::string& entry_point,
                              const std::vector<D3D_SHADER_MACRO>& defines)
       -> std::size_t;
+
+   DWORD _compiler_flags;
 
    std::string _render_type;
    std::filesystem::path _source_path;

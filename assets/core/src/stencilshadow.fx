@@ -75,7 +75,7 @@ float4 extend_directional_hardskin_gen_normal_vs(Vs_input_generate_normal input,
 {
    float4 obj_positions[3];
 
-   for (uint i = 0; i < 3; ++i) {
+   [unroll] for (uint i = 0u; i < 3u; ++i) {
       obj_positions[i] = transform::hard_skinned::position(input.positions[i],
                                                            input.blend_indices[0][i]);
    }
@@ -118,7 +118,7 @@ float4 extend_directional_softskin_gen_normal_vs(Vs_input_generate_normal input,
 {
    float4 obj_positions[3];
 
-   for (uint i = 0; i < 3; ++i) {
+   [unroll] for (uint i = 0u; i < 3u; ++i) {
       obj_positions[i] = transform::soft_skinned::position(input.positions[i],
                                                            input.blend_indices[i],
                                                            input.weights[i]);
@@ -197,7 +197,7 @@ float4 extend_point_hardskin_gen_normal_vs(Vs_input_generate_normal input,
 {
    float4 obj_positions[3];
 
-   for (uint i = 0; i < 3; ++i) {
+   [unroll] for (uint i = 0u; i < 3u; ++i) {
       obj_positions[i] = transform::hard_skinned::position(input.positions[i],
                                                            input.blend_indices[0][i]);
    }
@@ -242,7 +242,7 @@ float4 extend_point_softskin_gen_normal_vs(Vs_input_generate_normal input,
 {
    float4 obj_positions[3];
 
-   for (uint i = 0; i < 3; ++i) {
+   [unroll] for (uint i = 0u; i < 3u; ++i) {
       obj_positions[i] = transform::soft_skinned::position(input.positions[i],
                                                            input.blend_indices[i],
                                                            input.weights[i]);

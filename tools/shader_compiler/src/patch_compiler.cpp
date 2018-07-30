@@ -30,7 +30,7 @@ namespace fs = std::filesystem;
 
 namespace {
 
-auto compile_shader_impl(const std::string& entry_point,
+auto compile_shader_impl(DWORD compiler_flags, const std::string& entry_point,
                          std::vector<D3D_SHADER_MACRO> defines,
                          const fs::path& source_path, std::mutex& shaders_mutex,
                          std::vector<std::pair<std::size_t, std::vector<DWORD>>>& shaders,
@@ -81,9 +81,11 @@ auto compile_shader_impl(const std::string& entry_point,
 }
 }
 
-Patch_compiler::Patch_compiler(nlohmann::json definition, const fs::path& definition_path,
+Patch_compiler::Patch_compiler(DWORD compiler_flags, nlohmann::json definition,
+                               const fs::path& definition_path,
                                const fs::path& source_file_dir,
                                const fs::path& output_dir)
+   : _compiler_flags{compiler_flags}
 {
    Expects(fs::is_directory(source_file_dir) && fs::is_directory(output_dir));
 
@@ -288,15 +290,17 @@ auto Patch_compiler::compile_vertex_shader(const std::string& entry_point,
                                            const std::vector<D3D_SHADER_MACRO>& defines)
    -> std::size_t
 {
-   return compile_shader_impl(entry_point, std::move(defines), _source_path,
-                              _vs_mutex, _vs_shaders, _vs_cache, "vs_3_0"s);
+   return compile_shader_impl(_compiler_flags, entry_point, std::move(defines),
+                              _source_path, _vs_mutex, _vs_shaders, _vs_cache,
+                              "vs_3_0"s);
 }
 
 auto Patch_compiler::compile_pixel_shader(const std::string& entry_point,
                                           const std::vector<D3D_SHADER_MACRO>& defines)
    -> std::size_t
 {
-   return compile_shader_impl(entry_point, std::move(defines), _source_path,
-                              _ps_mutex, _ps_shaders, _ps_cache, "ps_3_0"s);
+   return compile_shader_impl(_compiler_flags, entry_point, std::move(defines),
+                              _source_path, _ps_mutex, _ps_shaders, _ps_cache,
+                              "ps_3_0"s);
 }
 }

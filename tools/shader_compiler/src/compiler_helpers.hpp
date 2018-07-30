@@ -34,8 +34,6 @@ inline bool operator==(const D3D_SHADER_MACRO& l, const D3D_SHADER_MACRO& r)
 
 namespace sp {
 
-const auto compiler_flags = D3DCOMPILE_OPTIMIZATION_LEVEL3;
-
 struct Shader_cache_index {
    std::string entry_point;
    std::vector<D3D_SHADER_MACRO> definitions;
