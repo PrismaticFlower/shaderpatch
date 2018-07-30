@@ -140,7 +140,7 @@ float4 main_opaque_ps(Ps_input input, const Normal_state state) : COLOR
                                    normalize(input.world_normal), V);
 
    const float shadow = 
-      state.shadowed ? tex2Dproj(shadow_map, input.shadow_texcoords).a : true;
+      state.shadowed ? tex2Dproj(shadow_map, input.shadow_texcoords).a : 1.0;
    const float ao = tex2D(ao_map, input.texcoords).r * ao_strength;
 
    float3 color =
