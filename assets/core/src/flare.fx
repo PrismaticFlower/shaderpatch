@@ -39,7 +39,7 @@ float4 flare_textured_ps(Ps_textured_input input) : COLOR
 {
    float4 color;
    color.rgb = input.color.rgb;
-   color.a = input.color.a * tex2D(diffuse_map, input.texcoord).a;
+   color.a = input.color.a * saturate(tex2D(diffuse_map, input.texcoord).a);
 
    return color;
 }
