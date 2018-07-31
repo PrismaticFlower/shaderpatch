@@ -104,7 +104,7 @@ struct Ps_input
 
    float fog_eye_distance : DEPTH;
 
-   //float vface : VFACE;
+   float vface : VFACE;
 };
 
 float4 main_ps(Ps_input input, const Normal_state state) : COLOR
@@ -129,7 +129,7 @@ float4 main_ps(Ps_input input, const Normal_state state) : COLOR
    // Calculate lighting.
    const float3 V = normalize(world_view_position - input.world_position);
    const float3 N = perturb_normal(normal_map, input.texcoords,
-                                   normalize(input.world_normal), V);
+                                   normalize(input.world_normal * -input.vface), V);
 
    const float shadow = 
       state.shadowed ? tex2Dproj(shadow_map, input.shadow_texcoords).a : 1.0;
