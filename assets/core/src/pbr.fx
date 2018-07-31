@@ -31,7 +31,7 @@ const static float3 base_color = material_constants[0].xyz;
 const static float base_metallicness = material_constants[0].w;
 const static float base_roughness = material_constants[1].x;
 const static float ao_strength = material_constants[1].y;
-const static float emissive_strength = material_constants[1].z;
+const static float emissive_power = material_constants[1].z;
 
 // Shader Feature Controls
 const static bool use_transparency = PBR_USE_TRANSPARENCY;
@@ -140,7 +140,7 @@ float4 main_ps(Ps_input input, const Normal_state state) : COLOR
                             ao, shadow);
 
    if (use_emissive_map) {
-      color += tex2D(emissive_map, input.texcoords).rgb * emissive_strength;
+      color += tex2D(emissive_map, input.texcoords).rgb * exp2(emissive_power);
    }
 
    color = fog::apply(color, input.fog_eye_distance);

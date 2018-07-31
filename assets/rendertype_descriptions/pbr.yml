@@ -25,6 +25,11 @@ Property Mappings:
       Type: scaler
       Range: [0.0, 2048.0]
       Constant: 1.z
+      
+   EmissivePower:
+      Type: scaler
+      Range: [0.0, 2048.0]
+      Constant: 1.z
 
 Texture Mappings:
    AlbedoMap: 
