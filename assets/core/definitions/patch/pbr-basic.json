@@ -7,6 +7,12 @@
   "lighting": true,
   "vertex_color": true,
 
+  "defines": [
+    [ "PBR_USE_TRANSPARENCY", "false" ],
+    [ "PBR_USE_METALLIC_ROUGHNESS_MAP", "false" ],
+    [ "PBR_USE_EMISSIVE_MAP", "false" ]
+  ],
+
   "undefines": [ "USE_VERTEX_COLOR" ],
 
   "states": [
@@ -27,12 +33,20 @@
     {
       "name": "near transparent",
 
+      "defines": [
+        [ "PBR_USE_TRANSPARENCY", "true" ]
+      ],
+
       "vertex_shader": "main_vs",
       "pixel_shader": "near_transparent_ps"
     },
 
     {
       "name": "near transparent hardedged",
+
+      "defines": [
+        [ "PBR_USE_TRANSPARENCY", "true" ]
+      ],
 
       "vertex_shader": "main_vs",
       "pixel_shader": "near_transparent_hardedged_ps"
@@ -55,12 +69,20 @@
     {
       "name": "near transparent projectedtex",
 
+      "defines": [
+        [ "PBR_USE_TRANSPARENCY", "true" ]
+      ],
+
       "vertex_shader": "main_vs",
       "pixel_shader": "near_transparent_ps"
     },
 
     {
       "name": "near transparent hardedged projectedtex",
+
+      "defines": [
+        [ "PBR_USE_TRANSPARENCY", "true" ]
+      ],
 
       "vertex_shader": "main_vs",
       "pixel_shader": "near_transparent_hardedged_ps"
@@ -98,6 +120,10 @@
     {
       "name": "near transparent shadow",
 
+      "defines": [
+        [ "PBR_USE_TRANSPARENCY", "true" ]
+      ],
+
       "vertex_shader": "main_vs",
       "pixel_shader": "near_transparent_shadow_ps"
 
@@ -106,6 +132,10 @@
     {
       "name": "near transparent hardedged shadow",
 
+      "defines": [
+        [ "PBR_USE_TRANSPARENCY", "true" ]
+      ],
+
       "vertex_shader": "main_vs",
       "pixel_shader": "near_transparent_hardedged_shadow_ps"
     },
@@ -113,12 +143,20 @@
     {
       "name": "near transparent shadow projectedtex",
 
+      "defines": [
+        [ "PBR_USE_TRANSPARENCY", "true" ]
+      ],
+
       "vertex_shader": "main_vs",
       "pixel_shader": "near_transparent_shadow_ps"
     },
 
     {
       "name": "near transparent hardedged shadow projectedtex",
+
+      "defines": [
+        [ "PBR_USE_TRANSPARENCY", "true" ]
+      ],
 
       "vertex_shader": "main_vs",
       "pixel_shader": "near_transparent_shadow_ps"

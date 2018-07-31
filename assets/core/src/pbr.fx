@@ -34,23 +34,9 @@ const static float ao_strength = material_constants[1].y;
 const static float emissive_strength = material_constants[1].z;
 
 // Shader Feature Controls
-#ifdef PBR_USE_METALLIC_ROUGHNESS_MAP
-const static bool use_metallic_roughness_map = true;
-#else
-const static bool use_metallic_roughness_map = false;
-#endif
-
-#ifdef PBR_USE_LIGHT_MAP
-const static bool use_light_map = true;
-#else
-const static bool use_light_map = false;
-#endif
-
-#ifdef PBR_USE_EMISSIVE_MAP
-const static bool use_emissive_map = true;
-#else
-const static bool use_emissive_map = false;
-#endif
+const static bool use_transparency = PBR_USE_TRANSPARENCY;
+const static bool use_metallic_roughness_map = PBR_USE_METALLIC_ROUGHNESS_MAP;
+const static bool use_emissive_map = PBR_USE_EMISSIVE_MAP;
 
 struct Vs_input
 {
@@ -90,13 +76,19 @@ Vs_output main_vs(Vs_input input)
    output.world_normal = world_normal;
    output.position = position_project(world_position);
    output.fog_eye_distance = fog::get_eye_distance(world_position.xyz);
-   output.fade = calculate_near_scene_fade(world_position).fade * 0.25 + 0.5;
 
    output.texcoords = decompress_transform_texcoords(input.texcoords,
                                                      texture_transforms[0],
                                                      texture_transforms[1]);
 
    output.shadow_texcoords = transform_shadowmap_coords(world_position);
+
+   if (use_transparency) {
+      output.fade = saturate(calculate_near_scene_fade(world_position).fade);
+   }
+   else {
+      output.fade = calculate_near_scene_fade(world_position).fade * 0.25 + 0.5;
+   }
 
    return output;
 }
@@ -115,7 +107,7 @@ struct Ps_input
    //float vface : VFACE;
 };
 
-float4 main_opaque_ps(Ps_input input, const Normal_state state) : COLOR
+float4 main_ps(Ps_input input, const Normal_state state) : COLOR
 {
    const float4 albedo_map_color = tex2D(albedo_map, input.texcoords);
    const float3 albedo = albedo_map_color.rgb * base_color;
@@ -153,22 +145,21 @@ float4 main_opaque_ps(Ps_input input, const Normal_state state) : COLOR
 
    color = fog::apply(color, input.fog_eye_distance);
 
-   return float4(color, saturate(input.fade * 4.0));
+   float alpha;
+
+
+   if (use_transparency) {
+      alpha = lerp(1.0, albedo_map_color.a, blend_constant.b);
+      alpha *= input.fade;
+
+      color /= alpha;
+   }
+   else {
+      alpha = saturate(input.fade * 4.0);
+   }
+
+   return float4(color, alpha);
 }
 
-float4 main_transparent_ps(Ps_input input, const Normal_state state) : COLOR
-{
-   const float4 albedo_map_color = tex2D(albedo_map, input.texcoords);
-
-   if (state.hardedged && albedo_map_color.a < 0.5) discard;
-
-   float4 color = main_opaque_ps(input, state);
-
-   // Divide color by alpha so blending works.
-   color.rgb /= color.a;
-
-   return color;
-}
-
-DEFINE_NORMAL_QPAQUE_PS_ENTRYPOINTS(Ps_input, main_opaque_ps)
-DEFINE_NORMAL_TRANSPARENT_PS_ENTRYPOINTS(Ps_input, main_transparent_ps)
+DEFINE_NORMAL_QPAQUE_PS_ENTRYPOINTS(Ps_input, main_ps)
+DEFINE_NORMAL_TRANSPARENT_PS_ENTRYPOINTS(Ps_input, main_ps)
