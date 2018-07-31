@@ -42,7 +42,7 @@ auto Material::target_rendertype() const noexcept -> std::string_view
 
 void Material::bind() const noexcept
 {
-   for (auto i = 0; i < material_textures_offset; ++i) {
+   for (auto i = 0u; i < _textures.size(); ++i) {
       _textures[i].bind(material_textures_offset + i);
    }
 
