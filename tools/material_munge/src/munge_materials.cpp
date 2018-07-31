@@ -80,7 +80,9 @@ auto munge_material(const fs::path& material_path, const fs::path& output_file_p
       required_files.emplace_back("sptex"s, std::vector<std::string>{}).second;
 
    for (const auto& texture : material.textures) {
-      if (!texture.empty()) required_sp_textures.emplace_back(texture);
+      if (texture.empty() || texture.front() == '$') continue;
+
+      required_sp_textures.emplace_back(texture);
    }
 
    write_patch_material(output_file_path, material);

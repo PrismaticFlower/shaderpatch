@@ -7,14 +7,16 @@
 #include <string>
 #include <unordered_map>
 
+#include <gsl/gsl>
+
 namespace sp {
 
 class Texture_database {
 public:
    Texture get(const std::string& name) const noexcept
    {
-      if (_textures.count(name)) {
-         auto ptr = _textures.at(name).lock();
+      if (auto it = lookup(name); it != _textures.cend()) {
+         auto ptr = it->second.lock();
 
          if (ptr) return *ptr;
       }
@@ -48,6 +50,28 @@ public:
    }
 
 private:
+   using Textures_it =
+      std::unordered_map<std::string, std::weak_ptr<Texture>>::const_iterator;
+
+   Textures_it lookup(const std::string& name) const noexcept
+   {
+      if (name.front() == '$') return builtin_lookup(name);
+
+      return _textures.find(name);
+   }
+
+   Textures_it builtin_lookup(const std::string& name) const noexcept
+   {
+      Expects(!name.empty());
+
+      using namespace std::literals;
+
+      auto builtin_name = "_SP_BUILTIN_"s;
+      builtin_name.append(name.cbegin() + 1, name.cend());
+
+      return _textures.find(builtin_name);
+   }
+
    std::unordered_map<std::string, std::weak_ptr<Texture>> _textures;
    Texture _default_texture;
 };

@@ -55,6 +55,8 @@ ucft
    {
       "sptex"
       "_SP_BUILTIN_water"
+      "_SP_BUILTIN_null_normalmap"
+      "_SP_BUILTIN_null_ao"
       "_SP_BUILTIN_blue_noise_rgb_0"
       "_SP_BUILTIN_blue_noise_rgb_1"
       "_SP_BUILTIN_blue_noise_rgb_2"
