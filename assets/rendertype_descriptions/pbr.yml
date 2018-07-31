@@ -28,14 +28,14 @@ Property Mappings:
 
 Texture Mappings:
    AlbedoMap: 
-      Slot: 04
+      Slot: 4
    NormalMap: 
-      Slot: 05
+      Slot: 5
    MetallicRoughnessMap: 
-      Slot: 06
+      Slot: 6
    AOMap:
-      Slot: 07
+      Slot: 7
    LightMap:
-      Slot: 08
+      Slot: 8
    EmissiveMap:
-      Slot: 09
+      Slot: 9

@@ -4,6 +4,6 @@ Property Mappings:
 
 Texture Mappings:
    DiffuseMap: 
-      Slot: 04
+      Slot: 4
    LightMap: 
-      Slot: 05
+      Slot: 5
