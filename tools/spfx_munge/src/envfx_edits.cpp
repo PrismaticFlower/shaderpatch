@@ -37,13 +37,15 @@ auto save_fx_cfg(const cfg::Node& fx_node, const fs::path& path)
 
 void apply_hdr_edits(cfg::Node& fx_node)
 {
-   for (auto it = std::cbegin(fx_node); it != std::cend(fx_node); ++it) {
+   for (auto it = fx_node.begin(); it != fx_node.end(); ++it) {
 
       if (it->first != "Effect"_svci) continue;
       if (it->second.values_count() == 0) continue;
       if (it->second.get_value<std::string>() != "HDR"_svci) continue;
 
       it = fx_node.erase(it);
+
+      if (it == fx_node.end()) break;
    }
 
    cfg::Node hdr_node;
