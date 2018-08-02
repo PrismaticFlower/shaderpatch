@@ -31,6 +31,7 @@ struct Hardcoded_material_flags {
    bool hard_edged = false;
    bool double_sided = false;
    bool statically_lit = false;
+   bool unlit = false;
 };
 
 auto munge_material(const fs::path& material_path, const fs::path& output_file_path,
@@ -69,10 +70,11 @@ auto munge_material(const fs::path& material_path, const fs::path& output_file_p
 
    Hardcoded_material_flags flags;
 
-   flags.transparent = flags_node["Transparent"s].as<bool>();
-   flags.hard_edged = flags_node["HardEdged"s].as<bool>();
-   flags.double_sided = flags_node["DoubleSided"s].as<bool>();
-   flags.statically_lit = flags_node["StaticallyLit"s].as<bool>();
+   flags.transparent = flags_node["Transparent"s].as<bool>(false);
+   flags.hard_edged = flags_node["HardEdged"s].as<bool>(false);
+   flags.double_sided = flags_node["DoubleSided"s].as<bool>(false);
+   flags.statically_lit = flags_node["StaticallyLit"s].as<bool>(false);
+   flags.unlit = flags_node["Unlit"s].as<bool>(false);
 
    std::vector<std::pair<std::string, std::vector<std::string>>> required_files;
 
@@ -154,6 +156,9 @@ void fixup_munged_model(const fs::path& model_path, Ci_String_view material_name
 
          if (flags.statically_lit) mtrl_flags |= Material_flags::vertex_lit;
          else mtrl_flags &= ~Material_flags::vertex_lit;
+
+         if (flags.unlit) mtrl_flags &= ~Material_flags::normal;
+         else mtrl_flags |= Material_flags::normal;
 
          // clang-format on
       }
