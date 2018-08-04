@@ -15,6 +15,9 @@ There are more than this but below is a short list of some of the key features S
 * [Generic Custom Materials System](https://github.com/SleepKiller/swbfii-shaderpatch/wiki/Shader-Patch-Materials)
 * [Modder Controllable Effects System](https://github.com/SleepKiller/swbfii-shaderpatch/wiki/Shader-Patch-Effects-System)
 
+## Downloading
+To grab yourself the latest release simply follow this [link](https://github.com/SleepKiller/swbfii-shaderpatch/releases/latest) and download the **shaderpatch.zip** file. If it's the source code your after there should be button labeled `Clone or Download` somewhere at the top of this page you can use to grab a copy of the lastest source code.
+
 ## Building
 Before anything else you'll need to install [git](https://git-scm.com/) (and made avalible on `PATH`) and
 of course [Visual Studio 2017 Community](https://www.visualstudio.com/downloads/) (you'll need the Desktop C++ 
