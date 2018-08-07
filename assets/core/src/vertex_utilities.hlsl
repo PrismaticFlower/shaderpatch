@@ -87,20 +87,29 @@ void decompress_tangents(inout float3 tangent, inout float3 bitangent)
    bitangent = bitangent * normaltex_decompress.xxx + normaltex_decompress.yyy;
 }
 
+float4 get_material_color()
+{
+   return float4(pow(material_diffuse_color.rgb, color_gamma), material_diffuse_color.a);
+}
+
 float4 get_material_color(float4 color)
 {
 #ifdef USE_VERTEX_COLOR
-   return pow(color * color_state.yyyw + color_state.xxxz, color_gamma) *
-      pow(material_diffuse_color, color_gamma);
+   color.rgb = pow(color.rgb * color_state.y + color_state.x, color_gamma) *
+               pow(material_diffuse_color.rgb, color_gamma);
+   color.a = (color.a * color_state.w + color_state.z) * material_diffuse_color.a;
 #else
-   return pow(material_diffuse_color, color_gamma);
+   return get_material_color();
 #endif
+
+   return color;
 }
+
 
 float3 get_static_diffuse_color(float4 color)
 {
 #ifdef USE_VERTEX_COLOR
-   return pow(color.rgb * color_state.xxx + color_state.zzz, color_gamma);
+   return pow(color.rgb * color_state.x + color_state.z, color_gamma);
 #else
    return 0.0;
 #endif
