@@ -143,20 +143,17 @@ auto remap_roughness_channels(DX::ScratchImage image) -> DirectX::ScratchImage
 {
    DX::ScratchImage swapped_image;
 
-   const auto result =
-      TransformImage(image.GetImages(), image.GetImageCount(), image.GetMetadata(),
-                     [](DX::XMVECTOR* out, const DX::XMVECTOR* in,
-                        std::size_t width, std::size_t) {
-                        for (size_t i = 0; i < width; ++i) {
-                           out[i] =
-                              DX::XMVectorSwizzle<DX::XM_SWIZZLE_Y, DX::XM_SWIZZLE_X,
-                                                  DX::XM_SWIZZLE_Z, DX::XM_SWIZZLE_W>(
-                                 in[i]);
+   const auto result = TransformImage(
+      image.GetImages(), image.GetImageCount(), image.GetMetadata(),
+      [](DX::XMVECTOR* out, const DX::XMVECTOR* in, std::size_t width, std::size_t) {
+         for (size_t i = 0; i < width; ++i) {
+            auto remapped = DX::XMVectorSetByIndex(in[i], 0.0f, DX::XM_SWIZZLE_W);
 
-                           DX::XMVectorSetByIndex(out[i], 0.0f, DX::XM_SWIZZLE_X);
-                        }
-                     },
-                     swapped_image);
+            out[i] = DX::XMVectorSwizzle<DX::XM_SWIZZLE_W, DX::XM_SWIZZLE_X,
+                                         DX::XM_SWIZZLE_W, DX::XM_SWIZZLE_W>(remapped);
+         }
+      },
+      swapped_image);
 
    if (FAILED(result)) {
       throw std::runtime_error{"Failed to remap colour channels for input roughness map!"s};
