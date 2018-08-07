@@ -25,7 +25,7 @@ struct Vs_output
    float3 normal_texcoords : TEXCOORD1;
    float3 world_normal : TEXCOORD2;
    float3 view_normal : TEXCOORD3;
-   float fade : TEXCOORD4;
+   float alpha : TEXCOORD4;
 };
 
 float3 animate_normal(float3 normal)
@@ -46,6 +46,23 @@ float3 animate_normal(float3 normal)
    return mul(y_trans, normal);
 }
 
+float angle_factor(float3 view_normal, float3 world_normal)
+{
+   float3 reflected_view_normal = reflect(view_normal, world_normal);
+
+   float view_angle = dot(reflected_view_normal, reflected_view_normal);
+   view_angle = max(view_angle, shield_constants.w);
+
+   float factor = rcp(view_angle);
+   view_angle = dot(view_normal, reflected_view_normal);
+   factor *= view_angle;
+   factor = factor * -0.5 + 0.5;
+   factor *= max(shield_constants.z, 1.0);
+   factor = -factor * material_diffuse_color.a + material_diffuse_color.a;
+
+   return factor;
+}
+
 Vs_output shield_vs(Vs_input input)
 {
    Vs_output output;
@@ -54,38 +71,23 @@ Vs_output shield_vs(Vs_input input)
    float3 world_normal = normals_to_world(obj_normal);
    float4 world_position = transform::position(input.position);
 
+   float3 view_normal = normalize(world_position.xyz - world_view_position);
+
    output.world_normal = world_normal;
    output.position = position_project(world_position);
-
-   float3 view_normal = normalize(world_position.xyz - world_view_position);
    output.view_normal = view_normal;
-
-   float3 reflected_view_normal = reflect(view_normal, world_normal);
-
-   float view_angle = dot(reflected_view_normal, reflected_view_normal);
-   view_angle = max(view_angle, shield_constants.w);
-   
-   float angle_alpha_factor = rcp(view_angle);
-   view_angle = dot(view_normal, reflected_view_normal);
-   angle_alpha_factor *= view_angle;
-   angle_alpha_factor = angle_alpha_factor * -0.5 + 0.5;
-   angle_alpha_factor *= max(shield_constants.z, 1.0);
-   angle_alpha_factor = -angle_alpha_factor * material_diffuse_color.w + material_diffuse_color.w;
-
 
    output.texcoords =
       output.texcoords = decompress_texcoords(input.texcoords) + shield_constants.xy;
    output.normal_texcoords = animate_normal(world_normal);
-
+   
    Near_scene near_scene = calculate_near_scene_fade(world_position);
-   output.fog = calculate_fog(near_scene, world_position);
 
    near_scene.fade = near_scene.fade * near_scene_fade_scale.x + near_scene_fade_scale.y;
-   near_scene = clamp_near_scene_fade(near_scene);
-   near_scene.fade = near_scene.fade * angle_alpha_factor;
 
-   output.fade = saturate(near_scene.fade * angle_alpha_factor);
-   
+   output.alpha = angle_factor(view_normal, world_normal) * saturate(near_scene.fade);
+   output.fog = calculate_fog(near_scene, world_position);
+
    return output;
 }
 
@@ -99,7 +101,7 @@ struct Ps_input
    float3 normal_texcoords : TEXCOORD1;
    float3 world_normal : TEXCOORD2;
    float3 view_normal : TEXCOORD3;
-   float fade : TEXCOORD4;
+   float alpha : TEXCOORD4;
 };
 
 float2 map_xyz_to_uv(float3 pos)
@@ -132,11 +134,12 @@ float2 map_xyz_to_uv(float3 pos)
 float4 shield_ps(Ps_input input, float2 position : VPOS) : COLOR
 {
    float3 view_normal = normalize(input.view_normal);
-   
-   float3 normal = perturb_normal(normal_map, map_xyz_to_uv(input.normal_texcoords),
-                                  normalize(input.world_normal), view_normal);
+   float3 world_normal = normalize(input.world_normal);
 
-   float2 scene_coords = position * rt_resolution.zw + normal.xz * 0.1;
+   float3 normal = perturb_normal(normal_map, map_xyz_to_uv(input.normal_texcoords),
+                                  world_normal, view_normal);
+
+   float2 scene_coords = position * rt_resolution.zw +normal.xz * 0.1;
    float3 scene_color = tex2D(refraction_texture, scene_coords).rgb;
    float4 diffuse_color = tex2D(diffuse_map, input.texcoords);
 
@@ -145,11 +148,11 @@ float4 shield_ps(Ps_input input, float2 position : VPOS) : COLOR
    float3 specular = pow(NdotH, 64);
    specular *= specular_color.rgb;
 
-   float3 color = diffuse_color.rgb * material_diffuse_color.rgb;
+   float3 color = diffuse_color.rgb * get_material_color().rgb;
 
    float alpha = material_diffuse_color.a * diffuse_color.a;
 
    color = (color * alpha + specular) * hdr_info.z;
 
-   return float4(color + scene_color, input.fade);
+   return float4(color + scene_color, saturate(input.alpha));
 }
