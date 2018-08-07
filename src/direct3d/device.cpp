@@ -1140,6 +1140,9 @@ void Device::resolve_blur_surface() noexcept
    Com_ptr<IDirect3DSurface9> backbuffer;
    GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, backbuffer.clear_and_assign());
 
+   Com_ptr<IDirect3DBaseTexture9> actual_texture;
+   _device->GetTexture(0, actual_texture.clear_and_assign());
+
    const auto [format, _] = effects::get_surface_metrics(*_blur_surface);
    auto resolve = _rt_allocator.allocate(format, _resolution / blur_resolve_factor);
 
@@ -1158,6 +1161,7 @@ void Device::resolve_blur_surface() noexcept
    _device->SetPixelShader(_game_pixel_shader.get());
    _device->SetRenderTarget(0, rt.get());
 
+   _device->SetTexture(0, actual_texture.get());
    apply_sampler_state(*_device, _sampler_states[0], 0);
    apply_blend_state(*_device, _state_block);
    apply_vertex_input_state(*_device, _vertex_input_state);
