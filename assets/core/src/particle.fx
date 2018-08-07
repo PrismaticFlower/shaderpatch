@@ -40,8 +40,7 @@ Vs_normal_output normal_vs(Vs_normal_input input,
    fade_scale = position.w * fade_factor.x + fade_factor.y;
    fade_scale = saturate(fade_scale);
 
-   output.color.a = 
-      saturate((near_scene.fade * fade_scale) * get_material_color(input.color).a);
+   output.color.a = (near_scene.fade * fade_scale) * get_material_color(input.color).a;
 
    float2 texcoords = decompress_texcoords(input.texcoords);
    output.texcoords = texcoords * texcoord_transform.xy + texcoord_transform.zw;
@@ -90,8 +89,7 @@ Vs_blur_output blur_vs(Vs_blur_input input,
    fade_scale = position.w * fade_factor.x + fade_factor.y;
    fade_scale = saturate(fade_scale);
 
-   output.color.a = 
-      saturate((near_scene.fade * fade_scale) * get_material_color(input.color).a);
+   output.color.a = (near_scene.fade * fade_scale) * get_material_color(input.color).a;
 
    float2 texcoords = decompress_texcoords(input.texcoords);
    output.texcoords = texcoords * texcoord_transform.xy + texcoord_transform.zw;
@@ -116,7 +114,9 @@ float4 normal_ps(Ps_normal_input input,
 {
    float4 diffuse_color = tex2D(diffuse_map, input.texcoords);
 
-   return diffuse_color * input.color;
+   float3 color = diffuse_color.rgb * input.color.rgb;
+
+   return float4(color, saturate(diffuse_color.a * input.color.a));
 }
 
 struct Ps_blur_input
@@ -131,12 +131,9 @@ float4 blur_ps(Ps_blur_input input,
                uniform sampler2D blur_buffer) : COLOR
 {
    float alpha = tex2D(alpha_map, input.texcoords).a;
-   float4 refraction_color = tex2Dproj(blur_buffer, input.blur_texcoords);
+   float3 blur_color = tex2Dproj(blur_buffer, input.blur_texcoords).rgb;
    
-   float4 color;
+   float3 color = blur_color * input.color.rgb;
 
-   color.rgb = refraction_color.rgb * input.color.rgb;
-   color.a = alpha * input.color.a;
-
-   return color;
+   return float4(color, saturate(alpha * input.color.a));
 }
