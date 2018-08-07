@@ -348,11 +348,11 @@ auto process_image(YAML::Node config, fs::path image_file_path)
 
    auto image = load_image(image_file_path, config["sRGB"s].as<bool>(true));
 
-   if (config["Type"].as<std::string>() == "roughness"sv) {
+   if (config["Type"s].as<std::string>() == "roughness"sv) {
       image = remap_roughness_channels(std::move(image));
    }
 
-   if (!config["PremultiplyAlpha"s].as<bool>(false)) {
+   if (config["PremultiplyAlpha"s].as<bool>(false)) {
       image = premultiply_alpha(std::move(image));
    }
 
