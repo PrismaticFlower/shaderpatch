@@ -116,7 +116,7 @@ Vs_normal_map_output normal_map_vs(float4 position : POSITION, float3 normal : N
    output.texcoords[2] = (texcoords * tex_scales[2]) * float2(0.125, 1.0) + (time_scales[2] * time);
    output.texcoords[3] = mul(rotation, texcoords * tex_scales[3]) + (time_scales[3] * time);
 
-   output.fade = saturate(output.position.z * fade_constant.z + fade_constant.w);
+   output.fade = output.position.z * fade_constant.z + fade_constant.w;
 
    return output;
 }
@@ -201,7 +201,7 @@ float4 normal_map_distorted_reflection_ps(Ps_normal_map_input input,
 
    color = fog::apply(color, input.fog_eye_distance);
 
-   return float4(color, 1.0);
+   return float4(color, saturate(input.fade));
 }
 
 float4 normal_map_distorted_reflection_specular_ps(Ps_normal_map_input input,
@@ -235,54 +235,72 @@ float4 normal_map_distorted_reflection_specular_ps(Ps_normal_map_input input,
 
    color = fog::apply(color, input.fog_eye_distance);
 
-   return float4(color, 1.0);
+   return float4(color, saturate(input.fade));
 }
 
-float4 normal_map_reflection_ps(Ps_normal_map_input input,
-                                           uniform sampler2D normal_map : register(s12),
-                                           uniform sampler2D reflection_map : register(s3)) : COLOR
+float4 normal_map_distorted_ps(Ps_normal_map_input input,
+                               uniform sampler2D normal_map : register(s12),
+                               uniform sampler2D refraction_map : register(s13),
+                               uniform sampler2D reflection_map : register(s3)) : COLOR
 {
-   float3 reflection = tex2D(reflection_map, input.position * rt_resolution.zw).rgb;
-   
-   float3 normal;
    float2 bump;
+   float3 normal;
+
    sample_normal_maps(normal_map, input.texcoords, bump, normal);
 
+   float2 reflection_coords = input.position * rt_resolution.zw;
+   reflection_coords += bump;
+
+   float3 reflection = tex2D(reflection_map, reflection_coords).rgb;
+   float3 refraction = tex2D(refraction_map, reflection_coords).rgb;
+
    float3 view_normal = normalize(input.view_normal);
-   float normal_view_dot = dot(normal, view_normal);
+   float normal_view_dot = max(dot(view_normal, normal), 0.0);
 
-   float fresnel = calc_fresnel(max(dot(view_normal, normal), 0.0));
+   float fresnel = calc_fresnel(normal_view_dot);
 
-   float3 color = reflection * reflection_colour.a;
+   float3 water_color =
+      ((refraction_colour.rgb * water_fade) * refraction) + (refraction * (1.0 - water_fade));
+
+   float3 color = lerp(water_color, reflection * reflection_colour.a, fresnel * water_fade);
 
    color = fog::apply(color, input.fog_eye_distance);
 
-   return float4(color, fresnel * input.fade);
+   return float4(color, saturate(input.fade));
 }
 
-float4 normal_map_reflection_specular_ps(Ps_normal_map_input input,
-                                         uniform sampler2D normal_map : register(s12), 
-                                         uniform sampler2D reflection_map : register(s3)) : COLOR
+float4 normal_map_distorted_specular_ps(Ps_normal_map_input input,
+                                        uniform sampler2D normal_map : register(s12),
+                                        uniform sampler2D refraction_map : register(s13),
+                                        uniform sampler2D reflection_map : register(s3)) : COLOR
 {
-   float3 reflection = tex2D(reflection_map, input.position * rt_resolution.zw).rgb;
-   
-   float3 normal;
    float2 bump;
+   float3 normal;
+
    sample_normal_maps(normal_map, input.texcoords, bump, normal);
 
+   float2 reflection_coords = input.position * rt_resolution.zw;
+   reflection_coords += bump;
+
+   float3 reflection = tex2D(reflection_map, reflection_coords).rgb;
+   float3 refraction = tex2D(refraction_map, reflection_coords).rgb;
+
    float3 view_normal = normalize(input.view_normal);
-   float fresnel = calc_fresnel(max(dot(view_normal, normal), 0.0));
+   float normal_view_dot = max(dot(view_normal, normal), 0.0);
 
-   float3 half_vector = normalize(light_direction.xyz + view_normal);
+   float fresnel = calc_fresnel(normal_view_dot);
 
-   float specular_angle = saturate(dot(half_vector, normal));
-   float specular = pow(specular_angle, specular_exponent);
+   float3 water_color =
+      ((refraction_colour.rgb * water_fade) * refraction) + (refraction * (1.0 - water_fade));
+   float3 color = lerp(water_color, reflection * reflection_colour.a, fresnel * water_fade);
 
-   float3 color = reflection * reflection_colour.a + specular;
+   float3 half_normal = normalize(light_direction.xyz + view_normal);
+   float normal_dot_half = saturate(dot(normal, half_normal));
+   color += pow(normal_dot_half, specular_exponent);
 
    color = fog::apply(color, input.fog_eye_distance);
 
-   return float4(color, fresnel * input.fade);
+   return float4(color, saturate(input.fade));
 }
 
 float4 normal_map_ps(Ps_normal_map_input input,
@@ -357,4 +375,11 @@ float4 lowquality_specular_ps(Ps_lowquality_input input,
    color.a *= input.hdr_scale_fade.y;
 
    return color;
+}
+
+float4 discard_ps() : COLOR
+{
+   discard;
+
+   return 0.0;
 }

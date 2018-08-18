@@ -155,6 +155,8 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
    _fs_vertex_buffer.reset(nullptr);
    _water_texture = Texture{};
    _vertex_input_state = {};
+   _far_depth_surface.reset(nullptr);
+   _water_depth_surface.reset(nullptr);
 
    _textures.clean_lost_textures();
    _effects.drop_device_resources();
@@ -322,7 +324,8 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
                       std::chrono::duration<float>{time_since_epoch}.count());
 
    // update per frame state
-   _water_refraction = false;
+   _near_water_refraction = false;
+   _far_water_refraction = false;
    _ice_refraction = false;
    _particles_blur = false;
    _render_depth_texture = _effects.active() && _effects.shadows_blur.enabled();
@@ -500,6 +503,8 @@ HRESULT Device::CreateDepthStencilSurface(UINT width, UINT height, D3DFORMAT for
                                           IDirect3DSurface9** surface,
                                           HANDLE* shared_handle) noexcept
 {
+   bool water = false;
+
    if (width == 512u && height == 256u) {
       if (_config.rendering.high_res_reflections) {
          width = _resolution.y * 2u;
@@ -508,6 +513,8 @@ HRESULT Device::CreateDepthStencilSurface(UINT width, UINT height, D3DFORMAT for
 
       width /= _config.rendering.reflection_buffer_factor;
       height /= _config.rendering.reflection_buffer_factor;
+
+      water = true;
    }
 
    if (_effects.active()) {
@@ -515,9 +522,19 @@ HRESULT Device::CreateDepthStencilSurface(UINT width, UINT height, D3DFORMAT for
       multi_sample_quality = 0;
    }
 
-   return _device->CreateDepthStencilSurface(width, height, format,
-                                             multi_sample, multi_sample_quality,
-                                             discard, surface, shared_handle);
+   auto& sp_surface = water ? _water_depth_surface : _far_depth_surface;
+
+   auto result =
+      _device->CreateDepthStencilSurface(width, height, format, multi_sample,
+                                         multi_sample_quality, discard,
+                                         sp_surface.clear_and_assign(), shared_handle);
+
+   if (SUCCEEDED(result)) {
+      sp_surface->AddRef();
+      *surface = sp_surface.get();
+   }
+
+   return result;
 }
 
 HRESULT Device::CreateVertexShader(const DWORD* function,
@@ -617,6 +634,21 @@ HRESULT Device::SetRenderTarget(DWORD render_target_index,
    }
 
    return _device->SetRenderTarget(render_target_index, render_target);
+}
+
+HRESULT Device::SetDepthStencilSurface(IDirect3DSurface9* new_z_stencil) noexcept
+{
+   if (new_z_stencil == _far_depth_surface) {
+      _current_scene = Current_scene::_far;
+   }
+   else if (new_z_stencil == _water_depth_surface) {
+      _current_scene = Current_scene::water;
+   }
+   else {
+      _current_scene = Current_scene::_near;
+   }
+
+   return _device->SetDepthStencilSurface(new_z_stencil);
 }
 
 HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
@@ -750,15 +782,22 @@ HRESULT Device::SetPixelShader(IDirect3DPixelShader9* shader) noexcept
          _on_ps_shader_set = nullptr;
       };
    }
-   else if (!_water_refraction && metadata.rendertype == "water"sv) {
-      if ((metadata.entry_point == "normal_map_distorted_reflection_ps") ||
-          (metadata.entry_point ==
-           "normal_map_distorted_reflection_specular_ps")) {
-         update_refraction_texture();
+   else if (metadata.rendertype == "water"sv) {
+      _discard_draw_calls = metadata.entry_point == "discard_ps"sv;
+
+      if ((metadata.entry_point == "normal_map_distorted_reflection_ps"sv) ||
+          (metadata.entry_point == "normal_map_distorted_reflection_specular_ps"sv)) {
+         if (_current_scene == Current_scene::_near &&
+             !std::exchange(_near_water_refraction, true)) {
+            update_refraction_texture();
+         }
+         else if (_current_scene == Current_scene::_far &&
+                  !std::exchange(_far_water_refraction, true)) {
+            update_refraction_texture();
+         }
+
          bind_refraction_texture();
          bind_water_texture();
-
-         _water_refraction = true;
       }
    }
    else if (metadata.rendertype == "refraction"sv && metadata.state_name != "far"sv &&

@@ -174,11 +174,6 @@ HRESULT Device::GetRenderTarget(DWORD render_target_index,
    return _device->GetRenderTarget(render_target_index, render_target);
 }
 
-HRESULT Device::SetDepthStencilSurface(IDirect3DSurface9* new_z_stencil) noexcept
-{
-   return _device->SetDepthStencilSurface(new_z_stencil);
-}
-
 HRESULT Device::GetDepthStencilSurface(IDirect3DSurface9** z_stencil_surface) noexcept
 {
    return _device->GetDepthStencilSurface(z_stencil_surface);

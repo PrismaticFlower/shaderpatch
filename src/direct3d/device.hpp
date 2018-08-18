@@ -324,6 +324,11 @@ public:
 private:
    ~Device();
 
+   // The underscore is infront of near and far to get around the fact Windows
+   // headers define them as macros for backwards compatibility. (Which I love
+   // but it'd still be nice if they weren't there.)
+   enum class Current_scene : std::int8_t { _near, _far, water };
+
    constexpr static auto water_slot = 12;
    constexpr static auto refraction_slot = 13;
    constexpr static auto cubemap_projection_slot = 15;
@@ -372,6 +377,9 @@ private:
    Com_ptr<IDirect3DSurface9> _blur_surface;
    Com_ptr<IDirect3DTexture9> _refraction_texture;
 
+   Com_ptr<IDirect3DSurface9> _far_depth_surface;
+   Com_ptr<IDirect3DSurface9> _water_depth_surface;
+
    std::function<HRESULT(IDirect3DSurface9*, const RECT*, IDirect3DSurface9*, const RECT*, D3DTEXTUREFILTERTYPE)>
       _stretch_rect_hook{};
    std::function<void()> _on_ps_shader_set{};
@@ -389,13 +397,15 @@ private:
    bool _effects_rt_resolved = false;
    bool _zprepass = false;
    bool _game_doing_bloom_pass = false;
-   bool _water_refraction = false;
+   bool _near_water_refraction = false;
+   bool _far_water_refraction = false;
    bool _ice_refraction = false;
    bool _particles_blur = false;
    bool _refresh_material = true;
    bool _discard_draw_calls = false;
    bool _discard_next_nonindexed_draw = false;
    bool _render_depth_texture = false;
+   Current_scene _current_scene = Current_scene::_near;
 
    int _created_full_rendertargets = 0;
    int _created_2_to_1_rendertargets = 0;

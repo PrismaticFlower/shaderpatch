@@ -15,7 +15,7 @@
           "transform": "position",
 
           "vertex_shader": "discard_vs",
-          "pixel_shader": "transmissive_pass_fade_ps"
+          "pixel_shader": "discard_ps"
         },
         {
           "skinned": false,
@@ -43,7 +43,7 @@
           "transform": "position",
 
           "vertex_shader": "discard_vs",
-          "pixel_shader": "transmissive_pass_fade_ps"
+          "pixel_shader": "discard_ps"
         },
         {
           "skinned": false,
@@ -70,8 +70,8 @@
           "texture_coords": false,
           "transform": "position",
 
-          "vertex_shader": "transmissive_pass_fade_vs",
-          "pixel_shader": "transmissive_pass_fade_ps"
+          "vertex_shader": "discard_vs",
+          "pixel_shader": "discard_ps"
         },
         {
           "skinned": false,
@@ -81,7 +81,7 @@
           "transform": "normals",
 
           "vertex_shader": "normal_map_vs",
-          "pixel_shader": "normal_map_reflection_specular_ps"
+          "pixel_shader": "normal_map_distorted_reflection_specular_ps"
         }
       ]
     },
@@ -98,8 +98,8 @@
           "texture_coords": false,
           "transform": "position",
 
-          "vertex_shader": "transmissive_pass_fade_vs",
-          "pixel_shader": "transmissive_pass_fade_ps"
+          "vertex_shader": "discard_vs",
+          "pixel_shader": "discard_ps"
         },
         {
           "skinned": false,
@@ -109,7 +109,7 @@
           "transform": "normals",
 
           "vertex_shader": "normal_map_vs",
-          "pixel_shader": "normal_map_reflection_ps"
+          "pixel_shader": "normal_map_distorted_reflection_ps"
         }
       ]
     },
@@ -126,8 +126,8 @@
           "texture_coords": false,
           "transform": "position",
 
-          "vertex_shader": "transmissive_pass_fade_vs",
-          "pixel_shader": "transmissive_pass_fade_ps"
+          "vertex_shader": "discard_vs",
+          "pixel_shader": "discard_ps"
         },
         {
           "skinned": false,
@@ -137,7 +137,7 @@
           "transform": "normals",
 
           "vertex_shader": "normal_map_vs",
-          "pixel_shader": "normal_map_reflection_specular_ps"
+          "pixel_shader": "normal_map_distorted_reflection_specular_ps"
         }
       ]
     },
@@ -154,8 +154,8 @@
           "texture_coords": false,
           "transform": "position",
 
-          "vertex_shader": "transmissive_pass_fade_vs",
-          "pixel_shader": "transmissive_pass_fade_ps"
+          "vertex_shader": "discard_vs",
+          "pixel_shader": "discard_ps"
         },
         {
           "skinned": false,
@@ -165,7 +165,7 @@
           "transform": "normals",
 
           "vertex_shader": "normal_map_vs",
-          "pixel_shader": "normal_map_reflection_ps"
+          "pixel_shader": "normal_map_distorted_reflection_ps"
         }
       ]
     },
