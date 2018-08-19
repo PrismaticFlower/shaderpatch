@@ -48,12 +48,12 @@ LRESULT CALLBACK get_message_hook(int code, WPARAM w_param, LPARAM l_param)
       }
    }
 
-   TranslateMessage(&msg);
-
    if (code < 0 || w_param == PM_NOREMOVE || msg.hwnd != g_window ||
        g_input_mode == Input_mode::normal) {
       return CallNextHookEx(g_hook, code, w_param, l_param);
    }
+
+   TranslateMessage(&msg);
 
    // input redirection handling
    switch (msg.message) {
