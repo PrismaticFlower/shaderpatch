@@ -86,10 +86,18 @@ inline auto parse_req_file(const std::filesystem::path& filepath,
 
       std::string section_type;
 
-      section >> std::quoted(section_type);
+      section >> section_type >> std::ws;
 
       if (section_type.empty()) {
          throw Parse_error{"Unexpected empty REQN section."s};
+      }
+
+      if (auto unquoted = sectioned_split_split(section_type, "\""sv, "\""sv); unquoted) {
+         section_type = (*unquoted)[0];
+      }
+      else {
+         throw compose_exception<Parse_error>("Unexpected token '"sv, section_type,
+                                              "', expected section type"sv);
       }
 
       std::vector<std::string> keys;
@@ -100,7 +108,15 @@ inline auto parse_req_file(const std::filesystem::path& filepath,
       while (section && !section.eof()) {
          std::string key;
 
-         section >> std::quoted(key) >> std::ws;
+         section >> key >> std::ws;
+
+         if (auto unquoted = sectioned_split_split(key, "\""sv, "\""sv); unquoted) {
+            key = (*unquoted)[0];
+         }
+         else {
+            throw compose_exception<Parse_error>("Unexpected token '"sv, key,
+                                                 "', expected section entry."sv);
+         }
 
          if (key.empty()) continue;
 
@@ -196,7 +212,15 @@ inline void parse_files_req_file(const std::filesystem::path& filepath,
       while (section && !section.eof()) {
          std::string value;
 
-         section >> std::quoted(value) >> std::ws;
+         section >> value >> std::ws;
+
+         if (auto unquoted = sectioned_split_split(value, "\""sv, "\""sv); unquoted) {
+            value = (*unquoted)[0];
+         }
+         else {
+            throw compose_exception<Parse_error>("Unexpected token '"sv, value,
+                                                 "', expected section entry."sv);
+         }
 
          if (value.empty()) continue;
 

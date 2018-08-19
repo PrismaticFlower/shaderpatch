@@ -271,7 +271,7 @@ constexpr auto sectioned_split_split(
 //! was successful.
 template<typename Char_t, typename Char_triats = std::char_traits<Char_t>>
 constexpr auto sectioned_split_split(
-   std::basic_string<Char_t, Char_triats> string,
+   const std::basic_string<Char_t, Char_triats>& string,
    typename std::common_type<std::basic_string_view<Char_t, Char_triats>>::type open,
    typename std::common_type<std::basic_string_view<Char_t, Char_triats>>::type close) noexcept
    -> std::optional<std::array<std::basic_string_view<Char_t, Char_triats>, 2>>
