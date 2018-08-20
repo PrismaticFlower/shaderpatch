@@ -64,7 +64,7 @@ constexpr bool is_constant_being_set(int constant, int start, int count) noexcep
    return constant >= start && constant < (start + count);
 }
 
-bool is_blur_blend_state(const std::array<Texture_state_block, 8>& texture_states)
+bool is_blur_texture_state(const std::array<Texture_state_block, 8>& texture_states)
 {
    if (texture_states[1].at(D3DTSS_COLOROP) != D3DTOP_DISABLE) return false;
    if (texture_states[1].at(D3DTSS_ALPHAOP) != D3DTOP_DISABLE) return false;
@@ -76,6 +76,27 @@ bool is_blur_blend_state(const std::array<Texture_state_block, 8>& texture_state
    if (texture_states[0].at(D3DTSS_ALPHAARG0) != D3DTA_CURRENT) return false;
    if (texture_states[0].at(D3DTSS_ALPHAARG1) != D3DTA_TFACTOR) return false;
    if (texture_states[0].at(D3DTSS_ALPHAARG2) != D3DTA_TEXTURE) return false;
+
+   return true;
+}
+
+bool is_damage_overlay_state(const Render_state_block& rs_state,
+                             const std::array<Texture_state_block, 8>& texture_states)
+{
+   if (texture_states[1].at(D3DTSS_COLOROP) != D3DTOP_DISABLE) return false;
+   if (texture_states[1].at(D3DTSS_ALPHAOP) != D3DTOP_DISABLE) return false;
+   if (texture_states[0].at(D3DTSS_COLOROP) != D3DTOP_MODULATE) return false;
+   if (texture_states[0].at(D3DTSS_COLORARG0) != D3DTA_CURRENT) return false;
+   if (texture_states[0].at(D3DTSS_COLORARG1) != D3DTA_TFACTOR) return false;
+   if (texture_states[0].at(D3DTSS_COLORARG2) != D3DTA_TEXTURE) return false;
+   if (texture_states[0].at(D3DTSS_ALPHAOP) != D3DTOP_MODULATE) return false;
+   if (texture_states[0].at(D3DTSS_ALPHAARG0) != D3DTA_CURRENT) return false;
+   if (texture_states[0].at(D3DTSS_ALPHAARG1) != D3DTA_TFACTOR) return false;
+   if (texture_states[0].at(D3DTSS_ALPHAARG2) != D3DTA_TEXTURE) return false;
+   if ((rs_state.at(D3DRS_TEXTUREFACTOR) | 0xff000000u) !=
+       D3DCOLOR_ARGB(0xff, 0xdf, 0x20, 0x20)) {
+      return false;
+   }
 
    return true;
 }
@@ -745,11 +766,6 @@ HRESULT Device::SetPixelShader(IDirect3DPixelShader9* shader) noexcept
    if (!shader) {
       _game_pixel_shader = nullptr;
 
-      if (_config.rendering.gaussian_scene_blur &&
-          is_blur_blend_state(_texture_states)) {
-         prepapre_gaussian_scene_blur();
-      }
-
       return _device->SetPixelShader(nullptr);
    }
 
@@ -1004,7 +1020,22 @@ HRESULT Device::StretchRect(IDirect3DSurface9* source_surface,
 HRESULT Device::DrawPrimitive(D3DPRIMITIVETYPE primitive_type,
                               UINT start_vertex, UINT primitive_count) noexcept
 {
-   if (_discard_draw_calls || std::exchange(_discard_next_nonindexed_draw, false)) {
+   if (!_game_pixel_shader) {
+      if (_config.rendering.gaussian_scene_blur &&
+          is_blur_texture_state(_texture_states)) {
+         apply_gaussian_scene_blur();
+
+         return S_OK;
+      }
+      else if (_config.rendering.new_damage_overlay &&
+               is_damage_overlay_state(_state_block, _texture_states)) {
+         apply_damage_overlay_effect();
+
+         return S_OK;
+      }
+   }
+
+   if (_discard_draw_calls) {
       return S_OK;
    }
 
@@ -1206,7 +1237,7 @@ void Device::resolve_blur_surface() noexcept
    apply_vertex_input_state(*_device, _vertex_input_state);
 }
 
-void Device::prepapre_gaussian_scene_blur() noexcept
+void Device::apply_gaussian_scene_blur() noexcept
 {
    resolve_blur_surface();
 
@@ -1224,8 +1255,34 @@ void Device::prepapre_gaussian_scene_blur() noexcept
 
    apply_transform_state_block_partial(*_device, _transform_state);
    apply_vertex_input_state(*_device, _vertex_input_state);
+}
 
-   _discard_next_nonindexed_draw = true;
+void Device::apply_damage_overlay_effect() noexcept
+{
+   Com_ptr<IDirect3DSurface9> rt;
+
+   _device->GetRenderTarget(0, rt.clear_and_assign());
+
+   Com_ptr<IDirect3DBaseTexture9> actual_texture;
+   _device->GetTexture(0, actual_texture.clear_and_assign());
+
+   auto resolve = _rt_allocator.allocate(_rt_format, _resolution);
+
+   _device->StretchRect(rt.get(), nullptr, resolve.surface(), nullptr, D3DTEXF_POINT);
+
+   auto color = glm::unpackUnorm4x8(_state_block.at(D3DRS_TEXTUREFACTOR));
+   color = {color.b, color.g, color.r, color.a};
+
+   _effects.damage_overlay.apply(_shaders, color, *resolve.texture(), *rt);
+
+   _device->SetVertexShader(_game_vertex_shader.get());
+   _device->SetPixelShader(_game_pixel_shader.get());
+   _device->SetRenderTarget(0, rt.get());
+
+   _device->SetTexture(0, actual_texture.get());
+   apply_sampler_state(*_device, _sampler_states[0], 0);
+   apply_blend_state(*_device, _state_block);
+   apply_vertex_input_state(*_device, _vertex_input_state);
 }
 
 void Device::set_hdr_rendering(bool hdr_rendering) noexcept

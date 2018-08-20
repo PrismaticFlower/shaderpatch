@@ -162,6 +162,7 @@
     <None Include="definitions\ocean.json" />
     <None Include="definitions\particle.json" />
     <None Include="definitions\patch\bloom.json" />
+    <None Include="definitions\patch\damage_overlay.json" />
     <None Include="definitions\patch\postprocess.json" />
     <None Include="definitions\patch\gaussian_blur.json" />
     <None Include="definitions\patch\normal_lightmapped.json" />
@@ -319,6 +320,11 @@
       <FileType>Document</FileType>
     </None>
     <None Include="src\shadows_blur.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\damage_overlay.fx">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

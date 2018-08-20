@@ -1,0 +1,18 @@
+{
+  "patch_shader": true,
+  "source_name": "damage_overlay.fx",
+  "rendertype": "damage overlay",
+
+  "skinned": false,
+  "lighting": false,
+  "vertex_color": false,
+
+  "states": [
+    {
+      "name": "apply",
+
+      "vertex_shader": "main_vs",
+      "pixel_shader": "apply_ps"
+    }
+  ]
+}

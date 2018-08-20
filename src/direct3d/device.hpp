@@ -358,7 +358,9 @@ private:
 
    void resolve_blur_surface() noexcept;
 
-   void prepapre_gaussian_scene_blur() noexcept;
+   void apply_gaussian_scene_blur() noexcept;
+
+   void apply_damage_overlay_effect() noexcept;
 
    void set_hdr_rendering(bool hdr_rendering) noexcept;
 
@@ -403,7 +405,6 @@ private:
    bool _particles_blur = false;
    bool _refresh_material = true;
    bool _discard_draw_calls = false;
-   bool _discard_next_nonindexed_draw = false;
    bool _render_depth_texture = false;
    Current_scene _current_scene = Current_scene::_near;
 

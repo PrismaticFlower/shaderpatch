@@ -141,6 +141,7 @@ struct User_config {
       bool smooth_bloom = true;
       bool gaussian_blur_blur_particles = true;
       bool gaussian_scene_blur = true;
+      bool new_damage_overlay = true;
 
       int reflection_buffer_factor = 1;
       int refraction_buffer_factor = 2;
@@ -183,6 +184,8 @@ struct User_config {
          }
 
          ImGui::Checkbox("Gaussian Scene Blur", &rendering.gaussian_scene_blur);
+
+         ImGui::Checkbox("New Damage Overlay", &rendering.new_damage_overlay);
 
          ImGui::Checkbox("Advertise Presence", &rendering.advertise_presence);
 
@@ -264,6 +267,9 @@ private:
 
       rendering.gaussian_scene_blur =
          config["Rendering"s]["GaussianSceneBlur"s].as<bool>();
+
+      rendering.new_damage_overlay =
+         config["Rendering"s]["NewDamageOverlay"s].as<bool>();
 
       const auto reflection_scale =
          config["Rendering"s]["ReflectionBufferScale"s].as<double>();

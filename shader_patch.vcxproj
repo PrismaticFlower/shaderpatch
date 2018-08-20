@@ -131,6 +131,7 @@
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\effects\damage_overlay.cpp" />
     <ClCompile Include="src\effects\shadows_blur.cpp" />
     <ClCompile Include="src\direct3d\check_required_features.cpp" />
     <ClCompile Include="src\direct3d\creator.cpp" />
@@ -156,6 +157,7 @@
     <ClInclude Include="src\direct3d\hook.hpp" />
     <ClInclude Include="src\direct3d\vertex_input_state.hpp" />
     <ClInclude Include="src\direct3d\texture_state_block.hpp" />
+    <ClInclude Include="src\effects\damage_overlay.hpp" />
     <ClInclude Include="src\effects\shadows_blur.hpp" />
     <ClInclude Include="src\direct3d\check_required_features.hpp" />
     <ClInclude Include="src\direct3d\device.hpp" />

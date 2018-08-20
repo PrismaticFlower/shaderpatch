@@ -63,6 +63,9 @@
     <ClCompile Include="src\effects\shadows_blur.cpp">
       <Filter>src\effects</Filter>
     </ClCompile>
+    <ClCompile Include="src\effects\damage_overlay.cpp">
+      <Filter>src\effects</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -168,6 +171,9 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\effects\shadows_blur.hpp">
+      <Filter>src\effects</Filter>
+    </ClInclude>
+    <ClInclude Include="src\effects\damage_overlay.hpp">
       <Filter>src\effects</Filter>
     </ClInclude>
   </ItemGroup>

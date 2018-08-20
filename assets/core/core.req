@@ -40,6 +40,7 @@ ucft
    {
       "shader"
       "bloom"
+      "damage_overlay"
       "gaussian_blur"
       "normal_lightmapped"
       "pbr"
