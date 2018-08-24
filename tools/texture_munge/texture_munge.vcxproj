@@ -90,6 +90,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)/submodules/Compressonator/Compressonator/Header;$(SolutionDir)/submodules/vcpkg/installed/x86-windows-static-md/include;%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>GLM_FORCE_CXX03;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -106,6 +107,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)/submodules/Compressonator/Compressonator/Header;$(SolutionDir)/submodules/vcpkg/installed/x86-windows-static-md/include;%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>GLM_FORCE_CXX03;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>Compressonator_MDd.lib;DirectXTex.lib;libyaml-cppmdd.lib;boost_system-vc140-mt-gd.lib;%(AdditionalDependencies)</AdditionalDependencies>
