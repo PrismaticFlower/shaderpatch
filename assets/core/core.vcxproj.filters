@@ -220,8 +220,31 @@
     <None Include="src\film_grain.hlsl">
       <Filter>src</Filter>
     </None>
-    <None Include="src\shadows_blur.fx" />
     <None Include="definitions\patch\damage_overlay.json">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="definitions\patch\normal_ext.json">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="src\lighting_utilities_specular.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\damage_overlay.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\shadows_blur.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="definitions\patch\normal_ext-specular.json">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="src\normal_ext.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="definitions\patch\normal_ext-specular-detail.json">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="definitions\patch\normal_ext-detail.json">
       <Filter>definitions\patch</Filter>
     </None>
   </ItemGroup>
@@ -238,10 +261,5 @@
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="core.req" />
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="src\damage_overlay.fx">
-      <Filter>src</Filter>
-    </FxCompile>
   </ItemGroup>
 </Project>

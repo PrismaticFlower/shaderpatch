@@ -3,6 +3,11 @@
 
 #include "ext_constants_list.hlsl"
 
+float3 blend_tangent_space_normals(float3 N0, float3 N1)
+{
+   return float3(N0.xy + N1.xy, N0.z * N1.z);
+}
+
 // Christian Schüler's Normal Mapping Without Precomputed Tangents code.
 // Taken from http://www.thetenthplanet.de/archives/1180, be sure to go
 // check out his article on it. 

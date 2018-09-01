@@ -1,0 +1,32 @@
+Overridden RenderType: "normal"
+
+Property Mappings:
+   DiffuseColor:
+      Type: vec3
+      Range: [0.0, 1.0]
+      Constant: 0.x
+     
+   GlossMapWeight:
+      Type: scaler
+      Range: [0.0, 1.0]
+      Constant: 0.w
+      
+   SpecularColor:
+      Type: vec3
+      Range: [0.0, 1.0]
+      Constant: 1.x
+
+   SpecularExponent:
+      Type: scaler
+      Range: [1.0, 2048.0]
+      Constant: 1.w
+
+Texture Mappings:
+   DiffuseMap: 
+      Slot: 4
+   NormalMap: 
+      Slot: 5
+   DetailMap: 
+      Slot: 6
+   DetailNormalMap: 
+      Slot: 7

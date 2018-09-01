@@ -163,6 +163,10 @@
     <None Include="definitions\particle.json" />
     <None Include="definitions\patch\bloom.json" />
     <None Include="definitions\patch\damage_overlay.json" />
+    <None Include="definitions\patch\normal_ext-detail.json" />
+    <None Include="definitions\patch\normal_ext-specular-detail.json" />
+    <None Include="definitions\patch\normal_ext-specular.json" />
+    <None Include="definitions\patch\normal_ext.json" />
     <None Include="definitions\patch\postprocess.json" />
     <None Include="definitions\patch\gaussian_blur.json" />
     <None Include="definitions\patch\normal_lightmapped.json" />
@@ -325,6 +329,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\damage_overlay.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\normal_ext.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\lighting_utilities_specular.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
