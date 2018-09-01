@@ -81,9 +81,8 @@ void read_prop(const std::string& prop_key, const YAML::Node value,
    }
 }
 
-void read_texture_slot(const std::string& texture_key, const YAML::Node value,
-                       const YAML::Node texture_mappings,
-                       std::array<std::string, 8>& constants)
+void read_texture_mapping(const std::string& texture_key, const YAML::Node value,
+                          const YAML::Node texture_mappings, Material_info& material_info)
 {
    if (!texture_mappings[texture_key]) {
       throw compose_exception<std::runtime_error>("Undescribed material texture "sv,
@@ -91,7 +90,9 @@ void read_texture_slot(const std::string& texture_key, const YAML::Node value,
                                                   " encountered."sv);
    }
 
-   auto index = texture_mappings[texture_key]["Slot"s].as<int>();
+   auto texture = texture_mappings[texture_key];
+
+   auto index = texture["Slot"s].as<int>();
 
    if (index < 4 || index > 11) {
       throw compose_exception<std::runtime_error>("Invalid material texture description"sv,
@@ -99,35 +100,27 @@ void read_texture_slot(const std::string& texture_key, const YAML::Node value,
                                                   " encountered."sv);
    }
 
-   constants.at(index - 4) = value.as<std::string>();
-}
+   material_info.textures.at(index - 4) = value.as<std::string>();
 
-auto glmify_constants(const std::array<float, 32>& constants)
-{
-   std::array<glm::vec4, 8> vec4_constants;
-
-   static_assert(sizeof(constants) == sizeof(vec4_constants));
-
-   std::memcpy(vec4_constants.data(), constants.data(), sizeof(constants));
-
-   return vec4_constants;
+   if (texture["Size Constant"s]) {
+      material_info.texture_size_mappings.at(index - 4) =
+         read_constant_offset(texture["Size Constant"s].as<std::string>());
+   }
 }
 }
 
 auto describe_material(const YAML::Node description, const YAML::Node material) -> Material_info
 {
-   Material_info info;
+   Material_info info{};
 
    info.rendertype = material["RenderType"s].as<std::string>();
    info.overridden_rendertype =
       description["Overridden RenderType"s].as<std::string>();
 
-   std::array<float, 32> constants{};
-
    for (auto prop : material["Material"s]) {
       try {
          read_prop(prop.first.as<std::string>(), prop.second,
-                   description["Property Mappings"s], constants);
+                   description["Property Mappings"s], info.constants);
       }
       catch (std::exception& e) {
          throw compose_exception<std::runtime_error>(
@@ -136,12 +129,10 @@ auto describe_material(const YAML::Node description, const YAML::Node material) 
       }
    }
 
-   info.constants = glmify_constants(constants);
-
    for (auto texture : material["Textures"s]) {
       try {
-         read_texture_slot(texture.first.as<std::string>(), texture.second,
-                           description["Texture Mappings"s], info.textures);
+         read_texture_mapping(texture.first.as<std::string>(), texture.second,
+                              description["Texture Mappings"s], info);
       }
       catch (std::exception& e) {
          throw compose_exception<std::runtime_error>(

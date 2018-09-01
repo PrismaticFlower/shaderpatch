@@ -23,14 +23,37 @@ auto resolve_textures(const Material_info& info, const Texture_database& texture
 
    return resolved;
 }
+
+auto resolve_constants(const Material_info& info,
+                       const std::array<Texture, Material::max_material_textures>& textures) noexcept
+{
+   auto constants = info.constants;
+
+   for (auto i = 0u; i < info.texture_size_mappings.size(); ++i) {
+      const auto& size_offset = info.texture_size_mappings[i];
+      const auto& texture = textures[i];
+
+      if (size_offset == -1) continue;
+
+      const auto size = static_cast<glm::vec2>(texture.size());
+      const auto size_constant = glm::vec4{size, 1.0f / size};
+
+      constants.at(size_offset) = size_constant[0];
+      constants.at(size_offset + 1) = size_constant[1];
+      constants.at(size_offset + 2) = size_constant[2];
+      constants.at(size_offset + 3) = size_constant[3];
+   }
+
+   return constants;
+}
 }
 
 Material::Material(const Material_info& info, Com_ref<IDirect3DDevice9> device,
                    const Shader_database& shaders, const Texture_database& textures) noexcept
    : _device{device},
      _overridden_rendertype{info.overridden_rendertype},
-     _constants{info.constants},
      _textures{resolve_textures(info, textures)},
+     _constants{resolve_constants(info, _textures)},
      _shader_group{shaders.at(info.rendertype)}
 {
 }
@@ -47,12 +70,10 @@ void Material::bind() const noexcept
    }
 
    _device->SetVertexShaderConstantF(sp::constants::vs::material_constants_start,
-                                     glm::value_ptr(_constants[0]),
-                                     max_material_constants);
+                                     _constants.data(), max_material_constants);
 
    _device->SetPixelShaderConstantF(sp::constants::ps::material_constants_start,
-                                    glm::value_ptr(_constants[0]),
-                                    max_material_constants);
+                                    _constants.data(), max_material_constants);
 }
 
 void Material::update(const std::string& state_name, const Shader_flags flags) const noexcept

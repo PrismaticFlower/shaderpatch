@@ -44,8 +44,8 @@ private:
 
    Com_ref<IDirect3DDevice9> _device;
 
-   const std::array<glm::vec4, max_material_constants> _constants{};
    const std::array<Texture, max_material_textures> _textures;
+   const std::array<float, max_material_constants * 4> _constants{};
 
    const Shader_group _shader_group;
 };

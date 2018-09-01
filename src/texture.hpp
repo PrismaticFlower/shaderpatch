@@ -5,6 +5,7 @@
 
 #include <utility>
 
+#include <glm/glm.hpp>
 #include <gsl/gsl>
 
 #include <d3d9.h>
@@ -17,7 +18,36 @@ public:
 
    Texture(Com_ptr<IDirect3DDevice9> device,
            Com_ptr<IDirect3DBaseTexture9> d3d_texture, Sampler_info sampler_info)
-      : _device{std::move(device)}, _texture{std::move(d3d_texture)}, _sampler{sampler_info} {};
+      : _device{std::move(device)}, _texture{std::move(d3d_texture)}, _sampler{sampler_info}
+   {
+      switch (_texture->GetType()) {
+      case D3DRTYPE_TEXTURE: {
+
+         D3DSURFACE_DESC desc{};
+         static_cast<IDirect3DTexture9&>(*_texture).GetLevelDesc(0, &desc);
+
+         _size = {desc.Width, desc.Height};
+
+         break;
+      }
+      case D3DRTYPE_VOLUMETEXTURE: {
+         D3DVOLUME_DESC desc{};
+         static_cast<IDirect3DVolumeTexture9&>(*_texture).GetLevelDesc(0, &desc);
+
+         _size = {desc.Width, desc.Height};
+
+         break;
+      }
+      case D3DRTYPE_CUBETEXTURE: {
+         D3DSURFACE_DESC desc{};
+         static_cast<IDirect3DCubeTexture9&>(*_texture).GetLevelDesc(0, &desc);
+
+         _size = {desc.Width, desc.Height};
+
+         break;
+      }
+      }
+   };
 
    void bind(DWORD slot) const noexcept
    {
@@ -41,6 +71,11 @@ public:
       return (!_device || !_texture);
    }
 
+   glm::ivec2 size() const noexcept
+   {
+      return _size;
+   }
+
    explicit operator bool() const noexcept
    {
       return !empty();
@@ -49,6 +84,7 @@ public:
 private:
    Com_ptr<IDirect3DDevice9> _device;
    Com_ptr<IDirect3DBaseTexture9> _texture;
+   glm::ivec2 _size{};
    Sampler_info _sampler{};
 };
 

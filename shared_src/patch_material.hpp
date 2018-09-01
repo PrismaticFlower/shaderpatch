@@ -15,14 +15,30 @@
 
 namespace sp {
 
-enum class Material_version : std::uint32_t { _1 };
+enum class Material_version : std::uint32_t {
+   _1_0_0,
+   _2_0_0,
+   current = _2_0_0
+};
 
 struct Material_info {
    std::string rendertype;
    std::string overridden_rendertype;
-   std::array<glm::vec4, 8> constants{};
+   std::array<float, 32> constants{};
    std::array<std::string, 8> textures{};
+   std::array<std::int32_t, 8> texture_size_mappings{-1, -1, -1, -1,
+                                                     -1, -1, -1, -1};
 };
+
+namespace materials {
+inline namespace v_2_0_0 {
+inline auto read_patch_material(ucfb::Reader reader) -> Material_info;
+}
+
+namespace v_1_0_0 {
+inline auto read_patch_material(ucfb::Reader reader) -> Material_info;
+}
+}
 
 inline void write_patch_material(const std::filesystem::path& save_path,
                                  const Material_info& info)
@@ -36,11 +52,12 @@ inline void write_patch_material(const std::filesystem::path& save_path,
    {
       ucfb::Writer writer{ostream, "matl"_mn};
 
-      writer.emplace_child("VER_"_mn).write(Material_version::_1);
+      writer.emplace_child("VER_"_mn).write(Material_version::current);
 
       writer.emplace_child("RTYP"_mn).write(info.rendertype);
       writer.emplace_child("ORTP"_mn).write(info.overridden_rendertype);
       writer.emplace_child("CNST"_mn).write(gsl::make_span(info.constants));
+      writer.emplace_child("TXSM"_mn).write(gsl::make_span(info.texture_size_mappings));
       writer.emplace_child("TX04"_mn).write(info.textures[0]);
       writer.emplace_child("TX05"_mn).write(info.textures[1]);
       writer.emplace_child("TX06"_mn).write(info.textures[2]);
@@ -62,25 +79,38 @@ inline void write_patch_material(const std::filesystem::path& save_path,
 
 inline auto read_patch_material(ucfb::Reader reader) -> Material_info
 {
-   Material_info info;
+   const auto version =
+      reader.read_child_strict<"VER_"_mn>().read_trivial<Material_version>();
+
+   reader.reset_head();
+
+   switch (version) {
+   case Material_version::current:
+      return materials::read_patch_material(reader);
+   case Material_version::_1_0_0:
+      return materials::v_1_0_0::read_patch_material(reader);
+   default:
+      throw std::runtime_error{"material has unknown version"};
+   }
+}
+
+namespace materials {
+namespace v_2_0_0 {
+inline auto read_patch_material(ucfb::Reader reader) -> Material_info
+{
+   Material_info info{};
 
    const auto version =
       reader.read_child_strict<"VER_"_mn>().read_trivial<Material_version>();
 
-   Ensures(version == Material_version::_1);
+   Ensures(version == Material_version::_2_0_0);
 
    info.rendertype = reader.read_child_strict<"RTYP"_mn>().read_string();
    info.overridden_rendertype = reader.read_child_strict<"ORTP"_mn>().read_string();
-
-   const auto constants = reader.read_child_strict<"CNST"_mn>()
-                             .read_trivial<std::array<std::array<float, 4>, 8>>();
-
-   for (auto i = 0; i < 8; ++i) {
-      for (auto j = 0; j < 4; ++j) {
-         info.constants[i][j] = constants[i][j];
-      }
-   }
-
+   info.constants =
+      reader.read_child_strict<"CNST"_mn>().read_trivial<std::array<float, 32>>();
+   info.texture_size_mappings =
+      reader.read_child_strict<"TXSM"_mn>().read_trivial<std::array<std::int32_t, 8>>();
    info.textures[0] = reader.read_child_strict<"TX04"_mn>().read_string();
    info.textures[1] = reader.read_child_strict<"TX05"_mn>().read_string();
    info.textures[2] = reader.read_child_strict<"TX06"_mn>().read_string();
@@ -91,5 +121,34 @@ inline auto read_patch_material(ucfb::Reader reader) -> Material_info
    info.textures[7] = reader.read_child_strict<"TX11"_mn>().read_string();
 
    return info;
+}
+}
+
+namespace v_1_0_0 {
+inline auto read_patch_material(ucfb::Reader reader) -> Material_info
+{
+   Material_info info{};
+
+   const auto version =
+      reader.read_child_strict<"VER_"_mn>().read_trivial<Material_version>();
+
+   Ensures(version == Material_version::_1_0_0);
+
+   info.rendertype = reader.read_child_strict<"RTYP"_mn>().read_string();
+   info.overridden_rendertype = reader.read_child_strict<"ORTP"_mn>().read_string();
+   info.constants =
+      reader.read_child_strict<"CNST"_mn>().read_trivial<std::array<float, 32>>();
+   info.textures[0] = reader.read_child_strict<"TX04"_mn>().read_string();
+   info.textures[1] = reader.read_child_strict<"TX05"_mn>().read_string();
+   info.textures[2] = reader.read_child_strict<"TX06"_mn>().read_string();
+   info.textures[3] = reader.read_child_strict<"TX07"_mn>().read_string();
+   info.textures[4] = reader.read_child_strict<"TX08"_mn>().read_string();
+   info.textures[5] = reader.read_child_strict<"TX09"_mn>().read_string();
+   info.textures[6] = reader.read_child_strict<"TX10"_mn>().read_string();
+   info.textures[7] = reader.read_child_strict<"TX11"_mn>().read_string();
+
+   return info;
+}
+}
 }
 }
