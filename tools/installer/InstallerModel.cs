@@ -14,7 +14,7 @@ namespace installer
 {
    class InstallerModel
    {
-      private void CheckWindowsSearchForPaths(ref HashSet<String> install_paths)
+      private void CheckWindowsSearchForPaths(ref HashSet<String> installPaths)
       {
          using (var connection = new OleDbConnection(@"Provider=Search.CollatorDSO;Extended Properties=""Application=Windows"""))
          {
@@ -34,7 +34,7 @@ namespace installer
                      path = path.Substring(5);
                      path = path.Replace('/', '\\');
 
-                     install_paths.Add(path);
+                     installPaths.Add(path);
                   }
                }
 
@@ -43,19 +43,19 @@ namespace installer
          }
       }
 
-      private void CheckRegistryForPaths(ref HashSet<String> install_paths)
+      private void CheckRegistryForPaths(ref HashSet<String> installPaths)
       {
          var path = Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\LucasArts\Star Wars Battlefront II\1.0",
                                       "ExePath",
                                       null);
 
-         if (path != null) install_paths.Add(path.ToString());
+         if (path != null) installPaths.Add(path.ToString());
 
          path = Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\LucasArts\Star Wars Battlefront II\1.0",
                                   "ExePath",
                                   null);
 
-         if (path != null) install_paths.Add(path.ToString());
+         if (path != null) installPaths.Add(path.ToString());
       }
       
       private bool Vc14RuntimeInstalled()
@@ -111,67 +111,111 @@ namespace installer
          return null;
       }
       
-      public void Install(string path, bool adminInstall = false)
+      public void Install(string installPath, bool adminInstall = false)
       {
-         Task runtimeInstall = null;
+         var installInfo = GetInstallInfo(installPath);
 
-         if (!Vc14RuntimeInstalled()) runtimeInstall = InstallVc14Runtime();
+         if (!adminInstall && !PathHelpers.CheckDirectoryAccess(installPath))
+         {
+            LaunchAdminInstall(installPath);
+
+            return;
+         }
 
          try
          {
-            Directory.CreateDirectory(Path.Combine(path, "data/shaderpatch/backup/"));
-
-            if (!File.Exists(Path.Combine(path, "data/shaderpatch/backup/core.lvl")))
-            {
-               File.Move(Path.Combine(path, "data/_lvl_pc/core.lvl"),
-                         Path.Combine(path, "data/shaderpatch/backup/core.lvl"));
-            }
-
-            FileSystem.CopyDirectory("./", path, true);
-
-            List<string> files = new List<string>();
-
-            files.Add("./data/shaderpatch/file_manifest.xml");
-
-            foreach (string file in Directory.GetFiles("./", "*", System.IO.SearchOption.AllDirectories))
-               files.Add(file);
+            Task runtimeInstall = null;
             
-            if (adminInstall)
+            if (!Vc14RuntimeInstalled()) runtimeInstall = InstallVc14Runtime();
+
+            var fileInstaller = new FileInstaller(installInfo, Environment.CurrentDirectory);
+            var dirInfo = new DirectoryInfo("./");
+            var files = dirInfo.GetFiles("*", System.IO.SearchOption.AllDirectories);
+
+            foreach (var file in files)
             {
-               File.WriteAllText(Path.Combine(path, "data/shaderpatch/admin install.txt"),
-                                 "# Do not delete this file! #");
-               files.Add("./data/shaderpatch/admin install.txt");
+               fileInstaller.InstallFile(file.FullName);
             }
 
-            XmlSerializer serializer = new XmlSerializer(typeof(List<string>));
+            XmlSerializer serializer = new XmlSerializer(typeof(InstallInfo));
 
-            using (var stream = File.OpenWrite(Path.Combine(path, "data/shaderpatch/file_manifest.xml")))
+            using (var stream = File.OpenWrite(Path.Combine(installPath, "data/shaderpatch/install_info.xml")))
             {
-               serializer.Serialize(stream, files);
+               serializer.Serialize(stream, installInfo);
             }
 
             if (runtimeInstall != null) runtimeInstall.Wait();
          }
-         catch (UnauthorizedAccessException)
+         catch (Exception)
          {
-            if (adminInstall) throw;
+            RevertInstall(installInfo);
 
-            var processInfo = new ProcessStartInfo
+            throw;
+         }
+      }
+      
+      private static void LaunchAdminInstall(string installPath)
+      {
+         var processInfo = new ProcessStartInfo
+         {
+            WindowStyle = ProcessWindowStyle.Hidden,
+            CreateNoWindow = true,
+            UseShellExecute = true,
+            Arguments = "-install \"" + installPath.Replace('\\', '/') + "\"",
+            Verb = "runas",
+            WorkingDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase),
+            FileName = Path.GetFileName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase)
+         };
+
+         var adminProcess = Process.Start(processInfo);
+
+         adminProcess.WaitForExit();
+
+         if (adminProcess.ExitCode != 0)
+         {
+            throw new Exception("Failed to install using admin privileges.");
+         }
+      }
+
+      private static void RevertInstall(InstallInfo installInfo)
+      {
+         foreach (var file in installInfo.installedFiles.ToList())
+         {
+            var filePath = Path.Combine(installInfo.installPath, file.Key);
+
+            File.Delete(filePath);
+
+            if (file.Value)
             {
-               WindowStyle = ProcessWindowStyle.Hidden,
-               CreateNoWindow = true,
-               UseShellExecute = true,
-               Arguments = "-install \"" + path.Replace('\\', '/') + "\"",
-               Verb = "runas",
-               WorkingDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase),
-               FileName = Path.GetFileName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase)
+               var backupFilePath = Path.Combine(installInfo.backupPath, file.Key);
+
+               File.Move(backupFilePath, filePath);
+            }
+
+            installInfo.installedFiles.Remove(file.Key);
+         }
+      }
+
+      private static InstallInfo GetInstallInfo(string installPath)
+      {
+         var infoPath = Path.Combine(installPath, "data/shaderpatch/install_info.xml");
+
+         if (!File.Exists(infoPath))
+         {
+            return new InstallInfo
+            {
+               installPath = installPath,
+               backupPath = Path.Combine(installPath, "./data/backup")
             };
-            
-            var adminProcess =  Process.Start(processInfo);
+         }
+         else
+         {
+            XmlSerializer serializer = new XmlSerializer(typeof(InstallInfo));
 
-            adminProcess.WaitForExit();
-
-            if (adminProcess.ExitCode != 0) throw;
+            using (var stream = File.OpenRead(Path.Combine(installPath, "data/shaderpatch/install_info.xml")))
+            {
+               return serializer.Deserialize(stream) as InstallInfo;
+            }
          }
       }
    }

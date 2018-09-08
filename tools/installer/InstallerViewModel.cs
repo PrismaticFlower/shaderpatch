@@ -9,21 +9,13 @@ namespace installer
 {
    class InstallerViewModel
    {
-      private List<string> possibleGameLocations = new List<string>();
-
       private InstallerModel installerModel = new InstallerModel();
 
-      public List<string> PossibleGameLocations
-      {
-         get
-         {
-            return possibleGameLocations;
-         }
-      }
-
+      public List<string> PossibleGameLocations { get; private set; } = new List<string>();
+      
       public void SearchForInstalls()
       {
-         possibleGameLocations = installerModel.SearchForInstallPaths();
+         PossibleGameLocations = installerModel.SearchForInstallPaths();
       }
 
       public void BrowseForInstallPath()
@@ -32,7 +24,7 @@ namespace installer
 
          if (path != null)
          {
-            possibleGameLocations.Add(path);
+            PossibleGameLocations.Add(path);
          }
       }
 
