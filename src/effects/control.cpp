@@ -153,6 +153,7 @@ void Control::drop_device_resources() noexcept
    postprocess.drop_device_resources();
    scene_blur.drop_device_resources();
    shadows_blur.drop_device_resources();
+   damage_overlay.drop_device_resources();
 }
 
 void Control::read_config(YAML::Node config)
