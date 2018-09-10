@@ -27,21 +27,25 @@ void apply_vignette(float2 texcoords, inout float3 color)
    color *= smoothstep(vignette_end, vignette_start, dist);
 }
 
-float sample_lut(sampler2D lut, float v)
+float3 sample_color_grading_lut(float3 color)
 {
-   return tex2D(lut, float2(sqrt(v) + 1.0 / 256.0, 0.0)).x;
+   const float3 scale = (color_grading_lut_size - 1.0f) / color_grading_lut_size;
+   const float3 offset = (1.0f / color_grading_lut_size) / 2.0f;
+
+   const float a = 5.555556;
+   const float b = 0.047996;
+   const float c = 0.244161;
+   const float d = 0.386036;
+
+   color = c * log10(a * color + b) + d;
+
+   return tex3D(color_grading_lut, color * scale + offset).rgb;
 }
 
 void apply_color_grading(inout float3 color)
 {
-   color *= exposure_color_filter;
-
-   float grey = dot(saturation_weights, color);
-   color = grey + (saturation * (color - grey));
-
-   color.r = sample_lut(red_lut, color.r);
-   color.g = sample_lut(green_lut, color.g);
-   color.b = sample_lut(blue_lut, color.b);
+   color *= exposure;
+   color = sample_color_grading_lut(color);
 }
 
 float fxaa_luma(float3 color)

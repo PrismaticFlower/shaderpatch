@@ -176,6 +176,15 @@
     <ClInclude Include="src\effects\damage_overlay.hpp">
       <Filter>src\effects</Filter>
     </ClInclude>
+    <ClInclude Include="src\effects\color_helpers.hpp">
+      <Filter>src\effects</Filter>
+    </ClInclude>
+    <ClInclude Include="src\effects\filmic_tonemapper.hpp">
+      <Filter>src\effects</Filter>
+    </ClInclude>
+    <ClInclude Include="src\effects\postprocess_params.hpp">
+      <Filter>src\effects</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="dinput8.def" />

@@ -377,7 +377,36 @@ Color_grading_params show_color_grading_imgui(Color_grading_params params) noexc
       ImGui::DragFloat("Hightlight Offset", &params.highlight_offset, 0.005f);
    }
 
+   if (ImGui::CollapsingHeader("Channel Mixer")) {
+      ImGui::DragFloatFormatted3("Red", &params.channel_mix_red.x,
+                                 {"R: %.3f", "G: %.3f", "B: %.3f"}, 0.025f,
+                                 -2.0f, 2.0f);
+      ImGui::DragFloatFormatted3("Green", &params.channel_mix_green.x,
+                                 {"R: %.3f", "G: %.3f", "B: %.3f"}, 0.025f,
+                                 -2.0f, 2.0f);
+      ImGui::DragFloatFormatted3("Blue", &params.channel_mix_blue.x,
+                                 {"R: %.3f", "G: %.3f", "B: %.3f"}, 0.025f,
+                                 -2.0f, 2.0f);
+   }
+
+   if (ImGui::CollapsingHeader("Hue / Saturation / Value")) {
+      params.hsv_hue_adjustment *= 360.0f;
+
+      ImGui::DragFloat("Hue Adjustment", &params.hsv_hue_adjustment, 1.0f,
+                       -180.0f, 180.0f);
+
+      ImGui::DragFloat("Saturation Adjustment",
+                       &params.hsv_saturation_adjustment, 0.025f, 0.0f, 2.0f);
+
+      ImGui::DragFloat("Value Adjustment", &params.hsv_value_adjustment, 0.025f,
+                       0.0f, 2.0f);
+
+      params.hsv_hue_adjustment /= 360.0f;
+   }
+
    if (ImGui::CollapsingHeader("Filmic Tonemapping")) {
+      filmic::show_imgui_curve(params);
+
       ImGui::DragFloat("Toe Strength", &params.filmic_toe_strength, 0.01f, 0.0f, 1.0f);
       ImGui::DragFloat("Toe Length", &params.filmic_toe_length, 0.01f, 0.0f, 1.0f);
       ImGui::DragFloat("Shoulder Strength", &params.filmic_shoulder_strength,
@@ -397,20 +426,6 @@ Color_grading_params show_color_grading_imgui(Color_grading_params params) noexc
 
       if (ImGui::IsItemHovered()) {
          ImGui::SetTooltip("Reset the curve to linear values.");
-      }
-
-      ImGui::SameLine();
-
-      if (ImGui::Button("Reset To Example")) {
-         params.filmic_toe_strength = 0.5f;
-         params.filmic_toe_length = 0.5f;
-         params.filmic_shoulder_strength = 2.0f;
-         params.filmic_shoulder_length = 0.5f;
-         params.filmic_shoulder_angle = 1.0f;
-      }
-
-      if (ImGui::IsItemHovered()) {
-         ImGui::SetTooltip("Reset the curve to example starting point values.");
       }
    }
 

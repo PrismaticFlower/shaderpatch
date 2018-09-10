@@ -26,6 +26,12 @@ bool supports_texture_format(IDirect3D9& d3d, D3DFORMAT format)
                                            0, D3DRTYPE_TEXTURE, format)) == 1);
 }
 
+bool supports_texture_3d_format(IDirect3D9& d3d, D3DFORMAT format)
+{
+   return (SUCCEEDED(d3d.CheckDeviceFormat(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, D3DFMT_X8R8G8B8,
+                                           0, D3DRTYPE_VOLUMETEXTURE, format)) == 1);
+}
+
 bool supports_render_texture_format(IDirect3D9& d3d, D3DFORMAT format)
 {
    return (SUCCEEDED(d3d.CheckDeviceFormat(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL,
@@ -65,6 +71,9 @@ void check_required_features(IDirect3D9& d3d) noexcept
                 "Device does not support ATI2 textures."sv);
    feature_test(supports_texture_format(d3d, D3DFMT_L16),
                 "Device does not support L16 (R16) textures."sv);
+
+   feature_test(supports_texture_3d_format(d3d, D3DFMT_A16B16G16R16F),
+                "Device does not support 3D A16B16G16R16F (R16G16B16A16_FLOAT) textures."sv);
 
    feature_test(supports_render_texture_format(d3d, D3DFMT_R32F),
                 "Device does not support rendering to R32F textures."sv);

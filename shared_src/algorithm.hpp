@@ -1,14 +1,26 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <exception>
 #include <execution>
 #include <functional>
 #include <iterator>
 #include <type_traits>
+#include <utility>
 
 namespace sp {
+
+namespace detail {
+
+template<typename Type, Type... sequence>
+constexpr auto generate_index_array_impl(std::integer_sequence<Type, sequence...>) noexcept
+{
+   return std::array{sequence...};
+}
+
+}
 
 template<class ExecutionPolicy, class ForwardIterable, class Function>
 inline void for_each(ExecutionPolicy&& policy, ForwardIterable& iterable, Function&& func)
@@ -42,4 +54,9 @@ inline void for_each_exception_capable(ExecutionPolicy&& policy,
 
    if (exception_ptr) std::rethrow_exception(exception_ptr);
 }
+
+template<auto size>
+constexpr auto index_array = detail::generate_index_array_impl(
+   std::make_integer_sequence<decltype(size), size>{});
+
 }

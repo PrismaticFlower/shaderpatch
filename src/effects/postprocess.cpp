@@ -1,6 +1,5 @@
 
 #include "postprocess.hpp"
-#include "color_grading_lut_baker.hpp"
 #include "helpers.hpp"
 
 #include <random>
@@ -52,10 +51,10 @@ void Postprocess::color_grading_params(const Color_grading_params& params) noexc
 {
    _color_grading_params = params;
 
-   _constants.color_grading.color_filter_exposure =
-      get_lut_exposure_color_filter(_color_grading_params);
-   _constants.color_grading.saturation = params.saturation;
-   _color_luts = std::nullopt;
+   _constants.color_grading.exposure =
+      glm::exp2(_color_grading_params.exposure) * _color_grading_params.brightness;
+
+   _color_grading_lut_baker.update_params(params);
 }
 
 void Postprocess::film_grain_params(const Film_grain_params& params) noexcept
@@ -75,7 +74,8 @@ void Postprocess::film_grain_params(const Film_grain_params& params) noexcept
 void Postprocess::drop_device_resources() noexcept
 {
    _vertex_buffer = nullptr;
-   _color_luts = std::nullopt;
+
+   _color_grading_lut_baker.drop_device_resources();
 }
 
 void Postprocess::hdr_state(Hdr_state state) noexcept
@@ -174,16 +174,15 @@ void Postprocess::do_bloom_and_color_grading(const Shader_database& shaders,
 
    set_fs_pass_blend_state(*_device);
 
-   _device->SetTexture(bloom_sampler_slots_start, rt_a.texture());
-   bind_color_grading_luts();
+   _device->SetTexture(bloom_sampler_slot, rt_a.texture());
+   _color_grading_lut_baker.bind_texture(lut_sampler_slot);
 
    _device->SetRenderState(D3DRS_SRGBWRITEENABLE, true);
    _device->SetSamplerState(0, D3DSAMP_SRGBTEXTURE, false);
-   set_linear_clamp_sampler(*_device, bloom_sampler_slots_start,
-                            format == D3DFMT_A8R8G8B8);
+   set_linear_clamp_sampler(*_device, bloom_sampler_slot, format == D3DFMT_A8R8G8B8);
 
    if (_bloom_params.use_dirt) {
-      textures.get(_bloom_params.dirt_texture_name).bind(dirt_sampler_slot_start);
+      textures.get(_bloom_params.dirt_texture_name).bind(dirt_sampler_slot);
    }
 
    post_shaders.at(_uber_shader).bind(*_device);
@@ -206,7 +205,7 @@ void Postprocess::do_color_grading(const Shader_database& shaders,
                                    IDirect3DSurface9& output) noexcept
 {
    set_linear_clamp_sampler(*_device, 0);
-   bind_color_grading_luts();
+   _color_grading_lut_baker.bind_texture(lut_sampler_slot);
    _device->SetRenderState(D3DRS_SRGBWRITEENABLE, true);
 
    shaders.at("postprocess"s).at(_uber_shader).bind(*_device);
@@ -277,17 +276,6 @@ void Postprocess::update_randomness() noexcept
                             _random_real_dist(_random_engine)};
 }
 
-void Postprocess::bind_color_grading_luts() noexcept
-{
-   if (!_color_luts) {
-      _color_luts = bake_color_grading_luts(*_device, _color_grading_params);
-   }
-
-   for (int i = 0; i < gsl::narrow_cast<int>(_color_luts->size()); ++i) {
-      (*_color_luts)[i].bind(lut_sampler_slots_start + i);
-   }
-}
-
 void Postprocess::bind_blue_noise_texture(const Texture_database& textures) noexcept
 {
    auto texture = textures.get("_SP_BUILTIN_blue_noise_rgb_"s +
@@ -337,5 +325,4 @@ void Postprocess::update_shaders_names() noexcept
       if (_colored_film_grain_enabled) _finalize_shader += " colored"sv;
    }
 }
-
 }

@@ -4,19 +4,16 @@
 sampler2D scene_sampler : register(s0);
 sampler2D bloom_sampler : register(s1);
 sampler2D dirt_sampler : register(s2);
-sampler2D red_lut : register(s3);
-sampler2D green_lut : register(s4);
-sampler2D blue_lut : register(s5);
-sampler2D blue_noise_sampler : register(s6);
+sampler3D color_grading_lut : register(s3);
+sampler2D blue_noise_sampler : register(s4);
 
 float4 scene_pixel_metrics : register(c60);
 float2 bloom_texel_size : register(c61);
 float4 bloom_global_scale_threshold : register(c62);
 float3 bloom_dirt_scale : register(c63);
-float4 exposure_color_filter_saturation : register(c64);
-float2 vignette_end_start : register(c65);
-float4 film_grain_params : register(c66);
-float4 randomness : register(c67);
+float3 exposure_vignette_end_start : register(c64);
+float4 film_grain_params : register(c65);
+float4 randomness : register(c66);
 float3 bloom_local_scale : register(c70);
 
 const static float2 scene_pixel_size = scene_pixel_metrics.xy;
@@ -24,17 +21,16 @@ const static float2 scene_resolution = scene_pixel_metrics.zw;
 
 const static float3 luma_weights = {0.2126, 0.7152, 0.0722};
 const static float3 fxaa_luma_weights = {0.299, 0.587, 0.114};
-const static float3 saturation_weights = {0.25, 0.5, 0.25};
+const static uint color_grading_lut_size = 32;
 
 const static float3 bloom_global_scale = bloom_global_scale_threshold.xyz;
 const static float bloom_threshold = bloom_global_scale_threshold.w;
 const static float bloom_radius_scale = 1.0;
 
-const static float vignette_end = vignette_end_start.x;
-const static float vignette_start = vignette_end_start.y;
+const static float exposure = exposure_vignette_end_start.x;
 
-const static float3 exposure_color_filter = exposure_color_filter_saturation.xyz;
-const static float saturation = exposure_color_filter_saturation.w;
+const static float vignette_end = exposure_vignette_end_start.y;
+const static float vignette_start = exposure_vignette_end_start.z;
 
 const static float film_grain_amount = film_grain_params.x;
 const static float film_grain_size = film_grain_params.y;
