@@ -152,6 +152,8 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 {
    if (presentation_parameters == nullptr) return D3DERR_INVALIDCALL;
 
+   presentation_parameters->EnableAutoDepthStencil = false;
+
    if (const auto& display = _config.display; display.enabled) {
       presentation_parameters->Windowed = display.windowed;
       presentation_parameters->BackBufferWidth = display.resolution.x;
@@ -176,6 +178,9 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
    _fs_vertex_buffer.reset(nullptr);
    _water_texture = Texture{};
    _vertex_input_state = {};
+   _near_depth_texture.reset(nullptr);
+   _near_depth_surface.reset(nullptr);
+   _far_depth_texture.reset(nullptr);
    _far_depth_surface.reset(nullptr);
    _water_depth_surface.reset(nullptr);
 
@@ -245,12 +250,28 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
       _effects_backbuffer->GetSurfaceLevel(0, _backbuffer_override.clear_and_assign());
       _device->SetRenderTarget(0, _backbuffer_override.get());
 
+      _device->CreateTexture(_resolution.x, _resolution.y, 1, D3DUSAGE_DEPTHSTENCIL,
+                             static_cast<D3DFORMAT>(MAKEFOURCC('I', 'N', 'T', 'Z')),
+                             D3DPOOL_DEFAULT,
+                             _near_depth_texture.clear_and_assign(), nullptr);
+
+      _near_depth_texture->GetSurfaceLevel(0, _near_depth_surface.clear_and_assign());
+
       _effects.active(true);
    }
    else {
+      _device->CreateDepthStencilSurface(_resolution.x, _resolution.y, D3DFMT_D24S8,
+                                         presentation_parameters->MultiSampleType,
+                                         presentation_parameters->MultiSampleQuality,
+                                         false,
+                                         _near_depth_surface.clear_and_assign(),
+                                         nullptr);
+
       set_hdr_rendering(false);
       _effects.active(false);
    }
+
+   _device->SetDepthStencilSurface(_near_depth_surface.get());
 
    const auto blur_res = _resolution / blur_buffer_factor;
 
@@ -543,16 +564,48 @@ HRESULT Device::CreateDepthStencilSurface(UINT width, UINT height, D3DFORMAT for
       multi_sample_quality = 0;
    }
 
-   auto& sp_surface = water ? _water_depth_surface : _far_depth_surface;
+   HRESULT result;
 
-   auto result =
-      _device->CreateDepthStencilSurface(width, height, format, multi_sample,
-                                         multi_sample_quality, discard,
-                                         sp_surface.clear_and_assign(), shared_handle);
+   if (water) {
+      result =
+         _device->CreateDepthStencilSurface(width, height, format, multi_sample,
+                                            multi_sample_quality, discard,
+                                            _water_depth_surface.clear_and_assign(),
+                                            shared_handle);
 
-   if (SUCCEEDED(result)) {
-      sp_surface->AddRef();
-      *surface = sp_surface.get();
+      if (SUCCEEDED(result)) {
+         _water_depth_surface->AddRef();
+         *surface = _water_depth_surface.get();
+      }
+   }
+   else {
+      if (_effects.active()) {
+         result = _device->CreateTexture(width, height, 1, D3DUSAGE_DEPTHSTENCIL,
+                                         static_cast<D3DFORMAT>(
+                                            MAKEFOURCC('I', 'N', 'T', 'Z')),
+                                         D3DPOOL_DEFAULT,
+                                         _far_depth_texture.clear_and_assign(),
+                                         shared_handle);
+
+         if (SUCCEEDED(result)) {
+            _far_depth_texture->GetSurfaceLevel(0, _far_depth_surface.clear_and_assign());
+
+            _far_depth_surface->AddRef();
+            *surface = _far_depth_surface.get();
+         }
+      }
+      else {
+         result =
+            _device->CreateDepthStencilSurface(width, height, format, multi_sample,
+                                               multi_sample_quality, discard,
+                                               _far_depth_surface.clear_and_assign(),
+                                               shared_handle);
+
+         if (SUCCEEDED(result)) {
+            _far_depth_surface->AddRef();
+            *surface = _far_depth_surface.get();
+         }
+      }
    }
 
    return result;
@@ -737,6 +790,11 @@ HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
 
             return S_OK;
          };
+      }
+      else if (_vs_metadata.rendertype == "skyfog"sv) {
+         apply_skyfog_ext();
+
+         _discard_next_draw_call = true;
       }
       else if (_vs_metadata.rendertype == "hdr"sv) {
          _game_doing_bloom_pass = true;
@@ -1035,7 +1093,7 @@ HRESULT Device::DrawPrimitive(D3DPRIMITIVETYPE primitive_type,
       }
    }
 
-   if (_discard_draw_calls) {
+   if (_discard_draw_calls || std::exchange(_discard_next_draw_call, false)) {
       return S_OK;
    }
 
@@ -1049,7 +1107,9 @@ HRESULT Device::DrawIndexedPrimitive(D3DPRIMITIVETYPE primitive_type,
                                      UINT min_vertex_index, UINT num_vertices,
                                      UINT start_Index, UINT prim_Count) noexcept
 {
-   if (_discard_draw_calls) return S_OK;
+   if (_discard_draw_calls || std::exchange(_discard_next_draw_call, false)) {
+      return S_OK;
+   }
 
    refresh_material();
 
@@ -1283,6 +1343,42 @@ void Device::apply_damage_overlay_effect() noexcept
    apply_sampler_state(*_device, _sampler_states[0], 0);
    apply_blend_state(*_device, _state_block);
    apply_vertex_input_state(*_device, _vertex_input_state);
+}
+
+void Device::apply_skyfog_ext() noexcept
+{
+   std::array<Com_ptr<IDirect3DBaseTexture9>, 2> textures;
+
+   _device->GetTexture(1, textures[0].clear_and_assign());
+   _device->GetTexture(2, textures[1].clear_and_assign());
+
+   _device->SetTexture(1, _far_depth_texture.get());
+   _device->SetTexture(2, _near_depth_texture.get());
+   _device->SetRenderTarget(1, _linear_depth_surface.get());
+   _device->SetStreamSource(0, _fs_vertex_buffer.get(), 0, effects::fs_triangle_stride);
+   _device->SetVertexDeclaration(_fs_vertex_decl.get());
+
+   effects::set_point_clamp_sampler(*_device, 1);
+   effects::set_point_clamp_sampler(*_device, 2);
+
+   _device->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, true);
+   _device->SetRenderState(D3DRS_COLORWRITEENABLE, effects::colorwrite_all);
+   _device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_INVSRCALPHA);
+   _device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_SRCALPHA);
+   _device->SetRenderState(D3DRS_SRCBLENDALPHA, D3DBLEND_ZERO);
+   _device->SetRenderState(D3DRS_DESTBLENDALPHA, D3DBLEND_ONE);
+   _device->SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_ADD);
+
+   _shaders.at("skyfog ext"s).at("main"s).bind(*_device);
+
+   _device->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 1);
+
+   apply_blend_state(*_device, _state_block);
+   apply_sampler_state(*_device, _sampler_states[1], 1);
+   apply_sampler_state(*_device, _sampler_states[2], 2);
+   _device->SetTexture(1, textures[0].get());
+   _device->SetTexture(2, textures[1].get());
+   _device->SetRenderTarget(1, nullptr);
 }
 
 void Device::set_hdr_rendering(bool hdr_rendering) noexcept

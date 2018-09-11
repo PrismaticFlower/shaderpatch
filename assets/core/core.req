@@ -52,6 +52,7 @@ ucft
       "pbr-emissive"
       "postprocess"
       "shadows_blur"
+      "skyfog_ext"
       "stock_bloom_ext"
    }
    

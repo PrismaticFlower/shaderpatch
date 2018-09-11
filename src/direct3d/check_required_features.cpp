@@ -39,6 +39,13 @@ bool supports_render_texture_format(IDirect3D9& d3d, D3DFORMAT format)
                                            D3DRTYPE_TEXTURE, format)) == 1);
 }
 
+bool supports_depth_stencil_texture_format(IDirect3D9& d3d, D3DFORMAT format)
+{
+   return (SUCCEEDED(d3d.CheckDeviceFormat(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL,
+                                           D3DFMT_X8R8G8B8, D3DUSAGE_DEPTHSTENCIL,
+                                           D3DRTYPE_TEXTURE, format)) == 1);
+}
+
 }
 
 void check_required_features(IDirect3D9& d3d) noexcept
@@ -79,6 +86,11 @@ void check_required_features(IDirect3D9& d3d) noexcept
                 "Device does not support rendering to R32F textures."sv);
    feature_test(supports_render_texture_format(d3d, D3DFMT_G16R16F),
                 "Device does not support rendering to G16R16F (R16G16F) textures."sv);
+
+   feature_test(supports_depth_stencil_texture_format(d3d, static_cast<D3DFORMAT>(
+                                                              MAKEFOURCC('I', 'N', 'T',
+                                                                         'Z'))),
+                "Device does not support reading depth buffer from shaders."sv);
 
    if (!supported) {
       const auto action = MessageBoxA(nullptr, failed_message, "Device Unsupported",

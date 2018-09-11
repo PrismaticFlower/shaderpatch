@@ -247,6 +247,12 @@
     <None Include="definitions\patch\normal_ext-detail.json">
       <Filter>definitions\patch</Filter>
     </None>
+    <None Include="definitions\patch\skyfog_ext.json">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="src\skyfog_ext.fx">
+      <Filter>src</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">

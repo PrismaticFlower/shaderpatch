@@ -350,6 +350,7 @@ private:
    void clear_material() noexcept;
 
    void bind_water_texture() noexcept;
+
    void bind_refraction_texture() noexcept;
 
    void blur_shadows() noexcept;
@@ -361,6 +362,8 @@ private:
    void apply_gaussian_scene_blur() noexcept;
 
    void apply_damage_overlay_effect() noexcept;
+
+   void apply_skyfog_ext() noexcept;
 
    void set_hdr_rendering(bool hdr_rendering) noexcept;
 
@@ -379,6 +382,10 @@ private:
    Com_ptr<IDirect3DSurface9> _blur_surface;
    Com_ptr<IDirect3DTexture9> _refraction_texture;
 
+   Com_ptr<IDirect3DTexture9> _near_depth_texture;
+   Com_ptr<IDirect3DSurface9> _near_depth_surface;
+
+   Com_ptr<IDirect3DTexture9> _far_depth_texture;
    Com_ptr<IDirect3DSurface9> _far_depth_surface;
    Com_ptr<IDirect3DSurface9> _water_depth_surface;
 
@@ -405,6 +412,7 @@ private:
    bool _particles_blur = false;
    bool _refresh_material = true;
    bool _discard_draw_calls = false;
+   bool _discard_next_draw_call = false;
    bool _render_depth_texture = false;
    Current_scene _current_scene = Current_scene::_near;
 
