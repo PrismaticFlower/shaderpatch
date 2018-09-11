@@ -232,15 +232,51 @@ inline void show_imgui_curve(const Color_grading_params& params)
 {
    auto curve = color_grading_params_to_curve(params);
 
+   static float divisor = 256.0f;
+   static int index_count = 1024;
+
    const auto plotter = [](void* data, int idx) {
       const auto& curve = *static_cast<Curve*>(data);
 
-      float v = idx / 64.0f;
+      float v = idx / divisor;
 
       return eval(v, curve);
    };
 
-   ImGui::PlotLines("Tonemap Curve", plotter, &curve, 3840);
+   static int range = 0;
+
+   ImGui::PlotLines("Tonemap Curve", plotter, &curve, index_count);
+   ImGui::SliderInt("Curve Preview Range", &range, 0, 4);
+
+   ImGui::SameLine();
+
+   switch (range) {
+   case 0:
+      divisor = 256.0f;
+      index_count = 1024;
+      ImGui::TextUnformatted("0.0 to 4.0");
+      break;
+   case 1:
+      divisor = 256.0f;
+      index_count = 2048;
+      ImGui::TextUnformatted("0.0 to 8.0");
+      break;
+   case 2:
+      divisor = 256.0f;
+      index_count = 4096;
+      ImGui::TextUnformatted("0.0 to 16.0");
+      break;
+   case 3:
+      divisor = 128.0f;
+      index_count = 4096;
+      ImGui::TextUnformatted("0.0 to 32.0");
+      break;
+   case 4:
+      divisor = 64.0f;
+      index_count = 4096;
+      ImGui::TextUnformatted("0.0 to 64.0");
+      break;
+   }
 }
 
 }
