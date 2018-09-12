@@ -343,7 +343,7 @@ private:
 
    void post_process() noexcept;
 
-   void late_fp_resolve() noexcept;
+   void late_effects_resolve() noexcept;
 
    void refresh_material() noexcept;
 

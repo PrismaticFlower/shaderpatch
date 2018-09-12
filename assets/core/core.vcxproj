@@ -163,6 +163,7 @@
     <None Include="definitions\particle.json" />
     <None Include="definitions\patch\bloom.json" />
     <None Include="definitions\patch\damage_overlay.json" />
+    <None Include="definitions\patch\late_effects_resolve.json" />
     <None Include="definitions\patch\normal_ext-detail.json" />
     <None Include="definitions\patch\normal_ext-specular-detail.json" />
     <None Include="definitions\patch\normal_ext-specular.json" />
@@ -345,6 +346,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\skyfog_ext.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\late_effects_resolve.fx">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

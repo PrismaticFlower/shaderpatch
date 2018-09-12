@@ -332,7 +332,7 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
    }
 
    if (_effects.active()) {
-      if (!(_effects_rt_resolved, false)) late_fp_resolve();
+      if (!std::exchange(_effects_rt_resolved, false)) late_effects_resolve();
    }
 
    if (_imgui_active) {
@@ -1167,15 +1167,29 @@ void Device::post_process() noexcept
    state->Apply();
 }
 
-void Device::late_fp_resolve() noexcept
+void Device::late_effects_resolve() noexcept
 {
    Com_ptr<IDirect3DSurface9> backbuffer;
    _device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO,
                           backbuffer.clear_and_assign());
    _device->SetRenderTarget(0, backbuffer.get());
+   _device->SetStreamSource(0, _fs_vertex_buffer.get(), 0, effects::fs_triangle_stride);
+   _device->SetVertexDeclaration(_fs_vertex_decl.get());
 
-   _device->StretchRect(_backbuffer_override.get(), nullptr, backbuffer.get(),
-                        nullptr, D3DTEXF_NONE);
+   _device->SetTexture(0, _effects_backbuffer.get());
+   _device->SetRenderState(D3DRS_SRGBWRITEENABLE, _rt_format == D3DFMT_A16B16G16R16F);
+   effects::set_point_clamp_sampler(*_device, 0);
+   effects::set_fs_pass_blend_state(*_device);
+
+   _shaders.at("late effects resolve"s).at("main"s).bind(*_device);
+
+   _device->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 1);
+
+   _device->SetVertexShader(_game_vertex_shader.get());
+   _device->SetPixelShader(_game_pixel_shader.get());
+   apply_vertex_input_state(*_device, _vertex_input_state);
+   apply_blend_state(*_device, _state_block);
+   apply_sampler_state(*_device, _sampler_states[0], 0);
 }
 
 void Device::refresh_material() noexcept
