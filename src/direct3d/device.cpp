@@ -751,42 +751,23 @@ HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
    }
 
    if (_effects.active()) {
-      if (_render_depth_texture && !_zprepass && _vs_metadata.rendertype == "zprepass"sv) {
-         _device->SetRenderTarget(0, _linear_depth_surface.get());
-         _device->Clear(0, nullptr, D3DCLEAR_TARGET, 0, 0.0, 0);
-         _device->SetRenderState(D3DRS_COLORWRITEENABLE, D3DCOLORWRITEENABLE_RED);
-         _zprepass = true;
-      }
-      else if (_render_depth_texture && _zprepass &&
-               _vs_metadata.rendertype != "zprepass"sv) {
-         Com_ptr<IDirect3DSurface9> backbuffer;
-         this->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO,
-                             backbuffer.clear_and_assign());
-         _device->SetRenderTarget(0, backbuffer.get());
-         _device->SetRenderState(D3DRS_COLORWRITEENABLE,
-                                 _state_block.get(D3DRS_COLORWRITEENABLE));
-         _zprepass = false;
-      }
-      else if (_vs_metadata.rendertype == "shadowquad"sv) {
-
+      if (_vs_metadata.rendertype == "shadowquad"sv) {
          Com_ptr<IDirect3DSurface9> shadow_surface;
-         Com_ptr<IDirect3DSurface9> rt;
 
          _shadow_texture->GetSurfaceLevel(0, shadow_surface.clear_and_assign());
-         _device->GetRenderTarget(0, rt.clear_and_assign());
 
          _device->SetRenderTarget(0, shadow_surface.get());
          _device->ColorFill(shadow_surface.get(), nullptr, 0xffffffff);
 
-         _stretch_rect_hook = [this,
-                               rt{std::move(rt)}](IDirect3DSurface9*, const RECT*,
-                                                  IDirect3DSurface9*, const RECT*,
-                                                  D3DTEXTUREFILTERTYPE) {
+         _stretch_rect_hook = [shadow_surface, this](auto...) {
             _stretch_rect_hook = nullptr;
 
             if (_effects.shadows_blur.enabled()) blur_shadows();
 
-            _device->SetRenderTarget(0, rt.get());
+            Com_ptr<IDirect3DSurface9> backbuffer;
+            _effects_backbuffer->GetSurfaceLevel(0, backbuffer.clear_and_assign());
+
+            _device->SetRenderTarget(0, backbuffer.get());
 
             return S_OK;
          };
@@ -1257,7 +1238,7 @@ void Device::blur_shadows() noexcept
    _device->SetRenderState(D3DRS_STENCILENABLE, FALSE);
 
    _effects.shadows_blur.apply(_shaders.at("shadows blur"s), _rt_allocator,
-                               *_linear_depth_texture, *_shadow_texture);
+                               *_near_depth_texture, *_shadow_texture);
 
    apply_sampler_state(*_device, _sampler_states[0], 0);
    apply_sampler_state(*_device, _sampler_states[1], 1);

@@ -74,7 +74,7 @@ float4 blur_ps(float2 texcoords : TEXCOORD) : COLOR
       float4 w = saturate(1.0 - abs(centre_d - d));
 
       v_total += dot(v, w);
-      w_total += dot(1.0, w);
+      w_total += (w.x + w.y + w.z + w.w);
    }
    
    return v_total / w_total;
@@ -84,6 +84,14 @@ float4 combine_ps(float2 texcoords : TEXCOORD) : COLOR
 {
    float v = tex2Dlod(buffer_sampler, texcoords, 0).a;
    float d = tex2Dlod(depth_sampler, texcoords, 0).r;
+
+   const static float near_plane = 0.5;
+   const static float far_plane = 10000.0;
+
+   const float proj_a = far_plane / (far_plane - near_plane);
+   const float proj_b = (-far_plane * near_plane) / (far_plane - near_plane);
+
+   d = proj_b / (d - proj_a);
 
    return float4(v, d, v, d);
 }

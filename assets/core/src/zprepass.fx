@@ -19,20 +19,16 @@ struct Vs_output
 {
    float4 position : POSITION;
    float2 texcoords : TEXCOORD0;
-   float camera_distance : TEXCOORD1;
 };
 
 Vs_output prepass_vs(Vs_input input)
 {
    Vs_output output;
 
-   float4 world_position = transform::position(input.position, input.blend_indices, 
-                                               input.weights);
-
-   output.position = position_project(world_position);
+   output.position = transform::position_project(input.position, input.blend_indices,
+                                                 input.weights);
    output.texcoords = decompress_transform_texcoords(input.texcoords, x_texcoord_transform,
                                                      y_texcoord_transform);
-   output.camera_distance = distance(world_view_position, world_position.xyz);
 
    return output;
 }
@@ -45,7 +41,7 @@ struct Ps_input
 
 float4 opaque_ps(Ps_input input) : COLOR
 {
-   return input.camera_distance;
+   return 0.0;
 }
 
 float4 hardedged_ps(Ps_input input) : COLOR
@@ -54,5 +50,5 @@ float4 hardedged_ps(Ps_input input) : COLOR
 
    if (alpha < 0.5) discard;
 
-   return input.camera_distance;
+   return 0.0;
 }
