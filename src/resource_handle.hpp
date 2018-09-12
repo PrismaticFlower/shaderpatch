@@ -202,9 +202,6 @@ public:
 
    HRESULT __stdcall GetLevelDesc(UINT, D3DVOLUME_DESC*) noexcept override
    {
-      log(Log_level::warning,
-          "Unimplemented function \"" __FUNCSIG__ "\" called.");
-
       return E_NOTIMPL;
    }
 
