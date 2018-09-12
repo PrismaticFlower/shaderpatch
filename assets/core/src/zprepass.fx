@@ -36,7 +36,6 @@ Vs_output prepass_vs(Vs_input input)
 struct Ps_input
 {
    float2 texcoords : TEXCOORD0;
-   float camera_distance : TEXCOORD1;
 };
 
 float4 opaque_ps(Ps_input input) : COLOR
@@ -50,5 +49,5 @@ float4 hardedged_ps(Ps_input input) : COLOR
 
    if (alpha < 0.5) discard;
 
-   return 0.0;
+   return float4(0.0, 0.0, 0.0, 1.0);
 }
