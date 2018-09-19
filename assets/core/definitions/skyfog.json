@@ -12,7 +12,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
 
           "vertex_shader": "skyfog_vs",
           "pixel_shader": "skyfog_ps"

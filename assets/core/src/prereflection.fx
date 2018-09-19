@@ -1,20 +1,22 @@
 
-#include "vertex_utilities.hlsl"
-#include "transform_utilities.hlsl"
+#include "generic_vertex_input.hlsl"
+#include "vertex_transformer.hlsl"
 
-float4 prereflection_vs(float4 position : POSITION) : POSITION
+float4 prereflection_vs(Vertex_input input) : SV_Position
 {
-   return transform::position_project(position);
+   Transformer transformer = create_transformer(input);
+
+   return transformer.positionPS();
 }
 
-float4 prereflection_fake_stencil_vs(float4 position : POSITION) : POSITION
+float4 prereflection_fake_stencil_vs(Vertex_input input) : SV_Position
 {
-   position = transform::position_project(position);
+   Transformer transformer = create_transformer(input);
 
-   return position.xyww;
+   return transformer.positionPS().xyww;
 }
 
-float4 prereflection_ps() : COLOR
+float4 prereflection_ps() : SV_Target0
 {
-   return float4(0.0, 0.0, 0.0, 0.0);
+   return 0.0;
 }

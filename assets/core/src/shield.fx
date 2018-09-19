@@ -1,32 +1,21 @@
 
 #include "ext_constants_list.hlsl"
+#include "fog_utilities.hlsl"
+#include "generic_vertex_input.hlsl"
 #include "vertex_utilities.hlsl"
+#include "vertex_transformer.hlsl"
 #include "pixel_utilities.hlsl"
-#include "transform_utilities.hlsl"
 #include "lighting_utilities.hlsl"
 
 float3 specular_color : register(c[CUSTOM_CONST_MIN]);
 float4 shield_constants : register(c[CUSTOM_CONST_MIN + 3]);
 float2 near_scene_fade_scale : register(c[CUSTOM_CONST_MIN + 4]);
 
-struct Vs_input
-{
-   float4 position : POSITION;
-   float3 normals : NORMAL;
-   float4 texcoords : TEXCOORD0;
-};
+Texture2D<float4> diffuse_texture : register(ps, s0);
+Texture2D<float2> normal_map_texture : register(ps, s12);
+Texture2D<float3> refraction_buffer : register(ps_3_0, s13);
 
-struct Vs_output
-{
-   float4 position : POSITION;
-   float fog : FOG;
-
-   float2 texcoords : TEXCOORD0;
-   float3 normal_texcoords : TEXCOORD1;
-   float3 world_normal : TEXCOORD2;
-   float3 view_normal : TEXCOORD3;
-   float alpha : TEXCOORD4;
-};
+SamplerState linear_wrap_sampler;
 
 float3 animate_normal(float3 normal)
 {
@@ -46,9 +35,9 @@ float3 animate_normal(float3 normal)
    return mul(y_trans, normal);
 }
 
-float angle_factor(float3 view_normal, float3 world_normal)
+float angle_factor(float3 view_normal, float3 normal)
 {
-   float3 reflected_view_normal = reflect(view_normal, world_normal);
+   float3 reflected_view_normal = reflect(view_normal, normal);
 
    float view_angle = dot(reflected_view_normal, reflected_view_normal);
    view_angle = max(view_angle, shield_constants.w);
@@ -63,46 +52,44 @@ float angle_factor(float3 view_normal, float3 world_normal)
    return factor;
 }
 
-Vs_output shield_vs(Vs_input input)
+struct Vs_output
+{
+   float4 positionPS : POSITION;
+
+   float2 texcoords : TEXCOORD0;
+   float3 normal_texcoords : TEXCOORD1;
+   float3 normalWS : TEXCOORD2;
+   float3 view_normalWS : TEXCOORD3;
+   float2 fog_eye_distance_alpha : TEXCOORD4;
+};
+
+Vs_output shield_vs(Vertex_input input)
 {
    Vs_output output;
 
-   float3 obj_normal = normalize(-decompress_position(input.position).xyz);
-   float3 world_normal = normals_to_world(obj_normal);
-   float4 world_position = transform::position(input.position);
+   Transformer transformer = create_transformer(input);
 
-   float3 view_normal = normalize(world_position.xyz - world_view_position);
+   const float3 positionWS = transformer.positionWS();
+   const float3 normalOS = normalize(-transformer.positionOS());
+   const float3 normalWS = mul(normalOS, (float3x3)world_matrix);
+   const float3 view_normalWS = normalize(positionWS - view_positionWS);
 
-   output.world_normal = world_normal;
-   output.position = position_project(world_position);
-   output.view_normal = view_normal;
+   output.positionPS = transformer.positionPS();
+   output.normalWS = normalWS;
+   output.view_normalWS = view_normalWS;
+   output.fog_eye_distance_alpha.x = fog::get_eye_distance(positionWS);
 
-   output.texcoords =
-      output.texcoords = decompress_texcoords(input.texcoords) + shield_constants.xy;
-   output.normal_texcoords = animate_normal(world_normal);
+   output.texcoords = input.texcoords() + shield_constants.xy;
+   output.normal_texcoords = animate_normal(normalWS);
    
-   Near_scene near_scene = calculate_near_scene_fade(world_position);
-
+   Near_scene near_scene = calculate_near_scene_fade(positionWS);
    near_scene.fade = near_scene.fade * near_scene_fade_scale.x + near_scene_fade_scale.y;
 
-   output.alpha = angle_factor(view_normal, world_normal) * saturate(near_scene.fade);
-   output.fog = calculate_fog(near_scene, world_position);
+   output.fog_eye_distance_alpha.y = 
+      angle_factor(view_normalWS, normalWS) * saturate(near_scene.fade);
 
    return output;
 }
-
-sampler2D diffuse_map : register(ps, s0);
-sampler2D normal_map : register(ps, s12);
-sampler2D refraction_texture : register(ps, s13);
-
-struct Ps_input
-{
-   float2 texcoords : TEXCOORD0;
-   float3 normal_texcoords : TEXCOORD1;
-   float3 world_normal : TEXCOORD2;
-   float3 view_normal : TEXCOORD3;
-   float alpha : TEXCOORD4;
-};
 
 float2 map_xyz_to_uv(float3 pos)
 {
@@ -131,20 +118,28 @@ float2 map_xyz_to_uv(float3 pos)
    return 0.5 * (coords / max_axis + 1.0);
 }
 
-float4 shield_ps(Ps_input input, float2 position : VPOS) : COLOR
+struct Ps_input
 {
-   float3 view_normal = normalize(input.view_normal);
-   float3 world_normal = normalize(input.world_normal);
+   float2 texcoords : TEXCOORD0;
+   float3 normal_texcoords : TEXCOORD1;
+   float3 normalWS : TEXCOORD2;
+   float3 view_normalWS : TEXCOORD3;
+   float2 fog_eye_distance_alpha : TEXCOORD4;
+};
 
-   float3 normal = perturb_normal(normal_map, map_xyz_to_uv(input.normal_texcoords),
-                                  world_normal, view_normal);
+float4 shield_ps(Ps_input input, float2 position : VPOS) : SV_Target0
+{
+   const float3 view_normalWS = normalize(input.view_normalWS);
+   const float3 normalWS = perturb_normal(normal_map_texture, linear_wrap_sampler,
+                                          map_xyz_to_uv(input.normal_texcoords),
+                                          normalize(input.normalWS), view_normalWS);
 
-   float2 scene_coords = position * rt_resolution.zw +normal.xz * 0.1;
-   float3 scene_color = tex2D(refraction_texture, scene_coords).rgb;
-   float4 diffuse_color = tex2D(diffuse_map, input.texcoords);
+   const float2 scene_coords = position * rt_resolution.zw + normalWS.xz * 0.1;
+   const float3 scene_color = refraction_buffer.SampleLevel(linear_wrap_sampler, scene_coords, 0.0);
+   const float4 diffuse_color = diffuse_texture.Sample(linear_wrap_sampler, input.texcoords);
 
-   const float3 H = normalize(light_directional_0_dir.xyz + view_normal);
-   const float NdotH = saturate(dot(normal, H));
+   const float3 H = normalize(light_directional_0_dir.xyz + view_normalWS);
+   const float NdotH = saturate(dot(normalWS, H));
    float3 specular = pow(NdotH, 64);
    specular *= specular_color.rgb;
 
@@ -154,5 +149,7 @@ float4 shield_ps(Ps_input input, float2 position : VPOS) : COLOR
 
    color = (color * alpha + specular) * hdr_info.z;
 
-   return float4(color + scene_color, saturate(input.alpha));
+   color = fog::apply(color, input.fog_eye_distance_alpha.x);
+
+   return float4(color + scene_color, saturate(input.fog_eye_distance_alpha.y));
 }

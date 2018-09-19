@@ -12,9 +12,6 @@ float3 blend_tangent_space_normals(float3 N0, float3 N1)
 // Taken from http://www.thetenthplanet.de/archives/1180, be sure to go
 // check out his article on it. 
 
-#define WITH_NORMALMAP_UNSIGNED
-#define WITH_NORMALMAP_2CHANNEL
-
 float3x3 cotangent_frame(float3 N, float3 p, float2 uv)
 {
    // get edge vectors of the pixel triangle
@@ -34,42 +31,43 @@ float3x3 cotangent_frame(float3 N, float3 p, float2 uv)
    return float3x3(T * invmax, B * invmax, N);
 }
 
-float3 perturb_normal(sampler2D samp, float2 texcoord, float3 N, float3 V)
+float3 perturb_normal(Texture2D<float2> tex, SamplerState samp, 
+                      float2 texcoords, float3 N, float3 V)
 {
    // assume N, the interpolated vertex normal and 
    // V, the view vector (vertex to eye)
-   float3 map = tex2D(samp, texcoord).xyz;
-#ifdef WITH_NORMALMAP_UNSIGNED
-   map = map * 255. / 127. - 128. / 127.;
-#endif
-#ifdef WITH_NORMALMAP_2CHANNEL
+
+   float3 map;
+   map.xy = tex.Sample(samp, texcoords) * 255. / 127. - 128. / 127.;
    map.z = sqrt(1. - dot(map.xy, map.xy));
-#endif
+
 #ifdef WITH_NORMALMAP_GREEN_UP
    map.y = -map.y;
 #endif
-   float3x3 TBN = cotangent_frame(N, -V, texcoord);
+
+   float3x3 TBN = cotangent_frame(N, -V, texcoords);
    return normalize(mul(map, TBN));
 }
 
-float3 sample_projected_light(sampler2D light_texture, float4 texcoords)
+float3 sample_projected_light(Texture2D<float3> projected_texture, float4 texcoords)
 {
-   if (cube_map_light_projection)
-   {
-      return texCUBEproj(cube_light_texture, texcoords).rgb;
-   }
-   else
-   {
-      return tex2Dproj(light_texture, texcoords).rgb;
-   }
+   // FIXME: SM 3.0 Flow Control workaround.
+   const float w_rcp = rcp(texcoords.w);
+
+   // if (cube_map_light_projection) {
+   //    const float3 proj_texcoords = texcoords.xyz * w_rcp;
+   // 
+   //    return cube_projected_texture.Sample(projected_texture_sampler, proj_texcoords);
+   // }
+   // else {
+      const float2 proj_texcoords = texcoords.xy * w_rcp;
+
+      return projected_texture.Sample(projected_texture_sampler, proj_texcoords);
+   // }
 }
 
-float4 tex2Dlod(sampler2D samp, float2 texcoord, float lod)
-{
-   return tex2Dlod(samp, float4(texcoord, 0.0, lod));
-}
-
-float4 tex2Dgaussian(sampler2D samp, float2 texcoord, float2 texel_size)
+float3 gaussian_sample(Texture2D<float3> tex, SamplerState samp,
+                       float2 texcoords, float2 texel_size)
 {
    const static float centre_weight = 0.083355;
    const static float mid_weight = 0.10267899999999999;
@@ -77,25 +75,25 @@ float4 tex2Dgaussian(sampler2D samp, float2 texcoord, float2 texel_size)
    const static float corner_weight = 0.126482;
    const static float2 corner_offset = { 1.3446735503866163, 1.3446735503866163 };
 
-   float4 color = tex2Dlod(samp, texcoord, 0) * centre_weight;
+   float3 color = tex.SampleLevel(samp, texcoords, 0) * centre_weight;
 
    color += 
-      tex2Dlod(samp, texcoord + (mid_offset * texel_size) * float2(1, 0), 0) * mid_weight;
+      tex.SampleLevel(samp, texcoords + (mid_offset * texel_size) * float2(1, 0), 0) * mid_weight;
    color += 
-      tex2Dlod(samp, texcoord - (mid_offset * texel_size) * float2(1, 0), 0) * mid_weight;
+      tex.SampleLevel(samp, texcoords - (mid_offset * texel_size) * float2(1, 0), 0) * mid_weight;
    color += 
-      tex2Dlod(samp, texcoord + (mid_offset * texel_size) * float2(0, 1), 0) * mid_weight;
+      tex.SampleLevel(samp, texcoords + (mid_offset * texel_size) * float2(0, 1), 0) * mid_weight;
    color += 
-      tex2Dlod(samp, texcoord - (mid_offset * texel_size) * float2(0, 1), 0) * mid_weight;
+      tex.SampleLevel(samp, texcoords - (mid_offset * texel_size) * float2(0, 1), 0) * mid_weight;
 
    color += 
-      tex2Dlod(samp, texcoord + (corner_offset * texel_size), 0) * corner_weight;
+      tex.SampleLevel(samp, texcoords + (corner_offset * texel_size), 0) * corner_weight;
    color += 
-      tex2Dlod(samp, texcoord + (corner_offset * texel_size) * float2(-1, 1), 0) * corner_weight;
+      tex.SampleLevel(samp, texcoords + (corner_offset * texel_size) * float2(-1, 1), 0) * corner_weight;
    color += 
-      tex2Dlod(samp, texcoord + (corner_offset * texel_size) * float2(-1, -1), 0) * corner_weight;
+      tex.SampleLevel(samp, texcoords + (corner_offset * texel_size) * float2(-1, -1), 0) * corner_weight;
    color += 
-      tex2Dlod(samp, texcoord + (corner_offset * texel_size) * float2(1, -1), 0) * corner_weight;
+      tex.SampleLevel(samp, texcoords + (corner_offset * texel_size) * float2(1, -1), 0) * corner_weight;
 
    return color;
 }

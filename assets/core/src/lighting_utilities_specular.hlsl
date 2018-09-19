@@ -6,50 +6,45 @@
 namespace light {
 namespace specular {
 
-float3 calculate(out float out_intensity, float3 world_normal, float3 view_normal,
-                 float3 light_direction, float3 light_color, float3 diffuse_color, 
-                 float3 specular_color, float exponent)
+void calculate(out float out_diffuse_intensity, out float out_specular_intensity, 
+               inout float3 in_out_diffuse, inout float3 in_out_specular, 
+               float3 N, float3 V, float3 L, float attenuation, float3 light_color, 
+               float exponent)
 {
-   const float3 H = normalize(light_direction + view_normal);
-   const float NdotH = max(dot(world_normal, H), 0.0);
-   float specular = pow(NdotH, exponent);
-   float diffuse = max(dot(world_normal, light_direction), 0.0);
+   const float3 H = normalize(L + V);
+   const float NdotH = max(dot(N, H), 0.0);
+   const float specular = pow(NdotH, exponent) * attenuation;
+   const float diffuse = max(dot(N, L), 0.0) * attenuation;
 
-   out_intensity = diffuse + specular;
+   out_diffuse_intensity = diffuse;
+   out_specular_intensity = specular;
 
-   return (diffuse * diffuse_color * light_color) + (specular * specular_color * light_color);
+   in_out_diffuse += (diffuse * light_color);
+   in_out_specular += (specular * light_color);
 }
 
-float3 calculate_point(out float out_intensity, float3 world_normal, float3 world_position,
-                       float3 view_normal, float4 light_position, float3 light_color,
-                       float3 diffuse_color, float3 specular_color, float exponent)
+void calculate_point(out float out_diffuse_intensity, out float out_specular_intensity,
+                     inout float3 in_out_diffuse, inout float3 in_out_specular, float3 normal,
+                     float3 position, float3 view_normal, float4 light_position, 
+                     float3 light_color, float exponent)
 {
-   const float3 light_dir = -normalize(world_position - light_position.xyz);
-   const float attenuation = attenuation_point(world_position, light_position);
+   const float3 light_dir = -normalize(position - light_position.xyz);
+   const float attenuation = attenuation_point(position, light_position);
    
-   float intensity;
-   const float3 color = calculate(intensity, world_normal, view_normal, 
-                                  light_dir, light_color, diffuse_color, 
-                                  specular_color, exponent);
-   out_intensity = intensity * attenuation;
-
-   return color * attenuation;
+   calculate(out_diffuse_intensity, out_specular_intensity, in_out_diffuse, in_out_specular,
+             normal, view_normal, light_dir, attenuation, light_color.rgb, exponent);
 }
 
-float3 calculate_spot(out float out_intensity, float3 world_normal, float3 world_position,
-                      float3 view_normal, float3 diffuse_color, float3 specular_color, 
-                      float exponent)
+void calculate_spot(out float out_diffuse_intensity, out float out_specular_intensity,
+                    inout float3 in_out_diffuse, inout float3 in_out_specular, 
+                    float3 normalWS, float3 positionWS, float3 view_normalWS, float exponent)
 {
-   const float3 light_dir = -normalize(world_position - light_spot_pos.xyz);
-   const float attenuation = attenuation_spot(world_position);
+   const float3 light_dirWS = -normalize(positionWS - light_spot_pos.xyz);
+   const float attenuation = attenuation_spot(positionWS);
 
-   float intensity;
-   const float3 color = calculate(intensity, world_normal, view_normal, 
-                                  light_dir, light_spot_color.rgb, diffuse_color,
-                                  specular_color, exponent);
-   out_intensity = intensity * attenuation;
-
-   return color * attenuation;
+   calculate(out_diffuse_intensity, out_specular_intensity, in_out_diffuse, in_out_specular,
+             normalWS, view_normalWS, light_dirWS, attenuation, light_spot_color.rgb, 
+             exponent);
 }
 
 }

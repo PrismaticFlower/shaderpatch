@@ -13,13 +13,10 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "far_vs",
-          "pixel_shader": "far_ps",
-
-          "vs_target": "vs_2_0",
-          "ps_target": "ps_2_0"
+          "pixel_shader": "far_ps"
         }
       ]
     },
@@ -34,13 +31,10 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "near_vs",
-          "pixel_shader": "near_ps",
-
-          "vs_target": "vs_2_0",
-          "ps_target": "ps_2_0"
+          "pixel_shader": "near_ps"
         }
       ]
     }

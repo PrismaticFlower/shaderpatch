@@ -164,7 +164,9 @@ auto Game_compiler::compile_pass(const nlohmann::json& pass_def,
 {
    Pass pass{};
 
-   pass.flags = get_pass_flags(pass_def);
+   pass.flags =
+      get_pass_flags(pass_def["base_input"s], pass_def["lighting"],
+                     pass_def["vertex_color"s], pass_def["texture_coords"s]);
 
    srgb_state = pass_def.value("srgb_state", srgb_state);
 
@@ -181,8 +183,8 @@ auto Game_compiler::compile_pass(const nlohmann::json& pass_def,
    const std::string vs_entry_point = pass_def["vertex_shader"];
    const std::string ps_entry_point = pass_def["pixel_shader"];
 
-   for (auto& variation : get_shader_variations(pass_def["skinned"], pass_def["lighting"],
-                                                pass_def["vertex_color"])) {
+   for (auto& variation :
+        get_shader_variations(pass.flags, pass_def["skinned"])) {
       pass.vs_shaders.emplace_back(
          compile_vertex_shader(vs_entry_point, vs_target, variation,
                                pass_defines, state_name, srgb_state));
@@ -204,11 +206,13 @@ auto Game_compiler::compile_vertex_shader(const std::string& entry_point,
    Com_ptr<ID3DBlob> error_message;
    Com_ptr<ID3DBlob> shader;
 
+   auto defines = combine_defines(pass_defines, variation.defines);
+   defines.add_define("__VERTEX_SHADER__"s, "1");
+
    auto result =
       D3DCompile(_source.data(), _source.length(), _source_path.string().data(),
-                 combine_defines(pass_defines, variation.defines).get().data(),
-                 D3D_COMPILE_STANDARD_FILE_INCLUDE, entry_point.data(),
-                 target.data(), _compiler_flags, NULL,
+                 defines.get().data(), D3D_COMPILE_STANDARD_FILE_INCLUDE,
+                 entry_point.data(), target.data(), _compiler_flags, NULL,
                  shader.clear_and_assign(), error_message.clear_and_assign());
 
    if (result != S_OK) {
@@ -236,9 +240,13 @@ auto Game_compiler::compile_pixel_shader(const std::string& entry_point,
    Com_ptr<ID3DBlob> error_message;
    Com_ptr<ID3DBlob> shader;
 
+   auto defines = pass_defines;
+   defines.add_define("__PIXEL_SHADER__"s, "1");
+   defines.add_define("__PS_FORCE_RUNTIME_LIGHTS_CONSTANTS__", "1");
+
    auto result =
       D3DCompile(_source.data(), _source.length(), _source_path.string().data(),
-                 pass_defines.get().data(), D3D_COMPILE_STANDARD_FILE_INCLUDE,
+                 defines.get().data(), D3D_COMPILE_STANDARD_FILE_INCLUDE,
                  entry_point.data(), target.data(), _compiler_flags, NULL,
                  shader.clear_and_assign(), error_message.clear_and_assign());
 
@@ -256,42 +264,5 @@ auto Game_compiler::compile_pixel_shader(const std::string& entry_point,
                                             make_dword_span(*shader)));
 
    return shader_index;
-}
-
-auto Game_compiler::get_pass_flags(const nlohmann::json& pass_def) -> Pass_flags
-{
-   Pass_flags flags = Pass_flags::none;
-
-   const std::string transform = pass_def["transform"];
-
-   if (pass_def["lighting"]) {
-      flags |= Pass_flags::lighting;
-   }
-   else {
-      flags |= Pass_flags::nolighting;
-   }
-
-   if (transform == "none"sv) {
-      flags |= Pass_flags::notransform;
-
-      return flags;
-   }
-   else if (transform == "position"sv) {
-      flags |= Pass_flags::position;
-   }
-   else if (transform == "normals"sv) {
-      flags |= Pass_flags::normals;
-   }
-   else if (transform == "binormals"sv) {
-      flags |= Pass_flags::binormals;
-   }
-   else {
-      throw std::runtime_error{"Invalid transform value: "s + transform};
-   }
-
-   if (pass_def["vertex_color"]) flags |= Pass_flags::vertex_color;
-   if (pass_def["texture_coords"]) flags |= Pass_flags::texcoords;
-
-   return flags;
 }
 }

@@ -47,6 +47,11 @@ public:
       }
    }
 
+   void add_define(const std::string& name, std::string definition) noexcept
+   {
+      _defines[name] = std::move(definition);
+   }
+
    template<typename Undefines>
    void add_undefines(const Undefines& undefines) noexcept
    {

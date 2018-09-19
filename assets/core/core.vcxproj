@@ -147,7 +147,7 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Core Files</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Core Files</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">powershell -Command  ./munge_core.ps1  -BinPath ../../bin/$(Configuration)/ -CompilerArgs:'-o:0 -d:true'</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">powershell -Command  ./munge_core.ps1  -BinPath ../../bin/$(Configuration)/ -CompilerArgs:'-o:2 -f:true'</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">powershell -Command  ./munge_core.ps1  -BinPath ../../bin/$(Configuration)/ -CompilerArgs:'-o:1 -f:true'</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Building core.lvl...</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Building core.lvl...</Message>
     </CustomBuild>
@@ -170,7 +170,6 @@
     <None Include="definitions\patch\normal_ext.json" />
     <None Include="definitions\patch\postprocess.json" />
     <None Include="definitions\patch\gaussian_blur.json" />
-    <None Include="definitions\patch\normal_lightmapped.json" />
     <None Include="definitions\patch\pbr-basic.json" />
     <None Include="definitions\patch\pbr-emissive.json" />
     <None Include="definitions\patch\pbr.json" />
@@ -273,7 +272,7 @@
     <None Include="src\stencilshadow.fx">
       <FileType>Document</FileType>
     </None>
-    <None Include="src\transform_utilities.hlsl">
+    <None Include="src\stencilshadow_transform_utilities.hlsl">
       <FileType>Document</FileType>
     </None>
     <None Include="src\vertex_utilities.hlsl">
@@ -283,11 +282,6 @@
       <FileType>Document</FileType>
     </None>
     <None Include="src\zprepass.fx">
-      <FileType>Document</FileType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="src\normal_entrypoint_defs.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
@@ -351,6 +345,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\late_effects_resolve.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\generic_vertex_input.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\vertex_transformer.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

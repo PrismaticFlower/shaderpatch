@@ -1,72 +1,65 @@
 
+#include "generic_vertex_input.hlsl"
 #include "vertex_utilities.hlsl"
-#include "transform_utilities.hlsl"
-
-struct Vs_textured_input
-{
-   float4 position : POSITION;
-   float4 color : COLOR;
-   float4 texcoord : TEXCOORD;
-};
+#include "vertex_transformer.hlsl"
 
 struct Vs_textured_output
 {
-   float4 position : POSITION;
-   float2 texcoord : TEXCOORD0;
+   float4 positionPS : SV_Position;
+   float2 texcoords : TEXCOORD0;
    float4 color : TEXCOORD1;
 };
 
-struct Ps_textured_input
-{
-   float2 texcoord : TEXCOORD0;
-   float4 color : TEXCOORD1;
-};
+Texture2D<float4> flare_map : register(ps_3_0, s0);
+SamplerState linear_clamp_sampler;
 
-sampler2D diffuse_map;
-
-Vs_textured_output flare_textured_vs(Vs_textured_input input)
+Vs_textured_output flare_textured_vs(Vertex_input input)
 {
    Vs_textured_output output;
 
-   output.position = transform::position_project(input.position);
-   output.color = get_material_color(input.color) * hdr_info.zzzw;
-   output.texcoord = decompress_texcoords(input.texcoord);
+   Transformer transformer = create_transformer(input);
+
+   output.positionPS = transformer.positionPS();
+   output.color = get_material_color(input.color()) * hdr_info.zzzw;
+   output.texcoords = input.texcoords();
 
    return output;
 }
 
-float4 flare_textured_ps(Ps_textured_input input) : COLOR
+struct Ps_textured_input
+{
+   float2 texcoords : TEXCOORD0;
+   float4 color : TEXCOORD1;
+};
+
+float4 flare_textured_ps(Ps_textured_input input) : SV_Target0
 {
    float4 color;
    color.rgb = input.color.rgb;
-   color.a = input.color.a * saturate(tex2D(diffuse_map, input.texcoord).a);
+   color.a = input.color.a * saturate(flare_map.Sample(linear_clamp_sampler, input.texcoords).a);
 
    return color;
 }
 
-struct Vs_untextured_input
-{
-   float4 position : POSITION;
-   float4 color : COLOR;
-};
-
 struct Vs_untextured_output
 {
-   float4 position : POSITION;
+   float4 positionPS : SV_Position;
    float4 color : TEXCOORD;
 };
 
-Vs_untextured_output flare_untextured_vs(Vs_untextured_input input)
+Vs_untextured_output flare_untextured_vs(Vertex_input input)
 {
    Vs_untextured_output output;
 
-   output.position = transform::position_project(input.position);
-   output.color = get_material_color(input.color) * hdr_info.zzzw;
+   Transformer transformer = create_transformer(input);
+
+   output.positionPS = transformer.positionPS();
+   output.color = get_material_color(input.color()) * hdr_info.zzzw;
 
    return output;
 }
 
-float4 flare_untextured_ps(float4 color : TEXCOORD) : COLOR
+float4 flare_untextured_ps(float4 color : TEXCOORD) : SV_Target0
 {
    return color;
 }

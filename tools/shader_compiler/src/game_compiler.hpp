@@ -32,27 +32,6 @@ public:
    Game_compiler& operator=(Game_compiler&&) = delete;
 
 private:
-   enum class Pass_flags : std::uint32_t {
-      none = 0,
-      nolighting = 1,
-      lighting = 2,
-
-      notransform = 16,
-      position = 32,
-      normals = 64,       // position,normals
-      binormals = 128,    // position, normals, binormals
-      vertex_color = 256, // vertex color
-      texcoords = 512     // texcoords
-   };
-
-   friend constexpr Pass_flags& operator|=(Pass_flags& l, const Pass_flags r) noexcept
-   {
-      return l = Game_compiler::Pass_flags{static_cast<std::uint32_t>(l) |
-                                           static_cast<std::uint32_t>(r)};
-   }
-
-   static auto get_pass_flags(const nlohmann::json& pass_def) -> Pass_flags;
-
    struct Vertex_shader_ref {
       Shader_flags flags;
       std::uint32_t index;

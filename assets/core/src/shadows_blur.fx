@@ -2,9 +2,11 @@
 #include "fullscreen_tri_vs.hlsl"
 #include "pixel_utilities.hlsl"
 
-sampler2D buffer_sampler : register(s4);
-sampler2D depth_sampler : register(s5);
+Texture2D<float4> source_texture : register(ps_3_0, s4);
+Texture2D<float2> buffer_texture : register(ps_3_0, s4);
+Texture2D<float1> depth_texture : register(ps_3_0, s5);
 
+SamplerState point_clamp_sampler;
 
 static const uint SAMPLE_NUM = 32;
 
@@ -46,9 +48,9 @@ static const float2 POISSON_SAMPLES[SAMPLE_NUM] =
 
 float2 scale : register(ps, c[60]);
 
-float4 blur_ps(float2 texcoords : TEXCOORD) : COLOR
+float4 blur_ps(float2 texcoords : TEXCOORD) : SV_Target0
 {
-   float2 centre_sample = tex2Dlod(buffer_sampler, texcoords, 0).rg;
+   float2 centre_sample = buffer_texture.SampleLevel(point_clamp_sampler, texcoords, 0);
    float centre_v = centre_sample.r;
    float centre_d = centre_sample.g;
 
@@ -58,10 +60,10 @@ float4 blur_ps(float2 texcoords : TEXCOORD) : COLOR
    [unroll] for (uint i = 0; i < SAMPLE_NUM; i += 4) {
       float2 samples[4];
 
-      samples[0] = tex2Dlod(buffer_sampler, texcoords + (POISSON_SAMPLES[i] * scale), 0).rg;
-      samples[1] = tex2Dlod(buffer_sampler, texcoords + (POISSON_SAMPLES[i + 1] * scale), 0).rg;
-      samples[2] = tex2Dlod(buffer_sampler, texcoords + (POISSON_SAMPLES[i + 2] * scale), 0).rg;
-      samples[3] = tex2Dlod(buffer_sampler, texcoords + (POISSON_SAMPLES[i + 3] * scale), 0).rg;
+      samples[0] = buffer_texture.SampleLevel(point_clamp_sampler, texcoords + (POISSON_SAMPLES[i] * scale), 0);
+      samples[1] = buffer_texture.SampleLevel(point_clamp_sampler, texcoords + (POISSON_SAMPLES[i + 1] * scale), 0);
+      samples[2] = buffer_texture.SampleLevel(point_clamp_sampler, texcoords + (POISSON_SAMPLES[i + 2] * scale), 0);
+      samples[3] = buffer_texture.SampleLevel(point_clamp_sampler, texcoords + (POISSON_SAMPLES[i + 3] * scale), 0);
 
       float4 v;
       float4 d;
@@ -80,10 +82,10 @@ float4 blur_ps(float2 texcoords : TEXCOORD) : COLOR
    return v_total / w_total;
 }
 
-float4 combine_ps(float2 texcoords : TEXCOORD) : COLOR
+float4 combine_ps(float2 texcoords : TEXCOORD) : SV_Target0
 {
-   float v = tex2Dlod(buffer_sampler, texcoords, 0).a;
-   float d = tex2Dlod(depth_sampler, texcoords, 0).r;
+   float v = source_texture.SampleLevel(point_clamp_sampler, texcoords, 0).a;
+   float d = depth_texture.SampleLevel(point_clamp_sampler, texcoords, 0);
 
    const static float near_plane = 0.5;
    const static float far_plane = 10000.0;

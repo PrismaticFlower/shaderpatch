@@ -1,105 +1,94 @@
 
+#include "fog_utilities.hlsl"
+#include "generic_vertex_input.hlsl"
 #include "vertex_utilities.hlsl"
-#include "transform_utilities.hlsl"
+#include "vertex_transformer.hlsl"
 
-struct Vs_input
-{
-   float4 position : POSITION;
-   float3 normals : NORMAL;
-   float4 texcoords : TEXCOORD0;
-   float4 color : COLOR;
-};
+float4 x_texcoords_transform : register(vs, c[CUSTOM_CONST_MIN]);
+float4 y_texcoords_transform : register(vs, c[CUSTOM_CONST_MIN + 1]);
+
+float3 light_directionWS : register(ps, c0);
+float3 light_color : register(ps, c1);
+float3 ambient_color : register(ps, c2);
+
+Texture2D<float3> water_texture : register(ps_3_0, s0);
+Texture2D<float4> foam_texture : register(ps_3_0, s1);
+
+SamplerState linear_wrap_sampler;
 
 struct Vs_output
 {
-   float4 position : POSITION;
-   float2 base_texcoords : TEXCOORD0;
-   float2 foam_texcoords : TEXCOORD1;
-   float3 normal_texcoords : TEXCOORD2;
+   float4 positionPS : SV_Position;
+   float3 normalWS : TEXCOORD0;
+   float2 texcoords : TEXCOORD1;
    float4 color : TEXCOORD3;
-   float1 fog : FOG;
+   float fog_eye_distance : DEPTH;
 };
 
-float4 texcoord_transform[2] : register(vs, c[CUSTOM_CONST_MIN]);
-
-Vs_output near_vs(Vs_input input)
+Vs_output near_vs(Vertex_input input)
 {
    Vs_output output;
 
-   float2 texcoords = decompress_transform_texcoords(input.texcoords,
-      texcoord_transform[0],
-      texcoord_transform[1]);
+   Transformer transformer = create_transformer(input);
 
-   output.base_texcoords = texcoords;
-   output.foam_texcoords = texcoords;
-   output.normal_texcoords = normals_to_world(decompress_normals(input.normals));
+   float3 positionWS = transformer.positionWS();
 
-   float4 world_position = transform::position(input.position);
+   output.positionPS = transformer.positionPS();
+   output.normalWS = transformer.normalWS();
+   output.fog_eye_distance = fog::get_eye_distance(positionWS);
 
-   output.position = position_project(world_position);
+   output.texcoords = transformer.texcoords(x_texcoords_transform, y_texcoords_transform);
 
-   Near_scene near_scene = calculate_near_scene_fade(world_position);
+   Near_scene near_scene = calculate_near_scene_fade(positionWS);
 
-   output.fog = calculate_fog(near_scene, world_position);
-
-   output.color.rgb = get_material_color(input.color).rgb;
-   output.color.a = near_scene.fade * 0.25 + 0.5;
+   output.color.rgb = get_material_color(input.color()).rgb;
+   output.color.a = saturate(near_scene.fade);
 
    return output;
 }
 
-Vs_output far_vs(Vs_input input)
+Vs_output far_vs(Vertex_input input)
 {
    Vs_output output = near_vs(input);
 
-   output.color = get_material_color(input.color);
+   output.color = get_material_color(input.color());
 
    return output;
 }
 
 struct Ps_input
 {
-   float2 base_texcoords : TEXCOORD0;
-   float2 foam_texcoords : TEXCOORD1;
-   float3 normal_texcoords : TEXCOORD2;
+   float3 normalWS : TEXCOORD0;
+   float2 texcoords : TEXCOORD1;
+   float2 foam_texcoords : TEXCOORD2;
    float4 color : TEXCOORD3;
+   float fog_eye_distance : DEPTH;
 };
 
-float4 light_vector : register(ps, c[0]);
-float4 light_color : register(ps, c[1]);
-float4 ambient_color : register(ps, c[2]);
-
-sampler2D base_sampler;
-sampler2D foam_sampler;
-samplerCUBE normalization_sampler;
-
-float4 near_ps(Ps_input input) : COLOR
+float4 near_ps(Ps_input input) : SV_Target0
 {
-   float4 base_color = tex2D(base_sampler, input.base_texcoords);
-   float4 foam_color = tex2D(foam_sampler, input.base_texcoords);
-   float4 normal_color = texCUBE(normalization_sampler, input.normal_texcoords);
-   
-   float3 normal_light = clamp(dot(normal_color.rgb * 2.0, light_vector.rgb), 0.0, 1.0);
-   float foam_level = foam_color.a * input.color.a;
+   const float3 water_color = water_texture.Sample(linear_wrap_sampler, input.texcoords);
+   const float4 foam_color = foam_texture.Sample(linear_wrap_sampler, input.texcoords);
 
-   float4 color = base_color * input.color;
+   float light_intensity = max(dot(normalize(input.normalWS), light_directionWS.xyz), 0.0);
 
-   normal_light = normal_light * light_color.rgb + ambient_color.rgb;
+   float3 color = water_color * input.color.rgb;
 
-   color.rgb *= normal_light.rgb;
+   color *= (light_intensity * light_color + ambient_color);
 
-   color.rgb = lerp(color.rgb, foam_color.rgb, foam_level.rrr);
+   const float foam_blend = foam_color.a * input.color.a;
 
-   color.a = saturate((input.color.a - 0.5) * 4.0);
+   color = lerp(color, foam_color.rgb, foam_blend);
 
-   return color;
+   return float4(color, input.color.a);
 }
 
-float4 far_ps(Ps_input input) : COLOR
+float4 far_ps(Ps_input input) : SV_Target0
 {
    float4 color = near_ps(input);
 
-   color.a = saturate(tex2D(foam_sampler, input.base_texcoords).a * input.color.a);
+   color.a =
+      foam_texture.Sample(linear_wrap_sampler, input.texcoords).a * input.color.a;
 
    return color;
 }

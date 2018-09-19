@@ -1,51 +1,53 @@
 
+#include "generic_vertex_input.hlsl"
 #include "vertex_utilities.hlsl"
+#include "vertex_transformer.hlsl"
 
 // Sprite shader. I am unsure what/if the game uses it for, it is listed as
 // deprecated in the modtools. This implementation was written before I knew 
 // that. It is likely useless and pointless.
 
-struct Vs_input
-{
-   float4 position : POSITION;
-   float4 texcoord : TEXCOORD;
-   float4 color : COLOR;
-};
+Texture2D diffuse_map_texture : register(ps_3_0, s0);
+
+SamplerState linear_clamp_sampler;
 
 struct Vs_output
 {
-   float4 position : POSITION;
-   float2 texcoord : TEXCOORD0;
+   float4 positionPS : POSITION;
+   float2 texcoords : TEXCOORD0;
    float4 color : TEXCOORD1;
 };
 
-struct Ps_input
-{
-   float2 texcoord : TEXCOORD0;
-   float4 color : TEXCOORD1;
-};
-
-sampler diffuse_map_sampler;
-
-Vs_output sprite_vs(Vs_input input)
+Vs_output sprite_vs(Vertex_input input)
 {
    Vs_output output;
 
-   float4 world_position = position_to_world(input.position);
+   Transformer transformer = create_transformer(input);
 
-   output.position = position_project(world_position);
-   output.texcoord = decompress_texcoords(input.texcoord);
+   float3 positionWS = transformer.positionWS();
 
-   float4 material_color = get_material_color(input.color);
-   Near_scene near_scene = calculate_near_scene_fade(world_position);
+   output.positionPS = transformer.positionPS();
+   output.texcoords = input.texcoords();
 
-   output.color.xyz = material_color.xyz;
-   output.color.w = near_scene.fade * material_color.w;
+   float4 material_color = get_material_color(input.color());
+   Near_scene near_scene = calculate_near_scene_fade(positionWS);
+
+   output.color.rgb = material_color.rgb;
+   output.color.a = saturate(near_scene.fade) * material_color.a;
 
    return output;
 }
 
-float4 sprite_ps(Ps_input input) : COLOR
+struct Ps_input
 {
-   return tex2D(diffuse_map_sampler, input.texcoord) * input.color;
+   float2 texcoords : TEXCOORD0;
+   float4 color : TEXCOORD1;
+};
+
+float4 sprite_ps(Ps_input input) : SV_Target0
+{
+   const float4 diffuse_map_color =
+      diffuse_map_texture.Sample(linear_clamp_sampler, input.texcoords);
+
+   return diffuse_map_color * input.color;
 }

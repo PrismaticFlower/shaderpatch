@@ -1,36 +1,38 @@
 
+#include "constants_list.hlsl"
 #include "vertex_utilities.hlsl"
-#include "transform_utilities.hlsl"
+
+Texture2D<float4> diffuse_map : register(ps_3_0, s0);
+Texture2D<float4> bump_map : register(ps_3_0, s1);
+
+SamplerState linear_wrap_sampler;
+
+float4 decal_constants[2] : register(ps, c[0]);
 
 struct Vs_input
 {
-   float4 position : POSITION;
-   float4 color : COLOR;
-   float4 texcoords : TEXCOORD;
+   float3 position : POSITION;
+   unorm float4 color : COLOR;
+   float2 texcoords : TEXCOORD;
 };
 
 struct Vs_output
 {
-   float4 position : POSITION;
+   float4 positionPS : SV_Position;
    float2 texcoords : TEXCOORD0;
    float4 color : TEXCOORD1;
 };
 
-sampler diffuse_map;
-sampler bump_map;
-
-float4 decal_constants[2] : register(ps, c[0]);
-
 Vs_output decal_vs(Vs_input input)
 {
-   float4 world_position = transform::position(input.position);
-
    Vs_output output;
 
-   output.position = position_project(input.position);
-   output.texcoords = decompress_texcoords(input.texcoords);
+   float3 positionWS = mul(float4(input.position, 1.0), world_matrix);
 
-   Near_scene near_scene = calculate_near_scene_fade(world_position);
+   output.positionPS = mul(float4(positionWS, 1.0), projection_matrix);
+   output.texcoords = input.texcoords;
+
+   Near_scene near_scene = calculate_near_scene_fade(positionWS);
 
    float4 color;
    color.rgb = input.color.rgb * material_diffuse_color.rgb;
@@ -48,62 +50,45 @@ struct Ps_input
    float4 color : TEXCOORD1;
 };
 
-float4 diffuse_ps(Ps_input input) : COLOR
+float4 diffuse_ps(Ps_input input) : SV_Target0
 {
-   float4 diffuse_color = tex2D(diffuse_map, input.texcoords);
+   float4 diffuse_color = diffuse_map.Sample(linear_wrap_sampler, input.texcoords);
 
-   float4 color;
+   float3 color = diffuse_color.rgb * input.color.rgb;
 
-   color.rgb = diffuse_color.rgb * input.color.rgb;
-   color.rgb = clamp(color.rgb, float3(0, 0, 0), float3(1, 1, 1));
+   color = lerp(decal_constants[0].rgb, color, diffuse_color.a * input.color.a);
 
-   float alpha_factor = diffuse_color.a * input.color.a;
-
-   color.rgb = lerp(decal_constants[0].rgb, color.rgb, alpha_factor.rrr);
-   color.a = decal_constants[0].a;
-
-   return color;
+   return float4(color, decal_constants[0].a);
 }
 
-float4 diffuse_bump_ps(Ps_input input) : COLOR
+float4 diffuse_bump_ps(Ps_input input) : SV_Target0
 {
-   float4 diffuse_color = tex2D(diffuse_map, input.texcoords);
-   float4 bump_color = tex2D(bump_map, input.texcoords);
+   float4 diffuse_color = diffuse_map.Sample(linear_wrap_sampler, input.texcoords);
+   float4 bump_color = bump_map.Sample(linear_wrap_sampler, input.texcoords);
 
-   float4 color;
+   float3 color;
 
-   color.rgb = dot((bump_color.rgb - 0.5) * 2, (input.color.rgb - 0.5) * 2);
-   color.rgb = clamp(color.rgb, float3(0, 0, 0), float3(1, 1, 1));
+   color = saturate(dot((bump_color - 0.5) * 2.0, (input.color - 0.5) * 2.0));
+   color = saturate(color * decal_constants[1].rgb);
+   color *= diffuse_color.rgb;
 
-   color.rgb *= decal_constants[1].rgb;
-   color.rgb = clamp(color.rgb, float3(0, 0, 0), float3(1, 1, 1));
+   const float alpha = saturate(bump_color.a * input.color.a * diffuse_color.a);
 
-   color.a = bump_color.a * input.color.a;
+   color = lerp(decal_constants[0].rgb, color, alpha);
 
-   color.rgb *= diffuse_color.rgb;
-   color.rgb = clamp(color.rgb, float3(0, 0, 0), float3(1, 1, 1));
-
-   color.a *= diffuse_color.a;
-   color.a = saturate(color.a);
-
-   color.rgb = lerp(decal_constants[0].rgb, color.rgb, color.aaa);
-
-   return color;
+   return float4(color, alpha);
 }
 
-float4 bump_ps(Ps_input input) : COLOR
+float4 bump_ps(Ps_input input) : SV_Target0
 {
-   float4 bump_color = tex2D(diffuse_map, input.texcoords);
+   const float4 bump_color = diffuse_map.Sample(linear_wrap_sampler, input.texcoords);
 
-   float4 color;
+   float3 color;
+   color = saturate(dot((bump_color.rgb - 0.5) * 2.0, (input.color.rgb - 0.5) * 2.0));
 
-   color.rgb = dot((bump_color.rgb - 0.5) * 2, (input.color.rgb - 0.5) * 2);
-   color.rgb = clamp(color.rgb, float3(0, 0, 0), float3(1, 1, 1));
+   const float alpha_factor = saturate(bump_color.a * input.color.a);
 
-   float alpha_factor = clamp(bump_color.a * input.color.a, 0.0, 1.0);
+   color = lerp(decal_constants[0].rgb, color.rgb, alpha_factor);
 
-   color.rgb = lerp(decal_constants[0].rgb, color.rgb, alpha_factor.rrr);
-   color.a = decal_constants[0].a;
-
-   return color;
+   return float4(color, decal_constants[0].a);
 }

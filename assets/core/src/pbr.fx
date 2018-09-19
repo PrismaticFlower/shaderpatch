@@ -2,29 +2,29 @@
 #include "constants_list.hlsl"
 #include "ext_constants_list.hlsl"
 #include "fog_utilities.hlsl"
+#include "generic_vertex_input.hlsl"
 #include "vertex_utilities.hlsl"
-#include "transform_utilities.hlsl"
+#include "vertex_transformer.hlsl"
 #include "lighting_utilities.hlsl"
 #include "pixel_utilities.hlsl"
-#include "normal_entrypoint_defs.hlsl"
 
 #pragma warning(disable : 3571)
 
 // Samplers
-sampler2D shadow_map : register(ps, s[3]);
-sampler2D albedo_map : register(ps, s[4]);
-sampler2D normal_map : register(ps, s[5]);
-sampler2D metallic_roughness_map : register(ps, s[6]);
-sampler2D ao_map : register(ps, s[7]);
-sampler2D light_map : register(ps, s[8]);
-sampler2D emissive_map : register(ps, s[9]);
+Texture2D<float4> shadow_map : register(ps_3_0, s3);
+Texture2D<float4> albedo_map : register(ps_3_0, s4);
+Texture2D<float2> normal_map : register(ps_3_0, s5);
+Texture2D<float2> metallic_roughness_map : register(ps_3_0, s6);
+Texture2D<float> ao_map : register(ps_3_0, s7);
+Texture2D<float4> emissive_map : register(ps_3_0, s9);
+
+SamplerState linear_wrap_sampler;
 
 // Game Custom Constants
 float4 blend_constant : register(ps, c[0]);
-float4 shadow_blend : register(ps, c[1]);
 
-float2 lighting_factor : register(c[CUSTOM_CONST_MIN]);
-float4 texture_transforms[4] : register(vs, c[CUSTOM_CONST_MIN + 1]);
+float4 x_texcoords_transform : register(vs, c[CUSTOM_CONST_MIN + 1]);
+float4 y_texcoords_transform : register(vs, c[CUSTOM_CONST_MIN + 2]);
 
 // Material Constants Mappings
 const static float3 base_color = material_constants[0].xyz;
@@ -34,71 +34,53 @@ const static float ao_strength = material_constants[1].y;
 const static float emissive_power = material_constants[1].z;
 
 // Shader Feature Controls
-const static bool use_transparency = PBR_USE_TRANSPARENCY;
 const static bool use_metallic_roughness_map = PBR_USE_METALLIC_ROUGHNESS_MAP;
 const static bool use_emissive_map = PBR_USE_EMISSIVE_MAP;
-
-struct Vs_input
-{
-   float4 position : POSITION;
-   float3 normal : NORMAL;
-   uint4 blend_indices : BLENDINDICES;
-   float4 weights : BLENDWEIGHT;
-   float4 texcoords : TEXCOORD;
-   float4 color : COLOR;
-};
+const static bool use_transparency = PBR_USE_TRANSPARENCY;
+const static bool use_hardedged_test = PBR_USE_HARDEDGED_TEST;
+const static bool use_shadow_map = PBR_USE_SHADOW_MAP;
 
 struct Vs_output
 {
-   float4 position : POSITION;
+   float4 positionPS : SV_Position;
 
-   float2 texcoords : TEXCOORD0;
-   float4 shadow_texcoords : TEXCOORD1;
-   float3 world_position : TEXCOORD2;
-   float3 world_normal : TEXCOORD3;
+   float3 positionWS : TEXCOORD0;
+   float3 normalWS : TEXCOORD1;
+   float2 texcoords : TEXCOORD2;
+   float4 shadow_texcoords : TEXCOORD3;
 
    float fade : TEXCOORD4;
 
    float fog_eye_distance : DEPTH;
 };
 
-Vs_output main_vs(Vs_input input)
+Vs_output main_vs(Vertex_input input)
 {
    Vs_output output;
     
-   float4 world_position = transform::position(input.position, input.blend_indices,
-                                               input.weights);
-   float3 normal = transform::normals(input.normal, input.blend_indices,
-                                      input.weights);
-   float3 world_normal = normals_to_world(normal);
+   Transformer transformer = create_transformer(input);
 
-   output.world_position = world_position.xyz;
-   output.world_normal = world_normal;
-   output.position = position_project(world_position);
-   output.fog_eye_distance = fog::get_eye_distance(world_position.xyz);
+   float3 positionWS = transformer.positionWS();
 
-   output.texcoords = decompress_transform_texcoords(input.texcoords,
-                                                     texture_transforms[0],
-                                                     texture_transforms[1]);
+   output.positionPS = transformer.positionPS();
+   output.positionWS = positionWS;
+   output.normalWS = transformer.normalWS();
+   output.fog_eye_distance = fog::get_eye_distance(positionWS);
 
-   output.shadow_texcoords = transform_shadowmap_coords(world_position);
+   output.texcoords = transformer.texcoords(x_texcoords_transform, y_texcoords_transform);
 
-   if (use_transparency) {
-      output.fade = saturate(calculate_near_scene_fade(world_position).fade);
-   }
-   else {
-      output.fade = calculate_near_scene_fade(world_position).fade * 0.25 + 0.5;
-   }
+   output.shadow_texcoords = transform_shadowmap_coords(positionWS);
+   output.fade = saturate(calculate_near_scene_fade(positionWS).fade);
 
    return output;
 }
 
 struct Ps_input
 {
-   float2 texcoords : TEXCOORD0;
-   float4 shadow_texcoords : TEXCOORD1;
-   float3 world_position : TEXCOORD2;
-   float3 world_normal : TEXCOORD3;
+   float3 positionWS : TEXCOORD0;
+   float3 normalWS : TEXCOORD1;
+   float2 texcoords : TEXCOORD2;
+   float4 shadow_texcoords : TEXCOORD3;
 
    float fade : TEXCOORD4;
 
@@ -107,46 +89,46 @@ struct Ps_input
    float vface : VFACE;
 };
 
-float4 main_ps(Ps_input input, const Normal_state state) : COLOR
+float4 main_ps(Ps_input input) : SV_Target0
 {
-   const float4 albedo_map_color = tex2D(albedo_map, input.texcoords);
+   const float4 albedo_map_color = albedo_map.Sample(linear_wrap_sampler, input.texcoords);
    const float3 albedo = albedo_map_color.rgb * base_color;
 
    // Hardedged Alphatest
-   if (state.hardedged && albedo_map_color.a < 0.5) discard;
+   if (use_hardedged_test && albedo_map_color.a < 0.5) discard;
 
    // Calculate Metallicness & Roughness factors
    float metallicness = base_metallicness;
    float roughness = base_roughness;
 
    if (use_metallic_roughness_map) {
-      const float2 mr_map_color = tex2D(metallic_roughness_map, input.texcoords).xy;
+      const float2 mr_map_color = metallic_roughness_map.Sample(linear_wrap_sampler, input.texcoords);
 
       metallicness *= mr_map_color.x;
       roughness *= mr_map_color.y;
    }
 
    // Calculate lighting.
-   const float3 V = normalize(world_view_position - input.world_position);
-   const float3 N = perturb_normal(normal_map, input.texcoords,
-                                   normalize(input.world_normal * -input.vface), V);
+   const float3 view_normalWS = normalize(view_positionWS - input.positionWS);
+   const float3 normalWS = perturb_normal(normal_map, linear_wrap_sampler, input.texcoords,
+                                          normalize(input.normalWS * -input.vface), view_normalWS);
 
+   const float2 shadow_texcoords = input.shadow_texcoords.xy / input.shadow_texcoords.w;
    const float shadow = 
-      state.shadowed ? tex2Dproj(shadow_map, input.shadow_texcoords).a : 1.0;
-   const float ao = tex2D(ao_map, input.texcoords).r * ao_strength;
+      use_shadow_map ? shadow_map.SampleLevel(linear_wrap_sampler, shadow_texcoords, 0).a : 1.0;
+   const float ao = ao_map.Sample(linear_wrap_sampler, input.texcoords) * ao_strength;
 
-   float3 color =
-      light::pbr::calculate(N, V, input.world_position, albedo, metallicness, roughness,
-                            ao, shadow);
+   float3 color = light::pbr::calculate(normalWS, view_normalWS, input.positionWS, 
+                                        albedo, metallicness, roughness, ao, shadow);
 
    if (use_emissive_map) {
-      color += tex2D(emissive_map, input.texcoords).rgb * exp2(emissive_power);
+      color += 
+         emissive_map.Sample(linear_wrap_sampler, input.texcoords).rgb * exp2(emissive_power);
    }
 
    color = fog::apply(color, input.fog_eye_distance);
 
    float alpha;
-
 
    if (use_transparency) {
       alpha = lerp(1.0, albedo_map_color.a, blend_constant.b);
@@ -155,11 +137,8 @@ float4 main_ps(Ps_input input, const Normal_state state) : COLOR
       color /= alpha;
    }
    else {
-      alpha = saturate(input.fade * 4.0);
+      alpha = input.fade;
    }
 
    return float4(color, alpha);
 }
-
-DEFINE_NORMAL_QPAQUE_PS_ENTRYPOINTS(Ps_input, main_ps)
-DEFINE_NORMAL_TRANSPARENT_PS_ENTRYPOINTS(Ps_input, main_ps)

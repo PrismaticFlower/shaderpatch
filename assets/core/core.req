@@ -46,7 +46,6 @@ ucft
       "normal_ext-detail"
       "normal_ext-specular"
       "normal_ext-specular-detail"
-      "normal_lightmapped"
       "late_effects_resolve"
       "pbr"
       "pbr-basic"

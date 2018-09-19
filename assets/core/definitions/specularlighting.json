@@ -13,10 +13,10 @@
       "passes": [
         {
           "skinned": true,
-          "lighting": true,
-          "vertex_color": true,
+          "lighting": false,
+          "vertex_color": false,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "blinn_phong_vs",
           "pixel_shader": "debug_vertexlit_ps"
@@ -36,9 +36,9 @@
         {
           "skinned": true,
           "lighting": false,
-          "vertex_color": true,
+          "vertex_color": false,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "blinn_phong_vs",
           "pixel_shader": "blinn_phong_ps"
@@ -58,9 +58,9 @@
         {
           "skinned": true,
           "lighting": false,
-          "vertex_color": true,
+          "vertex_color": false,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "blinn_phong_vs",
           "pixel_shader": "blinn_phong_ps"
@@ -80,9 +80,9 @@
         {
           "skinned": true,
           "lighting": false,
-          "vertex_color": true,
+          "vertex_color": false,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "blinn_phong_vs",
           "pixel_shader": "blinn_phong_ps"
@@ -98,9 +98,9 @@
         {
           "skinned": true,
           "lighting": false,
-          "vertex_color": true,
+          "vertex_color": false,
           "texture_coords": true,
-          "transform": "binormals",
+          "base_input": "binormals",
 
           "vertex_shader": "normalmapped_vs",
           "pixel_shader": "normalmapped_ps"
@@ -116,9 +116,9 @@
         {
           "skinned": true,
           "lighting": false,
-          "vertex_color": true,
+          "vertex_color": false,
           "texture_coords": true,
-          "transform": "binormals",
+          "base_input": "binormals",
 
           "vertex_shader": "normalmapped_vs",
           "pixel_shader": "normalmapped_envmap_ps"
@@ -134,9 +134,9 @@
         {
           "skinned": true,
           "lighting": false,
-          "vertex_color": true,
+          "vertex_color": false,
           "texture_coords": true,
-          "transform": "binormals",
+          "base_input": "binormals",
 
           "vertex_shader": "normalmapped_vs",
           "pixel_shader": "normalmapped_ps"
@@ -145,9 +145,9 @@
         {
           "skinned": true,
           "lighting": false,
-          "vertex_color": true,
+          "vertex_color": false,
           "texture_coords": true,
-          "transform": "binormals",
+          "base_input": "binormals",
 
           "vertex_shader": "normalmapped_vs",
           "pixel_shader": "normalmapped_envmap_ps"

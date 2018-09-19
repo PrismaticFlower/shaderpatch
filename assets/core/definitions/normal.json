@@ -2,6 +2,13 @@
   "rendertype": "normal",
   "srgb_state": [ true, false, true, false ],
 
+  "defines": [
+    [ "NORMAL_USE_TRANSPARENCY", "false" ],
+    [ "NORMAL_USE_HARDEDGED_TEST", "false" ],
+    [ "NORMAL_USE_SHADOW_MAP", "false" ],
+    [ "NORMAL_USE_PROJECTED_TEXTURE", "false" ]
+  ],
+
   "states": [
     {
       "name": "unlit opaque",
@@ -13,10 +20,10 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "position",
+          "base_input": "position",
 
-          "vertex_shader": "unlit_opaque_vs",
-          "pixel_shader": "unlit_opaque_ps"
+          "vertex_shader": "unlit_main_vs",
+          "pixel_shader": "unlit_main_ps"
         }
       ]
     },
@@ -25,16 +32,20 @@
       "name": "unlit opaque hardedged",
       "id": 1,
 
+      "defines": [
+        [ "NORMAL_USE_HARDEDGED_TEST", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "position",
+          "base_input": "position",
 
-          "vertex_shader": "unlit_opaque_vs",
-          "pixel_shader": "unlit_opaque_hardedged_ps"
+          "vertex_shader": "unlit_main_vs",
+          "pixel_shader": "unlit_main_ps"
         }
       ]
     },
@@ -43,23 +54,32 @@
       "name": "unlit transparent",
       "id": 2,
 
+      "defines": [
+        [ "NORMAL_USE_TRANSPARENCY", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "position",
+          "base_input": "position",
 
-          "vertex_shader": "unlit_transparent_vs",
-          "pixel_shader": "unlit_transparent_ps"
+          "vertex_shader": "unlit_main_vs",
+          "pixel_shader": "unlit_main_ps"
         }
       ]
     },
 
     {
-      "name": "unlit transparent",
+      "name": "unlit transparent hardedged",
       "id": 3,
+
+      "defines": [
+        [ "NORMAL_USE_TRANSPARENCY", "true" ],
+        [ "NORMAL_USE_HARDEDGED_TEST", "true" ]
+      ],
 
       "passes": [
         {
@@ -67,10 +87,10 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "position",
+          "base_input": "position",
 
-          "vertex_shader": "unlit_transparent_vs",
-          "pixel_shader": "unlit_transparent_hardedged_ps"
+          "vertex_shader": "unlit_main_vs",
+          "pixel_shader": "unlit_main_ps"
         }
       ]
     },
@@ -85,10 +105,10 @@
           "lighting": true,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
-          "vertex_shader": "near_opaque_vs",
-          "pixel_shader": "near_opaque_ps"
+          "vertex_shader": "main_vs",
+          "pixel_shader": "main_ps"
         }
       ]
     },
@@ -97,16 +117,20 @@
       "name": "near opaque hardedged",
       "id": 5,
 
+      "defines": [
+        [ "NORMAL_USE_HARDEDGED_TEST", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
           "lighting": true,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
-          "vertex_shader": "near_opaque_vs",
-          "pixel_shader": "near_opaque_hardedged_ps"
+          "vertex_shader": "main_vs",
+          "pixel_shader": "main_ps"
         }
       ]
     },
@@ -115,16 +139,20 @@
       "name": "near transparent",
       "id": 6,
 
+      "defines": [
+        [ "NORMAL_USE_TRANSPARENCY", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
           "lighting": true,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
-          "vertex_shader": "near_transparent_shadow_projectedtex_vs",
-          "pixel_shader": "near_transparent_ps"
+          "vertex_shader": "main_vs",
+          "pixel_shader": "main_ps"
         }
       ]
     },
@@ -133,16 +161,21 @@
       "name": "near transparent hardedged",
       "id": 7,
 
+      "defines": [
+        [ "NORMAL_USE_TRANSPARENCY", "true" ],
+        [ "NORMAL_USE_HARDEDGED_TEST", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
           "lighting": true,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
-          "vertex_shader": "near_transparent_shadow_projectedtex_vs",
-          "pixel_shader": "near_transparent_hardedged_ps"
+          "vertex_shader": "main_vs",
+          "pixel_shader": "main_ps"
         }
       ]
     },
@@ -151,16 +184,20 @@
       "name": "near opaque projectedtex",
       "id": 8,
 
+      "defines": [
+        [ "NORMAL_USE_PROJECTED_TEXTURE", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
           "lighting": true,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
-          "vertex_shader": "near_opaque_shadow_projectedtex_vs",
-          "pixel_shader": "near_opaque_projectedtex_ps"
+          "vertex_shader": "main_vs",
+          "pixel_shader": "main_ps"
         }
       ]
     },
@@ -169,16 +206,21 @@
       "name": "near opaque hardedged projectedtex",
       "id": 9,
 
+      "defines": [
+        [ "NORMAL_USE_HARDEDGED_TEST", "true" ],
+        [ "NORMAL_USE_PROJECTED_TEXTURE", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
           "lighting": true,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
-          "vertex_shader": "near_opaque_shadow_projectedtex_vs",
-          "pixel_shader": "near_opaque_hardedged_projectedtex_ps"
+          "vertex_shader": "main_vs",
+          "pixel_shader": "main_ps"
         }
       ]
     },
@@ -187,16 +229,21 @@
       "name": "near transparent projectedtex",
       "id": 10,
 
+      "defines": [
+        [ "NORMAL_USE_TRANSPARENCY", "true" ],
+        [ "NORMAL_USE_PROJECTED_TEXTURE", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
           "lighting": true,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
-          "vertex_shader": "near_transparent_shadow_projectedtex_vs",
-          "pixel_shader": "near_transparent_projectedtex_ps"
+          "vertex_shader": "main_vs",
+          "pixel_shader": "main_ps"
         }
       ]
     },
@@ -205,16 +252,22 @@
       "name": "near transparent hardedged projectedtex",
       "id": 11,
 
+      "defines": [
+        [ "NORMAL_USE_TRANSPARENCY", "true" ],
+        [ "NORMAL_USE_HARDEDGED_TEST", "true" ],
+        [ "NORMAL_USE_PROJECTED_TEXTURE", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
           "lighting": true,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
-          "vertex_shader": "near_transparent_shadow_projectedtex_vs",
-          "pixel_shader": "near_transparent_hardedged_projectedtex_ps"
+          "vertex_shader": "main_vs",
+          "pixel_shader": "main_ps"
         }
       ]
     },
@@ -223,16 +276,20 @@
       "name": "near opaque shadow",
       "id": 12,
 
+      "defines": [
+        [ "NORMAL_USE_SHADOW_MAP", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
           "lighting": true,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
-          "vertex_shader": "near_opaque_shadow_projectedtex_vs",
-          "pixel_shader": "near_opaque_shadow_ps"
+          "vertex_shader": "main_vs",
+          "pixel_shader": "main_ps"
         }
       ]
     },
@@ -241,16 +298,21 @@
       "name": "near opaque hardedged shadow",
       "id": 13,
 
+      "defines": [
+        [ "NORMAL_USE_HARDEDGED_TEST", "true" ],
+        [ "NORMAL_USE_SHADOW_MAP", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
           "lighting": true,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
-          "vertex_shader": "near_opaque_shadow_projectedtex_vs",
-          "pixel_shader": "near_opaque_hardedged_shadow_ps"
+          "vertex_shader": "main_vs",
+          "pixel_shader": "main_ps"
         }
       ]
     },
@@ -259,16 +321,21 @@
       "name": "near opaque shadow projectedtex",
       "id": 14,
 
+      "defines": [
+        [ "NORMAL_USE_SHADOW_MAP", "true" ],
+        [ "NORMAL_USE_PROJECTED_TEXTURE", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
           "lighting": true,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
-          "vertex_shader": "near_opaque_shadow_projectedtex_vs",
-          "pixel_shader": "near_opaque_shadow_projectedtex_ps"
+          "vertex_shader": "main_vs",
+          "pixel_shader": "main_ps"
         }
       ]
     },
@@ -277,16 +344,22 @@
       "name": "near opaque hardedged shadow projectedtex",
       "id": 15,
 
+      "defines": [
+        [ "NORMAL_USE_HARDEDGED_TEST", "true" ],
+        [ "NORMAL_USE_SHADOW_MAP", "true" ],
+        [ "NORMAL_USE_PROJECTED_TEXTURE", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
           "lighting": true,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
-          "vertex_shader": "near_opaque_shadow_projectedtex_vs",
-          "pixel_shader": "near_opaque_hardedged_shadow_projectedtex_ps"
+          "vertex_shader": "main_vs",
+          "pixel_shader": "main_ps"
         }
       ]
     },
@@ -295,16 +368,21 @@
       "name": "near transparent shadow",
       "id": 16,
 
+      "defines": [
+        [ "NORMAL_USE_TRANSPARENCY", "true" ],
+        [ "NORMAL_USE_SHADOW_MAP", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
           "lighting": true,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
-          "vertex_shader": "near_transparent_shadow_projectedtex_vs",
-          "pixel_shader": "near_transparent_shadow_ps"
+          "vertex_shader": "main_vs",
+          "pixel_shader": "main_ps"
         }
       ]
     },
@@ -313,16 +391,22 @@
       "name": "near transparent hardedged shadow",
       "id": 17,
 
+      "defines": [
+        [ "NORMAL_USE_TRANSPARENCY", "true" ],
+        [ "NORMAL_USE_HARDEDGED_TEST", "true" ],
+        [ "NORMAL_USE_SHADOW_MAP", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
           "lighting": true,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
-          "vertex_shader": "near_transparent_shadow_projectedtex_vs",
-          "pixel_shader": "near_transparent_hardedged_shadow_ps"
+          "vertex_shader": "main_vs",
+          "pixel_shader": "main_ps"
         }
       ]
     },
@@ -331,16 +415,22 @@
       "name": "near transparent shadow projectedtex",
       "id": 18,
 
+      "defines": [
+        [ "NORMAL_USE_TRANSPARENCY", "true" ],
+        [ "NORMAL_USE_SHADOW_MAP", "true" ],
+        [ "NORMAL_USE_PROJECTED_TEXTURE", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
           "lighting": true,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
-          "vertex_shader": "near_transparent_shadow_projectedtex_vs",
-          "pixel_shader": "near_transparent_shadow_projectedtex_ps"
+          "vertex_shader": "main_vs",
+          "pixel_shader": "main_ps"
         }
       ]
     },
@@ -349,16 +439,23 @@
       "name": "near transparent hardedged shadow projectedtex",
       "id": 19,
 
+      "defines": [
+        [ "NORMAL_USE_TRANSPARENCY", "true" ],
+        [ "NORMAL_USE_HARDEDGED_TEST", "true" ],
+        [ "NORMAL_USE_SHADOW_MAP", "true" ],
+        [ "NORMAL_USE_PROJECTED_TEXTURE", "true" ]
+      ],
+
       "passes": [
         {
           "skinned": true,
           "lighting": true,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
-          "vertex_shader": "near_transparent_shadow_projectedtex_vs",
-          "pixel_shader": "near_transparent_shadow_projectedtex_ps"
+          "vertex_shader": "main_vs",
+          "pixel_shader": "main_ps"
         }
       ]
     }

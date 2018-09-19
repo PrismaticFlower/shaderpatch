@@ -10,11 +10,11 @@
 
       "passes": [
         {
-          "skinned": true,
+          "skinned": false,
           "lighting": true,
           "vertex_color": true,
           "texture_coords": false,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "diffuse_blendmap_vs",
           "pixel_shader": "diffuse_blendmap_ps"
@@ -28,16 +28,16 @@
 
       "passes": [
         {
-          "skinned": true,
+          "skinned": false,
           "lighting": false,
           "vertex_color": true,
           "texture_coords": false,
-          "transform": "normals",
+          "base_input": "normals",
 
           "srgb_state": [ true, true, true, false ],
 
           "vertex_shader": "diffuse_blendmap_vs",
-          "pixel_shader": "diffuse_blendmap_unlit_ps"
+          "pixel_shader": "diffuse_blendmap_ps"
         },
 
         {
@@ -45,7 +45,7 @@
           "lighting": true,
           "vertex_color": true,
           "texture_coords": false,
-          "transform": "normals",
+          "base_input": "normals",
 
           "srgb_state": [ false, false, true, false ],
 

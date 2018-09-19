@@ -1,74 +1,69 @@
 
 #include "constants_list.hlsl"
-#include "vertex_utilities.hlsl"
 
-float4 interface_transform_const : register(vs, c[CUSTOM_CONST_MIN]);
-float4 ps_constant : register(ps, c[0]);
+float4 interface_scale_offset : register(vs, c[CUSTOM_CONST_MIN]);
+float4 interface_color : register(ps, c0);
 
-sampler bitmap_sampler;
-sampler mask_sampler;
+Texture2D<float4> element_texture : register(ps_3_0, s0);
+Texture2D<float4> element_mask : register(ps_3_0, s1);
 
-float4 project_interface_pos(float4 position)
+SamplerState linear_clamp_sampler;
+
+float4 transform_interface_position(float3 position)
 {
-   position = position_to_world_project(position);
+   float4 positionPS =
+      mul(float4(mul(float4(position, 1.0), world_matrix), 1.0), projection_matrix);
 
-   position.xy = position.xy * interface_transform_const.xy + interface_transform_const.zw;
+   positionPS.xy = positionPS.xy * interface_scale_offset.xy + interface_scale_offset.zw;
 
-   return position;
+   return positionPS;
 }
 
 // Masked Bitmap Element
 
 struct Vs_masked_input
 {
-   float4 position : POSITION;
-   float4 texcoord_0 : TEXCOORD0;
-   float4 texcoord_1 : TEXCOORD1;
+   float3 position : POSITION;
+   float2 texcoords_0 : TEXCOORD0;
+   float2 texcoords_1 : TEXCOORD1;
 };
 
 struct Vs_masked_output
 {
-   float4 position : POSITION;
-   float2 texcoord_0 : TEXCOORD0;
-   float2 texcoord_1 : TEXCOORD1;
-};
-
-struct Ps_masked_input
-{
-   float2 texcoord_0 : TEXCOORD0;
-   float2 texcoord_1 : TEXCOORD1;
+   float4 positionPS : SV_Position;
+   float2 texcoords[2] : TEXCOORD0;
 };
 
 Vs_masked_output masked_bitmap_vs(Vs_masked_input input)
 {
    Vs_masked_output output;
     
-   output.position = project_interface_pos(input.position);
-
-   output.texcoord_0 = decompress_texcoords(input.texcoord_0);
-   output.texcoord_1 = decompress_texcoords(input.texcoord_1);
+   output.positionPS = transform_interface_position(input.position);
+   output.texcoords[0] = input.texcoords_0;
+   output.texcoords[1] = input.texcoords_1;
 
    return output;
 }
 
-float4 masked_bitmap_ps(Ps_masked_input input) : COLOR
+float4 masked_bitmap_ps(float2 texcoords[2] : TEXCOORD0) : SV_Target0
 {
-   float4 color = tex2D(bitmap_sampler, input.texcoord_0);
+   const float4 mask = element_mask.Sample(linear_clamp_sampler, texcoords[1]);
+   const float4 texture_color = element_texture.Sample(linear_clamp_sampler, texcoords[0]);
 
-   return color * ps_constant * tex2D(mask_sampler, input.texcoord_1);
+   return texture_color * interface_color * mask;
 }
 
 // Vector Element
 
 struct Vs_vector_input
 {
-   float4 position : POSITION;
-   float4 color : COLOR;
+   float3 position : POSITION;
+   unorm float4 color : COLOR;
 };
 
 struct Vs_vector_output
 {
-   float4 position : POSITION;
+   float4 positionPS : SV_Position;
    float4 color : TEXCOORD;
 };
 
@@ -76,55 +71,54 @@ Vs_vector_output vector_vs(Vs_vector_input input)
 {
    Vs_vector_output output;
 
-   output.position = project_interface_pos(input.position);
+   output.positionPS = transform_interface_position(input.position);
    output.color = input.color;
 
    return output;
 }
 
-float4 vector_ps(float4 color : TEXCOORD) : COLOR
+float4 vector_ps(float4 color : TEXCOORD) : SV_Target0
 {
-   return color * ps_constant;
+   return color * interface_color;
 }
 
 // Bitmap Untextured
 
-void bitmap_untextured_vs(inout float4 position : POSITION)
+float4 bitmap_untextured_vs(float3 position : POSITION) : SV_Position
 {
-   position = project_interface_pos(position);
+   return transform_interface_position(position);
 }
 
-float4 bitmap_untextured_ps() : COLOR
+float4 bitmap_untextured_ps() : SV_Target0
 {
-   return ps_constant;
+   return interface_color;
 }
 
 // Bitmap Textured
 
 struct Vs_textured_input
 {
-   float4 position : POSITION;
-   float4 texcoord : TEXCOORD;
+   float3 position : POSITION;
+   float2 texcoords : TEXCOORD;
 };
 
 struct Vs_textured_output
 {
-   float4 position : POSITION;
-   float2 texcoord : TEXCOORD;
+   float4 positionPS : SV_Position;
+   float2 texcoords : TEXCOORD;
 };
 
 Vs_textured_output bitmap_textured_vs(Vs_textured_input input)
 {
    Vs_textured_output output;
 
-   output.position = project_interface_pos(input.position);
-
-   output.texcoord = decompress_texcoords(input.texcoord);
+   output.positionPS = transform_interface_position(input.position);
+   output.texcoords = input.texcoords;
 
    return output;
 }
 
-float4 bitmap_textured_ps(float2 texcoord : TEXCOORD) : COLOR
+float4 bitmap_textured_ps(float2 texcoords : TEXCOORD) : SV_Target0
 {
-   return tex2D(bitmap_sampler, texcoord) * ps_constant;
+   return element_texture.Sample(linear_clamp_sampler, texcoords) * interface_color;
 }

@@ -2,7 +2,9 @@
 #include "fullscreen_tri_vs.hlsl"
 #include "pixel_utilities.hlsl"
 
-sampler2D scene_sampler : register(s0);
+Texture2D<float3> scene_buffer : register(ps_3_0, s0);
+
+SamplerState linear_clamp_sampler;
 
 float4 damage_color : register(c60);
 float2 blur_step_sample_count : register(c61);
@@ -32,14 +34,14 @@ float4 apply_ps(float2 texcoords : TEXCOORD) : COLOR
 
    [branch] if (fade < 0.000001) discard;
 
-   float3 color = tex2Dlod(scene_sampler, texcoords, 0).rgb;
+   float3 color = scene_buffer.SampleLevel(linear_clamp_sampler, texcoords, 0).rgb;
 
    [loop] for (float i = 1.0; i < sample_count; i += 1.0) {
       float2 uv = polar(texcoords * 2.0 - 1.0);
       uv.x += blur_step * i;
       uv = cartesian(uv) * 0.5 + 0.5;
 
-      color.rgb += tex2Dlod(scene_sampler, uv, 0).rgb;
+      color.rgb += scene_buffer.SampleLevel(linear_clamp_sampler, uv, 0).rgb;
    }
 
    color.rgb /= sample_count;

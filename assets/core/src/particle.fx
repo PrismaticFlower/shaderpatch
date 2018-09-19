@@ -1,104 +1,84 @@
-#include "vertex_utilities.hlsl"
-#include "transform_utilities.hlsl"
 
-struct Vs_normal_input
-{
-   float4 position : POSITION;
-   float4 color : COLOR;
-   float4 texcoords : TEXCOORD0;
-};
+#include "fog_utilities.hlsl"
+#include "generic_vertex_input.hlsl"
+#include "vertex_utilities.hlsl"
+#include "vertex_transformer.hlsl"
+
+float2 fade_factor : register(vs, c[CUSTOM_CONST_MIN]);
+float4 texcoords_transform : register(vs, c[CUSTOM_CONST_MIN + 1]);
+float4x4 blur_projection : register(vs, c[CUSTOM_CONST_MIN + 2]);
+
+Texture2D<float4> particle_texture : register(ps_3_0, s0);
+Texture2D<float3> blur_buffer : register(ps_3_0, s1);
+
+SamplerState linear_clamp_sampler;
 
 struct Vs_normal_output
 {
-   float4 position : POSITION;
-   float fog : FOG;
+   float4 positionPS : SV_Position;
    float2 texcoords : TEXCOORD0;
    float4 color : TEXCOORD1;
+   float fog_eye_distance : DEPTH;
 };
 
-Vs_normal_output normal_vs(Vs_normal_input input,
-                           uniform float2 fade_factor : register(vs, c[CUSTOM_CONST_MIN]),
-                           uniform float4 texcoord_transform : register(vs, c[CUSTOM_CONST_MIN + 1]))
+Vs_normal_output normal_vs(Vertex_input input)
 {
    Vs_normal_output output;
 
-   float4 world_position = transform::position(input.position);
-   float4 position = position_project(world_position);
+   Transformer transformer = create_transformer(input);
 
-   output.position = position;
+   float3 positionWS = transformer.positionWS();
+   float4 positionPS = transformer.positionPS();
 
-   Near_scene near_scene = calculate_near_scene_fade(world_position);
-   output.fog = calculate_fog(near_scene, world_position);
+   output.positionPS = positionPS;
+   output.fog_eye_distance = fog::get_eye_distance(positionWS);
 
-   near_scene = clamp_near_scene_fade(near_scene);
-   near_scene.fade *= near_scene.fade;
+   output.texcoords = input.texcoords() * texcoords_transform.xy + texcoords_transform.zw;
 
-   output.color.rgb = get_material_color(input.color).rgb * hdr_info.zzz;
+   Near_scene near_scene = calculate_near_scene_fade(positionWS);
+   near_scene.fade = saturate(near_scene.fade);
+   near_scene.fade = near_scene.fade * near_scene.fade;
 
-   float fade_scale;
+   const float fade_scale = saturate(positionPS.w * fade_factor.x + fade_factor.y);
 
-   fade_scale = position.w * fade_factor.x + fade_factor.y;
-   fade_scale = saturate(fade_scale);
-
-   output.color.a = (near_scene.fade * fade_scale) * get_material_color(input.color).a;
-
-   float2 texcoords = decompress_texcoords(input.texcoords);
-   output.texcoords = texcoords * texcoord_transform.xy + texcoord_transform.zw;
+   output.color.rgb = get_material_color(input.color()).rgb * hdr_info.z;
+   output.color.a = (near_scene.fade * fade_scale) * get_material_color(input.color()).a;
 
    return output;
 }
 
-struct Vs_blur_input
-{
-   float4 position : POSITION;
-   float4 color : COLOR;
-   float4 texcoords : TEXCOORD0;
-   float3 normal : NORMAL;
-};
-
 struct Vs_blur_output
 {
-   float4 position : POSITION;
-   float  fog : FOG;
+   float4 positionPS : SV_Position;
    float2 texcoords : TEXCOORD0;
    float4 blur_texcoords : TEXCOORD1;
    float4 color : TEXCOORD2;
+   float fog_eye_distance : DEPTH;
 };
 
-Vs_blur_output blur_vs(Vs_blur_input input,
-                       uniform float2 fade_factor : register(vs, c[CUSTOM_CONST_MIN]),
-                       uniform float4 texcoord_transform : register(vs, c[CUSTOM_CONST_MIN + 1]),
-                       uniform float4x4 blur_projection : register(vs, c[CUSTOM_CONST_MIN + 2]))
+Vs_blur_output blur_vs(Vertex_input input)
 {
    Vs_blur_output output;
 
-   float4 world_position = transform::position(input.position);
-   float4 position = position_project(world_position);
+   Transformer transformer = create_transformer(input);
 
-   output.position = position;
+   float3 positionWS = transformer.positionWS();
+   float4 positionPS = transformer.positionPS();
 
-   Near_scene near_scene = calculate_near_scene_fade(world_position);
-   output.fog = calculate_fog(near_scene, world_position);
+   output.positionPS = positionPS;
+   output.fog_eye_distance = fog::get_eye_distance(positionWS);
 
-   near_scene = clamp_near_scene_fade(near_scene);
+   output.texcoords = input.texcoords() * texcoords_transform.xy + texcoords_transform.zw;
+   output.blur_texcoords = mul(float4(input.normal(), 1.0), blur_projection);
 
-   output.color.rgb = get_material_color(input.color).rgb;
+   Near_scene near_scene = calculate_near_scene_fade(positionWS);
+   near_scene.fade = saturate(near_scene.fade);
+   near_scene.fade = near_scene.fade * near_scene.fade;
 
-   float fade_scale;
+   const float fade_scale = saturate(positionPS.w * fade_factor.x + fade_factor.y);
 
-   fade_scale = position.w * fade_factor.x + fade_factor.y;
-   fade_scale = saturate(fade_scale);
-
-   output.color.a = (near_scene.fade * fade_scale) * get_material_color(input.color).a;
-
-   float2 texcoords = decompress_texcoords(input.texcoords);
-   output.texcoords = texcoords * texcoord_transform.xy + texcoord_transform.zw;
-
-   float3 normal = decompress_normals(input.normal);
-
-   float4 coords = float4(normal.xyz, 1.0);
-   
-   output.blur_texcoords = mul(coords, blur_projection);
+   output.color.rgb = get_material_color(input.color()).rgb;
+   output.color.a = (near_scene.fade * fade_scale) * get_material_color(input.color()).a;
 
    return output;
 }
@@ -107,16 +87,18 @@ struct Ps_normal_input
 {
    float2 texcoords : TEXCOORD0;
    float4 color : TEXCOORD1;
+   float fog_eye_distance : DEPTH;
 };
 
-float4 normal_ps(Ps_normal_input input,
-                 uniform sampler2D diffuse_map) : COLOR
+float4 normal_ps(Ps_normal_input input) : SV_Target0
 {
-   float4 diffuse_color = tex2D(diffuse_map, input.texcoords);
+   const float4 diffuse_color = particle_texture.Sample(linear_clamp_sampler, input.texcoords);
 
-   float3 color = diffuse_color.rgb * input.color.rgb;
+   float4 color = diffuse_color * input.color;
 
-   return float4(color, saturate(diffuse_color.a * input.color.a));
+   color.rgb = fog::apply(color.rgb, input.fog_eye_distance);
+
+   return color;
 }
 
 struct Ps_blur_input
@@ -124,16 +106,21 @@ struct Ps_blur_input
    float2 texcoords : TEXCOORD0;
    float4 blur_texcoords : TEXCOORD1;
    float4 color : TEXCOORD2;
+   float fog_eye_distance : DEPTH;
 };
 
-float4 blur_ps(Ps_blur_input input,
-               uniform sampler2D alpha_map,
-               uniform sampler2D blur_buffer) : COLOR
+float4 blur_ps(Ps_blur_input input) : SV_Target0
 {
-   float alpha = tex2D(alpha_map, input.texcoords).a;
-   float3 blur_color = tex2Dproj(blur_buffer, input.blur_texcoords).rgb;
+   const float2 blur_texcoords = input.blur_texcoords.xy / input.blur_texcoords.w;
+   const float3 scene_color = blur_buffer.SampleLevel(linear_clamp_sampler, 
+                                                      blur_texcoords,
+                                                      0);
    
-   float3 color = blur_color * input.color.rgb;
+   const float alpha = particle_texture.Sample(linear_clamp_sampler, input.texcoords).a;
+
+   float3 color = scene_color * input.color.rgb;
+
+   color = fog::apply(color, input.fog_eye_distance);
 
    return float4(color, saturate(alpha * input.color.a));
 }

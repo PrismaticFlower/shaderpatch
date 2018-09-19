@@ -22,7 +22,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "perpixel_vs",
           "pixel_shader": "perpixel_ps"
@@ -44,7 +44,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "perpixel_vs",
           "pixel_shader": "perpixel_ps"
@@ -66,7 +66,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "perpixel_vs",
           "pixel_shader": "perpixel_ps"
@@ -88,7 +88,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "perpixel_vs",
           "pixel_shader": "perpixel_ps"
@@ -99,7 +99,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "perpixel_spotlight_vs",
           "pixel_shader": "perpixel_spotlight_ps"
@@ -121,7 +121,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "perpixel_vs",
           "pixel_shader": "perpixel_ps"
@@ -132,7 +132,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "perpixel_spotlight_vs",
           "pixel_shader": "perpixel_spotlight_ps"
@@ -154,7 +154,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "perpixel_vs",
           "pixel_shader": "perpixel_ps"
@@ -165,7 +165,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "perpixel_spotlight_vs",
           "pixel_shader": "perpixel_spotlight_ps"
@@ -187,7 +187,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "binormals",
+          "base_input": "binormals",
 
           "vertex_shader": "normalmapped_vs",
           "pixel_shader": "normalmapped_ps"
@@ -209,7 +209,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "binormals",
+          "base_input": "binormals",
 
           "vertex_shader": "normalmapped_vs",
           "pixel_shader": "normalmapped_ps"
@@ -231,7 +231,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "binormals",
+          "base_input": "binormals",
 
           "vertex_shader": "normalmapped_vs",
           "pixel_shader": "normalmapped_ps"
@@ -253,7 +253,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "binormals",
+          "base_input": "binormals",
 
           "vertex_shader": "normalmapped_vs",
           "pixel_shader": "normalmapped_ps"
@@ -264,7 +264,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "binormals",
+          "base_input": "binormals",
 
           "vertex_shader": "normalmapped_spotlight_vs",
           "pixel_shader": "normalmapped_spotlight_ps"
@@ -286,7 +286,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "binormals",
+          "base_input": "binormals",
 
           "vertex_shader": "normalmapped_vs",
           "pixel_shader": "normalmapped_ps"
@@ -297,7 +297,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "binormals",
+          "base_input": "binormals",
 
           "vertex_shader": "normalmapped_spotlight_vs",
           "pixel_shader": "normalmapped_spotlight_ps"
@@ -319,7 +319,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "binormals",
+          "base_input": "binormals",
 
           "vertex_shader": "normalmapped_vs",
           "pixel_shader": "normalmapped_ps"
@@ -330,7 +330,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "binormals",
+          "base_input": "binormals",
 
           "vertex_shader": "normalmapped_spotlight_vs",
           "pixel_shader": "normalmapped_spotlight_ps"
@@ -353,7 +353,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "normalmapped_vs",
           "pixel_shader": "normalmapped_ps"
@@ -376,7 +376,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "normalmapped_vs",
           "pixel_shader": "normalmapped_ps"
@@ -399,7 +399,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "normalmapped_vs",
           "pixel_shader": "normalmapped_ps"
@@ -422,7 +422,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "normalmapped_vs",
           "pixel_shader": "normalmapped_ps"
@@ -433,7 +433,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "normalmapped_spotlight_vs",
           "pixel_shader": "normalmapped_spotlight_ps"
@@ -456,7 +456,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "normalmapped_vs",
           "pixel_shader": "normalmapped_ps"
@@ -467,7 +467,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "normalmapped_spotlight_vs",
           "pixel_shader": "normalmapped_spotlight_ps"
@@ -490,7 +490,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "normalmapped_vs",
           "pixel_shader": "normalmapped_ps"
@@ -501,7 +501,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "normalmapped_spotlight_vs",
           "pixel_shader": "normalmapped_spotlight_ps"
@@ -525,7 +525,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "normalmapped_vs",
           "pixel_shader": "normalmapped_ps"
@@ -549,7 +549,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "normalmapped_vs",
           "pixel_shader": "normalmapped_ps"
@@ -573,7 +573,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "normalmapped_vs",
           "pixel_shader": "normalmapped_ps"
@@ -597,7 +597,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "normalmapped_vs",
           "pixel_shader": "normalmapped_ps"
@@ -608,7 +608,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "normalmapped_spotlight_vs",
           "pixel_shader": "normalmapped_spotlight_ps"
@@ -632,7 +632,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "normalmapped_vs",
           "pixel_shader": "normalmapped_ps"
@@ -643,7 +643,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "normalmapped_spotlight_vs",
           "pixel_shader": "normalmapped_spotlight_ps"
@@ -667,7 +667,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "normalmapped_vs",
           "pixel_shader": "normalmapped_ps"
@@ -678,7 +678,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "normalmapped_spotlight_vs",
           "pixel_shader": "normalmapped_spotlight_ps"

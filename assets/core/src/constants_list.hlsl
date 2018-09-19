@@ -8,8 +8,8 @@
 // world space to projection space matrix
 float4x4 projection_matrix : register(vs, c[2]);
 
-// the position of the camera
-float3 world_view_position : register(c[6]);
+// the position of the camera in world space
+float3 view_positionWS : register(c[6]);
 
 // (camera fog scale, camera fog offset, world fog scale, world fog offset)
 float4 fog_info : register(c[7]);
@@ -23,7 +23,7 @@ float4 near_scene_fade : register(c[8]);
 static const float4 hdr_info = near_scene_fade;
 
 // shadow map transform
-float4 shadow_map_transform[3] : register(c[9]);
+float4x3 shadow_map_transform : register(c[9]);
 
 // (normal decompress = 2 or 1, -1 or 0, texture decompress = 1 / 0x0800 or 1, 1)
 float4 normaltex_decompress : register(c[12]);
@@ -123,7 +123,7 @@ float4 material_diffuse_color : register(c[39]);
 #define CUSTOM_CONST_MAX 50
 
 // bone matrices
-float4 bone_matrices[45] : register(vs, c[51]);
+float4x3 bone_matrices[15] : register(vs, c[51]);
 
 
 #endif

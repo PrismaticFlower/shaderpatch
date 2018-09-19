@@ -11,10 +11,12 @@
 
 void apply_bloom(float2 texcoords, inout float3 color)
 {
-   float3 bloom_color = bloom_tent9_upsample(bloom_sampler, texcoords);
+   float3 bloom_color = bloom_tent9_upsample(bloom_texture, texcoords);
    
    if (bloom_use_dirt) {
-      bloom_color += (bloom_color * (tex2D(dirt_sampler, texcoords).rgb * bloom_dirt_scale));
+      const float3 dirt = dirt_texture.Sample(linear_clamp_sampler, texcoords);
+
+      bloom_color += (bloom_color * (dirt * bloom_dirt_scale));
    }
    
    color += (bloom_color * bloom_global_scale);
@@ -39,7 +41,7 @@ float3 sample_color_grading_lut(float3 color)
 
    color = c * log10(a * color + b) + d;
 
-   return tex3D(color_grading_lut, color * scale + offset).rgb;
+   return color_grading_lut.SampleLevel(linear_clamp_sampler, color * scale + offset, 0);
 }
 
 void apply_color_grading(inout float3 color)
@@ -53,9 +55,9 @@ float fxaa_luma(float3 color)
    return sqrt(dot(color, fxaa_luma_weights));
 }
 
-float4 postprocess_ps(float2 texcoords : TEXCOORD) : COLOR
+float4 postprocess_ps(float2 texcoords : TEXCOORD) : SV_Target0
 {
-   float3 color = tex2D(scene_sampler, texcoords).rgb;
+   float3 color = scene_texture.SampleLevel(linear_clamp_sampler, texcoords, 0).rgb;
 
    if (stock_hdr) color = srgb_to_linear(color + color);
 
@@ -70,23 +72,25 @@ float4 postprocess_ps(float2 texcoords : TEXCOORD) : COLOR
 
 void apply_dithering(inout float3 color, float2 position)
 {
-   float3 blue_noise = tex2Dlod(blue_noise_sampler, (position / 64.0) + randomness.xy, 0).rgb;
+   const float2 texcoords = (position / 64.0) + randomness.xy;
+
+   float3 blue_noise = blue_noise_texture.SampleLevel(linear_wrap_sampler, texcoords, 0);
    blue_noise = blue_noise * 2.0 - 1.0;
    blue_noise = sign(blue_noise) * (1.0 - sqrt(1.0 - abs(blue_noise)));
 
    color += (blue_noise / 255.0);
 }
 
-float4 postprocess_finalize_ps(float2 texcoords : TEXCOORD, float2 position : VPOS) : COLOR
+float4 postprocess_finalize_ps(float2 texcoords : TEXCOORD, float2 position : VPOS) : SV_Target0
 {
    float3 color = 0.0;
    
    if (fxaa_enabled) {
       color = FxaaPixelShader(texcoords,
                               0.0,
-                              scene_sampler,
-                              scene_sampler,
-                              scene_sampler,
+                              fxaa_scene_sampler,
+                              fxaa_scene_sampler,
+                              fxaa_scene_sampler,
                               scene_pixel_size,
                               0.0,
                               0.0,
@@ -100,7 +104,7 @@ float4 postprocess_finalize_ps(float2 texcoords : TEXCOORD, float2 position : VP
                               0.0).rgb;
    }
    else {
-      color = tex2D(scene_sampler, texcoords).rgb;
+      color = scene_texture.SampleLevel(linear_clamp_sampler, texcoords, 0).rgb;
    }
 
    if (film_grain) filmgrain::apply(texcoords, color);

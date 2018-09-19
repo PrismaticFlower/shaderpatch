@@ -49,12 +49,10 @@ private:
                       const Preprocessor_defines& global_defines) -> State;
 
    auto compile_vertex_shader(const std::string& entry_point,
-                              const std::vector<D3D_SHADER_MACRO>& defines)
-      -> std::size_t;
+                              Preprocessor_defines defines) -> std::size_t;
 
    auto compile_pixel_shader(const std::string& entry_point,
-                             const std::vector<D3D_SHADER_MACRO>& defines)
-      -> std::size_t;
+                             Preprocessor_defines defines) -> std::size_t;
 
    DWORD _compiler_flags;
 

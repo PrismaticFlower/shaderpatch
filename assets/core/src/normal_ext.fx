@@ -2,27 +2,32 @@
 #include "constants_list.hlsl"
 #include "ext_constants_list.hlsl"
 #include "fog_utilities.hlsl"
+#include "generic_vertex_input.hlsl"
 #include "vertex_utilities.hlsl"
-#include "transform_utilities.hlsl"
+#include "vertex_transformer.hlsl"
 #include "lighting_utilities.hlsl"
 #include "lighting_utilities_specular.hlsl"
 #include "pixel_utilities.hlsl"
-#include "normal_entrypoint_defs.hlsl"
 
 // Samplers
-sampler2D projected_light_texture : register(ps, s[2]);
-sampler2D shadow_map : register(ps, s[3]);
-sampler2D diffuse_map : register(ps, s[4]);
-sampler2D normal_map : register(ps, s[5]);
-sampler2D detail_map : register(ps, s[6]);
-sampler2D detail_normal_map : register(ps, s[7]);
+Texture2D<float3> projected_light_texture : register(ps_3_0, s2);
+Texture2D<float4> shadow_map : register(ps_3_0, s3);
+Texture2D<float4> diffuse_map : register(ps_3_0, s4);
+Texture2D<float4> normal_map : register(ps_3_0, s5);
+Texture2D<float3> detail_map : register(ps_3_0, s6);
+Texture2D<float2> detail_normal_map : register(ps_3_0, s7);
+
+SamplerState linear_wrap_sampler;
 
 // Game Custom Constants
 float4 blend_constant : register(ps, c[0]);
 float4 shadow_blend : register(ps, c[1]);
 
 float2 lighting_factor : register(c[CUSTOM_CONST_MIN]);
-float4 texture_transforms[4] : register(vs, c[CUSTOM_CONST_MIN + 1]);
+float4 x_diffuse_texcoords_transform : register(vs, c[CUSTOM_CONST_MIN + 1]);
+float4 y_diffuse_texcoords_transform : register(vs, c[CUSTOM_CONST_MIN + 2]);
+float4 x_detail_texcoords_transform : register(vs, c[CUSTOM_CONST_MIN + 3]);
+float4 y_detail_texcoords_transform : register(vs, c[CUSTOM_CONST_MIN + 4]);
 
 // Material Constants Mappings
 const static float3 base_diffuse_color = material_constants[0].xyz;
@@ -36,146 +41,128 @@ const static float height_scale = material_constants[3].x;
 const static bool use_detail_maps = NORMAL_EXT_USE_DETAIL_MAPS;
 const static bool use_specular = NORMAL_EXT_USE_SPECULAR;
 const static bool use_transparency = NORMAL_EXT_USE_TRANSPARENCY;
-
-struct Vs_input
-{
-   float4 position : POSITION;
-   float3 normals : NORMAL;
-   uint4 blend_indices : BLENDINDICES;
-   float4 weights : BLENDWEIGHT;
-   float4 texcoords : TEXCOORD0;
-   float4 color : COLOR;
-};
+const static bool use_hardedged_test = NORMAL_EXT_USE_HARDEDGED_TEST;
+const static bool use_shadow_map = NORMAL_EXT_USE_SHADOW_MAP;
+const static bool use_projected_texture = NORMAL_EXT_USE_PROJECTED_TEXTURE;
 
 struct Vs_output
 {
-   float4 position : POSITION;
+   float4 positionPS : POSITION;
 
-   float2 diffuse_texcoords : TEXCOORD0;
-   float2 detail_texcoords : TEXCOORD1;
-   float4 projection_texcoords : TEXCOORD2;
-   float4 shadow_texcoords : TEXCOORD3;
+   float3 positionWS : TEXCOORD0;
+   float3 normalWS : TEXCOORD1;
 
-   float3 world_position : TEXCOORD4;
-   float3 world_normal : TEXCOORD5;
+   float2 diffuse_texcoords : TEXCOORD2;
+   float2 detail_texcoords : TEXCOORD3;
+   float4 projection_texcoords : TEXCOORD4;
+   float4 shadow_texcoords : TEXCOORD5;
    
-   float3 vertex_color : TEXCOORD6;
-   float fade : TEXCOORD7;
+   float4 material_color_fade : TEXCOORD6;
+   float3 static_lighting : TEXCOORD7;
 
    float fog_eye_distance : DEPTH;
 };
 
-Vs_output main_vs(Vs_input input)
+Vs_output main_vs(Vertex_input input)
 {
    Vs_output output;
-    
-   float4 world_position = transform::position(input.position, input.blend_indices,
-                                               input.weights);
-   float3 normal = transform::normals(input.normals, input.blend_indices,
-                                      input.weights);
-   float3 world_normal = normals_to_world(normal);
+   
+   Transformer transformer = create_transformer(input);
 
-   output.world_position = world_position.xyz;
-   output.world_normal = world_normal;
-   output.position = position_project(world_position);
-   output.fog_eye_distance = fog::get_eye_distance(world_position.xyz);
+   const float3 positionWS = transformer.positionWS();
 
-   output.diffuse_texcoords = decompress_transform_texcoords(input.texcoords,
-                                                             texture_transforms[0],
-                                                             texture_transforms[1]);
+   output.positionPS = transformer.positionPS();
+   output.positionWS = positionWS;
+   output.normalWS = transformer.normalWS();
+   output.fog_eye_distance = fog::get_eye_distance(positionWS);
 
-   output.detail_texcoords = decompress_transform_texcoords(input.texcoords,
-                                                           texture_transforms[2],
-                                                           texture_transforms[3]);
+   output.diffuse_texcoords = transformer.texcoords(x_diffuse_texcoords_transform,
+                                                    y_diffuse_texcoords_transform);
 
-   output.projection_texcoords = mul(world_position, light_proj_matrix);
+   output.detail_texcoords = transformer.texcoords(x_detail_texcoords_transform,
+                                                   y_detail_texcoords_transform);
 
-   output.shadow_texcoords = transform_shadowmap_coords(world_position);
 
-   Near_scene near_scene = calculate_near_scene_fade(world_position);
+   output.projection_texcoords = mul(float4(positionWS, 1.0), light_proj_matrix);
+   output.shadow_texcoords = transform_shadowmap_coords(positionWS);
 
-   output.vertex_color = input.color.rgb;
-   output.fade = near_scene.fade * 0.25 + 0.5;
+   Near_scene near_scene = calculate_near_scene_fade(positionWS);
+
+   output.material_color_fade = get_material_color(input.color());
+   output.material_color_fade.a = saturate(near_scene.fade);
+   output.static_lighting = get_static_diffuse_color(input.color());
 
    return output;
 }
 
-void sample_normal_maps_gloss(float2 texcoords, float2 detail_texcoords, float3 world_normal,
-                              float3 view_normal, out float3 out_normal, out float out_gloss)
+void sample_normal_maps_gloss(float2 texcoords, float2 detail_texcoords, float3 normalWS,
+                              float3 view_normalWS, out float3 out_normalWS, out float out_gloss)
 {
-   float4 N0_gloss = tex2D(normal_map, texcoords);
+   float4 N0_gloss = normal_map.Sample(linear_wrap_sampler, texcoords);
    float3 N0 = N0_gloss.xyz * 255.0 / 127.0 - 128.0 / 127.0;
    N0.z = sqrt(1.0 - dot(N0.xy, N0.xy));
 
    if (use_detail_maps) {
-      float3 N1 = tex2D(normal_map, detail_texcoords).xyz * 255.0 / 127.0 - 128.0 / 127.0;
+      float3 N1;
+      N1.xy = detail_normal_map.Sample(linear_wrap_sampler, detail_texcoords) * 255.0 / 127.0 - 128.0 / 127.0;
       N1.z = sqrt(1.0 - dot(N1.xy, N1.xy));
 
       N0 = blend_tangent_space_normals(N0, N1);
    }
 
-   out_normal = mul(N0, cotangent_frame(world_normal, -view_normal, texcoords));
+   out_normalWS = mul(N0, cotangent_frame(normalWS, -view_normalWS, texcoords));
    out_gloss = lerp(N0_gloss.a, 1.0, gloss_map_weight);
 }
 
-float3 do_lighting_diffuse(float3 world_normal, float3 world_position, float3 diffuse_color,
+float3 do_lighting_diffuse(float3 normalWS, float3 positionWS, float3 diffuse_color,
                            float3 static_diffuse_lighting, float shadow, 
-                           float3 light_texture, Normal_state state)
+                           float3 light_texture)
 {
    float4 diffuse_lighting = 0.0;
-   diffuse_lighting.rgb = (light::ambient(world_normal) + static_diffuse_lighting) * diffuse_color;
+   diffuse_lighting.rgb = (light::ambient(normalWS) + static_diffuse_lighting) * diffuse_color;
 
-   if (lighting_directional) {
-      float4 intensity = float4(diffuse_lighting.rgb, 1.0);
+   if (ps_light_active_directional) {
+      float4 intensity = 0.0;
 
-      intensity.x = light::intensity_directional(world_normal, light_directional_0_dir);
+      intensity.x = light::intensity_directional(normalWS, light_directional_0_dir);
       diffuse_lighting += intensity.x * light_directional_0_color;
 
-      intensity.w = light::intensity_directional(world_normal, light_directional_1_dir);
+      intensity.w = light::intensity_directional(normalWS, light_directional_1_dir);
       diffuse_lighting += intensity.w * light_directional_1_color;
 
-      if (lighting_point_0) {
-         intensity.y = light::intensity_point(world_normal, world_position, light_point_0_pos);
+      if (ps_light_active_point_0) {
+         intensity.y = light::intensity_point(normalWS, positionWS, light_point_0_pos);
          diffuse_lighting += intensity.y * light_point_0_color;
       }
 
-      if (lighting_point_1) {
-         intensity.w = light::intensity_point(world_normal, world_position, light_point_1_pos);
+      if (ps_light_active_point_1) {
+         intensity.w = light::intensity_point(normalWS, positionWS, light_point_1_pos);
          diffuse_lighting += intensity.w * light_point_1_color;
       }
 
-      if (lighting_point_23) {
-         intensity.w = light::intensity_point(world_normal, world_position, light_point_2_pos);
+      if (ps_light_active_point_23) {
+         intensity.w = light::intensity_point(normalWS, positionWS, light_point_2_pos);
          diffuse_lighting += intensity.w * light_point_2_color;
 
-         intensity.w = light::intensity_point(world_normal, world_position, light_point_3_pos);
+         intensity.w = light::intensity_point(normalWS, positionWS, light_point_3_pos);
          diffuse_lighting += intensity.w * light_point_3_color;
       }
-      else if (lighting_spot_0) {
-         intensity.z = light::intensity_spot(world_normal, world_position);
+      else if (ps_light_active_spot_light) {
+         intensity.z = light::intensity_spot(normalWS, positionWS);
          diffuse_lighting += intensity.z * light_spot_color;
       }
 
-      if (state.projected_tex) {
-         float proj_intensity = dot(light_proj_selector, intensity);
+      if (use_projected_texture) {
+         const float proj_intensity = dot(light_proj_selector, intensity);
          diffuse_lighting.rgb -= light_proj_color.rgb * proj_intensity;
-
-         if (state.shadowed) {
-            diffuse_lighting.rgb += light_proj_color.rgb * light_texture + proj_intensity;
-         }
-         else {
-            float projection_shadow = lerp(1.0, shadow, shadow_blend.a);
-
-            diffuse_lighting.rgb +=
-               (light_proj_color.rgb * light_texture + proj_intensity) * projection_shadow;
-         }
+         diffuse_lighting.rgb += (light_proj_color.rgb * light_texture) * proj_intensity;
       }
 
       float3 color = diffuse_lighting.rgb * diffuse_color;
 
       float diffuse_intensity = diffuse_lighting.a;
 
-      if (state.shadowed) {
+      if (use_shadow_map) {
          color *= (1.0 - (diffuse_intensity * (1.0 - shadow)));
       }
 
@@ -188,85 +175,89 @@ float3 do_lighting_diffuse(float3 world_normal, float3 world_position, float3 di
       return color;
    }
    else {
-      return diffuse_color;
+      return diffuse_color * hdr_info.z;
    }
 }
 
 
-float3 do_lighting(float3 world_normal, float3 world_position, float3 view_normal,
+float3 do_lighting(float3 normalWS, float3 positionWS, float3 view_normalWS,
                    float3 diffuse_color, float3 static_diffuse_lighting, 
-                   float3 specular_color, float shadow, float3 light_texture, 
-                   Normal_state state)
+                   float3 specular_color, float shadow, float3 light_texture)
 {
-   float3 color;
-   color = (light::ambient(world_normal) + static_diffuse_lighting) * diffuse_color;
+   float3 diffuse_lighting = 0.0;
+   float3 specular_lighting = 0.0;
+   diffuse_lighting = (light::ambient(normalWS) + static_diffuse_lighting);
 
    float shadow_sum = 0.0;
 
-   if (lighting_directional) {
-      float4 intensity = float4(color, 1.0);
+   if (ps_light_active_directional) {
+      float4 intensity_diffuse = 0.0;
+      float4 intensity_specular = 0.0;
 
-      color += light::specular::calculate(intensity.x, world_normal, view_normal,
-                                          -light_directional_0_dir.xyz, light_directional_0_color.rgb,
-                                          diffuse_color, specular_color, specular_exponent);
-      shadow_sum += intensity.x * light_directional_0_color.a;
+      light::specular::calculate(intensity_diffuse.x, intensity_specular.x, diffuse_lighting, 
+                                 specular_lighting, normalWS, view_normalWS, 
+                                 -light_directional_0_dir.xyz, 1.0, 
+                                  light_directional_0_color.rgb, specular_exponent);
+      shadow_sum += intensity_diffuse.x + intensity_specular.x * light_directional_0_color.a;
       
-      color += light::specular::calculate(intensity.w, world_normal, view_normal,
-                                          -light_directional_1_dir.xyz, light_directional_1_color.rgb,
-                                          diffuse_color, specular_color, specular_exponent);
-      shadow_sum += intensity.w * light_directional_1_color.a;
+      light::specular::calculate(intensity_diffuse.w, intensity_specular.w, diffuse_lighting, 
+                                 specular_lighting, normalWS, view_normalWS, 
+                                 -light_directional_0_dir.xyz, 1.0,
+                                 light_directional_0_color.rgb, specular_exponent);
+      shadow_sum += intensity_diffuse.w + intensity_specular.w * light_directional_0_color.a;
 
-      if (lighting_point_0) {
-         color += light::specular::calculate_point(intensity.y, world_normal, world_position, 
-                                                   view_normal, light_point_0_pos, 
-                                                   light_point_0_color.rgb, diffuse_color, 
-                                                   specular_color, specular_exponent);
-         shadow_sum += intensity.y * light_point_0_color.a;
+      if (ps_light_active_point_0) {
+         light::specular::calculate_point(intensity_diffuse.y, intensity_specular.y, 
+                                          diffuse_lighting, specular_lighting, normalWS, 
+                                          positionWS, view_normalWS, light_point_0_pos, 
+                                          light_point_0_color.rgb, specular_exponent);
+         shadow_sum += intensity_diffuse.y + intensity_specular.y * light_point_0_color.a;
       }
 
-      if (lighting_point_1) {
-         color += light::specular::calculate_point(intensity.w, world_normal, world_position, 
-                                                   view_normal, light_point_1_pos, 
-                                                   light_point_1_color.rgb, diffuse_color, 
-                                                   specular_color, specular_exponent);
-         shadow_sum += intensity.w * light_point_1_color.a;
+      if (ps_light_active_point_1) {
+         light::specular::calculate_point(intensity_diffuse.w, intensity_specular.w, 
+                                          diffuse_lighting, specular_lighting, normalWS, 
+                                          positionWS, view_normalWS, light_point_1_pos, 
+                                          light_point_1_color.rgb, specular_exponent);
+         shadow_sum += intensity_diffuse.w + intensity_specular.w * light_point_1_color.a;
       }
 
-      if (lighting_point_23) {
-         color += light::specular::calculate_point(intensity.w, world_normal, world_position, 
-                                                   view_normal, light_point_2_pos, 
-                                                   light_point_2_color.rgb, diffuse_color, 
-                                                   specular_color, specular_exponent);
-         shadow_sum += intensity.w * light_point_2_color.a;
-
-         color += light::specular::calculate_point(intensity.w, world_normal, world_position, 
-                                                   view_normal, light_point_3_pos, 
-                                                   light_point_3_color.rgb, diffuse_color, 
-                                                   specular_color, specular_exponent);
-         shadow_sum += intensity.w * light_point_3_color.a;
+      if (ps_light_active_point_23) {
+         light::specular::calculate_point(intensity_diffuse.w, intensity_specular.w, 
+                                          diffuse_lighting, specular_lighting, normalWS, 
+                                          positionWS, view_normalWS, light_point_2_pos, 
+                                          light_point_2_color.rgb, specular_exponent);
+         shadow_sum += intensity_diffuse.w + intensity_specular.w * light_point_2_color.a;
+         
+         light::specular::calculate_point(intensity_diffuse.w, intensity_specular.w,
+                                          diffuse_lighting, specular_lighting, normalWS, 
+                                          positionWS, view_normalWS, light_point_3_pos, 
+                                          light_point_3_color.rgb, specular_exponent);
+         shadow_sum += intensity_diffuse.w + intensity_specular.w * light_point_3_color.a;
       }
-      else if (lighting_spot_0) {
-         color += light::specular::calculate_spot(intensity.z, world_normal, view_normal,
-                                                  world_position, diffuse_color, specular_color, 
-                                                  specular_exponent);
-         shadow_sum += intensity.z * light_spot_color.a;
-      }
-
-      if (state.projected_tex) {
-         float proj_intensity = dot(light_proj_selector, intensity);
-         color -= light_proj_color.rgb * proj_intensity;
-
-         if (state.shadowed) {
-            color += light_proj_color.rgb * light_texture + proj_intensity;
-         }
-         else {
-            float projection_shadow = lerp(1.0, shadow, shadow_blend.a);
-
-            color += (color * light_texture + proj_intensity) * projection_shadow;
-         }
+      else if (ps_light_active_spot_light) {
+         light::specular::calculate_spot(intensity_diffuse.z, intensity_specular.z, 
+                                         diffuse_lighting, specular_lighting,
+                                         normalWS, view_normalWS, positionWS, specular_exponent);
+         shadow_sum += intensity_diffuse.z + intensity_specular.w * light_spot_color.a;
       }
 
-      if (state.shadowed) {
+      if (use_projected_texture) {
+         const float diffuse_proj_intensity = dot(light_proj_selector, intensity_diffuse);
+
+         diffuse_lighting -= (light_proj_color.rgb * diffuse_proj_intensity);
+         diffuse_lighting += (light_proj_color.rgb * light_texture) * diffuse_proj_intensity;
+
+         const float specular_proj_intensity = dot(light_proj_selector, intensity_specular);
+
+         specular_lighting -= light_proj_color.rgb * specular_proj_intensity;
+         specular_lighting += (light_proj_color.rgb * light_texture) * specular_proj_intensity;
+      }
+
+      float3 color = 
+         (diffuse_lighting * diffuse_color) + (specular_lighting * specular_color);
+
+      if (use_shadow_map) {
          color *= saturate((1.0 - (shadow_sum * (1.0 - shadow))));
       }
 
@@ -279,73 +270,74 @@ float3 do_lighting(float3 world_normal, float3 world_position, float3 view_norma
       return color;
    }
    else {
-      return diffuse_color;
+      return diffuse_color * hdr_info.z;
    }
 }
 
 
 struct Ps_input
 {
-   float2 diffuse_texcoords : TEXCOORD0;
-   float2 detail_texcoords : TEXCOORD1;
-   float4 projection_texcoords : TEXCOORD2;
-   float4 shadow_texcoords : TEXCOORD3;
-   float3 world_position : TEXCOORD4;
-   float3 world_normal : TEXCOORD5;
-   float3 vertex_color : TEXCOORD6;
-   float fade : TEXCOORD7;
+   float3 positionWS : TEXCOORD0;
+   float3 normalWS : TEXCOORD1;
+
+   float2 diffuse_texcoords : TEXCOORD2;
+   float2 detail_texcoords : TEXCOORD3;
+   float4 projection_texcoords : TEXCOORD4;
+   float4 shadow_texcoords : TEXCOORD5;
+
+   float4 material_color_fade : TEXCOORD6;
+   float3 static_lighting : TEXCOORD7;
 
    float fog_eye_distance : DEPTH;
 
    float vface : VFACE;
 };
 
-float4 main_ps(Ps_input input, const Normal_state state) : COLOR
+float4 main_ps(Ps_input input) : SV_Target0
 {
-
-   float4 diffuse_map_color = tex2D(diffuse_map, input.diffuse_texcoords);
+   const float4 diffuse_map_color = 
+      diffuse_map.Sample(linear_wrap_sampler, input.diffuse_texcoords);
 
    // Hardedged Alpha Test
-   if (state.hardedged && diffuse_map_color.a < 0.5) discard;
+   if (use_hardedged_test && diffuse_map_color.a < 0.5) discard;
 
-   const float3 light_texture = state.projected_tex ?
-      sample_projected_light(projected_light_texture, input.projection_texcoords) : 1.0;
+   const float3 light_texture = use_projected_texture ?
+      sample_projected_light(projected_light_texture, input.projection_texcoords) : 0.0;
+   const float2 shadow_texcoords = input.shadow_texcoords.xy / input.shadow_texcoords.w;
    const float shadow = 
-      state.shadowed ? tex2Dproj(shadow_map, input.shadow_texcoords).a : 1.0;
+      use_shadow_map ? shadow_map.SampleLevel(linear_wrap_sampler, shadow_texcoords, 0).a : 1.0;
 
    // Get Diffuse Color
    float3 diffuse_color = diffuse_map_color.rgb * base_diffuse_color;
-   diffuse_color *= get_material_color(float4(input.vertex_color, 1.0)).rgb;
+   diffuse_color *= input.material_color_fade.rgb;
 
    if (use_detail_maps) {
-      const float3 detail_color = tex2D(detail_map, input.detail_texcoords).rgb;
+      const float3 detail_color = detail_map.Sample(linear_wrap_sampler, input.detail_texcoords);
       diffuse_color = diffuse_color * detail_color * 2.0;
    }
 
    // Sample Normal Maps
-   const float3 view_normal = normalize(world_view_position - input.world_position);
+   const float3 view_normalWS = normalize(view_positionWS - input.positionWS);
 
-   float3 normal;
+   float3 normalWS;
    float gloss;
 
    sample_normal_maps_gloss(input.diffuse_texcoords, input.detail_texcoords,
-                            normalize(input.world_normal * -input.vface), 
-                            view_normal, normal, gloss);
+                            normalize(input.normalWS * -input.vface), 
+                            view_normalWS, normalWS, gloss);
 
 
    float3 color;
 
    // Calculate Lighting
-   float3 static_diffuse_lighting = get_static_diffuse_color(float4(input.vertex_color, 1.0));
-
    if (use_specular) {
-      color = do_lighting(normal, input.world_position, view_normal, diffuse_color,
-                          static_diffuse_lighting, base_specular_color * gloss,
-                          shadow, light_texture, state);
+      color = do_lighting(normalWS, input.positionWS, view_normalWS, diffuse_color,
+                          input.static_lighting, base_specular_color * gloss,
+                          shadow, light_texture);
    }
    else {
-      color = do_lighting_diffuse(normal, input.world_position, diffuse_color, 
-                                  static_diffuse_lighting, shadow, light_texture, state);
+      color = do_lighting_diffuse(normalWS, input.positionWS, diffuse_color, 
+                                  input.static_lighting, shadow, light_texture);
    }
 
 
@@ -357,16 +349,13 @@ float4 main_ps(Ps_input input, const Normal_state state) : COLOR
 
    if (use_transparency) {
       alpha = lerp(1.0, diffuse_map_color.a, blend_constant.b);
-      alpha = saturate(alpha * input.fade);
+      alpha = saturate(alpha * input.material_color_fade.a);
 
       color /= alpha;
    }
    else {
-      alpha = saturate(input.fade * 4.0);
+      alpha = input.material_color_fade.a;
    }
 
    return float4(color, alpha);
 }
-
-DEFINE_NORMAL_QPAQUE_PS_ENTRYPOINTS(Ps_input, main_ps)
-DEFINE_NORMAL_TRANSPARENT_PS_ENTRYPOINTS(Ps_input, main_ps)

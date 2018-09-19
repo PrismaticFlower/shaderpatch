@@ -25,7 +25,6 @@
 
 #include <gsl/gsl>
 #include <imgui.h>
-
 using namespace std::literals;
 
 namespace sp::direct3d {

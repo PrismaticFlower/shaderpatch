@@ -12,7 +12,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
 
           "vertex_shader": "preextended_vs",
           "pixel_shader": "shadow_ps"
@@ -30,7 +30,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
 
           "vertex_shader": "extend_directional_vs",
           "pixel_shader": "shadow_ps"
@@ -48,7 +48,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
 
           "vertex_shader": "extend_directional_hardskin_facenormal_vs",
           "pixel_shader": "shadow_ps"
@@ -66,7 +66,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
 
           "vertex_shader": "extend_directional_hardskin_gen_normal_vs",
           "pixel_shader": "shadow_ps"
@@ -84,7 +84,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
 
           "vertex_shader": "extend_directional_softskin_facenormal_vs",
           "pixel_shader": "shadow_ps"
@@ -102,7 +102,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
 
           "vertex_shader": "extend_directional_softskin_gen_normal_vs",
           "pixel_shader": "shadow_ps"
@@ -120,7 +120,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
 
           "vertex_shader": "extend_point_vs",
           "pixel_shader": "shadow_ps"
@@ -138,7 +138,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
 
           "vertex_shader": "extend_point_hardskin_facenormal_vs",
           "pixel_shader": "shadow_ps"
@@ -156,7 +156,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
 
           "vertex_shader": "extend_point_hardskin_gen_normal_vs",
           "pixel_shader": "shadow_ps"
@@ -174,7 +174,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
 
           "vertex_shader": "extend_point_softskin_facenormal_vs",
           "pixel_shader": "shadow_ps"
@@ -192,7 +192,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
 
           "vertex_shader": "extend_point_softskin_gen_normal_vs",
           "pixel_shader": "shadow_ps"
@@ -210,7 +210,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
 
           "vertex_shader": "extend_directional_vs",
           "pixel_shader": "shadow_ps"
@@ -221,7 +221,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
 
           "vertex_shader": "extend_point_vs",
           "pixel_shader": "shadow_ps"
@@ -239,7 +239,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
 
           "vertex_shader": "extend_directional_hardskin_facenormal_vs",
           "pixel_shader": "shadow_ps"
@@ -250,7 +250,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
 
           "vertex_shader": "extend_point_hardskin_facenormal_vs",
           "pixel_shader": "shadow_ps"
@@ -268,7 +268,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
 
           "vertex_shader": "extend_directional_hardskin_gen_normal_vs",
           "pixel_shader": "shadow_ps"
@@ -279,7 +279,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
 
           "vertex_shader": "extend_point_hardskin_gen_normal_vs",
           "pixel_shader": "shadow_ps"
@@ -297,7 +297,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
 
           "vertex_shader": "extend_directional_softskin_facenormal_vs",
           "pixel_shader": "shadow_ps"
@@ -308,7 +308,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
 
           "vertex_shader": "extend_point_softskin_facenormal_vs",
           "pixel_shader": "shadow_ps"
@@ -326,7 +326,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
 
           "vertex_shader": "extend_directional_softskin_gen_normal_vs",
           "pixel_shader": "shadow_ps"
@@ -337,7 +337,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
 
           "vertex_shader": "extend_point_softskin_gen_normal_vs",
           "pixel_shader": "shadow_ps"

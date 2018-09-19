@@ -7,12 +7,6 @@
 
 struct Lighting
 {
-   float4 diffuse;
-   float4 static_diffuse;
-};
-
-struct Pixel_lighting
-{
    float3 color;
    float intensity;
 };
@@ -20,9 +14,9 @@ struct Pixel_lighting
 namespace light
 {
 
-float3 ambient(float3 world_normal)
+float3 ambient(float3 normalWS)
 {
-   float factor = world_normal.y * -0.5 + 0.5;
+   float factor = normalWS.y * -0.5 + 0.5;
 
    float3 color;
 
@@ -32,22 +26,21 @@ float3 ambient(float3 world_normal)
    return color;
 }
 
-float attenuation_point(float3 world_position, float4 light_position)
+float attenuation_point(float3 positionWS, float4 light_positionWS)
 {
-   const float inv_range_sq = light_position.w;
-   const float light_dst = distance(world_position, light_position.xyz);
+   const float inv_range_sq = light_positionWS.w;
+   const float light_dst = distance(positionWS, light_positionWS.xyz);
 
-   return max(1.0 - (light_dst * light_dst) * inv_range_sq, 0.0);
+   const float attenuation = saturate(1.0 - (light_dst * light_dst) * inv_range_sq);
+
+   return attenuation * attenuation;
 }
 
-float attenuation_spot(float3 world_position)
+float attenuation_spot(float3 positionWS)
 {
-   const float3 light_dir = normalize(world_position - light_spot_pos.xyz);
+   const float3 light_dir = normalize(positionWS - light_spot_pos.xyz);
 
-   const float inv_range_sq = light_spot_pos.w;
-   const float light_dst = distance(world_position, light_spot_pos.xyz);
-
-   const float attenuation = max(1.0 - (light_dst * light_dst) * inv_range_sq, 0.0);
+   const float attenuation = attenuation_point(positionWS, light_spot_pos);
 
    const float outer_cone = light_spot_params.x;
 
@@ -57,186 +50,88 @@ float attenuation_spot(float3 world_position)
    return attenuation * cone_falloff;
 }
 
-float intensity_directional(float3 world_normal, float4 direction)
+float intensity_directional(float3 normalWS, float4 direction)
 {
-   return max(dot(world_normal, -direction.xyz), 0.0);
+   return max(dot(normalWS, -direction.xyz), 0.0);
 }
 
-float intensity_point(float3 world_normal, float3 world_position, float4 light_position)
+float intensity_point(float3 normalWS, float3 positionWS, float4 light_positionWS)
 {
-   const float3 light_dir = normalize(world_position - light_position.xyz);
+   const float3 light_dir = normalize(positionWS - light_positionWS.xyz);
 
-   const float intensity = max(dot(world_normal.xyz, -light_dir), 0.0);
+   const float intensity = max(dot(normalWS, -light_dir), 0.0);
 
-   return attenuation_point(world_position, light_position)  * intensity;
+   return attenuation_point(positionWS, light_positionWS)  * intensity;
 }
 
-float intensity_spot(float3 world_normal, float3 world_position)
+float intensity_spot(float3 normalWS, float3 positionWS)
 {
-   const float3 light_dir = normalize(world_position - light_spot_pos.xyz);
+   const float3 light_dir = normalize(positionWS - light_spot_pos.xyz);
 
-   const float intensity = max(dot(world_normal, -light_dir), 0.0);
+   const float intensity = max(dot(normalWS, -light_dir), 0.0);
 
-   return intensity * attenuation_spot(world_position);
+   return intensity * attenuation_spot(positionWS);
 }
 
-Lighting calculate(float3 normal, float3 world_position,
-                   float3 static_diffuse_lighting)
-{
-   float3 world_normal = normals_to_world(normal);
-
-   Lighting lighting;
-
-   lighting.diffuse = 0.0;
-   lighting.diffuse.rgb = ambient(world_normal) + static_diffuse_lighting;
-
-   if (lighting_directional) {
-      float4 intensity = float4(lighting.diffuse.rgb, 1.0);
-
-      intensity.x = intensity_directional(world_normal, light_directional_0_dir);
-      lighting.diffuse += intensity.x * light_directional_0_color;
-
-      intensity.w = intensity_directional(world_normal, light_directional_1_dir);
-      lighting.diffuse += intensity.w * light_directional_1_color;
-
-      if (lighting_point_0) {
-         intensity.y = intensity_point(world_normal, world_position, light_point_0_pos);
-         lighting.diffuse += intensity.y * light_point_0_color;
-      }
-
-      if (lighting_point_1) {
-         intensity.w = intensity_point(world_normal, world_position, light_point_1_pos);
-         lighting.diffuse += intensity.w * light_point_1_color;
-      }
-
-      if (lighting_point_23) {
-         intensity.w = intensity_point(world_normal, world_position, light_point_2_pos);
-         lighting.diffuse += intensity.w * light_point_2_color;
-
-         intensity.w = intensity_point(world_normal, world_position, light_point_3_pos);
-         lighting.diffuse += intensity.w * light_point_3_color;
-      }
-      else if (lighting_spot_0) {
-         intensity.z = intensity_spot(world_normal, world_position);
-         lighting.diffuse += intensity.z * light_spot_color;
-      }
-
-      lighting.static_diffuse.rgb = static_diffuse_lighting;
-      lighting.static_diffuse.w = dot(light_proj_selector, intensity);
-      lighting.diffuse.rgb += -light_proj_color.rgb * lighting.static_diffuse.w;
-
-      float scale = max(lighting.diffuse.r, lighting.diffuse.g);
-      scale = max(scale, lighting.diffuse.b);
-      scale = max(scale, 1.0);
-      scale = rcp(scale);
-      lighting.diffuse.rgb = lerp(lighting.diffuse.rgb * scale, 
-                                  lighting.diffuse.rgb, tonemap_state);
-      lighting.diffuse.rgb *= hdr_info.z;
-   }
-   else {
-      lighting.diffuse = float4(1.0.xxx, 0.0);
-      lighting.static_diffuse = 0.0;
-   }
-
-   return lighting;
-}
-
-Lighting vertex_precalculate(float3 world_normal, float3 world_position,
-                             float3 static_diffuse_lighting)
+Lighting calculate(float3 normalWS, float3 positionWS, float3 static_diffuse_lighting,
+                   bool use_projected_light = false, float3 projected_light_texture_color = 0.0)
 {
    Lighting lighting;
 
-   lighting.diffuse = 0.0;
-   lighting.diffuse.rgb = ambient(world_normal) + static_diffuse_lighting;
+   float4 light = float4(ambient(normalWS) + static_diffuse_lighting, 0.0);
 
-   if (lighting_directional) {
-      float4 intensity = float4(lighting.diffuse.rgb, 1.0);
+   if (ps_light_active_directional) {
+      float4 intensity = float4(light.rgb, 1.0);
 
-      intensity.x = intensity_directional(world_normal, light_directional_0_dir);
-      intensity.w = intensity_directional(world_normal, light_directional_1_dir);
-
-      if (lighting_point_0) {
-         intensity.y = intensity_point(world_normal, world_position, light_point_0_pos);
-      }
-
-      if (lighting_point_1) {
-         intensity.w = intensity_point(world_normal, world_position, light_point_1_pos);
-      }
-
-      if (lighting_point_23) {
-         intensity.w = intensity_point(world_normal, world_position, light_point_3_pos);
-      }
-      else if (lighting_spot_0) {
-         intensity.z = intensity_spot(world_normal, world_position);
-      }
-
-      lighting.static_diffuse.rgb = static_diffuse_lighting;
-      lighting.static_diffuse.w = dot(light_proj_selector, intensity);
-      lighting.diffuse.rgb += -light_proj_color.rgb * lighting.static_diffuse.w;
-   }
-   else {
-      lighting.diffuse = float4(1.0.xxx, 0.0);
-      lighting.static_diffuse = 0.0;
-   }
-
-   return lighting;
-}
-
-Pixel_lighting pixel_calculate(float3 world_normal, float3 world_position, 
-                               float3 precalculated)
-{
-   float4 light = float4(precalculated, 0.0);
-
-   float4 intensity = float4(light.rgb, 1.0);
-
-   [branch] if (directional_lights) {
-      intensity.x = intensity_directional(world_normal, light_directional_0_dir);
+      intensity.x = intensity_directional(normalWS, light_directional_0_dir);
       light += intensity.x * light_directional_0_color;
 
-      intensity.w = intensity_directional(world_normal, light_directional_1_dir);
+      intensity.w = intensity_directional(normalWS, light_directional_1_dir);
       light += intensity.w * light_directional_1_color;
 
-
-      [branch] if (point_light_0) {
-         intensity.y = intensity_point(world_normal, world_position, light_point_0_pos);
+      if (ps_light_active_point_0) {
+         intensity.y = intensity_point(normalWS, positionWS, light_point_0_pos);
          light += intensity.y * light_point_0_color;
       }
 
-      [branch] if (point_light_1) {
-         intensity.w = intensity_point(world_normal, world_position, light_point_1_pos);
+      if (ps_light_active_point_1) {
+         intensity.w = intensity_point(normalWS, positionWS, light_point_1_pos);
          light += intensity.w * light_point_1_color;
       }
 
-      [branch] if (point_light_23) {
-         intensity.w = intensity_point(world_normal, world_position, light_point_2_pos);
+      if (ps_light_active_point_23) {
+         intensity.w = intensity_point(normalWS, positionWS, light_point_2_pos);
          light += intensity.w * light_point_2_color;
 
-
-         intensity.w = intensity_point(world_normal, world_position, light_point_3_pos);
+         intensity.w = intensity_point(normalWS, positionWS, light_point_3_pos);
          light += intensity.w * light_point_3_color;
       }
-      else if (spot_light) {
-         intensity.z = intensity_spot(world_normal, world_position);
+      else if (ps_light_active_spot_light) {
+         intensity.z = intensity_spot(normalWS, positionWS);
          light += intensity.z * light_spot_color;
       }
 
-      float scale = max(light.r, light.g);
-      scale = max(scale, light.b);
+      if (use_projected_light) {
+         const float proj_light_intensity = dot(light_proj_selector, intensity);
+
+         light.rgb -= (light_proj_color.rgb * proj_light_intensity);
+         light.rgb += (projected_light_texture_color * light_proj_color.rgb * proj_light_intensity);
+      }
+
+      float scale = max(max(light.r, light.g), light.b);
       scale = max(scale, 1.0);
-      scale = rcp(scale);
-      light.rgb = lerp(light.rgb * scale, light.rgb, tonemap_state);
+      light.rgb = lerp(light.rgb / scale, light.rgb, tonemap_state);
       light.rgb *= hdr_info.z;
+
+      lighting.color = light.rgb;
+      lighting.intensity = light.a;
    }
    else {
-      light = 1.0;
+      lighting.color = hdr_info.zzz;
+      lighting.intensity = 0.0;
    }
 
-   Pixel_lighting result;
-
-   result.color = light.rgb;
-   result.intensity = light.a;
-
-   return result;
+   return lighting;
 }
 
 namespace pbr
@@ -305,7 +200,7 @@ float3 calculate(float3 N, float3 V, float3 world_position, float3 albedo,
 
    float3 light = 0.0;
 
-   if (lighting_directional) {
+   if (ps_light_active_directional) {
       light += brdf_light(diffuse, F0, roughness, N, -light_directional_0_dir.xyz,
                           V, NdotV, 1.0, light_directional_0_color.rgb);
 
@@ -314,7 +209,7 @@ float3 calculate(float3 N, float3 V, float3 world_position, float3 albedo,
 
       light *= shadow;
 
-      if (lighting_point_0) {
+      if (ps_light_active_point_0) {
          const float3 light_dir = normalize(light_point_0_pos.xyz - world_position);
          const float attenuation = attenuation_point(world_position, light_point_0_pos);
 
@@ -322,7 +217,7 @@ float3 calculate(float3 N, float3 V, float3 world_position, float3 albedo,
                              V, NdotV, attenuation, light_point_0_color.rgb);
       }
 
-      if (lighting_point_1) {
+      if (ps_light_active_point_1) {
          const float3 light_dir = normalize(light_point_1_pos.xyz - world_position);
          const float attenuation = attenuation_point(world_position, light_point_1_pos);
 
@@ -330,7 +225,7 @@ float3 calculate(float3 N, float3 V, float3 world_position, float3 albedo,
                              V, NdotV, attenuation, light_point_1_color.rgb);
       }
 
-      if (lighting_point_23) {
+      if (ps_light_active_point_23) {
          float3 light_dir = normalize(light_point_2_pos.xyz - world_position);
          float attenuation = attenuation_point(world_position, light_point_2_pos);
 
@@ -343,7 +238,7 @@ float3 calculate(float3 N, float3 V, float3 world_position, float3 albedo,
          light += brdf_light(diffuse, F0, roughness, N, light_dir,
                              V, NdotV, attenuation, light_point_3_color.rgb);
       }
-      else if (lighting_spot_0) {
+      else if (ps_light_active_spot_light) {
          const float3 light_dir = normalize(light_spot_pos.xyz - world_position);
          const float attenuation = attenuation_spot(world_position);
 

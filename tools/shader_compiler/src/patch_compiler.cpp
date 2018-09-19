@@ -112,8 +112,11 @@ Patch_compiler::Patch_compiler(DWORD compiler_flags, nlohmann::json definition,
 
    _render_type = definition["rendertype"s];
 
-   _variations = get_shader_variations(definition["skinned"s], definition["lighting"s],
-                                       definition["vertex_color"s]);
+   const auto pass_flags =
+      get_pass_flags(definition["base_input"s], definition["lighting"s],
+                     definition["vertex_color"s], definition["texture_coords"s]);
+
+   _variations = get_shader_variations(pass_flags, definition["skinned"s]);
 
    Preprocessor_defines shader_defines;
 
@@ -274,9 +277,10 @@ auto Patch_compiler::compile_state(const nlohmann::json& state_def,
 
       shader.vs_index =
          compile_vertex_shader(vs_entry_point,
-                               combine_defines(variation.defines, state_defines).get());
-      shader.ps_index = compile_pixel_shader(
-         ps_entry_point, combine_defines(variation.ps_defines, state_defines).get());
+                               combine_defines(variation.defines, state_defines));
+      shader.ps_index =
+         compile_pixel_shader(ps_entry_point,
+                              combine_defines(variation.ps_defines, state_defines));
 
       state.shaders.emplace_back(std::move(shader));
    };
@@ -287,20 +291,20 @@ auto Patch_compiler::compile_state(const nlohmann::json& state_def,
 }
 
 auto Patch_compiler::compile_vertex_shader(const std::string& entry_point,
-                                           const std::vector<D3D_SHADER_MACRO>& defines)
-   -> std::size_t
+                                           Preprocessor_defines defines) -> std::size_t
 {
-   return compile_shader_impl(_compiler_flags, entry_point, std::move(defines),
-                              _source_path, _vs_mutex, _vs_shaders, _vs_cache,
-                              "vs_3_0"s);
+   defines.add_define("__VERTEX_SHADER__"s, "1");
+
+   return compile_shader_impl(_compiler_flags, entry_point, defines.get(), _source_path,
+                              _vs_mutex, _vs_shaders, _vs_cache, "vs_3_0"s);
 }
 
 auto Patch_compiler::compile_pixel_shader(const std::string& entry_point,
-                                          const std::vector<D3D_SHADER_MACRO>& defines)
-   -> std::size_t
+                                          Preprocessor_defines defines) -> std::size_t
 {
-   return compile_shader_impl(_compiler_flags, entry_point, std::move(defines),
-                              _source_path, _ps_mutex, _ps_shaders, _ps_cache,
-                              "ps_3_0"s);
+   defines.add_define("__PIXEL_SHADER__"s, "1");
+
+   return compile_shader_impl(_compiler_flags, entry_point, defines.get(), _source_path,
+                              _ps_mutex, _ps_shaders, _ps_cache, "ps_3_0"s);
 }
 }

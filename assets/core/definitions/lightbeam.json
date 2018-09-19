@@ -12,7 +12,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": false,
-          "transform": "position",
+          "base_input": "position",
 
           "vertex_shader": "lightbeam_vs",
           "pixel_shader": "lightbeam_ps"

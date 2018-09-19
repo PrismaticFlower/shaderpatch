@@ -14,7 +14,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "position",
+          "base_input": "position",
 
           "vertex_shader": "normal_vs",
           "pixel_shader": "normal_ps"
@@ -32,7 +32,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "blur_vs",
           "pixel_shader": "blur_ps"

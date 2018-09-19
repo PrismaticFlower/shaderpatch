@@ -2,213 +2,108 @@
 #include "constants_list.hlsl"
 #include "ext_constants_list.hlsl"
 #include "fog_utilities.hlsl"
+#include "generic_vertex_input.hlsl"
 #include "vertex_utilities.hlsl"
-#include "transform_utilities.hlsl"
+#include "vertex_transformer.hlsl"
 #include "lighting_utilities.hlsl"
 #include "pixel_utilities.hlsl"
-#include "normal_entrypoint_defs.hlsl"
 
-sampler2D diffuse_map : register(ps, s[0]);
-sampler2D detail_map : register(ps, s[1]);
-sampler2D projected_texture : register(ps, s[2]);
-sampler2D shadow_map : register(ps, s[3]);
+Texture2D<float4> diffuse_map : register(ps_3_0, s0);
+Texture2D<float3> detail_map : register(ps_3_0, s1);
+Texture2D<float3> projected_texture : register(ps_3_0, s2);
+Texture2D<float4> shadow_map : register(ps_3_0, s3);
 
-float4 blend_constant : register(ps, c[0]);
-float4 shadow_blend : register(ps, c[1]);
+SamplerState linear_wrap_sampler;
+
+float4 blend_constants : register(ps, c[0]);
 
 float2 lighting_factor : register(c[CUSTOM_CONST_MIN]);
 float4 texture_transforms[4] : register(vs, c[CUSTOM_CONST_MIN + 1]);
 
-struct Vs_input
-{
-   float4 position : POSITION;
-   float3 normals : NORMAL;
-   uint4 blend_indices : BLENDINDICES;
-   float4 weights : BLENDWEIGHT;
-   float4 texcoords : TEXCOORD0;
-   float4 color : COLOR;
-};
+const static bool use_transparency = NORMAL_USE_TRANSPARENCY;
+const static bool use_hardedged_test = NORMAL_USE_HARDEDGED_TEST;
+const static bool use_shadow_map = NORMAL_USE_SHADOW_MAP;
+const static bool use_projected_texture = NORMAL_USE_PROJECTED_TEXTURE;
 
 struct Vs_output_unlit
 {
-   float4 position : POSITION;
+   float4 position : SV_Position;
    float2 diffuse_texcoords : TEXCOORD0;
    float2 detail_texcoords : TEXCOORD1;
-   float4 color : TEXCOORD2;
+   float4 material_color_fade : TEXCOORD2;
    float fog_eye_distance : DEPTH;
 };
 
-Vs_output_unlit unlit_opaque_vs(Vs_input input)
+Vs_output_unlit unlit_main_vs(Vertex_input input)
 {
    Vs_output_unlit output;
     
-   float4 world_position = transform::position(input.position, input.blend_indices,
-                                               input.weights);
+   Transformer transformer = create_transformer(input);
 
-   output.position = position_project(world_position);
-   output.fog_eye_distance = fog::get_eye_distance(world_position.xyz);
+   float3 positionWS = transformer.positionWS();
 
-   output.diffuse_texcoords = decompress_transform_texcoords(input.texcoords,
-                                                             texture_transforms[0],
-                                                             texture_transforms[1]);
-   
-   output.detail_texcoords = decompress_transform_texcoords(input.texcoords,
-                                                            texture_transforms[2],
-                                                            texture_transforms[3]);
+   output.position = transformer.positionPS();
+   output.fog_eye_distance = fog::get_eye_distance(positionWS);
 
-   Near_scene near_scene = calculate_near_scene_fade(world_position);
+   output.diffuse_texcoords = transformer.texcoords(texture_transforms[0],
+                                                    texture_transforms[1]);  
+   output.detail_texcoords = transformer.texcoords(texture_transforms[2],
+                                                   texture_transforms[3]);
 
-   float4 material_color = get_material_color(input.color);
+   Near_scene near_scene = calculate_near_scene_fade(positionWS);
 
-   output.color.rgb = hdr_info.z * lighting_factor.x + lighting_factor.y;
-   output.color.rgb *= material_color.rgb;
-   output.color.a = near_scene.fade * 0.25 + 0.5;
-
-   return output;
-}
-
-Vs_output_unlit unlit_transparent_vs(Vs_input input)
-{
-   float4 world_position = transform::position(input.position, input.blend_indices,
-                                               input.weights);
-
-   Vs_output_unlit output = unlit_opaque_vs(input);
-    
-   Near_scene near_scene = calculate_near_scene_fade(world_position);
-   near_scene = clamp_near_scene_fade(near_scene);
-
-   output.color.a = get_material_color(input.color).a * near_scene.fade;
+   output.material_color_fade.rgb = hdr_info.z * lighting_factor.x + lighting_factor.y;
+   output.material_color_fade.a = saturate(near_scene.fade);
+   output.material_color_fade *= get_material_color(input.color());
 
    return output;
 }
 
 struct Vs_output
 {
-   float4 position : POSITION;
-   float2 diffuse_texcoords : TEXCOORD0;
-   float2 detail_texcoords : TEXCOORD1;
-   float3 world_position : TEXCOORD4;
-   float3 world_normal : TEXCOORD5;
-
-   float4 color : TEXCOORD6;
-   float3 precalculated_light : TEXCOORD7;
-
-   float fog_eye_distance : DEPTH;
-};
-
-Vs_output near_opaque_vs(Vs_input input)
-{
-   Vs_output output;
-    
-   float4 world_position = transform::position(input.position, input.blend_indices,
-                                               input.weights);
-   float3 normal = transform::normals(input.normals, input.blend_indices,
-                                      input.weights);
-   float3 world_normal = normals_to_world(normal);
-
-   output.world_position = world_position.xyz;
-   output.world_normal = world_normal;
-   output.position = position_project(world_position);
-   output.fog_eye_distance = fog::get_eye_distance(world_position.xyz);
-
-   output.diffuse_texcoords = decompress_transform_texcoords(input.texcoords,
-                                                             texture_transforms[0],
-                                                             texture_transforms[1]);
-
-   output.detail_texcoords = decompress_transform_texcoords(input.texcoords,
-                                                            texture_transforms[2],
-                                                            texture_transforms[3]);
-   
-   Near_scene near_scene = calculate_near_scene_fade(world_position);
-
-   Lighting lighting = light::vertex_precalculate(world_normal, world_position.xyz,
-                                                  get_static_diffuse_color(input.color));
-
-   output.precalculated_light = lighting.diffuse.rgb;
-   output.color.rgb = get_material_color(input.color).rgb;
-   output.color.a = near_scene.fade * 0.25 + 0.5;
-
-   return output;
-}
-
-struct Vs_full_output
-{
-   float4 position : POSITION;
+   float4 positionPS : SV_Position;
 
    float2 diffuse_texcoords : TEXCOORD0;
    float2 detail_texcoords : TEXCOORD1;
    float4 projection_texcoords : TEXCOORD2;
    float4 shadow_texcoords : TEXCOORD3;
 
-   float3 world_position : TEXCOORD4;
-   float3 world_normal : TEXCOORD5;
+   float3 positionWS : TEXCOORD4;
+   float3 normalWS : TEXCOORD5;
 
-   float4 color : TEXCOORD6;
-   float3 precalculated_light : TEXCOORD7;
-   float3 projection_color : TEXCOORD8;
+   float4 material_color_fade : TEXCOORD6;
+   float3 static_lighting : TEXCOORD7;
 
-   float fog_eye_distance : DEPTH;
+   float fog_eye_distance : TEXCOORD8;
 };
 
-Vs_full_output near_opaque_shadow_projectedtex_vs(Vs_input input)
+Vs_output main_vs(Vertex_input input)
 {
-   Vs_full_output output;
-    
-   float4 world_position = transform::position(input.position, input.blend_indices,
-                                               input.weights);
-   float3 normal = transform::normals(input.normals, input.blend_indices,
-                                      input.weights);
-   float3 world_normal = normals_to_world(normal);
+   Vs_output output;
 
-   output.world_position = world_position.xyz;
-   output.world_normal = world_normal;
-   output.position = position_project(world_position);
-   output.fog_eye_distance = fog::get_eye_distance(world_position.xyz);
+   Transformer transformer = create_transformer(input);
 
-   output.diffuse_texcoords = decompress_transform_texcoords(input.texcoords,
-                                                             texture_transforms[0],
-                                                             texture_transforms[1]);
+   float3 positionWS = transformer.positionWS();
+   float3 normalWS = transformer.normalWS();
 
-   output.detail_texcoords = decompress_transform_texcoords(input.texcoords,
-                                                           texture_transforms[2],
-                                                           texture_transforms[3]);
+   output.positionWS = positionWS;
+   output.normalWS = normalWS;
+   output.positionPS = transformer.positionPS();
+   output.fog_eye_distance = fog::get_eye_distance(positionWS);
 
-   output.projection_texcoords = mul(world_position, light_proj_matrix);
+   output.diffuse_texcoords = transformer.texcoords(texture_transforms[0],
+                                                    texture_transforms[1]);  
+   output.detail_texcoords = transformer.texcoords(texture_transforms[2],
+                                                   texture_transforms[3]);
 
-   output.shadow_texcoords = transform_shadowmap_coords(world_position);
+   output.projection_texcoords = mul(float4(positionWS, 1.0), light_proj_matrix);
+   output.shadow_texcoords = transform_shadowmap_coords(positionWS);
 
-   Near_scene near_scene = calculate_near_scene_fade(world_position);
+   Near_scene near_scene = calculate_near_scene_fade(positionWS);
 
-   Lighting lighting = light::vertex_precalculate(world_normal, world_position.xyz,
-                                                  get_static_diffuse_color(input.color));
-
-   float3 material_color = get_material_color(input.color).rgb;
-
-   float3 projection_color;
-   projection_color = lighting.static_diffuse.a * material_color;
-   projection_color *= hdr_info.z;
-   projection_color *= light_proj_color.rgb;
-   output.projection_color = projection_color;
-
-   output.precalculated_light = lighting.diffuse.rgb;
-   output.color.rgb = material_color;
-   output.color.a = near_scene.fade * 0.25 + 0.5;
-
-   return output;
-}
-
-Vs_full_output near_transparent_shadow_projectedtex_vs(Vs_input input)
-{
-   Vs_full_output output = near_opaque_shadow_projectedtex_vs(input);
-    
-   Near_scene near_scene = calculate_near_scene_fade(float4(output.world_position, 1.0));
-
-   near_scene = clamp_near_scene_fade(near_scene);
-   // near_scene.fade *= near_scene.fade;
-
-   float4 material_color = get_material_color(input.color);
-
-   output.color.a = near_scene.fade * material_color.a;
+   output.material_color_fade = get_material_color(input.color());
+   output.material_color_fade.a *= saturate(near_scene.fade);
+   output.static_lighting = get_static_diffuse_color(input.color());
 
    return output;
 }
@@ -217,92 +112,45 @@ struct Ps_input_unlit
 {
    float2 diffuse_texcoords : TEXCOORD0;
    float2 detail_texcoords : TEXCOORD1;
-   float4 color : TEXCOORD2;
+   float4 material_color_fade : TEXCOORD2;
    float fog_eye_distance : DEPTH;
 };
 
-float4 unlit_opaque_ps(Ps_input_unlit input) : COLOR
+float get_glow_factor(float4 diffuse_map_color)
 {
-   float4 diffuse_color = tex2D(diffuse_map, input.diffuse_texcoords);
-   float4 detail_color = tex2D(detail_map, input.detail_texcoords);
+   if (use_hardedged_test || use_transparency) return blend_constants.a;
+   
+   return lerp(blend_constants.b, diffuse_map_color.a, blend_constants.a);
+}
 
-   float4 color = diffuse_color * input.color;
+float4 unlit_main_ps(Ps_input_unlit input) : SV_Target0
+{
+   const float4 diffuse_map_color = diffuse_map.Sample(linear_wrap_sampler, 
+                                                       input.diffuse_texcoords);
+   const float3 detail_color = detail_map.Sample(linear_wrap_sampler, input.detail_texcoords);
+
+   float3 color = diffuse_map_color.rgb * input.material_color_fade.rgb;
    color = (color * detail_color) * 2.0;
 
-   float blend_factor = lerp(blend_constant.b, diffuse_color.a, blend_constant.a);
+   const float glow_factor = get_glow_factor(diffuse_map_color);
+   const float3 glow_color = color * glow_factor + color;
+     
+   color = glow_color * glow_factor + color;
 
-   float4 blended_color = color * blend_factor + color;
-   color = blended_color * blend_factor + color;
+   float alpha = input.material_color_fade.a;
 
-   color.a = saturate((input.color.a - 0.5) * 4.0);
+   if (use_transparency) {
+      if (use_hardedged_test && diffuse_map_color.a < 0.5) discard;
 
-   color.rgb = fog::apply(color.rgb, input.fog_eye_distance);
+      alpha *= diffuse_map_color.a;
+   }
+   else if (use_hardedged_test) {
+      if (diffuse_map_color.a < 0.5) discard;
+   }
 
-   return color;
-}
+   color = fog::apply(color.rgb, input.fog_eye_distance);
 
-float4 unlit_opaque_hardedged_ps(Ps_input_unlit input) : COLOR
-{
-   float4 diffuse_color = tex2D(diffuse_map, input.diffuse_texcoords);
-   float4 detail_color = tex2D(detail_map, input.detail_texcoords);
-
-   float4 color = diffuse_color * input.color;
-   color = (color * detail_color) * 2.0;
-
-   float4 blended_color = color * blend_constant.a + color;
-   color = blended_color * blend_constant.a + color;
-
-   if (diffuse_color.a > 0.5) color.a = input.color.a - 0.5;
-   else color.a = 0.0;
-
-   color.a = saturate(color.a * 4.0);
-
-   color.rgb = fog::apply(color.rgb, input.fog_eye_distance);
-
-   return color;
-}
-
-float4 unlit_transparent_ps(Ps_input_unlit input) : COLOR
-{
-   float4 diffuse_color = tex2D(diffuse_map, input.diffuse_texcoords);
-   float4 detail_color = tex2D(detail_map, input.detail_texcoords);
-
-   float4 color = diffuse_color * input.color;
-   color.rgb = (color * detail_color).rgb * 2.0;
-
-   float4 blended_color = color * blend_constant.a + color;
-   color.rgb = (blended_color * blend_constant.a + color).rgb;
-
-   color.rgb = fog::apply(color.rgb, input.fog_eye_distance);
-
-   color.a = saturate(color.a);
-
-   return color;
-}
-
-float4 unlit_transparent_hardedged_ps(Ps_input_unlit input) : COLOR
-{
-   float4 diffuse_color = tex2D(diffuse_map, input.diffuse_texcoords);
-   float4 detail_color = tex2D(detail_map, input.detail_texcoords);
-
-   float4 color;
-
-   float alpha = diffuse_color.a * input.color.a;
-
-   if (diffuse_color.a > 0.5) color.a = saturate(alpha);
-   else color.a = 0.0;
-
-   color.rgb = (diffuse_color * input.color).rgb;
-   color.rgb = (color * detail_color).rgb * 2.0;
-
-   float3 blended_color;
-
-   blended_color = color.rgb * blend_constant.a + color.rgb;
-   color.rgb = blended_color * blend_constant.a + color.rgb;
-
-   color.rgb = fog::apply(color.rgb, input.fog_eye_distance);
-
-   return color;
+   return float4(color, alpha);
 }
 
 struct Ps_input
@@ -311,93 +159,81 @@ struct Ps_input
    float2 detail_texcoords : TEXCOORD1;
    float4 projection_texcoords : TEXCOORD2;
    float4 shadow_texcoords : TEXCOORD3;
-   float3 world_position : TEXCOORD4;
-   float3 world_normal : TEXCOORD5;
 
-   float4 color : TEXCOORD6;
-   float3 precalculated_light : TEXCOORD7;
-   float3 projection_color : TEXCOORD8;
+   float3 positionWS : TEXCOORD4;
+   float3 normalWS : TEXCOORD5;
 
-   float fog_eye_distance : DEPTH;
+   float4 material_color_fade : TEXCOORD6;
+   float3 static_lighting : TEXCOORD7;
+
+   float fog_eye_distance : TEXCOORD8;
 };
 
-float4 main_opaque_ps(Ps_input input, const Normal_state state) : COLOR
+float4 main_ps(Ps_input input) : SV_Target0
 {
-   const float3 detail_color = tex2D(detail_map, input.detail_texcoords).rgb;
-   const float3 projected_color = sample_projected_light(projected_texture, 
-                                                         input.projection_texcoords);
-   const float shadow_map_color = tex2Dproj(shadow_map, input.shadow_texcoords).a;
+   const float4 diffuse_map_color = diffuse_map.Sample(linear_wrap_sampler, 
+                                                       input.diffuse_texcoords);
+   const float3 detail_color = detail_map.Sample(linear_wrap_sampler, input.detail_texcoords);
 
-   float3 diffuse_color = tex2D(diffuse_map, input.diffuse_texcoords).rgb * input.color.rgb;
+   float3 diffuse_color = diffuse_map_color.rgb * input.material_color_fade.rgb;
    diffuse_color = diffuse_color * detail_color * 2.0;
+   
+   const float3 projection_texture_color = 
+      use_projected_texture ? sample_projected_light(projected_texture, 
+                                                     input.projection_texcoords) :
+                              0.0;
 
    // Calculate lighting.
-   Pixel_lighting light = light::pixel_calculate(normalize(input.world_normal), input.world_position,
-                                                 input.precalculated_light.rgb);
-   light.color = light.color * lighting_factor.x + lighting_factor.y;
+   Lighting lighting = light::calculate(normalize(input.normalWS), input.positionWS,
+                                        input.static_lighting, use_projected_texture,
+                                        projection_texture_color);
 
-   float4 color = 0.0;
+   lighting.color = lighting.color * lighting_factor.x + lighting_factor.y;
 
-   // Calculate projected texture lighting.
-   if (state.projected_tex && state.shadowed) {
-      float projection_shadow = lerp(1.0, shadow_map_color, shadow_blend.a);
-      
-      color.rgb = projected_color * input.projection_color * projection_shadow;
-   }
-   else if (state.projected_tex) {
-      color.rgb = projected_color * input.projection_color;
-   }
+   float3 color = 0.0;
 
    // Apply lighting to diffuse colour.
-   color.rgb += light.color;
-   color.rgb *= diffuse_color; 
+   color += lighting.color;
+   color *= diffuse_color; 
 
-   if (state.shadowed) {
-      float shadow = 1.0 - (light.intensity * (1.0 - shadow_map_color));
+   if (use_shadow_map) {
+      const float2 shadow_texcoords = input.shadow_texcoords.xy / input.shadow_texcoords.w;
+
+      const float shadow_map_value =
+         use_shadow_map ? shadow_map.SampleLevel(linear_wrap_sampler, shadow_texcoords, 0).a
+                        : 1.0;
+
+      float shadow = 1.0 - (lighting.intensity * (1.0 - shadow_map_value));
 
       // Linear Rendering Normalmap Hack
-      color.rgb = lerp(color.rgb * shadow, diffuse_color * hdr_info.z * shadow, rt_multiply_blending);
+      color = lerp(color * shadow, diffuse_color * hdr_info.z * shadow, rt_multiply_blending);
    }
    else {
 
       // Linear Rendering Normalmap Hack
-      color.rgb = lerp(color.rgb, diffuse_color * hdr_info.z, rt_multiply_blending);
+      color = lerp(color, diffuse_color * hdr_info.z, rt_multiply_blending);
    }
 
-   if (state.hardedged) {
-      if (tex2D(diffuse_map, input.diffuse_texcoords).a > 0.5) color.a = input.color.a - 0.5;
-      else color.a = -0.01;
+   float alpha;
 
-      color.a *= 4.0;
-   }
-   else {
-      color.a = (input.color.a - 0.5) * 4.0;
-   }
+   if (use_transparency) {
+      if (use_hardedged_test) {
+         if (diffuse_map_color.a < 0.5) discard;
 
-   color.a = saturate(color.a);
-
-   color.rgb = fog::apply(color.rgb, input.fog_eye_distance);
-
-   return color;
-}
-
-float4 main_transparent_ps(Ps_input input, const Normal_state state) : COLOR
-{
-   float alpha = tex2D(diffuse_map, input.diffuse_texcoords).a;
-
-   if (state.hardedged) {
-      if (alpha > 0.5) alpha = (alpha * input.color.a);
-      else alpha = 0.0;
+         alpha = diffuse_map_color.a * input.material_color_fade.a;
+      }
+      else {
+         alpha = 
+            lerp(1.0, diffuse_map_color.a, blend_constants.b) * input.material_color_fade.a;
+      }
    }
    else {
-      alpha = lerp(1.0, alpha, blend_constant.b);
-      alpha *= input.color.a;
+      if (use_hardedged_test && diffuse_map_color.a < 0.5) discard;
+
+      alpha = input.material_color_fade.a;
    }
 
-   alpha = saturate(alpha);
+   color = fog::apply(color, input.fog_eye_distance);
 
-   return float4(main_opaque_ps(input, state).rgb, alpha);
+   return float4(color, alpha);
 }
-
-DEFINE_NORMAL_QPAQUE_PS_ENTRYPOINTS(Ps_input, main_opaque_ps)
-DEFINE_NORMAL_TRANSPARENT_PS_ENTRYPOINTS(Ps_input, main_transparent_ps)

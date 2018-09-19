@@ -13,7 +13,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
 
           "vertex_shader": "decal_vs",
           "pixel_shader": "diffuse_ps"
@@ -31,7 +31,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
 
           "vertex_shader": "decal_vs",
           "pixel_shader": "diffuse_bump_ps"
@@ -49,7 +49,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
 
           "vertex_shader": "decal_vs",
           "pixel_shader": "bump_ps"

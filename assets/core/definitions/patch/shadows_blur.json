@@ -6,6 +6,8 @@
   "skinned": false,
   "lighting": false,
   "vertex_color": false,
+  "texture_coords": false,
+  "base_input": "none",
 
   "states": [
     {

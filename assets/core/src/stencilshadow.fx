@@ -1,267 +1,280 @@
 
+#include "constants_list.hlsl"
 #include "vertex_utilities.hlsl"
-#include "transform_utilities.hlsl"
+#include "stencilshadow_transform_utilities.hlsl"
 
-struct Vs_input
+const static float3 debug_color = {0.6, 0.2, 0.6};
+
+struct Vs_extend_input
 {
-   float4 position : POSITION;
-   float3 normal : NORMAL;
-   float4 weights : BLENDWEIGHT;
-   uint4 blend_indices : BLENDINDICES;
+   int4 position : POSITION;
+   unorm float4 normal : NORMAL;
 };
 
-struct Vs_input_generate_normal
+struct Vs_extend_hardskin_input
 {
-   float4 positions[3] : POSITION;
-   float4 weights[3] : BLENDWEIGHT;
-   uint4 blend_indices[3] : BLENDINDICES;
+   int4 position : POSITION;
+   unorm float4 normal : NORMAL;
+   unorm float4 blend_indices : BLENDINDICES;
 };
 
-float4 preextended_vs(float4 position : POSITION) : POSITION
+struct Vs_extend_hardskin_gen_normal_input
 {
-   return transform::position_project(position);
+   int4 position0 : POSITION0;
+   unorm float4 blend_indices : BLENDINDICES;
+   int4 position1 : POSITION1;
+   int4 position2 : POSITION2;
+};
+
+struct Vs_extend_softskin_facenormal_input
+{
+   int4 position : POSITION0;
+   unorm float4 blend_weights : BLENDWEIGHT0;
+   unorm float4 blend_indices : BLENDINDICES0;
+   unorm float4 face_normal : NORMAL;
+   unorm float4 face_blend_weights : BLENDWEIGHT1;
+   unorm float4 face_blend_indices : BLENDINDICES1;
+};
+
+struct Vs_extend_softskin_gen_normal_input
+{
+   int4 position0 : POSITION0;
+   unorm float4 blend_weights0 : BLENDWEIGHT0;
+   unorm float4 blend_indices0 : BLENDINDICES0;
+   int4 position1 : POSITION1;
+   unorm float4 blend_weights1 : BLENDWEIGHT1;
+   unorm float4 blend_indices1 : BLENDINDICES1;
+   int4 position2 : POSITION2;
+   unorm float4 blend_weights2 : BLENDWEIGHT2;
+   unorm float4 blend_indices2 : BLENDINDICES2;
+};
+
+float4 preextended_vs(float3 position : POSITION) : SV_Position
+{
+   const float3 positionWS = mul(float4(position, 1.0), world_matrix);
+
+   return mul(float4(positionWS, 1.0), projection_matrix);
 }
 
-float4 extrude_directional(float4 world_position, float3 world_normal,
+float3 extrude_directional(float3 position, float3 normal,
                            float3 light_direction, float2 extrusion_info)
 {
-   float normal_dot = dot(world_normal.xyz, -light_direction);
+   float NdotL = dot(normal, -light_direction);
 
-   if (normal_dot >= 0.0) normal_dot = 1.0f;
-   else normal_dot = 0.0f;
+   if (NdotL >= 0.0) NdotL = 1.0f;
+   else NdotL = 0.0f;
 
    const float extrusion_length = extrusion_info.x;
    const float extrusion_offset = extrusion_info.y;
 
-   normal_dot = normal_dot * extrusion_length + extrusion_offset;
+   NdotL = NdotL * extrusion_length + extrusion_offset;
 
-   return float4(normal_dot * light_direction + world_position.xyz, world_position.w);
+   return NdotL * light_direction + position;
 }
 
-float4 extend_directional_vs(Vs_input input, 
-                             uniform float3 light_direction : register(vs, c[CUSTOM_CONST_MIN]),
-                             uniform float2 extrusion_info : register(vs, c[CUSTOM_CONST_MIN + 1])) : POSITION
+float4 extend_directional_vs(Vs_extend_input input,
+                             uniform float3 light_directionWS : register(c[CUSTOM_CONST_MIN]),
+                             uniform float2 extrusion_info : register(c[CUSTOM_CONST_MIN + 1])) : SV_Position
 {
-   float4 world_position = transform::position(input.position);
-   float3 world_normal = normals_to_world(decompress_normals(input.normal));
+   const float3 positionWS = unskinned_positionWS(input.position);
+   const float3 normalWS = unskinned_normalWS(input.normal);
 
-   float4 extruded_position = extrude_directional(world_position, world_normal,
-                                                  light_direction, extrusion_info);
+   const float3 positionExtrudedWS = extrude_directional(positionWS, normalWS, 
+                                                         light_directionWS,
+                                                         extrusion_info);
 
-   return position_project(extruded_position);
+   return mul(float4(positionExtrudedWS, 1.0), projection_matrix);
 }
 
-float4 extend_directional_hardskin_facenormal_vs(Vs_input input,
-                                                 uniform float3 light_direction : register(vs, c[CUSTOM_CONST_MIN]),
-                                                 uniform float2 extrusion_info : register(vs, c[CUSTOM_CONST_MIN + 1])) : POSITION
+float4 extend_directional_hardskin_facenormal_vs(Vs_extend_hardskin_input input,
+                                                 uniform float3 light_directionWS : register(c[CUSTOM_CONST_MIN]),
+                                                 uniform float2 extrusion_info : register(c[CUSTOM_CONST_MIN + 1])) : SV_Position
 {
-   float4 obj_position = transform::hard_skinned::position(input.position, 
-                                                           input.blend_indices);
-   float3 obj_normal = transform::hard_skinned::normals(input.normal,
-                                                        input.blend_indices);
+   const int4 blend_indices = input.blend_indices * 255.0;
+   const float3 positionWS = hard_skinned_positionWS(input.position, blend_indices.x);
+   const float3 normalWS = hard_skinned_normalWS(input.normal, (int)input.blend_indices.y);
 
-   float4 world_position = position_to_world(obj_position);
-   float3 world_normal = normals_to_world(obj_normal);
+   const float3 positionExtrudedWS = extrude_directional(positionWS, normalWS,
+                                                         light_directionWS,
+                                                         extrusion_info);
 
-   float4 extruded_position = extrude_directional(world_position, world_normal,
-                                                  light_direction, extrusion_info);
-
-   return position_project(extruded_position);
+   return mul(float4(positionExtrudedWS, 1.0), projection_matrix);
 }
 
-float4 extend_directional_hardskin_gen_normal_vs(Vs_input_generate_normal input,
-                                                 uniform float3 light_direction : register(vs, c[CUSTOM_CONST_MIN]),
-                                                 uniform float2 extrusion_info : register(vs, c[CUSTOM_CONST_MIN + 1])) : POSITION
+float4 extend_directional_hardskin_gen_normal_vs(Vs_extend_hardskin_gen_normal_input input,
+                                                 uniform float3 light_directionWS : register(c[CUSTOM_CONST_MIN]),
+                                                 uniform float2 extrusion_info : register(c[CUSTOM_CONST_MIN + 1])) : SV_Position
 {
-   float4 obj_positions[3];
+   const int4 blend_indices = input.blend_indices * 255.0;
 
-   [unroll] for (uint i = 0u; i < 3u; ++i) {
-      obj_positions[i] = transform::hard_skinned::position(input.positions[i],
-                                                           input.blend_indices[0][i]);
-   }
+   const float3 position0WS = hard_skinned_positionWS(input.position0, blend_indices.x);
+   const float3 position1WS = hard_skinned_positionWS(input.position1, blend_indices.y);
+   const float3 position2WS = hard_skinned_positionWS(input.position2, blend_indices.z);
 
-   float3 obj_normal = cross(obj_positions[2].xyz - obj_positions[1].xyz,
-                             obj_positions[0].xyz - obj_positions[1].xyz);
-
-   float4 world_position = position_to_world(obj_positions[0]);
-   float3 world_normal = normals_to_world(obj_normal);
-
-   float4 extruded_position = extrude_directional(world_position, world_normal,
-                                                  light_direction, extrusion_info);
-
-   return position_project(extruded_position);
+   float3 normalWS = cross(position2WS - position1WS, position0WS - position1WS);
+   normalWS = normalize(normalWS);
+   
+   const float3 positionExtrudedWS = extrude_directional(position0WS, normalWS,
+                                                         light_directionWS,
+                                                         extrusion_info);
+   
+   return mul(float4(positionExtrudedWS, 1.0), projection_matrix);
 }
 
-float4 extend_directional_softskin_facenormal_vs(Vs_input input,
-                                                 uniform float3 light_direction : register(vs, c[CUSTOM_CONST_MIN]),
-                                                 uniform float2 extrusion_info : register(vs, c[CUSTOM_CONST_MIN + 1])) : POSITION
+float4 extend_directional_softskin_facenormal_vs(Vs_extend_softskin_facenormal_input input,
+                                                 uniform float3 light_directionWS : register(c[CUSTOM_CONST_MIN]),
+                                                 uniform float2 extrusion_info : register(c[CUSTOM_CONST_MIN + 1])) : SV_Position
 {
-   float4 obj_position = transform::soft_skinned::position(input.position, 
-                                                           input.blend_indices,
-                                                           input.weights);
-   float3 obj_normal = transform::soft_skinned::normals(input.normal,
-                                                        input.blend_indices,
-                                                        input.weights);
+   const int4 blend_indices = input.blend_indices * 255.0;
+   const float3 positionWS = soft_skinned_positionWS(input.position, blend_indices, 
+                                                     input.blend_weights);
+   
+   const int4 face_blend_indices = input.face_blend_indices * 255.0;
+   const float3 normalWS = soft_skinned_normalWS(input.face_normal, face_blend_indices,
+                                                 input.face_blend_indices);
 
-   float4 world_position = position_to_world(obj_position);
-   float3 world_normal = normals_to_world(obj_normal);
+   const float3 positionExtrudedWS = extrude_directional(positionWS, normalWS,
+                                                         light_directionWS,
+                                                         extrusion_info);
 
-   float4 extruded_position = extrude_directional(world_position, world_normal,
-                                                  light_direction, extrusion_info);
-
-   return position_project(extruded_position);
+   return mul(float4(positionExtrudedWS, 1.0), projection_matrix);
 }
 
-float4 extend_directional_softskin_gen_normal_vs(Vs_input_generate_normal input,
-                                                 uniform float3 light_direction : register(vs, c[CUSTOM_CONST_MIN]),
-                                                 uniform float2 extrusion_info : register(vs, c[CUSTOM_CONST_MIN + 1])) : POSITION
+float4 extend_directional_softskin_gen_normal_vs(Vs_extend_softskin_gen_normal_input input,
+                                                 uniform float3 light_directionWS : register(c[CUSTOM_CONST_MIN]),
+                                                 uniform float2 extrusion_info : register(c[CUSTOM_CONST_MIN + 1])) : SV_Position
 {
-   float4 obj_positions[3];
+   const int4 blend_indices[3] = {input.blend_indices0 * 255.0, 
+                                  input.blend_indices1 * 255.0,
+                                  input.blend_indices2 * 255.0};
 
-   [unroll] for (uint i = 0u; i < 3u; ++i) {
-      obj_positions[i] = transform::soft_skinned::position(input.positions[i],
-                                                           input.blend_indices[i],
-                                                           input.weights[i]);
-   }
+   const float3 position0WS = soft_skinned_positionWS(input.position0, input.blend_weights0,
+                                                      blend_indices[0]);
+   const float3 position1WS = soft_skinned_positionWS(input.position1, input.blend_weights1,
+                                                      blend_indices[1]);
+   const float3 position2WS = soft_skinned_positionWS(input.position2, input.blend_weights2,
+                                                      blend_indices[2]);
 
-   float3 obj_normal = cross(obj_positions[2].xyz - obj_positions[1].xyz,
-                             obj_positions[0].xyz - obj_positions[1].xyz);
+   float3 normalWS = cross(position2WS - position1WS, position0WS - position1WS);
+   normalWS = normalize(normalWS);
 
-   float4 world_position = position_to_world(obj_positions[0]);
-   float3 world_normal = normals_to_world(obj_normal);
+   const float3 positionExtrudedWS = extrude_directional(position0WS, normalWS,
+                                                         light_directionWS,
+                                                         extrusion_info);
 
-   float4 extruded_position = extrude_directional(world_position, world_normal,
-                                                  light_direction, extrusion_info);
-
-   return position_project(extruded_position);
+   return mul(float4(positionExtrudedWS, 1.0), projection_matrix);
 }
 
-float4 extrude_point(float4 world_position, float3 world_normal, float3 light_position,
+float3 extrude_point(float3 position, float3 normal, float3 light_position,
                      float light_radius, float extrusion_offset)
 {
-   float3 light_direction = world_position.xyz - light_position.xyz;
+   const float3 light_direction = normalize(position - light_position.xyz);
+   const float LdotL = dot(light_direction, light_direction);
+   const float extrude_amount = max(light_radius - LdotL, 0.0);
 
-   float dir_dot = dot(light_direction, light_direction);
-   float dir_dot_sqr = rsqrt(dir_dot);
+   float NdotL = dot(normal, -light_direction);
 
-   light_direction *= dir_dot_sqr;
-   dir_dot *= dir_dot_sqr;
+   NdotL = (NdotL >= 0.0) ? 1.0 : 0.0;
+   NdotL = NdotL * extrude_amount + extrusion_offset;
 
-   float extrude_amount = max(light_radius - dir_dot, 0.0);
-
-   float normal_dot = dot(world_normal.xyz, -light_direction);
-
-   normal_dot = (normal_dot >= 0.0) ? 1.0 : 0.0;
-
-   normal_dot = normal_dot * extrude_amount + extrusion_offset;
-
-   return float4(normal_dot * light_direction + world_position.xyz, world_position.w);
+   return NdotL * light_direction + position;
 }
 
-float4 extend_point_vs(Vs_input input, 
-                       uniform float4 light_position : register(vs, c[CUSTOM_CONST_MIN]),
-                       uniform float extrusion_offset : register(vs, c[CUSTOM_CONST_MIN + 1])) : POSITION
+float4 extend_point_vs(Vs_extend_input input,
+                       uniform float4 light_positionWS : register(c[CUSTOM_CONST_MIN]),
+                       uniform float extrusion_offset : register(c[CUSTOM_CONST_MIN + 1])) : SV_Position
 {
-   float4 world_position = transform::position(input.position);
-   float3 world_normal = normals_to_world(decompress_normals(input.normal));
+   const float3 positionWS = unskinned_positionWS(input.position);
+   const float3 normalWS = unskinned_normalWS(input.normal);
 
-   float4 extruded_position = extrude_point(world_position, world_normal, 
-                                            light_position.xyz, light_position.w, 
-                                            extrusion_offset);
+   const float3 positionExtrudedWS = extrude_point(positionWS, normalWS,
+                                                   light_positionWS.xyz, light_positionWS.w,
+                                                   extrusion_offset);
 
-   return position_project(extruded_position);
+   return mul(float4(positionExtrudedWS, 1.0), projection_matrix);
 }
 
-float4 extend_point_hardskin_facenormal_vs(Vs_input input, 
-                                           uniform float4 light_position : register(vs, c[CUSTOM_CONST_MIN]),
-                                           uniform float extrusion_offset : register(vs, c[CUSTOM_CONST_MIN + 1])) : POSITION
+float4 extend_point_hardskin_facenormal_vs(Vs_extend_hardskin_input input,
+                                           uniform float4 light_positionWS : register(c[CUSTOM_CONST_MIN]),
+                                           uniform float extrusion_offset : register(c[CUSTOM_CONST_MIN + 1])) : SV_Position
 {
-   float4 obj_position = transform::hard_skinned::position(input.position, 
-                                                           input.blend_indices);
-   float3 obj_normal = transform::hard_skinned::normals(input.normal,
-                                                        input.blend_indices);
+   const int4 blend_indices = input.blend_indices * 255.0;
+   const float3 positionWS = hard_skinned_positionWS(input.position, blend_indices.x);
+   const float3 normalWS = hard_skinned_normalWS(input.normal, (int)input.blend_indices.y);
 
-   float4 world_position = position_to_world(obj_position);
-   float3 world_normal = normals_to_world(obj_normal);
-   
-   float4 extruded_position = extrude_point(world_position, world_normal, 
-                                            light_position.xyz, light_position.w, 
-                                            extrusion_offset);
 
-   return position_project(extruded_position);
+   const float3 positionExtrudedWS = extrude_point(positionWS, normalWS,
+                                                   light_positionWS.xyz, light_positionWS.w,
+                                                   extrusion_offset);
+
+   return mul(float4(positionExtrudedWS, 1.0), projection_matrix);
 }
 
-float4 extend_point_hardskin_gen_normal_vs(Vs_input_generate_normal input, 
-                                           uniform float4 light_position : register(vs, c[CUSTOM_CONST_MIN]),
-                                           uniform float extrusion_offset : register(vs, c[CUSTOM_CONST_MIN + 1])) : POSITION
+float4 extend_point_hardskin_gen_normal_vs(Vs_extend_hardskin_gen_normal_input input,
+                                           uniform float4 light_positionWS : register(c[CUSTOM_CONST_MIN]),
+                                           uniform float extrusion_offset : register(c[CUSTOM_CONST_MIN + 1])) : SV_Position
 {
-   float4 obj_positions[3];
+   const int4 blend_indices = input.blend_indices * 255.0;
 
-   [unroll] for (uint i = 0u; i < 3u; ++i) {
-      obj_positions[i] = transform::hard_skinned::position(input.positions[i],
-                                                           input.blend_indices[0][i]);
-   }
+   const float3 position0WS = hard_skinned_positionWS(input.position0, blend_indices[0]);
+   const float3 position1WS = hard_skinned_positionWS(input.position1, blend_indices[1]);
+   const float3 position2WS = hard_skinned_positionWS(input.position2, blend_indices[2]);
 
-   float3 obj_normal = cross(obj_positions[2].xyz - obj_positions[1].xyz,
-                             obj_positions[0].xyz - obj_positions[1].xyz);
+   float3 normalWS = cross(position2WS - position1WS, position0WS - position1WS);
+   normalWS = normalize(normalWS);
 
-   float4 world_position = position_to_world(obj_positions[0]);
-   float3 world_normal = normals_to_world(obj_normal);
-   
-   float4 extruded_position = extrude_point(world_position, world_normal, 
-                                            light_position.xyz, light_position.w, 
-                                            extrusion_offset);
+   const float3 positionExtrudedWS = extrude_point(position0WS, normalWS,
+                                                   light_positionWS.xyz, light_positionWS.w,
+                                                   extrusion_offset);
 
-   return position_project(extruded_position);
+   return mul(float4(positionExtrudedWS, 1.0), projection_matrix);
 }
 
-float4 extend_point_softskin_facenormal_vs(Vs_input input,
-                                           uniform float4 light_position : register(vs, c[CUSTOM_CONST_MIN]),
-                                           uniform float extrusion_offset : register(vs, c[CUSTOM_CONST_MIN + 1])) : POSITION
+float4 extend_point_softskin_facenormal_vs(Vs_extend_softskin_facenormal_input input,
+                                           uniform float4 light_positionWS : register(c[CUSTOM_CONST_MIN]),
+                                           uniform float extrusion_offset : register(c[CUSTOM_CONST_MIN + 1])) : SV_Position
 {
-   float4 obj_position = transform::soft_skinned::position(input.position, 
-                                                           input.blend_indices,
-                                                           input.weights);
-   float3 obj_normal = transform::soft_skinned::normals(input.normal,
-                                                        input.blend_indices,
-                                                        input.weights);
+   const int4 blend_indices = input.blend_indices * 255.0;
+   const float3 positionWS = soft_skinned_positionWS(input.position, blend_indices,
+                                                     input.blend_weights);
 
-   float4 world_position = position_to_world(obj_position);
-   float3 world_normal = normals_to_world(obj_normal);
-   
-   float4 extruded_position = extrude_point(world_position, world_normal, 
-                                            light_position.xyz, light_position.w, 
-                                            extrusion_offset);
+   const int4 face_blend_indices = input.face_blend_indices * 255.0;
+   const float3 normalWS = soft_skinned_normalWS(input.face_normal, face_blend_indices,
+                                                 input.face_blend_indices);
 
-   return position_project(extruded_position);
+   const float3 positionExtrudedWS = extrude_point(positionWS, normalWS,
+                                                   light_positionWS.xyz, light_positionWS.w,
+                                                   extrusion_offset);
+
+   return mul(float4(positionExtrudedWS, 1.0), projection_matrix);
 }
 
-float4 extend_point_softskin_gen_normal_vs(Vs_input_generate_normal input,
-                                           uniform float4 light_position : register(vs, c[CUSTOM_CONST_MIN]),
-                                           uniform float extrusion_offset : register(vs, c[CUSTOM_CONST_MIN + 1])) : POSITION
+float4 extend_point_softskin_gen_normal_vs(Vs_extend_softskin_gen_normal_input input,
+                                           uniform float4 light_positionWS : register(c[CUSTOM_CONST_MIN]),
+                                           uniform float extrusion_offset : register(c[CUSTOM_CONST_MIN + 1])) : SV_Position
 {
-   float4 obj_positions[3];
+   const int4 blend_indices[3] = {input.blend_indices0 * 255.0,
+                                  input.blend_indices1 * 255.0,
+                                  input.blend_indices2 * 255.0};
 
-   [unroll] for (uint i = 0u; i < 3u; ++i) {
-      obj_positions[i] = transform::soft_skinned::position(input.positions[i],
-                                                           input.blend_indices[i],
-                                                           input.weights[i]);
-   }
+   const float3 position0WS = soft_skinned_positionWS(input.position0, input.blend_weights0,
+                                                      blend_indices[0]);
+   const float3 position1WS = soft_skinned_positionWS(input.position1, input.blend_weights1,
+                                                      blend_indices[1]);
+   const float3 position2WS = soft_skinned_positionWS(input.position2, input.blend_weights2,
+                                                      blend_indices[2]);
 
-   float3 obj_normal = cross(obj_positions[2].xyz - obj_positions[1].xyz,
-                             obj_positions[0].xyz - obj_positions[1].xyz);
+   float3 normalWS = cross(position2WS - position1WS, position0WS - position1WS);
+   normalWS = normalize(normalWS);
 
-   float4 world_position = position_to_world(obj_positions[0]);
-   float3 world_normal = normals_to_world(obj_normal);
-   
-   float4 extruded_position = extrude_point(world_position, world_normal, 
-                                            light_position.xyz, light_position.w, 
-                                            extrusion_offset);
+   const float3 positionExtrudedWS = extrude_point(position0WS, normalWS,
+                                                   light_positionWS.xyz, light_positionWS.w,
+                                                   extrusion_offset);
 
-   return position_project(extruded_position);
+   return mul(float4(positionExtrudedWS, 1.0), projection_matrix);
 }
 
-float4 shadow_ps() : COLOR
+float4 shadow_ps() : SV_Target0
 {
-   return float4(0.0, 0.0, 0.0, 1.0);
+   return float4(debug_color, 1.0);
 }

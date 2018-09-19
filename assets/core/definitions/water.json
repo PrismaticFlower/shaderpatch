@@ -1,6 +1,6 @@
 {
   "rendertype": "water",
-
+  
   "states": [
     {
       "name": "projective bumpmap with distorted reflection with specular",
@@ -12,7 +12,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "position",
+          "base_input": "position",
 
           "vertex_shader": "discard_vs",
           "pixel_shader": "discard_ps"
@@ -22,7 +22,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "normal_map_vs",
           "pixel_shader": "normal_map_distorted_reflection_specular_ps"
@@ -40,7 +40,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "position",
+          "base_input": "position",
 
           "vertex_shader": "discard_vs",
           "pixel_shader": "discard_ps"
@@ -50,7 +50,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "normal_map_vs",
           "pixel_shader": "normal_map_distorted_reflection_ps"
@@ -68,7 +68,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "position",
+          "base_input": "position",
 
           "vertex_shader": "discard_vs",
           "pixel_shader": "discard_ps"
@@ -78,7 +78,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "normal_map_vs",
           "pixel_shader": "normal_map_distorted_reflection_specular_ps"
@@ -96,7 +96,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "position",
+          "base_input": "position",
 
           "vertex_shader": "discard_vs",
           "pixel_shader": "discard_ps"
@@ -106,7 +106,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "normal_map_vs",
           "pixel_shader": "normal_map_distorted_reflection_ps"
@@ -124,7 +124,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "position",
+          "base_input": "position",
 
           "vertex_shader": "discard_vs",
           "pixel_shader": "discard_ps"
@@ -134,7 +134,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "normal_map_vs",
           "pixel_shader": "normal_map_distorted_reflection_specular_ps"
@@ -152,7 +152,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "position",
+          "base_input": "position",
 
           "vertex_shader": "discard_vs",
           "pixel_shader": "discard_ps"
@@ -162,7 +162,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "normal_map_vs",
           "pixel_shader": "normal_map_distorted_reflection_ps"
@@ -180,7 +180,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "position",
+          "base_input": "position",
 
           "vertex_shader": "transmissive_pass_fade_vs",
           "pixel_shader": "transmissive_pass_fade_ps"
@@ -190,7 +190,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "normal_map_vs",
           "pixel_shader": "normal_map_specular_ps"
@@ -208,7 +208,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "position",
+          "base_input": "position",
 
           "vertex_shader": "transmissive_pass_fade_vs",
           "pixel_shader": "transmissive_pass_fade_ps"
@@ -218,7 +218,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "normal_map_vs",
           "pixel_shader": "normal_map_ps"
@@ -238,7 +238,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "lowquality_vs",
           "pixel_shader": "lowquality_specular_ps"
@@ -258,7 +258,7 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "lowquality_vs",
           "pixel_shader": "lowquality_ps"

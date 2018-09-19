@@ -1,11 +1,16 @@
 #ifndef POSTPROCESS_COMMON_INCLUDED
 #define POSTPROCESS_COMMON_INCLUDED
 
-sampler2D scene_sampler : register(s0);
-sampler2D bloom_sampler : register(s1);
-sampler2D dirt_sampler : register(s2);
-sampler3D color_grading_lut : register(s3);
-sampler2D blue_noise_sampler : register(s4);
+Texture2D<float4> scene_texture : register(ps_3_0, s0);
+Texture2D<float4> bloom_texture : register(ps_3_0, s1);
+Texture2D<float3> dirt_texture : register(ps_3_0, s2);
+Texture3D<float3> color_grading_lut : register(ps_3_0, s3);
+Texture2D<float3> blue_noise_texture : register(ps_3_0, s4);
+
+sampler2D fxaa_scene_sampler : register(ps_3_0, s0);
+
+SamplerState linear_clamp_sampler;
+SamplerState linear_wrap_sampler;
 
 float4 scene_pixel_metrics : register(c60);
 float2 bloom_texel_size : register(c61);
@@ -44,25 +49,25 @@ const static bool vignette = VIGNETTE_ACTIVE;
 const static bool film_grain = FILM_GRAIN_ACTIVE;
 const static bool film_grain_colored = FILM_GRAIN_COLORED;
 
-float3 bloom_box13_downsample(sampler2D samp, float2 texcoords)
+float3 bloom_box13_downsample(Texture2D<float4> tex, float2 texcoords)
 {
    const static float2 ts = bloom_texel_size;
 
    float3 inner = 0.0;
-   inner += tex2D(samp, texcoords + float2(-1.0, -1.0) * ts).rgb;
-   inner += tex2D(samp, texcoords + float2(1.0, -1.0) * ts).rgb;
-   inner += tex2D(samp, texcoords + float2(-1.0, 1.0) * ts).rgb;
-   inner += tex2D(samp, texcoords + float2(1.0, 1.0) * ts).rgb;
+   inner += tex.SampleLevel(linear_clamp_sampler, texcoords + float2(-1.0, -1.0) * ts, 0).rgb;
+   inner += tex.SampleLevel(linear_clamp_sampler, texcoords + float2(1.0, -1.0) * ts, 0).rgb;
+   inner += tex.SampleLevel(linear_clamp_sampler, texcoords + float2(-1.0, 1.0) * ts, 0).rgb;
+   inner += tex.SampleLevel(linear_clamp_sampler, texcoords + float2(1.0, 1.0) * ts, 0).rgb;
 
-   float3 A = tex2D(samp, texcoords + float2(-2.0, -2.0) * ts).rgb;
-   float3 B = tex2D(samp, texcoords + float2(0.0, -2.0) * ts).rgb;
-   float3 C = tex2D(samp, texcoords + float2(2.0, -2.0) * ts).rgb;
-   float3 D = tex2D(samp, texcoords + float2(2.0, 0.0) * ts).rgb;
-   float3 E = tex2D(samp, texcoords + float2(2.0, 2.0) * ts).rgb;
-   float3 F = tex2D(samp, texcoords + float2(0.0, 2.0) * ts).rgb;
-   float3 G = tex2D(samp, texcoords + float2(-2.0, 2.0) * ts).rgb;
-   float3 H = tex2D(samp, texcoords + float2(-2.0, 0.0) * ts).rgb;
-   float3 I = tex2D(samp, texcoords).rgb;
+   float3 A = tex.SampleLevel(linear_clamp_sampler, texcoords + float2(-2.0, -2.0) * ts, 0).rgb;
+   float3 B = tex.SampleLevel(linear_clamp_sampler, texcoords + float2(0.0, -2.0) * ts, 0).rgb;
+   float3 C = tex.SampleLevel(linear_clamp_sampler, texcoords + float2(2.0, -2.0) * ts, 0).rgb;
+   float3 D = tex.SampleLevel(linear_clamp_sampler, texcoords + float2(2.0, 0.0) * ts, 0).rgb;
+   float3 E = tex.SampleLevel(linear_clamp_sampler, texcoords + float2(2.0, 2.0) * ts, 0).rgb;
+   float3 F = tex.SampleLevel(linear_clamp_sampler, texcoords + float2(0.0, 2.0) * ts, 0).rgb;
+   float3 G = tex.SampleLevel(linear_clamp_sampler, texcoords + float2(-2.0, 2.0) * ts, 0).rgb;
+   float3 H = tex.SampleLevel(linear_clamp_sampler, texcoords + float2(-2.0, 0.0) * ts, 0).rgb;
+   float3 I = tex.SampleLevel(linear_clamp_sampler, texcoords, 0.0).rgb;
 
    float3 color = inner * (0.25 * 0.5);
    color += (A + B + H + I) * (0.25 * 0.125);
@@ -73,22 +78,22 @@ float3 bloom_box13_downsample(sampler2D samp, float2 texcoords)
    return color;
 }
 
-float3 bloom_tent9_upsample(sampler2D samp, float2 texcoords)
+float3 bloom_tent9_upsample(Texture2D<float4> tex, float2 texcoords)
 {
    const static float2 ts = bloom_texel_size;
    const static float scale = bloom_radius_scale;
 
    float3 color = 0.0;
-   color += tex2D(samp, texcoords).rgb * 0.25;
+   color += tex.SampleLevel(linear_clamp_sampler, texcoords, 0).rgb * 0.25;
 
-   color += tex2D(samp, texcoords + float2(-1.0, -1.0) * ts * scale).rgb * 0.0625;
-   color += tex2D(samp, texcoords + float2(0.0, -1.0) * ts * scale).rgb * 0.125;
-   color += tex2D(samp, texcoords + float2(1.0, -1.0) * ts * scale).rgb * 0.0625;
-   color += tex2D(samp, texcoords + float2(1.0, 0.0) * ts * scale).rgb * 0.125;
-   color += tex2D(samp, texcoords + float2(1.0, 1.0) * ts * scale).rgb * 0.0625;
-   color += tex2D(samp, texcoords + float2(0.0, 1.0) * ts * scale).rgb * 0.125;
-   color += tex2D(samp, texcoords + float2(-1.0, 1.0) * ts * scale).rgb * 0.0625;
-   color += tex2D(samp, texcoords + float2(-1.0, 0.0) * ts * scale).rgb * 0.125;
+   color += tex.SampleLevel(linear_clamp_sampler, texcoords + float2(-1.0, -1.0) * ts * scale, 0).rgb * 0.0625;
+   color += tex.SampleLevel(linear_clamp_sampler, texcoords + float2(0.0, -1.0) * ts * scale, 0).rgb * 0.125;
+   color += tex.SampleLevel(linear_clamp_sampler, texcoords + float2(1.0, -1.0) * ts * scale, 0).rgb * 0.0625;
+   color += tex.SampleLevel(linear_clamp_sampler, texcoords + float2(1.0, 0.0) * ts * scale, 0).rgb * 0.125;
+   color += tex.SampleLevel(linear_clamp_sampler, texcoords + float2(1.0, 1.0) * ts * scale, 0).rgb * 0.0625;
+   color += tex.SampleLevel(linear_clamp_sampler, texcoords + float2(0.0, 1.0) * ts * scale, 0).rgb * 0.125;
+   color += tex.SampleLevel(linear_clamp_sampler, texcoords + float2(-1.0, 1.0) * ts * scale, 0).rgb * 0.0625;
+   color += tex.SampleLevel(linear_clamp_sampler, texcoords + float2(-1.0, 0.0) * ts * scale, 0).rgb * 0.125;
 
    return color * bloom_local_scale;
 }

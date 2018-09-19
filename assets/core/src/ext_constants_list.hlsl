@@ -22,41 +22,54 @@ bool spot_light : register(b4);
 bool fog_enabled : register(b5);
 bool cube_map_light_projection : register(b6);
 
-float2 linear_state: register(c[98]);
+float2 linear_state : register(c[98]);
 
 const static float color_gamma = linear_state.x;
 const static float tonemap_state = linear_state.y;
 
 float rt_multiply_blending : register(ps, c[99]);
 
-uniform samplerCUBE cube_light_texture : register(s15);
+uniform TextureCube<float3> cube_projected_texture : register(ps_3_0, s15);
+uniform SamplerState projected_texture_sampler;
 
 // Compile Time Lighting Constants 
 
-#ifdef LIGHTING_DIRECTIONAL
-const static bool lighting_directional = true;
+#ifdef __PS_FORCE_RUNTIME_LIGHTS_CONSTANTS__
+
+const static bool ps_light_active_directional = directional_lights;
+const static bool ps_light_active_point_0 = point_light_0;
+const static bool ps_light_active_point_1 = point_light_1;
+const static bool ps_light_active_point_23 = point_light_23;
+const static bool ps_light_active_spot_light = spot_light;
+
 #else
-const static bool lighting_directional = false;
+
+#ifdef __PS_LIGHT_ACTIVE_DIRECTIONAL__
+const static bool ps_light_active_directional = true;
+#else
+const static bool ps_light_active_directional = false;
 #endif
-#ifdef LIGHTING_POINT_0
-const static bool lighting_point_0 = true;
+#ifdef __PS_LIGHT_ACTIVE_POINT_0__
+const static bool ps_light_active_point_0 = true;
 #else
-const static bool lighting_point_0 = false;
+const static bool ps_light_active_point_0 = false;
 #endif
-#ifdef LIGHTING_POINT_1
-const static bool lighting_point_1 = true;
+#ifdef __PS_LIGHT_ACTIVE_POINT_1__
+const static bool ps_light_active_point_1 = true;
 #else
-const static bool lighting_point_1 = false;
+const static bool ps_light_active_point_1 = false;
 #endif
-#ifdef LIGHTING_POINT_23
-const static bool lighting_point_23 = true;
+#ifdef __PS_LIGHT_ACTIVE_POINT_23__
+const static bool ps_light_active_point_23 = true;
 #else
-const static bool lighting_point_23 = false;
+const static bool ps_light_active_point_23 = false;
 #endif
-#ifdef LIGHTING_SPOT_0
-const static bool lighting_spot_0 = true;
+#ifdef __PS_LIGHT_ACTIVE_SPOT__
+const static bool ps_light_active_spot_light = true;
 #else
-const static bool lighting_spot_0 = false;
+const static bool ps_light_active_spot_light = false;
+#endif
+
 #endif
 
 #endif

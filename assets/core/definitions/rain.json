@@ -10,9 +10,9 @@
         {
           "skinned": false,
           "lighting": false,
-          "vertex_color": false,
+          "vertex_color": true,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "position",
 
           "vertex_shader": "rain_vs",
           "pixel_shader": "rain_ps"

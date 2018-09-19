@@ -13,10 +13,10 @@
           "lighting": true,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "far_vs",
-          "pixel_shader": "far_ps"
+          "pixel_shader": "nodistortion_ps"
         }
       ]
     },
@@ -31,10 +31,10 @@
           "lighting": true,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "nodistortion_vs",
-          "pixel_shader": "far_ps"
+          "pixel_shader": "nodistortion_ps"
         }
       ]
     },
@@ -49,7 +49,7 @@
           "lighting": true,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "distortion_vs",
           "pixel_shader": "near_ps"
@@ -67,7 +67,7 @@
           "lighting": true,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "distortion_vs",
           "pixel_shader": "near_bump_ps"
@@ -85,7 +85,7 @@
           "lighting": true,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "distortion_vs",
           "pixel_shader": "near_diffuse_ps"
@@ -103,7 +103,7 @@
           "lighting": true,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "normals",
+          "base_input": "normals",
 
           "vertex_shader": "distortion_vs",
           "pixel_shader": "near_diffuse_bump_ps"

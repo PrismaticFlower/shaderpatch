@@ -8,11 +8,11 @@
 
       "passes": [
         {
-          "skinned": true,
+          "skinned": false,
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "position",
+          "base_input": "position",
 
           "vertex_shader": "prereflection_vs",
           "pixel_shader": "prereflection_ps"
@@ -26,11 +26,11 @@
 
       "passes": [
         {
-          "skinned": true,
+          "skinned": false,
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "position",
+          "base_input": "position",
 
           "vertex_shader": "prereflection_fake_stencil_vs",
           "pixel_shader": "prereflection_ps"

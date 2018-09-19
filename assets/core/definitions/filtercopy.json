@@ -12,10 +12,12 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
+
+          "defines": [ [ "TEXTURE_COUNT", "4" ] ],
 
           "vertex_shader": "filtercopy_vs",
-          "pixel_shader": "filtercopy_4tex_ps"
+          "pixel_shader": "filtercopy_ps"
         }
       ]
     },
@@ -30,10 +32,12 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
+
+          "defines": [ [ "TEXTURE_COUNT", "4" ] ],
 
           "vertex_shader": "filtercopy_vs",
-          "pixel_shader": "filtercopy_4tex_ps"
+          "pixel_shader": "filtercopy_ps"
         },
 
         {
@@ -41,10 +45,12 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
+
+          "defines": [ [ "TEXTURE_COUNT", "1" ] ],
 
           "vertex_shader": "filtercopy_vs",
-          "pixel_shader": "filtercopy_1tex_ps"
+          "pixel_shader": "filtercopy_ps"
         }
       ]
     },
@@ -59,10 +65,12 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
+
+          "defines": [ [ "TEXTURE_COUNT", "4" ] ],
 
           "vertex_shader": "filtercopy_vs",
-          "pixel_shader": "filtercopy_4tex_ps"
+          "pixel_shader": "filtercopy_ps"
         },
 
         {
@@ -70,10 +78,12 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
+
+          "defines": [ [ "TEXTURE_COUNT", "2" ] ],
 
           "vertex_shader": "filtercopy_vs",
-          "pixel_shader": "filtercopy_2tex_ps"
+          "pixel_shader": "filtercopy_ps"
         }
       ]
     },
@@ -88,10 +98,12 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
+
+          "defines": [ [ "TEXTURE_COUNT", "4" ] ],
 
           "vertex_shader": "filtercopy_vs",
-          "pixel_shader": "filtercopy_4tex_ps"
+          "pixel_shader": "filtercopy_ps"
         },
 
         {
@@ -99,10 +111,12 @@
           "lighting": false,
           "vertex_color": false,
           "texture_coords": false,
-          "transform": "none",
+          "base_input": "none",
+
+          "defines": [ [ "TEXTURE_COUNT", "3" ] ],
 
           "vertex_shader": "filtercopy_vs",
-          "pixel_shader": "filtercopy_3tex_ps"
+          "pixel_shader": "filtercopy_ps"
         }
       ]
     }

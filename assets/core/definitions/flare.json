@@ -14,7 +14,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "transform": "position",
+          "base_input": "position",
 
           "vertex_shader": "flare_textured_vs",
           "pixel_shader": "flare_textured_ps"
@@ -32,7 +32,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": false,
-          "transform": "position",
+          "base_input": "position",
 
           "vertex_shader": "flare_untextured_vs",
           "pixel_shader": "flare_untextured_ps"
