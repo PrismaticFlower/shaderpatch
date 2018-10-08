@@ -1,0 +1,326 @@
+{
+  "rendertype": "normal",
+  "srgb_state": [ true, false, true, false ],
+
+  "states": [
+    {
+      "id": 0,
+
+      "passes": [
+        {
+          "name": "unlit opaque",
+
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "position"
+        }
+      ]
+    },
+
+    {
+      "id": 1,
+
+      "passes": [
+        {
+          "name": "unlit opaque hardedged",
+
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "position"
+        }
+      ]
+    },
+
+    {
+      "id": 2,
+
+      "passes": [
+        {
+          "name": "unlit transparent",
+
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "position"
+        }
+      ]
+    },
+
+    {
+      "id": 3,
+
+      "passes": [
+        {
+          "name": "unlit transparent hardedged",
+
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "position"
+        }
+      ]
+    },
+
+    {
+      "id": 4,
+
+      "passes": [
+        {
+          "name": "near opaque",
+
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 5,
+
+      "passes": [
+        {
+          "name": "near opaque hardedged",
+
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 6,
+
+      "passes": [
+        {
+          "name": "near transparent",
+
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 7,
+
+      "passes": [
+        {
+          "name": "near transparent hardedged",
+
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 8,
+
+      "passes": [
+        {
+          "name": "near opaque projectedtex",
+
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 9,
+
+      "passes": [
+        {
+          "name": "near opaque hardedged projectedtex",
+
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 10,
+
+      "passes": [
+        {
+          "name": "near transparent projectedtex",
+
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 11,
+
+      "passes": [
+        {
+          "name": "near transparent hardedged projectedtex",
+
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 12,
+
+      "passes": [
+        {
+          "name": "near opaque shadow",
+
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 13,
+
+      "passes": [
+        {
+          "name": "near opaque hardedged shadow",
+
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 14,
+
+      "passes": [
+        {
+          "name": "near opaque shadow projectedtex",
+
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 15,
+
+      "passes": [
+        {
+          "name": "near opaque hardedged shadow projectedtex",
+
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 16,
+
+      "passes": [
+        {
+          "name": "near transparent shadow",
+
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 17,
+
+      "passes": [
+        {
+          "name": "near transparent hardedged shadow",
+
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 18,
+
+      "passes": [
+        {
+          "name": "near transparent shadow projectedtex",
+
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 19,
+
+      "passes": [
+        {
+          "name": "near transparent hardedged shadow projectedtex",
+
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    }
+  ]
+}

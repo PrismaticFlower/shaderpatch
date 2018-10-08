@@ -1,13 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="src\game_compiler.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\main.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\patch_compiler.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\declaration_munge.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
@@ -17,9 +17,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\game_compiler.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="src\shader_variations.hpp">
       <Filter>src</Filter>
     </ClInclude>
@@ -30,6 +27,18 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\preprocessor_defines.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader_description.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader_entrypoint.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader_custom_flags.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\declaration_munge.hpp">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

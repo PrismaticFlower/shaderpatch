@@ -47,7 +47,7 @@ public:
       return _params.enabled && _user_enabled;
    }
 
-   void apply(const Shader_group& shaders, Rendertarget_allocator& allocator,
+   void apply(const Shader_rendertype& rendertype, Rendertarget_allocator& allocator,
               IDirect3DTexture9& depth, IDirect3DTexture9& from_to) noexcept;
 
    void drop_device_resources() noexcept;

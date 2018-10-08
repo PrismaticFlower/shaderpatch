@@ -32,29 +32,17 @@ namespace {
 
 auto compile_shader_impl(DWORD compiler_flags, const std::string& entry_point,
                          std::vector<D3D_SHADER_MACRO> defines,
-                         const fs::path& source_path, std::mutex& shaders_mutex,
-                         std::vector<std::pair<std::size_t, std::vector<DWORD>>>& shaders,
-                         std::unordered_map<Shader_cache_index, std::size_t>& cache,
-                         std::string target) -> std::size_t
+                         const fs::path& source_path, std::string target)
+   -> Com_ptr<ID3DBlob>
 {
-   std::unique_lock<std::mutex> lock{shaders_mutex};
-
-   Shader_cache_index cache_index{entry_point, std::move(defines)};
-
-   const auto cached = cache.find(cache_index);
-
-   if (cached != std::end(cache)) return cached->second;
-
-   lock.unlock();
-
    Com_ptr<ID3DBlob> error_message;
    Com_ptr<ID3DBlob> shader;
 
-   auto result =
-      D3DCompileFromFile(source_path.c_str(), cache_index.definitions.data(),
-                         D3D_COMPILE_STANDARD_FILE_INCLUDE, entry_point.data(),
-                         target.data(), compiler_flags, 0, shader.clear_and_assign(),
-                         error_message.clear_and_assign());
+   auto result = D3DCompileFromFile(source_path.c_str(), defines.data(),
+                                    D3D_COMPILE_STANDARD_FILE_INCLUDE,
+                                    entry_point.data(), target.data(),
+                                    compiler_flags, 0, shader.clear_and_assign(),
+                                    error_message.clear_and_assign());
 
    if (result != S_OK) {
       if (!error_message) {
@@ -67,18 +55,74 @@ auto compile_shader_impl(DWORD compiler_flags, const std::string& entry_point,
       std::cout << static_cast<char*>(error_message->GetBufferPointer());
    }
 
-   const auto span = make_dword_span(*shader);
-
-   lock.lock();
-
-   const auto shader_index = shaders.size();
-
-   cache.emplace(std::move(cache_index), shader_index);
-   shaders.emplace_back(shader_index,
-                        std::vector<DWORD>{std::cbegin(span), std::cend(span)});
-
-   return shader_index;
+   return shader;
 }
+
+auto resolve_state_flags(const std::unordered_map<std::string, bool>& state_flags,
+                         const std::vector<std::string>& entrypoint_flag_names)
+   -> std::uint32_t
+{
+   std::bitset<shader::Custom_flags::max_flags> result{};
+
+   const auto count = static_cast<int>(entrypoint_flag_names.size());
+
+   for (const auto& flag : state_flags) {
+      for (auto i = 0; i < count; ++i) {
+         if (entrypoint_flag_names[i] == flag.first) {
+            result[i] = flag.second;
+            break;
+         }
+      }
+   }
+
+   return result.to_ulong();
+}
+
+template<typename Entrypoint>
+void write_entrypoints(ucfb::Writer& writer,
+                       const std::unordered_map<std::string, Entrypoint>& entrypoints)
+{
+   writer.emplace_child("SIZE"_mn).write(
+      static_cast<std::uint32_t>(entrypoints.size()));
+
+   for (const auto& entrypoint : entrypoints) {
+      auto ep_writer = writer.emplace_child("EP__"_mn);
+
+      ep_writer.emplace_child("NAME"_mn).write(entrypoint.first);
+
+      // write entry point variations
+      {
+         auto vrs_writer = ep_writer.emplace_child("VRS_"_mn);
+
+         vrs_writer.emplace_child("SIZE"_mn).write(
+            static_cast<std::uint32_t>(entrypoint.second.variations.size()));
+
+         for (const auto& vari : entrypoint.second.variations) {
+            auto vari_writer = vrs_writer.emplace_child("VARI"_mn);
+
+            vari_writer.write(vari.first.first);
+            vari_writer.write(vari.first.second);
+            vari_writer.write(static_cast<std::uint32_t>(vari.second->GetBufferSize()));
+            vari_writer.write(
+               gsl::span{static_cast<const std::byte*>(vari.second->GetBufferPointer()),
+                         static_cast<gsl::index>(vari.second->GetBufferSize())});
+         }
+      }
+
+      // write entry point flag names
+      {
+         auto flag_names_writer = ep_writer.emplace_child("FLGS"_mn);
+
+         flag_names_writer.write(
+            static_cast<std::uint32_t>(entrypoint.second.static_flag_names.size()));
+
+         for (const auto& name : entrypoint.second.static_flag_names) {
+            flag_names_writer.write(name);
+         }
+      }
+   }
+}
+
 }
 
 Patch_compiler::Patch_compiler(DWORD compiler_flags, nlohmann::json definition,
@@ -89,6 +133,9 @@ Patch_compiler::Patch_compiler(DWORD compiler_flags, nlohmann::json definition,
 {
    Expects(fs::is_directory(source_file_dir) && fs::is_directory(output_dir));
 
+   shader::Description description = definition;
+
+   _group_name = description.group_name;
    _source_path =
       source_file_dir /
       definition.value("source_name"s,
@@ -110,74 +157,10 @@ Patch_compiler::Patch_compiler(DWORD compiler_flags, nlohmann::json definition,
 
    synced_print("Munging shader "sv, definition_path.filename().string(), "..."sv);
 
-   _render_type = definition["rendertype"s];
+   compile_entrypoints(description.entrypoints);
+   assemble_rendertypes(description.rendertypes);
 
-   const auto pass_flags =
-      get_pass_flags(definition["base_input"s], definition["lighting"s],
-                     definition["vertex_color"s], definition["texture_coords"s]);
-
-   _variations = get_shader_variations(pass_flags, definition["skinned"s]);
-
-   Preprocessor_defines shader_defines;
-
-   shader_defines.add_defines(
-      definition.value<std::vector<Shader_define>>("defines"s, {}));
-   shader_defines.add_undefines(
-      definition.value<std::vector<std::string>>("undefines"s, {}));
-
-   for_each_exception_capable(std::execution::par, definition["states"s],
-                              [&](const auto& state_def) {
-                                 auto state = compile_state(state_def, shader_defines);
-
-                                 std::lock_guard<std::mutex> lock{_states_mutex};
-
-                                 _states.emplace_back(std::move(state));
-                              });
-
-   optimize_and_linearize_permutations();
    save(output_path);
-}
-
-void Patch_compiler::optimize_and_linearize_permutations()
-{
-   std::scoped_lock<std::mutex, std::mutex, std::mutex> lock{_vs_mutex, _ps_mutex,
-                                                             _states_mutex};
-
-   _vs_cache.clear();
-   _ps_cache.clear();
-
-   const auto optimize = [](std::vector<std::pair<std::size_t, std::vector<DWORD>>>& shaders,
-                            auto remapper) {
-      for (auto a_it = std::begin(shaders); a_it != std::end(shaders); ++a_it) {
-         for (auto b_it = a_it + 1; b_it != std::end(shaders);) {
-            if (std::equal(std::begin(a_it->second), std::end(a_it->second),
-                           std::begin(b_it->second), std::end(b_it->second))) {
-               remapper(b_it->first, a_it->first);
-
-               b_it = shaders.erase(b_it);
-            }
-            else {
-               ++b_it;
-            }
-         }
-      }
-   };
-
-   optimize(_vs_shaders, [this](std::size_t from, std::size_t to) {
-      for (auto& state : _states) {
-         for (auto& shader : state.shaders) {
-            if (shader.vs_index == from) shader.vs_index = to;
-         }
-      }
-   });
-
-   optimize(_ps_shaders, [this](std::size_t from, std::size_t to) {
-      for (auto& state : _states) {
-         for (auto& shader : state.shaders) {
-            if (shader.ps_index == from) shader.ps_index = to;
-         }
-      }
-   });
 }
 
 void Patch_compiler::save(const fs::path& output_path) const
@@ -186,57 +169,58 @@ void Patch_compiler::save(const fs::path& output_path) const
 
    // create shader chunk
    {
-      ucfb::Writer writer{shader_chunk, "ssdr"_mn};
+      ucfb::Writer writer{shader_chunk, "shpk"_mn};
 
-      writer.emplace_child("RTYP"_mn).write(_render_type);
+      writer.emplace_child("NAME"_mn).write(_group_name);
 
-      // write vertex shaders
+      // write entry points
       {
-         auto vs_writer = writer.emplace_child("VSHD"_mn);
+         auto entrypoint_writer = writer.emplace_child("EPTS"_mn);
 
-         vs_writer.emplace_child("SIZE"_mn).write(
-            static_cast<std::uint32_t>(_vs_shaders.size()));
+         // write vertex entry points
+         {
+            auto vs_writer = entrypoint_writer.emplace_child("VSHD"_mn);
 
-         for (const auto& bytecode : _vs_shaders) {
-            auto bc_writer = vs_writer.emplace_child("BC__"_mn);
+            write_entrypoints(vs_writer, _vertex_entrypoints);
+         }
 
-            bc_writer.emplace_child("ID__"_mn).write(
-               static_cast<std::uint32_t>(bytecode.first));
-            bc_writer.emplace_child("CODE"_mn).write(gsl::make_span(bytecode.second));
+         // write pixel entry points
+         {
+            auto ps_writer = entrypoint_writer.emplace_child("PSHD"_mn);
+
+            write_entrypoints(ps_writer, _pixel_entrypoints);
          }
       }
 
-      // write pixel shaders
+      // write rendertypes
       {
-         auto ps_writer = writer.emplace_child("PSHD"_mn);
+         auto rendertypes_writer = writer.emplace_child("RTS_"_mn);
 
-         ps_writer.emplace_child("SIZE"_mn).write(
-            static_cast<std::uint32_t>(_ps_shaders.size()));
+         rendertypes_writer.emplace_child("SIZE"_mn).write(
+            static_cast<std::uint32_t>(_rendertypes.size()));
 
-         for (const auto& bytecode : _ps_shaders) {
-            auto bc_writer = ps_writer.emplace_child("BC__"_mn);
+         for (const auto& rendertype : _rendertypes) {
+            auto rtyp_writer = rendertypes_writer.emplace_child("RTYP"_mn);
 
-            bc_writer.emplace_child("ID__"_mn).write(
-               static_cast<std::uint32_t>(bytecode.first));
-            bc_writer.emplace_child("CODE"_mn).write(gsl::make_span(bytecode.second));
-         }
-      }
+            rtyp_writer.emplace_child("NAME"_mn).write(rendertype.first);
+            rtyp_writer.emplace_child("SIZE"_mn).write(
+               static_cast<std::uint32_t>(rendertype.second.states.size()));
 
-      // write shader references
-      {
-         auto states_writer = writer.emplace_child("SHRS"_mn);
+            // write rendertype states
+            for (const auto& state : rendertype.second.states) {
+               auto stat_writer = rtyp_writer.emplace_child("STAT"_mn);
 
-         for (const auto& state : _states) {
-            auto shader_writer = states_writer.emplace_child("SHDR"_mn);
+               stat_writer.emplace_child("NAME"_mn).write(state.first);
 
-            shader_writer.emplace_child("NAME"_mn).write(state.name);
-            shader_writer.emplace_child("INFO"_mn).write(
-               static_cast<std::uint32_t>(state.shaders.size()));
+               // write state info
+               {
+                  auto info_writer = stat_writer.emplace_child("INFO"_mn);
 
-            for (const auto& shader : state.shaders) {
-               shader_writer.emplace_child("VARI"_mn)
-                  .write(shader.flags, static_cast<std::uint32_t>(shader.vs_index),
-                         static_cast<std::uint32_t>(shader.ps_index));
+                  info_writer.write(state.second.vs_entrypoint);
+                  info_writer.write(state.second.vs_static_flags);
+                  info_writer.write(state.second.ps_entrypoint);
+                  info_writer.write(state.second.ps_static_flags);
+               }
             }
          }
       }
@@ -244,67 +228,144 @@ void Patch_compiler::save(const fs::path& output_path) const
 
    const auto data = shader_chunk.str();
 
-   save_volume_resource(output_path.string(), _render_type, Volume_resource_type::shader,
+   save_volume_resource(output_path.string(), _group_name, Volume_resource_type::shader,
                         gsl::make_span(reinterpret_cast<const std::byte*>(data.data()),
                                        data.size()));
 }
 
-auto Patch_compiler::compile_state(const nlohmann::json& state_def,
-                                   const Preprocessor_defines& global_defines)
-   -> Patch_compiler::State
+void Patch_compiler::compile_entrypoints(
+   const std::unordered_map<std::string, shader::Entrypoint>& entrypoints)
 {
-   const std::string vs_entry_point = state_def["vertex_shader"s];
-   const std::string ps_entry_point = state_def["pixel_shader"s];
+   for (const auto& entrypoint : entrypoints) {
+      switch (entrypoint.second.stage) {
+      case shader::Stage::vertex:
+         compile_vertex_entrypoint(entrypoint);
+         break;
+      case shader::Stage::pixel:
+         compile_pixel_entrypoint(entrypoint);
+         break;
+      }
+   }
+}
 
-   Preprocessor_defines state_defines;
+void Patch_compiler::compile_vertex_entrypoint(
+   const std::pair<std::string, shader::Entrypoint>& entrypoint)
+{
+   Expects(entrypoint.second.stage == shader::Stage::vertex);
+   Expects(!_vertex_entrypoints.count(entrypoint.first));
 
-   state_defines.combine_with(global_defines);
-   state_defines.add_defines(
-      state_def.value<std::vector<Shader_define>>("defines"s, {}));
-   state_defines.add_undefines(
-      state_def.value<std::vector<std::string>>("undefines"s, {}));
+   auto& state = std::get<shader::Vertex_state>(entrypoint.second.stage_state);
 
-   State state;
+   auto variations = shader::get_vertex_shader_variations(state);
 
-   state.name = state_def["name"s];
+   if (entrypoint.second.static_flags.count()) {
+      variations =
+         shader::combine_variations(variations,
+                                    shader::get_custom_variations<shader::Vertex_variation>(
+                                       entrypoint.second.static_flags));
+   }
 
-   state.shaders.reserve(_variations.size());
+   Compiled_vertex_entrypoint compiled;
 
-   const auto predicate = [&](const auto& variation) {
-      Shader shader;
+   const auto entrypoint_func =
+      entrypoint.second.function_name.value_or(entrypoint.first);
 
-      shader.flags = variation.flags;
+   for (const auto& variation : variations) {
+      compiled.variations
+         .emplace(std::pair{variation.flags, variation.static_flags},
+                  compile_vertex_shader(entrypoint_func,
+                                        combine_defines(entrypoint.second.defines,
+                                                        variation.defines)));
+   }
 
-      shader.vs_index =
-         compile_vertex_shader(vs_entry_point,
-                               combine_defines(variation.defines, state_defines));
-      shader.ps_index =
-         compile_pixel_shader(ps_entry_point,
-                              combine_defines(variation.ps_defines, state_defines));
+   const auto static_flags_names = entrypoint.second.static_flags.list_flags();
+   compiled.static_flag_names.assign(std::cbegin(static_flags_names),
+                                     std::cend(static_flags_names));
 
-      state.shaders.emplace_back(std::move(shader));
-   };
+   _vertex_entrypoints.emplace(entrypoint.first, std::move(compiled));
+}
 
-   for_each_exception_capable(std::execution::par, _variations, predicate);
+void Patch_compiler::compile_pixel_entrypoint(
+   const std::pair<std::string, shader::Entrypoint>& entrypoint)
+{
+   Expects(entrypoint.second.stage == shader::Stage::pixel);
+   Expects(!_vertex_entrypoints.count(entrypoint.first));
 
-   return state;
+   auto& state = std::get<shader::Pixel_state>(entrypoint.second.stage_state);
+
+   auto variations = shader::get_pixel_shader_variations(state);
+
+   if (entrypoint.second.static_flags.count()) {
+      variations =
+         shader::combine_variations(variations,
+                                    shader::get_custom_variations<shader::Pixel_variation>(
+                                       entrypoint.second.static_flags));
+   }
+
+   Compiled_pixel_entrypoint compiled;
+
+   const auto entrypoint_func =
+      entrypoint.second.function_name.value_or(entrypoint.first);
+
+   for (const auto& variation : variations) {
+      compiled.variations
+         .emplace(std::pair{variation.flags, variation.static_flags},
+                  compile_pixel_shader(entrypoint_func,
+                                       combine_defines(entrypoint.second.defines,
+                                                       variation.defines)));
+   }
+
+   const auto static_flags_names = entrypoint.second.static_flags.list_flags();
+   compiled.static_flag_names.assign(std::cbegin(static_flags_names),
+                                     std::cend(static_flags_names));
+
+   _pixel_entrypoints.emplace(entrypoint.first, std::move(compiled));
 }
 
 auto Patch_compiler::compile_vertex_shader(const std::string& entry_point,
-                                           Preprocessor_defines defines) -> std::size_t
+                                           Preprocessor_defines defines)
+   -> Com_ptr<ID3DBlob>
 {
    defines.add_define("__VERTEX_SHADER__"s, "1");
 
-   return compile_shader_impl(_compiler_flags, entry_point, defines.get(), _source_path,
-                              _vs_mutex, _vs_shaders, _vs_cache, "vs_3_0"s);
+   return compile_shader_impl(_compiler_flags, entry_point, defines.get(),
+                              _source_path, "vs_3_0"s);
 }
 
 auto Patch_compiler::compile_pixel_shader(const std::string& entry_point,
-                                          Preprocessor_defines defines) -> std::size_t
+                                          Preprocessor_defines defines)
+   -> Com_ptr<ID3DBlob>
 {
    defines.add_define("__PIXEL_SHADER__"s, "1");
 
-   return compile_shader_impl(_compiler_flags, entry_point, defines.get(), _source_path,
-                              _ps_mutex, _ps_shaders, _ps_cache, "ps_3_0"s);
+   return compile_shader_impl(_compiler_flags, entry_point, defines.get(),
+                              _source_path, "ps_3_0"s);
 }
+
+void Patch_compiler::assemble_rendertypes(
+   const std::unordered_map<std::string, shader::Rendertype>& rendertypes)
+{
+   for (const auto& rendertype : rendertypes) {
+      Assembled_rendertype assembled_rt;
+
+      for (const auto& state : rendertype.second.states) {
+         Assembled_state assembled_state;
+
+         assembled_state.vs_entrypoint = state.second.vs_entrypoint;
+         assembled_state.vs_static_flags = resolve_state_flags(
+            state.second.vs_static_flag_values,
+            _vertex_entrypoints.at(assembled_state.vs_entrypoint).static_flag_names);
+
+         assembled_state.ps_entrypoint = state.second.ps_entrypoint;
+         assembled_state.ps_static_flags = resolve_state_flags(
+            state.second.ps_static_flag_values,
+            _pixel_entrypoints.at(assembled_state.ps_entrypoint).static_flag_names);
+
+         assembled_rt.states.emplace(state.first, std::move(assembled_state));
+      }
+
+      _rendertypes.emplace(rendertype.first, std::move(assembled_rt));
+   }
+}
+
 }

@@ -1,43 +1,84 @@
 {
-  "rendertype": "flare",
+  "group_name": "flare",
+  "source_name": "flare.fx",
 
-  "states": [
-    {
-      "name": "textured flare",
-      "id": 0,
+  "entrypoints": {
+    "flare_textured_vs": {
+      "stage": "vertex",
 
-      "srgb_state": [ true, false, false, false ],
-
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "position",
-
-          "vertex_shader": "flare_textured_vs",
-          "pixel_shader": "flare_textured_ps"
+          "normal": false,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
         }
-      ]
+      }
     },
 
-    {
-      "name": "untextured flare",
-      "id": 1,
+    "flare_untextured_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": false,
-          "base_input": "position",
-
-          "vertex_shader": "flare_untextured_vs",
-          "pixel_shader": "flare_untextured_ps"
+          "normal": false,
+          "tangents": false,
+          "color": true,
+          "texture_coords": false
         }
-      ]
+      }
+    },
+
+    "flare_textured_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
+    },
+
+    "flare_untextured_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
     }
-  ]
+  },
+
+  "rendertypes": {
+    "flare": {}
+  },
+
+  "states": {
+    "textured flare": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "flare_textured_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "flare_textured_ps"
+      }
+    },
+
+    "untextured flare": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "flare_untextured_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "flare_untextured_ps"
+      }
+    }
+  }
 }

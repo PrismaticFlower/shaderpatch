@@ -1,0 +1,37 @@
+{
+  "rendertype": "flare",
+
+  "states": [
+    {
+      "id": 0,
+
+      "passes": [
+        {
+          "name": "textured flare",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "position"
+        }
+      ]
+    },
+
+    {
+      "id": 1,
+
+      "passes": [
+        {
+          "name": "untextured flare",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": false,
+          "base_input": "position"
+        }
+      ]
+    }
+  ]
+}

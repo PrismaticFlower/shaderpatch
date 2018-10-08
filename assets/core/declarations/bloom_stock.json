@@ -1,0 +1,69 @@
+{
+  "rendertype": "hdr",
+
+  "states": [
+    {
+      "id": 0,
+
+      "passes": [
+        {
+          "name": "glow threshold",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "base_input": "none"
+        }
+      ]
+    },
+
+    {
+      "id": 1,
+
+      "passes": [
+        {
+          "name": "luminance",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "base_input": "none"
+        }
+      ]
+    },
+
+    {
+      "id": 2,
+
+      "passes": [
+        {
+          "name": "bloomfilter",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "base_input": "none"
+        }
+      ]
+    },
+
+    {
+      "id": 3,
+
+      "passes": [
+        {
+          "name": "screenspace",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "base_input": "none"
+        }
+      ]
+    }
+  ]
+}

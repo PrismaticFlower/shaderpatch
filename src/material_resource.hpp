@@ -56,7 +56,8 @@ public:
             boost::make_local_shared<Material>(read_patch_material(ucfb::Reader{
                                                   gsl::make_span(_data.get(),
                                                                  _resource_size)}),
-                                               _device, _shaders, _textures);
+                                               _device, _shaders.rendertypes,
+                                               _textures);
       }
       catch (std::exception& e) {
          log_and_terminate("Failed to read material in from game. Exception message: "sv,

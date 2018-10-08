@@ -1,689 +1,505 @@
 {
-  "rendertype": "perpixeldiffuselighting",
+  "group_name": "perpixeldiffuselighting",
+  "source_name": "perpixeldiffuselighting.fx",
 
-  "defines": [
-    [ "GENERATE_TEXCOORDS", "false" ],
-    [ "GENERATE_TANGENTS", "false" ],
-    [ "LIGHT_COUNT", "0" ]
-  ],
-
-  "states": [
-    {
-      "name": "perpixel 3 lights",
-      "id": 0,
+  "entrypoints": {
+    "perpixel_vs": {
+      "stage": "vertex",
 
       "defines": [
-        [ "LIGHT_COUNT", "3" ]
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "0" ]
       ],
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "perpixel_vs",
-          "pixel_shader": "perpixel_ps"
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
         }
-      ]
+      }
     },
 
-    {
-      "name": "perpixel 2 lights",
-      "id": 1,
+    "perpixel_spotlight_vs": {
+      "stage": "vertex",
 
       "defines": [
-        [ "LIGHT_COUNT", "2" ]
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "0" ]
       ],
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "perpixel_vs",
-          "pixel_shader": "perpixel_ps"
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
         }
-      ]
+      }
     },
 
-    {
-      "name": "perpixel 1 lights",
-      "id": 2,
+    "normalmapped_vs": {
+      "stage": "vertex",
 
       "defines": [
-        [ "LIGHT_COUNT", "1" ]
+        [ "PERPIXEL_LIGHT_COUNT", "0" ],
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "0" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "0" ]
       ],
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "perpixel_vs",
-          "pixel_shader": "perpixel_ps"
+          "normal": true,
+          "tangents": true,
+          "color": true,
+          "texture_coords": true
         }
-      ]
+      }
     },
 
-    {
-      "name": "perpixel 3 lights with spotlight/projection",
-      "id": 3,
+    "normalmapped_generate_tangents_vs": {
+      "stage": "vertex",
+      "function_name": "normalmapped_vs",
 
       "defines": [
-        [ "LIGHT_COUNT", "3" ]
+        [ "PERPIXEL_LIGHT_COUNT", "0" ],
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "0" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "1" ]
       ],
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "perpixel_vs",
-          "pixel_shader": "perpixel_ps"
-        },
-
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "perpixel_spotlight_vs",
-          "pixel_shader": "perpixel_spotlight_ps"
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
         }
-      ]
+      }
     },
 
-    {
-      "name": "perpixel 2 lights with spotlight/projection",
-      "id": 4,
+    "normalmapped_generate_tangents_texcoords_vs": {
+      "stage": "vertex",
+      "function_name": "normalmapped_vs",
 
       "defines": [
-        [ "LIGHT_COUNT", "2" ]
+        [ "PERPIXEL_LIGHT_COUNT", "0" ],
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "1" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "1" ]
       ],
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "perpixel_vs",
-          "pixel_shader": "perpixel_ps"
-        },
-
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "perpixel_spotlight_vs",
-          "pixel_shader": "perpixel_spotlight_ps"
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": false
         }
-      ]
+      }
     },
 
-    {
-      "name": "perpixel 1 lights with spotlight/projection",
-      "id": 5,
+    "normalmapped_spotlight_vs": {
+      "stage": "vertex",
 
       "defines": [
-        [ "LIGHT_COUNT", "1" ]
+        [ "PERPIXEL_LIGHT_COUNT", "0" ],
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "0" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "0" ]
       ],
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "perpixel_vs",
-          "pixel_shader": "perpixel_ps"
-        },
-
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "perpixel_spotlight_vs",
-          "pixel_shader": "perpixel_spotlight_ps"
+          "normal": true,
+          "tangents": true,
+          "color": true,
+          "texture_coords": true
         }
-      ]
+      }
     },
 
-    {
-      "name": "normalmapped 3 lights",
-      "id": 6,
+    "normalmapped_spotlight_generate_tangents_vs": {
+      "stage": "vertex",
+      "function_name": "normalmapped_spotlight_vs",
 
       "defines": [
-        [ "LIGHT_COUNT", "3" ]
+        [ "PERPIXEL_LIGHT_COUNT", "0" ],
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "0" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "1" ]
       ],
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "binormals",
-
-          "vertex_shader": "normalmapped_vs",
-          "pixel_shader": "normalmapped_ps"
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
         }
-      ]
+      }
     },
 
-    {
-      "name": "normalmapped 2 lights",
-      "id": 7,
+    "normalmapped_spotlight_generate_tangents_texcoords_vs": {
+      "stage": "vertex",
+      "function_name": "normalmapped_spotlight_vs",
 
       "defines": [
-        [ "LIGHT_COUNT", "2" ]
+        [ "PERPIXEL_LIGHT_COUNT", "0" ],
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "0" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "1" ]
       ],
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "binormals",
-
-          "vertex_shader": "normalmapped_vs",
-          "pixel_shader": "normalmapped_ps"
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": false
         }
-      ]
+      }
     },
 
-    {
-      "name": "normalmapped 1 lights",
-      "id": 8,
+    "perpixel_3lights_ps": {
+      "stage": "pixel",
+      "function_name": "perpixel_ps",
 
       "defines": [
-        [ "LIGHT_COUNT", "1" ]
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "3" ]
       ],
 
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "binormals",
-
-          "vertex_shader": "normalmapped_vs",
-          "pixel_shader": "normalmapped_ps"
-        }
-      ]
+      "pixel_state": {
+        "lighting": false
+      }
     },
 
-    {
-      "name": "normalmapped 3 lights with spotlight/projection",
-      "id": 9,
+    "perpixel_2lights_ps": {
+      "stage": "pixel",
+      "function_name": "perpixel_ps",
 
       "defines": [
-        [ "LIGHT_COUNT", "3" ]
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "2" ]
       ],
 
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "binormals",
-
-          "vertex_shader": "normalmapped_vs",
-          "pixel_shader": "normalmapped_ps"
-        },
-
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "binormals",
-
-          "vertex_shader": "normalmapped_spotlight_vs",
-          "pixel_shader": "normalmapped_spotlight_ps"
-        }
-      ]
+      "pixel_state": {
+        "lighting": false
+      }
     },
 
-    {
-      "name": "normalmapped 2 lights with spotlight/projection",
-      "id": 10,
+    "perpixel_1lights_ps": {
+      "stage": "pixel",
+      "function_name": "perpixel_ps",
 
       "defines": [
-        [ "LIGHT_COUNT", "2" ]
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "1" ]
       ],
 
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "binormals",
-
-          "vertex_shader": "normalmapped_vs",
-          "pixel_shader": "normalmapped_ps"
-        },
-
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "binormals",
-
-          "vertex_shader": "normalmapped_spotlight_vs",
-          "pixel_shader": "normalmapped_spotlight_ps"
-        }
-      ]
+      "pixel_state": {
+        "lighting": false
+      }
     },
 
-    {
-      "name": "normalmapped 1 lights with spotlight/projection",
-      "id": 11,
+    "normalmapped_3lights_ps": {
+      "stage": "pixel",
+      "function_name": "normalmapped_ps",
 
       "defines": [
-        [ "LIGHT_COUNT", "1" ]
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "3" ]
       ],
 
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "binormals",
-
-          "vertex_shader": "normalmapped_vs",
-          "pixel_shader": "normalmapped_ps"
-        },
-
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "binormals",
-
-          "vertex_shader": "normalmapped_spotlight_vs",
-          "pixel_shader": "normalmapped_spotlight_ps"
-        }
-      ]
+      "pixel_state": {
+        "lighting": false
+      }
     },
 
-    {
-      "name": "normalmapped 3 lights (generate tangents)",
-      "id": 12,
+    "normalmapped_2lights_ps": {
+      "stage": "pixel",
+      "function_name": "normalmapped_ps",
 
       "defines": [
-        [ "LIGHT_COUNT", "3" ],
-        [ "GENERATE_TANGENTS", "true" ]
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "2" ]
       ],
 
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "normalmapped_vs",
-          "pixel_shader": "normalmapped_ps"
-        }
-      ]
+      "pixel_state": {
+        "lighting": false
+      }
     },
 
-    {
-      "name": "normalmapped 2 lights (generate tangents)",
-      "id": 13,
+    "normalmapped_1lights_ps": {
+      "stage": "pixel",
+      "function_name": "normalmapped_ps",
 
       "defines": [
-        [ "LIGHT_COUNT", "2" ],
-        [ "GENERATE_TANGENTS", "true" ]
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "1" ]
       ],
 
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "normalmapped_vs",
-          "pixel_shader": "normalmapped_ps"
-        }
-      ]
+      "pixel_state": {
+        "lighting": false
+      }
     },
 
-    {
-      "name": "normalmapped 1 lights (generate tangents)",
-      "id": 14,
+    "perpixel_spotlight_ps": {
+      "stage": "pixel",
 
       "defines": [
-        [ "LIGHT_COUNT", "1" ],
-        [ "GENERATE_TANGENTS", "true" ]
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "0" ]
       ],
 
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "normalmapped_vs",
-          "pixel_shader": "normalmapped_ps"
-        }
-      ]
+      "pixel_state": {
+        "lighting": false
+      }
     },
 
-    {
-      "name": "normalmapped 3 lights with spotlight/projection (generate tangents)",
-      "id": 15,
+    "normalmapped_spotlight_ps": {
+      "stage": "pixel",
 
       "defines": [
-        [ "LIGHT_COUNT", "3" ],
-        [ "GENERATE_TANGENTS", "true" ]
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "0" ]
       ],
 
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "normalmapped_vs",
-          "pixel_shader": "normalmapped_ps"
-        },
-
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "normalmapped_spotlight_vs",
-          "pixel_shader": "normalmapped_spotlight_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "normalmapped 2 lights with spotlight/projection (generate tangents)",
-      "id": 16,
-
-      "defines": [
-        [ "LIGHT_COUNT", "2" ],
-        [ "GENERATE_TANGENTS", "true" ]
-      ],
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "normalmapped_vs",
-          "pixel_shader": "normalmapped_ps"
-        },
-
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "normalmapped_spotlight_vs",
-          "pixel_shader": "normalmapped_spotlight_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "normalmapped 1 lights with spotlight/projection (generate tangents)",
-      "id": 17,
-
-      "defines": [
-        [ "LIGHT_COUNT", "1" ],
-        [ "GENERATE_TANGENTS", "true" ]
-      ],
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "normalmapped_vs",
-          "pixel_shader": "normalmapped_ps"
-        },
-
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "normalmapped_spotlight_vs",
-          "pixel_shader": "normalmapped_spotlight_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "normalmapped 3 lights (generate tangents & texcoords)",
-      "id": 18,
-
-      "defines": [
-        [ "LIGHT_COUNT", "3" ],
-        [ "GENERATE_TANGENTS", "true" ],
-        [ "GENERATE_TEXCOORDS", "true" ]
-      ],
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "normalmapped_vs",
-          "pixel_shader": "normalmapped_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "normalmapped 2 lights (generate tangents & texcoords)",
-      "id": 19,
-
-      "defines": [
-        [ "LIGHT_COUNT", "2" ],
-        [ "GENERATE_TANGENTS", "true" ],
-        [ "GENERATE_TEXCOORDS", "true" ]
-      ],
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "normalmapped_vs",
-          "pixel_shader": "normalmapped_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "normalmapped 1 lights (generate tangents & texcoords)",
-      "id": 20,
-
-      "defines": [
-        [ "LIGHT_COUNT", "1" ],
-        [ "GENERATE_TANGENTS", "true" ],
-        [ "GENERATE_TEXCOORDS", "true" ]
-      ],
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "normalmapped_vs",
-          "pixel_shader": "normalmapped_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "normalmapped 3 lights with spotlight/projection (generate tangents & texcoords)",
-      "id": 21,
-
-      "defines": [
-        [ "LIGHT_COUNT", "3" ],
-        [ "GENERATE_TANGENTS", "true" ],
-        [ "GENERATE_TEXCOORDS", "true" ]
-      ],
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "normalmapped_vs",
-          "pixel_shader": "normalmapped_ps"
-        },
-
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "normalmapped_spotlight_vs",
-          "pixel_shader": "normalmapped_spotlight_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "normalmapped 2 lights with spotlight/projection (generate tangents & texcoords)",
-      "id": 22,
-
-      "defines": [
-        [ "LIGHT_COUNT", "2" ],
-        [ "GENERATE_TANGENTS", "true" ],
-        [ "GENERATE_TEXCOORDS", "true" ]
-      ],
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "normalmapped_vs",
-          "pixel_shader": "normalmapped_ps"
-        },
-
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "normalmapped_spotlight_vs",
-          "pixel_shader": "normalmapped_spotlight_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "normalmapped 1 lights with spotlight/projection (generate tangents & texcoords)",
-      "id": 23,
-
-      "defines": [
-        [ "LIGHT_COUNT", "1" ],
-        [ "GENERATE_TANGENTS", "true" ],
-        [ "GENERATE_TEXCOORDS", "true" ]
-      ],
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "normalmapped_vs",
-          "pixel_shader": "normalmapped_ps"
-        },
-
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "normalmapped_spotlight_vs",
-          "pixel_shader": "normalmapped_spotlight_ps"
-        }
-      ]
+      "pixel_state": {
+        "lighting": false
+      }
     }
-  ]
+  },
+
+  "rendertypes": { "perpixeldiffuselighting": {} },
+
+  "states": {
+    "perpixel 3 lights": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "perpixel_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "perpixel_3lights_ps"
+      }
+    },
+
+    "perpixel 2 lights": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "perpixel_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "perpixel_2lights_ps"
+      }
+    },
+
+    "perpixel 1 lights": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "perpixel_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "perpixel_1lights_ps"
+      }
+    },
+
+    "perpixel spotlight": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "perpixel_spotlight_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "perpixel_spotlight_ps"
+      }
+    },
+
+    "normalmapped 3 lights": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_3lights_ps"
+      }
+    },
+
+    "normalmapped 2 lights": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_2lights_ps"
+      }
+    },
+
+    "normalmapped 1 lights": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_1lights_ps"
+      }
+    },
+
+    "normalmapped 3 lights (generate tangents)": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_generate_tangents_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_3lights_ps"
+      }
+    },
+
+    "normalmapped 2 lights (generate tangents)": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_generate_tangents_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_2lights_ps"
+      }
+    },
+
+    "normalmapped 1 lights (generate tangents)": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_generate_tangents_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_1lights_ps"
+      }
+    },
+
+    "normalmapped 3 lights (generate tangents & texcoords)": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_generate_tangents_texcoords_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_3lights_ps"
+      }
+    },
+
+    "normalmapped 2 lights (generate tangents & texcoords)": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_generate_tangents_texcoords_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_2lights_ps"
+      }
+    },
+
+    "normalmapped 1 lights (generate tangents & texcoords)": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_generate_tangents_texcoords_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_1lights_ps"
+      }
+    },
+
+    "normalmapped spotlight": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_spotlight_vs",
+
+        "static_flags": {
+          "PERPIXEL_GENERATE_TEXCOORDS": false,
+          "PERPIXEL_GENERATE_TANGENTS": false
+        }
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_spotlight_ps"
+      }
+    },
+
+    "normalmapped spotlight (generate tangents)": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_spotlight_generate_tangents_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_spotlight_ps"
+      }
+    },
+
+    "normalmapped spotlight (generate tangents & texcoords)": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_spotlight_generate_tangents_texcoords_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_spotlight_ps"
+      }
+    }
+  }
 }

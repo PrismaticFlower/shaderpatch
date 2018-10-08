@@ -1,0 +1,99 @@
+{
+  "rendertype": "filtercopy",
+
+  "states": [
+    {
+      "id": 0,
+
+      "passes": [
+        {
+          "name": "filtercopy four textures",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        }
+      ]
+    },
+
+    {
+      "id": 1,
+
+      "passes": [
+        {
+          "name": "filtercopy four textures",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        },
+
+        {
+          "name": "filtercopy one texture",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        }
+      ]
+    },
+
+    {
+      "id": 2,
+
+      "passes": [
+        {
+          "name": "filtercopy four textures",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        },
+
+        {
+          "name": "filtercopy two textures",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        }
+      ]
+    },
+
+    {
+      "id": 3,
+
+      "passes": [
+        {
+          "name": "filtercopy four textures",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        },
+
+        {
+          "name": "filtercopy three textures",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        }
+      ]
+    }
+  ]
+}

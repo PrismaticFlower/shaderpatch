@@ -1,0 +1,37 @@
+{
+  "rendertype": "normalmapadder",
+
+  "states": [
+    {
+      "id": 0,
+
+      "passes": [
+        {
+          "name": "unusued",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "base_input": "position"
+        }
+      ]
+    },
+
+    {
+      "id": 1,
+
+      "passes": [
+        {
+          "name": "unusued",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "base_input": "tangents"
+        }
+      ]
+    }
+  ]
+}

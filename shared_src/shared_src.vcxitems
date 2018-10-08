@@ -23,6 +23,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)exceptions.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)file_dialogs.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)file_helpers.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)game_rendertypes.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)glm_yaml_adapters.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)imgui_ext.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)magic_number.hpp" />

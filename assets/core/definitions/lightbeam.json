@@ -1,23 +1,46 @@
 {
-  "rendertype": "lightbeam",
+  "group_name": "lightbeam",
+  "source_name": "lightbeam.fx",
 
-  "states": [
-    {
-      "name": "lightbeam",
-      "id": 0,
+  "entrypoints": {
+    "lightbeam_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": false,
-          "base_input": "position",
-
-          "vertex_shader": "lightbeam_vs",
-          "pixel_shader": "lightbeam_ps"
+          "normal": false,
+          "tangents": false,
+          "color": true,
+          "texture_coords": false
         }
-      ]
+      }
+    },
+
+    "lightbeam_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
     }
-  ]
+  },
+
+  "rendertypes": { "lightbeam": {} },
+
+  "states": {
+    "lightbeam": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "lightbeam_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "lightbeam_ps"
+      }
+    }
+  }
 }

@@ -1,23 +1,47 @@
 {
-  "rendertype": "sample",
+  "group_name": "sample",
+  "source_name": "sample.fx",
 
-  "states": [
-    {
-      "name": "sample",
-      "id": 0,
 
-      "passes": [
-        {
+  "entrypoints": {
+    "sample_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "sample_vs",
-          "pixel_shader": "sample_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
+    },
+
+    "sample_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
     }
-  ]
+  },
+
+  "rendertypes": { "sample": {} },
+
+  "states": {
+    "sample": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "sample_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "sample_ps"
+      }
+    }
+  }
 }

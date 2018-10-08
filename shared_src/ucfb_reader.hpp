@@ -486,6 +486,19 @@ class Reader_strict : public Reader {
 public:
    Reader_strict() = delete;
 
+   //! \brief Construct a strict reader from a span of memory.
+   //!
+   //! \param bytes The span of memory holding the chunk. The size of the
+   //! span must be at least 8 and the first four bytes must match `type_mn`.
+   //!
+   //! \exception std::runtime_error Thrown when the size of the chunk does not
+   //! match the size of the span.
+   explicit Reader_strict(const gsl::span<const std::byte> bytes)
+      : Reader{bytes}
+   {
+      Expects(magic_number() == type_mn);
+   }
+
    //! \brief Construct a strict reader.
    //!
    //! \param ucfb_reader The reader to construct the strict reader from.

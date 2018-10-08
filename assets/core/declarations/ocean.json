@@ -1,0 +1,38 @@
+{
+  "rendertype": "ocean",
+  "srgb_state": [ true, true, false, false ],
+
+  "states": [
+    {
+      "id": 0,
+
+      "passes": [
+        {
+          "name": "far ocean",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 1,
+
+      "passes": [
+        {
+          "name": "near ocean",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    }
+  ]
+}

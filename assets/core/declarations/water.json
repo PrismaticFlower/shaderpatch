@@ -1,0 +1,255 @@
+{
+  "rendertype": "water",
+  
+  "states": [
+    {
+      "id": 0,
+
+      "passes": [
+        {
+          "name": "discard",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "position"
+        },
+
+        {
+          "name": "projective bumpmap with distorted reflection with specular",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 1,
+
+      "passes": [
+        {
+          "name": "discard",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "position"
+        },
+
+        {
+          "name": "projective bumpmap with distorted reflection",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 2,
+
+      "passes": [
+        {
+          "name": "discard",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "position"
+        },
+
+        {
+          "name": "projective bumpmap without distortion with specular",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 3,
+
+      "passes": [
+        {
+          "name": "discard",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "position"
+        },
+
+        {
+          "name": "normal map without distortion",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "base_input": "normals",
+
+          "vertex_shader": "normal_map_vs",
+          "pixel_shader": "normal_map_distorted_reflection_ps"
+        }
+      ]
+    },
+
+    {
+      "id": 4,
+
+      "passes": [
+        {
+          "name": "discard",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "position"
+        },
+
+        {
+          "name": "normal map with reflection with specular",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 5,
+
+      "passes": [
+        {
+          "name": "discard",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "position"
+        },
+
+        {
+          "name": "normal map with reflection",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 6,
+
+      "passes": [
+        {
+          "name": "transmissive fade",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "position",
+
+          "vertex_shader": "transmissive_pass_fade_vs",
+          "pixel_shader": "transmissive_pass_fade_ps"
+        },
+
+        {
+          "name": "normal map without reflection with specular",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 7,
+
+      "passes": [
+        {
+          "name": "transmissive fade",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "position"
+        },
+
+        {
+          "name": "normal map without reflection",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 8,
+
+      "srgb_state": [ true, true, false, false ],
+
+      "passes": [
+        {
+          "name": "low quality with specular",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 9,
+
+      "srgb_state": [ true, true, false, false ],
+
+      "passes": [
+        {
+          "name": "low quality",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    }
+  ]
+}

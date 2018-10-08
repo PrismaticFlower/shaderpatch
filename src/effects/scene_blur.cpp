@@ -6,23 +6,51 @@ namespace sp::effects {
 
 Scene_blur::Scene_blur(Com_ref<IDirect3DDevice9> device) : _device{device} {}
 
-void Scene_blur::apply(const Shader_database& shaders, Rendertarget_allocator& allocator,
-                       IDirect3DTexture9& from_to) noexcept
+void Scene_blur::compute(const Shader_rendertype& rendertype,
+                         Rendertarget_allocator& allocator,
+                         IDirect3DSurface9& from, IDirect3DTexture9& to) noexcept
 {
-   auto [format, res] = get_texture_metrics(from_to);
+   const auto [format, resolution] = effects::get_surface_metrics(from);
+   auto resolve = allocator.allocate(format, resolution / 2);
+
+   Com_ptr<IDirect3DSurface9> to_surface;
+   to.GetSurfaceLevel(0, to_surface.clear_and_assign());
+
+   _device->StretchRect(&from, nullptr, resolve.surface(), nullptr, D3DTEXF_LINEAR);
+   _device->StretchRect(resolve.surface(), nullptr, to_surface.get(), nullptr,
+                        D3DTEXF_LINEAR);
 
    setup_vetrex_stream();
    setup_state(format);
 
-   auto rt_a_x = allocator.allocate(format, res);
+   auto rt_a_x = allocator.allocate(format, resolution / 4);
 
-   Com_ptr<IDirect3DSurface9> to;
-   from_to.GetSurfaceLevel(0, to.clear_and_assign());
+   rendertype.at("blur 6"s).bind(*_device);
 
-   shaders.at("gaussian blur"s).at("blur 6"s).bind(*_device);
+   do_pass(*rt_a_x.surface(), to, {1.f, 0.f});
+   do_pass(*to_surface.get(), *rt_a_x.texture(), {0.f, 1.f});
+}
 
-   do_pass(*rt_a_x.surface(), from_to, {1.f, 0.f});
-   do_pass(*to.get(), *rt_a_x.texture(), {0.f, 1.f});
+void Scene_blur::apply(const Shader_database& shaders, Rendertarget_allocator& allocator,
+                       IDirect3DSurface9& from_to, float alpha) noexcept
+{
+   const auto [format, resolution] = effects::get_surface_metrics(from_to);
+   auto blur_target = allocator.allocate(format, resolution / 4);
+
+   compute(shaders.rendertypes.at("gaussian blur"s), allocator, from_to,
+           *blur_target.texture());
+
+   set_fs_pass_alpha_blend_state(*_device);
+   _device->SetTexture(0, blur_target.texture());
+   _device->SetRenderTarget(0, &from_to);
+   set_fs_pass_state(*_device, from_to);
+
+   shaders.rendertypes.at("scene blur apply"s).at("main"s).bind(*_device);
+
+   direct3d::Ps_1f_shader_constant<constants::ps::post_processing_start>{}.set(*_device,
+                                                                               alpha);
+
+   _device->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 1);
 }
 
 void Scene_blur::do_pass(IDirect3DSurface9& dest, IDirect3DTexture9& source,

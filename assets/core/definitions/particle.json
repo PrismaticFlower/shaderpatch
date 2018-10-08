@@ -1,43 +1,82 @@
 {
-  "rendertype": "particle",
+  "group_name": "particle",
+  "source_name": "particle.fx",
 
-  "states": [
-    {
-      "name": "normal",
-      "id": 0,
+  "entrypoints": {
+    "normal_vs": {
+      "stage": "vertex",
 
-      "srgb_state": [ true, false, false, false ],
-
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "position",
-
-          "vertex_shader": "normal_vs",
-          "pixel_shader": "normal_ps"
+          "normal": false,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
         }
-      ]
+      }
     },
 
-    {
-      "name": "blur",
-      "id": 1,
+    "blur_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "blur_vs",
-          "pixel_shader": "blur_ps"
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
         }
-      ]
+      }
+    },
+
+    "normal_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
+    },
+
+    "blur_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
     }
-  ]
+  },
+
+  "rendertypes": { "particle": {} },
+
+  "states": {
+    "normal": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normal_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normal_ps"
+      }
+    },
+
+    "blur": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "blur_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "blur_ps"
+      }
+    }
+  }
 }

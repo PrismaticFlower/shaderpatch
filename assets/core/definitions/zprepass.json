@@ -1,41 +1,82 @@
 {
-  "rendertype": "zprepass",
+  "group_name": "zprepass",
+  "source_name": "zprepass.fx",
 
-  "states": [
-    {
-      "name": "opaque",
-      "id": 0,
+  "entrypoints": {
+    "opaque_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": true,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "position",
-
-          "vertex_shader": "opaque_vs",
-          "pixel_shader": "opaque_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
     },
 
-    {
-      "name": "hardedged",
-      "id": 1,
+    "hardedged_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": true,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": true,
-          "base_input": "position",
-
-          "vertex_shader": "hardedged_vs",
-          "pixel_shader": "hardedged_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": true
         }
-      ]
+      }
+    },
+
+    "opaque_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
+    },
+
+    "hardedged_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
     }
-  ]
+  },
+
+  "rendertypes": { "zprepass": {} },
+
+  "states": {
+    "opaque": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "opaque_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "opaque_ps"
+      }
+    },
+
+    "hardedged": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "hardedged_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "hardedged_ps"
+      }
+    }
+  }
 }

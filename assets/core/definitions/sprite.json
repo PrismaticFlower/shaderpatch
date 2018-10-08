@@ -1,23 +1,47 @@
 {
-  "rendertype": "sprite",
+  "group_name": "sprite",
+  "source_name": "sprite.fx",
 
-  "states": [
-    {
-      "name": "sprite",
-      "id": 0,
 
-      "passes": [
-        {
+  "entrypoints": {
+    "sprite_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "position",
-
-          "vertex_shader": "sprite_vs",
-          "pixel_shader": "sprite_ps"
+          "normal": false,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
         }
-      ]
+      }
+    },
+
+    "sprite_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
     }
-  ]
+  },
+
+  "rendertypes": { "sprite": {} },
+
+  "states": {
+    "sprite": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "sprite_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "sprite_ps"
+      }
+    }
+  }
 }

@@ -17,7 +17,7 @@ namespace sp::ucfb {
 
 template<typename Last_act, typename Writer_type>
 class Writer_child : public Writer_type {
-   static_assert(std::is_invocable_v<Last_act, decltype(Writer::_size)>);
+   static_assert(std::is_invocable_v<Last_act, decltype(Writer_type::_size)>);
 
 public:
    Writer_child(Last_act last_act, std::ostream& output_stream, const Magic_number mn)

@@ -1,158 +1,197 @@
 {
-  "rendertype": "specularlighting",
+  "group_name": "specularlighting",
+  "source_name": "specularlighting.fx",
 
-  "defines": [
-    [ "LIGHT_COUNT", "0" ]
-  ],
-
-  "states": [
-    {
-      "name": "vertex lit specular",
-      "id": 0,
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "blinn_phong_vs",
-          "pixel_shader": "debug_vertexlit_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "specular 3 lights",
-      "id": 1,
+  "entrypoints": {
+    "blinn_phong_vs": {
+      "stage": "vertex",
 
       "defines": [
-        [ "LIGHT_COUNT", "3" ]
+        [ "SPECULAR_LIGHT_COUNT", "0" ]
       ],
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": true,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "blinn_phong_vs",
-          "pixel_shader": "blinn_phong_ps"
+          "normal": true,
+          "tangents": false,
+          "color": false,
+          "texture_coords": true
         }
-      ]
+      }
     },
 
-    {
-      "name": "specular 2 lights",
-      "id": 2,
+    "normalmapped_vs": {
+      "stage": "vertex",
 
       "defines": [
-        [ "LIGHT_COUNT", "2" ]
+        [ "SPECULAR_LIGHT_COUNT", "0" ]
       ],
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": true,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "blinn_phong_vs",
-          "pixel_shader": "blinn_phong_ps"
+          "normal": true,
+          "tangents": true,
+          "color": false,
+          "texture_coords": true
         }
-      ]
+      }
     },
 
-    {
-      "name": "specular 1 lights",
-      "id": 3,
+    "debug_vertexlit_ps": {
+      "stage": "pixel",
 
       "defines": [
-        [ "LIGHT_COUNT", "1" ]
+        [ "SPECULAR_LIGHT_COUNT", "0" ]
       ],
 
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "blinn_phong_vs",
-          "pixel_shader": "blinn_phong_ps"
-        }
-      ]
+      "pixel_state": {
+        "lighting": false
+      }
     },
 
-    {
-      "name": "specular normalmapped",
-      "id": 4,
+    "blinn_phong_3lights_ps": {
+      "stage": "pixel",
+      "function_name": "blinn_phong_ps",
 
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": true,
-          "base_input": "binormals",
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "3" ]
+      ],
 
-          "vertex_shader": "normalmapped_vs",
-          "pixel_shader": "normalmapped_ps"
-        }
-      ]
+      "pixel_state": {
+        "lighting": false
+      }
     },
 
-    {
-      "name": "normalmapped reflection",
-      "id": 5,
+    "blinn_phong_2lights_ps": {
+      "stage": "pixel",
+      "function_name": "blinn_phong_ps",
 
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": true,
-          "base_input": "binormals",
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "2" ]
+      ],
 
-          "vertex_shader": "normalmapped_vs",
-          "pixel_shader": "normalmapped_envmap_ps"
-        }
-      ]
+      "pixel_state": {
+        "lighting": false
+      }
     },
 
-    {
-      "name": "specular normalmapped & reflection normalmapped",
-      "id": 6,
+    "blinn_phong_1lights_ps": {
+      "stage": "pixel",
+      "function_name": "blinn_phong_ps",
 
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": true,
-          "base_input": "binormals",
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "1" ]
+      ],
 
-          "vertex_shader": "normalmapped_vs",
-          "pixel_shader": "normalmapped_ps"
-        },
+      "pixel_state": {
+        "lighting": false
+      }
+    },
 
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": true,
-          "base_input": "binormals",
+    "normalmapped_ps": {
+      "stage": "pixel",
 
-          "vertex_shader": "normalmapped_vs",
-          "pixel_shader": "normalmapped_envmap_ps"
-        }
-      ]
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "0" ]
+      ],
+
+      "pixel_state": {
+        "lighting": false
+      }
+    },
+
+    "normalmapped_envmap_ps": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "0" ]
+      ],
+
+      "pixel_state": {
+        "lighting": false
+      }
     }
-  ]
+  },
+
+  "rendertypes": { "specularlighting": {} },
+
+  "states": {
+    "vertex lit specular": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "blinn_phong_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "debug_vertexlit_ps"
+      }
+    },
+
+    "specular 3 lights": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "blinn_phong_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "blinn_phong_3lights_ps"
+      }
+    },
+
+    "specular 2 lights": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "blinn_phong_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "blinn_phong_2lights_ps"
+      }
+    },
+
+    "specular 1 lights": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "blinn_phong_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "blinn_phong_1lights_ps"
+      }
+    },
+
+    "specular normalmapped": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_ps"
+      }
+    },
+
+    "normalmapped reflection": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_envmap_ps"
+      }
+    }
+  }
 }

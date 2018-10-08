@@ -14,7 +14,8 @@ Shadows_blur::Shadows_blur(Com_ref<IDirect3DDevice9> device) : _device{device}
 {
 }
 
-void Shadows_blur::apply(const Shader_group& shaders, Rendertarget_allocator& allocator,
+void Shadows_blur::apply(const Shader_rendertype& rendertype,
+                         Rendertarget_allocator& allocator,
                          IDirect3DTexture9& depth, IDirect3DTexture9& from_to) noexcept
 {
    auto [format, res] = get_texture_metrics(from_to);
@@ -29,12 +30,12 @@ void Shadows_blur::apply(const Shader_group& shaders, Rendertarget_allocator& al
    Com_ptr<IDirect3DSurface9> from_to_surface;
    from_to.GetSurfaceLevel(0, from_to_surface.clear_and_assign());
 
-   shaders.at("combine depth"s).bind(*_device);
+   rendertype.at("combine depth"s).bind(*_device);
 
    auto combined = allocator.allocate(D3DFMT_G16R16F, res);
    do_pass(*combined.surface(), from_to);
 
-   shaders.at("blur"s).bind(*_device);
+   rendertype.at("blur"s).bind(*_device);
 
    do_pass(*from_to_surface.get(), *combined.texture());
 }

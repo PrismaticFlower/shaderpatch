@@ -34,30 +34,7 @@ inline bool operator==(const D3D_SHADER_MACRO& l, const D3D_SHADER_MACRO& r)
 
 namespace sp {
 
-struct Shader_cache_index {
-   std::string entry_point;
-   std::vector<D3D_SHADER_MACRO> definitions;
-};
-
-inline bool operator==(const Shader_cache_index& l, const Shader_cache_index& r)
-{
-   return std::tie(l.entry_point, l.definitions) ==
-          std::tie(r.entry_point, r.definitions);
-}
-
-inline gsl::span<DWORD> make_dword_span(ID3DBlob& blob)
-{
-   using namespace std::literals;
-
-   if (blob.GetBufferSize() % 4) {
-      throw std::runtime_error{"Resulting shader bytecode was bad."s};
-   }
-
-   return gsl::make_span<DWORD>(static_cast<DWORD*>(blob.GetBufferPointer()),
-                                static_cast<std::ptrdiff_t>(blob.GetBufferSize()) / 4);
-}
-
-inline auto read_definition_file(const std::filesystem::path& path) -> nlohmann::json
+inline auto read_json_file(const std::filesystem::path& path) -> nlohmann::json
 {
    namespace fs = std::filesystem;
 
@@ -144,27 +121,3 @@ inline auto date_test_shader_file(const std::filesystem::path& file_path) noexce
    return std::max(includer.newest(), fs::last_write_time(file_path));
 }
 }
-
-template<>
-struct std::hash<sp::Shader_cache_index> {
-   using argument_type = sp::Shader_cache_index;
-   using result_type = std::size_t;
-
-   result_type operator()(argument_type const& entry) const noexcept
-   {
-      std::size_t seed = 0;
-
-      boost::hash_combine(seed, std::hash<std::string>{}(entry.entry_point));
-
-      for (const auto& item : entry.definitions) {
-         if (item.Name) {
-            boost::hash_combine(seed, std::hash<std::string_view>{}(item.Name));
-         }
-         if (item.Definition) {
-            boost::hash_combine(seed, std::hash<std::string_view>{}(item.Definition));
-         }
-      }
-
-      return seed;
-   }
-};

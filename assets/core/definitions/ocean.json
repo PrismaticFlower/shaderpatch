@@ -1,42 +1,82 @@
 {
-  "rendertype": "ocean",
-  "srgb_state": [ true, true, false, false ],
+  "group_name": "ocean",
+  "source_name": "ocean.fx",
 
-  "states": [
-    {
-      "name": "far ocean",
-      "id": 0,
+  "entrypoints": {
+    "far_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "far_vs",
-          "pixel_shader": "far_ps"
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
         }
-      ]
+      }
     },
 
-    {
-      "name": "near ocean",
-      "id": 1,
+    "near_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "near_vs",
-          "pixel_shader": "near_ps"
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
         }
-      ]
+      }
+    },
+
+    "far_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
+    },
+
+    "near_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
     }
-  ]
+  },
+
+  "rendertypes": { "ocean": {} },
+
+  "states": {
+    "far ocean": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "far_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "far_ps"
+      }
+    },
+
+    "near ocean": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "near_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "near_ps"
+      }
+    }
+  }
 }

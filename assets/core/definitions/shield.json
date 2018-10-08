@@ -1,24 +1,46 @@
 {
-  "rendertype": "shield",
-  "srgb_state": [ true, false, false, false ],
+  "group_name": "shield",
+  "source_name": "shield.fx",
 
-  "states": [
-    {
-      "name": "shield",
-      "id": 0,
+  "entrypoints": {
+    "shield_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "shield_vs",
-          "pixel_shader": "shield_ps"
+          "normal": true,
+          "tangents": false,
+          "color": false,
+          "texture_coords": true
         }
-      ]
+      }
+    },
+
+    "shield_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
     }
-  ]
+  },
+
+  "rendertypes": { "shield": {} },
+
+  "states": {
+    "shield": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "shield_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "shield_ps"
+      }
+    }
+  }
 }

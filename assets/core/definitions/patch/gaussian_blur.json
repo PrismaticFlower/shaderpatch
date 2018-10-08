@@ -1,55 +1,146 @@
 {
-  "patch_shader": true,
+  "group_name": "gaussian blur",
   "source_name": "gaussian_blur.fx",
-  "rendertype": "gaussian blur",
 
-  "skinned": false,
-  "lighting": false,
-  "vertex_color": false,
-  "texture_coords": false,
-  "base_input": "none",
+  "entrypoints": {
+    "main_vs": {
+      "stage": "vertex",
 
-  "states": [
-    {
-      "name": "blur 4",
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "blur_4_ps"
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
+        }
+      }
     },
 
-    {
-      "name": "blur 6",
+    "blur_4_ps": {
+      "stage": "pixel",
 
-      "vertex_shader": "main_vs",
-      "pixel_shader": "blur_6_ps"
+      "pixel_state": {
+        "lighting": false
+      }
     },
 
-    {
-      "name": "blur 8",
+    "blur_6_ps": {
+      "stage": "pixel",
 
-      "vertex_shader": "main_vs",
-      "pixel_shader": "blur_8_ps"
+      "pixel_state": {
+        "lighting": false
+      }
     },
 
-    {
-      "name": "blur 12",
+    "blur_8_ps": {
+      "stage": "pixel",
 
-      "vertex_shader": "main_vs",
-      "pixel_shader": "blur_12_ps"
+      "pixel_state": {
+        "lighting": false
+      }
     },
 
-    {
-      "name": "blur 16",
+    "blur_12_ps": {
+      "stage": "pixel",
 
-      "vertex_shader": "main_vs",
-      "pixel_shader": "blur_16_ps"
+      "pixel_state": {
+        "lighting": false
+      }
     },
 
-    {
-      "name": "blur 20",
+    "blur_16_ps": {
+      "stage": "pixel",
 
-      "vertex_shader": "main_vs",
-      "pixel_shader": "blur_20_ps"
+      "pixel_state": {
+        "lighting": false
+      }
+    },
+
+    "blur_20_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
     }
-  ]
+  },
+
+  "rendertypes": { "gaussian blur": {} },
+
+  "states": {
+    "blur 4": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "blur_4_ps"
+      }
+    },
+
+    "blur 6": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "blur_6_ps"
+      }
+    },
+
+    "blur 8": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "blur_8_ps"
+      }
+    },
+
+    "blur 12": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "blur_12_ps"
+      }
+    },
+
+    "blur 16": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "blur_16_ps"
+      }
+    },
+
+    "blur 20": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "blur_20_ps"
+      }
+    }
+  }
 }

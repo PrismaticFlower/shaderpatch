@@ -108,7 +108,8 @@ float4 postprocess_finalize_ps(float2 texcoords : TEXCOORD, float2 position : VP
    }
 
    if (film_grain) filmgrain::apply(texcoords, color);
-   else apply_dithering(color, position);
+  
+   apply_dithering(color, position);
 
    return float4(color, 1.0);
 }

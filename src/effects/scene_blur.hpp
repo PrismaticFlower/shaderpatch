@@ -13,8 +13,11 @@ class Scene_blur {
 public:
    Scene_blur(Com_ref<IDirect3DDevice9> device);
 
+   void compute(const Shader_rendertype& rendertype, Rendertarget_allocator& allocator,
+                IDirect3DSurface9& from, IDirect3DTexture9& to) noexcept;
+
    void apply(const Shader_database& shaders, Rendertarget_allocator& allocator,
-              IDirect3DTexture9& from_to) noexcept;
+              IDirect3DSurface9& from_to, float alpha) noexcept;
 
    void drop_device_resources() noexcept;
 

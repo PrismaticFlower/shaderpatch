@@ -1,6 +1,6 @@
 
 #include "compiler_helpers.hpp"
-#include "game_compiler.hpp"
+#include "declaration_munge.hpp"
 #include "patch_compiler.hpp"
 #include "synced_io.hpp"
 
@@ -23,6 +23,7 @@ int main(int arg_count, char* args[])
    using namespace clara;
 
    bool help = false;
+   auto decl_file_dir = "./"s;
    auto def_file_dir = "./"s;
    auto source_file_dir = "./"s;
    auto output_dir = "./"s;
@@ -58,6 +59,8 @@ int main(int arg_count, char* args[])
       | Opt{output_dir, "output directory"s}
       ["--outputdir"s]
       ("Path to place munged files in."s)
+      | Opt{decl_file_dir, "shader declarations directory"s}
+      ["--declarationinputdir"s]
       | Opt{def_file_dir, "shader definitions directory"s}
       ["--definitioninputdir"s]
       ("Input directory for shader definition files."s)
@@ -92,15 +95,22 @@ int main(int arg_count, char* args[])
    fs::path source_file_dir_path = source_file_dir;
    fs::path output_dir_path = output_dir;
 
+   if (!fs::exists(decl_file_dir)) {
+      synced_error_print("Declaration Source Directory "sv,
+                         std::quoted(def_file_dir), " does not exist!"sv);
+
+      return 1;
+   }
+
    if (!fs::exists(def_file_dir)) {
-      synced_error_print("Source Directory "sv, std::quoted(def_file_dir),
-                         " does not exist!"sv);
+      synced_error_print("Definition Source Directory "sv,
+                         std::quoted(def_file_dir), " does not exist!"sv);
 
       return 1;
    }
 
    if (!fs::exists(source_file_dir_path)) {
-      synced_error_print("Source Directory "sv, source_file_dir_path,
+      synced_error_print("HLSL Source Directory "sv, source_file_dir_path,
                          " does not exist!"sv);
 
       return 1;
@@ -113,6 +123,15 @@ int main(int arg_count, char* args[])
       return 1;
    }
 
+   // Munge Declarations
+   for (auto& entry : fs::recursive_directory_iterator{decl_file_dir}) {
+      if (!fs::is_regular_file(entry.path())) continue;
+      if (entry.path().extension() != ".json"s) continue;
+
+      Declaration_munge{entry.path(), output_dir_path};
+   }
+
+   // Compile Shaders
    std::vector<fs::path> definition_files;
    definition_files.reserve(64);
 
@@ -130,16 +149,10 @@ int main(int arg_count, char* args[])
 
    auto predicate = [&](const fs::path& path) {
       try {
-         auto definition = read_definition_file(path);
+         auto definition = read_json_file(path);
 
-         if (definition.value("patch_shader"s, false)) {
-            sp::Patch_compiler{compiler_flags, definition, path,
-                               source_file_dir_path, output_dir_path};
-         }
-         else {
-            sp::Game_compiler{compiler_flags, definition, path,
-                              source_file_dir_path, output_dir_path};
-         }
+         sp::Patch_compiler{compiler_flags, definition, path,
+                            source_file_dir_path, output_dir_path};
       }
       catch (std::exception& e) {
          synced_error_print("Error occured while munging "sv,

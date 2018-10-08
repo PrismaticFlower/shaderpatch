@@ -6,6 +6,26 @@
 
 namespace sp {
 
+enum class Vertex_shader_flags : std::uint32_t {
+   none = 0b0,
+   compressed = 0b1,
+   position = 0b10,
+   normal = 0b100,
+   tangents = 0b1000,
+   texcoords = 0b10000,
+   color = 0b100000,
+   hard_skinned = 0b1000000
+};
+
+enum class Pixel_shader_flags : std::uint32_t {
+   none = 0b0,
+   light_point_1 = 0b1,
+   light_point_2 = 0b10,
+   light_point_4 = 0b100,
+   light_spot = 0b1000,
+   light_directional = 0b10000
+};
+
 enum class Shader_flags : std::uint32_t {
    none = 0,
 
@@ -39,72 +59,53 @@ enum class Pass_flags : std::uint32_t {
    texcoords = 512
 };
 
-constexpr Shader_flags operator|(const Shader_flags l, const Shader_flags r) noexcept
+template<typename Type>
+constexpr bool is_shader_flag_v =
+   std::is_same_v<Type, Vertex_shader_flags> ||
+   std::is_same_v<Type, Pixel_shader_flags> ||
+   std::is_same_v<Type, Shader_flags> || std::is_same_v<Type, Pass_flags>;
+
+template<typename Flags, typename = std::enable_if_t<is_shader_flag_v<Flags>>>
+constexpr Flags operator|(const Flags l, const Flags r) noexcept
 {
-   return Shader_flags{static_cast<std::uint32_t>(l) | static_cast<std::uint32_t>(r)};
+   return Flags{static_cast<std::underlying_type_t<Flags>>(l) |
+                static_cast<std::underlying_type_t<Flags>>(r)};
 }
 
-constexpr Shader_flags operator&(Shader_flags l, Shader_flags r) noexcept
+template<typename Flags, typename = std::enable_if_t<is_shader_flag_v<Flags>>>
+constexpr Flags operator&(Flags l, Flags r) noexcept
 {
-   return Shader_flags{static_cast<std::uint32_t>(l) & static_cast<std::uint32_t>(r)};
+   return Flags{static_cast<std::underlying_type_t<Flags>>(l) &
+                static_cast<std::underlying_type_t<Flags>>(r)};
 }
 
-constexpr Shader_flags operator^(const Shader_flags l, const Shader_flags r) noexcept
+template<typename Flags, typename = std::enable_if_t<is_shader_flag_v<Flags>>>
+constexpr Flags operator^(const Flags l, const Flags r) noexcept
 {
-   return Shader_flags{static_cast<std::uint32_t>(l) ^ static_cast<std::uint32_t>(r)};
+   return Flags{static_cast<std::underlying_type_t<Flags>>(l) ^
+                static_cast<std::underlying_type_t<Flags>>(r)};
 }
 
-constexpr Shader_flags operator~(const Shader_flags f) noexcept
+template<typename Flags, typename = std::enable_if_t<is_shader_flag_v<Flags>>>
+constexpr Flags operator~(const Flags f) noexcept
 {
-   return Shader_flags{~static_cast<std::uint32_t>(f)};
+   return Flags{~static_cast<std::underlying_type_t<Flags>>(f)};
 }
 
-constexpr Shader_flags& operator|=(Shader_flags& l, const Shader_flags r) noexcept
-{
-   return l = l | r;
-}
-
-constexpr Shader_flags& operator&=(Shader_flags& l, const Shader_flags r) noexcept
-{
-   return l = l & r;
-}
-
-constexpr Shader_flags& operator^=(Shader_flags& l, const Shader_flags r) noexcept
-{
-   return l = l ^ r;
-}
-
-constexpr Pass_flags operator|(const Pass_flags l, const Pass_flags r) noexcept
-{
-   return Pass_flags{static_cast<std::uint32_t>(l) | static_cast<std::uint32_t>(r)};
-}
-
-constexpr Pass_flags operator&(Pass_flags l, Pass_flags r) noexcept
-{
-   return Pass_flags{static_cast<std::uint32_t>(l) & static_cast<std::uint32_t>(r)};
-}
-
-constexpr Pass_flags operator^(const Pass_flags l, const Pass_flags r) noexcept
-{
-   return Pass_flags{static_cast<std::uint32_t>(l) ^ static_cast<std::uint32_t>(r)};
-}
-
-constexpr Pass_flags operator~(const Pass_flags f) noexcept
-{
-   return Pass_flags{~static_cast<std::uint32_t>(f)};
-}
-
-constexpr Pass_flags& operator|=(Pass_flags& l, const Pass_flags r) noexcept
+template<typename Flags, typename = std::enable_if_t<is_shader_flag_v<Flags>>>
+constexpr Flags& operator|=(Flags& l, const Flags r) noexcept
 {
    return l = l | r;
 }
 
-constexpr Pass_flags& operator&=(Pass_flags& l, const Pass_flags r) noexcept
+template<typename Flags, typename = std::enable_if_t<is_shader_flag_v<Flags>>>
+constexpr Flags& operator&=(Flags& l, const Flags r) noexcept
 {
    return l = l & r;
 }
 
-constexpr Pass_flags& operator^=(Pass_flags& l, const Pass_flags r) noexcept
+template<typename Flags, typename = std::enable_if_t<is_shader_flag_v<Flags>>>
+constexpr Flags& operator^=(Flags& l, const Flags r) noexcept
 {
    return l = l ^ r;
 }
@@ -128,6 +129,9 @@ inline auto get_pass_flags(std::string base_input, bool lighting,
       flags |= Pass_flags::nolighting;
    }
 
+   if (vertex_color) flags |= Pass_flags::vertex_color;
+   if (texcoords) flags |= Pass_flags::texcoords;
+
    if (base_input == "none"sv) {
       flags |= Pass_flags::notransform;
 
@@ -140,7 +144,7 @@ inline auto get_pass_flags(std::string base_input, bool lighting,
       flags |= Pass_flags::position;
       flags |= Pass_flags::normal;
    }
-   else if (base_input == "binormals"sv) {
+   else if (base_input == "tangents"sv) {
       flags |= Pass_flags::position;
       flags |= Pass_flags::normal;
       flags |= Pass_flags::tangents;
@@ -148,9 +152,6 @@ inline auto get_pass_flags(std::string base_input, bool lighting,
    else {
       throw std::runtime_error{"Invalid base_input value: "s += base_input};
    }
-
-   if (vertex_color) flags |= Pass_flags::vertex_color;
-   if (texcoords) flags |= Pass_flags::texcoords;
 
    return flags;
 }

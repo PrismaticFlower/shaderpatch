@@ -334,12 +334,13 @@ private:
    constexpr static auto cubemap_projection_slot = 15;
 
    constexpr static auto fp_texture_format = D3DFMT_A16B16G16R16F;
-   constexpr static auto blur_resolve_factor = 2;
    constexpr static auto blur_buffer_factor = 4;
 
    void init_sampler_max_anisotropy() noexcept;
 
    void init_optional_format_types() noexcept;
+
+   void refresh_game_shader() noexcept;
 
    void post_process() noexcept;
 
@@ -391,7 +392,7 @@ private:
 
    std::function<HRESULT(IDirect3DSurface9*, const RECT*, IDirect3DSurface9*, const RECT*, D3DTEXTUREFILTERTYPE)>
       _stretch_rect_hook{};
-   std::function<void()> _on_ps_shader_set{};
+   std::function<void()> _on_shader_set{};
 
    glm::ivec2 _resolution;
 
@@ -421,9 +422,7 @@ private:
 
    boost::local_shared_ptr<Material> _material;
 
-   Shader_metadata _vs_metadata;
-   Com_ptr<IDirect3DVertexShader9> _game_vertex_shader;
-   Com_ptr<IDirect3DPixelShader9> _game_pixel_shader;
+   Shader_metadata _shader_metadata;
 
    User_config _config{"shader patch.yml"s};
 

@@ -1,78 +1,156 @@
 {
-  "rendertype": "interface",
-  "srgb_state": [ true, false, false, false ],
+  "group_name": "interface",
+  "source_name": "interface.fx",
 
-  "states": [
-    {
-      "name": "masked bitmap element",
-      "id": 0,
+  "entrypoints": {
+    "masked_bitmap_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "masked_bitmap_vs",
-          "pixel_shader": "masked_bitmap_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
     },
 
-    {
-      "name": "vector element",
-      "id": 1,
+    "vector_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "vector_vs",
-          "pixel_shader": "vector_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
     },
 
-    {
-      "name": "untextured bitmap element",
-      "id": 2,
+    "bitmap_untextured_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "bitmap_untextured_vs",
-          "pixel_shader": "bitmap_untextured_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
     },
 
-    {
-      "name": "textured bitmap element",
-      "id": 3,
+    "bitmap_textured_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "bitmap_textured_vs",
-          "pixel_shader": "bitmap_textured_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
+    },
+
+    "masked_bitmap_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
+    },
+
+    "vector_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
+    },
+
+    "bitmap_untextured_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
+    },
+
+    "bitmap_textured_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
     }
-  ]
+  },
+
+  "rendertypes": {
+    "interface": {}
+  },
+
+  "states": {
+    "masked bitmap element": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "masked_bitmap_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "masked_bitmap_ps"
+      }
+    },
+
+    "vector element": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "vector_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "vector_ps"
+      }
+    },
+
+    "untextured bitmap element": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "bitmap_untextured_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "bitmap_untextured_ps"
+      }
+    },
+
+    "textured bitmap element": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "bitmap_textured_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "bitmap_textured_ps"
+      }
+    }
+  }
 }

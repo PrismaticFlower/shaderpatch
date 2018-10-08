@@ -1,23 +1,46 @@
 {
-  "rendertype": "skyfog",
+  "group_name": "skyfog",
+  "source_name": "skyfog.fx",
 
-  "states": [
-    {
-      "name": "skyfog",
-      "id": 0,
+  "entrypoints": {
+    "skyfog_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "skyfog_vs",
-          "pixel_shader": "skyfog_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
+    },
+
+    "skyfog_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
     }
-  ]
+  },
+
+  "rendertypes": { "skyfog": {} },
+
+  "states": {
+    "skyfog": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "skyfog_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "skyfog_ps"
+      }
+    }
+  }
 }

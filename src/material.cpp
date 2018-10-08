@@ -49,12 +49,13 @@ auto resolve_constants(const Material_info& info,
 }
 
 Material::Material(const Material_info& info, Com_ref<IDirect3DDevice9> device,
-                   const Shader_database& shaders, const Texture_database& textures) noexcept
+                   const Shader_rendertype_collection& rendertypes,
+                   const Texture_database& textures) noexcept
    : _device{device},
      _overridden_rendertype{info.overridden_rendertype},
      _textures{resolve_textures(info, textures)},
      _constants{resolve_constants(info, _textures)},
-     _shader_group{shaders.at(info.rendertype)}
+     _rendertype{rendertypes.at(info.rendertype)}
 {
 }
 
@@ -76,15 +77,18 @@ void Material::bind() const noexcept
                                     _constants.data(), max_material_constants);
 }
 
-void Material::update(const std::string& state_name, const Shader_flags flags) const noexcept
+void Material::update(const std::string& shader_name,
+                      const Vertex_shader_flags vertex_flags,
+                      const Pixel_shader_flags pixel_flags) const noexcept
 {
-   if (const auto state = _shader_group.find(state_name); state) {
-      const auto& program = (*state)[flags];
-
-      program.bind(*_device);
+   if (const auto state = _rendertype.find(shader_name); state) {
+      state->bind(*_device, vertex_flags, pixel_flags);
    }
    else {
-      Shader_program{}.bind(*_device);
+      // TODO: Log attempt to use material on unsupported state here.
+
+      _device->SetVertexShader(nullptr);
+      _device->SetPixelShader(nullptr);
    }
 }
 }

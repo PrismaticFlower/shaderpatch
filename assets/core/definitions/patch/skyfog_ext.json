@@ -1,20 +1,46 @@
 {
-  "patch_shader": true,
+  "group_name": "skyfog ext",
   "source_name": "skyfog_ext.fx",
-  "rendertype": "skyfog ext",
 
-  "skinned": false,
-  "lighting": false,
-  "vertex_color": false,
-  "texture_coords": false,
-  "base_input": "none",
+  "entrypoints": {
+    "main_vs": {
+      "stage": "vertex",
 
-  "states": [
-    {
-      "name": "main",
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
+        }
+      }
+    },
 
-      "vertex_shader": "main_vs",
-      "pixel_shader": "main_ps"
+    "main_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
     }
-  ]
+  },
+
+  "rendertypes": { "skyfog ext": {} },
+
+  "states": {
+    "main": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      }
+    }
+  }
 }

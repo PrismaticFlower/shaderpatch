@@ -20,7 +20,8 @@ namespace sp {
 class Material {
 public:
    Material(const Material_info& info, Com_ref<IDirect3DDevice9> device,
-            const Shader_database& shaders, const Texture_database& textures) noexcept;
+            const Shader_rendertype_collection& rendertypes,
+            const Texture_database& textures) noexcept;
 
    Material(const Material&) = default;
    Material& operator=(const Material&) = default;
@@ -32,8 +33,8 @@ public:
 
    void bind() const noexcept;
 
-   void update(const std::string& entrypoint,
-               const Shader_flags flags = Shader_flags::none) const noexcept;
+   void update(const std::string& shader_name, const Vertex_shader_flags vertex_flags,
+               const Pixel_shader_flags pixel_flags) const noexcept;
 
    constexpr static auto material_textures_offset = 4;
    constexpr static auto max_material_textures = 8;
@@ -47,6 +48,6 @@ private:
    const std::array<Texture, max_material_textures> _textures;
    const std::array<float, max_material_constants * 4> _constants{};
 
-   const Shader_group _shader_group;
+   const Shader_rendertype& _rendertype;
 };
 }

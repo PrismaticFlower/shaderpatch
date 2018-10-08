@@ -22,9 +22,9 @@ const static float3 spotlight_positionWS =  light_constants[0].xyz;
 const static float spotlight_inv_radiuses_sq = light_constants[1].x;
 const static float3 spotlight_directionWS = light_constants[2].xyz;
 
-const static bool generate_texcoords = GENERATE_TEXCOORDS;
-const static bool generate_tangents = GENERATE_TANGENTS;
-const static uint light_count = LIGHT_COUNT;
+const static bool generate_texcoords = PERPIXEL_GENERATE_TEXCOORDS;
+const static bool generate_tangents = PERPIXEL_GENERATE_TANGENTS;
+const static uint light_count = PERPIXEL_LIGHT_COUNT;
 
 SamplerState linear_wrap_sampler;
 

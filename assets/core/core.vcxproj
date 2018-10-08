@@ -151,6 +151,30 @@
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Building core.lvl...</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Building core.lvl...</Message>
     </CustomBuild>
+    <None Include="declarations\bloom_stock.json" />
+    <None Include="declarations\decal.json" />
+    <None Include="declarations\filtercopy.json" />
+    <None Include="declarations\flare.json" />
+    <None Include="declarations\interface.json" />
+    <None Include="declarations\lightbeam.json" />
+    <None Include="declarations\normal.json" />
+    <None Include="declarations\normalmapadder.json" />
+    <None Include="declarations\normal_terrain.json" />
+    <None Include="declarations\ocean.json" />
+    <None Include="declarations\particle.json" />
+    <None Include="declarations\perpixeldiffuselighting.json" />
+    <None Include="declarations\prereflection.json" />
+    <None Include="declarations\rain.json" />
+    <None Include="declarations\refraction.json" />
+    <None Include="declarations\sample.json" />
+    <None Include="declarations\shadowquad.json" />
+    <None Include="declarations\shield.json" />
+    <None Include="declarations\skyfog.json" />
+    <None Include="declarations\specularlighting.json" />
+    <None Include="declarations\sprite.json" />
+    <None Include="declarations\stencilshadow.json" />
+    <None Include="declarations\water.json" />
+    <None Include="declarations\zprepass.json" />
     <None Include="definitions\decal.json" />
     <None Include="definitions\filtercopy.json" />
     <None Include="definitions\flare.json" />
@@ -164,15 +188,11 @@
     <None Include="definitions\patch\bloom.json" />
     <None Include="definitions\patch\damage_overlay.json" />
     <None Include="definitions\patch\late_effects_resolve.json" />
-    <None Include="definitions\patch\normal_ext-detail.json" />
-    <None Include="definitions\patch\normal_ext-specular-detail.json" />
-    <None Include="definitions\patch\normal_ext-specular.json" />
     <None Include="definitions\patch\normal_ext.json" />
     <None Include="definitions\patch\postprocess.json" />
     <None Include="definitions\patch\gaussian_blur.json" />
-    <None Include="definitions\patch\pbr-basic.json" />
-    <None Include="definitions\patch\pbr-emissive.json" />
     <None Include="definitions\patch\pbr.json" />
+    <None Include="definitions\patch\scene_blur_apply.json" />
     <None Include="definitions\patch\shadows_blur.json" />
     <None Include="definitions\patch\skyfog_ext.json" />
     <None Include="definitions\patch\stock_bloom_ext.json" />
@@ -355,6 +375,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\vertex_transformer.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\scene_blur_apply.fx">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

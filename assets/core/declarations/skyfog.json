@@ -1,0 +1,21 @@
+{
+  "rendertype": "skyfog",
+
+  "states": [
+    {
+      "id": 0,
+
+      "passes": [
+        {
+          "name": "skyfog",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        }
+      ]
+    }
+  ]
+}

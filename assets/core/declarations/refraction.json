@@ -1,0 +1,102 @@
+{
+  "rendertype": "refraction",
+  "srgb_state": [ false, false, true, true ],
+
+  "states": [
+    {
+      "id": 0,
+
+      "passes": [
+        {
+          "name": "far",
+
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 1,
+
+      "passes": [
+        {
+          "name": "nodistortion",
+
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 2,
+
+      "passes": [
+        {
+          "name": "near",
+
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 3,
+
+      "passes": [
+        {
+          "name": "near bump",
+
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 4,
+
+      "passes": [
+        {
+          "name": "near diffuse",
+
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 5,
+
+      "passes": [
+        {
+          "name": "near diffuse bump",
+
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    }
+  ]
+}

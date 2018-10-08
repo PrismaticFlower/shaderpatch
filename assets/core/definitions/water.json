@@ -1,269 +1,282 @@
 {
-  "rendertype": "water",
-  
-  "states": [
-    {
-      "name": "projective bumpmap with distorted reflection with specular",
-      "id": 0,
+  "group_name": "water",
+  "source_name": "water.fx",
 
-      "passes": [
-        {
+  "entrypoints": {
+    "discard_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "position",
-
-          "vertex_shader": "discard_vs",
-          "pixel_shader": "discard_ps"
-        },
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "normal_map_vs",
-          "pixel_shader": "normal_map_distorted_reflection_specular_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
     },
 
-    {
-      "name": "projective bumpmap with distorted reflection",
-      "id": 1,
+    "normal_map_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "position",
-
-          "vertex_shader": "discard_vs",
-          "pixel_shader": "discard_ps"
-        },
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "normal_map_vs",
-          "pixel_shader": "normal_map_distorted_reflection_ps"
+          "normal": true,
+          "tangents": false,
+          "color": false,
+          "texture_coords": true
         }
-      ]
+      }
     },
 
-    {
-      "name": "projective bumpmap without distortion with specular",
-      "id": 2,
+    "transmissive_pass_fade_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "position",
-
-          "vertex_shader": "discard_vs",
-          "pixel_shader": "discard_ps"
-        },
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "normal_map_vs",
-          "pixel_shader": "normal_map_distorted_reflection_specular_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
     },
 
-    {
-      "name": "normal map without distortion",
-      "id": 3,
+    "lowquality_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "position",
-
-          "vertex_shader": "discard_vs",
-          "pixel_shader": "discard_ps"
-        },
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "normal_map_vs",
-          "pixel_shader": "normal_map_distorted_reflection_ps"
+          "normal": true,
+          "tangents": false,
+          "color": false,
+          "texture_coords": true
         }
-      ]
+      }
     },
 
-    {
-      "name": "normal map with reflection with specular",
-      "id": 4,
+    "discard_ps": {
+      "stage": "pixel",
 
-      "passes": [
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "position",
-
-          "vertex_shader": "discard_vs",
-          "pixel_shader": "discard_ps"
-        },
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "normal_map_vs",
-          "pixel_shader": "normal_map_distorted_reflection_specular_ps"
-        }
-      ]
+      "pixel_state": {
+        "lighting": false
+      }
     },
 
-    {
-      "name": "normal map with reflection",
-      "id": 5,
+    "normal_map_distorted_reflection_ps": {
+      "stage": "pixel",
 
-      "passes": [
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "position",
-
-          "vertex_shader": "discard_vs",
-          "pixel_shader": "discard_ps"
-        },
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "normal_map_vs",
-          "pixel_shader": "normal_map_distorted_reflection_ps"
-        }
-      ]
+      "pixel_state": {
+        "lighting": false
+      }
     },
 
-    {
-      "name": "normal map without reflection with specular",
-      "id": 6,
+    "normal_map_distorted_reflection_specular_ps": {
+      "stage": "pixel",
 
-      "passes": [
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "position",
-
-          "vertex_shader": "transmissive_pass_fade_vs",
-          "pixel_shader": "transmissive_pass_fade_ps"
-        },
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "normal_map_vs",
-          "pixel_shader": "normal_map_specular_ps"
-        }
-      ]
+      "pixel_state": {
+        "lighting": false
+      }
     },
 
-    {
-      "name": "normal map without reflection",
-      "id": 7,
+    "normal_map_specular_ps": {
+      "stage": "pixel",
 
-      "passes": [
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "position",
-
-          "vertex_shader": "transmissive_pass_fade_vs",
-          "pixel_shader": "transmissive_pass_fade_ps"
-        },
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "normal_map_vs",
-          "pixel_shader": "normal_map_ps"
-        }
-      ]
+      "pixel_state": {
+        "lighting": false
+      }
     },
 
-    {
-      "name": "low quality with specular",
-      "id": 8,
+    "normal_map_ps": {
+      "stage": "pixel",
 
-      "srgb_state": [ true, true, false, false ],
-
-      "passes": [
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "lowquality_vs",
-          "pixel_shader": "lowquality_specular_ps"
-        }
-      ]
+      "pixel_state": {
+        "lighting": false
+      }
     },
 
-    {
-      "name": "low quality",
-      "id": 9,
+    "transmissive_pass_fade_ps": {
+      "stage": "pixel",
 
-      "srgb_state": [ true, true, false, false ],
+      "pixel_state": {
+        "lighting": false
+      }
+    },
 
-      "passes": [
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": true,
-          "base_input": "normals",
+    "lowquality_specular_ps": {
+      "stage": "pixel",
 
-          "vertex_shader": "lowquality_vs",
-          "pixel_shader": "lowquality_ps"
-        }
-      ]
+      "pixel_state": {
+        "lighting": false
+      }
+    },
+
+    "lowquality_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
     }
-  ]
+  },
+
+  "rendertypes": { "water": {} },
+
+  "states": {
+    "discard": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "discard_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "discard_ps"
+      }
+    },
+
+    "transmissive fade": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "transmissive_pass_fade_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "transmissive_pass_fade_ps"
+      }
+    },
+
+    "projective bumpmap with distorted reflection with specular": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normal_map_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normal_map_distorted_reflection_specular_ps"
+      }
+    },
+
+    "projective bumpmap with distorted reflection": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normal_map_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normal_map_distorted_reflection_ps"
+      }
+    },
+
+    "projective bumpmap without distortion with specular": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normal_map_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normal_map_distorted_reflection_specular_ps"
+      }
+    },
+
+    "normal map without distortion": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normal_map_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normal_map_distorted_reflection_ps"
+      }
+    },
+
+    "normal map with reflection with specular": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normal_map_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normal_map_distorted_reflection_specular_ps"
+      }
+    },
+
+    "normal map with reflection": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normal_map_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normal_map_distorted_reflection_ps"
+      }
+    },
+
+    "normal map without reflection with specular": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normal_map_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normal_map_specular_ps"
+      }
+    },
+
+    "normal map without reflection": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normal_map_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normal_map_ps"
+      }
+    },
+
+    "low quality with specular": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "lowquality_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "lowquality_specular_ps"
+      }
+    },
+
+    "low quality": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "lowquality_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "lowquality_ps"
+      }
+    }
+  }
 }

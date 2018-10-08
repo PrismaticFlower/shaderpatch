@@ -9,7 +9,7 @@ Damage_overlay::Damage_overlay(Com_ref<IDirect3DDevice9> device)
 {
 }
 
-void Damage_overlay::apply(const Shader_database& shaders, glm::vec4 color,
+void Damage_overlay::apply(const Shader_rendertype& rendertype, glm::vec4 color,
                            IDirect3DTexture9& from, IDirect3DSurface9& over) noexcept
 {
    setup_vetrex_stream();
@@ -21,7 +21,7 @@ void Damage_overlay::apply(const Shader_database& shaders, glm::vec4 color,
                                                       D3DCOLORWRITEENABLE_GREEN |
                                                       D3DCOLORWRITEENABLE_BLUE);
 
-   shaders.at("damage overlay"s).at("apply"s).bind(*_device);
+   rendertype.at("apply"s).bind(*_device);
 
    _device->SetTexture(0, &from);
    _device->SetRenderTarget(0, &over);

@@ -1,0 +1,37 @@
+{
+  "rendertype": "zprepass",
+
+  "states": [
+    {
+      "id": 0,
+
+      "passes": [
+        {
+          "name": "opaque",
+
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "position"
+        }
+      ]
+    },
+
+    {
+      "id": 1,
+
+      "passes": [
+        {
+          "name": "hardedged",
+
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "base_input": "position"
+        }
+      ]
+    }
+  ]
+}

@@ -1,27 +1,84 @@
 {
-  "patch_shader": true,
+  "group_name": "stock bloom ext",
   "source_name": "bloom_stock.fx",
-  "rendertype": "stock bloom ext",
 
-  "skinned": false,
-  "lighting": false,
-  "vertex_color": false,
-  "texture_coords": true,
-  "base_input": "none",
 
-  "states": [
-    {
-      "name": "screenspace",
+  "entrypoints": {
+    "screenspace_vs": {
+      "stage": "vertex",
 
-      "vertex_shader": "screenspace_vs",
-      "pixel_shader": "screenspace_ex_ps"
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": true
+        }
+      }
     },
 
-    {
-      "name": "bloomfilter",
+    "bloomfilter_vs": {
+      "stage": "vertex",
 
-      "vertex_shader": "bloomfilter_vs",
-      "pixel_shader": "bloomfilter_ex_ps"
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "screenspace_ex_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
+    },
+
+    "bloomfilter_ex_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
     }
-  ]
+  },
+
+
+  "rendertypes": { "stock bloom ext": {} },
+
+  "states": {
+    "screenspace": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "screenspace_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "screenspace_ex_ps"
+      }
+    },
+
+    "bloomfilter": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "bloomfilter_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "bloomfilter_ex_ps"
+      }
+    }
+  }
 }

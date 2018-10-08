@@ -1,58 +1,82 @@
 {
-  "rendertype": "Terrain2",
+  "group_name": "normal_terrain",
+  "source_name": "normal_terrain.fx",
 
-  "states": [
-    {
-      "name": "diffuse blendmap",
-      "id": 0,
+  "entrypoints": {
+    "diffuse_blendmap_vs": {
+      "stage": "vertex",
 
-      "srgb_state": [ true, true, true, false ],
-
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": false,
-          "lighting": true,
-          "vertex_color": true,
-          "texture_coords": false,
-          "base_input": "normals",
-
-          "vertex_shader": "diffuse_blendmap_vs",
-          "pixel_shader": "diffuse_blendmap_ps"
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": false
         }
-      ]
+      }
     },
 
-    {
-      "name": "diffuse blendmap with shadows and projected texture",
-      "id": 1,
+    "detailing_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": false,
-          "base_input": "normals",
-
-          "srgb_state": [ true, true, true, false ],
-
-          "vertex_shader": "diffuse_blendmap_vs",
-          "pixel_shader": "diffuse_blendmap_ps"
-        },
-
-        {
-          "skinned": true,
-          "lighting": true,
-          "vertex_color": true,
-          "texture_coords": false,
-          "base_input": "normals",
-
-          "srgb_state": [ false, false, true, false ],
-
-          "vertex_shader": "detailing_vs",
-          "pixel_shader": "detailing_ps"
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": false
         }
-      ]
+      }
+    },
+
+    "diffuse_blendmap_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": true
+      }
+    },
+
+    "detailing_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": true
+      }
     }
-  ]
+  },
+
+  "rendertypes": { "Terrain2": {} },
+
+  "states": {
+    "diffuse blendmap": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "diffuse_blendmap_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "diffuse_blendmap_ps"
+      }
+    },
+
+    "detailing": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "detailing_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "detailing_ps"
+      }
+    }
+  }
 }

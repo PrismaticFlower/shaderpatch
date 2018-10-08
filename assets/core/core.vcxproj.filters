@@ -157,16 +157,10 @@
     <None Include="src\constants_list.hlsl">
       <Filter>src</Filter>
     </None>
-    <None Include="definitions\patch\pbr-basic.json">
-      <Filter>definitions\patch</Filter>
-    </None>
     <None Include="src\pbr.fx">
       <Filter>src</Filter>
     </None>
     <None Include="definitions\patch\pbr.json">
-      <Filter>definitions\patch</Filter>
-    </None>
-    <None Include="definitions\patch\pbr-emissive.json">
       <Filter>definitions\patch</Filter>
     </None>
     <None Include="src\normal_lightmapped.fx">
@@ -226,17 +220,8 @@
     <None Include="src\shadows_blur.fx">
       <Filter>src</Filter>
     </None>
-    <None Include="definitions\patch\normal_ext-specular.json">
-      <Filter>definitions\patch</Filter>
-    </None>
     <None Include="src\normal_ext.fx">
       <Filter>src</Filter>
-    </None>
-    <None Include="definitions\patch\normal_ext-specular-detail.json">
-      <Filter>definitions\patch</Filter>
-    </None>
-    <None Include="definitions\patch\normal_ext-detail.json">
-      <Filter>definitions\patch</Filter>
     </None>
     <None Include="definitions\patch\skyfog_ext.json">
       <Filter>definitions\patch</Filter>
@@ -259,6 +244,84 @@
     <None Include="src\stencilshadow_transform_utilities.hlsl">
       <Filter>src</Filter>
     </None>
+    <None Include="declarations\normal.json">
+      <Filter>declarations</Filter>
+    </None>
+    <None Include="declarations\bloom_stock.json">
+      <Filter>declarations</Filter>
+    </None>
+    <None Include="declarations\decal.json">
+      <Filter>declarations</Filter>
+    </None>
+    <None Include="declarations\filtercopy.json">
+      <Filter>declarations</Filter>
+    </None>
+    <None Include="declarations\flare.json">
+      <Filter>declarations</Filter>
+    </None>
+    <None Include="declarations\interface.json">
+      <Filter>declarations</Filter>
+    </None>
+    <None Include="declarations\lightbeam.json">
+      <Filter>declarations</Filter>
+    </None>
+    <None Include="declarations\normal_terrain.json">
+      <Filter>declarations</Filter>
+    </None>
+    <None Include="declarations\ocean.json">
+      <Filter>declarations</Filter>
+    </None>
+    <None Include="declarations\particle.json">
+      <Filter>declarations</Filter>
+    </None>
+    <None Include="declarations\perpixeldiffuselighting.json">
+      <Filter>declarations</Filter>
+    </None>
+    <None Include="declarations\prereflection.json">
+      <Filter>declarations</Filter>
+    </None>
+    <None Include="declarations\rain.json">
+      <Filter>declarations</Filter>
+    </None>
+    <None Include="declarations\refraction.json">
+      <Filter>declarations</Filter>
+    </None>
+    <None Include="declarations\sample.json">
+      <Filter>declarations</Filter>
+    </None>
+    <None Include="declarations\shadowquad.json">
+      <Filter>declarations</Filter>
+    </None>
+    <None Include="declarations\shield.json">
+      <Filter>declarations</Filter>
+    </None>
+    <None Include="declarations\skyfog.json">
+      <Filter>declarations</Filter>
+    </None>
+    <None Include="declarations\specularlighting.json">
+      <Filter>declarations</Filter>
+    </None>
+    <None Include="declarations\sprite.json">
+      <Filter>declarations</Filter>
+    </None>
+    <None Include="declarations\stencilshadow.json">
+      <Filter>declarations</Filter>
+    </None>
+    <None Include="declarations\water.json">
+      <Filter>declarations</Filter>
+    </None>
+    <None Include="declarations\zprepass.json">
+      <Filter>declarations</Filter>
+    </None>
+    <None Include="definitions\patch\scene_blur_apply.json">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="src\scene_blur_apply.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="declarations\normalmapadder.json">
+      <Filter>declarations</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">
@@ -269,6 +332,9 @@
     </Filter>
     <Filter Include="definitions\patch">
       <UniqueIdentifier>{d3186a52-bf6a-47d1-90d2-ad874b6b82dd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="declarations">
+      <UniqueIdentifier>{2ae5cb42-618b-4f6e-a3b4-ba73d8aa3967}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

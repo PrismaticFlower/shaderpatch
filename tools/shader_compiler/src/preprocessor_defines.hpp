@@ -52,10 +52,26 @@ public:
       _defines[name] = std::move(definition);
    }
 
+   template<typename Defines>
+   void move_in_defines(Defines&& defines) noexcept
+   {
+      for (Shader_define& def : defines) {
+         _defines[std::move(def.name)] = std::move(def.definition);
+      }
+   }
+
    template<typename Undefines>
    void add_undefines(const Undefines& undefines) noexcept
    {
       _undefines.insert(std::cbegin(undefines), std::cend(undefines));
+   }
+
+   template<typename Undefines>
+   void move_in_undefines(Undefines&& undefines) noexcept
+   {
+      for (std::string& undef : undefines) {
+         _undefines.emplace(std::move(undef));
+      }
    }
 
    void combine_with(const Preprocessor_defines& other) noexcept
@@ -99,11 +115,11 @@ inline auto combine_defines(const Preprocessor_defines& left,
 inline void from_json(const nlohmann::json& j, Shader_define& define)
 {
    if (j.is_string()) {
-      define.name = j;
+      define.name = j.get<std::string>();
    }
    else {
-      define.name = j[0];
-      define.definition = j[1];
+      define.name = j[0].get<std::string>();
+      define.definition = j[1].get<std::string>();
    }
 }
 }

@@ -1,0 +1,21 @@
+{
+  "rendertype": "shadowquad",
+
+  "states": [
+    {
+      "id": 0,
+
+      "passes": [
+        {
+          "name": "shadowquad",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        }
+      ]
+    }
+  ]
+}

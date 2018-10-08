@@ -9,6 +9,7 @@
 
 namespace sp {
 
-auto load_shader(ucfb::Reader reader, IDirect3DDevice9& device)
-   -> std::pair<std::string, Shader_group>;
+void load_shader_pack(ucfb::Reader_strict<"shpk"_mn> reader,
+                      IDirect3DDevice9& device, Shader_database& database);
+
 }

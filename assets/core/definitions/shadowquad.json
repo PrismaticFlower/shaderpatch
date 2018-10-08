@@ -1,23 +1,46 @@
 {
-  "rendertype": "shadowquad",
+  "group_name": "shadowquad",
+  "source_name": "shadowquad.fx",
 
-  "states": [
-    {
-      "name": "shadowquad",
-      "id": 0,
+  "entrypoints": {
+    "shadowquad_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "shadowquad_vs",
-          "pixel_shader": "shadowquad_ps"
+          "normal": false,
+          "tangents": false,
+          "color": true,
+          "texture_coords": false
         }
-      ]
+      }
+    },
+
+    "shadowquad_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
     }
-  ]
+  },
+
+  "rendertypes": { "shadowquad": {} },
+
+  "states": {
+    "shadowquad": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "shadowquad_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "shadowquad_ps"
+      }
+    }
+  }
 }

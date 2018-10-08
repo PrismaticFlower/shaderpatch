@@ -1,60 +1,88 @@
 {
-  "rendertype": "decal",
-  "srgb_state": [ true, false, false, false ],
+  "group_name": "decal",
+  "source_name": "decal.fx",
 
-  "states": [
-    {
-      "name": "diffuse",
-      "id": 0,
+  "entrypoints": {
+    "decal_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "decal_vs",
-          "pixel_shader": "diffuse_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
     },
 
-    {
-      "name": "diffuse bump",
-      "id": 1,
+    "diffuse_ps": {
+      "stage": "pixel",
 
-      "passes": [
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "decal_vs",
-          "pixel_shader": "diffuse_bump_ps"
-        }
-      ]
+      "pixel_state": {
+        "lighting": false
+      }
     },
 
-    {
-      "name": "bump",
-      "id": 2,
+    "diffuse_bump_ps": {
+      "stage": "pixel",
 
-      "passes": [
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
+      "pixel_state": {
+        "lighting": false
+      }
+    },
 
-          "vertex_shader": "decal_vs",
-          "pixel_shader": "bump_ps"
-        }
-      ]
+    "bump_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
     }
-  ]
+  },
+
+  "rendertypes": {
+    "decal": {}
+  },
+
+  "states": {
+    "diffuse": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "decal_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "diffuse_ps"
+      }
+    },
+
+    "diffuse bump": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "decal_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "diffuse_bump_ps"
+      }
+    },
+
+    "bump": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "decal_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "bump_ps"
+      }
+    }
+  }
 }

@@ -1,41 +1,74 @@
 {
-  "rendertype": "prereflection",
+  "group_name": "prereflection",
+  "source_name": "prereflection.fx",
 
-  "states": [
-    {
-      "name": "prereflection",
-      "id": 0,
+  "entrypoints": {
+    "prereflection_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "position",
-
-          "vertex_shader": "prereflection_vs",
-          "pixel_shader": "prereflection_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
     },
 
-    {
-      "name": "prereflection fake stencil",
-      "id": 1,
+    "prereflection_fake_stencil_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "position",
-
-          "vertex_shader": "prereflection_fake_stencil_vs",
-          "pixel_shader": "prereflection_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
+    },
+
+    "prereflection_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
     }
-  ]
+  },
+
+  "rendertypes": { "prereflection": {} },
+
+  "states": {
+    "prereflection": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "prereflection_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "prereflection_ps"
+      }
+    },
+
+    "prereflection fake stencil": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "prereflection_fake_stencil_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "prereflection_ps"
+      }
+    }
+  }
 }

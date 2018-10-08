@@ -13,14 +13,14 @@ namespace sp::direct3d {
 template<typename Type>
 class Shader : public Type {
 public:
-   Shader(Com_ptr<Type> shader, Shader_metadata metadata) noexcept
-      : _interface{std::move(shader)}, metadata{metadata}
-   {
-   }
+   Shader(Shader_metadata metadata) noexcept : metadata{metadata} {}
 
-   HRESULT __stdcall QueryInterface(const IID& iid, void** object) noexcept override
+   HRESULT __stdcall QueryInterface(const IID&, void**) noexcept override
    {
-      return _interface->QueryInterface(iid, object);
+      log(Log_level::warning,
+          "Unimplemented function \"" __FUNCSIG__ "\" called.");
+
+      return E_NOTIMPL;
    }
 
    ULONG __stdcall AddRef() noexcept override
@@ -37,24 +37,20 @@ public:
       return ref_count;
    }
 
-   HRESULT __stdcall GetDevice(IDirect3DDevice9** device) noexcept override
+   HRESULT __stdcall GetDevice(IDirect3DDevice9**) noexcept override
    {
-      return _interface->GetDevice(device);
+      log(Log_level::warning,
+          "Unimplemented function \"" __FUNCSIG__ "\" called.");
+
+      return E_NOTIMPL;
    }
 
-   HRESULT __stdcall GetFunction(void* data, UINT* data_size) noexcept override
+   HRESULT __stdcall GetFunction(void*, UINT*) noexcept override
    {
-      return _interface->GetFunction(data, data_size);
-   }
+      log(Log_level::warning,
+          "Unimplemented function \"" __FUNCSIG__ "\" called.");
 
-   gsl::not_null<Type*> get() noexcept
-   {
-      return gsl::not_null<Type*>{_interface.get()};
-   }
-
-   gsl::not_null<const Type*> get() const noexcept
-   {
-      return gsl::not_null<const Type*>{_interface.get()};
+      return E_NOTIMPL;
    }
 
    const Shader_metadata metadata;
@@ -62,11 +58,46 @@ public:
 private:
    ~Shader() = default;
 
-   const Com_ptr<Type> _interface;
+   std::atomic<ULONG> _ref_count{1};
+};
+
+template<typename Type>
+class Null_shader : public Type {
+public:
+   HRESULT __stdcall QueryInterface(const IID&, void**) noexcept override
+   {
+      return E_NOINTERFACE;
+   }
+
+   ULONG __stdcall AddRef() noexcept override
+   {
+      return _ref_count += 1;
+   }
+
+   ULONG __stdcall Release() noexcept override
+   {
+      const auto ref_count = _ref_count -= 1;
+
+      if (ref_count == 0) delete this;
+
+      return ref_count;
+   }
+
+   HRESULT __stdcall GetDevice(IDirect3DDevice9**) noexcept override
+   {
+      return E_NOTIMPL;
+   }
+
+   HRESULT __stdcall GetFunction(void*, UINT*) noexcept override
+   {
+      return E_NOTIMPL;
+   }
+
+private:
+   ~Null_shader() = default;
 
    std::atomic<ULONG> _ref_count{1};
 };
 
 using Vertex_shader = Shader<IDirect3DVertexShader9>;
-using Pixel_shader = Shader<IDirect3DPixelShader9>;
 }

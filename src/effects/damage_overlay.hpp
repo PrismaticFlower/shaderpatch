@@ -14,7 +14,7 @@ class Damage_overlay {
 public:
    Damage_overlay(Com_ref<IDirect3DDevice9> device);
 
-   void apply(const Shader_database& shaders, glm::vec4 colour,
+   void apply(const Shader_rendertype& rendertype, glm::vec4 colour,
               IDirect3DTexture9& from, IDirect3DSurface9& over) noexcept;
 
    void drop_device_resources() noexcept;

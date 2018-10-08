@@ -1,0 +1,54 @@
+{
+  "rendertype": "decal",
+  "srgb_state": [ true, false, false, false ],
+
+  "states": [
+    {
+      "id": 0,
+
+      "passes": [
+        {
+          "name": "diffuse",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        }
+      ]
+    },
+
+    {
+      "id": 1,
+
+      "passes": [
+        {
+          "name": "diffuse bump",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        }
+      ]
+    },
+
+    {
+      "id": 2,
+
+      "passes": [
+        {
+          "name": "bump",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        }
+      ]
+    }
+  ]
+}

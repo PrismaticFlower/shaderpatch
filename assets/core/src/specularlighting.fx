@@ -6,7 +6,7 @@
 #include "lighting_utilities.hlsl"
 
 static const float specular_exponent = 64.0;
-const static uint light_count = LIGHT_COUNT;
+const static uint light_count = SPECULAR_LIGHT_COUNT;
 
 float4 x_texcoords_transform : register(vs, c[CUSTOM_CONST_MIN]);
 float4 y_texcoords_transform : register(vs, c[CUSTOM_CONST_MIN + 1]);

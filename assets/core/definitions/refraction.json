@@ -1,114 +1,170 @@
 {
-  "rendertype": "refraction",
-  "srgb_state": [ false, false, true, true ],
+  "group_name": "refraction",
+  "source_name": "refraction.fx",
 
-  "states": [
-    {
-      "name": "far",
-      "id": 0,
+  "entrypoints": {
+    "far_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": true,
-          "lighting": true,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "far_vs",
-          "pixel_shader": "nodistortion_ps"
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
         }
-      ]
+      }
     },
 
-    {
-      "name": "nodistortion",
-      "id": 1,
+    "nodistortion_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": true,
-          "lighting": true,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "nodistortion_vs",
-          "pixel_shader": "nodistortion_ps"
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
         }
-      ]
+      }
     },
 
-    {
-      "name": "near",
-      "id": 2,
+    "distortion_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": true,
-          "lighting": true,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "distortion_vs",
-          "pixel_shader": "near_ps"
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
         }
-      ]
+      }
     },
 
-    {
-      "name": "near bump",
-      "id": 3,
+    "nodistortion_ps": {
+      "stage": "pixel",
 
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": true,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "distortion_vs",
-          "pixel_shader": "near_bump_ps"
-        }
-      ]
+      "pixel_state": {
+        "lighting": true
+      }
     },
 
-    {
-      "name": "near diffuse",
-      "id": 4,
+    "near_ps": {
+      "stage": "pixel",
 
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": true,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "distortion_vs",
-          "pixel_shader": "near_diffuse_ps"
-        }
-      ]
+      "pixel_state": {
+        "lighting": true
+      }
     },
 
-    {
-      "name": "near diffuse bump",
-      "id": 5,
+    "near_bump_ps": {
+      "stage": "pixel",
 
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": true,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
+      "pixel_state": {
+        "lighting": true
+      }
+    },
 
-          "vertex_shader": "distortion_vs",
-          "pixel_shader": "near_diffuse_bump_ps"
-        }
-      ]
+    "near_diffuse_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": true
+      }
+    },
+
+    "near_diffuse_bump_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": true
+      }
     }
-  ]
+  },
+
+  "rendertypes": { "refraction": {} },
+
+  "states": {
+    "far": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "far_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "nodistortion_ps"
+      }
+    },
+
+    "nodistortion": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "nodistortion_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "nodistortion_ps"
+      }
+    },
+
+    "near": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "distortion_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "near_ps"
+      }
+    },
+
+    "near bump": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "distortion_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "near_bump_ps"
+      }
+    },
+
+    "near diffuse": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "distortion_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "near_diffuse_ps"
+      }
+    },
+
+    "near diffuse bump": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "distortion_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "near_diffuse_bump_ps"
+      }
+    }
+  }
 }

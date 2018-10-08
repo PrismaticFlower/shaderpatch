@@ -1,125 +1,180 @@
 {
-  "rendertype": "filtercopy",
+  "group_name": "filtercopy",
+  "source_name": "filtercopy.fx",
 
-  "states": [
-    {
-      "name": "filtercopy four textures",
-      "id": 0,
+  "entrypoints": {
+    "filtercopy_4tex_vs": {
+      "stage": "vertex",
+      "function_name": "filtercopy_vs",
 
-      "passes": [
-        {
+      "defines": [ [ "TEXTURE_COUNT", "4" ] ],
+
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "defines": [ [ "TEXTURE_COUNT", "4" ] ],
-
-          "vertex_shader": "filtercopy_vs",
-          "pixel_shader": "filtercopy_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
     },
 
-    {
-      "name": "filtercopy one texture",
-      "id": 1,
+    "filtercopy_3tex_vs": {
+      "stage": "vertex",
+      "function_name": "filtercopy_vs",
 
-      "passes": [
-        {
+      "defines": [ [ "TEXTURE_COUNT", "3" ] ],
+
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "defines": [ [ "TEXTURE_COUNT", "4" ] ],
-
-          "vertex_shader": "filtercopy_vs",
-          "pixel_shader": "filtercopy_ps"
-        },
-
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "defines": [ [ "TEXTURE_COUNT", "1" ] ],
-
-          "vertex_shader": "filtercopy_vs",
-          "pixel_shader": "filtercopy_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
     },
 
-    {
-      "name": "filtercopy two textures",
-      "id": 2,
+    "filtercopy_2tex_vs": {
+      "stage": "vertex",
+      "function_name": "filtercopy_vs",
 
-      "passes": [
-        {
+      "defines": [ [ "TEXTURE_COUNT", "2" ] ],
+
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "defines": [ [ "TEXTURE_COUNT", "4" ] ],
-
-          "vertex_shader": "filtercopy_vs",
-          "pixel_shader": "filtercopy_ps"
-        },
-
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "defines": [ [ "TEXTURE_COUNT", "2" ] ],
-
-          "vertex_shader": "filtercopy_vs",
-          "pixel_shader": "filtercopy_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
     },
 
-    {
-      "name": "filtercopy three textures",
-      "id": 3,
+    "filtercopy_1tex_vs": {
+      "stage": "vertex",
+      "function_name": "filtercopy_vs",
 
-      "passes": [
-        {
+      "defines": [ [ "TEXTURE_COUNT", "1" ] ],
+
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "defines": [ [ "TEXTURE_COUNT", "4" ] ],
-
-          "vertex_shader": "filtercopy_vs",
-          "pixel_shader": "filtercopy_ps"
-        },
-
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "defines": [ [ "TEXTURE_COUNT", "3" ] ],
-
-          "vertex_shader": "filtercopy_vs",
-          "pixel_shader": "filtercopy_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
+    },
+
+    "filtercopy_4tex_ps": {
+      "stage": "pixel",
+      "function_name": "filtercopy_ps",
+
+      "defines": [ [ "TEXTURE_COUNT", "4" ] ],
+
+      "pixel_state": {
+        "lighting": false
+      }
+    },
+
+    "filtercopy_3tex_ps": {
+      "stage": "pixel",
+      "function_name": "filtercopy_ps",
+
+      "defines": [ [ "TEXTURE_COUNT", "3" ] ],
+
+      "pixel_state": {
+        "lighting": false
+      }
+    },
+
+    "filtercopy_2tex_ps": {
+      "stage": "pixel",
+      "function_name": "filtercopy_ps",
+
+      "defines": [ [ "TEXTURE_COUNT", "2" ] ],
+
+      "pixel_state": {
+        "lighting": false
+      }
+    },
+
+    "filtercopy_1tex_ps": {
+      "stage": "pixel",
+      "function_name": "filtercopy_ps",
+
+      "defines": [ [ "TEXTURE_COUNT", "1" ] ],
+
+      "pixel_state": {
+        "lighting": false
+      }
     }
+  },
 
-  ]
+  "rendertypes": {
+    "filtercopy": {}
+  },
+
+  "states": {
+    "filtercopy four textures": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "filtercopy_4tex_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "filtercopy_4tex_ps"
+      }
+    },
+
+    "filtercopy three textures": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "filtercopy_3tex_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "filtercopy_3tex_ps"
+      }
+    },
+
+    "filtercopy two textures": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "filtercopy_2tex_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "filtercopy_2tex_ps"
+      }
+    },
+
+    "filtercopy one texture": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "filtercopy_1tex_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "filtercopy_1tex_ps"
+      }
+    }
+  }
 }

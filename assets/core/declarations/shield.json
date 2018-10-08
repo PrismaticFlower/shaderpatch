@@ -1,0 +1,22 @@
+{
+  "rendertype": "shield",
+  "srgb_state": [ true, false, false, false ],
+
+  "states": [
+    {
+      "id": 0,
+
+      "passes": [
+        {
+          "name": "shield",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    }
+  ]
+}

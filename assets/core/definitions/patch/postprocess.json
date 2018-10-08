@@ -1,337 +1,646 @@
 {
-  "patch_shader": true,
+  "group_name": "postprocess",
   "source_name": "postprocess.fx",
-  "rendertype": "postprocess",
 
-  "skinned": false,
-  "lighting": false,
-  "vertex_color": false,
-  "texture_coords": false,
-  "base_input": "none",
+  "entrypoints": {
+    "main_vs": {
+      "stage": "vertex",
 
-  "defines": [
-    [ "BLOOM_ACTIVE", "false" ],
-    [ "BLOOM_USE_DIRT", "false" ],
-    [ "STOCK_HDR_STATE", "false" ],
-    [ "VIGNETTE_ACTIVE", "false" ],
-    [ "FILM_GRAIN_ACTIVE", "false" ],
-    [ "FILM_GRAIN_COLORED", "false" ]
-  ],
-
-  "states": [
-    {
-      "name": "colorgrade",
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_ps"
-    },
-
-    {
-      "name": "vignette colorgrade",
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
+        }
+      },
 
       "defines": [
-        [ "VIGNETTE_ACTIVE", "true" ]
+        [ "BLOOM_ACTIVE", "false" ],
+        [ "BLOOM_USE_DIRT", "false" ],
+        [ "STOCK_HDR_STATE", "false" ],
+        [ "VIGNETTE_ACTIVE", "false" ],
+        [ "FILM_GRAIN_ACTIVE", "false" ],
+        [ "FILM_GRAIN_COLORED", "false" ]
+      ]
+    },
+
+    "postprocess_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      },
+
+      "static_flags": [
+        "BLOOM_ACTIVE",
+        "BLOOM_USE_DIRT",
+        "STOCK_HDR_STATE",
+        "VIGNETTE_ACTIVE"
       ],
 
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_ps"
+      "defines": [
+        [ "FILM_GRAIN_ACTIVE", "false" ],
+        [ "FILM_GRAIN_COLORED", "false" ]
+      ]
     },
 
-    {
-      "name": "bloom colorgrade",
+    "postprocess_finalize_ps": {
+      "stage": "pixel",
 
-      "defines": [
-        [ "BLOOM_ACTIVE", "true" ]
+      "pixel_state": {
+        "lighting": false
+      },
+
+      "static_flags": [
+        "FILM_GRAIN_ACTIVE",
+        "FILM_GRAIN_COLORED"
       ],
 
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_ps"
+      "defines": [
+        [ "BLOOM_ACTIVE", "false" ],
+        [ "BLOOM_USE_DIRT", "false" ],
+        [ "STOCK_HDR_STATE", "false" ],
+        [ "VIGNETTE_ACTIVE", "false" ]
+      ]
     },
 
-    {
-      "name": "bloom dirt colorgrade",
+    "postprocess_finalize_aa_fastest_ps": {
+      "stage": "pixel",
+      "function_name": "postprocess_finalize_ps",
 
-      "defines": [
-        [ "BLOOM_ACTIVE", "true" ],
-        [ "BLOOM_USE_DIRT", "true" ]
+      "pixel_state": {
+        "lighting": false
+      },
+
+      "static_flags": [
+        "FILM_GRAIN_ACTIVE",
+        "FILM_GRAIN_COLORED"
       ],
 
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_ps"
-    },
-
-    {
-      "name": "bloom vignette colorgrade",
-
       "defines": [
-        [ "BLOOM_ACTIVE", "true" ],
-        [ "VIGNETTE_ACTIVE", "true" ]
-      ],
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_ps"
-    },
-
-    {
-      "name": "bloom dirt vignette colorgrade",
-
-      "defines": [
-        [ "BLOOM_ACTIVE", "true" ],
-        [ "BLOOM_USE_DIRT", "true" ],
-        [ "VIGNETTE_ACTIVE", "true" ]
-      ],
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_ps"
-    },
-
-    {
-      "name": "colorgrade stock hdr",
-
-      "defines": [
-        [ "STOCK_HDR_STATE", "true" ]
-      ],
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_ps"
-    },
-
-    {
-      "name": "vignette colorgrade stock hdr",
-
-      "defines": [
-        [ "STOCK_HDR_STATE", "true" ],
-        [ "VIGNETTE_ACTIVE", "true" ]
-      ],
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_ps"
-    },
-
-    {
-      "name": "bloom colorgrade stock hdr",
-
-      "defines": [
-        [ "BLOOM_ACTIVE", "true" ],
-        [ "STOCK_HDR_STATE", "true" ]
-      ],
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_ps"
-    },
-
-    {
-      "name": "bloom dirt colorgrade stock hdr",
-
-      "defines": [
-        [ "BLOOM_ACTIVE", "true" ],
-        [ "BLOOM_USE_DIRT", "true" ],
-        [ "STOCK_HDR_STATE", "true" ]
-      ],
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_ps"
-    },
-
-    {
-      "name": "bloom vignette colorgrade stock hdr",
-
-      "defines": [
-        [ "BLOOM_ACTIVE", "true" ],
-        [ "STOCK_HDR_STATE", "true" ],
-        [ "VIGNETTE_ACTIVE", "true" ]
-      ],
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_ps"
-    },
-
-    {
-      "name": "bloom dirt vignette colorgrade stock hdr",
-
-      "defines": [
-        [ "BLOOM_ACTIVE", "true" ],
-        [ "BLOOM_USE_DIRT", "true" ],
-        [ "STOCK_HDR_STATE", "true" ],
-        [ "VIGNETTE_ACTIVE", "true" ]
-      ],
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_ps"
-    },
-
-    {
-      "name": "finalize none",
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_finalize_ps"
-    },
-
-    {
-      "name": "finalize fastest",
-
-      "defines": [
+        [ "BLOOM_ACTIVE", "false" ],
+        [ "BLOOM_USE_DIRT", "false" ],
+        [ "STOCK_HDR_STATE", "false" ],
+        [ "VIGNETTE_ACTIVE", "false" ],
         [ "AA_FASTEST", "1" ]
-      ],
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_finalize_ps"
+      ]
     },
 
-    {
-      "name": "finalize fast",
+    "postprocess_finalize_aa_fast_ps": {
+      "stage": "pixel",
+      "function_name": "postprocess_finalize_ps",
+
+      "pixel_state": {
+        "lighting": false
+      },
+
+      "static_flags": [
+        "FILM_GRAIN_ACTIVE",
+        "FILM_GRAIN_COLORED"
+      ],
 
       "defines": [
+        [ "BLOOM_ACTIVE", "false" ],
+        [ "BLOOM_USE_DIRT", "false" ],
+        [ "STOCK_HDR_STATE", "false" ],
+        [ "VIGNETTE_ACTIVE", "false" ],
         [ "AA_FAST", "1" ]
-      ],
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_finalize_ps"
+      ]
     },
 
-    {
-      "name": "finalize slower",
+    "postprocess_finalize_aa_slower_ps": {
+      "stage": "pixel",
+      "function_name": "postprocess_finalize_ps",
+
+      "pixel_state": {
+        "lighting": false
+      },
+
+      "static_flags": [
+        "FILM_GRAIN_ACTIVE",
+        "FILM_GRAIN_COLORED"
+      ],
 
       "defines": [
+        [ "BLOOM_ACTIVE", "false" ],
+        [ "BLOOM_USE_DIRT", "false" ],
+        [ "STOCK_HDR_STATE", "false" ],
+        [ "VIGNETTE_ACTIVE", "false" ],
         [ "AA_SLOWER", "1" ]
-      ],
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_finalize_ps"
+      ]
     },
 
-    {
-      "name": "finalize slowest",
+    "postprocess_finalize_aa_slowest_ps": {
+      "stage": "pixel",
+      "function_name": "postprocess_finalize_ps",
+
+      "pixel_state": {
+        "lighting": false
+      },
+
+      "static_flags": [
+        "FILM_GRAIN_ACTIVE",
+        "FILM_GRAIN_COLORED"
+      ],
 
       "defines": [
+        [ "BLOOM_ACTIVE", "false" ],
+        [ "BLOOM_USE_DIRT", "false" ],
+        [ "STOCK_HDR_STATE", "false" ],
+        [ "VIGNETTE_ACTIVE", "false" ],
         [ "AA_SLOWEST", "1" ]
-      ],
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_finalize_ps"
-    },
-
-    {
-      "name": "finalize none film grain",
-
-      "defines": [
-        [ "FILM_GRAIN_ACTIVE", "true" ]
-      ],
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_finalize_ps"
-    },
-
-    {
-      "name": "finalize fastest film grain",
-
-      "defines": [
-        [ "AA_FASTEST", "1" ],
-        [ "FILM_GRAIN_ACTIVE", "true" ]
-      ],
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_finalize_ps"
-    },
-
-    {
-      "name": "finalize fast film grain",
-
-      "defines": [
-        [ "AA_FAST", "1" ],
-        [ "FILM_GRAIN_ACTIVE", "true" ]
-      ],
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_finalize_ps"
-    },
-
-    {
-      "name": "finalize slower film grain",
-
-      "defines": [
-        [ "AA_SLOWER", "1" ],
-        [ "FILM_GRAIN_ACTIVE", "true" ]
-      ],
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_finalize_ps"
-    },
-
-    {
-      "name": "finalize slowest film grain",
-
-      "defines": [
-        [ "AA_SLOWEST", "1" ],
-        [ "FILM_GRAIN_ACTIVE", "true" ]
-      ],
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_finalize_ps"
-    },
-
-    {
-      "name": "finalize none film grain colored",
-
-      "defines": [
-        [ "FILM_GRAIN_ACTIVE", "true" ],
-        [ "FILM_GRAIN_COLORED", "true" ]
-      ],
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_finalize_ps"
-    },
-
-    {
-      "name": "finalize fastest film grain colored",
-
-      "defines": [
-        [ "AA_FASTEST", "1" ],
-        [ "FILM_GRAIN_ACTIVE", "true" ],
-        [ "FILM_GRAIN_COLORED", "true" ]
-      ],
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_finalize_ps"
-    },
-
-    {
-      "name": "finalize fast film grain colored",
-
-      "defines": [
-        [ "AA_FAST", "1" ],
-        [ "FILM_GRAIN_ACTIVE", "true" ],
-        [ "FILM_GRAIN_COLORED", "true" ]
-      ],
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_finalize_ps"
-    },
-
-    {
-      "name": "finalize slower film grain colored",
-
-      "defines": [
-        [ "AA_SLOWER", "1" ],
-        [ "FILM_GRAIN_ACTIVE", "true" ],
-        [ "FILM_GRAIN_COLORED", "true" ]
-      ],
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_finalize_ps"
-    },
-
-    {
-      "name": "finalize slowest film grain colored",
-
-      "defines": [
-        [ "AA_SLOWEST", "1" ],
-        [ "FILM_GRAIN_ACTIVE", "true" ],
-        [ "FILM_GRAIN_COLORED", "true" ]
-      ],
-
-      "vertex_shader": "main_vs",
-      "pixel_shader": "postprocess_finalize_ps"
+      ]
     }
-  ]
+  },
+
+  "rendertypes": { "postprocess": {} },
+
+  "states": {
+    "colorgrade": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_ps",
+
+        "static_flags": {
+          "BLOOM_ACTIVE": false,
+          "BLOOM_USE_DIRT": false,
+          "STOCK_HDR_STATE": false,
+          "VIGNETTE_ACTIVE": false
+        }
+      }
+    },
+
+    "vignette colorgrade": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_ps",
+
+        "static_flags": {
+          "BLOOM_ACTIVE": false,
+          "BLOOM_USE_DIRT": false,
+          "STOCK_HDR_STATE": false,
+          "VIGNETTE_ACTIVE": true
+        }
+      }
+    },
+
+    "bloom colorgrade": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_ps",
+
+        "static_flags": {
+          "BLOOM_ACTIVE": true,
+          "BLOOM_USE_DIRT": false,
+          "STOCK_HDR_STATE": false,
+          "VIGNETTE_ACTIVE": false
+        }
+      }
+    },
+
+    "bloom dirt colorgrade": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_ps",
+
+        "static_flags": {
+          "BLOOM_ACTIVE": true,
+          "BLOOM_USE_DIRT": true,
+          "STOCK_HDR_STATE": false,
+          "VIGNETTE_ACTIVE": false
+        }
+      }
+    },
+
+    "bloom vignette colorgrade": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_ps",
+
+        "static_flags": {
+          "BLOOM_ACTIVE": true,
+          "BLOOM_USE_DIRT": false,
+          "STOCK_HDR_STATE": false,
+          "VIGNETTE_ACTIVE": true
+        }
+      }
+    },
+
+    "bloom dirt vignette colorgrade": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_ps",
+
+        "static_flags": {
+          "BLOOM_ACTIVE": true,
+          "BLOOM_USE_DIRT": true,
+          "STOCK_HDR_STATE": false,
+          "VIGNETTE_ACTIVE": true
+        }
+      }
+    },
+
+    "colorgrade stock hdr": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_ps",
+
+        "static_flags": {
+          "BLOOM_ACTIVE": false,
+          "BLOOM_USE_DIRT": false,
+          "STOCK_HDR_STATE": true,
+          "VIGNETTE_ACTIVE": false
+        }
+      }
+    },
+
+    "vignette colorgrade stock hdr": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_ps",
+
+        "static_flags": {
+          "BLOOM_ACTIVE": false,
+          "BLOOM_USE_DIRT": false,
+          "STOCK_HDR_STATE": true,
+          "VIGNETTE_ACTIVE": true
+        }
+      }
+    },
+
+    "bloom colorgrade stock hdr": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_ps",
+
+        "static_flags": {
+          "BLOOM_ACTIVE": true,
+          "BLOOM_USE_DIRT": false,
+          "STOCK_HDR_STATE": true,
+          "VIGNETTE_ACTIVE": false
+        }
+      }
+    },
+
+    "bloom dirt colorgrade stock hdr": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_ps",
+
+        "static_flags": {
+          "BLOOM_ACTIVE": true,
+          "BLOOM_USE_DIRT": true,
+          "STOCK_HDR_STATE": true,
+          "VIGNETTE_ACTIVE": false
+        }
+      }
+    },
+
+    "bloom vignette colorgrade stock hdr": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_ps",
+
+        "static_flags": {
+          "BLOOM_ACTIVE": true,
+          "BLOOM_USE_DIRT": false,
+          "STOCK_HDR_STATE": true,
+          "VIGNETTE_ACTIVE": true
+        }
+      }
+    },
+
+    "bloom dirt vignette colorgrade stock hdr": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_ps",
+
+        "static_flags": {
+          "BLOOM_ACTIVE": true,
+          "BLOOM_USE_DIRT": true,
+          "STOCK_HDR_STATE": true,
+          "VIGNETTE_ACTIVE": true
+        }
+      }
+    },
+
+    "finalize none": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_finalize_ps",
+
+        "static_flags": {
+          "FILM_GRAIN_ACTIVE": false,
+          "FILM_GRAIN_COLORED": false
+        }
+      }
+    },
+
+    "finalize none film grain": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_finalize_ps",
+
+        "static_flags": {
+          "FILM_GRAIN_ACTIVE": true,
+          "FILM_GRAIN_COLORED": false
+        }
+      }
+    },
+
+    "finalize none film grain colored": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_finalize_ps",
+
+        "static_flags": {
+          "FILM_GRAIN_ACTIVE": true,
+          "FILM_GRAIN_COLORED": true
+        }
+      }
+    },
+
+    "finalize fastest": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_finalize_aa_fastest_ps",
+
+        "static_flags": {
+          "FILM_GRAIN_ACTIVE": false,
+          "FILM_GRAIN_COLORED": false
+        }
+      }
+    },
+
+    "finalize fastest film grain": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_finalize_aa_fastest_ps",
+
+        "static_flags": {
+          "FILM_GRAIN_ACTIVE": true,
+          "FILM_GRAIN_COLORED": false
+        }
+      }
+    },
+
+    "finalize fastest film grain colored": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_finalize_aa_fastest_ps",
+
+        "static_flags": {
+          "FILM_GRAIN_ACTIVE": true,
+          "FILM_GRAIN_COLORED": true
+        }
+      }
+    },
+
+    "finalize fast": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_finalize_aa_fast_ps",
+
+        "static_flags": {
+          "FILM_GRAIN_ACTIVE": false,
+          "FILM_GRAIN_COLORED": false
+        }
+      }
+    },
+
+    "finalize fast film grain": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_finalize_aa_fast_ps",
+
+        "static_flags": {
+          "FILM_GRAIN_ACTIVE": true,
+          "FILM_GRAIN_COLORED": false
+        }
+      }
+    },
+
+    "finalize fast film grain colored": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_finalize_aa_fast_ps",
+
+        "static_flags": {
+          "FILM_GRAIN_ACTIVE": true,
+          "FILM_GRAIN_COLORED": true
+        }
+      }
+    },
+
+    "finalize slower": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_finalize_aa_slower_ps",
+
+        "static_flags": {
+          "FILM_GRAIN_ACTIVE": false,
+          "FILM_GRAIN_COLORED": false
+        }
+      }
+    },
+
+    "finalize slower film grain": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_finalize_aa_slower_ps",
+
+        "static_flags": {
+          "FILM_GRAIN_ACTIVE": true,
+          "FILM_GRAIN_COLORED": false
+        }
+      }
+    },
+
+    "finalize slower film grain colored": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_finalize_aa_slower_ps",
+
+        "static_flags": {
+          "FILM_GRAIN_ACTIVE": true,
+          "FILM_GRAIN_COLORED": true
+        }
+      }
+    },
+
+    "finalize slowest": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_finalize_aa_slowest_ps",
+
+        "static_flags": {
+          "FILM_GRAIN_ACTIVE": false,
+          "FILM_GRAIN_COLORED": false
+        }
+      }
+    },
+
+    "finalize slowest film grain": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_finalize_aa_slowest_ps",
+
+        "static_flags": {
+          "FILM_GRAIN_ACTIVE": true,
+          "FILM_GRAIN_COLORED": false
+        }
+      }
+    },
+
+    "finalize slowest film grain colored": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "postprocess_finalize_aa_slowest_ps",
+
+        "static_flags": {
+          "FILM_GRAIN_ACTIVE": true,
+          "FILM_GRAIN_COLORED": true
+        }
+      }
+    }
+  }
 }

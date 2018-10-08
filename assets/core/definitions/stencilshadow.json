@@ -1,349 +1,326 @@
 {
-  "rendertype": "stencilshadow",
+  "group_name": "stencilshadow",
+  "source_name": "stencilshadow.fx",
 
-  "states": [
-    {
-      "name": "cpu pre-extended",
-      "id": 0,
+  "entrypoints": {
+    "preextended_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "preextended_vs",
-          "pixel_shader": "shadow_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
     },
 
-    {
-      "name": "extend directional unskinned",
-      "id": 1,
+    "extend_directional_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "extend_directional_vs",
-          "pixel_shader": "shadow_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
     },
 
-    {
-      "name": "extend directional hard skinned",
-      "id": 2,
+    "extend_directional_hardskin_facenormal_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "extend_directional_hardskin_facenormal_vs",
-          "pixel_shader": "shadow_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
     },
 
-    {
-      "name": "extend directional hard skinned generate normal",
-      "id": 3,
+    "extend_directional_hardskin_gen_normal_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "extend_directional_hardskin_gen_normal_vs",
-          "pixel_shader": "shadow_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
     },
 
-    {
-      "name": "extend directional soft skinned",
-      "id": 4,
+    "extend_directional_softskin_facenormal_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "extend_directional_softskin_facenormal_vs",
-          "pixel_shader": "shadow_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
     },
 
-    {
-      "name": "extend directional soft skinned generate normal",
-      "id": 5,
+    "extend_directional_softskin_gen_normal_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "extend_directional_softskin_gen_normal_vs",
-          "pixel_shader": "shadow_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
     },
 
-    {
-      "name": "extend point unskinned",
-      "id": 6,
+    "extend_point_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "extend_point_vs",
-          "pixel_shader": "shadow_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
     },
 
-    {
-      "name": "extend point hard skinned",
-      "id": 7,
+    "extend_point_hardskin_facenormal_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "extend_point_hardskin_facenormal_vs",
-          "pixel_shader": "shadow_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
     },
 
-    {
-      "name": "extend point hard skinned generate normal",
-      "id": 8,
+    "extend_point_hardskin_gen_normal_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "extend_point_hardskin_gen_normal_vs",
-          "pixel_shader": "shadow_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
     },
 
-    {
-      "name": "extend point soft skinned",
-      "id": 9,
+    "extend_point_softskin_facenormal_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "extend_point_softskin_facenormal_vs",
-          "pixel_shader": "shadow_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
     },
 
-    {
-      "name": "extend point soft skinned generate normal",
-      "id": 10,
+    "extend_point_softskin_gen_normal_vs": {
+      "stage": "vertex",
 
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
           "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "extend_point_softskin_gen_normal_vs",
-          "pixel_shader": "shadow_ps"
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
         }
-      ]
+      }
     },
 
-    {
-      "name": "extend directional + point unskinned",
-      "id": 11,
+    "shadow_ps": {
+      "stage": "pixel",
 
-      "passes": [
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "extend_directional_vs",
-          "pixel_shader": "shadow_ps"
-        },
-
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "extend_point_vs",
-          "pixel_shader": "shadow_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "extend directional + point hard skinned",
-      "id": 12,
-
-      "passes": [
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "extend_directional_hardskin_facenormal_vs",
-          "pixel_shader": "shadow_ps"
-        },
-
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "extend_point_hardskin_facenormal_vs",
-          "pixel_shader": "shadow_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "extend directional + point hard skinned generate normal",
-      "id": 13,
-
-      "passes": [
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "extend_directional_hardskin_gen_normal_vs",
-          "pixel_shader": "shadow_ps"
-        },
-
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "extend_point_hardskin_gen_normal_vs",
-          "pixel_shader": "shadow_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "extend directional + point soft skinned",
-      "id": 14,
-
-      "passes": [
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "extend_directional_softskin_facenormal_vs",
-          "pixel_shader": "shadow_ps"
-        },
-
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "extend_point_softskin_facenormal_vs",
-          "pixel_shader": "shadow_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "extend directional + point soft skinned generate normal",
-      "id": 15,
-
-      "passes": [
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "extend_directional_softskin_gen_normal_vs",
-          "pixel_shader": "shadow_ps"
-        },
-
-        {
-          "skinned": false,
-          "lighting": false,
-          "vertex_color": false,
-          "texture_coords": false,
-          "base_input": "none",
-
-          "vertex_shader": "extend_point_softskin_gen_normal_vs",
-          "pixel_shader": "shadow_ps"
-        }
-      ]
+      "pixel_state": {
+        "lighting": false
+      }
     }
+  },
 
-  ]
+  "rendertypes": { "stencilshadow": {} },
+
+  "states": {
+    "cpu pre-extended": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "preextended_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "shadow_ps"
+      }
+    },
+
+    "extend directional unskinned": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "extend_directional_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "shadow_ps"
+      }
+    },
+
+    "extend directional hard skinned": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "extend_directional_hardskin_facenormal_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "shadow_ps"
+      }
+    },
+
+    "extend directional hard skinned generate normal": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "extend_directional_hardskin_gen_normal_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "shadow_ps"
+      }
+    },
+
+    "extend directional soft skinned": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "extend_directional_softskin_facenormal_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "shadow_ps"
+      }
+    },
+
+    "extend directional soft skinned generate normal": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "extend_directional_softskin_gen_normal_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "shadow_ps"
+      }
+    },
+
+    "extend point unskinned": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "extend_point_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "shadow_ps"
+      }
+    },
+
+    "extend point hard skinned": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "extend_point_hardskin_facenormal_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "shadow_ps"
+      }
+    },
+
+    "extend point hard skinned generate normal": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "extend_point_hardskin_gen_normal_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "shadow_ps"
+      }
+    },
+
+    "extend point soft skinned": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "extend_point_softskin_facenormal_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "shadow_ps"
+      }
+    },
+
+    "extend point soft skinned generate normal": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "extend_point_softskin_gen_normal_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "shadow_ps"
+      }
+    }
+  }
 }

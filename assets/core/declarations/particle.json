@@ -1,0 +1,39 @@
+{
+  "rendertype": "particle",
+
+  "states": [
+    {
+      "id": 0,
+
+      "srgb_state": [ true, false, false, false ],
+
+      "passes": [
+        {
+          "name": "normal",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "position"
+        }
+      ]
+    },
+
+    {
+      "id": 1,
+
+      "passes": [
+        {
+          "name": "blur",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    }
+  ]
+}

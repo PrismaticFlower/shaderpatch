@@ -1,0 +1,312 @@
+{
+  "rendertype": "stencilshadow",
+
+  "states": [
+    {
+      "id": 0,
+
+      "passes": [
+        {
+          "name": "cpu pre-extended",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        }
+      ]
+    },
+
+    {
+      "id": 1,
+
+      "passes": [
+        {
+          "name": "extend directional unskinned",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        }
+      ]
+    },
+
+    {
+      "id": 2,
+
+      "passes": [
+        {
+          "name": "extend directional hard skinned",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        }
+      ]
+    },
+
+    {
+      "id": 3,
+
+      "passes": [
+        {
+          "name": "extend directional hard skinned generate normal",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        }
+      ]
+    },
+
+    {
+      "id": 4,
+
+      "passes": [
+        {
+          "name": "extend directional soft skinned",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        }
+      ]
+    },
+
+    {
+      "id": 5,
+
+      "passes": [
+        {
+          "name": "extend directional soft skinned generate normal",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        }
+      ]
+    },
+
+    {
+      "id": 6,
+
+      "passes": [
+        {
+          "name": "extend point unskinned",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        }
+      ]
+    },
+
+    {
+      "id": 7,
+
+      "passes": [
+        {
+          "name": "extend point hard skinned",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        }
+      ]
+    },
+
+    {
+      "id": 8,
+
+      "passes": [
+        {
+          "name": "extend point hard skinned generate normal",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        }
+      ]
+    },
+
+    {
+      "id": 9,
+
+      "passes": [
+        {
+          "name": "extend point soft skinned",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        }
+      ]
+    },
+
+    {
+      "id": 10,
+
+      "passes": [
+        {
+          "name": "extend point soft skinned generate normal",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        }
+      ]
+    },
+
+    {
+      "id": 11,
+
+      "passes": [
+        {
+          "name": "extend directional unskinned",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        },
+
+        {
+          "name": "extend point unskinned",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        }
+      ]
+    },
+
+    {
+      "id": 12,
+
+      "passes": [
+        {
+          "name": "extend directional hard skinned",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        },
+
+        {
+          "name": "extend point hard skinned",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        }
+      ]
+    },
+
+    {
+      "id": 13,
+
+      "passes": [
+        {
+          "name": "extend directional hard skinned generate normal",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        },
+
+        {
+          "name": "extend point hard skinned generate normal",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        }
+      ]
+    },
+
+    {
+      "id": 14,
+
+      "passes": [
+        {
+          "name": "extend directional soft skinned",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        },
+
+        {
+          "name": "extend point soft skinned",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        }
+      ]
+    },
+
+    {
+      "id": 15,
+
+      "passes": [
+        {
+          "name": "extend directional soft skinned generate normal",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        },
+
+        {
+          "name": "extend point soft skinned generate normal",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": false,
+          "base_input": "none"
+        }
+      ]
+    }
+
+  ]
+}

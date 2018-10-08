@@ -7,10 +7,40 @@ ucft
       "premunged"
    }
    
-   // Game Shaders
+   // Game Shader Declarations
+   REQN
+   {
+      "shader_declaration"
+      "bloom_stock"
+      "filtercopy"
+      "flare"
+      "interface"
+      "lightbeam"
+      "normal"
+      "normal_terrain"
+      "normalmapadder"
+      "ocean"
+      "particle"
+      "perpixeldiffuselighting"
+      "prereflection"
+      "rain"
+      "refraction"
+      "sample"
+      "shadowquad"
+      "shield"
+      "skyfog"
+      "specularlighting"
+      "sprite"
+      "stencilshadow"
+      "water"
+      "zprepass"
+   }
+
+   // Shaders
    REQN
    {
       "shader"
+      // Game Shaders
       "bloom_stock"
       "filtercopy"
       "flare"
@@ -33,24 +63,16 @@ ucft
       "stencilshadow"
       "water"
       "zprepass"
-   }
 
-   // Patch Shaders
-   REQN
-   {
-      "shader"
+      // Patch Shaders
       "bloom"
       "damage_overlay"
       "gaussian_blur"
       "normal_ext"
-      "normal_ext-detail"
-      "normal_ext-specular"
-      "normal_ext-specular-detail"
       "late_effects_resolve"
       "pbr"
-      "pbr-basic"
-      "pbr-emissive"
       "postprocess"
+      "scene_blur_apply"
       "shadows_blur"
       "skyfog_ext"
       "stock_bloom_ext"

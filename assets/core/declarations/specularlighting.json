@@ -1,0 +1,127 @@
+{
+  "rendertype": "specularlighting",
+
+  "states": [
+    {
+      "id": 0,
+
+      "passes": [
+        {
+          "name": "vertex lit specular",
+
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 1,
+
+      "passes": [
+        {
+          "name": "specular 3 lights",
+
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 2,
+
+      "passes": [
+        {
+          "name": "specular 2 lights",
+
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 3,
+
+      "passes": [
+        {
+          "name": "specular 1 lights",
+
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 4,
+
+      "passes": [
+        {
+          "name": "specular normalmapped",
+
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "base_input": "tangents"
+        }
+      ]
+    },
+
+    {
+      "id": 5,
+
+      "passes": [
+        {
+          "name": "normalmapped reflection",
+
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "base_input": "tangents"
+        }
+      ]
+    },
+
+    {
+      "id": 6,
+
+      "passes": [
+        {
+          "name": "specular normalmapped",
+
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "base_input": "tangents"
+        },
+
+        {
+          "name": "normalmapped reflection",
+
+          "skinned": true,
+          "lighting": false,
+          "vertex_color": false,
+          "texture_coords": true,
+          "base_input": "tangents"
+        }
+      ]
+    }
+  ]
+}

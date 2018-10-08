@@ -1,0 +1,53 @@
+{
+  "rendertype": "Terrain2",
+
+  "states": [
+    {
+      "id": 0,
+
+      "srgb_state": [ true, true, true, false ],
+
+      "passes": [
+        {
+          "name": "diffuse blendmap",
+
+          "skinned": false,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": false,
+          "base_input": "normals"
+        }
+      ]
+    },
+
+    {
+      "id": 1,
+
+      "passes": [
+        {
+          "name": "diffuse blendmap",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": false,
+          "base_input": "normals",
+
+          "srgb_state": [ true, true, true, false ]
+        },
+
+        {
+          "name": "detailing",
+
+          "skinned": true,
+          "lighting": true,
+          "vertex_color": true,
+          "texture_coords": false,
+          "base_input": "normals",
+
+          "srgb_state": [ false, false, true, false ]
+        }
+      ]
+    }
+  ]
+}

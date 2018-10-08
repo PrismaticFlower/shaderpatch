@@ -131,8 +131,9 @@ void Postprocess::do_bloom_and_color_grading(const Shader_database& shaders,
    _device->SetRenderState(D3DRS_SRGBWRITEENABLE, format == D3DFMT_A8R8G8B8);
    _device->SetSamplerState(0, D3DSAMP_SRGBTEXTURE, false);
 
-   auto& post_shaders = shaders.at("postprocess"s);
-   auto& bloom_shaders = shaders.at("bloom"s);
+   auto& rendertypes = shaders.rendertypes;
+   auto& post_shaders = rendertypes.at("postprocess"s);
+   auto& bloom_shaders = rendertypes.at("bloom"s);
 
    auto rt_a = allocator.allocate(format, res / 2);
    auto rt_b = allocator.allocate(format, res / 4);
@@ -208,7 +209,7 @@ void Postprocess::do_color_grading(const Shader_database& shaders,
    _color_grading_lut_baker.bind_texture(lut_sampler_slot);
    _device->SetRenderState(D3DRS_SRGBWRITEENABLE, true);
 
-   shaders.at("postprocess"s).at(_uber_shader).bind(*_device);
+   shaders.rendertypes.at("postprocess"s).at(_uber_shader).bind(*_device);
 
    do_pass(input, output);
 }
@@ -222,7 +223,7 @@ void Postprocess::do_finalize(const Shader_database& shaders,
    set_linear_clamp_sampler(*_device, 0, false);
    _device->SetRenderState(D3DRS_SRGBWRITEENABLE, false);
 
-   shaders.at("postprocess"s).at(_finalize_shader).bind(*_device);
+   shaders.rendertypes.at("postprocess"s).at(_finalize_shader).bind(*_device);
 
    do_pass(input, output);
 }

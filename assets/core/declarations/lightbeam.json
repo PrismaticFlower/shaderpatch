@@ -1,0 +1,21 @@
+{
+  "rendertype": "lightbeam",
+
+  "states": [
+    {
+      "id": 0,
+
+      "passes": [
+        {
+          "name": "lightbeam",
+
+          "skinned": false,
+          "lighting": false,
+          "vertex_color": true,
+          "texture_coords": false,
+          "base_input": "position"
+        }
+      ]
+    }
+  ]
+}

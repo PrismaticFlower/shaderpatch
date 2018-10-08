@@ -1,463 +1,463 @@
 {
-  "rendertype": "normal",
-  "srgb_state": [ true, false, true, false ],
+  "group_name":  "normal",
+  "source_name": "normal.fx",
 
-  "defines": [
-    [ "NORMAL_USE_TRANSPARENCY", "false" ],
-    [ "NORMAL_USE_HARDEDGED_TEST", "false" ],
-    [ "NORMAL_USE_SHADOW_MAP", "false" ],
-    [ "NORMAL_USE_PROJECTED_TEXTURE", "false" ]
-  ],
+  "entrypoints": {
+    "unlit_main_vs": {
+      "stage": "vertex",
 
-  "states": [
-    {
-      "name": "unlit opaque",
-      "id": 0,
-
-      "passes": [
-        {
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
           "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "position",
-
-          "vertex_shader": "unlit_main_vs",
-          "pixel_shader": "unlit_main_ps"
+          "normal": false,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
         }
-      ]
-    },
-
-    {
-      "name": "unlit opaque hardedged",
-      "id": 1,
+      },
 
       "defines": [
-        [ "NORMAL_USE_HARDEDGED_TEST", "true" ]
-      ],
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "position",
-
-          "vertex_shader": "unlit_main_vs",
-          "pixel_shader": "unlit_main_ps"
-        }
+        [ "NORMAL_USE_TRANSPARENCY", "false" ],
+        [ "NORMAL_USE_HARDEDGED_TEST", "false" ],
+        [ "NORMAL_USE_SHADOW_MAP", "false" ],
+        [ "NORMAL_USE_PROJECTED_TEXTURE", "false" ]
       ]
     },
 
-    {
-      "name": "unlit transparent",
-      "id": 2,
+    "unlit_main_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      },
+
+      "static_flags": [
+        "NORMAL_USE_TRANSPARENCY",
+        "NORMAL_USE_HARDEDGED_TEST"
+      ],
 
       "defines": [
-        [ "NORMAL_USE_TRANSPARENCY", "true" ]
-      ],
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "position",
-
-          "vertex_shader": "unlit_main_vs",
-          "pixel_shader": "unlit_main_ps"
-        }
+        [ "NORMAL_USE_SHADOW_MAP", "false" ],
+        [ "NORMAL_USE_PROJECTED_TEXTURE", "false" ]
       ]
     },
 
-    {
-      "name": "unlit transparent hardedged",
-      "id": 3,
+    "main_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": true,
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
+        }
+      },
 
       "defines": [
-        [ "NORMAL_USE_TRANSPARENCY", "true" ],
-        [ "NORMAL_USE_HARDEDGED_TEST", "true" ]
-      ],
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": false,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "position",
-
-          "vertex_shader": "unlit_main_vs",
-          "pixel_shader": "unlit_main_ps"
-        }
+        [ "NORMAL_USE_TRANSPARENCY", "false" ],
+        [ "NORMAL_USE_HARDEDGED_TEST", "false" ],
+        [ "NORMAL_USE_SHADOW_MAP", "false" ],
+        [ "NORMAL_USE_PROJECTED_TEXTURE", "false" ]
       ]
     },
 
-    {
-      "name": "near opaque",
-      "id": 4,
+    "main_ps": {
+      "stage": "pixel",
 
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": true,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
+      "pixel_state": {
+        "lighting": true
+      },
 
-          "vertex_shader": "main_vs",
-          "pixel_shader": "main_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "near opaque hardedged",
-      "id": 5,
-
-      "defines": [
-        [ "NORMAL_USE_HARDEDGED_TEST", "true" ]
-      ],
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": true,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "main_vs",
-          "pixel_shader": "main_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "near transparent",
-      "id": 6,
-
-      "defines": [
-        [ "NORMAL_USE_TRANSPARENCY", "true" ]
-      ],
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": true,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "main_vs",
-          "pixel_shader": "main_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "near transparent hardedged",
-      "id": 7,
-
-      "defines": [
-        [ "NORMAL_USE_TRANSPARENCY", "true" ],
-        [ "NORMAL_USE_HARDEDGED_TEST", "true" ]
-      ],
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": true,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "main_vs",
-          "pixel_shader": "main_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "near opaque projectedtex",
-      "id": 8,
-
-      "defines": [
-        [ "NORMAL_USE_PROJECTED_TEXTURE", "true" ]
-      ],
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": true,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "main_vs",
-          "pixel_shader": "main_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "near opaque hardedged projectedtex",
-      "id": 9,
-
-      "defines": [
-        [ "NORMAL_USE_HARDEDGED_TEST", "true" ],
-        [ "NORMAL_USE_PROJECTED_TEXTURE", "true" ]
-      ],
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": true,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "main_vs",
-          "pixel_shader": "main_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "near transparent projectedtex",
-      "id": 10,
-
-      "defines": [
-        [ "NORMAL_USE_TRANSPARENCY", "true" ],
-        [ "NORMAL_USE_PROJECTED_TEXTURE", "true" ]
-      ],
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": true,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "main_vs",
-          "pixel_shader": "main_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "near transparent hardedged projectedtex",
-      "id": 11,
-
-      "defines": [
-        [ "NORMAL_USE_TRANSPARENCY", "true" ],
-        [ "NORMAL_USE_HARDEDGED_TEST", "true" ],
-        [ "NORMAL_USE_PROJECTED_TEXTURE", "true" ]
-      ],
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": true,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "main_vs",
-          "pixel_shader": "main_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "near opaque shadow",
-      "id": 12,
-
-      "defines": [
-        [ "NORMAL_USE_SHADOW_MAP", "true" ]
-      ],
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": true,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "main_vs",
-          "pixel_shader": "main_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "near opaque hardedged shadow",
-      "id": 13,
-
-      "defines": [
-        [ "NORMAL_USE_HARDEDGED_TEST", "true" ],
-        [ "NORMAL_USE_SHADOW_MAP", "true" ]
-      ],
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": true,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "main_vs",
-          "pixel_shader": "main_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "near opaque shadow projectedtex",
-      "id": 14,
-
-      "defines": [
-        [ "NORMAL_USE_SHADOW_MAP", "true" ],
-        [ "NORMAL_USE_PROJECTED_TEXTURE", "true" ]
-      ],
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": true,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "main_vs",
-          "pixel_shader": "main_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "near opaque hardedged shadow projectedtex",
-      "id": 15,
-
-      "defines": [
-        [ "NORMAL_USE_HARDEDGED_TEST", "true" ],
-        [ "NORMAL_USE_SHADOW_MAP", "true" ],
-        [ "NORMAL_USE_PROJECTED_TEXTURE", "true" ]
-      ],
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": true,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "main_vs",
-          "pixel_shader": "main_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "near transparent shadow",
-      "id": 16,
-
-      "defines": [
-        [ "NORMAL_USE_TRANSPARENCY", "true" ],
-        [ "NORMAL_USE_SHADOW_MAP", "true" ]
-      ],
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": true,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "main_vs",
-          "pixel_shader": "main_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "near transparent hardedged shadow",
-      "id": 17,
-
-      "defines": [
-        [ "NORMAL_USE_TRANSPARENCY", "true" ],
-        [ "NORMAL_USE_HARDEDGED_TEST", "true" ],
-        [ "NORMAL_USE_SHADOW_MAP", "true" ]
-      ],
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": true,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "main_vs",
-          "pixel_shader": "main_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "near transparent shadow projectedtex",
-      "id": 18,
-
-      "defines": [
-        [ "NORMAL_USE_TRANSPARENCY", "true" ],
-        [ "NORMAL_USE_SHADOW_MAP", "true" ],
-        [ "NORMAL_USE_PROJECTED_TEXTURE", "true" ]
-      ],
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": true,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "main_vs",
-          "pixel_shader": "main_ps"
-        }
-      ]
-    },
-
-    {
-      "name": "near transparent hardedged shadow projectedtex",
-      "id": 19,
-
-      "defines": [
-        [ "NORMAL_USE_TRANSPARENCY", "true" ],
-        [ "NORMAL_USE_HARDEDGED_TEST", "true" ],
-        [ "NORMAL_USE_SHADOW_MAP", "true" ],
-        [ "NORMAL_USE_PROJECTED_TEXTURE", "true" ]
-      ],
-
-      "passes": [
-        {
-          "skinned": true,
-          "lighting": true,
-          "vertex_color": true,
-          "texture_coords": true,
-          "base_input": "normals",
-
-          "vertex_shader": "main_vs",
-          "pixel_shader": "main_ps"
-        }
+      "static_flags": [
+        "NORMAL_USE_TRANSPARENCY",
+        "NORMAL_USE_HARDEDGED_TEST",
+        "NORMAL_USE_SHADOW_MAP",
+        "NORMAL_USE_PROJECTED_TEXTURE"
       ]
     }
-  ]
+  },
+
+  "rendertypes": {
+    "normal": {}
+  },
+
+  "states": {
+    "unlit opaque": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "unlit_main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "unlit_main_ps",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": false,
+          "NORMAL_USE_HARDEDGED_TEST": false
+        }
+      }
+    },
+
+    "unlit opaque hardedged": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "unlit_main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "unlit_main_ps",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": false,
+          "NORMAL_USE_HARDEDGED_TEST": true
+        }
+      }
+    },
+
+    "unlit transparent": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "unlit_main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "unlit_main_ps",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": true,
+          "NORMAL_USE_HARDEDGED_TEST": false
+        }
+      }
+    },
+
+    "unlit transparent hardedged": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "unlit_main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "unlit_main_ps",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": true,
+          "NORMAL_USE_HARDEDGED_TEST": true
+        }
+      }
+    },
+
+    "near opaque": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": false,
+          "NORMAL_USE_HARDEDGED_TEST": false,
+          "NORMAL_USE_SHADOW_MAP": false,
+          "NORMAL_USE_PROJECTED_TEXTURE": false
+        }
+      }
+    },
+
+    "near opaque hardedged": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": false,
+          "NORMAL_USE_HARDEDGED_TEST": true,
+          "NORMAL_USE_SHADOW_MAP": false,
+          "NORMAL_USE_PROJECTED_TEXTURE": false
+        }
+      }
+    },
+
+    "near transparent": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": true,
+          "NORMAL_USE_HARDEDGED_TEST": false,
+          "NORMAL_USE_SHADOW_MAP": false,
+          "NORMAL_USE_PROJECTED_TEXTURE": false
+        }
+      }
+    },
+
+    "near transparent hardedged": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": true,
+          "NORMAL_USE_HARDEDGED_TEST": true,
+          "NORMAL_USE_SHADOW_MAP": false,
+          "NORMAL_USE_PROJECTED_TEXTURE": false
+        }
+      }
+    },
+
+    "near opaque projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": false,
+          "NORMAL_USE_HARDEDGED_TEST": false,
+          "NORMAL_USE_SHADOW_MAP": false,
+          "NORMAL_USE_PROJECTED_TEXTURE": true
+        }
+      }
+    },
+
+    "near opaque hardedged projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": false,
+          "NORMAL_USE_HARDEDGED_TEST": true,
+          "NORMAL_USE_SHADOW_MAP": false,
+          "NORMAL_USE_PROJECTED_TEXTURE": true
+        }
+      }
+    },
+
+    "near transparent projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": true,
+          "NORMAL_USE_HARDEDGED_TEST": false,
+          "NORMAL_USE_SHADOW_MAP": false,
+          "NORMAL_USE_PROJECTED_TEXTURE": true
+        }
+      }
+    },
+
+    "near transparent hardedged projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": true,
+          "NORMAL_USE_HARDEDGED_TEST": true,
+          "NORMAL_USE_SHADOW_MAP": false,
+          "NORMAL_USE_PROJECTED_TEXTURE": true
+        }
+      }
+    },
+
+    "near opaque shadow": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": false,
+          "NORMAL_USE_HARDEDGED_TEST": false,
+          "NORMAL_USE_SHADOW_MAP": true,
+          "NORMAL_USE_PROJECTED_TEXTURE": false
+        }
+      }
+    },
+
+    "near opaque hardedged shadow": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": false,
+          "NORMAL_USE_HARDEDGED_TEST": true,
+          "NORMAL_USE_SHADOW_MAP": true,
+          "NORMAL_USE_PROJECTED_TEXTURE": false
+        }
+      }
+    },
+
+    "near opaque shadow projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": false,
+          "NORMAL_USE_HARDEDGED_TEST": false,
+          "NORMAL_USE_SHADOW_MAP": true,
+          "NORMAL_USE_PROJECTED_TEXTURE": true
+        }
+      }
+    },
+
+    "near opaque hardedged shadow projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": false,
+          "NORMAL_USE_HARDEDGED_TEST": true,
+          "NORMAL_USE_SHADOW_MAP": true,
+          "NORMAL_USE_PROJECTED_TEXTURE": true
+        }
+      }
+    },
+
+    "near transparent shadow": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": true,
+          "NORMAL_USE_HARDEDGED_TEST": false,
+          "NORMAL_USE_SHADOW_MAP": true,
+          "NORMAL_USE_PROJECTED_TEXTURE": false
+        }
+      }
+    },
+
+    "near transparent hardedged shadow": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": true,
+          "NORMAL_USE_HARDEDGED_TEST": true,
+          "NORMAL_USE_SHADOW_MAP": true,
+          "NORMAL_USE_PROJECTED_TEXTURE": false
+        }
+      }
+    },
+
+    "near transparent shadow projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": true,
+          "NORMAL_USE_HARDEDGED_TEST": false,
+          "NORMAL_USE_SHADOW_MAP": true,
+          "NORMAL_USE_PROJECTED_TEXTURE": true
+        }
+      }
+    },
+
+    "near transparent hardedged shadow projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": true,
+          "NORMAL_USE_HARDEDGED_TEST": true,
+          "NORMAL_USE_SHADOW_MAP": true,
+          "NORMAL_USE_PROJECTED_TEXTURE": true
+        }
+      }
+    }
+  }
 }
