@@ -64,7 +64,8 @@ auto munge_material(const fs::path& material_path, const fs::path& output_file_p
       throw std::runtime_error{"RenderType has no material description."s};
    }
 
-   const auto material = describe_material(descriptions.at(desc_name), root_node);
+   const auto material = describe_material(material_path.stem().u8string(),
+                                           descriptions.at(desc_name), root_node);
 
    auto flags_node = root_node["Flags"s];
 

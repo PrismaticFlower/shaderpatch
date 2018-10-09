@@ -109,13 +109,15 @@ void read_texture_mapping(const std::string& texture_key, const YAML::Node value
 }
 }
 
-auto describe_material(const YAML::Node description, const YAML::Node material) -> Material_info
+auto describe_material(std::string_view name, const YAML::Node description,
+                       const YAML::Node material) -> Material_info
 {
    Material_info info{};
 
+   info.name = name;
    info.rendertype = material["RenderType"s].as<std::string>();
-   info.overridden_rendertype =
-      description["Overridden RenderType"s].as<std::string>();
+   info.overridden_rendertype = rendertype_from_string(
+      description["Overridden RenderType"s].as<std::string>());
 
    for (auto prop : material["Material"s]) {
       try {

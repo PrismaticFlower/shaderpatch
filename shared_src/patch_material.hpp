@@ -1,5 +1,6 @@
 #pragma once
 
+#include "game_rendertypes.hpp"
 #include "ucfb_reader.hpp"
 #include "ucfb_writer.hpp"
 #include "volume_resource.hpp"
@@ -18,12 +19,14 @@ namespace sp {
 enum class Material_version : std::uint32_t {
    _1_0_0,
    _2_0_0,
-   current = _2_0_0
+   _3_0_0,
+   current = _3_0_0
 };
 
 struct Material_info {
+   std::string name;
    std::string rendertype;
-   std::string overridden_rendertype;
+   Rendertype overridden_rendertype;
    std::array<float, 32> constants{};
    std::array<std::string, 8> textures{};
    std::array<std::int32_t, 8> texture_size_mappings{-1, -1, -1, -1,
@@ -31,7 +34,11 @@ struct Material_info {
 };
 
 namespace materials {
-inline namespace v_2_0_0 {
+inline namespace v_3_0_0 {
+inline auto read_patch_material(ucfb::Reader reader) -> Material_info;
+}
+
+namespace v_2_0_0 {
 inline auto read_patch_material(ucfb::Reader reader) -> Material_info;
 }
 
@@ -54,6 +61,7 @@ inline void write_patch_material(const std::filesystem::path& save_path,
 
       writer.emplace_child("VER_"_mn).write(Material_version::current);
 
+      writer.emplace_child("NAME"_mn).write(info.name);
       writer.emplace_child("RTYP"_mn).write(info.rendertype);
       writer.emplace_child("ORTP"_mn).write(info.overridden_rendertype);
       writer.emplace_child("CNST"_mn).write(gsl::make_span(info.constants));
@@ -87,6 +95,8 @@ inline auto read_patch_material(ucfb::Reader reader) -> Material_info
    switch (version) {
    case Material_version::current:
       return materials::read_patch_material(reader);
+   case Material_version::_2_0_0:
+      return materials::v_2_0_0::read_patch_material(reader);
    case Material_version::_1_0_0:
       return materials::v_1_0_0::read_patch_material(reader);
    default:
@@ -95,6 +105,37 @@ inline auto read_patch_material(ucfb::Reader reader) -> Material_info
 }
 
 namespace materials {
+namespace v_3_0_0 {
+inline auto read_patch_material(ucfb::Reader reader) -> Material_info
+{
+   Material_info info{};
+
+   const auto version =
+      reader.read_child_strict<"VER_"_mn>().read_trivial<Material_version>();
+
+   Ensures(version == Material_version::_3_0_0);
+
+   info.name = reader.read_child_strict<"NAME"_mn>().read_string();
+   info.rendertype = reader.read_child_strict<"RTYP"_mn>().read_string();
+   info.overridden_rendertype =
+      reader.read_child_strict<"ORTP"_mn>().read_trivial<Rendertype>();
+   info.constants =
+      reader.read_child_strict<"CNST"_mn>().read_trivial<std::array<float, 32>>();
+   info.texture_size_mappings =
+      reader.read_child_strict<"TXSM"_mn>().read_trivial<std::array<std::int32_t, 8>>();
+   info.textures[0] = reader.read_child_strict<"TX04"_mn>().read_string();
+   info.textures[1] = reader.read_child_strict<"TX05"_mn>().read_string();
+   info.textures[2] = reader.read_child_strict<"TX06"_mn>().read_string();
+   info.textures[3] = reader.read_child_strict<"TX07"_mn>().read_string();
+   info.textures[4] = reader.read_child_strict<"TX08"_mn>().read_string();
+   info.textures[5] = reader.read_child_strict<"TX09"_mn>().read_string();
+   info.textures[6] = reader.read_child_strict<"TX10"_mn>().read_string();
+   info.textures[7] = reader.read_child_strict<"TX11"_mn>().read_string();
+
+   return info;
+}
+}
+
 namespace v_2_0_0 {
 inline auto read_patch_material(ucfb::Reader reader) -> Material_info
 {
@@ -105,8 +146,10 @@ inline auto read_patch_material(ucfb::Reader reader) -> Material_info
 
    Ensures(version == Material_version::_2_0_0);
 
+   info.name = "OldUnnamedMaterial";
    info.rendertype = reader.read_child_strict<"RTYP"_mn>().read_string();
-   info.overridden_rendertype = reader.read_child_strict<"ORTP"_mn>().read_string();
+   info.overridden_rendertype =
+      rendertype_from_string(reader.read_child_strict<"ORTP"_mn>().read_string());
    info.constants =
       reader.read_child_strict<"CNST"_mn>().read_trivial<std::array<float, 32>>();
    info.texture_size_mappings =
@@ -134,8 +177,10 @@ inline auto read_patch_material(ucfb::Reader reader) -> Material_info
 
    Ensures(version == Material_version::_1_0_0);
 
+   info.name = "OldUnnamedMaterial";
    info.rendertype = reader.read_child_strict<"RTYP"_mn>().read_string();
-   info.overridden_rendertype = reader.read_child_strict<"ORTP"_mn>().read_string();
+   info.overridden_rendertype =
+      rendertype_from_string(reader.read_child_strict<"ORTP"_mn>().read_string());
    info.constants =
       reader.read_child_strict<"CNST"_mn>().read_trivial<std::array<float, 32>>();
    info.textures[0] = reader.read_child_strict<"TX04"_mn>().read_string();

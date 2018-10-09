@@ -713,7 +713,7 @@ HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
 
    _refresh_material = true;
 
-   if (_material && _material->target_rendertype() == _shader_metadata.rendertype_name) {
+   if (_material && _material->overridden_rendertype() == _shader_metadata.rendertype) {
       return S_OK;
    }
 
@@ -1155,7 +1155,7 @@ void Device::late_effects_resolve() noexcept
 void Device::refresh_material() noexcept
 {
    if (std::exchange(_refresh_material, false) && _material) {
-      if (_shader_metadata.rendertype_name == _material->target_rendertype()) {
+      if (_shader_metadata.rendertype == _material->overridden_rendertype()) {
          _material->update(_shader_metadata.shader_name,
                            _shader_metadata.vertex_shader_flags,
                            _shader_metadata.pixel_shader_flags);

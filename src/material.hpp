@@ -29,7 +29,9 @@ public:
    Material(Material&&) = default;
    Material& operator=(Material&&) = default;
 
-   auto target_rendertype() const noexcept -> std::string_view;
+   auto overridden_rendertype() const noexcept -> Rendertype;
+
+   auto info() const noexcept -> Material_info;
 
    void bind() const noexcept;
 
@@ -41,7 +43,7 @@ public:
    constexpr static auto max_material_constants = 8;
 
 private:
-   const std::string _overridden_rendertype;
+   const Rendertype _overridden_rendertype;
 
    Com_ref<IDirect3DDevice9> _device;
 
@@ -49,5 +51,6 @@ private:
    const std::array<float, max_material_constants * 4> _constants{};
 
    const Shader_rendertype& _rendertype;
+   const Material_info _info;
 };
 }

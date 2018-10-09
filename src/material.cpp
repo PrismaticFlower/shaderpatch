@@ -55,13 +55,19 @@ Material::Material(const Material_info& info, Com_ref<IDirect3DDevice9> device,
      _overridden_rendertype{info.overridden_rendertype},
      _textures{resolve_textures(info, textures)},
      _constants{resolve_constants(info, _textures)},
-     _rendertype{rendertypes.at(info.rendertype)}
+     _rendertype{rendertypes.at(info.rendertype)},
+     _info{info}
 {
 }
 
-auto Material::target_rendertype() const noexcept -> std::string_view
+auto Material::overridden_rendertype() const noexcept -> Rendertype
 {
    return _overridden_rendertype;
+}
+
+auto Material::info() const noexcept -> Material_info
+{
+   return _info;
 }
 
 void Material::bind() const noexcept

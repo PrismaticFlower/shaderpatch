@@ -48,6 +48,8 @@ public:
 
    HRESULT __stdcall UnlockBox(UINT level) noexcept override
    {
+      using namespace std::literals;
+
       if (level != 0) return D3DERR_INVALIDCALL;
       if (!_data) return D3DERR_INVALIDCALL;
 
@@ -58,6 +60,9 @@ public:
                                                                  _resource_size)}),
                                                _device, _shaders.rendertypes,
                                                _textures);
+
+         log(Log_level::info, "Loaded material "sv,
+             std::quoted(_material->info().name));
       }
       catch (std::exception& e) {
          log_and_terminate("Failed to read material in from game. Exception message: "sv,
@@ -236,7 +241,10 @@ public:
    constexpr static auto id = static_cast<D3DRESOURCETYPE>("mtrl"_mn);
 
 private:
-   ~Material_resource() = default;
+   ~Material_resource()
+   {
+      log(Log_level::info, "Unloaded material "sv, std::quoted(_material->info().name));
+   }
 
    const std::uint32_t _resource_size;
 
