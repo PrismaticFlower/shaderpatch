@@ -28,6 +28,8 @@ public:
 
    void add(const std::string& name, std::weak_ptr<Texture> texture) noexcept
    {
+      log(Log_level::info, "Loaded texture "sv, std::quoted(name));
+
       _textures[name] = std::move(texture);
    }
 
@@ -36,6 +38,8 @@ public:
       for (auto it = std::begin(_textures); it != std::cend(_textures);) {
 
          if (it->second.expired()) {
+            log(Log_level::info, "Lost texture "sv, std::quoted(it->first));
+
             it = _textures.erase(it);
          }
          else {
