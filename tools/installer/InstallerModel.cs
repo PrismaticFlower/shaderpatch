@@ -113,14 +113,14 @@ namespace installer
       
       public void Install(string installPath, bool adminInstall = false)
       {
-         var installInfo = GetInstallInfo(installPath);
-
          if (!adminInstall && !PathHelpers.CheckDirectoryAccess(installPath))
          {
             LaunchAdminInstall(installPath);
 
             return;
          }
+
+         var installInfo = GetInstallInfo(installPath);
 
          try
          {
@@ -136,6 +136,8 @@ namespace installer
             {
                fileInstaller.InstallFile(file.FullName);
             }
+
+            TidyInstall(installInfo, fileInstaller.UnusedOldFiles);
 
             XmlSerializer serializer = new XmlSerializer(typeof(InstallInfo));
 
@@ -193,6 +195,28 @@ namespace installer
             }
 
             installInfo.installedFiles.Remove(file.Key);
+         }
+      }
+
+      private static void TidyInstall(InstallInfo installInfo, Dictionary<string, bool> unusuedFiles)
+      {
+         foreach (var file in unusuedFiles.ToList())
+         {
+            var filePath = Path.Combine(installInfo.installPath, file.Key);
+
+            File.Delete(filePath);
+
+            if (file.Value)
+            {
+               var backupFilePath = Path.Combine(installInfo.backupPath, file.Key);
+
+               File.Move(backupFilePath, filePath);
+            }
+
+            if (installInfo.installedFiles.ContainsKey(file.Key))
+            {
+               installInfo.installedFiles.Remove(file.Key);
+            }
          }
       }
 

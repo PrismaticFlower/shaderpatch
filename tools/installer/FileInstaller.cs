@@ -13,6 +13,7 @@ namespace installer
       {
          this.installInfo = installInfo;
          this.installerDirectory = installerDirectory;
+         UnusedOldFiles = new Dictionary<string, bool>(installInfo.installedFiles);
       }
 
       public void InstallFile(string sourceFilePath)
@@ -20,25 +21,31 @@ namespace installer
          var fileRelativePath = PathHelpers.GetRelativePath(sourceFilePath, installerDirectory);
          var destFilePath = Path.Combine(installInfo.installPath, fileRelativePath);
          var destExists = File.Exists(destFilePath);
-         bool backedUp;
-         installInfo.installedFiles.TryGetValue(fileRelativePath, out backedUp);
-         
+         var preexisting = UnusedOldFiles.ContainsKey(fileRelativePath);
+
+         installInfo.installedFiles.TryGetValue(fileRelativePath, out var backedUp);
+
          Directory.CreateDirectory(Path.GetDirectoryName(destFilePath));
 
-         if (destExists && !installInfo.installedFiles.ContainsKey(fileRelativePath))
+         if (destExists && !preexisting)
          {
             BackupFile(fileRelativePath);
             backedUp = true;
          }
-
+         
          File.Copy(sourceFilePath, destFilePath, true);
          installInfo.installedFiles[fileRelativePath] = backedUp;
+
+         if (preexisting)
+         {
+            UnusedOldFiles.Remove(fileRelativePath);
+         }
       }
 
-      public InstallInfo Property { get { return installInfo; } }
+      public Dictionary<string, bool> UnusedOldFiles { get; private set; }
 
       private InstallInfo installInfo;
-      private string installerDirectory;
+      private readonly string installerDirectory;
 
       private void BackupFile(string filePath)
       {
