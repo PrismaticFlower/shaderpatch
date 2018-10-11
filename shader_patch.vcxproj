@@ -48,7 +48,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>bin\$(Configuration)\</OutDir>
     <IntDir>build\$(Configuration)\</IntDir>
-    <TargetName>dinput8</TargetName>
+    <TargetName>d3d9</TargetName>
     <TargetExt>.dll</TargetExt>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <CodeAnalysisRuleSet>NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
@@ -57,7 +57,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>bin\$(Configuration)\</OutDir>
     <IntDir>build\$(Configuration)\</IntDir>
-    <TargetName>dinput8</TargetName>
+    <TargetName>d3d9</TargetName>
     <TargetExt>.dll</TargetExt>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <EnableCppCoreCheck>true</EnableCppCoreCheck>
@@ -79,7 +79,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>mhook.lib;Bcrypt.lib	;boost_system-vc140-mt-gd.lib;libyaml-cppmdd.lib;DirectXTex.lib;dxguid.lib;d3d9.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ModuleDefinitionFile>dinput8.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>d3d9.def</ModuleDefinitionFile>
       <AdditionalLibraryDirectories>submodules/vcpkg/installed/x86-windows-static-md/debug/lib;submodules/vcpkg/installed/x86-windows/debug/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <DelayLoadDLLs>
       </DelayLoadDLLs>
@@ -115,7 +115,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>mhook.lib;Bcrypt.lib	;boost_system-vc140-mt.lib;libyaml-cppmd.lib;DirectXTex.lib;dxguid.lib;d3d9.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ModuleDefinitionFile>dinput8.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>d3d9.def</ModuleDefinitionFile>
       <AdditionalLibraryDirectories>submodules/vcpkg/installed/x86-windows-static-md/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <DelayLoadDLLs>
       </DelayLoadDLLs>
@@ -137,7 +137,6 @@
     <ClCompile Include="src\direct3d\creator.cpp" />
     <ClCompile Include="src\direct3d\device.cpp" />
     <ClCompile Include="src\direct3d\device_stubs.cpp" />
-    <ClCompile Include="src\direct3d\hook.cpp" />
     <ClCompile Include="src\effects\color_grading_lut_baker.cpp" />
     <ClCompile Include="src\effects\control.cpp" />
     <ClCompile Include="src\effects\postprocess.cpp" />
@@ -150,11 +149,7 @@
     <ClCompile Include="src\shader_loader.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="dinput8.def" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="src\direct3d\creator.hpp" />
-    <ClInclude Include="src\direct3d\hook.hpp" />
     <ClInclude Include="src\direct3d\vertex_input_state.hpp" />
     <ClInclude Include="src\direct3d\texture_state_block.hpp" />
     <ClInclude Include="src\effects\color_helpers.hpp" />
@@ -192,6 +187,9 @@
     <ClInclude Include="src\unlock_memory.hpp" />
     <ClInclude Include="src\user_config.hpp" />
     <ClInclude Include="src\window_helpers.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="d3d9.def" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

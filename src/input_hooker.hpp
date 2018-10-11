@@ -4,8 +4,6 @@
 
 #include <functional>
 
-struct IDirectInput8A;
-
 namespace sp {
 
 enum class Input_mode {
@@ -16,9 +14,7 @@ enum class Input_mode {
    imgui
 };
 
-void initialize_input_hooks(const DWORD thread_id, IDirectInput8A& direct_input) noexcept;
-
-void close_input_hooks() noexcept;
+void initialize_input_hooks(const DWORD thread_id) noexcept;
 
 void set_input_window(const DWORD thread_id, const HWND window) noexcept;
 

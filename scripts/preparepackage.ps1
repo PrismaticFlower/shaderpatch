@@ -23,7 +23,7 @@ copy "${installationPath}\VC\Redist\MSVC\14.*\VCRedist_x86.exe" ".\packaged\data
 # Build
 msbuild /t:Build /p:Configuration=Release /p:Platform=x86 /m shader_patch.sln
 
-copy .\bin\Release\dinput8.dll .\packaged\
+copy .\bin\Release\d3d9.dll .\packaged\
 copy ".\bin\Release\shader patch installer.exe" ".\packaged\Shader Patch Installer.exe"
 copy ".\bin\Release\Microsoft.Expression.Drawing.dll" .\packaged\
 
@@ -40,17 +40,4 @@ copy '.\assets\fps limit info.yml' .\packaged\data\shaderpatch\
 copy '.\assets\shader patch.yml' .\packaged\
 copy '.\assets\shader patch user readme.txt' '.\packaged\shader patch readme.txt'
 
-# Copy core.lvl source files.
-copy '.\assets\core\' '.\packaged\data\shaderpatch\core\' -Recurse
-
-if (Test-Path -Path ".\packaged\data\shaderpatch\core\munged") 
-{ 
-   del ".\packaged\data\shaderpatch\core\munged" -Recurse
-}
-
-if (Test-Path -Path ".\packaged\data\shaderpatch\core\build") 
-{ 
-   del ".\packaged\data\shaderpatch\core\build" -Recurse
-}
-
-Move-Item -Path .\packaged\data\shaderpatch\core\core.lvl -Destination .\packaged\data\_lvl_pc\core.lvl
+Copy-Item -Path .\assets\core\core.lvl -Destination .\packaged\data\_lvl_pc\core.lvl
