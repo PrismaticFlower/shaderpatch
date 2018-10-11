@@ -34,6 +34,6 @@ into the GameData directory of your SWBFII installation. Backup any duplicate fi
 v0.6.0 only core.lvl needs to be backed up), when using the installer it will do this for you.
 
 You'll need the Visual Studio 2017 version of the VC++ runtime to use Shader Patch. You can 
-find it (relative to this file) at "data\shaderpatch\binVCRedist_x86.exe" or you can download it
+find it (relative to this file) at "data\shaderpatch\bin\VCRedist_x86.exe" or you can download it
 from Microsoft directly over here https://www.visualstudio.com/downloads/ (scroll down to the 
 bottom of the page to find it).
