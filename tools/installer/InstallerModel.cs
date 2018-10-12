@@ -141,7 +141,7 @@ namespace installer
 
             XmlSerializer serializer = new XmlSerializer(typeof(InstallInfo));
 
-            using (var stream = File.OpenWrite(Path.Combine(installPath, "data/shaderpatch/install_info.xml")))
+            using (var stream = File.Create(Path.Combine(installPath, "data/shaderpatch/install_info.xml")))
             {
                serializer.Serialize(stream, installInfo);
             }
