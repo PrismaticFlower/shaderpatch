@@ -2,7 +2,6 @@
 #include "com_ptr.hpp"
 #include "direct3d/creator.hpp"
 #include "hook_vtable.hpp"
-#include "input_hooker.hpp"
 #include "logger.hpp"
 
 #include <exception>
@@ -49,8 +48,6 @@ const auto true_direct3d_create =
 extern "C" IDirect3D9* __stdcall direct3d9_create(UINT) noexcept
 {
    Com_ptr actual{true_direct3d_create(D3D_SDK_VERSION)};
-
-   initialize_input_hooks(GetCurrentThreadId());
 
    return direct3d::Creator::create(std::move(actual)).release();
 }

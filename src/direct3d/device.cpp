@@ -269,7 +269,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
       auto& io = ImGui::GetIO();
       io.MouseDrawCursor = true;
 
-      set_input_window(GetCurrentThreadId(), _window);
+      initialize_input_hooks(GetCurrentThreadId(), _window);
 
       set_input_hotkey(_config.developer.toggle_key);
       set_input_hotkey_func([this] {

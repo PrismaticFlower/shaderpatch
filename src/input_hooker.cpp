@@ -131,11 +131,11 @@ void install_get_message_hook(const DWORD thread_id) noexcept
 
 void install_dinput_hooks() noexcept
 {
+   Expects(g_window);
+
    static bool installed = false;
 
-   if (installed) return;
-
-   installed = true;
+   if (std::exchange(installed, true)) return;
 
    static_assert(DIRECTINPUT_VERSION == 0x0800,
                  "Unexpected DirectInput version. Device vtables hooked may be "
@@ -147,10 +147,13 @@ void install_dinput_hooks() noexcept
                              IID_IDirectInput8A, dinput.void_clear_and_assign(),
                              nullptr);
 
-   using Aquire_fn = HRESULT __stdcall(IDirectInputDevice8A & self);
+   using Set_coop_level_fn = HRESULT __stdcall(IDirectInputDevice8A&, HWND, DWORD);
 
-   using Get_device_state_fn =
-      HRESULT __stdcall(IDirectInputDevice8A & self, DWORD data_size, LPVOID data);
+   using Poll_fn = HRESULT __stdcall(IDirectInputDevice8A&);
+
+   using Get_device_state_fn = HRESULT __stdcall(IDirectInputDevice8A&, DWORD, LPVOID);
+
+   const std::uintptr_t* keyboard_vtable;
 
    // Hook System Keyboard Device
    {
@@ -158,21 +161,36 @@ void install_dinput_hooks() noexcept
 
       dinput->CreateDevice(GUID_SysKeyboard, device.clear_and_assign(), nullptr);
 
-      static Aquire_fn* true_keyboard_aquire = nullptr;
+      keyboard_vtable = get_vtable_pointer(*device);
 
-      true_keyboard_aquire =
-         hook_vtable<Aquire_fn>(*device, 7, [](IDirectInputDevice8A& self) {
-            self.SetCooperativeLevel(g_window, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
+      static Set_coop_level_fn* true_set_coop_level = nullptr;
 
-            return true_keyboard_aquire(self);
+      true_set_coop_level = hook_vtable<Set_coop_level_fn>(
+         *device, 13, [](IDirectInputDevice8A& self, HWND window, DWORD) {
+            return true_set_coop_level(self, window,
+                                       DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
          });
 
-      static Get_device_state_fn* true_get_keyboard_device_state = nullptr;
+      static Poll_fn* true_poll = nullptr;
 
-      true_get_keyboard_device_state = hook_vtable<Get_device_state_fn>(
+      true_poll = hook_vtable<Poll_fn>(*device, 25, [](IDirectInputDevice8A& self) {
+         static int coop_overrides_left = 2;
+
+         if (coop_overrides_left != 0) {
+            --coop_overrides_left;
+            self.Unacquire();
+            true_set_coop_level(self, g_window, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
+         }
+
+         return true_poll(self);
+      });
+
+      static Get_device_state_fn* true_get_device_state = nullptr;
+
+      true_get_device_state = hook_vtable<Get_device_state_fn>(
          *device, 9, [](IDirectInputDevice8A& self, DWORD data_size, LPVOID data) {
             if (g_input_mode == Input_mode::normal) {
-               return true_get_keyboard_device_state(self, data_size, data);
+               return true_get_device_state(self, data_size, data);
             }
 
             std::memset(data, 0, data_size);
@@ -182,63 +200,74 @@ void install_dinput_hooks() noexcept
    }
 
    // Hook System Mouse Device
-   // {
-   //    Com_ptr<IDirectInputDevice8A> device;
-   //
-   //    dinput->CreateDevice(GUID_SysMouse, device.clear_and_assign(), nullptr);
-   //
-   //    static Set_coop_level_type* true_set_mouse_coop_level = nullptr;
-   //
-   //    true_set_mouse_coop_level = hook_vtable<Set_coop_level_type>(
-   //       *device, 13, [](IDirectInputDevice8A& self, HWND window, DWORD) {
-   //          return true_set_mouse_coop_level(self, window,
-   //                                           DISCL_NONEXCLUSIVE | DISCL_FOREGROUND);
-   //       });
-   //
-   //    static Get_device_state_type* true_get_mouse_device_state = nullptr;
-   //
-   //    true_get_mouse_device_state = hook_vtable<Get_device_state_type>(
-   //       *device, 9, [](IDirectInputDevice8A& self, DWORD data_size, LPVOID data) {
-   //          if (g_input_mode == Input_mode::normal) {
-   //             return true_get_mouse_device_state(self, data_size, data);
-   //          }
-   //
-   //          std::memset(data, 0, data_size);
-   //
-   //          return DI_OK;
-   //       });
-   // }
+   {
+      Com_ptr<IDirectInputDevice8A> device;
+
+      dinput->CreateDevice(GUID_SysMouse, device.clear_and_assign(), nullptr);
+
+      if (keyboard_vtable == get_vtable_pointer(*device)) return;
+
+      static Set_coop_level_fn* true_set_coop_level = nullptr;
+
+      true_set_coop_level = hook_vtable<Set_coop_level_fn>(
+         *device, 13, [](IDirectInputDevice8A& self, HWND window, DWORD) {
+            return true_set_coop_level(self, window,
+                                       DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
+         });
+
+      static Poll_fn* true_poll = nullptr;
+
+      true_poll = hook_vtable<Poll_fn>(*device, 25, [](IDirectInputDevice8A& self) {
+         static bool coop_level_overridden = false;
+
+         if (!std::exchange(coop_level_overridden, true)) {
+            self.Unacquire();
+            true_set_coop_level(self, g_window, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
+         }
+
+         return true_poll(self);
+      });
+
+      static Get_device_state_fn* true_get_device_state = nullptr;
+
+      true_get_device_state = hook_vtable<Get_device_state_fn>(
+         *device, 9, [](IDirectInputDevice8A& self, DWORD data_size, LPVOID data) {
+            if (g_input_mode == Input_mode::normal) {
+               return true_get_device_state(self, data_size, data);
+            }
+
+            std::memset(data, 0, data_size);
+
+            return DI_OK;
+         });
+   }
+}
+
+void install_winndow_hook(const DWORD thread_id) noexcept
+{
+   Expects(g_window);
+   Expects(!g_wnd_proc_hook);
+
+   g_wnd_proc_hook =
+      SetWindowsHookExW(WH_CALLWNDPROC, &wnd_proc_hook, nullptr, thread_id);
 }
 }
 
-void initialize_input_hooks(const DWORD thread_id) noexcept
+void initialize_input_hooks(const DWORD thread_id, const HWND window) noexcept
 {
+   Expects(window);
+
    static bool hooked = false;
 
    if (std::exchange(hooked, true)) {
       log_and_terminate("Attempt to install input hooks twice.");
    }
 
-   install_get_message_hook(thread_id);
-   install_dinput_hooks();
-}
-
-void set_input_window(const DWORD thread_id, const HWND window) noexcept
-{
    g_window = window;
 
-   if (g_wnd_proc_hook) {
-      UnhookWindowsHookEx(g_wnd_proc_hook);
-
-      g_wnd_proc_hook = nullptr;
-   }
-
-   g_wnd_proc_hook =
-      SetWindowsHookExW(WH_CALLWNDPROC, &wnd_proc_hook, nullptr, thread_id);
-
-   if (GetFocus() == window) {
-      clip_cursor_to_window(window);
-   }
+   install_get_message_hook(thread_id);
+   install_dinput_hooks();
+   install_winndow_hook(thread_id);
 }
 
 void set_input_mode(const Input_mode mode) noexcept
