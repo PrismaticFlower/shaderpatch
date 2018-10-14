@@ -149,6 +149,12 @@ void write_file_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
 
    const auto file_data = read_binary_in(filepath);
 
+   if (file_data.size() == 8u) {
+      synced_print(filepath, " is empty, skipping."sv);
+
+      return;
+   }
+
    ucfb::Reader reader{gsl::make_span(file_data)};
 
    if (filepath.extension() == ".lvl"s) {
@@ -281,14 +287,14 @@ int main(int arg_count, char* args[])
    }
 
    if (!fs::exists(source_dir)) {
-      synced_error_print("Input Directory "sv, std::quoted(source_dir),
+      synced_error_print("Source Directory "sv, std::quoted(source_dir),
                          " does not exist!"sv);
 
       return 1;
    }
 
    if (input_directories.empty()) {
-      synced_error_print("No source directories specified!"sv);
+      synced_error_print("No input directories specified!"sv);
 
       return 1;
    }
@@ -298,18 +304,19 @@ int main(int arg_count, char* args[])
 
    for (const auto& path : input_directories_paths) {
       if (!fs::exists(path) || !fs::is_directory(path)) {
-         synced_error_print("Warning source directory "sv, path, " does not exist!"sv);
+         synced_error_print("Warning input directory "sv, path, " does not exist!"sv);
       }
    }
 
    const auto extern_files = make_extern_files_set(extern_files_list_paths);
 
+   const std::regex regex{input_filter, std::regex::ECMAScript};
+
    const auto process_directory = [&](auto&& iterator) {
       for (auto& entry : std::forward<decltype(iterator)>(iterator)) {
          if (!fs::is_regular_file(entry.path())) continue;
 
-         if (!std::regex_match(entry.path().filename().string(),
-                               std::regex{input_filter, std::regex::ECMAScript})) {
+         if (!std::regex_match(entry.path().filename().string(), regex)) {
             continue;
          }
 

@@ -108,7 +108,8 @@ inline auto parse_req_file(const std::filesystem::path& filepath,
       while (section && !section.eof()) {
          std::string key;
 
-         section >> key >> std::ws;
+         std::getline(section, key);
+         section >> std::ws;
 
          if (auto unquoted = sectioned_split_split(key, "\""sv, "\""sv); unquoted) {
             key = (*unquoted)[0];
@@ -212,7 +213,8 @@ inline void parse_files_req_file(const std::filesystem::path& filepath,
       while (section && !section.eof()) {
          std::string value;
 
-         section >> value >> std::ws;
+         std::getline(section, value);
+         section >> std::ws;
 
          if (auto unquoted = sectioned_split_split(value, "\""sv, "\""sv); unquoted) {
             value = (*unquoted)[0];
