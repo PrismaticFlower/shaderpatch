@@ -89,7 +89,15 @@ void Declaration_munge::save(const fs::path& output_path, const std::string& inp
       }
 
       // write pixel shaders
-      pipe.emplace_child("PSP_"_mn).emplace_child("PS__"_mn).write("NULL"_mn);
+      {
+         auto psp_ = pipe.emplace_child("PSP_"_mn);
+
+         {
+            auto ps__ = pipe.emplace_child("PS__"_mn);
+            ps__.write(sizeof(Magic_number));
+            ps__.write("NULL"_mn);
+         }
+      }
 
       for (std::uint32_t i = 0u; i < _states.size(); ++i) {
          const auto& state = _states[i];
