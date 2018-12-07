@@ -3,8 +3,6 @@
 
 #include "constants_list.hlsl"
 
-#define __VERTEX_INPUT_FORCE_DYNAMIC_DECOMPRESSION__
-
 namespace detail {
 namespace vi {
 #ifdef __VERTEX_INPUT_IS_COMPRESSED__
@@ -23,14 +21,6 @@ typedef float2 Texcoords_vec;
 }
 }
 
-
-// #define __VERTEX_INPUT_POSITION__
-// #define __VERTEX_INPUT_BLEND_INDICES__
-// #define __VERTEX_INPUT_NORMAL__
-// #define __VERTEX_INPUT_TANGENTS__
-// #define __VERTEX_INPUT_COLOR__
-// #define __VERTEX_INPUT_TEXCOORDS__
-
 struct Vertex_input
 {
    float3 position()
@@ -40,8 +30,6 @@ struct Vertex_input
          const float3 position = float3(_position.xyz);
 
          return position_decompress_max.xyz + (position_decompress_min.xyz * position);
-#     elif defined(__VERTEX_INPUT_FORCE_DYNAMIC_DECOMPRESSION__)
-         return position_decompress_max.xyz + (position_decompress_min.xyz * _position.xyz);
       #else
          return _position;
       #endif
@@ -64,8 +52,6 @@ struct Vertex_input
 #  ifdef __VERTEX_INPUT_NORMAL__
 #     ifdef __VERTEX_INPUT_IS_COMPRESSED__
          return _normal.xyz * 255.0 / 127.0 - 128.0 / 127.0;
-#     elif defined(__VERTEX_INPUT_FORCE_DYNAMIC_DECOMPRESSION__)
-         return _normal.xyz * normaltex_decompress.x + normaltex_decompress.y;
       #else
          return _normal;
       #endif
@@ -79,8 +65,6 @@ struct Vertex_input
 #  ifdef __VERTEX_INPUT_TANGENTS__
 #     ifdef __VERTEX_INPUT_IS_COMPRESSED__
          return _tangent.xyz * 255.0 / 127.0 - 128.0 / 127.0;
-#     elif defined(__VERTEX_INPUT_FORCE_DYNAMIC_DECOMPRESSION__)
-         return _tangent.xyz * normaltex_decompress.x + normaltex_decompress.y;
       #else
          return _tangent;
       #endif
@@ -94,8 +78,6 @@ struct Vertex_input
 #  ifdef __VERTEX_INPUT_TANGENTS__
 #     ifdef __VERTEX_INPUT_IS_COMPRESSED__
          return _bitangent.xyz * 255.0 / 127.0 - 128.0 / 127.0;
-#     elif defined(__VERTEX_INPUT_FORCE_DYNAMIC_DECOMPRESSION__)
-         return _bitangent.xyz * normaltex_decompress.x + normaltex_decompress.y;
       #else
          return _bitangent;
       #endif
@@ -118,8 +100,6 @@ struct Vertex_input
 #  ifdef __VERTEX_INPUT_TEXCOORDS__
 #     ifdef __VERTEX_INPUT_IS_COMPRESSED__
          return (float2)_texcoords / 2048.0;
-#     elif defined(__VERTEX_INPUT_FORCE_DYNAMIC_DECOMPRESSION__)
-         return _texcoords * normaltex_decompress.z;
       #else
          return _texcoords;
       #endif
@@ -141,8 +121,8 @@ struct Vertex_input
 #endif
 
 #ifdef __VERTEX_INPUT_TANGENTS__
-   detail::vi::Normal_vec _tangent   : BINORMAL;
    detail::vi::Normal_vec _bitangent : TANGENT;
+   detail::vi::Normal_vec _tangent   : BINORMAL;
 #endif
 
 #ifdef __VERTEX_INPUT_COLOR__

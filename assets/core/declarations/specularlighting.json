@@ -11,7 +11,7 @@
 
           "skinned": true,
           "lighting": false,
-          "vertex_color": false,
+          "vertex_color": true,
           "texture_coords": true,
           "base_input": "normals"
         }
@@ -27,7 +27,7 @@
 
           "skinned": true,
           "lighting": false,
-          "vertex_color": false,
+          "vertex_color": true,
           "texture_coords": true,
           "base_input": "normals"
         }
@@ -43,7 +43,7 @@
 
           "skinned": true,
           "lighting": false,
-          "vertex_color": false,
+          "vertex_color": true,
           "texture_coords": true,
           "base_input": "normals"
         }
@@ -59,7 +59,7 @@
 
           "skinned": true,
           "lighting": false,
-          "vertex_color": false,
+          "vertex_color": true,
           "texture_coords": true,
           "base_input": "normals"
         }
@@ -75,7 +75,7 @@
 
           "skinned": true,
           "lighting": false,
-          "vertex_color": false,
+          "vertex_color": true,
           "texture_coords": true,
           "base_input": "tangents"
         }
@@ -91,7 +91,7 @@
 
           "skinned": true,
           "lighting": false,
-          "vertex_color": false,
+          "vertex_color": true,
           "texture_coords": true,
           "base_input": "tangents"
         }
@@ -107,7 +107,7 @@
 
           "skinned": true,
           "lighting": false,
-          "vertex_color": false,
+          "vertex_color": true,
           "texture_coords": true,
           "base_input": "tangents"
         },
@@ -117,7 +117,7 @@
 
           "skinned": true,
           "lighting": false,
-          "vertex_color": false,
+          "vertex_color": true,
           "texture_coords": true,
           "base_input": "tangents"
         }

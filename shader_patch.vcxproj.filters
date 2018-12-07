@@ -13,25 +13,19 @@
     <Filter Include="src\imgui">
       <UniqueIdentifier>{995a280b-cfa2-4de5-82b7-596f17701cc0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\core">
+      <UniqueIdentifier>{5dbc8ed0-a3c6-4114-8b1e-5967ed35fd7c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
       <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\direct3d\device.cpp">
-      <Filter>src\direct3d</Filter>
-    </ClCompile>
-    <ClCompile Include="src\direct3d\device_stubs.cpp">
-      <Filter>src\direct3d</Filter>
     </ClCompile>
     <ClCompile Include="src\input_hooker.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\direct3d\check_required_features.cpp">
       <Filter>src\direct3d</Filter>
-    </ClCompile>
-    <ClCompile Include="src\shader_loader.cpp">
-      <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\material.cpp">
       <Filter>src</Filter>
@@ -63,19 +57,67 @@
     <ClCompile Include="src\effects\damage_overlay.cpp">
       <Filter>src\effects</Filter>
     </ClCompile>
+    <ClCompile Include="src\direct3d\device_old.cpp">
+      <Filter>src\direct3d</Filter>
+    </ClCompile>
+    <ClCompile Include="src\direct3d\device.cpp">
+      <Filter>src\direct3d</Filter>
+    </ClCompile>
+    <ClCompile Include="src\direct3d\texture2d_managed.cpp">
+      <Filter>src\direct3d</Filter>
+    </ClCompile>
+    <ClCompile Include="src\direct3d\texture2d_rendertarget.cpp">
+      <Filter>src\direct3d</Filter>
+    </ClCompile>
+    <ClCompile Include="src\direct3d\surface_backbuffer.cpp">
+      <Filter>src\direct3d</Filter>
+    </ClCompile>
+    <ClCompile Include="src\direct3d\texture3d_managed.cpp">
+      <Filter>src\direct3d</Filter>
+    </ClCompile>
+    <ClCompile Include="src\direct3d\texturecube_managed.cpp">
+      <Filter>src\direct3d</Filter>
+    </ClCompile>
+    <ClCompile Include="src\direct3d\surface_depthstencil.cpp">
+      <Filter>src\direct3d</Filter>
+    </ClCompile>
+    <ClCompile Include="src\direct3d\surface_systemmem_dummy.cpp">
+      <Filter>src\direct3d</Filter>
+    </ClCompile>
+    <ClCompile Include="src\direct3d\render_state_manager.cpp">
+      <Filter>src\direct3d</Filter>
+    </ClCompile>
+    <ClCompile Include="src\direct3d\vertex_declaration.cpp">
+      <Filter>src\direct3d</Filter>
+    </ClCompile>
+    <ClCompile Include="src\direct3d\vertex_shader.cpp">
+      <Filter>src\direct3d</Filter>
+    </ClCompile>
+    <ClCompile Include="src\direct3d\pixel_shader.cpp">
+      <Filter>src\direct3d</Filter>
+    </ClCompile>
+    <ClCompile Include="src\direct3d\query.cpp">
+      <Filter>src\direct3d</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\shader_loader.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\shader_patch.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\d3d11_helpers.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\input_layout_cache.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\input_layout_factory.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
       <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\direct3d\device.hpp">
-      <Filter>src\direct3d</Filter>
-    </ClInclude>
-    <ClInclude Include="src\direct3d\shader.hpp">
-      <Filter>src\direct3d</Filter>
-    </ClInclude>
-    <ClInclude Include="src\direct3d\shader_constant.hpp">
-      <Filter>src\direct3d</Filter>
     </ClInclude>
     <ClInclude Include="src\shader_constants.hpp">
       <Filter>src</Filter>
@@ -86,9 +128,6 @@
     <ClInclude Include="src\window_helpers.hpp">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\direct3d\render_state_block.hpp">
-      <Filter>src\direct3d</Filter>
-    </ClInclude>
     <ClInclude Include="src\logger.hpp">
       <Filter>src</Filter>
     </ClInclude>
@@ -96,18 +135,6 @@
       <Filter>src\direct3d</Filter>
     </ClInclude>
     <ClInclude Include="src\user_config.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\direct3d\sampler_state_block.hpp">
-      <Filter>src\direct3d</Filter>
-    </ClInclude>
-    <ClInclude Include="src\shader_database.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\shader_program.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\shader_loader.hpp">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\texture.hpp">
@@ -137,9 +164,6 @@
     <ClInclude Include="src\imgui\imgui_impl_dx9.h">
       <Filter>src\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="src\direct3d\texture_state_block.hpp">
-      <Filter>src\direct3d</Filter>
-    </ClInclude>
     <ClInclude Include="src\effects\scene_blur.hpp">
       <Filter>src\effects</Filter>
     </ClInclude>
@@ -150,12 +174,6 @@
       <Filter>src\effects</Filter>
     </ClInclude>
     <ClInclude Include="src\direct3d\creator.hpp">
-      <Filter>src\direct3d</Filter>
-    </ClInclude>
-    <ClInclude Include="src\direct3d\transform_state_block.hpp">
-      <Filter>src\direct3d</Filter>
-    </ClInclude>
-    <ClInclude Include="src\direct3d\vertex_input_state.hpp">
       <Filter>src\direct3d</Filter>
     </ClInclude>
     <ClInclude Include="src\fps_unlock.hpp">
@@ -178,6 +196,99 @@
     </ClInclude>
     <ClInclude Include="src\effects\postprocess_params.hpp">
       <Filter>src\effects</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\device_old.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\device.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\shader_patch.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\texture2d_managed.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\game_texture.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\texture2d_rendertarget.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\surface_backbuffer.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\texture3d_managed.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\texturecube_managed.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\resource.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\base_texture.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\buffer.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\surface_depthstencil.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\surface_systemmem_dummy.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\helpers.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\render_state_manager.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\vertex_declaration.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\game_input_layout.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\vertex_shader.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\game_shader.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\pixel_shader.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\query.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\shader_database.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\shader_loader.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\input_layout_cache.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\game_rendertarget.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\d3d11_helpers.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\depthstencil.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\constant_buffers.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\debug_trace.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\input_layout_factory.hpp">
+      <Filter>src\core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

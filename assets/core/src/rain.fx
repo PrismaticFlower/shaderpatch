@@ -4,8 +4,8 @@
 
 struct Vs_output
 {
+   float4 color : COLOR;
    float4 positionPS : SV_Position;
-   float4 color : TEXCOORD;
 };
 
 Vs_output rain_vs(Vertex_input input)
@@ -20,7 +20,7 @@ Vs_output rain_vs(Vertex_input input)
    return output;
 }
 
-float4 rain_ps(float4 color : TEXCOORD) : SV_Target0
+float4 rain_ps(float4 color : COLOR) : SV_Target0
 {
    return color;
 }

@@ -47,8 +47,8 @@ void Scene_blur::apply(const Shader_database& shaders, Rendertarget_allocator& a
 
    shaders.rendertypes.at("scene blur apply"s).at("main"s).bind(*_device);
 
-   direct3d::Ps_1f_shader_constant<constants::ps::post_processing_start>{}.set(*_device,
-                                                                               alpha);
+   d3d9::Ps_1f_shader_constant<constants::ps::post_processing_start>{}.set(*_device,
+                                                                           alpha);
 
    _device->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 1);
 }

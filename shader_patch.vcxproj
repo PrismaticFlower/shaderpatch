@@ -46,7 +46,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>bin\$(Configuration)\</OutDir>
+    <OutDir>D:\GOG Games\Star Wars - Battlefront 2\GameData\</OutDir>
     <IntDir>build\$(Configuration)\</IntDir>
     <TargetName>d3d9</TargetName>
     <TargetExt>.dll</TargetExt>
@@ -55,7 +55,7 @@
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>bin\$(Configuration)\</OutDir>
+    <OutDir>D:\GOG Games\Star Wars - Battlefront 2\GameData\</OutDir>
     <IntDir>build\$(Configuration)\</IntDir>
     <TargetName>d3d9</TargetName>
     <TargetExt>.dll</TargetExt>
@@ -72,13 +72,15 @@
       <PreprocessorDefinitions>GLM_FORCE_CXX03;NOMINMAX;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>true</TreatWarningAsError>
       <AdditionalIncludeDirectories>submodules/vcpkg/installed/x86-windows-static-md/include;submodules/vcpkg/installed/x86-windows/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4127</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4275;4251;4127;4018</DisableSpecificWarnings>
       <ConformanceMode>true</ConformanceMode>
       <EnablePREfast>false</EnablePREfast>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>mhook.lib;Bcrypt.lib	;boost_system-vc140-mt-gd.lib;libyaml-cppmdd.lib;DirectXTex.lib;dxguid.lib;d3d9.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;DXGI.lib;Bcrypt.lib;dxguid.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>d3d9.def</ModuleDefinitionFile>
       <AdditionalLibraryDirectories>submodules/vcpkg/installed/x86-windows-static-md/debug/lib;submodules/vcpkg/installed/x86-windows/debug/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <DelayLoadDLLs>
@@ -107,14 +109,16 @@
       <PreprocessorDefinitions>GLM_FORCE_CXX03;NOMINMAX;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>true</TreatWarningAsError>
       <AdditionalIncludeDirectories>submodules/vcpkg/installed/x86-windows-static-md/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4127</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4275;4251;4127;4018</DisableSpecificWarnings>
       <ConformanceMode>true</ConformanceMode>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>mhook.lib;Bcrypt.lib	;boost_system-vc140-mt.lib;libyaml-cppmd.lib;DirectXTex.lib;dxguid.lib;d3d9.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;DXGI.lib;Bcrypt.lib;dxguid.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>d3d9.def</ModuleDefinitionFile>
       <AdditionalLibraryDirectories>submodules/vcpkg/installed/x86-windows-static-md/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <DelayLoadDLLs>
@@ -131,45 +135,144 @@
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\effects\damage_overlay.cpp" />
-    <ClCompile Include="src\effects\shadows_blur.cpp" />
+    <ClCompile Include="src\core\d3d11_helpers.cpp" />
+    <ClCompile Include="src\core\input_layout_cache.cpp" />
+    <ClCompile Include="src\core\input_layout_factory.cpp" />
+    <ClCompile Include="src\core\shader_loader.cpp" />
+    <ClCompile Include="src\core\shader_patch.cpp" />
+    <ClCompile Include="src\direct3d\device.cpp" />
+    <ClCompile Include="src\direct3d\pixel_shader.cpp" />
+    <ClCompile Include="src\direct3d\query.cpp" />
+    <ClCompile Include="src\direct3d\render_state_manager.cpp" />
+    <ClCompile Include="src\direct3d\surface_backbuffer.cpp" />
+    <ClCompile Include="src\direct3d\surface_depthstencil.cpp" />
+    <ClCompile Include="src\direct3d\surface_systemmem_dummy.cpp" />
+    <ClCompile Include="src\direct3d\texture2d_managed.cpp" />
+    <ClCompile Include="src\direct3d\texture2d_rendertarget.cpp" />
+    <ClCompile Include="src\direct3d\texture3d_managed.cpp" />
+    <ClCompile Include="src\direct3d\texturecube_managed.cpp" />
+    <ClCompile Include="src\direct3d\vertex_declaration.cpp" />
+    <ClCompile Include="src\direct3d\vertex_shader.cpp" />
+    <ClCompile Include="src\effects\damage_overlay.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\effects\shadows_blur.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="src\direct3d\check_required_features.cpp" />
     <ClCompile Include="src\direct3d\creator.cpp" />
-    <ClCompile Include="src\direct3d\device.cpp" />
-    <ClCompile Include="src\direct3d\device_stubs.cpp" />
-    <ClCompile Include="src\effects\color_grading_lut_baker.cpp" />
-    <ClCompile Include="src\effects\control.cpp" />
-    <ClCompile Include="src\effects\postprocess.cpp" />
-    <ClCompile Include="src\effects\scene_blur.cpp" />
+    <ClCompile Include="src\direct3d\device_old.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\effects\color_grading_lut_baker.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\effects\control.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\effects\postprocess.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\effects\scene_blur.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="src\fps_unlock.cpp" />
     <ClCompile Include="src\imgui\imgui_impl_dx9.cpp" />
     <ClCompile Include="src\input_hooker.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\material.cpp" />
-    <ClCompile Include="src\shader_loader.cpp" />
+    <ClCompile Include="src\material.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\core\constant_buffers.hpp" />
+    <ClInclude Include="src\core\depthstencil.hpp" />
+    <ClInclude Include="src\core\game_input_layout.hpp" />
+    <ClInclude Include="src\core\game_rendertarget.hpp" />
+    <ClInclude Include="src\core\game_shader.hpp" />
+    <ClInclude Include="src\core\d3d11_helpers.hpp" />
+    <ClInclude Include="src\core\input_layout_cache.hpp" />
+    <ClInclude Include="src\core\input_layout_factory.hpp" />
+    <ClInclude Include="src\core\shader_database.hpp" />
+    <ClInclude Include="src\core\shader_loader.hpp" />
+    <ClInclude Include="src\core\shader_patch.hpp" />
+    <ClInclude Include="src\core\game_texture.hpp" />
+    <ClInclude Include="src\direct3d\base_texture.hpp" />
+    <ClInclude Include="src\direct3d\buffer.hpp" />
     <ClInclude Include="src\direct3d\creator.hpp" />
-    <ClInclude Include="src\direct3d\vertex_input_state.hpp" />
-    <ClInclude Include="src\direct3d\texture_state_block.hpp" />
-    <ClInclude Include="src\effects\color_helpers.hpp" />
-    <ClInclude Include="src\effects\damage_overlay.hpp" />
-    <ClInclude Include="src\effects\filmic_tonemapper.hpp" />
-    <ClInclude Include="src\effects\postprocess_params.hpp" />
-    <ClInclude Include="src\effects\shadows_blur.hpp" />
-    <ClInclude Include="src\direct3d\check_required_features.hpp" />
+    <ClInclude Include="src\direct3d\debug_trace.hpp" />
+    <ClInclude Include="src\direct3d\helpers.hpp" />
     <ClInclude Include="src\direct3d\device.hpp" />
-    <ClInclude Include="src\direct3d\sampler_state_block.hpp" />
-    <ClInclude Include="src\direct3d\shader.hpp" />
-    <ClInclude Include="src\direct3d\shader_constant.hpp" />
-    <ClInclude Include="src\direct3d\render_state_block.hpp" />
-    <ClInclude Include="src\direct3d\transform_state_block.hpp" />
-    <ClInclude Include="src\effects\color_grading_lut_baker.hpp" />
-    <ClInclude Include="src\effects\control.hpp" />
-    <ClInclude Include="src\effects\helpers.hpp" />
-    <ClInclude Include="src\effects\postprocess.hpp" />
-    <ClInclude Include="src\effects\rendertarget_allocator.hpp" />
-    <ClInclude Include="src\effects\scene_blur.hpp" />
+    <ClInclude Include="src\direct3d\pixel_shader.hpp" />
+    <ClInclude Include="src\direct3d\query.hpp" />
+    <ClInclude Include="src\direct3d\resource.hpp" />
+    <ClInclude Include="src\direct3d\surface_depthstencil.hpp" />
+    <ClInclude Include="src\direct3d\surface_systemmem_dummy.hpp" />
+    <ClInclude Include="src\direct3d\texture3d_managed.hpp" />
+    <ClInclude Include="src\direct3d\texturecube_managed.hpp" />
+    <ClInclude Include="src\direct3d\render_state_manager.hpp" />
+    <ClInclude Include="src\direct3d\surface_backbuffer.hpp" />
+    <ClInclude Include="src\direct3d\texture2d_managed.hpp" />
+    <ClInclude Include="src\direct3d\texture2d_rendertarget.hpp" />
+    <ClInclude Include="src\direct3d\vertex_declaration.hpp" />
+    <ClInclude Include="src\direct3d\vertex_shader.hpp" />
+    <ClInclude Include="src\effects\color_helpers.hpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="src\effects\damage_overlay.hpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="src\effects\filmic_tonemapper.hpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="src\effects\postprocess_params.hpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="src\effects\shadows_blur.hpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\check_required_features.hpp" />
+    <ClInclude Include="src\direct3d\device_old.hpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="src\effects\color_grading_lut_baker.hpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="src\effects\control.hpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="src\effects\helpers.hpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="src\effects\postprocess.hpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="src\effects\rendertarget_allocator.hpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="src\effects\scene_blur.hpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="src\fps_unlock.hpp" />
     <ClInclude Include="src\hook_vtable.hpp" />
     <ClInclude Include="src\imgui\imgui_impl_dx9.h" />
@@ -179,9 +282,6 @@
     <ClInclude Include="src\material_resource.hpp" />
     <ClInclude Include="src\resource_handle.hpp" />
     <ClInclude Include="src\shader_constants.hpp" />
-    <ClInclude Include="src\shader_database.hpp" />
-    <ClInclude Include="src\shader_loader.hpp" />
-    <ClInclude Include="src\shader_program.hpp" />
     <ClInclude Include="src\texture.hpp" />
     <ClInclude Include="src\texture_database.hpp" />
     <ClInclude Include="src\unlock_memory.hpp" />

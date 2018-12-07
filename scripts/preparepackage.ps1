@@ -41,3 +41,4 @@ copy '.\assets\shader patch.yml' .\packaged\
 copy '.\assets\shader patch user readme.txt' '.\packaged\shader patch readme.txt'
 
 Copy-Item -Path .\assets\core\core.lvl -Destination .\packaged\data\_lvl_pc\core.lvl
+Copy-Item -Path .\assets\core\shaders.lvl -Destination .\packaged\data\shaderpatch\shaders.lvl

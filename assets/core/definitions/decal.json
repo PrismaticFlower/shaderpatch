@@ -2,11 +2,42 @@
   "group_name": "decal",
   "source_name": "decal.fx",
 
+  "input_layouts": {
+    "decal_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "R32G32B32_FLOAT",
+        "offset": 0
+      },
+      {
+        "semantic": {
+          "name": "COLOR",
+          "index": 0
+        },
+        "format": "B8G8R8A8_UNORM",
+        "offset": 12
+      },
+      {
+        "semantic": {
+          "name": "TEXCOORD",
+          "index": 0
+        },
+        "format": "R32G32_FLOAT",
+        "offset": 16
+      }
+    ]
+  },
+
   "entrypoints": {
     "decal_vs": {
       "stage": "vertex",
 
       "vertex_state": {
+        "input_layout": "decal_input",
+
         "generic_input": {
           "dynamic_compression": false,
           "position": false,

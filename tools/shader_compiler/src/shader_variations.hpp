@@ -80,23 +80,25 @@ inline auto get_vertex_shader_variations(const Vertex_state& state) noexcept
    const Shader_define blend_indices_def = {"__VERTEX_INPUT_BLEND_INDICES__"s, "1"s};
    const Shader_define color_def = {"__VERTEX_INPUT_COLOR__", "1"};
 
-   add_variation(Vertex_shader_flags::none, {unskinned_def});
+   if (!state.generic_input.always_compressed) {
+      add_variation(Vertex_shader_flags::none, {unskinned_def});
 
-   if (state.generic_input.skinned) {
-      add_variation(Vertex_shader_flags::hard_skinned,
-                    {skinned_def, blend_indices_def});
+      if (state.generic_input.skinned) {
+         add_variation(Vertex_shader_flags::hard_skinned,
+                       {skinned_def, blend_indices_def});
+      }
+
+      if (state.generic_input.color) {
+         add_variation(Vertex_shader_flags::color, {unskinned_def, color_def});
+      }
+
+      if (state.generic_input.skinned && state.generic_input.color) {
+         add_variation(Vertex_shader_flags::hard_skinned | Vertex_shader_flags::color,
+                       {skinned_def, blend_indices_def, color_def});
+      }
    }
 
-   if (state.generic_input.color) {
-      add_variation(Vertex_shader_flags::color, {unskinned_def, color_def});
-   }
-
-   if (state.generic_input.skinned && state.generic_input.color) {
-      add_variation(Vertex_shader_flags::hard_skinned | Vertex_shader_flags::color,
-                    {skinned_def, blend_indices_def, color_def});
-   }
-
-   if (state.generic_input.dynamic_compression) {
+   if (state.generic_input.dynamic_compression || state.generic_input.always_compressed) {
       add_variation(Vertex_shader_flags::compressed, {unskinned_def, compressed_def});
 
       if (state.generic_input.skinned) {

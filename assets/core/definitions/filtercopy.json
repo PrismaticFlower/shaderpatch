@@ -2,6 +2,27 @@
   "group_name": "filtercopy",
   "source_name": "filtercopy.fx",
 
+  "input_layouts": {
+    "filtercopy_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "R32G32B32_FLOAT",
+        "offset": 0
+      },
+      {
+        "semantic": {
+          "name": "TEXCOORD",
+          "index": 0
+        },
+        "format": "R32G32_FLOAT",
+        "offset": 12
+      }
+    ]
+  },
+
   "entrypoints": {
     "filtercopy_4tex_vs": {
       "stage": "vertex",
@@ -10,6 +31,8 @@
       "defines": [ [ "TEXTURE_COUNT", "4" ] ],
 
       "vertex_state": {
+        "input_layout": "filtercopy_input",
+
         "generic_input": {
           "dynamic_compression": false,
           "position": false,
@@ -29,6 +52,8 @@
       "defines": [ [ "TEXTURE_COUNT", "3" ] ],
 
       "vertex_state": {
+        "input_layout": "filtercopy_input",
+
         "generic_input": {
           "dynamic_compression": false,
           "position": false,
@@ -48,6 +73,8 @@
       "defines": [ [ "TEXTURE_COUNT", "2" ] ],
 
       "vertex_state": {
+        "input_layout": "filtercopy_input",
+
         "generic_input": {
           "dynamic_compression": false,
           "position": false,
@@ -67,6 +94,8 @@
       "defines": [ [ "TEXTURE_COUNT", "1" ] ],
 
       "vertex_state": {
+        "input_layout": "filtercopy_input",
+
         "generic_input": {
           "dynamic_compression": false,
           "position": false,

@@ -157,19 +157,19 @@ void Postprocess::do_bloom_and_color_grading(const Shader_database& shaders,
    bloom_shaders.at("upsample"s).bind(*_device);
    set_fs_pass_additive_blend_state(*_device);
 
-   direct3d::Ps_3f_shader_constant<constants::ps::post_processing_start + 10>{}
+   d3d9::Ps_3f_shader_constant<constants::ps::post_processing_start + 10>{}
       .set(*_device, _bloom_outer_scale);
    do_bloom_pass(*rt_e.texture(), *rt_d.surface());
 
-   direct3d::Ps_3f_shader_constant<constants::ps::post_processing_start + 10>{}
+   d3d9::Ps_3f_shader_constant<constants::ps::post_processing_start + 10>{}
       .set(*_device, _bloom_outer_mid_scale);
    do_bloom_pass(*rt_d.texture(), *rt_c.surface());
 
-   direct3d::Ps_3f_shader_constant<constants::ps::post_processing_start + 10>{}
+   d3d9::Ps_3f_shader_constant<constants::ps::post_processing_start + 10>{}
       .set(*_device, _bloom_mid_scale);
    do_bloom_pass(*rt_c.texture(), *rt_b.surface());
 
-   direct3d::Ps_3f_shader_constant<constants::ps::post_processing_start + 10>{}
+   d3d9::Ps_3f_shader_constant<constants::ps::post_processing_start + 10>{}
       .set(*_device, _bloom_inner_mid_scale);
    do_bloom_pass(*rt_b.texture(), *rt_a.surface());
 
@@ -193,9 +193,9 @@ void Postprocess::do_bloom_and_color_grading(const Shader_database& shaders,
    const auto output_size =
       static_cast<glm::vec2>(std::get<glm::ivec2>(get_surface_metrics(output)));
 
-   direct3d::Ps_2f_shader_constant<constants::ps::post_processing_start + 1>{}
+   d3d9::Ps_2f_shader_constant<constants::ps::post_processing_start + 1>{}
       .set(*_device, {1.0f / input_size});
-   direct3d::Ps_3f_shader_constant<constants::ps::post_processing_start + 10>{}
+   d3d9::Ps_3f_shader_constant<constants::ps::post_processing_start + 10>{}
       .set(*_device, _bloom_inner_scale);
 
    do_pass(input, output);
@@ -248,7 +248,7 @@ void Postprocess::do_bloom_pass(IDirect3DTexture9& input, IDirect3DSurface9& out
    const auto input_size =
       static_cast<glm::vec2>(std::get<glm::ivec2>(get_texture_metrics(input)));
 
-   direct3d::Ps_2f_shader_constant<constants::ps::post_processing_start + 1>{}
+   d3d9::Ps_2f_shader_constant<constants::ps::post_processing_start + 1>{}
       .set(*_device, {1.0f / input_size});
 
    _device->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 1);

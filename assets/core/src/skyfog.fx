@@ -1,13 +1,12 @@
 
 #include "constants_list.hlsl"
+#include "pixel_sampler_states.hlsl"
 
 Texture2D<float3> far_scene_texture;
 
-SamplerState linear_clamp_sampler;
-
-float4 skyfog_pos_scale : register(vs, c[CUSTOM_CONST_MIN]);
-float4 skyfog_z_transform : register(vs, c[CUSTOM_CONST_MIN + 1]);
-float4 skyfog_texcoords_transfrom : register(vs, c[CUSTOM_CONST_MIN + 2]);
+const static float4 skyfog_pos_scale = custom_constants[0]; 
+const static float4 skyfog_z_transform = custom_constants[1];
+const static float4 skyfog_texcoords_transfrom = custom_constants[2]; 
 
 struct Vs_input
 {
@@ -17,8 +16,8 @@ struct Vs_input
 
 struct Vs_output
 {
-   float4 positionPS : SV_Position;
    float2 texcoords : TEXCOORD;
+   float4 positionPS : SV_Position;
 };
 
 Vs_output skyfog_vs(Vs_input input)
@@ -38,7 +37,7 @@ Vs_output skyfog_vs(Vs_input input)
    return output;
 }
 
-float4 skyfog_ps(float2 texcoords : TEXCOORD) : COLOR
+float4 skyfog_ps(float2 texcoords : TEXCOORD) : SV_Target0
 {
    float3 color = far_scene_texture.SampleLevel(linear_clamp_sampler, texcoords, 0);
 

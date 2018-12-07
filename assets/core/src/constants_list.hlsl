@@ -1,104 +1,79 @@
 #ifndef CONSTANTS_LIST_INCLUDED
 #define CONSTANTS_LIST_INCLUDED
 
-// This file is a listing of SWBFII's shader constants/uniforms as in 
-// pcredvertexshaderconstants.h. Along with the comments on the contents
-// of the constants.
+cbuffer SceneConstants : register(b0)
+{
+   float4x4 projection_matrix;
+   float3 vs_view_positionWS;
+   float _bufferPadding0;
+   float4 fog_info; // (camera fog scale, camera fog offset, world fog scale, world fog offset)
+   float4 near_scene_fade; // (nearfade scale, nearfade offset, lighting scale, 1.0)
+   float4x3 shadow_map_transform;
+   float vertex_color_gamma;
+   float time;
+}
 
-// world space to projection space matrix
-float4x4 projection_matrix : register(vs, c[2]);
+cbuffer DrawConstants : register(b1)
+{
+   float4 normaltex_decompress; // (normal decompress = 2 or 1, -1 or 0, texture decompress = 1 / 0x0800 or 1, 1)
+   float4 position_decompress_min; // min_pos = ((bbox (max - min) * 0.5 / 0x7FFF) or (1, 1, 1), 0)
+   float4 position_decompress_max; // max_pos = ((bbox (max + min) * 0.5 / 0x7FFF) or (0, 0, 0), 1)
+   float4 color_state; // whether vertex colors are lighting or material colors (0, 1, 1, 0) or (0, 1, 1, 0) 
+   float4x3 world_matrix;
+   float4 light_ambient_color_top;
+   float4 light_ambient_color_bottom;
+   float4 light_directional_0_color;
+   float4 light_directional_0_dir;
+   float4 light_directional_1_color;
+   float4 light_directional_1_dir;
+   float4 light_point_0_color;
+   float4 light_point_0_pos;
+   float4 light_point_1_color;
+   float4 light_point_1_pos;
+   float4 overlapping_lights[4];
+   float4 light_proj_color;
+   float4 light_proj_selector;
+   float4x4 light_proj_matrix;
+   float4 material_diffuse_color;
+   float4 custom_constants[9];
+}
 
-// the position of the camera in world space
-float3 view_positionWS : register(c[6]);
+tbuffer SkinConstants : register(t0)
+{
+   float4x3 bone_matrices[15];
+}
 
-// (camera fog scale, camera fog offset, world fog scale, world fog offset)
-float4 fog_info : register(c[7]);
+cbuffer PSDrawConstants : register(b0)
+{
+   float4 ps_custom_constants[5];
+   float3 ps_view_positionWS;
+   float ps_lighting_scale;
+   float4 rt_resolution; // x = width, y = height, z = 1 / width, w = 1 / height
+   float3 fog_color;
+   float stock_tonemap_state;
+   float rt_multiply_blending_state;
+   bool fog_enabled;
+   bool cube_projtex;
+}
 
-// (nearfade scale, nearfade offset, lighting scale, 1.0)
-float4 near_scene_fade : register(c[8]);
+#ifdef __VERTEX_SHADER__
+static const float3 view_positionWS = vs_view_positionWS;
+static const float lighting_scale = near_scene_fade.z;
+#elif defined(__PIXEL_SHADER__)
+static const float3 view_positionWS = ps_view_positionWS;
+static const float lighting_scale = ps_lighting_scale;
+#endif
 
-// uses the same register as near_scene_fade, so may be no different or
-// it might be. The original authors of the shaders made the distinction
-// so this does as well.
-static const float4 hdr_info = near_scene_fade;
+// x fog start, y = fog end, z = 1 / (fog end - fog start)
+static const float3 fog_range = {0, 0, 1};
 
-// shadow map transform
-float4x3 shadow_map_transform : register(c[9]);
-
-// (normal decompress = 2 or 1, -1 or 0, texture decompress = 1 / 0x0800 or 1, 1)
-float4 normaltex_decompress : register(c[12]);
-
-// min_pos = ((bbox (max - min) * 0.5 / 0x7FFF) or (1, 1, 1), 0)
-float4 position_decompress_min : register(c[13]);
-// max_pos = ((bbox (max + min) * 0.5 / 0x7FFF) or (0, 0, 0), 1)
-float4 position_decompress_max : register(c[14]);
-
-// Pandemic: whether vertex colors are lighting or material colors
-// (1, 0, 0, 0)
-float4 color_state : register(c[15]);
-
-// object space to world space matrix
-float4x3 world_matrix : register(c[16]);
-
-// Pandemic: ambient color interpolated with ambient color1 using world 
-// normal y component - applied in the transform fragment (i.e. lighting 
-// fragment not needed)
-float4 light_ambient_color_top : register(c[19]);
-
-// Pandemic: ambient color interpolated with ambient color0 using world 
-// normal y component - applied in the transform fragment (i.e. lighting 
-// fragment not needed)
-float4 light_ambient_color_bottom : register(c[20]);
-
-// directional light 0 color
-float4 light_directional_0_color : register(c[21]);
-
-// directional light 0 normalized world space direction
-float4 light_directional_0_dir : register(c[22]);
-
-// directional light 1 color
-float4 light_directional_1_color : register(c[23]);
-
-// directional light 1 normalized world space direction
-float4 light_directional_1_dir : register(c[24]);
-
-// point light 0 color, intensity in alpha value
-float4 light_point_0_color : register(c[25]);
-
-// point light 0 world space position
-float4 light_point_0_pos : register(c[26]);
-
-// point light 1 color, intensity in alpha value
-float4 light_point_1_color : register(c[27]);
-
-// point light 1 world space position
-float4 light_point_1_pos : register(c[28]);
-
-float4 overlapping_lights[4] : register(c[29]);
-
-// point light 2 color, intensity in alpha value 
-// (shares register with light_spot_color)
 static const float4 light_point_2_color = overlapping_lights[0];
-
-// point light 2 world space position
-// (shares register with light_spot_pos)
 static const float4 light_point_2_pos = overlapping_lights[1];
-
-// point light 3 color, intensity in alpha value
-// (shares register with light_spot_dir)
 static const float4 light_point_3_color = overlapping_lights[2];
-
-// point light 3 world space position
-// (shares register with light_spot_params)
 static const float4 light_point_3_pos = overlapping_lights[3];
 
-// spot light color, intensity in alpha value
 static const float4 light_spot_color = overlapping_lights[0];
-
-// spot light position, w = 1 / r^2
-static const float4 light_spot_pos = overlapping_lights[1];
-
-// spot light direction
+static const float4 light_spot_pos = overlapping_lights[1]; // spot light position, w = 1 / r^2
 static const float4 light_spot_dir = overlapping_lights[2];
 
 // spot light params
@@ -106,24 +81,31 @@ static const float4 light_spot_dir = overlapping_lights[2];
 //  z = 1 / (cos(y) - cos(x)), w = falloff)
 static const float4 light_spot_params = overlapping_lights[3];
 
-// projected light color
-float4 light_proj_color : register(c[33]);
 
-// Pandemic: selects which light use for the projection texture
-float4 light_proj_selector : register(c[34]);
-
-// projected light matrix
-float4x4 light_proj_matrix : register(c[35]);
-
-// Pandemic: material diffuse color (x tweak color)
-float4 material_diffuse_color : register(c[39]);
-
-// registers 40 to 50 are set aside as "custom constants"
-#define CUSTOM_CONST_MIN 40
-#define CUSTOM_CONST_MAX 50
-
-// bone matrices
-float4x3 bone_matrices[15] : register(vs, c[51]);
-
+#ifdef __PS_LIGHT_ACTIVE_DIRECTIONAL__
+const static bool ps_light_active_directional = true;
+#else
+const static bool ps_light_active_directional = false;
+#endif
+#ifdef __PS_LIGHT_ACTIVE_POINT_0__
+const static bool ps_light_active_point_0 = true;
+#else
+const static bool ps_light_active_point_0 = false;
+#endif
+#ifdef __PS_LIGHT_ACTIVE_POINT_1__
+const static bool ps_light_active_point_1 = true;
+#else
+const static bool ps_light_active_point_1 = false;
+#endif
+#ifdef __PS_LIGHT_ACTIVE_POINT_23__
+const static bool ps_light_active_point_23 = true;
+#else
+const static bool ps_light_active_point_23 = false;
+#endif
+#ifdef __PS_LIGHT_ACTIVE_SPOT__
+const static bool ps_light_active_spot_light = true;
+#else
+const static bool ps_light_active_spot_light = false;
+#endif
 
 #endif

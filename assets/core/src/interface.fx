@@ -1,13 +1,12 @@
 
 #include "constants_list.hlsl"
+#include "pixel_sampler_states.hlsl"
 
-float4 interface_scale_offset : register(vs, c[CUSTOM_CONST_MIN]);
-float4 interface_color : register(ps, c0);
+const static float4 interface_scale_offset = custom_constants[0];
+const static float4 interface_color = ps_custom_constants[0];
 
-Texture2D<float4> element_texture : register(ps_3_0, s0);
-Texture2D<float4> element_mask : register(ps_3_0, s1);
-
-SamplerState linear_clamp_sampler;
+Texture2D<float4> element_texture : register(t0);
+Texture2D<float4> element_mask : register(t1);
 
 float4 transform_interface_position(float3 position)
 {
@@ -30,8 +29,8 @@ struct Vs_masked_input
 
 struct Vs_masked_output
 {
-   float4 positionPS : SV_Position;
    float2 texcoords[2] : TEXCOORD0;
+   float4 positionPS : SV_Position;
 };
 
 Vs_masked_output masked_bitmap_vs(Vs_masked_input input)
@@ -63,8 +62,8 @@ struct Vs_vector_input
 
 struct Vs_vector_output
 {
+   float4 color : COLOR;
    float4 positionPS : SV_Position;
-   float4 color : TEXCOORD;
 };
 
 Vs_vector_output vector_vs(Vs_vector_input input)
@@ -77,7 +76,7 @@ Vs_vector_output vector_vs(Vs_vector_input input)
    return output;
 }
 
-float4 vector_ps(float4 color : TEXCOORD) : SV_Target0
+float4 vector_ps(float4 color : COLOR) : SV_Target0
 {
    return color * interface_color;
 }
@@ -104,8 +103,8 @@ struct Vs_textured_input
 
 struct Vs_textured_output
 {
-   float4 positionPS : SV_Position;
    float2 texcoords : TEXCOORD;
+   float4 positionPS : SV_Position;
 };
 
 Vs_textured_output bitmap_textured_vs(Vs_textured_input input)

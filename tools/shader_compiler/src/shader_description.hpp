@@ -1,8 +1,10 @@
 
 #include "shader_entrypoint.hpp"
+#include "shader_input_element.hpp"
 
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include <nlohmann/json.hpp>
 
@@ -24,6 +26,7 @@ struct Description {
    std::string group_name;
    std::string source_name;
 
+   std::unordered_map<std::string, std::vector<Input_element>> input_layouts;
    std::unordered_map<std::string, Entrypoint> entrypoints;
    std::unordered_map<std::string, Rendertype> rendertypes;
 };
@@ -48,6 +51,8 @@ inline void from_json(const nlohmann::json& j, Description& description)
 
    description.group_name = j.at("group_name"s).get<std::string>();
    description.source_name = j.at("source_name"s).get<std::string>();
+
+   description.input_layouts = j.value("input_layouts"s, description.input_layouts);
 
    description.entrypoints =
       j.at("entrypoints"s).get<decltype(description.entrypoints)>();

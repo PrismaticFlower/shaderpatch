@@ -15,6 +15,10 @@
 
 namespace sp {
 
+namespace ucfb {
+class Writer;
+}
+
 class Patch_compiler {
 public:
    Patch_compiler(DWORD compiler_flags, nlohmann::json definition,
@@ -29,14 +33,20 @@ public:
    Patch_compiler& operator=(Patch_compiler&&) = delete;
 
 private:
-   template<typename Stage_flag_type>
-   struct Compiled_entrypoint {
-      std::map<std::pair<Stage_flag_type, std::uint32_t>, Com_ptr<ID3DBlob>> variations;
+   struct Compiled_vertex_variation {
+      std::vector<shader::Input_element> input_layout;
+      Com_ptr<ID3DBlob> bytecode;
+   };
+
+   struct Compiled_vertex_entrypoint {
+      std::map<std::pair<Vertex_shader_flags, std::uint32_t>, Compiled_vertex_variation> variations;
       std::vector<std::string> static_flag_names;
    };
 
-   using Compiled_vertex_entrypoint = Compiled_entrypoint<Vertex_shader_flags>;
-   using Compiled_pixel_entrypoint = Compiled_entrypoint<Pixel_shader_flags>;
+   struct Compiled_pixel_entrypoint {
+      std::map<std::pair<Pixel_shader_flags, std::uint32_t>, Com_ptr<ID3DBlob>> variations;
+      std::vector<std::string> static_flag_names;
+   };
 
    struct Assembled_state {
       std::string vs_entrypoint;
@@ -52,9 +62,13 @@ private:
 
    void save(const std::filesystem::path& output_path) const;
 
-   void compile_entrypoints(const std::unordered_map<std::string, shader::Entrypoint>& entrypoints);
+   void compile_entrypoints(
+      const std::unordered_map<std::string, shader::Entrypoint>& entrypoints,
+      const std::unordered_map<std::string, std::vector<shader::Input_element>>& input_layouts);
 
-   void compile_vertex_entrypoint(const std::pair<std::string, shader::Entrypoint>& entrypoint);
+   void compile_vertex_entrypoint(
+      const std::pair<std::string, shader::Entrypoint>& entrypoint,
+      const std::unordered_map<std::string, std::vector<shader::Input_element>>& input_layouts);
 
    void compile_pixel_entrypoint(const std::pair<std::string, shader::Entrypoint>& entrypoint);
 
@@ -66,6 +80,14 @@ private:
 
    void assemble_rendertypes(
       const std::unordered_map<std::string, shader::Rendertype>& rendertypes);
+
+   void write_entrypoints(
+      ucfb::Writer& writer,
+      const std::unordered_map<std::string, Compiled_vertex_entrypoint>& entrypoints) const;
+
+   void write_entrypoints(
+      ucfb::Writer& writer,
+      const std::unordered_map<std::string, Compiled_pixel_entrypoint>& entrypoints) const;
 
    DWORD _compiler_flags;
 

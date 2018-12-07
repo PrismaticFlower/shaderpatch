@@ -2,11 +2,91 @@
   "group_name": "interface",
   "source_name": "interface.fx",
 
+  "input_layouts": {
+    "masked_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "R32G32B32_FLOAT",
+        "offset": 0
+      },
+      {
+        "semantic": {
+          "name": "TEXCOORD",
+          "index": 0
+        },
+        "format": "R32G32_FLOAT",
+        "offset": 12
+      },
+      {
+        "semantic": {
+          "name": "TEXCOORD",
+          "index": 1
+        },
+        "format": "R32G32_FLOAT",
+        "offset": 20
+      }
+    ],
+
+    "vector_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "R32G32B32_FLOAT",
+        "offset": 0
+      },
+      {
+        "semantic": {
+          "name": "COLOR",
+          "index": 0
+        },
+        "format": "B8G8R8A8_UNORM",
+        "offset": 12
+      }
+    ],
+
+    "untextured_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "R32G32B32_FLOAT",
+        "offset": 0
+      }
+    ],
+
+    "textured_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "R32G32B32_FLOAT",
+        "offset": 0
+      },
+      {
+        "semantic": {
+          "name": "TEXCOORD",
+          "index": 0
+        },
+        "format": "R32G32_FLOAT",
+        "offset": 12
+      }
+    ]
+  },
+
   "entrypoints": {
     "masked_bitmap_vs": {
       "stage": "vertex",
 
       "vertex_state": {
+        "input_layout": "masked_input",
+
         "generic_input": {
           "dynamic_compression": false,
           "position": false,
@@ -23,6 +103,8 @@
       "stage": "vertex",
 
       "vertex_state": {
+        "input_layout": "vector_input",
+
         "generic_input": {
           "dynamic_compression": false,
           "position": false,
@@ -39,6 +121,8 @@
       "stage": "vertex",
 
       "vertex_state": {
+        "input_layout": "untextured_input",
+
         "generic_input": {
           "dynamic_compression": false,
           "position": false,
@@ -55,6 +139,8 @@
       "stage": "vertex",
 
       "vertex_state": {
+        "input_layout": "textured_input",
+
         "generic_input": {
           "dynamic_compression": false,
           "position": false,

@@ -120,14 +120,14 @@ Lighting calculate(float3 normalWS, float3 positionWS, float3 static_diffuse_lig
 
       float scale = max(max(light.r, light.g), light.b);
       scale = max(scale, 1.0);
-      light.rgb = lerp(light.rgb / scale, light.rgb, tonemap_state);
-      light.rgb *= hdr_info.z;
+      light.rgb = lerp(light.rgb / scale, light.rgb, stock_tonemap_state);
+      light.rgb *= lighting_scale;
 
       lighting.color = light.rgb;
       lighting.intensity = light.a;
    }
    else {
-      lighting.color = hdr_info.zzz;
+      lighting.color = lighting_scale;
       lighting.intensity = 0.0;
    }
 

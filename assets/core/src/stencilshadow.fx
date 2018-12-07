@@ -5,6 +5,9 @@
 
 const static float3 debug_color = {0.6, 0.2, 0.6};
 
+const static float3 light_directionWS = custom_constants[0].xyz;
+const static float2 extrusion_info = custom_constants[1].xy;
+
 struct Vs_extend_input
 {
    int4 position : POSITION;
@@ -72,9 +75,7 @@ float3 extrude_directional(float3 position, float3 normal,
    return NdotL * light_direction + position;
 }
 
-float4 extend_directional_vs(Vs_extend_input input,
-                             uniform float3 light_directionWS : register(c[CUSTOM_CONST_MIN]),
-                             uniform float2 extrusion_info : register(c[CUSTOM_CONST_MIN + 1])) : SV_Position
+float4 extend_directional_vs(Vs_extend_input input) : SV_Position
 {
    const float3 positionWS = unskinned_positionWS(input.position);
    const float3 normalWS = unskinned_normalWS(input.normal);
@@ -86,9 +87,7 @@ float4 extend_directional_vs(Vs_extend_input input,
    return mul(float4(positionExtrudedWS, 1.0), projection_matrix);
 }
 
-float4 extend_directional_hardskin_facenormal_vs(Vs_extend_hardskin_input input,
-                                                 uniform float3 light_directionWS : register(c[CUSTOM_CONST_MIN]),
-                                                 uniform float2 extrusion_info : register(c[CUSTOM_CONST_MIN + 1])) : SV_Position
+float4 extend_directional_hardskin_facenormal_vs(Vs_extend_hardskin_input input) : SV_Position
 {
    const int4 blend_indices = input.blend_indices * 255.0;
    const float3 positionWS = hard_skinned_positionWS(input.position, blend_indices.x);
@@ -101,9 +100,7 @@ float4 extend_directional_hardskin_facenormal_vs(Vs_extend_hardskin_input input,
    return mul(float4(positionExtrudedWS, 1.0), projection_matrix);
 }
 
-float4 extend_directional_hardskin_gen_normal_vs(Vs_extend_hardskin_gen_normal_input input,
-                                                 uniform float3 light_directionWS : register(c[CUSTOM_CONST_MIN]),
-                                                 uniform float2 extrusion_info : register(c[CUSTOM_CONST_MIN + 1])) : SV_Position
+float4 extend_directional_hardskin_gen_normal_vs(Vs_extend_hardskin_gen_normal_input input) : SV_Position
 {
    const int4 blend_indices = input.blend_indices * 255.0;
 
@@ -121,9 +118,7 @@ float4 extend_directional_hardskin_gen_normal_vs(Vs_extend_hardskin_gen_normal_i
    return mul(float4(positionExtrudedWS, 1.0), projection_matrix);
 }
 
-float4 extend_directional_softskin_facenormal_vs(Vs_extend_softskin_facenormal_input input,
-                                                 uniform float3 light_directionWS : register(c[CUSTOM_CONST_MIN]),
-                                                 uniform float2 extrusion_info : register(c[CUSTOM_CONST_MIN + 1])) : SV_Position
+float4 extend_directional_softskin_facenormal_vs(Vs_extend_softskin_facenormal_input input) : SV_Position
 {
    const int4 blend_indices = input.blend_indices * 255.0;
    const float3 positionWS = soft_skinned_positionWS(input.position, blend_indices, 
@@ -140,9 +135,7 @@ float4 extend_directional_softskin_facenormal_vs(Vs_extend_softskin_facenormal_i
    return mul(float4(positionExtrudedWS, 1.0), projection_matrix);
 }
 
-float4 extend_directional_softskin_gen_normal_vs(Vs_extend_softskin_gen_normal_input input,
-                                                 uniform float3 light_directionWS : register(c[CUSTOM_CONST_MIN]),
-                                                 uniform float2 extrusion_info : register(c[CUSTOM_CONST_MIN + 1])) : SV_Position
+float4 extend_directional_softskin_gen_normal_vs(Vs_extend_softskin_gen_normal_input input) : SV_Position
 {
    const int4 blend_indices[3] = {input.blend_indices0 * 255.0, 
                                   input.blend_indices1 * 255.0,
@@ -165,6 +158,9 @@ float4 extend_directional_softskin_gen_normal_vs(Vs_extend_softskin_gen_normal_i
    return mul(float4(positionExtrudedWS, 1.0), projection_matrix);
 }
 
+const static float4 light_positionWS = custom_constants[0];
+const static float extrusion_offset = custom_constants[1].x;
+
 float3 extrude_point(float3 position, float3 normal, float3 light_position,
                      float light_radius, float extrusion_offset)
 {
@@ -180,9 +176,7 @@ float3 extrude_point(float3 position, float3 normal, float3 light_position,
    return NdotL * light_direction + position;
 }
 
-float4 extend_point_vs(Vs_extend_input input,
-                       uniform float4 light_positionWS : register(c[CUSTOM_CONST_MIN]),
-                       uniform float extrusion_offset : register(c[CUSTOM_CONST_MIN + 1])) : SV_Position
+float4 extend_point_vs(Vs_extend_input input) : SV_Position
 {
    const float3 positionWS = unskinned_positionWS(input.position);
    const float3 normalWS = unskinned_normalWS(input.normal);
@@ -194,9 +188,7 @@ float4 extend_point_vs(Vs_extend_input input,
    return mul(float4(positionExtrudedWS, 1.0), projection_matrix);
 }
 
-float4 extend_point_hardskin_facenormal_vs(Vs_extend_hardskin_input input,
-                                           uniform float4 light_positionWS : register(c[CUSTOM_CONST_MIN]),
-                                           uniform float extrusion_offset : register(c[CUSTOM_CONST_MIN + 1])) : SV_Position
+float4 extend_point_hardskin_facenormal_vs(Vs_extend_hardskin_input input) : SV_Position
 {
    const int4 blend_indices = input.blend_indices * 255.0;
    const float3 positionWS = hard_skinned_positionWS(input.position, blend_indices.x);
@@ -210,9 +202,7 @@ float4 extend_point_hardskin_facenormal_vs(Vs_extend_hardskin_input input,
    return mul(float4(positionExtrudedWS, 1.0), projection_matrix);
 }
 
-float4 extend_point_hardskin_gen_normal_vs(Vs_extend_hardskin_gen_normal_input input,
-                                           uniform float4 light_positionWS : register(c[CUSTOM_CONST_MIN]),
-                                           uniform float extrusion_offset : register(c[CUSTOM_CONST_MIN + 1])) : SV_Position
+float4 extend_point_hardskin_gen_normal_vs(Vs_extend_hardskin_gen_normal_input input) : SV_Position
 {
    const int4 blend_indices = input.blend_indices * 255.0;
 
@@ -230,9 +220,7 @@ float4 extend_point_hardskin_gen_normal_vs(Vs_extend_hardskin_gen_normal_input i
    return mul(float4(positionExtrudedWS, 1.0), projection_matrix);
 }
 
-float4 extend_point_softskin_facenormal_vs(Vs_extend_softskin_facenormal_input input,
-                                           uniform float4 light_positionWS : register(c[CUSTOM_CONST_MIN]),
-                                           uniform float extrusion_offset : register(c[CUSTOM_CONST_MIN + 1])) : SV_Position
+float4 extend_point_softskin_facenormal_vs(Vs_extend_softskin_facenormal_input input) : SV_Position
 {
    const int4 blend_indices = input.blend_indices * 255.0;
    const float3 positionWS = soft_skinned_positionWS(input.position, blend_indices,
@@ -249,9 +237,7 @@ float4 extend_point_softskin_facenormal_vs(Vs_extend_softskin_facenormal_input i
    return mul(float4(positionExtrudedWS, 1.0), projection_matrix);
 }
 
-float4 extend_point_softskin_gen_normal_vs(Vs_extend_softskin_gen_normal_input input,
-                                           uniform float4 light_positionWS : register(c[CUSTOM_CONST_MIN]),
-                                           uniform float extrusion_offset : register(c[CUSTOM_CONST_MIN + 1])) : SV_Position
+float4 extend_point_softskin_gen_normal_vs(Vs_extend_softskin_gen_normal_input input) : SV_Position
 {
    const int4 blend_indices[3] = {input.blend_indices0 * 255.0,
                                   input.blend_indices1 * 255.0,

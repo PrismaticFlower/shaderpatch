@@ -5,7 +5,7 @@
 #include <Windows.h>
 #include <d3d9.h>
 
-namespace sp::direct3d {
+namespace sp::d3d9 {
 
 using namespace std::string_literals;
 

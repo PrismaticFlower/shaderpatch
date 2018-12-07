@@ -51,7 +51,7 @@ void Shadows_blur::do_pass(IDirect3DSurface9& dest, IDirect3DTexture9& source) c
 
 void Shadows_blur::set_ps_constants(glm::ivec2 resolution) const noexcept
 {
-   direct3d::Ps_2f_shader_constant<constants::ps::post_processing_start>{}
+   d3d9::Ps_2f_shader_constant<constants::ps::post_processing_start>{}
       .set(*_device, {1.0f / glm::vec2{resolution} * _params.radius_scale});
 }
 

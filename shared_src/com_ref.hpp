@@ -2,6 +2,8 @@
 
 #include "com_ptr.hpp"
 
+#include <gsl/gsl>
+
 namespace sp {
 
 template<typename Class>
@@ -30,6 +32,18 @@ public:
    Com_ref() = delete;
    Com_ref& operator=(const Com_ref& other) noexcept = delete;
    Com_ref& operator=(Com_ref&& other) noexcept = delete;
+
+   explicit operator Com_ptr<Class>() const noexcept
+   {
+      return _pointer;
+   }
+
+   [[nodiscard]] Class* unmanaged_copy() const noexcept
+   {
+      _pointer->AddRef();
+
+      return _pointer.get();
+   }
 
    Class* get() const noexcept
    {

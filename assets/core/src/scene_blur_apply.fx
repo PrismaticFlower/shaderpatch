@@ -1,8 +1,7 @@
 
 #include "fullscreen_tri_vs.hlsl"
 
-Texture2D<float3> backbuffer_texture : register(ps_3_0, s0);
-SamplerState point_clamp_sampler;
+Texture2D<float3> backbuffer_texture : register(t0);
 
 float alpha : register(c60);
 

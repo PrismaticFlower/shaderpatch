@@ -7,7 +7,7 @@
 
       "passes": [
         {
-          "name": "unusued",
+          "name": "discard",
 
           "skinned": false,
           "lighting": false,
@@ -23,7 +23,7 @@
 
       "passes": [
         {
-          "name": "unusued",
+          "name": "discard tangents",
 
           "skinned": false,
           "lighting": false,

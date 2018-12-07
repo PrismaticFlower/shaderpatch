@@ -8,26 +8,24 @@
 #include "lighting_utilities.hlsl"
 #include "lighting_utilities_specular.hlsl"
 #include "pixel_utilities.hlsl"
+#include "pixel_sampler_states.hlsl"
 
 // Samplers
-Texture2D<float3> projected_light_texture : register(ps_3_0, s2);
-Texture2D<float4> shadow_map : register(ps_3_0, s3);
-Texture2D<float4> diffuse_map : register(ps_3_0, s4);
-Texture2D<float4> normal_map : register(ps_3_0, s5);
-Texture2D<float3> detail_map : register(ps_3_0, s6);
-Texture2D<float2> detail_normal_map : register(ps_3_0, s7);
-
-SamplerState linear_wrap_sampler;
+Texture2D<float3> projected_light_texture : register(t2);
+Texture2D<float4> shadow_map : register(t3);
+Texture2D<float4> diffuse_map : register(t4);
+Texture2D<float4> normal_map : register(t5);
+Texture2D<float3> detail_map : register(t6);
+Texture2D<float2> detail_normal_map : register(t7);
 
 // Game Custom Constants
-float4 blend_constant : register(ps, c[0]);
-float4 shadow_blend : register(ps, c[1]);
 
-float2 lighting_factor : register(c[CUSTOM_CONST_MIN]);
-float4 x_diffuse_texcoords_transform : register(vs, c[CUSTOM_CONST_MIN + 1]);
-float4 y_diffuse_texcoords_transform : register(vs, c[CUSTOM_CONST_MIN + 2]);
-float4 x_detail_texcoords_transform : register(vs, c[CUSTOM_CONST_MIN + 3]);
-float4 y_detail_texcoords_transform : register(vs, c[CUSTOM_CONST_MIN + 4]);
+const static float4 blend_constant = ps_custom_constants[0];
+const static float2 lighting_factor = custom_constants[0].xy;
+const static float4 x_diffuse_texcoords_transform = custom_constants[1];
+const static float4 y_diffuse_texcoords_transform = custom_constants[2];
+const static float4 x_detail_texcoords_transform  = custom_constants[3];
+const static float4 y_detail_texcoords_transform  = custom_constants[4];
 
 // Material Constants Mappings
 const static float3 base_diffuse_color = material_constants[0].xyz;
@@ -47,20 +45,20 @@ const static bool use_projected_texture = NORMAL_EXT_USE_PROJECTED_TEXTURE;
 
 struct Vs_output
 {
-   float4 positionPS : POSITION;
-
-   float3 positionWS : TEXCOORD0;
-   float3 normalWS : TEXCOORD1;
+   float3 positionWS : POSITIONWS;
+   float3 normalWS : NORMALWS;
 
    float2 diffuse_texcoords : TEXCOORD2;
    float2 detail_texcoords : TEXCOORD3;
    float4 projection_texcoords : TEXCOORD4;
    float4 shadow_texcoords : TEXCOORD5;
    
-   float4 material_color_fade : TEXCOORD6;
-   float3 static_lighting : TEXCOORD7;
+   float4 material_color_fade : MATCOLOR;
+   float3 static_lighting : STATICLIGHT;
 
    float fog_eye_distance : DEPTH;
+
+   float4 positionPS : SV_Position;
 };
 
 Vs_output main_vs(Vertex_input input)
@@ -98,13 +96,13 @@ Vs_output main_vs(Vertex_input input)
 void sample_normal_maps_gloss(float2 texcoords, float2 detail_texcoords, float3 normalWS,
                               float3 view_normalWS, out float3 out_normalWS, out float out_gloss)
 {
-   float4 N0_gloss = normal_map.Sample(linear_wrap_sampler, texcoords);
+   float4 N0_gloss = normal_map.Sample(aniso_wrap_sampler, texcoords);
    float3 N0 = N0_gloss.xyz * 255.0 / 127.0 - 128.0 / 127.0;
    N0.z = sqrt(1.0 - dot(N0.xy, N0.xy));
 
    if (use_detail_maps) {
       float3 N1;
-      N1.xy = detail_normal_map.Sample(linear_wrap_sampler, detail_texcoords) * 255.0 / 127.0 - 128.0 / 127.0;
+      N1.xy = detail_normal_map.Sample(aniso_wrap_sampler, detail_texcoords) * 255.0 / 127.0 - 128.0 / 127.0;
       N1.z = sqrt(1.0 - dot(N1.xy, N1.xy));
 
       N0 = blend_tangent_space_normals(N0, N1);
@@ -169,13 +167,13 @@ float3 do_lighting_diffuse(float3 normalWS, float3 positionWS, float3 diffuse_co
       float scale = max(color.r, color.g);
       scale = max(scale, color.b);
       scale = max(scale, 1.0);
-      color = lerp(color / scale, color, tonemap_state);
-      color *= hdr_info.z;
+      color = lerp(color / scale, color, stock_tonemap_state);
+      color *= lighting_scale;
 
       return color;
    }
    else {
-      return diffuse_color * hdr_info.z;
+      return diffuse_color * lighting_scale;
    }
 }
 
@@ -264,29 +262,29 @@ float3 do_lighting(float3 normalWS, float3 positionWS, float3 view_normalWS,
       float scale = max(color.r, color.g);
       scale = max(scale, color.b);
       scale = max(scale, 1.0);
-      color = lerp(color / scale, color, tonemap_state);
-      color *= hdr_info.z;
+      color = lerp(color / scale, color, stock_tonemap_state);
+      color *= lighting_scale;
 
       return color;
    }
    else {
-      return diffuse_color * hdr_info.z;
+      return diffuse_color * lighting_scale;
    }
 }
 
 
 struct Ps_input
 {
-   float3 positionWS : TEXCOORD0;
-   float3 normalWS : TEXCOORD1;
+   float3 positionWS : POSITIONWS;
+   float3 normalWS : NORMALWS;
 
    float2 diffuse_texcoords : TEXCOORD2;
    float2 detail_texcoords : TEXCOORD3;
    float4 projection_texcoords : TEXCOORD4;
    float4 shadow_texcoords : TEXCOORD5;
 
-   float4 material_color_fade : TEXCOORD6;
-   float3 static_lighting : TEXCOORD7;
+   float4 material_color_fade : MATCOLOR;
+   float3 static_lighting : STATICLIGHT;
 
    float fog_eye_distance : DEPTH;
 
@@ -296,7 +294,7 @@ struct Ps_input
 float4 main_ps(Ps_input input) : SV_Target0
 {
    const float4 diffuse_map_color = 
-      diffuse_map.Sample(linear_wrap_sampler, input.diffuse_texcoords);
+      diffuse_map.Sample(aniso_wrap_sampler, input.diffuse_texcoords);
 
    // Hardedged Alpha Test
    if (use_hardedged_test && diffuse_map_color.a < 0.5) discard;
@@ -305,14 +303,14 @@ float4 main_ps(Ps_input input) : SV_Target0
       sample_projected_light(projected_light_texture, input.projection_texcoords) : 0.0;
    const float2 shadow_texcoords = input.shadow_texcoords.xy / input.shadow_texcoords.w;
    const float shadow = 
-      use_shadow_map ? shadow_map.SampleLevel(linear_wrap_sampler, shadow_texcoords, 0).a : 1.0;
+      use_shadow_map ? shadow_map.SampleLevel(linear_clamp_sampler, shadow_texcoords, 0).a : 1.0;
 
    // Get Diffuse Color
    float3 diffuse_color = diffuse_map_color.rgb * base_diffuse_color;
    diffuse_color *= input.material_color_fade.rgb;
 
    if (use_detail_maps) {
-      const float3 detail_color = detail_map.Sample(linear_wrap_sampler, input.detail_texcoords);
+      const float3 detail_color = detail_map.Sample(aniso_wrap_sampler, input.detail_texcoords);
       diffuse_color = diffuse_color * detail_color * 2.0;
    }
 

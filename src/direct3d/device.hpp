@@ -1,42 +1,29 @@
 #pragma once
 
-#include "../effects/control.hpp"
-#include "../effects/rendertarget_allocator.hpp"
-#include "../material.hpp"
-#include "../shader_constants.hpp"
-#include "../shader_database.hpp"
-#include "../texture.hpp"
-#include "../texture_database.hpp"
-#include "../user_config.hpp"
+#include "../core/shader_patch.hpp"
+#include "../logger.hpp"
 #include "com_ptr.hpp"
 #include "com_ref.hpp"
-#include "render_state_block.hpp"
-#include "sampler_state_block.hpp"
-#include "shader.hpp"
-#include "shader_constant.hpp"
-#include "smart_win32_handle.hpp"
-#include "texture_state_block.hpp"
-#include "transform_state_block.hpp"
-#include "vertex_input_state.hpp"
+#include "render_state_manager.hpp"
+#include "surface_backbuffer.hpp"
+#include "surface_depthstencil.hpp"
 
-#include <atomic>
-#include <chrono>
-#include <functional>
-#include <memory>
-#include <optional>
-#include <unordered_map>
-#include <vector>
-
-#include <boost/smart_ptr/local_shared_ptr.hpp>
+#include <array>
 
 #include <d3d9.h>
 
-namespace sp::direct3d {
+namespace sp::d3d9 {
 
-class Device : public IDirect3DDevice9 {
+class Device final : public IDirect3DDevice9 {
 public:
-   Device(IDirect3DDevice9& device, const HWND window,
-          const glm::ivec2 resolution, DWORD max_anisotropy) noexcept;
+   static Com_ptr<Device> create(IDirect3D9& direct3d9, IDXGIAdapter2& adapter,
+                                 const HWND window) noexcept;
+
+   Device(const Device&) = delete;
+   Device& operator=(const Device&) = delete;
+
+   Device(Device&&) = delete;
+   Device& operator=(Device&&) = delete;
 
    HRESULT __stdcall QueryInterface(const IID& iid, void** object) noexcept override;
    ULONG __stdcall AddRef() noexcept override;
@@ -46,24 +33,20 @@ public:
 
    UINT __stdcall GetAvailableTextureMem() noexcept override;
 
-   HRESULT __stdcall EvictManagedResources() noexcept override;
-
    HRESULT __stdcall GetDirect3D(IDirect3D9** d3d9) noexcept override;
+
    HRESULT __stdcall GetDeviceCaps(D3DCAPS9* caps) noexcept override;
+
    HRESULT __stdcall GetDisplayMode(UINT swap_chain, D3DDISPLAYMODE* mode) noexcept override;
-   HRESULT __stdcall GetCreationParameters(D3DDEVICE_CREATION_PARAMETERS* parameters) noexcept override;
 
-   HRESULT __stdcall SetCursorProperties(UINT x_hot_spot, UINT y_hot_spot,
-                                         IDirect3DSurface9* cursor_bitmap) noexcept override;
+   HRESULT __stdcall SetCursorProperties(UINT, UINT, IDirect3DSurface9*) noexcept override
+   {
+      return S_OK;
+   }
+
    void __stdcall SetCursorPosition(int x, int y, DWORD flags) noexcept override;
-   BOOL __stdcall ShowCursor(BOOL show) noexcept override;
 
-   HRESULT __stdcall CreateAdditionalSwapChain(D3DPRESENT_PARAMETERS* presentation_parameters,
-                                               IDirect3DSwapChain9** swap_chain) noexcept override;
-
-   HRESULT __stdcall GetSwapChain(UINT swap_chain_index,
-                                  IDirect3DSwapChain9** swap_chain) noexcept override;
-   UINT __stdcall GetNumberOfSwapChains() noexcept override;
+   BOOL __stdcall ShowCursor(BOOL show) noexcept;
 
    HRESULT __stdcall Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept override;
 
@@ -74,57 +57,44 @@ public:
    HRESULT __stdcall GetBackBuffer(UINT swap_chain, UINT back_buffer_index,
                                    D3DBACKBUFFER_TYPE type,
                                    IDirect3DSurface9** back_buffer) noexcept override;
-   HRESULT __stdcall GetRasterStatus(UINT swap_chain,
-                                     D3DRASTER_STATUS* raster_status) noexcept override;
 
-   HRESULT __stdcall SetDialogBoxMode(BOOL enable_dialogs) noexcept override;
-
-   void __stdcall SetGammaRamp(UINT swap_chain_index, DWORD flags,
-                               const D3DGAMMARAMP* ramp) noexcept override;
-   void __stdcall GetGammaRamp(UINT swap_chain_index, D3DGAMMARAMP* ramp) noexcept override;
+   void __stdcall SetGammaRamp(UINT, DWORD, const D3DGAMMARAMP*) noexcept override
+   {
+   }
 
    HRESULT __stdcall CreateTexture(UINT width, UINT height, UINT levels,
                                    DWORD usage, D3DFORMAT format, D3DPOOL pool,
                                    IDirect3DTexture9** texture,
                                    HANDLE* shared_handle) noexcept override;
+
    HRESULT __stdcall CreateVolumeTexture(UINT width, UINT height, UINT depth,
                                          UINT levels, DWORD usage,
                                          D3DFORMAT format, D3DPOOL pool,
                                          IDirect3DVolumeTexture9** volume_texture,
                                          HANDLE* shared_handle) noexcept override;
+
    HRESULT __stdcall CreateCubeTexture(UINT edge_length, UINT levels, DWORD usage,
                                        D3DFORMAT format, D3DPOOL pool,
                                        IDirect3DCubeTexture9** cube_texture,
                                        HANDLE* shared_handle) noexcept override;
+
    HRESULT __stdcall CreateVertexBuffer(UINT length, DWORD usage, DWORD fvf,
                                         D3DPOOL pool,
                                         IDirect3DVertexBuffer9** vertex_buffer,
                                         HANDLE* shared_handle) noexcept override;
+
    HRESULT __stdcall CreateIndexBuffer(UINT length, DWORD usage,
                                        D3DFORMAT format, D3DPOOL pool,
                                        IDirect3DIndexBuffer9** index_buffer,
                                        HANDLE* shared_handle) noexcept override;
-   HRESULT __stdcall CreateRenderTarget(UINT width, UINT height, D3DFORMAT format,
-                                        D3DMULTISAMPLE_TYPE multi_sample,
-                                        DWORD multisample_quality, BOOL lockable,
-                                        IDirect3DSurface9** surface,
-                                        HANDLE* shared_handle) noexcept override;
+
    HRESULT __stdcall CreateDepthStencilSurface(
       UINT width, UINT height, D3DFORMAT format,
       D3DMULTISAMPLE_TYPE multi_sample, DWORD multi_sample_quality, BOOL discard,
       IDirect3DSurface9** surface, HANDLE* shared_handle) noexcept override;
 
-   HRESULT __stdcall UpdateSurface(IDirect3DSurface9* source_surface,
-                                   const RECT* source_rect,
-                                   IDirect3DSurface9* destination_surface,
-                                   const POINT* dest_point) noexcept override;
-   HRESULT __stdcall UpdateTexture(IDirect3DBaseTexture9* source_texture,
-                                   IDirect3DBaseTexture9* destination_texture) noexcept override;
-
    HRESULT __stdcall GetRenderTargetData(IDirect3DSurface9* render_target,
                                          IDirect3DSurface9* dest_surface) noexcept override;
-   HRESULT __stdcall GetFrontBufferData(UINT swap_chain_index,
-                                        IDirect3DSurface9* dest_surface) noexcept override;
 
    HRESULT __stdcall StretchRect(IDirect3DSurface9* source_surface,
                                  const RECT* source_rect,
@@ -139,15 +109,18 @@ public:
                                                  IDirect3DSurface9** surface,
                                                  HANDLE* shared_handle) noexcept override;
 
-   HRESULT __stdcall SetRenderTarget(DWORD render_target_index,
-                                     IDirect3DSurface9* render_target) noexcept override;
-   HRESULT __stdcall GetRenderTarget(DWORD render_target_index,
-                                     IDirect3DSurface9** render_target) noexcept override;
+   HRESULT __stdcall SetRenderTarget(DWORD rendertarget_index,
+                                     IDirect3DSurface9* rendertarget) noexcept override;
+
+   HRESULT __stdcall GetRenderTarget(DWORD rendertarget_index,
+                                     IDirect3DSurface9** rendertarget) noexcept override;
 
    HRESULT __stdcall SetDepthStencilSurface(IDirect3DSurface9* new_z_stencil) noexcept override;
+
    HRESULT __stdcall GetDepthStencilSurface(IDirect3DSurface9** z_stencil_surface) noexcept override;
 
    HRESULT __stdcall BeginScene() noexcept override;
+
    HRESULT __stdcall EndScene() noexcept override;
 
    HRESULT __stdcall Clear(DWORD count, const D3DRECT* rects, DWORD flags,
@@ -155,314 +128,551 @@ public:
 
    HRESULT __stdcall SetTransform(D3DTRANSFORMSTATETYPE state,
                                   const D3DMATRIX* matrix) noexcept override;
+
    HRESULT __stdcall GetTransform(D3DTRANSFORMSTATETYPE state,
                                   D3DMATRIX* matrix) noexcept override;
-   HRESULT __stdcall MultiplyTransform(D3DTRANSFORMSTATETYPE state,
-                                       const D3DMATRIX* matrix) noexcept override;
 
    HRESULT __stdcall SetViewport(const D3DVIEWPORT9* viewport) noexcept override;
+
    HRESULT __stdcall GetViewport(D3DVIEWPORT9* viewport) noexcept override;
 
-   HRESULT __stdcall SetMaterial(const D3DMATERIAL9* material) noexcept override;
-   HRESULT __stdcall GetMaterial(D3DMATERIAL9* material) noexcept override;
-
-   HRESULT __stdcall SetLight(DWORD index, const D3DLIGHT9* light) noexcept override;
-   HRESULT __stdcall GetLight(DWORD index, D3DLIGHT9* light) noexcept override;
-
-   HRESULT __stdcall LightEnable(DWORD index, BOOL enabled) noexcept override;
-   HRESULT __stdcall GetLightEnable(DWORD index, BOOL* enabled) noexcept override;
-
-   HRESULT __stdcall SetClipPlane(DWORD index, const float* plane) noexcept override;
-   HRESULT __stdcall GetClipPlane(DWORD index, float* plane) noexcept override;
-
    HRESULT __stdcall SetRenderState(D3DRENDERSTATETYPE state, DWORD value) noexcept override;
+
    HRESULT __stdcall GetRenderState(D3DRENDERSTATETYPE state,
                                     DWORD* value) noexcept override;
 
-   HRESULT __stdcall CreateStateBlock(D3DSTATEBLOCKTYPE type,
-                                      IDirect3DStateBlock9** state_block) noexcept override;
-   HRESULT __stdcall BeginStateBlock() noexcept override;
-   HRESULT __stdcall EndStateBlock(IDirect3DStateBlock9** state_block) noexcept override;
-
-   HRESULT __stdcall SetClipStatus(const D3DCLIPSTATUS9* clip_status) noexcept override;
-   HRESULT __stdcall GetClipStatus(D3DCLIPSTATUS9* clip_status) noexcept override;
-
    HRESULT __stdcall GetTexture(DWORD stage,
                                 IDirect3DBaseTexture9** texture) noexcept override;
+
    HRESULT __stdcall SetTexture(DWORD stage,
                                 IDirect3DBaseTexture9* texture) noexcept override;
 
-   HRESULT __stdcall GetTextureStageState(DWORD stage, D3DTEXTURESTAGESTATETYPE type,
+   HRESULT __stdcall GetTextureStageState(DWORD stage, D3DTEXTURESTAGESTATETYPE state,
                                           DWORD* value) noexcept override;
-   HRESULT __stdcall SetTextureStageState(DWORD stage, D3DTEXTURESTAGESTATETYPE type,
+
+   HRESULT __stdcall SetTextureStageState(DWORD stage, D3DTEXTURESTAGESTATETYPE state,
                                           DWORD value) noexcept override;
 
-   HRESULT __stdcall GetSamplerState(DWORD sampler, D3DSAMPLERSTATETYPE type,
+   HRESULT __stdcall GetSamplerState(DWORD sampler, D3DSAMPLERSTATETYPE state,
                                      DWORD* value) noexcept override;
-   HRESULT __stdcall SetSamplerState(DWORD sampler, D3DSAMPLERSTATETYPE type,
+
+   HRESULT __stdcall SetSamplerState(DWORD sampler, D3DSAMPLERSTATETYPE state,
                                      DWORD value) noexcept override;
-
-   HRESULT __stdcall ValidateDevice(DWORD* num_passes) noexcept override;
-
-   HRESULT __stdcall SetPaletteEntries(UINT palette_number,
-                                       const PALETTEENTRY* entries) noexcept override;
-   HRESULT __stdcall GetPaletteEntries(UINT palette_number,
-                                       PALETTEENTRY* entries) noexcept override;
-
-   HRESULT __stdcall SetCurrentTexturePalette(UINT palette_number) noexcept override;
-   HRESULT __stdcall GetCurrentTexturePalette(UINT* palette_number) noexcept override;
-
-   HRESULT __stdcall SetScissorRect(const RECT* rect) noexcept override;
-   HRESULT __stdcall GetScissorRect(RECT* rect) noexcept override;
-
-   HRESULT __stdcall SetSoftwareVertexProcessing(BOOL software) noexcept override;
-   BOOL __stdcall GetSoftwareVertexProcessing() noexcept override;
-
-   HRESULT __stdcall SetNPatchMode(float segments) noexcept override;
-   float __stdcall GetNPatchMode() noexcept override;
 
    HRESULT __stdcall DrawPrimitive(D3DPRIMITIVETYPE primitive_type, UINT start_vertex,
                                    UINT primitive_count) noexcept override;
+
    HRESULT __stdcall DrawIndexedPrimitive(D3DPRIMITIVETYPE primitive_type,
                                           INT base_vertex_index, UINT min_vertex_index,
                                           UINT num_vertices, UINT start_Index,
-                                          UINT prim_Count) noexcept override;
-   HRESULT __stdcall DrawPrimitiveUP(D3DPRIMITIVETYPE primitive_type,
-                                     UINT primitive_count,
-                                     const void* vertexstreamzerodata,
-                                     UINT vertexstreamzerostride) noexcept override;
-   HRESULT __stdcall DrawIndexedPrimitiveUP(
-      D3DPRIMITIVETYPE primitive_type, UINT min_vertex_index, UINT num_vertices,
-      UINT primitive_count, const void* index_data, D3DFORMAT index_data_format,
-      const void* vertex_stream_zero_data,
-      UINT vertex_stream_zero_stride) noexcept override;
-
-   HRESULT __stdcall ProcessVertices(UINT src_start_index, UINT dest_index,
-                                     UINT vertex_count,
-                                     IDirect3DVertexBuffer9* dest_buffer,
-                                     IDirect3DVertexDeclaration9* vertex_decl,
-                                     DWORD flags) noexcept override;
+                                          UINT prim_count) noexcept override;
 
    HRESULT __stdcall CreateVertexDeclaration(const D3DVERTEXELEMENT9* vertex_elements,
                                              IDirect3DVertexDeclaration9** decl) noexcept override;
 
    HRESULT __stdcall SetVertexDeclaration(IDirect3DVertexDeclaration9* decl) noexcept override;
-   HRESULT __stdcall GetVertexDeclaration(IDirect3DVertexDeclaration9** decl) noexcept override;
 
    HRESULT __stdcall SetFVF(DWORD fvf) noexcept override;
+
    HRESULT __stdcall GetFVF(DWORD* fvf) noexcept override;
 
    HRESULT __stdcall CreateVertexShader(const DWORD* function,
                                         IDirect3DVertexShader9** shader) noexcept override;
 
    HRESULT __stdcall SetVertexShader(IDirect3DVertexShader9* shader) noexcept override;
-   HRESULT __stdcall GetVertexShader(IDirect3DVertexShader9** shader) noexcept override;
 
    HRESULT __stdcall SetVertexShaderConstantF(UINT start_register,
                                               const float* constant_data,
                                               UINT vector4f_count) noexcept override;
-   HRESULT __stdcall GetVertexShaderConstantF(UINT start_register, float* constant_data,
-                                              UINT vector4f_count) noexcept override;
-   HRESULT __stdcall SetVertexShaderConstantI(UINT start_register,
-                                              const int* constant_data,
-                                              UINT vector4i_count) noexcept override;
-   HRESULT __stdcall GetVertexShaderConstantI(UINT start_register, int* constant_data,
-                                              UINT vector4i_count) noexcept override;
-   HRESULT __stdcall SetVertexShaderConstantB(UINT start_register,
-                                              const BOOL* constant_data,
-                                              UINT bool_count) noexcept override;
-   HRESULT __stdcall GetVertexShaderConstantB(UINT start_register, BOOL* constant_data,
-                                              UINT bool_count) noexcept override;
 
    HRESULT __stdcall SetStreamSource(UINT stream_number,
                                      IDirect3DVertexBuffer9* stream_data,
                                      UINT offset_in_bytes, UINT stride) noexcept override;
-   HRESULT __stdcall GetStreamSource(UINT stream_number,
-                                     IDirect3DVertexBuffer9** stream_data,
-                                     UINT* offset_in_bytes,
-                                     UINT* stride) noexcept override;
-
-   HRESULT __stdcall SetStreamSourceFreq(UINT stream_number, UINT setting) noexcept override;
-   HRESULT __stdcall GetStreamSourceFreq(UINT stream_number,
-                                         UINT* setting) noexcept override;
 
    HRESULT __stdcall SetIndices(IDirect3DIndexBuffer9* index_data) noexcept override;
-   HRESULT __stdcall GetIndices(IDirect3DIndexBuffer9** index_data) noexcept override;
 
    HRESULT __stdcall CreatePixelShader(const DWORD* function,
                                        IDirect3DPixelShader9** shader) noexcept override;
 
    HRESULT __stdcall SetPixelShader(IDirect3DPixelShader9* shader) noexcept override;
-   HRESULT __stdcall GetPixelShader(IDirect3DPixelShader9** shader) noexcept override;
 
    HRESULT __stdcall SetPixelShaderConstantF(UINT start_register,
                                              const float* constant_data,
                                              UINT vector4f_count) noexcept override;
-   HRESULT __stdcall GetPixelShaderConstantF(UINT Start_Register, float* constant_data,
-                                             UINT vector4f_count) noexcept override;
-   HRESULT __stdcall SetPixelShaderConstantI(UINT start_register,
-                                             const int* constant_data,
-                                             UINT vector4i_count) noexcept override;
-   HRESULT __stdcall GetPixelShaderConstantI(UINT start_register, int* constant_data,
-                                             UINT vector4i_count) noexcept override;
-   HRESULT __stdcall SetPixelShaderConstantB(UINT start_register,
-                                             const BOOL* constant_data,
-                                             UINT bool_count) noexcept override;
-   HRESULT __stdcall GetPixelShaderConstantB(UINT start_register, BOOL* constant_data,
-                                             UINT bool_count) noexcept override;
-
-   HRESULT __stdcall DrawRectPatch(UINT handle, const float* num_segs,
-                                   const D3DRECTPATCH_INFO* rect_patch_info) noexcept override;
-   HRESULT __stdcall DrawTriPatch(UINT handle, const float* num_segs,
-                                  const D3DTRIPATCH_INFO* tri_patch_info) noexcept override;
-
-   HRESULT __stdcall DeletePatch(UINT handle) noexcept override;
 
    HRESULT __stdcall CreateQuery(D3DQUERYTYPE type,
                                  IDirect3DQuery9** query) noexcept override;
 
+   [[deprecated("unimplemented")]] HRESULT __stdcall CreateRenderTarget(
+      UINT, UINT, D3DFORMAT, D3DMULTISAMPLE_TYPE, DWORD, BOOL,
+      IDirect3DSurface9**, HANDLE*) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemente"
+                "d")]] HRESULT __stdcall EvictManagedResources() noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall GetCreationParameters(
+      D3DDEVICE_CREATION_PARAMETERS*) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall CreateAdditionalSwapChain(
+      D3DPRESENT_PARAMETERS*, IDirect3DSwapChain9**) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall GetSwapChain(
+      UINT, IDirect3DSwapChain9**) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemente"
+                "d")]] UINT __stdcall GetNumberOfSwapChains() noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall GetRasterStatus(
+      UINT, D3DRASTER_STATUS*) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall SetDialogBoxMode(BOOL) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] void __stdcall GetGammaRamp(UINT, D3DGAMMARAMP*) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall UpdateSurface(
+      IDirect3DSurface9*, const RECT*, IDirect3DSurface9*, const POINT*) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall UpdateTexture(
+      IDirect3DBaseTexture9*, IDirect3DBaseTexture9*) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall GetFrontBufferData(
+      UINT, IDirect3DSurface9*) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall MultiplyTransform(
+      D3DTRANSFORMSTATETYPE, const D3DMATRIX*) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall SetMaterial(const D3DMATERIAL9*) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall GetMaterial(D3DMATERIAL9*) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall SetLight(DWORD,
+                                                              const D3DLIGHT9*) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall GetLight(DWORD, D3DLIGHT9*) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall LightEnable(DWORD, BOOL) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall GetLightEnable(DWORD, BOOL*) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall SetClipPlane(DWORD,
+                                                                  const float*) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall GetClipPlane(DWORD, float*) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall CreateStateBlock(
+      D3DSTATEBLOCKTYPE, IDirect3DStateBlock9**) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated(
+      "unimplemented")]] HRESULT __stdcall BeginStateBlock() noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall EndStateBlock(
+      IDirect3DStateBlock9**) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall SetClipStatus(const D3DCLIPSTATUS9*) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall GetClipStatus(D3DCLIPSTATUS9*) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall ValidateDevice(DWORD*) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall SetPaletteEntries(
+      UINT, const PALETTEENTRY*) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall GetPaletteEntries(UINT,
+                                                                       PALETTEENTRY*) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall SetCurrentTexturePalette(UINT) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall GetCurrentTexturePalette(UINT*) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall SetScissorRect(const RECT*) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall GetScissorRect(RECT*) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated(
+      "unimplemented")]] HRESULT __stdcall SetSoftwareVertexProcessing(BOOL) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemente"
+                "d")]] BOOL __stdcall GetSoftwareVertexProcessing() noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall SetNPatchMode(float) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated(
+      "unimplemented")]] float __stdcall GetNPatchMode() noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall DrawPrimitiveUP(
+      D3DPRIMITIVETYPE, UINT, const void*, UINT) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall DrawIndexedPrimitiveUP(
+      D3DPRIMITIVETYPE, UINT, UINT, UINT, const void*, D3DFORMAT, const void*,
+      UINT) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall ProcessVertices(
+      UINT, UINT, UINT, IDirect3DVertexBuffer9*, IDirect3DVertexDeclaration9*,
+      DWORD) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall GetVertexDeclaration(
+      IDirect3DVertexDeclaration9**) noexcept
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall GetVertexShader(
+      IDirect3DVertexShader9**) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall GetVertexShaderConstantF(
+      UINT, float*, UINT) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall SetVertexShaderConstantI(
+      UINT, const int*, UINT) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall GetVertexShaderConstantI(
+      UINT, int*, UINT) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall SetVertexShaderConstantB(
+      UINT, const BOOL*, UINT) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall GetVertexShaderConstantB(
+      UINT, BOOL*, UINT) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall GetStreamSource(
+      UINT, IDirect3DVertexBuffer9**, UINT*, UINT*) noexcept
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall SetStreamSourceFreq(UINT, UINT) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall GetStreamSourceFreq(UINT, UINT*) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall GetIndices(IDirect3DIndexBuffer9**) noexcept
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall GetPixelShader(
+      IDirect3DPixelShader9**) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall GetPixelShaderConstantF(
+      UINT, float*, UINT) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall SetPixelShaderConstantI(
+      UINT, const int*, UINT) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall GetPixelShaderConstantI(
+      UINT, int*, UINT) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall SetPixelShaderConstantB(
+      UINT, const BOOL*, UINT) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall GetPixelShaderConstantB(
+      UINT, BOOL*, UINT) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall DrawRectPatch(
+      UINT, const float*, const D3DRECTPATCH_INFO*) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall DrawTriPatch(
+      UINT, const float*, const D3DTRIPATCH_INFO*) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
+   [[deprecated("unimplemented")]] HRESULT __stdcall DeletePatch(UINT) noexcept override
+   {
+      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
+   }
+
 private:
-   ~Device();
+   Device(IDirect3D9& direct3d9, IDXGIAdapter2& adapter, const HWND window) noexcept;
+   ~Device() = default;
 
-   // The underscore is infront of near and far to get around the fact Windows
-   // headers define them as macros for backwards compatibility. (Which I love
-   // but it'd still be nice if they weren't there.)
-   enum class Current_scene : std::int8_t { _near, _far, water };
+   auto create_texture2d_managed(const UINT width, const UINT height,
+                                 const UINT mip_levels, const D3DFORMAT d3d_format) noexcept
+      -> Com_ptr<IDirect3DTexture9>;
 
-   constexpr static auto water_slot = 12;
-   constexpr static auto refraction_slot = 13;
-   constexpr static auto cubemap_projection_slot = 15;
+   auto create_texture2d_rendertarget(const UINT width, const UINT height) noexcept
+      -> Com_ptr<IDirect3DTexture9>;
 
-   constexpr static auto fp_texture_format = D3DFMT_A16B16G16R16F;
-   constexpr static auto blur_buffer_factor = 4;
+   auto create_texture3d_managed(const UINT width, const UINT height,
+                                 const UINT depth, const UINT mip_levels,
+                                 const D3DFORMAT d3d_format) noexcept
+      -> Com_ptr<IDirect3DVolumeTexture9>;
 
-   void init_sampler_max_anisotropy() noexcept;
+   auto create_texturecube_managed(const UINT width, const UINT mip_levels,
+                                   const D3DFORMAT d3d_format) noexcept
+      -> Com_ptr<IDirect3DCubeTexture9>;
 
-   void init_optional_format_types() noexcept;
+   auto create_vertex_buffer(const UINT size, const bool dynamic) noexcept
+      -> Com_ptr<IDirect3DVertexBuffer9>;
 
-   void refresh_game_shader() noexcept;
+   auto create_index_buffer(const UINT size, const bool dynamic) noexcept
+      -> Com_ptr<IDirect3DIndexBuffer9>;
 
-   void post_process() noexcept;
+   auto create_vertex_declaration(const D3DVERTEXELEMENT9* const vertex_elements) noexcept
+      -> Com_ptr<IDirect3DVertexDeclaration9>;
 
-   void late_effects_resolve() noexcept;
+   bool draw_common(const D3DPRIMITIVETYPE primitive_type) noexcept;
 
-   void refresh_material() noexcept;
-
-   void clear_material() noexcept;
-
-   void bind_water_texture() noexcept;
-
-   void bind_refraction_texture() noexcept;
-
-   void blur_shadows() noexcept;
-
-   void update_refraction_texture() noexcept;
-
-   void resolve_blur_surface() noexcept;
-
-   void apply_gaussian_scene_blur() noexcept;
-
-   void apply_damage_overlay_effect() noexcept;
-
-   void apply_skyfog_ext() noexcept;
-
-   void set_hdr_rendering(bool hdr_rendering) noexcept;
-
-   Com_ref<IDirect3DDevice9> _device;
+   const Com_ref<IDirect3D9> _direct3d9;
+   const Com_ref<IDXGIAdapter2> _adapter;
    const HWND _window;
-   const std::unique_ptr<ImGuiContext, void (*)(ImGuiContext*)> _imgui_context;
 
-   Com_ptr<IDirect3DTexture9> _effects_backbuffer;
-   Com_ptr<IDirect3DSurface9> _backbuffer_override;
+   core::Shader_patch _shader_patch;
+   Render_state_manager _render_state_manager;
 
-   Com_ptr<IDirect3DSurface9> _linear_depth_surface;
-   Com_ptr<IDirect3DTexture9> _linear_depth_texture;
-   Com_ptr<IDirect3DTexture9> _shadow_texture;
-   Texture _water_texture;
-   Com_ptr<IDirect3DTexture9> _blur_texture;
-   Com_ptr<IDirect3DSurface9> _blur_surface;
-   Com_ptr<IDirect3DTexture9> _refraction_texture;
+   D3DPRIMITIVETYPE _last_primitive_type;
+   bool _fixed_func_active = true;
 
-   Com_ptr<IDirect3DTexture9> _near_depth_texture;
-   Com_ptr<IDirect3DSurface9> _near_depth_surface;
+   const Com_ref<IUnknown> _backbuffer{
+      Surface_backbuffer::create(_shader_patch.get_back_buffer(), 800, 600)};
 
-   Com_ptr<IDirect3DTexture9> _far_depth_texture;
-   Com_ptr<IDirect3DSurface9> _far_depth_surface;
-   Com_ptr<IDirect3DSurface9> _water_depth_surface;
+   Com_ptr<IUnknown> _rendertarget{_backbuffer};
 
-   std::function<HRESULT(IDirect3DSurface9*, const RECT*, IDirect3DSurface9*, const RECT*, D3DTEXTUREFILTERTYPE)>
-      _stretch_rect_hook{};
-   std::function<void()> _on_shader_set{};
+   Com_ptr<IUnknown> _depthstencil{
+      Surface_depthstencil::create(core::Game_depthstencil::nearscene, 800, 600)};
 
-   glm::ivec2 _resolution;
+   D3DVIEWPORT9 _viewport{0, 0, 800, 600, 0.0f, 1.0f};
 
-   // Config State
-   bool _window_dirty = true;
-   bool _imgui_bootstrapped = false;
-   bool _imgui_active = false;
-   bool _fake_device_loss = false;
-
-   // Per-Frame State
-   bool _hdr_rendering = false;
-   bool _effects_rt_resolved = false;
-   bool _zprepass = false;
-   bool _game_doing_bloom_pass = false;
-   bool _near_water_refraction = false;
-   bool _far_water_refraction = false;
-   bool _ice_refraction = false;
-   bool _particles_blur = false;
-   bool _refresh_material = true;
-   bool _discard_draw_calls = false;
-   bool _discard_next_draw_call = false;
-   bool _render_depth_texture = false;
-   Current_scene _current_scene = Current_scene::_near;
-
-   int _created_full_rendertargets = 0;
-   int _created_2_to_1_rendertargets = 0;
-
-   boost::local_shared_ptr<Material> _material;
-
-   Shader_metadata _shader_metadata;
-
-   User_config _config{"shader patch.yml"s};
-
-   Ps_3f_shader_constant<constants::ps::fog_range> _fog_range_const;
-   Ps_3f_shader_constant<constants::ps::fog_color> _fog_color_const;
-   Ps_4f_shader_constant<constants::ps::rt_resolution> _rt_resolution_const;
-   Vs_1f_shader_constant<constants::vs::time> _time_vs_const;
-   Ps_1f_shader_constant<constants::ps::time> _time_ps_const;
-   Vs_2f_shader_constant<constants::vs::linear_state> _hdr_state_vs_const;
-   Ps_2f_shader_constant<constants::ps::linear_state> _hdr_state_ps_const;
-   Ps_1f_shader_constant<constants::ps::rt_multiply_blending> _multiply_blendstate_ps_const;
-
-   Shader_database _shaders;
-   Texture_database _textures;
-
-   effects::Control _effects{_device, _config.effects};
-
-   effects::Rendertarget_allocator _rt_allocator{_device};
-
-   const Com_ptr<IDirect3DVertexDeclaration9> _fs_vertex_decl;
-   Com_ptr<IDirect3DVertexBuffer9> _fs_vertex_buffer;
-
-   const std::chrono::steady_clock::time_point _device_start{
-      std::chrono::steady_clock::now()};
-
-   Render_state_block _state_block;
-   std::array<Sampler_state_block, 16> _sampler_states;
-   std::array<Texture_state_block, 8> _texture_states;
-   Transform_state_block _transform_state;
-   Vertex_input_state _vertex_input_state;
-
-   win32::Unique_handle _sp_advertise_handle;
-
-   const int _device_max_anisotropy = 1;
-   D3DFORMAT _stencil_shadow_format;
-   D3DFORMAT _effects_high_stock_hdr_format;
-   D3DFORMAT _effects_ultra_stock_hdr_format;
-   D3DFORMAT _rt_format;
-
-   std::atomic_int_fast32_t _active_fx_id{0};
-   std::atomic<ULONG> _ref_count{1};
+   ULONG _ref_count = 1;
 };
+
+constexpr auto device_caps = []() -> D3DCAPS9 {
+   D3DCAPS9 caps{};
+
+   caps.DeviceType = D3DDEVTYPE_HAL;
+   caps.AdapterOrdinal = 0x00000000;
+   caps.Caps = 0x00020000;
+   caps.Caps2 = 0xe0020000;
+   caps.Caps3 = 0x000003a0;
+   caps.PresentationIntervals = 0x8000000f;
+   caps.CursorCaps = 0x00000000;
+   caps.DevCaps = 0x001bbef0;
+   caps.PrimitiveMiscCaps = 0x002fcef2;
+   caps.RasterCaps = 0x07732191;
+   caps.ZCmpCaps = 0x000000ff;
+   caps.SrcBlendCaps = 0x00003fff;
+   caps.DestBlendCaps = 0x00003fff;
+   caps.AlphaCmpCaps = 0x000000ff;
+   caps.ShadeCaps = 0x00084208;
+   caps.TextureCaps = 0x0001ecc5;
+   caps.TextureFilterCaps = 0x03030700;
+   caps.CubeTextureFilterCaps = 0x03030300;
+   caps.VolumeTextureFilterCaps = 0x03030300;
+   caps.TextureAddressCaps = 0x0000003f;
+   caps.VolumeTextureAddressCaps = 0x0000003f;
+   caps.LineCaps = 0x0000001f;
+   caps.MaxTextureWidth = 0x00004000;
+   caps.MaxTextureHeight = 0x00004000;
+   caps.MaxVolumeExtent = 0x00000800;
+   caps.MaxTextureRepeat = 0x00002000;
+   caps.MaxTextureAspectRatio = 0x00004000;
+   caps.MaxAnisotropy = 0x00000010;
+   caps.MaxVertexW = 1.00000000e+10;
+   caps.GuardBandLeft = -100000000.;
+   caps.GuardBandTop = -100000000.;
+   caps.GuardBandRight = 100000000.;
+   caps.GuardBandBottom = 100000000.;
+   caps.ExtentsAdjust = 0.000000000;
+   caps.StencilCaps = 0x000001ff;
+   caps.FVFCaps = 0x00180008;
+   caps.TextureOpCaps = 0x03feffff;
+   caps.MaxTextureBlendStages = 0x00000008;
+   caps.MaxSimultaneousTextures = 0x00000008;
+   caps.VertexProcessingCaps = 0x0000013b;
+   caps.MaxActiveLights = 0x00000008;
+   caps.MaxUserClipPlanes = 0x00000008;
+   caps.MaxVertexBlendMatrices = 0x00000004;
+   caps.MaxVertexBlendMatrixIndex = 0x00000000;
+   caps.MaxPointSize = 8192.00000;
+   caps.MaxPrimitiveCount = 0x00ffffff;
+   caps.MaxVertexIndex = 0x00ffffff;
+   caps.MaxStreams = 0x00000010;
+   caps.MaxStreamStride = 0x000000ff;
+   caps.VertexShaderVersion = 0xfffe0300;
+   caps.MaxVertexShaderConst = 0x00000100;
+   caps.PixelShaderVersion = 0xffff0300;
+   caps.PixelShader1xMaxValue = 65504.0000;
+   caps.DevCaps2 = 0x00000051;
+   caps.MaxNpatchTessellationLevel = 0.000000000;
+   caps.Reserved5 = 0x00000000;
+   caps.MasterAdapterOrdinal = 0x00000000;
+   caps.AdapterOrdinalInGroup = 0x00000000;
+   caps.NumberOfAdaptersInGroup = 0x00000001;
+   caps.DeclTypes = 0x0000030f;
+   caps.NumSimultaneousRTs = 0x00000004;
+   caps.StretchRectFilterCaps = 0x03000300;
+   caps.VS20Caps = {0x00000001, 0x00000018, 0x00000020};
+   caps.PS20Caps = {0x0000001f, 0x00000018, 0x00000004, 0x00000200};
+   caps.VertexTextureFilterCaps = 0x03030700;
+   caps.MaxVShaderInstructionsExecuted = 0x0000ffff;
+   caps.MaxPShaderInstructionsExecuted = 0x0000ffff;
+   caps.MaxVertexShader30InstructionSlots = 0x00001000;
+   caps.MaxPixelShader30InstructionSlots = 0x00001000;
+
+   return caps;
+}();
 }

@@ -7,18 +7,18 @@
 #include "vertex_transformer.hlsl"
 #include "lighting_utilities.hlsl"
 #include "pixel_utilities.hlsl"
+#include "pixel_sampler_states.hlsl"
 
-Texture2D<float4> diffuse_map : register(ps_3_0, s0);
-Texture2D<float3> detail_map : register(ps_3_0, s1);
-Texture2D<float3> projected_texture : register(ps_3_0, s2);
-Texture2D<float4> shadow_map : register(ps_3_0, s3);
+Texture2D<float4> diffuse_map : register(t0);
+Texture2D<float3> detail_map : register(t1);
+Texture2D<float3> projected_texture : register(t2);
+Texture2D<float4> shadow_map : register(t3);
 
-SamplerState linear_wrap_sampler;
+const static float4 blend_constants = ps_custom_constants[0];
+const static float2 lighting_factor = custom_constants[0].xy;
+const static float4 texture_transforms[4] = 
+   {custom_constants[1], custom_constants[2], custom_constants[3], custom_constants[4]};
 
-float4 blend_constants : register(ps, c[0]);
-
-float2 lighting_factor : register(c[CUSTOM_CONST_MIN]);
-float4 texture_transforms[4] : register(vs, c[CUSTOM_CONST_MIN + 1]);
 
 const static bool use_transparency = NORMAL_USE_TRANSPARENCY;
 const static bool use_hardedged_test = NORMAL_USE_HARDEDGED_TEST;
@@ -27,11 +27,11 @@ const static bool use_projected_texture = NORMAL_USE_PROJECTED_TEXTURE;
 
 struct Vs_output_unlit
 {
-   float4 position : SV_Position;
    float2 diffuse_texcoords : TEXCOORD0;
    float2 detail_texcoords : TEXCOORD1;
-   float4 material_color_fade : TEXCOORD2;
+   float4 material_color_fade : MATCOLOR;
    float fog_eye_distance : DEPTH;
+   float4 position : SV_Position;
 };
 
 Vs_output_unlit unlit_main_vs(Vertex_input input)
@@ -52,7 +52,7 @@ Vs_output_unlit unlit_main_vs(Vertex_input input)
 
    Near_scene near_scene = calculate_near_scene_fade(positionWS);
 
-   output.material_color_fade.rgb = hdr_info.z * lighting_factor.x + lighting_factor.y;
+   output.material_color_fade.rgb = lighting_scale * lighting_factor.x + lighting_factor.y;
    output.material_color_fade.a = saturate(near_scene.fade);
    output.material_color_fade *= get_material_color(input.color());
 
@@ -61,20 +61,20 @@ Vs_output_unlit unlit_main_vs(Vertex_input input)
 
 struct Vs_output
 {
-   float4 positionPS : SV_Position;
-
    float2 diffuse_texcoords : TEXCOORD0;
    float2 detail_texcoords : TEXCOORD1;
    float4 projection_texcoords : TEXCOORD2;
    float4 shadow_texcoords : TEXCOORD3;
 
-   float3 positionWS : TEXCOORD4;
-   float3 normalWS : TEXCOORD5;
+   float3 positionWS : POSITIONWS;
+   float3 normalWS : NORMALWS;
 
-   float4 material_color_fade : TEXCOORD6;
-   float3 static_lighting : TEXCOORD7;
+   float4 material_color_fade : MATCOLOR;
+   float3 static_lighting : STATICLIGHT;
 
-   float fog_eye_distance : TEXCOORD8;
+   float fog_eye_distance : DEPTH;
+
+   float4 positionPS : SV_Position;
 };
 
 Vs_output main_vs(Vertex_input input)
@@ -112,7 +112,7 @@ struct Ps_input_unlit
 {
    float2 diffuse_texcoords : TEXCOORD0;
    float2 detail_texcoords : TEXCOORD1;
-   float4 material_color_fade : TEXCOORD2;
+   float4 material_color_fade : MATCOLOR;
    float fog_eye_distance : DEPTH;
 };
 
@@ -125,9 +125,9 @@ float get_glow_factor(float4 diffuse_map_color)
 
 float4 unlit_main_ps(Ps_input_unlit input) : SV_Target0
 {
-   const float4 diffuse_map_color = diffuse_map.Sample(linear_wrap_sampler, 
+   const float4 diffuse_map_color = diffuse_map.Sample(aniso_wrap_sampler,
                                                        input.diffuse_texcoords);
-   const float3 detail_color = detail_map.Sample(linear_wrap_sampler, input.detail_texcoords);
+   const float3 detail_color = detail_map.Sample(aniso_wrap_sampler, input.detail_texcoords);
 
    float3 color = diffuse_map_color.rgb * input.material_color_fade.rgb;
    color = (color * detail_color) * 2.0;
@@ -160,20 +160,20 @@ struct Ps_input
    float4 projection_texcoords : TEXCOORD2;
    float4 shadow_texcoords : TEXCOORD3;
 
-   float3 positionWS : TEXCOORD4;
-   float3 normalWS : TEXCOORD5;
+   float3 positionWS : POSITIONWS;
+   float3 normalWS : NORMALWS;
 
-   float4 material_color_fade : TEXCOORD6;
-   float3 static_lighting : TEXCOORD7;
+   float4 material_color_fade : MATCOLOR;
+   float3 static_lighting : STATICLIGHT;
 
-   float fog_eye_distance : TEXCOORD8;
+   float fog_eye_distance : DEPTH;
 };
 
 float4 main_ps(Ps_input input) : SV_Target0
 {
-   const float4 diffuse_map_color = diffuse_map.Sample(linear_wrap_sampler, 
+   const float4 diffuse_map_color = diffuse_map.Sample(aniso_wrap_sampler,
                                                        input.diffuse_texcoords);
-   const float3 detail_color = detail_map.Sample(linear_wrap_sampler, input.detail_texcoords);
+   const float3 detail_color = detail_map.Sample(aniso_wrap_sampler, input.detail_texcoords);
 
    float3 diffuse_color = diffuse_map_color.rgb * input.material_color_fade.rgb;
    diffuse_color = diffuse_color * detail_color * 2.0;
@@ -200,18 +200,18 @@ float4 main_ps(Ps_input input) : SV_Target0
       const float2 shadow_texcoords = input.shadow_texcoords.xy / input.shadow_texcoords.w;
 
       const float shadow_map_value =
-         use_shadow_map ? shadow_map.SampleLevel(linear_wrap_sampler, shadow_texcoords, 0).a
+         use_shadow_map ? shadow_map.SampleLevel(linear_clamp_sampler, shadow_texcoords, 0).a
                         : 1.0;
 
       float shadow = 1.0 - (lighting.intensity * (1.0 - shadow_map_value));
 
       // Linear Rendering Normalmap Hack
-      color = lerp(color * shadow, diffuse_color * hdr_info.z * shadow, rt_multiply_blending);
+      color = lerp(color * shadow, diffuse_color * lighting_scale * shadow, rt_multiply_blending_state);
    }
    else {
 
       // Linear Rendering Normalmap Hack
-      color = lerp(color, diffuse_color * hdr_info.z, rt_multiply_blending);
+      color = lerp(color, diffuse_color * lighting_scale, rt_multiply_blending_state);
    }
 
    float alpha;

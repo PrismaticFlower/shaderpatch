@@ -2,11 +2,233 @@
   "group_name": "stencilshadow",
   "source_name": "stencilshadow.fx",
 
+  "input_layouts": {
+    "preextended_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "R32G32B32_FLOAT",
+        "offset": 0
+      }
+    ],
+
+    "extend_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "R16G16B16A16_SINT",
+        "offset": 0
+      },
+      {
+        "semantic": {
+          "name": "NORMAL",
+          "index": 0
+        },
+        "format": "B8G8R8A8_UNORM",
+        "offset": 8
+      }
+    ],
+
+    "extend_hardskin_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "R16G16B16A16_SINT",
+        "offset": 0
+      },
+      {
+        "semantic": {
+          "name": "NORMAL",
+          "index": 0
+        },
+        "format": "B8G8R8A8_UNORM",
+        "offset": 8
+      },
+      {
+        "semantic": {
+          "name": "BLENDINDICES",
+          "index": 0
+        },
+        "format": "B8G8R8A8_UNORM",
+        "offset": 12
+      }
+    ],
+
+    "extend_hardskin_gen_normal_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "R16G16B16A16_SINT",
+        "offset": 0
+      },
+      {
+        "semantic": {
+          "name": "BLENDINDICES",
+          "index": 0
+        },
+        "format": "B8G8R8A8_UNORM",
+        "offset": 8
+      },
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 1
+        },
+        "format": "R16G16B16A16_SINT",
+        "offset": 12
+      },
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 2
+        },
+        "format": "R16G16B16A16_SINT",
+        "offset": 20
+      }
+    ],
+
+    "extend_softskin_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "R16G16B16A16_SINT",
+        "offset": 0
+      },
+      {
+        "semantic": {
+          "name": "BLENDWEIGHT",
+          "index": 0
+        },
+        "format": "B8G8R8A8_UNORM",
+        "offset": 8
+      },
+      {
+        "semantic": {
+          "name": "BLENDINDICES",
+          "index": 0
+        },
+        "format": "B8G8R8A8_UNORM",
+        "offset": 12
+      },
+      {
+        "semantic": {
+          "name": "NORMAL",
+          "index": 0
+        },
+        "format": "B8G8R8A8_UNORM",
+        "offset": 16
+      },
+      {
+        "semantic": {
+          "name": "BLENDWEIGHT",
+          "index": 1
+        },
+        "format": "B8G8R8A8_UNORM",
+        "offset": 20
+      },
+      {
+        "semantic": {
+          "name": "BLENDINDICES",
+          "index": 1
+        },
+        "format": "B8G8R8A8_UNORM",
+        "offset": 24
+      }
+    ],
+
+    "extend_softskin_gen_normal_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "R16G16B16A16_SINT",
+        "offset": 0
+      },
+      {
+        "semantic": {
+          "name": "BLENDWEIGHT",
+          "index": 0
+        },
+        "format": "B8G8R8A8_UNORM",
+        "offset": 8
+      },
+      {
+        "semantic": {
+          "name": "BLENDINDICES",
+          "index": 0
+        },
+        "format": "B8G8R8A8_UNORM",
+        "offset": 12
+      },
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 1
+        },
+        "format": "R16G16B16A16_SINT",
+        "offset": 16
+      },
+      {
+        "semantic": {
+          "name": "BLENDWEIGHT",
+          "index": 1
+        },
+        "format": "B8G8R8A8_UNORM",
+        "offset": 24
+      },
+      {
+        "semantic": {
+          "name": "BLENDINDICES",
+          "index": 1
+        },
+        "format": "B8G8R8A8_UNORM",
+        "offset": 28
+      },
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 2
+        },
+        "format": "R16G16B16A16_SINT",
+        "offset": 36
+      },
+      {
+        "semantic": {
+          "name": "BLENDWEIGHT",
+          "index": 2
+        },
+        "format": "B8G8R8A8_UNORM",
+        "offset": 40
+      },
+      {
+        "semantic": {
+          "name": "BLENDINDICES",
+          "index": 2
+        },
+        "format": "B8G8R8A8_UNORM",
+        "offset": 44
+      }
+    ]
+  },
+
   "entrypoints": {
     "preextended_vs": {
       "stage": "vertex",
 
       "vertex_state": {
+        "input_layout": "preextended_input",
+
         "generic_input": {
           "dynamic_compression": false,
           "position": false,
@@ -23,6 +245,8 @@
       "stage": "vertex",
 
       "vertex_state": {
+        "input_layout": "extend_input",
+
         "generic_input": {
           "dynamic_compression": false,
           "position": false,
@@ -39,6 +263,8 @@
       "stage": "vertex",
 
       "vertex_state": {
+        "input_layout": "extend_hardskin_input",
+
         "generic_input": {
           "dynamic_compression": false,
           "position": false,
@@ -55,6 +281,8 @@
       "stage": "vertex",
 
       "vertex_state": {
+        "input_layout": "extend_hardskin_gen_normal_input",
+
         "generic_input": {
           "dynamic_compression": false,
           "position": false,
@@ -71,6 +299,8 @@
       "stage": "vertex",
 
       "vertex_state": {
+        "input_layout": "extend_softskin_input",
+
         "generic_input": {
           "dynamic_compression": false,
           "position": false,
@@ -87,6 +317,8 @@
       "stage": "vertex",
 
       "vertex_state": {
+        "input_layout": "extend_softskin_gen_normal_input",
+
         "generic_input": {
           "dynamic_compression": false,
           "position": false,
@@ -103,6 +335,8 @@
       "stage": "vertex",
 
       "vertex_state": {
+        "input_layout": "extend_input",
+
         "generic_input": {
           "dynamic_compression": false,
           "position": false,
@@ -119,6 +353,8 @@
       "stage": "vertex",
 
       "vertex_state": {
+        "input_layout": "extend_hardskin_input",
+
         "generic_input": {
           "dynamic_compression": false,
           "position": false,
@@ -135,6 +371,8 @@
       "stage": "vertex",
 
       "vertex_state": {
+        "input_layout": "extend_hardskin_gen_normal_input",
+
         "generic_input": {
           "dynamic_compression": false,
           "position": false,
@@ -151,6 +389,8 @@
       "stage": "vertex",
 
       "vertex_state": {
+        "input_layout": "extend_softskin_input",
+
         "generic_input": {
           "dynamic_compression": false,
           "position": false,
@@ -167,6 +407,8 @@
       "stage": "vertex",
 
       "vertex_state": {
+        "input_layout": "extend_softskin_gen_normal_input",
+
         "generic_input": {
           "dynamic_compression": false,
           "position": false,

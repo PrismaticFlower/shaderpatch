@@ -3,26 +3,26 @@
 #include "generic_vertex_input.hlsl"
 #include "vertex_utilities.hlsl"
 #include "vertex_transformer.hlsl"
+#include "pixel_sampler_states.hlsl"
 
-float4 x_texcoords_transform : register(vs, c[CUSTOM_CONST_MIN]);
-float4 y_texcoords_transform : register(vs, c[CUSTOM_CONST_MIN + 1]);
+const static float4 x_texcoords_transform = custom_constants[0];
+const static float4 y_texcoords_transform = custom_constants[1];
 
-float3 light_directionWS : register(ps, c0);
-float3 light_color : register(ps, c1);
-float3 ambient_color : register(ps, c2);
+const static float3 light_directionWS = ps_custom_constants[0].xyz;
+const static float3 light_color = ps_custom_constants[1].xyz;
+const static float3 ambient_color = ps_custom_constants[2].xyz;
 
-Texture2D<float3> water_texture : register(ps_3_0, s0);
-Texture2D<float4> foam_texture : register(ps_3_0, s1);
-
-SamplerState linear_wrap_sampler;
+Texture2D<float3> water_texture : register(t0);
+Texture2D<float4> foam_texture : register(t1);
 
 struct Vs_output
 {
-   float4 positionPS : SV_Position;
-   float3 normalWS : TEXCOORD0;
-   float2 texcoords : TEXCOORD1;
-   float4 color : TEXCOORD3;
+   float3 normalWS : NORMALWS;
+   float2 texcoords : TEXCOORD0;
+   float4 color : COLOR;
    float fog_eye_distance : DEPTH;
+
+   float4 positionPS : SV_Position;
 };
 
 Vs_output near_vs(Vertex_input input)
@@ -58,17 +58,16 @@ Vs_output far_vs(Vertex_input input)
 
 struct Ps_input
 {
-   float3 normalWS : TEXCOORD0;
-   float2 texcoords : TEXCOORD1;
-   float2 foam_texcoords : TEXCOORD2;
-   float4 color : TEXCOORD3;
+   float3 normalWS : NORMALWS;
+   float2 texcoords : TEXCOORD0;
+   float4 color : COLOR;
    float fog_eye_distance : DEPTH;
 };
 
 float4 near_ps(Ps_input input) : SV_Target0
 {
-   const float3 water_color = water_texture.Sample(linear_wrap_sampler, input.texcoords);
-   const float4 foam_color = foam_texture.Sample(linear_wrap_sampler, input.texcoords);
+   const float3 water_color = water_texture.Sample(aniso_wrap_sampler, input.texcoords);
+   const float4 foam_color = foam_texture.Sample(aniso_wrap_sampler, input.texcoords);
 
    float light_intensity = max(dot(normalize(input.normalWS), light_directionWS.xyz), 0.0);
 
@@ -88,7 +87,7 @@ float4 far_ps(Ps_input input) : SV_Target0
    float4 color = near_ps(input);
 
    color.a =
-      foam_texture.Sample(linear_wrap_sampler, input.texcoords).a * input.color.a;
+      foam_texture.Sample(aniso_wrap_sampler, input.texcoords).a * input.color.a;
 
    return color;
 }

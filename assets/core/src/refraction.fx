@@ -6,27 +6,26 @@
 #include "lighting_utilities.hlsl"
 
 
-float4 distort_alpha_constant : register(ps, c[0]);
-const static float distort_blend = distort_alpha_constant.a;
+const static float distort_blend = ps_custom_constants[0].a;
 
 SamplerState linear_wrap_sampler;
 
 struct Vs_nodistortion_output
 {
-   float4 positionPS : SV_Position;
+   float3 positionWS : POSITIONWS;
+   float3 normalWS : NORMALWS;
 
-   float3 positionWS : TEXCOORD0;
-   float3 normalWS : TEXCOORD1;
-   float2 texcoords : TEXCOORD2;
-   float4 material_color_fade : TEXCOORD3;
-   float3 static_lighting : TEXCOORD4;
+   float2 texcoords : TEXCOORD0;
+
+   float4 material_color_fade : MATCOLOR;
+   float3 static_lighting : STATICLIGHT;
 
    float fog_eye_distance : DEPTH;
+
+   float4 positionPS : SV_Position;
 };
 
-Vs_nodistortion_output far_vs(Vertex_input input,
-                              uniform float4 x_texcoords_transform : register(c[CUSTOM_CONST_MIN]),
-                              uniform float4 y_texcoords_transform : register(c[CUSTOM_CONST_MIN + 1]))
+Vs_nodistortion_output far_vs(Vertex_input input)
 {
    Vs_nodistortion_output output;
 
@@ -38,6 +37,9 @@ Vs_nodistortion_output far_vs(Vertex_input input,
    output.positionWS = positionWS;
    output.normalWS = transformer.normalWS();
    output.fog_eye_distance = fog::get_eye_distance(positionWS);
+
+   const float4 x_texcoords_transform = custom_constants[0];
+   const float4 y_texcoords_transform = custom_constants[1];
 
    output.texcoords = transformer.texcoords(x_texcoords_transform, y_texcoords_transform);
 
@@ -47,9 +49,7 @@ Vs_nodistortion_output far_vs(Vertex_input input,
    return output;
 }
 
-Vs_nodistortion_output nodistortion_vs(Vertex_input input,
-                                       uniform float4 x_texcoords_transform : register(c[CUSTOM_CONST_MIN]),
-                                       uniform float4 y_texcoords_transform : register(c[CUSTOM_CONST_MIN + 1]))
+Vs_nodistortion_output nodistortion_vs(Vertex_input input)
 {
    Vs_nodistortion_output output;
 
@@ -61,6 +61,9 @@ Vs_nodistortion_output nodistortion_vs(Vertex_input input,
    output.positionWS = positionWS;
    output.normalWS = transformer.normalWS();
    output.fog_eye_distance = fog::get_eye_distance(positionWS);
+
+   const float4 x_texcoords_transform = custom_constants[0];
+   const float4 y_texcoords_transform = custom_constants[1];
 
    output.texcoords = transformer.texcoords(x_texcoords_transform, y_texcoords_transform);
 
@@ -77,20 +80,20 @@ Vs_nodistortion_output nodistortion_vs(Vertex_input input,
 
 struct Vs_distortion_output
 {
-   float4 positionPS : SV_Position;
+   float3 positionWS : POSITIONWS;
+   float3 normalWS : NORMALWS;
 
-   float3 positionWS : TEXCOORD0;
-   float3 normalWS : TEXCOORD1;
+   float2 bump_texcoords : TEXCOORD0;
+   float4 distortion_texcoords : TEXCOORD1;
+   float2 diffuse_texcoords : TEXCOORD2;
+   float4 projection_texcoords : TEXCOORD3;
 
-   float2 bump_texcoords : TEXCOORD2;
-   float4 distortion_texcoords : TEXCOORD3;
-   float2 diffuse_texcoords : TEXCOORD4;
-   float4 projection_texcoords : TEXCOORD5;
-
-   float4 material_color_fade : TEXCOORD6;
-   float3 static_lighting : TEXCOORD7;
+   float4 material_color_fade : MATCOLOR;
+   float3 static_lighting : STATICLIGHT;
 
    float fog_eye_distance : DEPTH;
+
+   float4 positionPS : SV_Position;
 };
 
 float4 distortion_texcoords(float3 normalOS, float3 positionOS, 
@@ -101,15 +104,15 @@ float4 distortion_texcoords(float3 normalOS, float3 positionOS,
    return mul(distortion, distort_transform).xyww;
 }
 
-Vs_distortion_output distortion_vs(Vertex_input input,
-                                   uniform float4 distort_constant : register(vs, c[CUSTOM_CONST_MIN]),
-                                   uniform float4x4 distort_transform : register(vs, c[CUSTOM_CONST_MIN + 1]),
-                                   uniform float4 x_bump_texcoords_transform : register(c[CUSTOM_CONST_MIN + 5]),
-                                   uniform float4 y_bump_texcoords_transform : register(c[CUSTOM_CONST_MIN + 6]),
-                                   uniform float4 x_diffuse_texcoords_transform : register(c[CUSTOM_CONST_MIN + 7]),
-                                   uniform float4 y_diffuse_texcoords_transform : register(c[CUSTOM_CONST_MIN + 8]))
+Vs_distortion_output distortion_vs(Vertex_input input)
 {
-
+   const float4 distort_constant = custom_constants[0];
+   const float4x4 distort_transform = 
+      {custom_constants[1], custom_constants[2], custom_constants[3], custom_constants[4]};
+   const float4 x_bump_texcoords_transform = custom_constants[5];
+   const float4 y_bump_texcoords_transform = custom_constants[6];
+   const float4 x_diffuse_texcoords_transform = custom_constants[7];
+   const float4 y_diffuse_texcoords_transform = custom_constants[8];
 
    Vs_distortion_output output;
 
@@ -146,17 +149,19 @@ Vs_distortion_output distortion_vs(Vertex_input input,
 
 struct Ps_nodistortion_input
 {
-   float3 positionWS : TEXCOORD0;
-   float3 normalWS : TEXCOORD1;
-   float2 texcoords : TEXCOORD2;
-   float4 material_color_fade : TEXCOORD3;
-   float3 static_lighting : TEXCOORD4;
+   float3 positionWS : POSITIONWS;
+   float3 normalWS : NORMALWS;
+
+   float2 texcoords : TEXCOORD0;
+
+   float4 material_color_fade : MATCOLOR;
+   float3 static_lighting : STATICLIGHT;
 
    float fog_eye_distance : DEPTH;
 };
 
 float4 nodistortion_ps(Ps_nodistortion_input input,
-                       Texture2D<float4> diffuse_texture : register(ps_3_0, s0)) : COLOR
+                       Texture2D<float4> diffuse_texture : register(t0)) : SV_Target0
 {
    const float4 diffuse_color = 
       diffuse_texture.Sample(linear_wrap_sampler, input.texcoords) * input.material_color_fade;
@@ -170,28 +175,28 @@ float4 nodistortion_ps(Ps_nodistortion_input input,
    return float4(color, diffuse_color.a);
 }
 
-Texture2D<float2> bump_texture : register(ps_3_0, s0);
-Texture2D<float3> refraction_buffer : register(ps_3_0, s13);
-Texture2D<float4> diffuse_texture : register(ps_3_0, s2);
-Texture2D<float3> projection_texture : register(ps_3_0, s3);
+Texture2D<float2> bump_texture : register(t0);
+Texture2D<float3> refraction_buffer : register(t13);
+Texture2D<float4> diffuse_texture : register(t2);
+Texture2D<float3> projection_texture : register(t3);
 
 struct Ps_near_input
 {
-   float3 positionWS : TEXCOORD0;
-   float3 normalWS : TEXCOORD1;
+   float3 positionWS : POSITIONWS;
+   float3 normalWS : NORMALWS;
 
-   float2 bump_texcoords : TEXCOORD2;
-   float4 distortion_texcoords : TEXCOORD3;
-   float2 diffuse_texcoords : TEXCOORD4;
-   float4 projection_texcoords : TEXCOORD5;
+   float2 bump_texcoords : TEXCOORD0;
+   float4 distortion_texcoords : TEXCOORD1;
+   float2 diffuse_texcoords : TEXCOORD2;
+   float4 projection_texcoords : TEXCOORD3;
 
-   float4 material_color_fade : TEXCOORD6;
-   float3 static_lighting : TEXCOORD7;
+   float4 material_color_fade : MATCOLOR;
+   float3 static_lighting : STATICLIGHT;
 
    float fog_eye_distance : DEPTH;
 };
 
-float4 near_diffuse_ps(Ps_near_input input) : COLOR
+float4 near_diffuse_ps(Ps_near_input input) : SV_Target0
 {
    const float2 projection_texcoords = 
       input.projection_texcoords.xy / input.projection_texcoords.w;
@@ -220,7 +225,7 @@ float4 near_diffuse_ps(Ps_near_input input) : COLOR
    return float4(color, input.material_color_fade.a);
 }
 
-float4 near_ps(Ps_near_input input) : COLOR
+float4 near_ps(Ps_near_input input) : SV_Target0
 {
    const float2 projection_texcoords = 
       input.projection_texcoords.xy / input.projection_texcoords.w;
@@ -255,7 +260,7 @@ float3 sample_distort_scene(float4 distort_texcoords, float2 bump)
    return refraction_buffer.Sample(linear_wrap_sampler, texcoords);
 }
 
-float4 near_diffuse_bump_ps(Ps_near_input input) : COLOR
+float4 near_diffuse_bump_ps(Ps_near_input input) : SV_Target0
 {
    const float2 projection_texcoords = 
       input.projection_texcoords.xy / input.projection_texcoords.w;
@@ -282,7 +287,7 @@ float4 near_diffuse_bump_ps(Ps_near_input input) : COLOR
    return float4(color, input.material_color_fade.a);
 }
 
-float4 near_bump_ps(Ps_near_input input) : COLOR
+float4 near_bump_ps(Ps_near_input input) : SV_Target0
 {
    const float2 projection_texcoords = 
       input.projection_texcoords.xy / input.projection_texcoords.w;

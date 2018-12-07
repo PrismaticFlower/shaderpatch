@@ -1,7 +1,10 @@
 #ifndef PIXEL_UTILS_INCLUDED
 #define PIXEL_UTILS_INCLUDED
 
-#include "ext_constants_list.hlsl"
+#include "constants_list.hlsl"
+#include "pixel_sampler_states.hlsl"
+
+TextureCube<float3> cube_projected_texture : register(t4);
 
 float3 blend_tangent_space_normals(float3 N0, float3 N1)
 {
@@ -49,21 +52,21 @@ float3 perturb_normal(Texture2D<float2> tex, SamplerState samp,
    return normalize(mul(map, TBN));
 }
 
+
 float3 sample_projected_light(Texture2D<float3> projected_texture, float4 texcoords)
 {
-   // FIXME: SM 3.0 Flow Control workaround.
    const float w_rcp = rcp(texcoords.w);
 
-   // if (cube_map_light_projection) {
-   //    const float3 proj_texcoords = texcoords.xyz * w_rcp;
-   // 
-   //    return cube_projected_texture.Sample(projected_texture_sampler, proj_texcoords);
-   // }
-   // else {
+    if (cube_projtex) {
+       const float3 proj_texcoords = texcoords.xyz * w_rcp;
+    
+       return cube_projected_texture.Sample(projtex_sampler, proj_texcoords);
+    }
+    else {
       const float2 proj_texcoords = texcoords.xy * w_rcp;
 
-      return projected_texture.Sample(projected_texture_sampler, proj_texcoords);
-   // }
+      return projected_texture.Sample(projtex_sampler, proj_texcoords);
+    }
 }
 
 float3 gaussian_sample(Texture2D<float3> tex, SamplerState samp,

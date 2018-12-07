@@ -1,14 +1,12 @@
-
 #include "constants_list.hlsl"
 #include "ext_constants_list.hlsl"
 #include "pixel_utilities.hlsl"
+#include "pixel_sampler_states.hlsl"
 
-Texture2D<float3> scene_texture : register(ps_3_0, s0);
+Texture2D<float3> scene_texture : register(t0);
 
-SamplerState linear_clamp_sampler;
-
-float4 position_offset : register(vs, c[CUSTOM_CONST_MIN + 1]);
-float4 texcoords_offsets : register(vs, c[CUSTOM_CONST_MIN + 2]);
+const static float4 position_offset = custom_constants[1];
+const static float4 texcoords_offsets = custom_constants[2];
 
 struct Vs_input
 {
@@ -18,8 +16,8 @@ struct Vs_input
 
 struct Vs_screenspace_output
 {
-   float4 position : SV_Position;
    float2 texcoords : TEXCOORD;
+   float4 position : SV_Position;
 };
 
 Vs_screenspace_output screenspace_vs(Vs_input input)
@@ -41,8 +39,8 @@ Vs_screenspace_output screenspace_vs(Vs_input input)
 
 struct Vs_bloomfilter_output
 {
-   float4 position : SV_Position;
    float2 texcoords[4] : TEXCOORD0;
+   float4 position : SV_Position;
 };
 
 Vs_bloomfilter_output bloomfilter_vs(Vs_input input)
@@ -72,14 +70,12 @@ Vs_bloomfilter_output bloomfilter_vs(Vs_input input)
    return output;
 }
 
-float4 ps_constants[3] : register(ps, c[0]);
-
-const static float3 luma_weights = ps_constants[0].rgb;
-const static float color_bias = ps_constants[0].a;
+const static float3 luma_weights = ps_custom_constants[0].rgb;
+const static float color_bias = ps_custom_constants[0].a;
 const static float luma_bias = 0.45;
-const static float3 screenspace_tint = ps_constants[2].rgb;
-const static float screenspace_alpha = ps_constants[2].a;
-const static float blur_weight = ps_constants[1].a;
+const static float3 screenspace_tint = ps_custom_constants[2].rgb;
+const static float screenspace_alpha = ps_custom_constants[2].a;
+const static float blur_weight = ps_custom_constants[1].a;
 
 float4 glowthreshold_ps(float2 texcoords : TEXCOORD) : SV_Target0
 {

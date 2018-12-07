@@ -15,7 +15,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include <boost/functional/hash.hpp>
 #include <d3dcompiler.h>
 #include <gsl/gsl>
 #include <nlohmann/json.hpp>

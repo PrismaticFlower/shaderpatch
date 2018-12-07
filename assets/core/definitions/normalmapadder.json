@@ -1,0 +1,79 @@
+{
+  "group_name": "normalmapadder",
+  "source_name": "normalmapadder.fx",
+
+  "entrypoints": {
+    "discard_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "discard_tangents_vs": {
+      "stage": "vertex",
+      "function_name": "discard_vs",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": false,
+          "normal": true,
+          "tangents": true,
+          "color": false,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "discard_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
+    }
+  },
+
+  "rendertypes": { "normalmapadder": {} },
+
+  "states": {
+    "discard": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "discard_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "discard_ps"
+      }
+    },
+
+    "discard tangents": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "discard_tangents_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "discard_ps"
+      }
+    }
+  }
+}

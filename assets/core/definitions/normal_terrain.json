@@ -2,13 +2,44 @@
   "group_name": "normal_terrain",
   "source_name": "normal_terrain.fx",
 
+  "input_layouts": {
+    "terrain_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "R16G16B16A16_SINT",
+        "offset": 0
+      },
+      {
+        "semantic": {
+          "name": "NORMAL",
+          "index": 0
+        },
+        "format": "B8G8R8A8_UNORM",
+        "offset": 8
+      },
+      {
+        "semantic": {
+          "name": "COLOR",
+          "index": 0
+        },
+        "format": "B8G8R8A8_UNORM",
+        "offset": 12
+      }
+    ]
+  },
+
   "entrypoints": {
     "diffuse_blendmap_vs": {
       "stage": "vertex",
 
       "vertex_state": {
+        "input_layout": "terrain_input",
+
         "generic_input": {
-          "dynamic_compression": true,
+          "always_compressed": true,
           "position": true,
           "skinned": false,
           "normal": true,
@@ -23,8 +54,10 @@
       "stage": "vertex",
 
       "vertex_state": {
+        "input_layout": "terrain_input",
+
         "generic_input": {
-          "dynamic_compression": true,
+          "always_compressed": true,
           "position": true,
           "skinned": false,
           "normal": true,

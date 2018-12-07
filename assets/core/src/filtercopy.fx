@@ -1,14 +1,14 @@
 #include "constants_list.hlsl"
+#include "pixel_sampler_states.hlsl"
 
 #if !defined(TEXTURE_COUNT) || (TEXTURE_COUNT > 4 || TEXTURE_COUNT < 1)
 #error TEXTURE_COUNT must be defined to 1, 2, 3 or 4.
 #endif
 
-float4 texcoord_offsets[TEXTURE_COUNT] : register(vs, c[CUSTOM_CONST_MIN]);
+const static float4 texcoord_offsets[4] = {custom_constants[0], custom_constants[1],
+                                           custom_constants[2], custom_constants[3]};
 
-Texture2D<float4> textures[TEXTURE_COUNT]: register(ps_3_0, s0);
-
-SamplerState linear_clamp_sampler;
+Texture2D<float4> textures[TEXTURE_COUNT]: register(t0);
 
 struct Vs_input
 {
@@ -18,8 +18,8 @@ struct Vs_input
 
 struct Vs_output
 {
-   float4 positionPS : SV_Position;
    float2 texcoords[TEXTURE_COUNT] : TEXCOORD0;
+   float4 positionPS : SV_Position;
 };
 
 Vs_output filtercopy_vs(Vs_input input)
@@ -35,7 +35,8 @@ Vs_output filtercopy_vs(Vs_input input)
    return output;
 }
 
-float4 color_filters[TEXTURE_COUNT] : register(ps, c[0]);
+const static float4 color_filters[4] = {ps_custom_constants[0], ps_custom_constants[1], 
+                                        ps_custom_constants[2], ps_custom_constants[3]};
 
 float4 filtercopy_ps(float2 texcoords[TEXTURE_COUNT] : TEXCOORD0) : SV_Target0
 {

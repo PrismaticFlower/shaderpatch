@@ -11,13 +11,15 @@
       ],
 
       "vertex_state": {
+        "input_layout": "$auto",
+
         "generic_input": {
           "dynamic_compression": true,
           "position": true,
           "skinned": true,
           "normal": true,
           "tangents": false,
-          "color": false,
+          "color": true,
           "texture_coords": true
         }
       }
@@ -31,13 +33,15 @@
       ],
 
       "vertex_state": {
+        "input_layout": "$auto",
+
         "generic_input": {
           "dynamic_compression": true,
           "position": true,
           "skinned": true,
           "normal": true,
           "tangents": true,
-          "color": false,
+          "color": true,
           "texture_coords": true
         }
       }

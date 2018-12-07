@@ -14,7 +14,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "base_input": "position"
+          "base_input": "normals"
         }
       ]
     },
@@ -30,7 +30,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "base_input": "position"
+          "base_input": "normals"
         }
       ]
     },
@@ -46,7 +46,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "base_input": "position"
+          "base_input": "normals"
         }
       ]
     },
@@ -62,7 +62,7 @@
           "lighting": false,
           "vertex_color": true,
           "texture_coords": true,
-          "base_input": "position"
+          "base_input": "normals"
         }
       ]
     },

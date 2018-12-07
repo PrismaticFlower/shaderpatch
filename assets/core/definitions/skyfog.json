@@ -2,11 +2,34 @@
   "group_name": "skyfog",
   "source_name": "skyfog.fx",
 
+  "input_layouts": {
+    "skyfog_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "R32G32B32_FLOAT",
+        "offset": 0
+      },
+      {
+        "semantic": {
+          "name": "TEXCOORD",
+          "index": 0
+        },
+        "format": "R32G32_FLOAT",
+        "offset": 12
+      }
+    ]
+  },
+
   "entrypoints": {
     "skyfog_vs": {
       "stage": "vertex",
 
       "vertex_state": {
+        "input_layout": "skyfog_input",
+
         "generic_input": {
           "dynamic_compression": false,
           "position": false,

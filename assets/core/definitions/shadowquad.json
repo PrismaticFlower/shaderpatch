@@ -2,18 +2,33 @@
   "group_name": "shadowquad",
   "source_name": "shadowquad.fx",
 
+  "input_layouts": {
+    "shadowquad_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "R32G32B32_FLOAT",
+        "offset": 0
+      }
+    ]
+  },
+
   "entrypoints": {
     "shadowquad_vs": {
       "stage": "vertex",
 
       "vertex_state": {
+        "input_layout": "shadowquad_input",
+
         "generic_input": {
           "dynamic_compression": false,
           "position": false,
           "skinned": false,
           "normal": false,
           "tangents": false,
-          "color": true,
+          "color": false,
           "texture_coords": false
         }
       }

@@ -171,7 +171,6 @@
     <None Include="declarations\shield.json" />
     <None Include="declarations\skyfog.json" />
     <None Include="declarations\specularlighting.json" />
-    <None Include="declarations\sprite.json" />
     <None Include="declarations\stencilshadow.json" />
     <None Include="declarations\water.json" />
     <None Include="declarations\zprepass.json" />
@@ -182,20 +181,21 @@
     <None Include="definitions\interface.json" />
     <None Include="definitions\lightbeam.json" />
     <None Include="definitions\normal.json" />
+    <None Include="definitions\normalmapadder.json" />
     <None Include="definitions\normal_terrain.json" />
     <None Include="definitions\ocean.json" />
     <None Include="definitions\particle.json" />
-    <None Include="definitions\patch\bloom.json" />
-    <None Include="definitions\patch\damage_overlay.json" />
-    <None Include="definitions\patch\late_effects_resolve.json" />
+    <None Include="definitions\patch\bloom.json.ignore" />
+    <None Include="definitions\patch\damage_overlay.json.ignore" />
+    <None Include="definitions\patch\late_effects_resolve.json.ignore" />
     <None Include="definitions\patch\normal_ext.json" />
-    <None Include="definitions\patch\postprocess.json" />
-    <None Include="definitions\patch\gaussian_blur.json" />
+    <None Include="definitions\patch\postprocess.json.ignore" />
+    <None Include="definitions\patch\gaussian_blur.json.ignore" />
     <None Include="definitions\patch\pbr.json" />
-    <None Include="definitions\patch\scene_blur_apply.json" />
-    <None Include="definitions\patch\shadows_blur.json" />
-    <None Include="definitions\patch\skyfog_ext.json" />
-    <None Include="definitions\patch\stock_bloom_ext.json" />
+    <None Include="definitions\patch\scene_blur_apply.json.ignore" />
+    <None Include="definitions\patch\shadows_blur.json.ignore" />
+    <None Include="definitions\patch\skyfog_ext.json.ignore" />
+    <None Include="definitions\patch\stock_bloom_ext.json.ignore" />
     <None Include="definitions\perpixeldiffuselighting.json" />
     <None Include="definitions\prereflection.json" />
     <None Include="definitions\rain.json" />
@@ -205,12 +205,12 @@
     <None Include="definitions\shield.json" />
     <None Include="definitions\skyfog.json" />
     <None Include="definitions\specularlighting.json" />
-    <None Include="definitions\sprite.json" />
     <None Include="definitions\stencilshadow.json" />
     <None Include="definitions\water.json" />
     <None Include="definitions\zprepass.json" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="shaders.req" />
     <None Include="src\constants_list.hlsl">
       <FileType>Document</FileType>
     </None>
@@ -286,9 +286,6 @@
     <None Include="src\specularlighting.fx">
       <FileType>Document</FileType>
     </None>
-    <None Include="src\sprite.fx">
-      <FileType>Document</FileType>
-    </None>
     <None Include="src\stencilshadow.fx">
       <FileType>Document</FileType>
     </None>
@@ -307,11 +304,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\pbr.fx">
-      <FileType>Document</FileType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="src\normal_lightmapped.fx">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
@@ -380,6 +372,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\scene_blur_apply.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\normalmapadder.fx">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

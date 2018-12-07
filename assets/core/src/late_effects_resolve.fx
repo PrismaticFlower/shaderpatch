@@ -1,8 +1,7 @@
 
 #include "vertex_utilities.hlsl"
 
-Texture2D backbuffer_texture : register(ps_3_0, s0);
-SamplerState point_clamp_sampler;
+Texture2D backbuffer_texture : register(t0);
 
 float4 main_vs(float2 position : POSITION, inout float2 texcoords : TEXCOORD) : POSITION
 {

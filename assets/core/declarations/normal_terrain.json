@@ -39,7 +39,7 @@
         {
           "name": "detailing",
 
-          "skinned": true,
+          "skinned": false,
           "lighting": true,
           "vertex_color": true,
           "texture_coords": false,

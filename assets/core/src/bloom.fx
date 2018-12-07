@@ -3,7 +3,7 @@
 #include "pixel_utilities.hlsl"
 #include "postprocess_common.hlsl"
 
-Texture2D<float3> bloom_input_texture : register(ps_3_0, s0);
+Texture2D<float3> bloom_input_texture : register(t0);
 
 float4 downsample_ps(float2 texcoords : TEXCOORD) : SV_Target0
 {

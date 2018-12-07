@@ -2,11 +2,9 @@
 #include "vertex_utilities.hlsl"
 #include "constants_list.hlsl"
 
-texture2D<float3> far_scene_texture : register(ps_3_0, s0);
-Texture2D<float> far_scene_depth_texture : register(ps_3_0, s1);
-Texture2D<float> near_scene_depth_texture : register(ps_3_0, s2);
-
-SamplerState point_clamp_sampler;
+texture2D<float3> far_scene_texture : register(t0);
+Texture2D<float> far_scene_depth_texture : register(t1);
+Texture2D<float> near_scene_depth_texture : register(t2);
 
 const static float near_scene_near_plane = 0.5;
 const static float far_scene_near_plane = 2.0;

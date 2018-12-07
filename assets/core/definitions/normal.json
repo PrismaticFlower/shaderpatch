@@ -7,11 +7,13 @@
       "stage": "vertex",
 
       "vertex_state": {
+        "input_layout": "$auto",
+
         "generic_input": {
           "dynamic_compression": true,
           "position": true,
           "skinned": true,
-          "normal": false,
+          "normal": true,
           "tangents": false,
           "color": true,
           "texture_coords": true
@@ -48,6 +50,8 @@
       "stage": "vertex",
 
       "vertex_state": {
+        "input_layout": "$auto",
+
         "generic_input": {
           "dynamic_compression": true,
           "position": true,

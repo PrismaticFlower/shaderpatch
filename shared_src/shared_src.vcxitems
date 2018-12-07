@@ -28,6 +28,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)imgui_ext.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)magic_number.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)material_flags.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)memory_mapped_file.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)munge_helpers.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)patch_material.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)patch_texture.hpp" />
@@ -41,6 +42,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)ucfb_tweaker.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ucfb_writer.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)smart_win32_handle.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)utility.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)volume_resource.hpp" />
   </ItemGroup>
 </Project>

@@ -1,16 +1,11 @@
 #ifndef POSTPROCESS_COMMON_INCLUDED
 #define POSTPROCESS_COMMON_INCLUDED
 
-Texture2D<float4> scene_texture : register(ps_3_0, s0);
-Texture2D<float4> bloom_texture : register(ps_3_0, s1);
-Texture2D<float3> dirt_texture : register(ps_3_0, s2);
-Texture3D<float3> color_grading_lut : register(ps_3_0, s3);
-Texture2D<float3> blue_noise_texture : register(ps_3_0, s4);
-
-sampler2D fxaa_scene_sampler : register(ps_3_0, s0);
-
-SamplerState linear_clamp_sampler;
-SamplerState linear_wrap_sampler;
+Texture2D<float4> scene_texture : register(t0);
+Texture2D<float4> bloom_texture : register(t1);
+Texture2D<float3> dirt_texture : register(t2);
+Texture3D<float3> color_grading_lut : register(t3);
+Texture2D<float3> blue_noise_texture : register(t4);
 
 float4 scene_pixel_metrics : register(c60);
 float2 bloom_texel_size : register(c61);

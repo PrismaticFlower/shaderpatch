@@ -1,5 +1,5 @@
 #define FXAA_PC 1
-#define FXAA_HLSL_3 1
+#define FXAA_HLSL_4 1
 
 // Quality level names are intended to be user friendly and not 
 // reflectively of if this is actually as fast or as slow as FXAA goes.

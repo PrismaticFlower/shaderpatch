@@ -2,14 +2,28 @@
   "group_name": "sample",
   "source_name": "sample.fx",
 
+  "input_layouts": {
+    "sample_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "R16G16B16A16_SINT",
+        "offset": 0
+      }
+    ]
+  },
 
   "entrypoints": {
     "sample_vs": {
       "stage": "vertex",
 
       "vertex_state": {
+        "input_layout": "sample_input",
+
         "generic_input": {
-          "dynamic_compression": false,
+          "always_compressed": true,
           "position": false,
           "skinned": false,
           "normal": false,

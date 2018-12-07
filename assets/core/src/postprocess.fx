@@ -86,11 +86,13 @@ float4 postprocess_finalize_ps(float2 texcoords : TEXCOORD, float2 position : VP
    float3 color = 0.0;
    
    if (fxaa_enabled) {
+      FxaaTex fxaa_tex = {linear_clamp_sampler, scene_texture};
+
       color = FxaaPixelShader(texcoords,
                               0.0,
-                              fxaa_scene_sampler,
-                              fxaa_scene_sampler,
-                              fxaa_scene_sampler,
+                              fxaa_tex,
+                              fxaa_tex,
+                              fxaa_tex,
                               scene_pixel_size,
                               0.0,
                               0.0,

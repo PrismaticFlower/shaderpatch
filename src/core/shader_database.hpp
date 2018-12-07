@@ -1,10 +1,9 @@
 #pragma once
 
+#include "../logger.hpp"
 #include "com_ptr.hpp"
-#include "logger.hpp"
 #include "shader_flags.hpp"
 #include "shader_metadata.hpp"
-#include "shader_program.hpp"
 
 #include <array>
 #include <functional>
@@ -13,9 +12,9 @@
 #include <type_traits>
 #include <unordered_map>
 
-#include <d3d9.h>
+#include <d3d11_1.h>
 
-namespace sp {
+namespace sp::core {
 
 namespace detail {
 
@@ -27,23 +26,23 @@ struct Shader_type_info {
 
 template<>
 struct Shader_type_info<Shader_type::vertex> {
-   using Resource_type = IDirect3DVertexShader9;
+   using Resource_type = ID3D11VertexShader;
    using Flags_type = Vertex_shader_flags;
 
-   static void bind(IDirect3DDevice9& device, Resource_type* shader) noexcept
+   static void bind(ID3D11DeviceContext& dc, Resource_type* shader) noexcept
    {
-      device.SetVertexShader(shader);
+      dc.VSSetShader(shader, nullptr, 0);
    }
 };
 
 template<>
 struct Shader_type_info<Shader_type::pixel> {
-   using Resource_type = IDirect3DPixelShader9;
+   using Resource_type = ID3D11PixelShader;
    using Flags_type = Pixel_shader_flags;
 
-   static void bind(IDirect3DDevice9& device, Resource_type* shader) noexcept
+   static void bind(ID3D11DeviceContext& dc, Resource_type* shader) noexcept
    {
-      device.SetPixelShader(shader);
+      dc.PSSetShader(shader, nullptr, 0);
    }
 };
 
@@ -74,10 +73,10 @@ public:
       }
    }
 
-   void bind(IDirect3DDevice9& device, const std::uint16_t static_flags = 0,
+   void bind(ID3D11DeviceContext& dc, const std::uint16_t static_flags = 0,
              const Game_flags game_flags = {}) const noexcept
    {
-      detail::Shader_type_info<type>::bind(device, get(static_flags, game_flags));
+      detail::Shader_type_info<type>::bind(dc, get(static_flags, game_flags));
    }
 
    void insert(Com_ptr<Resource> shader, const std::uint16_t static_flags,
@@ -261,62 +260,57 @@ public:
 
    Shader_state& operator=(const Shader_state&) = delete;
 
-   // This function is NOT threadsafe. //
-   void bind(IDirect3DDevice9& device, const Vertex_shader_flags vertex_flags = {},
-             const Pixel_shader_flags pixel_flags = {}) const noexcept
+   auto at(const Vertex_shader_flags vertex_flags = {}) const noexcept
+      -> Com_ptr<ID3D11VertexShader>
    {
-      if (auto result = _variation_cache.find(index(vertex_flags, pixel_flags));
-          result != _variation_cache.cend()) {
-         device.SetVertexShader(result->second.first.get());
-         device.SetPixelShader(result->second.second.get());
+      auto vs = at_if(vertex_flags);
+
+      if (!vs) {
+         log_and_terminate("Attempt to get nonexistent vertex shader variation."sv);
       }
-      else {
-         bind_and_add_to_cache(device, vertex_flags, pixel_flags);
+
+      return Com_ptr{vs};
+   }
+
+   auto at(const Pixel_shader_flags pixel_flags = {}) const noexcept
+      -> Com_ptr<ID3D11PixelShader>
+   {
+      auto ps = at_if(pixel_flags);
+
+      if (!ps) {
+         log_and_terminate("Attempt to get nonexistent pixel shader variation."sv);
       }
+
+      return Com_ptr{ps};
+   }
+
+   auto at_if(const Vertex_shader_flags vertex_flags = {}) const noexcept
+      -> Com_ptr<ID3D11VertexShader>
+   {
+      ID3D11VertexShader* vs = nullptr;
+
+      if (vs = _vertex_shader_entrypoint.get(_vertex_static_flags, vertex_flags); !vs) {
+         return nullptr;
+      }
+      vs->AddRef();
+
+      return Com_ptr{vs};
+   }
+
+   auto at_if(const Pixel_shader_flags pixel_flags = {}) const noexcept
+      -> Com_ptr<ID3D11PixelShader>
+   {
+      ID3D11PixelShader* ps = nullptr;
+
+      if (ps = _pixel_shader_entrypoint.get(_pixel_static_flags, pixel_flags); !ps) {
+         return nullptr;
+      }
+      ps->AddRef();
+
+      return Com_ptr{ps};
    }
 
 private:
-   static constexpr std::uint32_t index(const Vertex_shader_flags vertex_flags,
-                                        const Pixel_shader_flags pixel_flags) noexcept
-   {
-      static_assert(sizeof(Vertex_shader_flags) <= sizeof(std::uint32_t));
-      static_assert(sizeof(Pixel_shader_flags) <= sizeof(std::uint32_t));
-
-      return static_cast<std::uint32_t>(vertex_flags) |
-             (static_cast<std::uint32_t>(pixel_flags) << 16u);
-   }
-
-   void bind_and_add_to_cache(IDirect3DDevice9& device,
-                              const Vertex_shader_flags vertex_flags,
-                              const Pixel_shader_flags pixel_flags) const noexcept
-   {
-      IDirect3DVertexShader9* vertex = nullptr;
-      IDirect3DPixelShader9* pixel = nullptr;
-
-      if (vertex = _vertex_shader_entrypoint.get(_vertex_static_flags, vertex_flags);
-          vertex) {
-         device.SetVertexShader(vertex);
-      }
-      else {
-         log_and_terminate("Attempt to bind nonexistent shader variation."sv);
-      }
-
-      if (pixel = _pixel_shader_entrypoint.get(_pixel_static_flags, pixel_flags); pixel) {
-         device.SetPixelShader(pixel);
-      }
-      else {
-         log_and_terminate("Attempt to bind nonexistent shader variation."sv);
-      }
-
-      vertex->AddRef();
-      pixel->AddRef();
-
-      _variation_cache.emplace(index(vertex_flags, pixel_flags),
-                               std::pair{Com_ptr{vertex}, Com_ptr{pixel}});
-   }
-
-   mutable std::unordered_map<std::uint32_t, std::pair<Com_ptr<IDirect3DVertexShader9>, Com_ptr<IDirect3DPixelShader9>>> _variation_cache;
-
    const Vertex_shader_entrypoint _vertex_shader_entrypoint;
    const std::uint16_t _vertex_static_flags;
    const Pixel_shader_entrypoint _pixel_shader_entrypoint;

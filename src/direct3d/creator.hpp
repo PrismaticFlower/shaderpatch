@@ -1,17 +1,26 @@
 #pragma once
 
 #include "com_ptr.hpp"
+#include "device.hpp"
 #include "smart_win32_handle.hpp"
 
-#include <atomic>
+#include <vector>
+
+#include <dxgi1_6.h>
 
 #include <d3d9.h>
 
-namespace sp::direct3d {
+namespace sp::d3d9 {
 
 class Creator : public IDirect3D9 {
 public:
-   static Com_ptr<Creator> create(Com_ptr<IDirect3D9> actual) noexcept;
+   static Com_ptr<Creator> create() noexcept;
+
+   Creator(const Creator&) = delete;
+   Creator& operator=(const Creator&) = delete;
+
+   Creator(Creator&&) = delete;
+   Creator& operator=(Creator&&) = delete;
 
    HRESULT __stdcall QueryInterface(const IID& iid, void** object) noexcept override;
    ULONG __stdcall AddRef() noexcept override;
@@ -48,17 +57,29 @@ public:
    HRESULT __stdcall GetDeviceCaps(UINT adapter, D3DDEVTYPE device_type,
                                    D3DCAPS9* caps) noexcept override;
    HMONITOR __stdcall GetAdapterMonitor(UINT adapter) noexcept override;
+
    HRESULT __stdcall CreateDevice(UINT adapter, D3DDEVTYPE device_type,
                                   HWND focus_window, DWORD behavior_flags,
                                   D3DPRESENT_PARAMETERS* presentation_parameters,
                                   IDirect3DDevice9** returned_device_interface) noexcept override;
 
 private:
-   Creator(Com_ptr<IDirect3D9> actual) : _creator{std::move(actual)} {}
+   Creator() noexcept;
    ~Creator() = default;
 
-   Com_ptr<IDirect3D9> _creator{};
-   std::atomic<ULONG> _ref_count{1};
+   Com_ptr<IDXGIFactory2> _factory;
+
+   std::vector<Com_ptr<IDXGIAdapter2>> _adapters;
+   std::unordered_map<IDXGIAdapter2*, std::vector<Com_ptr<IDXGIOutput1>>> _outputs;
+   std::unordered_map<IDXGIOutput1*, std::vector<DXGI_MODE_DESC1>> _display_modes;
+
+   Com_ptr<Device> _device;
+
+   const int _desired_output = 0;
+   const DXGI_FORMAT _desired_backbuffer_format = DXGI_FORMAT_B8G8R8A8_UNORM;
+
+   bool _first_device = true;
+   ULONG _ref_count{1};
 };
 
 }

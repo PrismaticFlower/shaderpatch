@@ -1,13 +1,13 @@
 
 #include "constants_list.hlsl"
 #include "vertex_utilities.hlsl"
+#include "pixel_sampler_states.hlsl"
 
-Texture2D<float4> diffuse_map : register(ps_3_0, s0);
-Texture2D<float4> bump_map : register(ps_3_0, s1);
+Texture2D<float4> diffuse_map : register(t0);
+Texture2D<float4> bump_map : register(t1);
 
-SamplerState linear_wrap_sampler;
-
-float4 decal_constants[2] : register(ps, c[0]);
+const static float4 decal_constants[2] =
+   {ps_custom_constants[0], ps_custom_constants[1]};
 
 struct Vs_input
 {
@@ -18,9 +18,9 @@ struct Vs_input
 
 struct Vs_output
 {
-   float4 positionPS : SV_Position;
    float2 texcoords : TEXCOORD0;
-   float4 color : TEXCOORD1;
+   float4 color : COLOR;
+   float4 positionPS : SV_Position;
 };
 
 Vs_output decal_vs(Vs_input input)
@@ -36,7 +36,7 @@ Vs_output decal_vs(Vs_input input)
 
    float4 color;
    color.rgb = input.color.rgb * material_diffuse_color.rgb;
-   color.rgb *= hdr_info.rgb;
+   color.rgb *= lighting_scale;
    color.a = material_diffuse_color.a * near_scene.fade;
 
    output.color = get_material_color(input.color);
@@ -47,12 +47,12 @@ Vs_output decal_vs(Vs_input input)
 struct Ps_input
 {
    float2 texcoords : TEXCOORD0;
-   float4 color : TEXCOORD1;
+   float4 color : COLOR;
 };
 
 float4 diffuse_ps(Ps_input input) : SV_Target0
 {
-   float4 diffuse_color = diffuse_map.Sample(linear_wrap_sampler, input.texcoords);
+   float4 diffuse_color = diffuse_map.Sample(aniso_wrap_sampler, input.texcoords);
 
    float3 color = diffuse_color.rgb * input.color.rgb;
 
@@ -63,8 +63,8 @@ float4 diffuse_ps(Ps_input input) : SV_Target0
 
 float4 diffuse_bump_ps(Ps_input input) : SV_Target0
 {
-   float4 diffuse_color = diffuse_map.Sample(linear_wrap_sampler, input.texcoords);
-   float4 bump_color = bump_map.Sample(linear_wrap_sampler, input.texcoords);
+   float4 diffuse_color = diffuse_map.Sample(aniso_wrap_sampler, input.texcoords);
+   float4 bump_color = bump_map.Sample(aniso_wrap_sampler, input.texcoords);
 
    float3 color;
 
@@ -81,7 +81,7 @@ float4 diffuse_bump_ps(Ps_input input) : SV_Target0
 
 float4 bump_ps(Ps_input input) : SV_Target0
 {
-   const float4 bump_color = diffuse_map.Sample(linear_wrap_sampler, input.texcoords);
+   const float4 bump_color = diffuse_map.Sample(aniso_wrap_sampler, input.texcoords);
 
    float3 color;
    color = saturate(dot((bump_color.rgb - 0.5) * 2.0, (input.color.rgb - 0.5) * 2.0));

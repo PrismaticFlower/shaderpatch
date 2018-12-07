@@ -18,6 +18,7 @@ enum class Stage { vertex, pixel };
 struct Vertex_state {
    struct Generic_input {
       bool dynamic_compression = false;
+      bool always_compressed = false;
       bool position = false;
       bool skinned = false;
       bool normal = false;
@@ -26,6 +27,7 @@ struct Vertex_state {
       bool texture_coords = false;
    };
 
+   std::string input_layout;
    Generic_input generic_input;
 };
 
@@ -60,25 +62,27 @@ inline void from_json(const nlohmann::json& j, Stage& stage)
    }
 }
 
-inline void from_json(const nlohmann::json& j, Vertex_state& vertex_state)
-{
-   using namespace std::literals;
-
-   vertex_state.generic_input =
-      j.value("generic_input"s, Vertex_state::Generic_input{});
-}
-
 inline void from_json(const nlohmann::json& j, Vertex_state::Generic_input& generic_input)
 {
    using namespace std::literals;
 
-   generic_input.dynamic_compression = j.at("dynamic_compression"s);
+   generic_input.dynamic_compression = j.value("dynamic_compression"s, false);
+   generic_input.always_compressed = j.value("always_compressed"s, false);
    generic_input.position = j.at("position"s);
    generic_input.skinned = j.at("skinned"s);
    generic_input.normal = j.at("normal"s);
    generic_input.tangents = j.at("tangents"s);
    generic_input.color = j.at("color"s);
    generic_input.texture_coords = j.at("texture_coords"s);
+}
+
+inline void from_json(const nlohmann::json& j, Vertex_state& vertex_state)
+{
+   using namespace std::literals;
+
+   vertex_state.input_layout = j.at("input_layout"s).get<std::string>();
+   vertex_state.generic_input =
+      j.value("generic_input"s, Vertex_state::Generic_input{});
 }
 
 inline void from_json(const nlohmann::json& j, Pixel_state& pixel_state)

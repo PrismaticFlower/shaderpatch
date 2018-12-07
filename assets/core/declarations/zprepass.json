@@ -27,7 +27,7 @@
 
           "skinned": true,
           "lighting": false,
-          "vertex_color": false,
+          "vertex_color": true,
           "texture_coords": true,
           "base_input": "position"
         }

@@ -53,14 +53,14 @@ float3 decompress_position(float3 position)
 
 float4 get_material_color()
 {
-   return float4(pow(material_diffuse_color.rgb, color_gamma), material_diffuse_color.a);
+   return float4(pow(material_diffuse_color.rgb, vertex_color_gamma), material_diffuse_color.a);
 }
 
 float4 get_material_color(float4 color)
 {
 #ifdef __VERTEX_INPUT_COLOR__
-   color.rgb = pow(color.rgb * color_state.y + color_state.x, color_gamma) *
-               pow(material_diffuse_color.rgb, color_gamma);
+   color.rgb = pow(color.rgb * color_state.y + color_state.x, vertex_color_gamma) *
+               pow(material_diffuse_color.rgb, vertex_color_gamma);
    color.a = (color.a * color_state.w + color_state.z) * material_diffuse_color.a;
 #else
    return get_material_color();
@@ -73,7 +73,7 @@ float4 get_material_color(float4 color)
 float3 get_static_diffuse_color(float4 color)
 {
 #ifdef __VERTEX_INPUT_COLOR__
-   return pow(color.rgb * color_state.x + color_state.z, color_gamma);
+   return pow(color.rgb * color_state.x + color_state.z, vertex_color_gamma);
 #else
    return 0.0;
 #endif

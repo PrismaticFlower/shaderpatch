@@ -2,11 +2,34 @@
   "group_name": "bloom_stock",
   "source_name": "bloom_stock.fx",
 
+  "input_layouts": {
+    "bloom_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "R32G32_FLOAT",
+        "offset": 0
+      },
+      {
+        "semantic": {
+          "name": "TEXCOORD",
+          "index": 0
+        },
+        "format": "R32G32_FLOAT",
+        "offset": 8
+      }
+    ]
+  },
+
   "entrypoints": {
     "screenspace_vs": {
       "stage": "vertex",
 
       "vertex_state": {
+        "input_layout": "bloom_input",
+
         "generic_input": {
           "dynamic_compression": false,
           "position": false,
@@ -23,6 +46,8 @@
       "stage": "vertex",
 
       "vertex_state": {
+        "input_layout": "bloom_input",
+
         "generic_input": {
           "dynamic_compression": false,
           "position": false,
@@ -101,7 +126,7 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "screenspace_vs"
+        "entrypoint": "bloomfilter_vs"
       },
 
       "pixel_shader": {

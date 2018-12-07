@@ -2,9 +2,9 @@
 #include "fullscreen_tri_vs.hlsl"
 #include "pixel_utilities.hlsl"
 
-Texture2D<float4> source_texture : register(ps_3_0, s4);
-Texture2D<float2> buffer_texture : register(ps_3_0, s4);
-Texture2D<float1> depth_texture : register(ps_3_0, s5);
+Texture2D<float4> source_texture : register(t4);
+Texture2D<float2> buffer_texture : register(t4);
+Texture2D<float1> depth_texture : register(t5);
 
 SamplerState point_clamp_sampler;
 

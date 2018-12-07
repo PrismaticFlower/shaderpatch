@@ -2,9 +2,7 @@
 #include "fullscreen_tri_vs.hlsl"
 #include "pixel_utilities.hlsl"
 
-Texture2D<float3> scene_buffer : register(ps_3_0, s0);
-
-SamplerState linear_clamp_sampler;
+Texture2D<float3> scene_buffer : register(t0);
 
 float4 damage_color : register(c60);
 float2 blur_step_sample_count : register(c61);
@@ -28,7 +26,7 @@ float2 cartesian(float2 uv)
    return float2(x, y);
 }
 
-float4 apply_ps(float2 texcoords : TEXCOORD) : COLOR
+float4 apply_ps(float2 texcoords : TEXCOORD) : SV_Target0
 {
    float fade = smoothstep(0.05, 0.55, distance(texcoords, float2(0.5, 0.5)));
 

@@ -1,8 +1,7 @@
 
 #include "fullscreen_tri_vs.hlsl"
 
-Texture2D<float3> source_texture : register(ps_3_0, s0);
-SamplerState linear_clamp_sampler;
+Texture2D<float3> source_texture : register(t0);
 
 float2 blur_dir_size : register(c60);
 

@@ -6,6 +6,8 @@
 #include <type_traits>
 #include <utility>
 
+#include <gsl/gsl>
+
 namespace sp {
 
 namespace detail {
@@ -68,12 +70,26 @@ public:
 
    Com_ptr(Com_ptr&& other) noexcept
    {
-      swap(other);
+      _pointer = other.release();
    }
 
    Com_ptr& operator=(Com_ptr&& other) noexcept
    {
-      swap(other);
+      _pointer = other.release();
+
+      return *this;
+   }
+
+   template<typename Other, typename = std::enable_if_t<std::is_convertible_v<Other*, Class*>>>
+   Com_ptr(Com_ptr<Other>&& other)
+   {
+      _pointer = static_cast<Class*>(other.release());
+   }
+
+   template<typename Other, typename = std::enable_if_t<std::is_convertible_v<Other*, Class*>>>
+   Com_ptr& operator=(Com_ptr<Other>&& other) noexcept
+   {
+      _pointer = static_cast<Class*>(other.release());
 
       return *this;
    }
@@ -129,6 +145,15 @@ public:
       static_assert(sizeof(void**) == sizeof(Class**));
 
       return reinterpret_cast<void**>(&_pointer);
+   }
+
+   [[nodiscard]] Class* unmanaged_copy() const noexcept
+   {
+      Expects(this->get() != nullptr);
+
+      _pointer->AddRef();
+
+      return _pointer;
    }
 
    explicit operator bool() const noexcept

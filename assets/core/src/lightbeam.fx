@@ -13,9 +13,9 @@ struct Vs_input
 
 struct Vs_output
 {
-   float4 positionPS : SV_Position;
-   float4 color : TEXCOORD;
+   float4 color : COLOR;
    float fog_eye_distance : DEPTH;
+   float4 positionPS : SV_Position;
 };
 
 Vs_output lightbeam_vs(Vertex_input input)
@@ -34,7 +34,7 @@ Vs_output lightbeam_vs(Vertex_input input)
 
    float4 material_color = get_material_color(input.color());
 
-   output.color.rgb = material_color.rgb * hdr_info.z;
+   output.color.rgb = material_color.rgb * lighting_scale;
    output.color.a = saturate(material_color.a * near_scene.fade);
 
    return output;
@@ -42,7 +42,7 @@ Vs_output lightbeam_vs(Vertex_input input)
 
 struct Ps_input
 {
-   float4 color : TEXCOORD;
+   float4 color : COLOR;
    float fog_eye_distance : DEPTH;
 };
 

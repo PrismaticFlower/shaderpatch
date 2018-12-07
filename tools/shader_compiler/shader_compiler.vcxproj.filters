@@ -41,5 +41,8 @@
     <ClInclude Include="src\declaration_munge.hpp">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="src\shader_input_element.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

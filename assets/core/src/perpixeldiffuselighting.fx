@@ -6,16 +6,22 @@
 #include "vertex_transformer.hlsl"
 #include "lighting_utilities.hlsl"
 #include "pixel_utilities.hlsl"
+#include "pixel_sampler_states.hlsl"
 
-float4 x_texcoords_transform : register(vs, c[CUSTOM_CONST_MIN]);
-float4 y_texcoords_transform : register(vs, c[CUSTOM_CONST_MIN + 1]);
+const static float4 x_texcoords_transform = custom_constants[0];
+const static float4 y_texcoords_transform = custom_constants[1];
 
-float4 light_constants[7] : register(c[21]);
+const static float4 light_constants[7] = 
+   {light_directional_0_color, light_directional_0_dir, light_directional_1_color,
+    light_directional_1_dir, light_point_0_color, light_point_0_pos, light_point_1_color};
 
-float3 light_colors[3] : register(ps, c[0]);
+const static float3 light_colors[3] = 
+   {ps_custom_constants[0].xyz, ps_custom_constants[1].xyz, ps_custom_constants[2].xyz};
 
-const static float4 light_positionsWS[3] = { light_constants[0], light_constants[2], light_constants[4] };
-const static float light_inv_radiuses_sq[3] = {light_constants[1].x, light_constants[3].x, light_constants[5].x};
+const static float4 light_positionsWS[3] = 
+   {light_constants[0], light_constants[2], light_constants[4]};
+const static float light_inv_radiuses_sq[3] = 
+   {light_constants[1].x, light_constants[3].x, light_constants[5].x};
 
 const static float3 spotlight_color = light_colors[0];
 const static float3 spotlight_positionWS =  light_constants[0].xyz;
@@ -26,18 +32,16 @@ const static bool generate_texcoords = PERPIXEL_GENERATE_TEXCOORDS;
 const static bool generate_tangents = PERPIXEL_GENERATE_TANGENTS;
 const static uint light_count = PERPIXEL_LIGHT_COUNT;
 
-SamplerState linear_wrap_sampler;
-
 struct Vs_perpixel_output
 {
-   float4 positionPS : SV_Position;
-
-   float3 positionWS : TEXCOORD0;
-   float3 normalWS : TEXCOORD1;
-   float2 texcoords : TEXCOORD2;
-   float3 static_lighting : TEXCOORD3;
+   float3 positionWS : POSITIONWS;
+   float3 normalWS : NORMALWS;
+   float2 texcoords : TEXCOORD;
+   float3 static_lighting : STATICLIGHT;
 
    float1 fog_eye_distance : DEPTH;
+
+   float4 positionPS : SV_Position;
 };
 
 Vs_perpixel_output perpixel_vs(Vertex_input input)
@@ -63,15 +67,15 @@ Vs_perpixel_output perpixel_vs(Vertex_input input)
 
 struct Vs_normalmapped_output
 {
-   float4 positionPS : SV_Position;
+   float3 positionWS : POSITIONWS;
+   float2 texcoords : TEXCOORD;
+   float3 static_lighting : STATICLIGHT;
 
-   float3 positionWS : TEXCOORD0;
-   float2 texcoords : TEXCOORD1;
-   float3 static_lighting : TEXCOORD2;
-
-   float3x3 TBN : TEXCOORD3;
+   float3x3 TBN : TBN;
 
    float1 fog_eye_distance : DEPTH;
+
+   float4 positionPS : SV_Position;
 };
 
 Vs_normalmapped_output normalmapped_vs(Vertex_input input)
@@ -130,15 +134,15 @@ float4 transform_spotlight_projection(float3 positionWS)
 
 struct Vs_perpixel_spotlight_output
 {
-   float4 positionPS : SV_Position;
-
-   float3 positionWS : TEXCOORD0;
-   float3 normalWS : TEXCOORD1;
-   float2 texcoords : TEXCOORD2;
-   float4 projection_coords : TEXCOORD3;
-   float3 static_lighting : TEXCOORD4;
+   float3 positionWS : POSITIONWS;
+   float3 normalWS : NORMALWS;
+   float2 texcoords : TEXCOORD0;
+   float4 projection_coords : TEXCOORD1;
+   float3 static_lighting : STATICLIGHT;
 
    float1 fog_eye_distance : DEPTH;
+
+   float4 positionPS : SV_Position;
 };
 
 Vs_perpixel_spotlight_output perpixel_spotlight_vs(Vertex_input input)
@@ -165,15 +169,16 @@ Vs_perpixel_spotlight_output perpixel_spotlight_vs(Vertex_input input)
 
 struct Vs_normalmapped_spotlight_output
 {
-   float4 positionPS : SV_Position;
-   float3 positionWS : TEXCOORD0;
-   float2 texcoords : TEXCOORD1;
-   float4 projection_coords : TEXCOORD2;
-   float3 static_lighting : TEXCOORD3;
+   float3 positionWS : POSITIONWS;
+   float2 texcoords : TEXCOORD0;
+   float4 projection_coords : TEXCOORD1;
+   float3 static_lighting : STATICLIGHT;
 
-   float3x3 TBN : TEXCOORD4;
+   float3x3 TBN : TBN;
 
    float1 fog_eye_distance : DEPTH;
+
+   float4 positionPS : SV_Position;
 };
 
 Vs_normalmapped_spotlight_output normalmapped_spotlight_vs(Vertex_input input)
@@ -248,20 +253,20 @@ float3 calculate_light(float3 position, float3 normal, float4 light_position,
 
 struct Ps_normalmapped_input
 {
-   float3 positionWS : TEXCOORD0;
-   float2 texcoords : TEXCOORD1;
-   float3 static_lighting : TEXCOORD2;
+   float3 positionWS : POSITIONWS;
+   float2 texcoords : TEXCOORD;
+   float3 static_lighting : STATICLIGHT;
 
-   float3x3 TBN : TEXCOORD3;
+   float3x3 TBN : TBN;
 
    float1 fog_eye_distance : DEPTH;
 };
 
 float4 normalmapped_ps(Ps_normalmapped_input input,
-                       Texture2D<float3> normal_map : register(ps_3_0, s0)) : SV_Target0
+                       Texture2D<float3> normal_map : register(t0)) : SV_Target0
 {
    const float3 normalTS = 
-      normal_map.Sample(linear_wrap_sampler, input.texcoords).rgb * 255.0 / 127.0 - 128.0 / 127.0;
+      normal_map.Sample(aniso_wrap_sampler, input.texcoords).rgb * 255.0 / 127.0 - 128.0 / 127.0;
 
    const float3 normalWS = normalize(mul(input.TBN, normalTS));
 
@@ -282,10 +287,10 @@ float4 normalmapped_ps(Ps_normalmapped_input input,
 
 struct Ps_perpixel_input
 {
-   float3 positionWS : TEXCOORD0;
-   float3 normalWS : TEXCOORD1;
-   float2 texcoords : TEXCOORD2;
-   float3 static_lighting : TEXCOORD3;
+   float3 positionWS : POSITIONWS;
+   float3 normalWS : NORMALWS;
+   float2 texcoords : TEXCOORD;
+   float3 static_lighting : STATICLIGHT;
 
    float1 fog_eye_distance : DEPTH;
 };
@@ -328,17 +333,17 @@ float3 calculate_spotlight(float3 world_position, float3 world_normal,
 
 struct Ps_perpixel_spotlight_input
 {
-   float3 positionWS : TEXCOORD0;
-   float3 normalWS : TEXCOORD1;
-   float2 texcoords : TEXCOORD2;
-   float4 projection_coords : TEXCOORD3;
-   float3 static_lighting : TEXCOORD4;
+   float3 positionWS : POSITIONWS;
+   float3 normalWS : NORMALWS;
+   float2 texcoords : TEXCOORD0;
+   float4 projection_coords : TEXCOORD1;
+   float3 static_lighting : STATICLIGHT;
 
    float1 fog_eye_distance : DEPTH;
 };
 
 float4 perpixel_spotlight_ps(Ps_perpixel_spotlight_input input,
-                             Texture2D<float3> projection_map : register(ps_3_0, s2)) : SV_Target0
+                             Texture2D<float3> projection_map : register(t2)) : SV_Target0
 {
    const float3 projection_color = sample_projected_light(projection_map,
                                                           input.projection_coords);
@@ -360,25 +365,25 @@ float4 perpixel_spotlight_ps(Ps_perpixel_spotlight_input input,
 
 struct Ps_normalmapped_spotlight_input
 {
-   float3 positionWS : TEXCOORD0;
-   float2 texcoords : TEXCOORD1;
-   float4 projection_coords : TEXCOORD2;
-   float3 static_lighting : TEXCOORD3;
+   float3 positionWS : POSITIONWS;
+   float2 texcoords : TEXCOORD0;
+   float4 projection_coords : TEXCOORD1;
+   float3 static_lighting : STATICLIGHT;
 
-   float3x3 TBN : TEXCOORD4;
+   float3x3 TBN : TBN;
 
    float1 fog_eye_distance : DEPTH;
 };
 
 float4 normalmapped_spotlight_ps(Ps_normalmapped_spotlight_input input,
-                                 Texture2D<float3> normal_map : register(ps_3_0, s0),
-                                 Texture2D<float3> projection_map : register(ps_3_0, s2)) : SV_Target0
+                                 Texture2D<float3> normal_map : register(t0),
+                                 Texture2D<float3> projection_map : register(t2)) : SV_Target0
 {
    const float3 projection_color = sample_projected_light(projection_map,
                                                           input.projection_coords);
 
    const float3 normalTS =
-      normal_map.Sample(linear_wrap_sampler, input.texcoords) * 255.0 / 127.0 - 128.0 / 127.0;
+      normal_map.Sample(aniso_wrap_sampler, input.texcoords) * 255.0 / 127.0 - 128.0 / 127.0;
 
    const float3 normalWS = normalize(mul(input.TBN, normalTS));
 

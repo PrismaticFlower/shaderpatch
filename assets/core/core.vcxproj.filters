@@ -58,13 +58,7 @@
     <None Include="definitions\specularlighting.json">
       <Filter>definitions</Filter>
     </None>
-    <None Include="definitions\sprite.json">
-      <Filter>definitions</Filter>
-    </None>
     <None Include="definitions\stencilshadow.json">
-      <Filter>definitions</Filter>
-    </None>
-    <None Include="definitions\water.json">
       <Filter>definitions</Filter>
     </None>
     <None Include="definitions\zprepass.json">
@@ -139,9 +133,6 @@
     <None Include="src\specularlighting.fx">
       <Filter>src</Filter>
     </None>
-    <None Include="src\sprite.fx">
-      <Filter>src</Filter>
-    </None>
     <None Include="src\stencilshadow.fx">
       <Filter>src</Filter>
     </None>
@@ -163,23 +154,8 @@
     <None Include="definitions\patch\pbr.json">
       <Filter>definitions\patch</Filter>
     </None>
-    <None Include="src\normal_lightmapped.fx">
-      <Filter>src</Filter>
-    </None>
-    <None Include="definitions\patch\stock_bloom_ext.json">
-      <Filter>definitions\patch</Filter>
-    </None>
-    <None Include="definitions\patch\gaussian_blur.json">
-      <Filter>definitions\patch</Filter>
-    </None>
     <None Include="src\fullscreen_tri_vs.hlsl">
       <Filter>src</Filter>
-    </None>
-    <None Include="definitions\patch\postprocess.json">
-      <Filter>definitions\patch</Filter>
-    </None>
-    <None Include="definitions\patch\shadows_blur.json">
-      <Filter>definitions\patch</Filter>
     </None>
     <None Include="src\gaussian_blur.fx">
       <Filter>src</Filter>
@@ -193,9 +169,6 @@
     <None Include="src\aa_quality_levels.hlsl">
       <Filter>src</Filter>
     </None>
-    <None Include="definitions\patch\bloom.json">
-      <Filter>definitions\patch</Filter>
-    </None>
     <None Include="src\bloom.fx">
       <Filter>src</Filter>
     </None>
@@ -204,9 +177,6 @@
     </None>
     <None Include="src\film_grain.hlsl">
       <Filter>src</Filter>
-    </None>
-    <None Include="definitions\patch\damage_overlay.json">
-      <Filter>definitions\patch</Filter>
     </None>
     <None Include="definitions\patch\normal_ext.json">
       <Filter>definitions\patch</Filter>
@@ -223,14 +193,8 @@
     <None Include="src\normal_ext.fx">
       <Filter>src</Filter>
     </None>
-    <None Include="definitions\patch\skyfog_ext.json">
-      <Filter>definitions\patch</Filter>
-    </None>
     <None Include="src\skyfog_ext.fx">
       <Filter>src</Filter>
-    </None>
-    <None Include="definitions\patch\late_effects_resolve.json">
-      <Filter>definitions\patch</Filter>
     </None>
     <None Include="src\late_effects_resolve.fx">
       <Filter>src</Filter>
@@ -301,9 +265,6 @@
     <None Include="declarations\specularlighting.json">
       <Filter>declarations</Filter>
     </None>
-    <None Include="declarations\sprite.json">
-      <Filter>declarations</Filter>
-    </None>
     <None Include="declarations\stencilshadow.json">
       <Filter>declarations</Filter>
     </None>
@@ -313,14 +274,48 @@
     <None Include="declarations\zprepass.json">
       <Filter>declarations</Filter>
     </None>
-    <None Include="definitions\patch\scene_blur_apply.json">
-      <Filter>definitions\patch</Filter>
-    </None>
     <None Include="src\scene_blur_apply.fx">
       <Filter>src</Filter>
     </None>
     <None Include="declarations\normalmapadder.json">
       <Filter>declarations</Filter>
+    </None>
+    <None Include="definitions\patch\bloom.json.ignore">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="definitions\patch\damage_overlay.json.ignore">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="definitions\patch\gaussian_blur.json.ignore">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="definitions\patch\late_effects_resolve.json.ignore">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="definitions\patch\postprocess.json.ignore">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="definitions\patch\scene_blur_apply.json.ignore">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="definitions\patch\shadows_blur.json.ignore">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="definitions\patch\skyfog_ext.json.ignore">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="definitions\patch\stock_bloom_ext.json.ignore">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="definitions\water.json">
+      <Filter>definitions</Filter>
+    </None>
+    <None Include="shaders.req" />
+    <None Include="definitions\normalmapadder.json">
+      <Filter>definitions</Filter>
+    </None>
+    <None Include="src\normalmapadder.fx">
+      <Filter>src</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
