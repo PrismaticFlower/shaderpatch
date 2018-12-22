@@ -1,6 +1,5 @@
 
 #include "ext_constants_list.hlsl"
-#include "fog_utilities.hlsl"
 #include "generic_vertex_input.hlsl"
 #include "vertex_utilities.hlsl"
 #include "vertex_transformer.hlsl"
@@ -58,7 +57,8 @@ struct Vs_output
    float3 normalWS : NORMALWS;
    float3 view_normalWS : VIEWNORMALWS;
    float3 material_color : MATCOLOR;
-   float2 fog_eye_distance_alpha : FOGDIST;
+   float fog : FOG;
+   float alpha : ALPHA;
 
    float4 positionPS : SV_Position;
 };
@@ -77,17 +77,16 @@ Vs_output shield_vs(Vertex_input input)
    output.positionPS = transformer.positionPS();
    output.normalWS = normalWS;
    output.view_normalWS = view_normalWS;
-   output.fog_eye_distance_alpha.x = fog::get_eye_distance(positionWS);
 
    output.texcoords = input.texcoords() + shield_constants.xy;
    output.normal_texcoords = animate_normal(normalWS);
-   
-   Near_scene near_scene = calculate_near_scene_fade(positionWS);
-   near_scene.fade = near_scene.fade * near_scene_fade_scale.x + near_scene_fade_scale.y;
+
+   float near_fade;
+   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   near_fade = near_fade * near_scene_fade_scale.x + near_scene_fade_scale.y;
 
    output.material_color = get_material_color().rgb;
-   output.fog_eye_distance_alpha.y = 
-      angle_factor(view_normalWS, normalWS) * saturate(near_scene.fade);
+   output.alpha = saturate(angle_factor(view_normalWS, normalWS) * near_fade);
 
    return output;
 }
@@ -126,7 +125,8 @@ struct Ps_input
    float3 normalWS : NORMALWS;
    float3 view_normalWS : VIEWNORMALWS;
    float3 material_color : MATCOLOR;
-   float2 fog_eye_distance_alpha : FOGDIST;
+   float fog : FOG;
+   float alpha : ALPHA;
    float4 positionSS : SV_Position;
 };
 
@@ -152,7 +152,7 @@ float4 shield_ps(Ps_input input) : SV_Target0
 
    color = (color * alpha + specular) * lighting_scale;
 
-   color = fog::apply(color, input.fog_eye_distance_alpha.x);
+   color = apply_fog(color, input.fog);
 
-   return float4(color + scene_color, saturate(input.fog_eye_distance_alpha.y));
+   return float4(color + scene_color, input.alpha);
 }

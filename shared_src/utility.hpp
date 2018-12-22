@@ -2,7 +2,9 @@
 
 #include <cstddef>
 #include <cstring>
+#include <iterator>
 #include <malloc.h>
+#include <vector>
 
 namespace sp {
 
@@ -74,7 +76,7 @@ private:
 };
 
 template<typename To, typename From>
-To bit_cast(const From from)
+inline To bit_cast(const From from)
 {
    static_assert(sizeof(From) <= sizeof(To));
    static_assert(std::is_trivial_v<To>);
@@ -85,6 +87,13 @@ To bit_cast(const From from)
    std::memcpy(&to, &from, sizeof(From));
 
    return to;
+}
+
+template<typename From>
+inline auto make_vector(const From& from) noexcept
+   -> std::vector<typename From::value_type>
+{
+   return {std::cbegin(from), std::cend(from)};
 }
 
 }

@@ -9,24 +9,21 @@
           "name": "POSITION",
           "index": 0
         },
-        "format": "R16G16B16A16_SINT",
-        "offset": 0
+        "format": "sint4"
       },
       {
         "semantic": {
           "name": "NORMAL",
           "index": 0
         },
-        "format": "B8G8R8A8_UNORM",
-        "offset": 8
+        "format": "float4"
       },
       {
         "semantic": {
           "name": "COLOR",
           "index": 0
         },
-        "format": "B8G8R8A8_UNORM",
-        "offset": 12
+        "format": "float4"
       }
     ]
   },

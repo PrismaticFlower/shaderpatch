@@ -9,8 +9,7 @@
           "name": "POSITION",
           "index": 0
         },
-        "format": "R32G32B32_FLOAT",
-        "offset": 0
+        "format": "float3"
       }
     ]
   },

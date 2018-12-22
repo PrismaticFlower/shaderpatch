@@ -1,14 +1,11 @@
 
-#include "fog_utilities.hlsl"
 #include "generic_vertex_input.hlsl"
 #include "vertex_utilities.hlsl"
 #include "vertex_transformer.hlsl"
 #include "lighting_utilities.hlsl"
-
+#include "pixel_utilities.hlsl"
 
 const static float distort_blend = ps_custom_constants[0].a;
-
-SamplerState linear_wrap_sampler;
 
 struct Vs_nodistortion_output
 {
@@ -20,7 +17,7 @@ struct Vs_nodistortion_output
    float4 material_color_fade : MATCOLOR;
    float3 static_lighting : STATICLIGHT;
 
-   float fog_eye_distance : DEPTH;
+   float fog : FOG;
 
    float4 positionPS : SV_Position;
 };
@@ -36,7 +33,6 @@ Vs_nodistortion_output far_vs(Vertex_input input)
    output.positionPS = transformer.positionPS();
    output.positionWS = positionWS;
    output.normalWS = transformer.normalWS();
-   output.fog_eye_distance = fog::get_eye_distance(positionWS);
 
    const float4 x_texcoords_transform = custom_constants[0];
    const float4 y_texcoords_transform = custom_constants[1];
@@ -45,6 +41,9 @@ Vs_nodistortion_output far_vs(Vertex_input input)
 
    output.material_color_fade = get_material_color(input.color());
    output.static_lighting = get_static_diffuse_color(input.color());
+
+   float near_fade;
+   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
 
    return output;
 }
@@ -60,19 +59,19 @@ Vs_nodistortion_output nodistortion_vs(Vertex_input input)
    output.positionPS = transformer.positionPS();
    output.positionWS = positionWS;
    output.normalWS = transformer.normalWS();
-   output.fog_eye_distance = fog::get_eye_distance(positionWS);
 
    const float4 x_texcoords_transform = custom_constants[0];
    const float4 y_texcoords_transform = custom_constants[1];
 
    output.texcoords = transformer.texcoords(x_texcoords_transform, y_texcoords_transform);
 
-   Near_scene near_scene = calculate_near_scene_fade(positionWS);
-   near_scene.fade = saturate(near_scene.fade);
-   near_scene.fade = near_scene.fade * near_scene.fade;
+   float near_fade;
+   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   near_fade = saturate(near_fade);
+   near_fade *= near_fade;
 
    output.material_color_fade = get_material_color(input.color());
-   output.material_color_fade.a *= near_scene.fade;
+   output.material_color_fade.a *= near_fade;
    output.static_lighting = get_static_diffuse_color(input.color());
 
    return output;
@@ -91,7 +90,7 @@ struct Vs_distortion_output
    float4 material_color_fade : MATCOLOR;
    float3 static_lighting : STATICLIGHT;
 
-   float fog_eye_distance : DEPTH;
+   float fog : FOG;
 
    float4 positionPS : SV_Position;
 };
@@ -125,7 +124,6 @@ Vs_distortion_output distortion_vs(Vertex_input input)
    output.positionPS = transformer.positionPS();
    output.positionWS = positionWS;
    output.normalWS = transformer.normalWS();
-   output.fog_eye_distance = fog::get_eye_distance(positionWS);
 
    output.distortion_texcoords = distortion_texcoords(normalOS, positionOS,
                                                       distort_constant, distort_transform);
@@ -136,12 +134,13 @@ Vs_distortion_output distortion_vs(Vertex_input input)
    output.diffuse_texcoords = transformer.texcoords(x_diffuse_texcoords_transform,
                                                     y_diffuse_texcoords_transform);
 
-   Near_scene near_scene = calculate_near_scene_fade(positionWS);
-   near_scene.fade = saturate(near_scene.fade);
-   near_scene.fade = near_scene.fade * near_scene.fade;
+   float near_fade;
+   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   near_fade = saturate(near_fade);
+   near_fade *= near_fade;
 
    output.material_color_fade = get_material_color(input.color());
-   output.material_color_fade.a *= near_scene.fade;
+   output.material_color_fade.a *= near_fade;
    output.static_lighting = get_static_diffuse_color(input.color());
 
    return output;
@@ -157,20 +156,20 @@ struct Ps_nodistortion_input
    float4 material_color_fade : MATCOLOR;
    float3 static_lighting : STATICLIGHT;
 
-   float fog_eye_distance : DEPTH;
+   float fog : FOG;
 };
 
 float4 nodistortion_ps(Ps_nodistortion_input input,
                        Texture2D<float4> diffuse_texture : register(t0)) : SV_Target0
 {
    const float4 diffuse_color = 
-      diffuse_texture.Sample(linear_wrap_sampler, input.texcoords) * input.material_color_fade;
+      diffuse_texture.Sample(aniso_wrap_sampler, input.texcoords) * input.material_color_fade;
    
    Lighting lighting = light::calculate(normalize(input.normalWS), input.positionWS,
                                         input.static_lighting);
 
    float3 color = lighting.color * diffuse_color.rgb;
-   color = fog::apply(color.rgb, input.fog_eye_distance);
+   color = apply_fog(color, input.fog);
 
    return float4(color, diffuse_color.a);
 }
@@ -193,7 +192,7 @@ struct Ps_near_input
    float4 material_color_fade : MATCOLOR;
    float3 static_lighting : STATICLIGHT;
 
-   float fog_eye_distance : DEPTH;
+   float fog : FOG;
 };
 
 float4 near_diffuse_ps(Ps_near_input input) : SV_Target0
@@ -212,7 +211,7 @@ float4 near_diffuse_ps(Ps_near_input input) : SV_Target0
    const float3 distortion_color = 
       refraction_buffer.SampleLevel(linear_wrap_sampler, distortion_texcoords, 0);
 
-   const float4 diffuse_color = diffuse_texture.Sample(linear_wrap_sampler, 
+   const float4 diffuse_color = diffuse_texture.Sample(aniso_wrap_sampler,
                                                        input.diffuse_texcoords);
 
    float3 color = (diffuse_color.rgb * input.material_color_fade.rgb) * lighting.color;
@@ -220,7 +219,7 @@ float4 near_diffuse_ps(Ps_near_input input) : SV_Target0
    const float blend = -diffuse_color.a * distort_blend + diffuse_color.a;
    color = lerp(distortion_color, color, blend);
 
-   color = fog::apply(color.rgb, input.fog_eye_distance);
+   color = apply_fog(color, input.fog);
 
    return float4(color, input.material_color_fade.a);
 }
@@ -244,8 +243,7 @@ float4 near_ps(Ps_near_input input) : SV_Target0
    float3 color = input.material_color_fade.rgb * lighting.color;
 
    color = lerp(distortion_color, color, distort_blend);
-
-   color = fog::apply(color.rgb, input.fog_eye_distance);
+   color = apply_fog(color, input.fog);
 
    return float4(color, input.material_color_fade.a);
 }
@@ -271,18 +269,18 @@ float4 near_diffuse_bump_ps(Ps_near_input input) : SV_Target0
                                         input.static_lighting, true,
                                         projection_texture_color);
 
-   const float4 diffuse_color = diffuse_texture.Sample(linear_wrap_sampler, 
+   const float4 diffuse_color = diffuse_texture.Sample(aniso_wrap_sampler,
                                                        input.diffuse_texcoords);
 
    float3 color = (diffuse_color.rgb * input.material_color_fade.rgb) * lighting.color;
 
-   const float2 bump = bump_texture.Sample(linear_wrap_sampler, input.bump_texcoords);
+   const float2 bump = bump_texture.Sample(aniso_wrap_sampler, input.bump_texcoords);
    const float3 distortion_color = sample_distort_scene(input.distortion_texcoords, bump);
 
    float blend = -diffuse_color.a * distort_blend + diffuse_color.a;
    color = lerp(distortion_color, color, blend);
 
-   color = fog::apply(color.rgb, input.fog_eye_distance);
+   color = apply_fog(color, input.fog);
 
    return float4(color, input.material_color_fade.a);
 }
@@ -300,12 +298,11 @@ float4 near_bump_ps(Ps_near_input input) : SV_Target0
 
    float3 color = input.material_color_fade.rgb * lighting.color;
 
-   const float2 bump = bump_texture.Sample(linear_wrap_sampler, input.bump_texcoords);
+   const float2 bump = bump_texture.Sample(aniso_wrap_sampler, input.bump_texcoords);
    const float3 distortion_color = sample_distort_scene(input.distortion_texcoords, bump);
 
    color = lerp(distortion_color, color, distort_blend);
-
-   color = fog::apply(color.rgb, input.fog_eye_distance);
+   color = apply_fog(color, input.fog);
 
    return float4(color, input.material_color_fade.a);
 }

@@ -40,7 +40,7 @@ auto enum_adapters_dxgi_1_6(IDXGIFactory6& factory) noexcept
 auto enum_adapaters(IDXGIFactory2& factory) noexcept
    -> std::vector<Com_ptr<IDXGIAdapter2>>
 {
-
+   // TODO: Enable me!
    // if (Com_ptr<IDXGIFactory6> factory_1_6;
    //     SUCCEEDED(factory.QueryInterface(factory_1_6.clear_and_assign()))) {
    //    return enum_adapters_dxgi_1_6(*factory_1_6);

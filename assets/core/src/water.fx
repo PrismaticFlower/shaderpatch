@@ -1,11 +1,11 @@
 
 #include "constants_list.hlsl"
 #include "ext_constants_list.hlsl"
-#include "fog_utilities.hlsl"
 #include "generic_vertex_input.hlsl"
 #include "vertex_utilities.hlsl"
 #include "vertex_transformer.hlsl"
 #include "pixel_sampler_states.hlsl"
+#include "pixel_utilities.hlsl"
 
 const static float4 texcoords_projection = custom_constants[0];
 const static float4 fade_constant = custom_constants[1];
@@ -15,11 +15,11 @@ const static float4 x_texcoords_transform[3] = {custom_constants[3], custom_cons
 const static float4 y_texcoords_transform[3] = {custom_constants[4], custom_constants[6],
                                                 custom_constants[8]};
 
-const static float4 refraction_colour = custom_constants[0];
-const static float4 reflection_colour = custom_constants[1];
-const static float4 fresnel_min_max = custom_constants[2];
-const static float4 blend_map_constant = custom_constants[3];
-const static float4 blend_specular_constant = custom_constants[4];
+const static float4 refraction_colour = ps_custom_constants[0];
+const static float4 reflection_colour = ps_custom_constants[1];
+const static float4 fresnel_min_max = ps_custom_constants[2];
+const static float4 blend_map_constant = ps_custom_constants[3];
+const static float4 blend_specular_constant = ps_custom_constants[4];
 
 const static float water_fade = saturate(fade_constant.z + fade_constant.w);
 const static float4 time_scales = {0.009, 0.01, 0.008, 0.01};
@@ -39,7 +39,7 @@ float4 discard_vs() : SV_Position
 struct Vs_fade_output
 {
    float fade : FADE;
-   float fog_eye_distance : DEPTH;
+   float fog : FOG;
    float4 positionPS : SV_Position;
 };
 
@@ -54,7 +54,8 @@ Vs_fade_output transmissive_pass_fade_vs(Vertex_input input)
 
    output.positionPS = positionPS;
    output.fade = saturate(positionPS.z * fade_constant.z + fade_constant.w);
-   output.fog_eye_distance = fog::get_eye_distance(positionWS);
+   float near_fade;
+   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
 
    return output;
 }
@@ -63,8 +64,9 @@ struct Vs_lowquality_output
 {
    float2 diffuse_texcoords : TEXCOORD0;
    float2 spec_texcoords[2] : TEXCOORD1;
-   float2 specular_fade : SPECFADE;
-   float1 fog_eye_distance: DEPTH;
+   float specular : SPECULAR;
+   float fade : FADE;
+   float fog : FOG;
 
    float4 positionPS : SV_Position;
 };
@@ -81,7 +83,7 @@ Vs_lowquality_output lowquality_vs(Vertex_input input)
 
    const float3 half_vectorWS = normalize(light_direction.xyz + view_normalWS);
    const float HdotN = max(dot(half_vectorWS, normalWS), 0.0);
-   output.specular_fade.x = pow(HdotN, light_direction.w);
+   output.specular = pow(HdotN, light_direction.w);
 
    output.diffuse_texcoords = transformer.texcoords(x_texcoords_transform[0], 
                                                     y_texcoords_transform[0]);
@@ -93,8 +95,10 @@ Vs_lowquality_output lowquality_vs(Vertex_input input)
    const float4 positionPS = transformer.positionPS();
 
    output.positionPS = positionPS;
-   output.fog_eye_distance = fog::get_eye_distance(positionWS);
-   output.specular_fade.y = saturate(positionPS.z * fade_constant.z + fade_constant.w);
+
+   float near_fade;
+   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   output.fade = saturate(positionPS.z * fade_constant.z + fade_constant.w);
 
    return output;
 }
@@ -103,7 +107,8 @@ struct Vs_normal_map_output
 {
    float3 view_normalWS : VIEWNORMALWS;
    float2 texcoords[4] : TEXCOORD0;
-   float2 fade_fog_eye_distance : FADE;
+   float fade : FADE;
+   float fog : FOG;
 
    float4 positionPS : SV_Position;
 };
@@ -119,7 +124,6 @@ Vs_normal_map_output normal_map_vs(Vertex_input input)
 
    output.positionPS = positionPS;
    output.view_normalWS = view_positionWS - positionWS;
-   output.fade_fog_eye_distance.y = fog::get_eye_distance(positionWS);
 
    float2 texcoords = positionWS.xz;
 
@@ -130,7 +134,9 @@ Vs_normal_map_output normal_map_vs(Vertex_input input)
    output.texcoords[2] = (texcoords * tex_scales[2]) * float2(0.125, 1.0) + (time_scales[2] * time);
    output.texcoords[3] = mul(rotation, texcoords * tex_scales[3]) + (time_scales[3] * time);
 
-   output.fade_fog_eye_distance.x = saturate(positionPS.z * fade_constant.z + fade_constant.w);
+   float near_fade;
+   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   output.fade = saturate(positionPS.z * fade_constant.z + fade_constant.w);
 
    return output;
 }
@@ -149,19 +155,20 @@ float calc_fresnel(float normal_view_dot)
 struct Ps_fade_input
 {
    float fade : FADE;
-   float fog_eye_distance : DEPTH;
+   float fog : FOG;
 };
 
 float4 transmissive_pass_fade_ps(Ps_fade_input input) : SV_Target0
 {
-   return float4(fog::apply(refraction_colour.rgb * input.fade, input.fog_eye_distance), input.fade);
+   return float4(apply_fog(refraction_colour.rgb * input.fade, input.fog), input.fade);
 }
 
 struct Ps_normal_map_input
 {
    float3 view_normalWS : VIEWNORMALWS;
    float2 texcoords[4] : TEXCOORD0;
-   float2 fade_fog_eye_distance : FADE;
+   float fade : FADE;
+   float fog : FOG;
 
    float4 positionSS : SV_Position;
 };
@@ -214,9 +221,9 @@ float4 normal_map_distorted_reflection_ps(Ps_normal_map_input input,
 
    float3 color = lerp(water_color, reflection * reflection_colour.a, fresnel * water_fade);
 
-   color = fog::apply(color, input.fade_fog_eye_distance.y);
+   color = apply_fog(color, input.fog);
 
-   return float4(color, input.fade_fog_eye_distance.x);
+   return float4(color, input.fade);
 }
 
 float4 normal_map_distorted_reflection_specular_ps(Ps_normal_map_input input,
@@ -248,9 +255,9 @@ float4 normal_map_distorted_reflection_specular_ps(Ps_normal_map_input input,
    const float NdotH = saturate(dot(normalWS, half_normalWS));
    color += pow(NdotH, specular_exponent);
 
-   color = fog::apply(color, input.fade_fog_eye_distance.y);
+   color = apply_fog(color, input.fog);
 
-   return float4(color, input.fade_fog_eye_distance.x);
+   return float4(color, input.fade);
 }
 
 float4 normal_map_distorted_ps(Ps_normal_map_input input,
@@ -279,9 +286,9 @@ float4 normal_map_distorted_ps(Ps_normal_map_input input,
 
    float3 color = lerp(water_color, reflection * reflection_colour.a, fresnel * water_fade);
 
-   color = fog::apply(color, input.fade_fog_eye_distance.y);
+   color = apply_fog(color, input.fog);
 
-   return float4(color, input.fade_fog_eye_distance.x);
+   return float4(color, input.fade);
 }
 
 float4 normal_map_distorted_specular_ps(Ps_normal_map_input input,
@@ -314,9 +321,9 @@ float4 normal_map_distorted_specular_ps(Ps_normal_map_input input,
    const float NdotH = saturate(dot(normalWS, half_normalWS));
    color += pow(NdotH, specular_exponent);
 
-   color = fog::apply(color, input.fade_fog_eye_distance.y);
+   color = apply_fog(color, input.fog);
 
-   return float4(color, input.fade_fog_eye_distance.x);
+   return float4(color, input.fade);
 }
 
 float4 normal_map_ps(Ps_normal_map_input input) : SV_Target0
@@ -331,9 +338,9 @@ float4 normal_map_ps(Ps_normal_map_input input) : SV_Target0
 
    const float fresnel = calc_fresnel(VdotN);
 
-   const float3 color = fog::apply(reflection_colour.rgb, input.fade_fog_eye_distance.y);
+   const float3 color = apply_fog(refraction_colour.rgb, input.fog);
 
-   return float4(color, fresnel * input.fade_fog_eye_distance.x);
+   return float4(color, input.fade * fresnel);
 }
 
 float4 normal_map_specular_ps(Ps_normal_map_input input) : SV_Target0
@@ -352,17 +359,19 @@ float4 normal_map_specular_ps(Ps_normal_map_input input) : SV_Target0
    const float NdotH = saturate(dot(normalWS, half_normalWS));
    const float spec = pow(NdotH, specular_exponent);
 
-   const float3 color = fog::apply(reflection_colour.rgb + spec, input.fade_fog_eye_distance.y);
+   float3 color = reflection_colour.rgb + spec;
+   color = apply_fog(color, input.fog);
 
-   return float4(color, fresnel * input.fade_fog_eye_distance.x);
+   return float4(color, input.fade * fresnel);
 }
 
 struct Ps_lowquality_input
 {
    float2 diffuse_texcoords : TEXCOORD0;
    float2 spec_texcoords[2] : TEXCOORD1;
-   float2 specular_fade : SPECFADE;
-   float1 fog_eye_distance: DEPTH;
+   float specular : SPECULAR;
+   float fade : FADE;
+   float fog : FOG;
 };
 
 float4 lowquality_ps(Ps_lowquality_input input,
@@ -373,9 +382,9 @@ float4 lowquality_ps(Ps_lowquality_input input,
 
    float4 color = refraction_colour * diffuse_color;
    color.rgb *= lighting_scale;
-   color.a *= input.specular_fade.y;
+   color.a *= input.fade;
 
-   color.rgb = fog::apply(color.rgb, input.fog_eye_distance);
+   color.rgb = apply_fog(color.rgb, input.fog);
 
    return color;
 }
@@ -395,11 +404,11 @@ float4 lowquality_specular_ps(Ps_lowquality_input input,
 
    float4 color = refraction_colour * diffuse_color;
 
-   color.rgb += (spec_mask * input.specular_fade.x);
+   color.rgb += (spec_mask * input.specular);
    color.rgb *= lighting_scale;
-   color.a *= input.specular_fade.y;
+   color.a *= input.fade;
 
-   color.rgb = fog::apply(color.rgb, input.fog_eye_distance);
+   color.rgb = apply_fog(color.rgb, input.fog);
 
    return color;
 }

@@ -108,10 +108,13 @@
     <ClCompile Include="src\core\d3d11_helpers.cpp">
       <Filter>src\core</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\input_layout_cache.cpp">
+    <ClCompile Include="src\core\sampler_states.cpp">
       <Filter>src\core</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\input_layout_factory.cpp">
+    <ClCompile Include="src\core\input_layout_descriptions.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\shader_input_layouts.cpp">
       <Filter>src\core</Filter>
     </ClCompile>
   </ItemGroup>
@@ -269,9 +272,6 @@
     <ClInclude Include="src\core\shader_loader.hpp">
       <Filter>src\core</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\input_layout_cache.hpp">
-      <Filter>src\core</Filter>
-    </ClInclude>
     <ClInclude Include="src\core\game_rendertarget.hpp">
       <Filter>src\core</Filter>
     </ClInclude>
@@ -287,7 +287,19 @@
     <ClInclude Include="src\direct3d\debug_trace.hpp">
       <Filter>src\direct3d</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\input_layout_factory.hpp">
+    <ClInclude Include="src\core\sampler_states.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\input_layout_descriptions.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\input_layout_element.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\shader_input_layouts.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\shader_input_element.hpp">
       <Filter>src\core</Filter>
     </ClInclude>
   </ItemGroup>

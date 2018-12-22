@@ -34,6 +34,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)patch_texture.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)req_file_helpers.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)shader_flags.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)shader_input_type.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)shader_metadata.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)string_utilities.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)synced_io.hpp" />

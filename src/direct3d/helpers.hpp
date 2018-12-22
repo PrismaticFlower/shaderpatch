@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <string>
 #include <tuple>
 
 #include <d3d11_1.h>
@@ -116,37 +117,39 @@ inline auto d3d_to_dxgi_format(const D3DFORMAT format) noexcept -> DXGI_FORMAT
    }
 }
 
-inline auto d3d_decl_usage_to_cstr(const D3DDECLUSAGE usage) noexcept -> const char*
+inline auto d3d_decl_usage_to_string(const D3DDECLUSAGE usage) noexcept -> std::string
 {
+   using namespace std::literals;
+
    switch (usage) {
    case D3DDECLUSAGE_POSITION:
-      return "POSITION";
+      return "POSITION"s;
    case D3DDECLUSAGE_BLENDWEIGHT:
-      return "BLENDWEIGHT";
+      return "BLENDWEIGHT"s;
    case D3DDECLUSAGE_BLENDINDICES:
-      return "BLENDINDICES";
+      return "BLENDINDICES"s;
    case D3DDECLUSAGE_NORMAL:
-      return "NORMAL";
+      return "NORMAL"s;
    case D3DDECLUSAGE_PSIZE:
-      return "PSIZE";
+      return "PSIZE"s;
    case D3DDECLUSAGE_TEXCOORD:
-      return "TEXCOORD";
+      return "TEXCOORD"s;
    case D3DDECLUSAGE_TANGENT:
-      return "TANGENT";
+      return "TANGENT"s;
    case D3DDECLUSAGE_BINORMAL:
-      return "BINORMAL";
+      return "BINORMAL"s;
    case D3DDECLUSAGE_TESSFACTOR:
-      return "TESSFACTOR";
+      return "TESSFACTOR"s;
    case D3DDECLUSAGE_POSITIONT:
-      return "POSITIONT";
+      return "POSITIONT"s;
    case D3DDECLUSAGE_COLOR:
-      return "COLOR";
+      return "COLOR"s;
    case D3DDECLUSAGE_FOG:
-      return "FOG";
+      return "FOG"s;
    case D3DDECLUSAGE_DEPTH:
-      return "DEPTH";
+      return "DEPTH"s;
    case D3DDECLUSAGE_SAMPLE:
-      return "SAMPLE";
+      return "SAMPLE"s;
    default:
       std::terminate();
    }
@@ -220,6 +223,32 @@ inline auto d3d_decl_type_size(const D3DDECLTYPE type) noexcept -> std::size_t
    case D3DDECLTYPE_UNUSED:
    default:
       return 0;
+   }
+}
+
+inline bool is_d3d_decl_type_int(const D3DDECLTYPE type) noexcept
+{
+   switch (type) {
+   case D3DDECLTYPE_FLOAT1:
+   case D3DDECLTYPE_FLOAT2:
+   case D3DDECLTYPE_FLOAT3:
+   case D3DDECLTYPE_FLOAT4:
+   case D3DDECLTYPE_D3DCOLOR:
+   case D3DDECLTYPE_UBYTE4N:
+   case D3DDECLTYPE_SHORT2N:
+   case D3DDECLTYPE_SHORT4N:
+   case D3DDECLTYPE_USHORT2N:
+   case D3DDECLTYPE_USHORT4N:
+   case D3DDECLTYPE_FLOAT16_2:
+   case D3DDECLTYPE_FLOAT16_4:
+   case D3DDECLTYPE_DEC3N:
+      return false;
+   case D3DDECLTYPE_UBYTE4:
+   case D3DDECLTYPE_SHORT2:
+   case D3DDECLTYPE_SHORT4:
+   case D3DDECLTYPE_UDEC3:
+   default:
+      return true;
    }
 }
 

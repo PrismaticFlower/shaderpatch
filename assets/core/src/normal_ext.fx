@@ -1,7 +1,6 @@
 
 #include "constants_list.hlsl"
 #include "ext_constants_list.hlsl"
-#include "fog_utilities.hlsl"
 #include "generic_vertex_input.hlsl"
 #include "vertex_utilities.hlsl"
 #include "vertex_transformer.hlsl"
@@ -55,8 +54,7 @@ struct Vs_output
    
    float4 material_color_fade : MATCOLOR;
    float3 static_lighting : STATICLIGHT;
-
-   float fog_eye_distance : DEPTH;
+   float fog : FOG;
 
    float4 positionPS : SV_Position;
 };
@@ -72,7 +70,6 @@ Vs_output main_vs(Vertex_input input)
    output.positionPS = transformer.positionPS();
    output.positionWS = positionWS;
    output.normalWS = transformer.normalWS();
-   output.fog_eye_distance = fog::get_eye_distance(positionWS);
 
    output.diffuse_texcoords = transformer.texcoords(x_diffuse_texcoords_transform,
                                                     y_diffuse_texcoords_transform);
@@ -84,10 +81,11 @@ Vs_output main_vs(Vertex_input input)
    output.projection_texcoords = mul(float4(positionWS, 1.0), light_proj_matrix);
    output.shadow_texcoords = transform_shadowmap_coords(positionWS);
 
-   Near_scene near_scene = calculate_near_scene_fade(positionWS);
+   float near_fade;
+   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
 
    output.material_color_fade = get_material_color(input.color());
-   output.material_color_fade.a = saturate(near_scene.fade);
+   output.material_color_fade.a = saturate(near_fade);
    output.static_lighting = get_static_diffuse_color(input.color());
 
    return output;
@@ -286,8 +284,9 @@ struct Ps_input
    float4 material_color_fade : MATCOLOR;
    float3 static_lighting : STATICLIGHT;
 
-   float fog_eye_distance : DEPTH;
+   float fog : FOG;
 
+   float4 positionSS : SV_Position;
    float vface : VFACE;
 };
 
@@ -341,7 +340,7 @@ float4 main_ps(Ps_input input) : SV_Target0
 
    color = color * lighting_factor.x + lighting_factor.y;
 
-   color = fog::apply(color.rgb, input.fog_eye_distance);
+   color = apply_fog(color, input.fog);
 
    float alpha = 1.0;
 

@@ -1,10 +1,10 @@
 
 #include "constants_list.hlsl"
-#include "fog_utilities.hlsl"
 #include "generic_vertex_input.hlsl"
 #include "vertex_transformer.hlsl"
 #include "lighting_utilities.hlsl"
 #include "pixel_sampler_states.hlsl"
+#include "pixel_utilities.hlsl"
 
 const static float4 specular_color = ps_custom_constants[0];
 static const float specular_exponent = 64.0;
@@ -21,7 +21,7 @@ struct Vs_normalmapped_ouput
    float2 texcoords : TEXCOORD1;
    float3x3 TBN : TBN;
 
-   float1 fog_eye_distance : DEPTH;
+   float fog : FOG;
 
    float4 positionPS : SV_Position;
 };
@@ -36,7 +36,6 @@ Vs_normalmapped_ouput normalmapped_vs(Vertex_input input)
 
    output.positionPS = transformer.positionPS();
    output.positionWS = positionWS;
-   output.fog_eye_distance = fog::get_eye_distance(positionWS);
 
    output.texcoords = transformer.texcoords(x_texcoords_transform,
                                             y_texcoords_transform);
@@ -49,6 +48,9 @@ Vs_normalmapped_ouput normalmapped_vs(Vertex_input input)
 
    output.TBN = transpose(TBN);
 
+   float near_fade;
+   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+
    return output;
 }
 
@@ -58,7 +60,7 @@ struct Vs_blinn_phong_ouput
    float3 normalWS : NORMALWS;
    float2 texcoords : TEXCOORD;
 
-   float1 fog_eye_distance : DEPTH;
+   float fog : FOG;
 
    float4 positionPS : SV_Position;
 };
@@ -78,7 +80,8 @@ Vs_blinn_phong_ouput blinn_phong_vs(Vertex_input input)
    output.texcoords = transformer.texcoords(x_texcoords_transform,
                                             y_texcoords_transform);
 
-   output.fog_eye_distance = fog::get_eye_distance(positionWS);
+   float near_fade;
+   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
 
    return output;
 }
@@ -126,7 +129,7 @@ struct Ps_normalmapped_input
    float2 texcoords : TEXCOORD1;
    float3x3 TBN : TBN;
 
-   float1 fog_eye_distance : DEPTH;
+   float fog : FOG;
 };
 
 float4 normalmapped_ps(Ps_normalmapped_input input,
@@ -148,7 +151,7 @@ float4 normalmapped_ps(Ps_normalmapped_input input,
    float gloss = lerp(1.0, normal_map_gloss.a, specular_color.a);
    float3 color = gloss * spec;
 
-   color = fog::apply(color, input.fog_eye_distance);
+   color = apply_fog(color, input.fog);
 
    return float4(color, normal_map_gloss.a);
 }
@@ -171,7 +174,7 @@ float4 normalmapped_envmap_ps(Ps_normalmapped_input input,
    float gloss = lerp(1.0, normal_map_gloss.a, specular_color.a);
    float3 color = light_colors[0] * envmap_color * gloss;
 
-   color = fog::apply(color, input.fog_eye_distance);
+   color = apply_fog(color, input.fog);
 
    return float4(color, normal_map_gloss.a);
 }
@@ -182,7 +185,7 @@ struct Ps_blinn_phong_input
    float3 normalWS : NORMALWS;
    float2 texcoords : TEXCOORD;
 
-   float1 fog_eye_distance : DEPTH;
+   float fog : FOG;
 };
 
 float4 blinn_phong_ps(Ps_blinn_phong_input input,
@@ -221,7 +224,7 @@ float4 blinn_phong_ps(Ps_blinn_phong_input input,
    }
 
    color *= gloss;
-   color = fog::apply(color, input.fog_eye_distance);
+   color = apply_fog(color, input.fog);
 
    return float4(color, alpha);
 }

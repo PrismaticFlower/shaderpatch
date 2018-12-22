@@ -3,66 +3,93 @@
 #include "../logger.hpp"
 #include "com_ptr.hpp"
 #include "shader_flags.hpp"
+#include "shader_input_element.hpp"
 #include "shader_metadata.hpp"
+#include "utility.hpp"
 
 #include <array>
 #include <functional>
 #include <iomanip>
 #include <string>
-#include <type_traits>
+#include <tuple>
 #include <unordered_map>
+
+#include <gsl/gsl>
 
 #include <d3d11_1.h>
 
 namespace sp::core {
 
-namespace detail {
-
-enum class Shader_type { vertex, pixel };
-
-template<Shader_type type>
-struct Shader_type_info {
-};
-
-template<>
-struct Shader_type_info<Shader_type::vertex> {
-   using Resource_type = ID3D11VertexShader;
-   using Flags_type = Vertex_shader_flags;
-
-   static void bind(ID3D11DeviceContext& dc, Resource_type* shader) noexcept
-   {
-      dc.VSSetShader(shader, nullptr, 0);
-   }
-};
-
-template<>
-struct Shader_type_info<Shader_type::pixel> {
-   using Resource_type = ID3D11PixelShader;
-   using Flags_type = Pixel_shader_flags;
-
-   static void bind(ID3D11DeviceContext& dc, Resource_type* shader) noexcept
-   {
-      dc.PSSetShader(shader, nullptr, 0);
-   }
-};
-
-}
-
-template<detail::Shader_type type>
-class Shader_entrypoint {
+class Vertex_shader_entrypoint {
 public:
-   Shader_entrypoint() = default;
-   explicit Shader_entrypoint(const Shader_entrypoint&) = default;
-   Shader_entrypoint(Shader_entrypoint&&) = default;
-   Shader_entrypoint& operator=(Shader_entrypoint&&) = default;
+   Vertex_shader_entrypoint() = default;
+   explicit Vertex_shader_entrypoint(const Vertex_shader_entrypoint&) = default;
+   Vertex_shader_entrypoint(Vertex_shader_entrypoint&&) = default;
+   Vertex_shader_entrypoint& operator=(Vertex_shader_entrypoint&&) = default;
 
-   Shader_entrypoint& operator=(const Shader_entrypoint&) = delete;
+   Vertex_shader_entrypoint& operator=(const Vertex_shader_entrypoint&) = delete;
 
-   using Resource = typename detail::Shader_type_info<type>::Resource_type;
-   using Game_flags = typename detail::Shader_type_info<type>::Flags_type;
+   auto get(const std::uint16_t static_flags = 0,
+            const Vertex_shader_flags game_flags = {}) const noexcept
+      -> std::optional<std::tuple<ID3D11VertexShader*, gsl::span<const std::byte>, gsl::span<const Shader_input_element>>>
+   {
+      if (const auto it = _variations.find(index(static_flags, game_flags));
+          it != _variations.end()) {
+         return std::tuple{std::get<0>(it->second).get(),
+                           gsl::make_span(std::get<1>(it->second)),
+                           gsl::make_span(std::get<2>(it->second))};
+      }
+      else {
+         return std::nullopt;
+      }
+   }
 
-   Resource* get(const std::uint16_t static_flags = 0,
-                 const Game_flags game_flags = {}) const noexcept
+   void bind(ID3D11DeviceContext& dc, const std::uint16_t static_flags = 0,
+             const Vertex_shader_flags game_flags = {}) const noexcept
+   {
+      if (const auto shader = get(static_flags, game_flags)) {
+         dc.VSSetShader(std::get<0>(*shader), nullptr, 0);
+      }
+      else {
+         dc.VSSetShader(nullptr, nullptr, 0);
+      }
+   }
+
+   void insert(Com_ptr<ID3D11VertexShader> shader, std::vector<std::byte> bytecode,
+               std::vector<Shader_input_element> input_layout,
+               const std::uint16_t static_flags,
+               const Vertex_shader_flags game_flags) noexcept
+   {
+      _variations[index(static_flags, game_flags)] = {std::move(shader),
+                                                      std::move(bytecode),
+                                                      std::move(input_layout)};
+   }
+
+private:
+   static constexpr std::uint32_t index(const std::uint16_t static_flags,
+                                        const Vertex_shader_flags game_flags) noexcept
+   {
+      static_assert(sizeof(Pixel_shader_flags) <= sizeof(std::uint32_t));
+
+      return static_cast<std::uint32_t>(game_flags) | (static_flags << 16u);
+   }
+
+   std::unordered_map<std::uint32_t,
+                      std::tuple<Com_ptr<ID3D11VertexShader>, std::vector<std::byte>, std::vector<Shader_input_element>>>
+      _variations;
+};
+
+class Pixel_shader_entrypoint {
+public:
+   Pixel_shader_entrypoint() = default;
+   explicit Pixel_shader_entrypoint(const Pixel_shader_entrypoint&) = default;
+   Pixel_shader_entrypoint(Pixel_shader_entrypoint&&) = default;
+   Pixel_shader_entrypoint& operator=(Pixel_shader_entrypoint&&) = default;
+
+   Pixel_shader_entrypoint& operator=(const Pixel_shader_entrypoint&) = delete;
+
+   auto get(const std::uint16_t static_flags = 0,
+            const Pixel_shader_flags game_flags = {}) const noexcept -> ID3D11PixelShader*
    {
       if (const auto it = _variations.find(index(static_flags, game_flags));
           it != _variations.end()) {
@@ -74,33 +101,30 @@ public:
    }
 
    void bind(ID3D11DeviceContext& dc, const std::uint16_t static_flags = 0,
-             const Game_flags game_flags = {}) const noexcept
+             const Pixel_shader_flags game_flags = {}) const noexcept
    {
-      detail::Shader_type_info<type>::bind(dc, get(static_flags, game_flags));
+      dc.PSSetShader(get(static_flags, game_flags), nullptr, 0);
    }
 
-   void insert(Com_ptr<Resource> shader, const std::uint16_t static_flags,
-               const Game_flags game_flags) noexcept
+   void insert(Com_ptr<ID3D11PixelShader> shader, const std::uint16_t static_flags,
+               const Pixel_shader_flags game_flags) noexcept
    {
       _variations[index(static_flags, game_flags)] = std::move(shader);
    }
 
 private:
    static constexpr std::uint32_t index(const std::uint16_t static_flags,
-                                        const Game_flags game_flags) noexcept
+                                        const Pixel_shader_flags game_flags) noexcept
    {
-      static_assert(sizeof(Game_flags) <= sizeof(std::uint32_t));
+      static_assert(sizeof(Pixel_shader_flags) <= sizeof(std::uint32_t));
 
       return static_cast<std::uint32_t>(game_flags) | (static_flags << 16u);
    }
 
-   std::unordered_map<std::uint32_t, Com_ptr<Resource>> _variations;
+   std::unordered_map<std::uint32_t, Com_ptr<ID3D11PixelShader>> _variations;
 };
 
-using Vertex_shader_entrypoint = Shader_entrypoint<detail::Shader_type::vertex>;
-using Pixel_shader_entrypoint = Shader_entrypoint<detail::Shader_type::pixel>;
-
-template<detail::Shader_type type>
+template<typename Entrypoint>
 class Shader_entrypoints {
 public:
    Shader_entrypoints() = default;
@@ -109,8 +133,6 @@ public:
    Shader_entrypoints& operator=(Shader_entrypoints&&) = default;
 
    Shader_entrypoints& operator=(const Shader_entrypoints&) = delete;
-
-   using Entrypoint = Shader_entrypoint<type>;
 
    Entrypoint& at(const std::string& entrypoint) noexcept
    {
@@ -176,8 +198,8 @@ struct Shader_group {
 
    Shader_group& operator=(const Shader_group&) = delete;
 
-   Shader_entrypoints<detail::Shader_type::vertex> vertex;
-   Shader_entrypoints<detail::Shader_type::pixel> pixel;
+   Shader_entrypoints<Vertex_shader_entrypoint> vertex;
+   Shader_entrypoints<Pixel_shader_entrypoint> pixel;
 };
 
 class Shader_group_collection {
@@ -261,15 +283,15 @@ public:
    Shader_state& operator=(const Shader_state&) = delete;
 
    auto at(const Vertex_shader_flags vertex_flags = {}) const noexcept
-      -> Com_ptr<ID3D11VertexShader>
+      -> std::tuple<Com_ptr<ID3D11VertexShader>, std::vector<std::byte>, std::vector<Shader_input_element>>
    {
-      auto vs = at_if(vertex_flags);
+      auto shader = at_if(vertex_flags);
 
-      if (!vs) {
+      if (!shader) {
          log_and_terminate("Attempt to get nonexistent vertex shader variation."sv);
       }
 
-      return Com_ptr{vs};
+      return std::move(*shader);
    }
 
    auto at(const Pixel_shader_flags pixel_flags = {}) const noexcept
@@ -285,16 +307,19 @@ public:
    }
 
    auto at_if(const Vertex_shader_flags vertex_flags = {}) const noexcept
-      -> Com_ptr<ID3D11VertexShader>
+      -> std::optional<std::tuple<Com_ptr<ID3D11VertexShader>, std::vector<std::byte>, std::vector<Shader_input_element>>>
    {
-      ID3D11VertexShader* vs = nullptr;
-
-      if (vs = _vertex_shader_entrypoint.get(_vertex_static_flags, vertex_flags); !vs) {
-         return nullptr;
+      if (auto shader = _vertex_shader_entrypoint.get(_vertex_static_flags, vertex_flags);
+          !shader) {
+         return std::nullopt;
       }
-      vs->AddRef();
+      else {
+         auto [vs, bytecode, layout] = *shader;
 
-      return Com_ptr{vs};
+         vs->AddRef();
+
+         return std::tuple{Com_ptr{vs}, make_vector(bytecode), make_vector(layout)};
+      }
    }
 
    auto at_if(const Pixel_shader_flags pixel_flags = {}) const noexcept
@@ -420,5 +445,4 @@ struct Shader_database {
    Shader_group_collection groups;
    Shader_rendertype_collection rendertypes;
 };
-
 }

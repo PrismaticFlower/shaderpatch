@@ -227,9 +227,6 @@
     <None Include="src\flare.fx">
       <FileType>Document</FileType>
     </None>
-    <None Include="src\fog_utilities.hlsl">
-      <FileType>Document</FileType>
-    </None>
     <None Include="src\bloom_stock.fx">
       <FileType>Document</FileType>
     </None>

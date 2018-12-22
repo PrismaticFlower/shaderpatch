@@ -76,9 +76,6 @@
     <None Include="src\flare.fx">
       <Filter>src</Filter>
     </None>
-    <None Include="src\fog_utilities.hlsl">
-      <Filter>src</Filter>
-    </None>
     <None Include="src\bloom_stock.fx">
       <Filter>src</Filter>
     </None>

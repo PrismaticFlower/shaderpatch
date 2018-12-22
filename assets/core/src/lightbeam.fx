@@ -1,9 +1,7 @@
 #include "constants_list.hlsl"
-#include "fog_utilities.hlsl"
 #include "generic_vertex_input.hlsl"
+#include "pixel_utilities.hlsl"
 #include "vertex_transformer.hlsl"
-
-const static float lightbeam_fog_scale = 0.66;
 
 struct Vs_input
 {
@@ -14,7 +12,7 @@ struct Vs_input
 struct Vs_output
 {
    float4 color : COLOR;
-   float fog_eye_distance : DEPTH;
+   float fog : FOG;
    float4 positionPS : SV_Position;
 };
 
@@ -27,15 +25,16 @@ Vs_output lightbeam_vs(Vertex_input input)
    float3 positionWS = transformer.positionWS();
 
    output.positionPS = transformer.positionPS();
-   output.fog_eye_distance = fog::get_eye_distance(positionWS) * lightbeam_fog_scale;
 
-   Near_scene near_scene = calculate_near_scene_fade(positionWS);
-   near_scene.fade = saturate(near_scene.fade * near_scene.fade);
+   float near_fade;
+   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   near_fade = saturate(near_fade);
+   near_fade *= near_fade;
 
    float4 material_color = get_material_color(input.color());
 
    output.color.rgb = material_color.rgb * lighting_scale;
-   output.color.a = saturate(material_color.a * near_scene.fade);
+   output.color.a = saturate(material_color.a * near_fade);
 
    return output;
 }
@@ -43,14 +42,14 @@ Vs_output lightbeam_vs(Vertex_input input)
 struct Ps_input
 {
    float4 color : COLOR;
-   float fog_eye_distance : DEPTH;
+   float fog : FOG;
 };
 
 float4 lightbeam_ps(Ps_input input) : SV_Target0
 {
    float4 color = input.color;
 
-   color.rgb = fog::apply(color.rgb, input.fog_eye_distance);
+   color.rgb = apply_fog(color.rgb, input.fog);
 
    return color;
 }

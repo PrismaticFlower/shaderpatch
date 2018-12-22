@@ -9,8 +9,7 @@
           "name": "POSITION",
           "index": 0
         },
-        "format": "R32G32B32_FLOAT",
-        "offset": 0
+        "format": "float3"
       }
     ],
 
@@ -20,16 +19,14 @@
           "name": "POSITION",
           "index": 0
         },
-        "format": "R16G16B16A16_SINT",
-        "offset": 0
+        "format": "sint4"
       },
       {
         "semantic": {
           "name": "NORMAL",
           "index": 0
         },
-        "format": "B8G8R8A8_UNORM",
-        "offset": 8
+        "format": "float4"
       }
     ],
 
@@ -39,24 +36,21 @@
           "name": "POSITION",
           "index": 0
         },
-        "format": "R16G16B16A16_SINT",
-        "offset": 0
+        "format": "sint4"
       },
       {
         "semantic": {
           "name": "NORMAL",
           "index": 0
         },
-        "format": "B8G8R8A8_UNORM",
-        "offset": 8
+        "format": "float4"
       },
       {
         "semantic": {
           "name": "BLENDINDICES",
           "index": 0
         },
-        "format": "B8G8R8A8_UNORM",
-        "offset": 12
+        "format": "float4"
       }
     ],
 
@@ -66,32 +60,28 @@
           "name": "POSITION",
           "index": 0
         },
-        "format": "R16G16B16A16_SINT",
-        "offset": 0
+        "format": "sint4"
       },
       {
         "semantic": {
           "name": "BLENDINDICES",
           "index": 0
         },
-        "format": "B8G8R8A8_UNORM",
-        "offset": 8
+        "format": "float4"
       },
       {
         "semantic": {
           "name": "POSITION",
           "index": 1
         },
-        "format": "R16G16B16A16_SINT",
-        "offset": 12
+        "format": "sint4"
       },
       {
         "semantic": {
           "name": "POSITION",
           "index": 2
         },
-        "format": "R16G16B16A16_SINT",
-        "offset": 20
+        "format": "sint4"
       }
     ],
 
@@ -101,48 +91,42 @@
           "name": "POSITION",
           "index": 0
         },
-        "format": "R16G16B16A16_SINT",
-        "offset": 0
+        "format": "sint4"
       },
       {
         "semantic": {
           "name": "BLENDWEIGHT",
           "index": 0
         },
-        "format": "B8G8R8A8_UNORM",
-        "offset": 8
+        "format": "float4"
       },
       {
         "semantic": {
           "name": "BLENDINDICES",
           "index": 0
         },
-        "format": "B8G8R8A8_UNORM",
-        "offset": 12
+        "format": "float4"
       },
       {
         "semantic": {
           "name": "NORMAL",
           "index": 0
         },
-        "format": "B8G8R8A8_UNORM",
-        "offset": 16
+        "format": "float4"
       },
       {
         "semantic": {
           "name": "BLENDWEIGHT",
           "index": 1
         },
-        "format": "B8G8R8A8_UNORM",
-        "offset": 20
+        "format": "float4"
       },
       {
         "semantic": {
           "name": "BLENDINDICES",
           "index": 1
         },
-        "format": "B8G8R8A8_UNORM",
-        "offset": 24
+        "format": "float4"
       }
     ],
 
@@ -152,72 +136,63 @@
           "name": "POSITION",
           "index": 0
         },
-        "format": "R16G16B16A16_SINT",
-        "offset": 0
+        "format": "sint4"
       },
       {
         "semantic": {
           "name": "BLENDWEIGHT",
           "index": 0
         },
-        "format": "B8G8R8A8_UNORM",
-        "offset": 8
+        "format": "float4"
       },
       {
         "semantic": {
           "name": "BLENDINDICES",
           "index": 0
         },
-        "format": "B8G8R8A8_UNORM",
-        "offset": 12
+        "format": "float4"
       },
       {
         "semantic": {
           "name": "POSITION",
           "index": 1
         },
-        "format": "R16G16B16A16_SINT",
-        "offset": 16
+        "format": "sint4"
       },
       {
         "semantic": {
           "name": "BLENDWEIGHT",
           "index": 1
         },
-        "format": "B8G8R8A8_UNORM",
-        "offset": 24
+        "format": "float4"
       },
       {
         "semantic": {
           "name": "BLENDINDICES",
           "index": 1
         },
-        "format": "B8G8R8A8_UNORM",
-        "offset": 28
+        "format": "float4"
       },
       {
         "semantic": {
           "name": "POSITION",
           "index": 2
         },
-        "format": "R16G16B16A16_SINT",
-        "offset": 36
+        "format": "sint4"
       },
       {
         "semantic": {
           "name": "BLENDWEIGHT",
           "index": 2
         },
-        "format": "B8G8R8A8_UNORM",
-        "offset": 40
+        "format": "float4"
       },
       {
         "semantic": {
           "name": "BLENDINDICES",
           "index": 2
         },
-        "format": "B8G8R8A8_UNORM",
-        "offset": 44
+        "format": "float4"
       }
     ]
   },
@@ -230,7 +205,7 @@
         "input_layout": "preextended_input",
 
         "generic_input": {
-          "dynamic_compression": false,
+          "always_compressed": false,
           "position": false,
           "skinned": false,
           "normal": false,
@@ -248,7 +223,7 @@
         "input_layout": "extend_input",
 
         "generic_input": {
-          "dynamic_compression": false,
+          "always_compressed": true,
           "position": false,
           "skinned": false,
           "normal": false,
@@ -266,7 +241,7 @@
         "input_layout": "extend_hardskin_input",
 
         "generic_input": {
-          "dynamic_compression": false,
+          "always_compressed": true,
           "position": false,
           "skinned": false,
           "normal": false,
@@ -284,7 +259,7 @@
         "input_layout": "extend_hardskin_gen_normal_input",
 
         "generic_input": {
-          "dynamic_compression": false,
+          "always_compressed": true,
           "position": false,
           "skinned": false,
           "normal": false,
@@ -302,7 +277,7 @@
         "input_layout": "extend_softskin_input",
 
         "generic_input": {
-          "dynamic_compression": false,
+          "always_compressed": true,
           "position": false,
           "skinned": false,
           "normal": false,
@@ -320,7 +295,7 @@
         "input_layout": "extend_softskin_gen_normal_input",
 
         "generic_input": {
-          "dynamic_compression": false,
+          "always_compressed": true,
           "position": false,
           "skinned": false,
           "normal": false,
@@ -338,7 +313,7 @@
         "input_layout": "extend_input",
 
         "generic_input": {
-          "dynamic_compression": false,
+          "always_compressed": true,
           "position": false,
           "skinned": false,
           "normal": false,
@@ -356,7 +331,7 @@
         "input_layout": "extend_hardskin_input",
 
         "generic_input": {
-          "dynamic_compression": false,
+          "always_compressed": true,
           "position": false,
           "skinned": false,
           "normal": false,
@@ -374,7 +349,7 @@
         "input_layout": "extend_hardskin_gen_normal_input",
 
         "generic_input": {
-          "dynamic_compression": false,
+          "always_compressed": true,
           "position": false,
           "skinned": false,
           "normal": false,
@@ -392,7 +367,7 @@
         "input_layout": "extend_softskin_input",
 
         "generic_input": {
-          "dynamic_compression": false,
+          "always_compressed": true,
           "position": false,
           "skinned": false,
           "normal": false,
@@ -410,7 +385,7 @@
         "input_layout": "extend_softskin_gen_normal_input",
 
         "generic_input": {
-          "dynamic_compression": false,
+          "always_compressed": true,
           "position": false,
           "skinned": false,
           "normal": false,

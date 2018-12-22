@@ -9,6 +9,7 @@ namespace sp::core {
 
 constexpr auto fixed_width = 800;
 constexpr auto fixed_height = 600;
+constexpr auto projtex_cube_slot = 127;
 
 namespace {
 
@@ -46,8 +47,7 @@ auto create_device(IDXGIAdapter2&) noexcept -> Com_ptr<ID3D11Device1>
          infoqueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
          infoqueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
 
-         std::array hide{D3D11_MESSAGE_ID_DEVICE_DRAW_VIEW_DIMENSION_MISMATCH,
-                         D3D11_MESSAGE_ID_DEVICE_DRAW_SAMPLER_NOT_SET};
+         std::array hide{D3D11_MESSAGE_ID_DEVICE_DRAW_VIEW_DIMENSION_MISMATCH};
 
          D3D11_INFO_QUEUE_FILTER filter{};
          filter.DenyList.NumIDs = hide.size();
@@ -103,6 +103,11 @@ Shader_patch::Shader_patch(IDXGIAdapter2& adapter, const HWND window) noexcept
 {
    bind_static_resources();
    set_viewport(0, 0, fixed_width, fixed_height);
+
+   _cb_scene.vertex_color_gamma = 1.0f;
+   _cb_draw_ps.rt_multiply_blending_state = 0.0f;
+   _cb_draw_ps.stock_tonemap_state = 0.0f;
+   _cb_draw_ps.cube_projtex = false;
 }
 
 void Shader_patch::reset() noexcept
@@ -461,30 +466,43 @@ auto Shader_patch::create_game_texture_cube(const DirectX::ScratchImage& image) 
    return Game_texture{std::move(srv), std::move(srgb_srv)};
 }
 
-auto Shader_patch::create_game_input_layout(
-   const gsl::span<const D3D11_INPUT_ELEMENT_DESC> layout) noexcept -> Game_input_layout
+auto Shader_patch::create_game_input_layout(const gsl::span<const Input_layout_element> layout,
+                                            const bool compressed) noexcept -> Game_input_layout
 {
-   return _input_layout_factory.game_create(layout);
+   return {_input_layout_descriptions.try_add(layout), compressed};
 }
 
-auto Shader_patch::create_game_shader(const Shader_metadata metadata) noexcept -> Game_shader
+auto Shader_patch::create_game_shader(const Shader_metadata metadata) noexcept
+   -> std::shared_ptr<Game_shader>
 {
-   Game_shader game_shader;
-
    auto& state =
       _shader_database.rendertypes.at(metadata.rendertype_name).at(metadata.shader_name);
 
-   game_shader.vs = state.at_if(metadata.vertex_shader_flags);
-   game_shader.vs_compressed =
-      state.at_if(metadata.vertex_shader_flags | Vertex_shader_flags::compressed);
-   game_shader.ps = state.at(metadata.pixel_shader_flags);
-   game_shader.rendertype = metadata.rendertype;
-   game_shader.shader_name = metadata.shader_name;
-   game_shader.srgb_state = metadata.srgb_state;
+   auto vertex_shader = state.at_if(metadata.vertex_shader_flags);
 
-   if (!game_shader.vs && !game_shader.vs_compressed)
+   auto [vs, vs_bytecode, vs_inputlayout] =
+      vertex_shader.value_or(decltype(vertex_shader)::value_type{});
+
+   auto vertex_shader_compressed =
+      state.at_if(metadata.vertex_shader_flags | Vertex_shader_flags::compressed);
+
+   auto [vs_compressed, vs_bytecode_compressed, vs_inputlayout_compressed] =
+      vertex_shader_compressed.value_or(decltype(vertex_shader)::value_type{});
+
+   auto game_shader = std::make_shared<Game_shader>(
+      Game_shader{std::move(vs),
+                  std::move(vs_compressed),
+                  state.at(metadata.pixel_shader_flags),
+                  metadata.rendertype,
+                  metadata.srgb_state,
+                  metadata.shader_name,
+                  {std::move(vs_inputlayout), std::move(vs_bytecode)},
+                  {std::move(vs_inputlayout_compressed),
+                   std::move(vs_bytecode_compressed)}});
+
+   if (!game_shader->vs && !game_shader->vs_compressed)
       log_and_terminate("Game_shader has no vertex shader!");
-   if (!game_shader.ps) log_and_terminate("Game_shader has no pixel shader!");
+   if (!game_shader->ps) log_and_terminate("Game_shader has no pixel shader!");
 
    return game_shader;
 }
@@ -594,6 +612,21 @@ void Shader_patch::clear_depthstencil(const float depth, const UINT8 stencil,
                                           clear_flags, depth, stencil);
 }
 
+void Shader_patch::reset_depthstencil(const Game_depthstencil depthstencil) noexcept
+{
+   constexpr auto flags = D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL;
+
+   if (depthstencil == Game_depthstencil::nearscene)
+      _device_context->ClearDepthStencilView(_nearscene_depthstencil.dsv.get(),
+                                             flags, 0.0f, 0x00);
+   else if (depthstencil == Game_depthstencil::farscene)
+      _device_context->ClearDepthStencilView(_farscene_depthstencil.dsv.get(),
+                                             flags, 0.0f, 0x00);
+   else if (depthstencil == Game_depthstencil::reflectionscene)
+      _device_context->ClearDepthStencilView(_reflectionscene_depthstencil.dsv.get(),
+                                             flags, 0.0f, 0x00);
+}
+
 void Shader_patch::set_index_buffer(ID3D11Buffer& buffer, const UINT offset) noexcept
 {
    _device_context->IASetIndexBuffer(&buffer, DXGI_FORMAT_R16_UINT, offset);
@@ -607,20 +640,10 @@ void Shader_patch::set_vertex_buffer(ID3D11Buffer& buffer, const UINT offset,
    _device_context->IASetVertexBuffers(0, 1, &ptr_buffer, &stride, &offset);
 }
 
-void Shader_patch::set_input_layout(const Game_input_layout& input_layout,
-                                    const gsl::span<const D3D11_INPUT_ELEMENT_DESC> layout_desc) noexcept
+void Shader_patch::set_input_layout(const Game_input_layout& input_layout) noexcept
 {
-   _device_context->IASetInputLayout(input_layout.layout.get());
-
-   _input_layout_desc = layout_desc;
-
-   if (std::exchange(_ia_input_compressed, input_layout.compressed) !=
-       input_layout.compressed) {
-      _device_context->VSSetShader(_ia_input_compressed
-                                      ? _game_shader.vs_compressed.get()
-                                      : _game_shader.vs.get(),
-                                   nullptr, 0);
-   }
+   _game_input_layout = input_layout;
+   _ia_vs_dirty = true;
 }
 
 void Shader_patch::set_primitive_topology(const D3D11_PRIMITIVE_TOPOLOGY topology) noexcept
@@ -628,15 +651,12 @@ void Shader_patch::set_primitive_topology(const D3D11_PRIMITIVE_TOPOLOGY topolog
    _device_context->IASetPrimitiveTopology(topology);
 }
 
-void Shader_patch::set_game_shader(const Game_shader& shader) noexcept
+void Shader_patch::set_game_shader(std::shared_ptr<Game_shader> shader) noexcept
 {
    _game_shader = shader;
+   _ia_vs_dirty = true;
 
-   _device_context->VSSetShader(_ia_input_compressed
-                                   ? _game_shader.vs_compressed.get()
-                                   : _game_shader.vs.get(),
-                                nullptr, 0);
-   _device_context->PSSetShader(_game_shader.ps.get(), nullptr, 0);
+   _device_context->PSSetShader(_game_shader->ps.get(), nullptr, 0);
 }
 
 void Shader_patch::set_rendertarget(const Game_rendertarget_id rendertarget) noexcept
@@ -713,9 +733,35 @@ void Shader_patch::set_texture(const UINT slot,
    _device_context->OMSetRenderTargets(0, nullptr, nullptr);
 }
 
-void Shader_patch::set_projtex_mode(const Projtex_mode) noexcept
+void Shader_patch::set_projtex_mode(const Projtex_mode mode) noexcept
 {
-   // TODO: Make stuff happen!
+   if (mode == Projtex_mode::clamp) {
+      auto* const sampler = _sampler_states.linear_clamp_sampler.get();
+      _device_context->PSSetSamplers(3, 1, &sampler);
+   }
+   else if (mode == Projtex_mode::wrap) {
+      auto* const sampler = _sampler_states.linear_wrap_sampler.get();
+      _device_context->PSSetSamplers(3, 1, &sampler);
+   }
+}
+
+void Shader_patch::set_projtex_type(const Projtex_type type) noexcept
+{
+   if (type == Projtex_type::tex2d) {
+      _cb_draw_ps.cube_projtex = false;
+   }
+   else if (type == Projtex_type::texcube) {
+      _cb_draw_ps.cube_projtex = true;
+   }
+
+   _cb_draw_ps_dirty = true;
+}
+
+void Shader_patch::set_projtex_cube(const Game_texture& texture) noexcept
+{
+   auto* const srv = texture.srv.get();
+
+   _device_context->PSSetShaderResources(projtex_cube_slot, 1, &srv);
 }
 
 void Shader_patch::set_constants(const cb::Scene_tag, const UINT offset,
@@ -726,6 +772,11 @@ void Shader_patch::set_constants(const cb::Scene_tag, const UINT offset,
    std::memcpy(bit_cast<std::byte*>(&_cb_scene) +
                   (offset * sizeof(std::array<float, 4>)),
                constants.data(), constants.size_bytes());
+
+   if (offset < (offsetof(cb::Scene, near_scene_fade) / sizeof(glm::vec4))) {
+      _cb_draw_ps_dirty = true;
+      _cb_draw_ps.ps_lighting_scale = _cb_scene.near_scene_fade.z;
+   }
 }
 
 void Shader_patch::set_constants(const cb::Draw_tag, const UINT offset,
@@ -817,18 +868,57 @@ auto Shader_patch::get_backbuffer_views() noexcept -> Game_rendertarget
 
 void Shader_patch::bind_static_resources() noexcept
 {
-   _device_context->VSSetConstantBuffers(
-      0, 2, std::array{_cb_scene_buffer.get(), _cb_draw_buffer.get()}.data());
+   auto* const empty_vertex_buffer = _empty_vertex_buffer.get();
+   const UINT empty_vertex_stride = 64;
+   const UINT empty_vertex_offset = 0;
+   _device_context->IASetVertexBuffers(1, Shader_input_layouts::throwaway_input_slot,
+                                       &empty_vertex_buffer, &empty_vertex_stride,
+                                       &empty_vertex_offset);
+
+   const auto vs_constant_buffers =
+      std::array{_cb_scene_buffer.get(), _cb_draw_buffer.get()};
+
+   _device_context->VSSetConstantBuffers(0, vs_constant_buffers.size(),
+                                         vs_constant_buffers.data());
 
    auto* const cb_skin_buffer = _cb_skin_buffer_srv.get();
    _device_context->VSSetShaderResources(0, 1, &cb_skin_buffer);
 
-   auto* const cb_draw_ps_buffer = _cb_draw_ps_buffer.get();
-   _device_context->PSSetConstantBuffers(0, 1, &cb_draw_ps_buffer);
+   const auto ps_constant_buffers =
+      std::array{_cb_draw_ps_buffer.get(), _cb_draw_buffer.get()};
+
+   _device_context->PSSetConstantBuffers(0, ps_constant_buffers.size(),
+                                         ps_constant_buffers.data());
+
+   const auto ps_samplers = std::array{_sampler_states.aniso_wrap_sampler.get(),
+                                       _sampler_states.linear_clamp_sampler.get(),
+                                       _sampler_states.linear_wrap_sampler.get(),
+                                       _sampler_states.linear_clamp_sampler.get()};
+
+   _device_context->PSSetSamplers(0, ps_samplers.size(), ps_samplers.data());
 }
 
 void Shader_patch::update_dirty_state() noexcept
 {
+   if (std::exchange(_ia_vs_dirty, false)) {
+      if (_game_input_layout.compressed) {
+         auto& input_layout =
+            _game_shader->input_layouts_compressed.get(*_device, _input_layout_descriptions,
+                                                       _game_input_layout.layout_index);
+
+         _device_context->IASetInputLayout(&input_layout);
+         _device_context->VSSetShader(_game_shader->vs_compressed.get(), nullptr, 0);
+      }
+      else {
+         auto& input_layout =
+            _game_shader->input_layouts.get(*_device, _input_layout_descriptions,
+                                            _game_input_layout.layout_index);
+
+         _device_context->IASetInputLayout(&input_layout);
+         _device_context->VSSetShader(_game_shader->vs.get(), nullptr, 0);
+      }
+   }
+
    if (std::exchange(_ps_textures_dirty, false)) {
       _device_context->PSSetShaderResources(0, 4,
                                             std::array{_game_textures[0].srv.get(),
@@ -839,13 +929,18 @@ void Shader_patch::update_dirty_state() noexcept
    }
 
    if (std::exchange(_om_targets_dirty, false)) {
-      const auto& rtv =
-         _game_rendertargets[static_cast<int>(_current_game_rendertarget)].rtv.get();
+      const auto& rt =
+         _game_rendertargets[static_cast<int>(_current_game_rendertarget)];
+      const auto& rtv = rt.rtv.get();
 
       _device_context->OMSetRenderTargets(1, &rtv,
                                           _current_depthstencil
                                              ? _current_depthstencil->dsv.get()
                                              : nullptr);
+
+      _cb_draw_ps_dirty = true;
+      _cb_draw_ps.rt_resolution = {rt.width, rt.height, 1.0f / rt.width,
+                                   1.0f / rt.height};
    }
 
    if (std::exchange(_cb_scene_dirty, false)) {

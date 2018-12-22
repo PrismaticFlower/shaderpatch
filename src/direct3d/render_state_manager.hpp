@@ -44,6 +44,7 @@ private:
       unsigned int dest_blend : 4;
       unsigned int blendop : 2;
       unsigned int writemask : 4;
+      unsigned int alpha_blend_enable : 1;
 
       Blend_state() noexcept
          : src_blend{D3DBLEND_ONE}, dest_blend{D3DBLEND_ZERO}, blendop{D3DBLENDOP_ADD}, writemask{0b1111u}

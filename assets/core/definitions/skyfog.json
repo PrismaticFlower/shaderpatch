@@ -9,16 +9,14 @@
           "name": "POSITION",
           "index": 0
         },
-        "format": "R32G32B32_FLOAT",
-        "offset": 0
+        "format": "float3"
       },
       {
         "semantic": {
           "name": "TEXCOORD",
           "index": 0
         },
-        "format": "R32G32_FLOAT",
-        "offset": 12
+        "format": "float2"
       }
     ]
   },

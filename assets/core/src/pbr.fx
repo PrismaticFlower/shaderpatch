@@ -1,7 +1,6 @@
 
 #include "constants_list.hlsl"
 #include "ext_constants_list.hlsl"
-#include "fog_utilities.hlsl"
 #include "generic_vertex_input.hlsl"
 #include "vertex_utilities.hlsl"
 #include "vertex_transformer.hlsl"
@@ -46,8 +45,7 @@ struct Vs_output
    float4 shadow_texcoords : TEXCOORD1;
 
    float fade : FADE;
-
-   float fog_eye_distance : DEPTH;
+   float fog : FOG;
 
    float4 positionPS : SV_Position;
 };
@@ -63,12 +61,13 @@ Vs_output main_vs(Vertex_input input)
    output.positionPS = transformer.positionPS();
    output.positionWS = positionWS;
    output.normalWS = transformer.normalWS();
-   output.fog_eye_distance = fog::get_eye_distance(positionWS);
 
    output.texcoords = transformer.texcoords(x_texcoords_transform, y_texcoords_transform);
-
    output.shadow_texcoords = transform_shadowmap_coords(positionWS);
-   output.fade = saturate(calculate_near_scene_fade(positionWS).fade);
+
+   float near_fade;
+   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   output.fade = saturate(near_fade);
 
    return output;
 }
@@ -81,9 +80,9 @@ struct Ps_input
    float4 shadow_texcoords : TEXCOORD1;
 
    float fade : FADE;
+   float fog : FOG;
 
-   float fog_eye_distance : DEPTH;
-
+   float4 positionSS : SV_Position;
    float vface : VFACE;
 };
 
@@ -124,7 +123,7 @@ float4 main_ps(Ps_input input) : SV_Target0
          emissive_map.Sample(aniso_wrap_sampler, input.texcoords).rgb * exp2(emissive_power);
    }
 
-   color = fog::apply(color, input.fog_eye_distance);
+   color = apply_fog(color, input.fog);
 
    float alpha;
 

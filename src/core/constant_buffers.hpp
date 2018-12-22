@@ -76,12 +76,10 @@ struct alignas(16) Draw_ps {
    glm::vec3 fog_color;
    float stock_tonemap_state;
    float rt_multiply_blending_state;
-   std::int32_t fog_enabled;
    std::int32_t cube_projtex;
+   std::int32_t fog_enabled;
    std::int32_t _buffer_padding2;
 };
-
-constexpr auto i = sizeof(Draw_ps);
 
 static_assert(sizeof(Draw_ps) == 144);
 

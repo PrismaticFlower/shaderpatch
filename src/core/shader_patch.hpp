@@ -8,7 +8,9 @@
 #include "game_rendertarget.hpp"
 #include "game_shader.hpp"
 #include "game_texture.hpp"
-#include "input_layout_factory.hpp"
+#include "input_layout_descriptions.hpp"
+#include "input_layout_element.hpp"
+#include "sampler_states.hpp"
 #include "shader_database.hpp"
 #include "shader_loader.hpp"
 #include "shader_metadata.hpp"
@@ -30,6 +32,8 @@ enum class Game_rendertarget_id : int {};
 enum class Game_depthstencil { nearscene, farscene, reflectionscene, none };
 
 enum class Projtex_mode { clamp, wrap };
+
+enum class Projtex_type { tex2d, texcube };
 
 enum class Query_result { success, notready, error };
 
@@ -74,10 +78,11 @@ public:
    auto create_game_texture_cube(const DirectX::ScratchImage& image) noexcept
       -> Game_texture;
 
-   auto create_game_input_layout(const gsl::span<const D3D11_INPUT_ELEMENT_DESC> layout) noexcept
-      -> Game_input_layout;
+   auto create_game_input_layout(const gsl::span<const Input_layout_element> layout,
+                                 const bool compressed) noexcept -> Game_input_layout;
 
-   auto create_game_shader(const Shader_metadata metadata) noexcept -> Game_shader;
+   auto create_game_shader(const Shader_metadata metadata) noexcept
+      -> std::shared_ptr<Game_shader>;
 
    auto create_ia_buffer(const UINT size, const bool vertex_buffer,
                          const bool index_buffer, const bool dynamic) noexcept
@@ -104,17 +109,18 @@ public:
    void clear_depthstencil(const float z, const UINT8 stencil,
                            const bool clear_depth, const bool clear_stencil) noexcept;
 
+   void reset_depthstencil(const Game_depthstencil depthstencil) noexcept;
+
    void set_index_buffer(ID3D11Buffer& buffer, const UINT offset) noexcept;
 
    void set_vertex_buffer(ID3D11Buffer& buffer, const UINT offset,
                           const UINT stride) noexcept;
 
-   void set_input_layout(const Game_input_layout& input_layout,
-                         const gsl::span<const D3D11_INPUT_ELEMENT_DESC> layout_desc) noexcept;
+   void set_input_layout(const Game_input_layout& input_layout) noexcept;
 
    void set_primitive_topology(const D3D11_PRIMITIVE_TOPOLOGY topology) noexcept;
 
-   void set_game_shader(const Game_shader& shader) noexcept;
+   void set_game_shader(std::shared_ptr<Game_shader> shader) noexcept;
 
    void set_rendertarget(const Game_rendertarget_id rendertarget) noexcept;
 
@@ -137,6 +143,10 @@ public:
    void set_texture(const UINT slot, const Game_rendertarget_id rendertarget) noexcept;
 
    void set_projtex_mode(const Projtex_mode mode) noexcept;
+
+   void set_projtex_type(const Projtex_type type) noexcept;
+
+   void set_projtex_cube(const Game_texture& texture) noexcept;
 
    void set_constants(const cb::Scene_tag, const UINT offset,
                       const gsl::span<const std::array<float, 4>> constants) noexcept;
@@ -181,9 +191,9 @@ private:
    }();
    const Com_ptr<IDXGISwapChain1> _swapchain;
 
-   Input_layout_factory _input_layout_factory{_device};
+   Input_layout_descriptions _input_layout_descriptions;
    const Shader_database _shader_database =
-      load_shader_lvl(L"data/shaderpatch/shaders.lvl", *_device, _input_layout_factory);
+      load_shader_lvl(L"data/shaderpatch/shaders.lvl", *_device);
 
    std::vector<Game_rendertarget> _game_rendertargets = {get_backbuffer_views()};
    Game_rendertarget_id _current_game_rendertarget = _game_backbuffer_index;
@@ -193,17 +203,18 @@ private:
    Depthstencil _reflectionscene_depthstencil{*_device, 512, 256};
    Depthstencil* _current_depthstencil = &_nearscene_depthstencil;
 
-   Game_shader _game_shader{};
+   Game_input_layout _game_input_layout{};
+   std::shared_ptr<Game_shader> _game_shader{};
 
    std::array<Game_texture, 4> _game_textures;
 
+   bool _ia_vs_dirty = true;
    bool _om_targets_dirty = true;
    bool _ps_textures_dirty = true;
    bool _cb_scene_dirty = true;
    bool _cb_draw_dirty = true;
    bool _cb_skin_dirty = true;
    bool _cb_draw_ps_dirty = true;
-   bool _ia_input_compressed = false;
 
    cb::Scene _cb_scene{};
    cb::Draw _cb_draw{};
@@ -231,8 +242,22 @@ private:
 
       return srv;
    }();
+   const Com_ptr<ID3D11Buffer> _empty_vertex_buffer = [this] {
+      Com_ptr<ID3D11Buffer> buffer;
 
-   gsl::span<const D3D11_INPUT_ELEMENT_DESC> _input_layout_desc;
+      const std::array<glm::uvec4, 32> data{};
+
+      const auto desc = CD3D11_BUFFER_DESC{data.size(), D3D11_BIND_VERTEX_BUFFER,
+                                           D3D11_USAGE_IMMUTABLE, 0};
+
+      const auto init_data = D3D11_SUBRESOURCE_DATA{data.data(), data.size(), 0};
+
+      _device->CreateBuffer(&desc, &init_data, buffer.clear_and_assign());
+
+      return buffer;
+   }();
+
+   const Sampler_states _sampler_states{*_device};
 };
 
 }

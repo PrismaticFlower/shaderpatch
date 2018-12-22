@@ -1,6 +1,5 @@
 
 #include "constants_list.hlsl"
-#include "fog_utilities.hlsl"
 #include "generic_vertex_input.hlsl"
 #include "vertex_utilities.hlsl"
 #include "vertex_transformer.hlsl"
@@ -36,10 +35,8 @@ struct Vs_perpixel_output
 {
    float3 positionWS : POSITIONWS;
    float3 normalWS : NORMALWS;
-   float2 texcoords : TEXCOORD;
    float3 static_lighting : STATICLIGHT;
-
-   float1 fog_eye_distance : DEPTH;
+   float1 fog : FOG;
 
    float4 positionPS : SV_Position;
 };
@@ -55,12 +52,10 @@ Vs_perpixel_output perpixel_vs(Vertex_input input)
    output.positionPS = transformer.positionPS();
    output.positionWS = positionWS;
    output.normalWS = transformer.normalWS();
-   output.fog_eye_distance = fog::get_eye_distance(positionWS);
-
-   output.texcoords = transformer.texcoords(x_texcoords_transform,
-                                            y_texcoords_transform);
-
    output.static_lighting = get_static_diffuse_color(input.color());
+
+   float near_fade;
+   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
 
    return output;
 }
@@ -70,10 +65,9 @@ struct Vs_normalmapped_output
    float3 positionWS : POSITIONWS;
    float2 texcoords : TEXCOORD;
    float3 static_lighting : STATICLIGHT;
+   float1 fog : FOG;
 
    float3x3 TBN : TBN;
-
-   float1 fog_eye_distance : DEPTH;
 
    float4 positionPS : SV_Position;
 };
@@ -88,7 +82,6 @@ Vs_normalmapped_output normalmapped_vs(Vertex_input input)
 
    output.positionPS = transformer.positionPS();
    output.positionWS = positionWS;
-   output.fog_eye_distance = fog::get_eye_distance(positionWS);
 
    if (generate_texcoords) {
       output.texcoords.x = dot(float4(positionWS, 1.0), x_texcoords_transform.xzyw);
@@ -117,6 +110,9 @@ Vs_normalmapped_output normalmapped_vs(Vertex_input input)
 
    output.static_lighting = get_static_diffuse_color(input.color());
 
+   float near_fade;
+   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+
    return output;
 }
 
@@ -136,11 +132,9 @@ struct Vs_perpixel_spotlight_output
 {
    float3 positionWS : POSITIONWS;
    float3 normalWS : NORMALWS;
-   float2 texcoords : TEXCOORD0;
-   float4 projection_coords : TEXCOORD1;
+   float4 projection_coords : TEXCOORD;
    float3 static_lighting : STATICLIGHT;
-
-   float1 fog_eye_distance : DEPTH;
+   float1 fog : FOG;
 
    float4 positionPS : SV_Position;
 };
@@ -151,18 +145,16 @@ Vs_perpixel_spotlight_output perpixel_spotlight_vs(Vertex_input input)
 
    Transformer transformer = create_transformer(input);
 
-   float3 positionWS = transformer.positionWS();
+   const float3 positionWS = transformer.positionWS();
 
    output.positionPS = transformer.positionPS();
    output.positionWS = positionWS;
    output.normalWS = transformer.normalWS();
-   output.fog_eye_distance = fog::get_eye_distance(positionWS);
-
-   output.texcoords = transformer.texcoords(x_texcoords_transform,
-                                            y_texcoords_transform);
-
    output.projection_coords = transform_spotlight_projection(positionWS);
    output.static_lighting = get_static_diffuse_color(input.color());
+
+   float near_fade;
+   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
 
    return output;
 }
@@ -173,10 +165,9 @@ struct Vs_normalmapped_spotlight_output
    float2 texcoords : TEXCOORD0;
    float4 projection_coords : TEXCOORD1;
    float3 static_lighting : STATICLIGHT;
+   float1 fog : FOG;
 
    float3x3 TBN : TBN;
-
-   float1 fog_eye_distance : DEPTH;
 
    float4 positionPS : SV_Position;
 };
@@ -191,7 +182,6 @@ Vs_normalmapped_spotlight_output normalmapped_spotlight_vs(Vertex_input input)
 
    output.positionPS = transformer.positionPS();
    output.positionWS = positionWS;
-   output.fog_eye_distance = fog::get_eye_distance(positionWS);
 
    if (generate_texcoords) {
       output.texcoords.x = dot(float4(positionWS, 1.0), x_texcoords_transform.xzyw);
@@ -220,6 +210,9 @@ Vs_normalmapped_spotlight_output normalmapped_spotlight_vs(Vertex_input input)
    output.TBN = transpose(TBN);
 
    output.static_lighting = get_static_diffuse_color(input.color());
+
+   float near_fade;
+   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
 
    return output;
 }
@@ -256,10 +249,9 @@ struct Ps_normalmapped_input
    float3 positionWS : POSITIONWS;
    float2 texcoords : TEXCOORD;
    float3 static_lighting : STATICLIGHT;
+   float1 fog : FOG;
 
    float3x3 TBN : TBN;
-
-   float1 fog_eye_distance : DEPTH;
 };
 
 float4 normalmapped_ps(Ps_normalmapped_input input,
@@ -280,7 +272,7 @@ float4 normalmapped_ps(Ps_normalmapped_input input,
                                light_inv_radiuses_sq[i]);
    }
 
-   color = fog::apply(color, input.fog_eye_distance);
+   color = apply_fog(color, input.fog);
 
    return float4(color, 1.0);
 }
@@ -289,10 +281,8 @@ struct Ps_perpixel_input
 {
    float3 positionWS : POSITIONWS;
    float3 normalWS : NORMALWS;
-   float2 texcoords : TEXCOORD;
    float3 static_lighting : STATICLIGHT;
-
-   float1 fog_eye_distance : DEPTH;
+   float1 fog : FOG;
 };
 
 float4 perpixel_ps(Ps_perpixel_input input) : SV_Target0
@@ -309,7 +299,7 @@ float4 perpixel_ps(Ps_perpixel_input input) : SV_Target0
                                light_inv_radiuses_sq[i]);
    }
 
-   color = fog::apply(color, input.fog_eye_distance);
+   color = apply_fog(color, input.fog);
 
    return float4(color, 1.0);
 }
@@ -335,11 +325,9 @@ struct Ps_perpixel_spotlight_input
 {
    float3 positionWS : POSITIONWS;
    float3 normalWS : NORMALWS;
-   float2 texcoords : TEXCOORD0;
-   float4 projection_coords : TEXCOORD1;
+   float4 projection_coords : TEXCOORD;
    float3 static_lighting : STATICLIGHT;
-
-   float1 fog_eye_distance : DEPTH;
+   float1 fog : FOG;
 };
 
 float4 perpixel_spotlight_ps(Ps_perpixel_spotlight_input input,
@@ -358,7 +346,7 @@ float4 perpixel_spotlight_ps(Ps_perpixel_spotlight_input input,
                                 spotlight_directionWS, spotlight_color,
                                 spotlight_inv_radiuses_sq, projection_color);
 
-   color = fog::apply(color, input.fog_eye_distance);
+   color = apply_fog(color, input.fog);
 
    return float4(color, 1.0);
 }
@@ -369,10 +357,9 @@ struct Ps_normalmapped_spotlight_input
    float2 texcoords : TEXCOORD0;
    float4 projection_coords : TEXCOORD1;
    float3 static_lighting : STATICLIGHT;
+   float1 fog : FOG;
 
    float3x3 TBN : TBN;
-
-   float1 fog_eye_distance : DEPTH;
 };
 
 float4 normalmapped_spotlight_ps(Ps_normalmapped_spotlight_input input,
@@ -395,7 +382,7 @@ float4 normalmapped_spotlight_ps(Ps_normalmapped_spotlight_input input,
                                 spotlight_directionWS, spotlight_color,
                                 spotlight_inv_radiuses_sq, projection_color);
 
-   color = fog::apply(color, input.fog_eye_distance);
+   color = apply_fog(color, input.fog);
 
    return float4(color, 1.0);
 }

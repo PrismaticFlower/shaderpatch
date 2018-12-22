@@ -259,7 +259,7 @@
 
       "passes": [
         {
-          "name": "normalmapped 3 lights (generate tangents)",
+          "name": "perpixel 3 lights",
 
           "skinned": true,
           "lighting": false,
@@ -275,7 +275,7 @@
 
       "passes": [
         {
-          "name": "normalmapped 2 lights (generate tangents)",
+          "name": "perpixel 2 lights",
 
           "skinned": true,
           "lighting": false,
@@ -291,7 +291,7 @@
 
       "passes": [
         {
-          "name": "normalmapped 1 lights (generate tangents)",
+          "name": "perpixel 1 lights",
 
           "skinned": true,
           "lighting": false,
@@ -307,7 +307,7 @@
 
       "passes": [
         {
-          "name": "normalmapped 3 lights (generate tangents)",
+          "name": "perpixel 3 lights",
 
           "skinned": true,
           "lighting": false,
@@ -317,7 +317,7 @@
         },
 
         {
-          "name": "normalmapped spotlight (generate tangents)",
+          "name": "perpixel spotlight",
 
           "skinned": true,
           "lighting": false,
@@ -333,7 +333,7 @@
 
       "passes": [
         {
-          "name": "normalmapped 2 lights (generate tangents)",
+          "name": "perpixel 2 lights",
 
           "skinned": true,
           "lighting": false,
@@ -343,7 +343,7 @@
         },
 
         {
-          "name": "normalmapped spotlight (generate tangents)",
+          "name": "perpixel spotlight",
 
           "skinned": true,
           "lighting": false,
@@ -359,7 +359,7 @@
 
       "passes": [
         {
-          "name": "normalmapped 1 lights (generate tangents)",
+          "name": "perpixel 1 lights",
 
           "skinned": true,
           "lighting": false,
@@ -372,7 +372,7 @@
         },
 
         {
-          "name": "normalmapped spotlight (generate tangents)",
+          "name": "perpixel spotlight",
 
           "skinned": true,
           "lighting": false,

@@ -2,6 +2,7 @@
 
 #include "com_ptr.hpp"
 #include "game_rendertypes.hpp"
+#include "shader_input_layouts.hpp"
 
 #include <array>
 
@@ -10,13 +11,16 @@
 namespace sp::core {
 
 struct Game_shader {
-   Com_ptr<ID3D11VertexShader> vs;
-   Com_ptr<ID3D11VertexShader> vs_compressed;
-   Com_ptr<ID3D11PixelShader> ps;
+   const Com_ptr<ID3D11VertexShader> vs;
+   const Com_ptr<ID3D11VertexShader> vs_compressed;
+   const Com_ptr<ID3D11PixelShader> ps;
 
-   Rendertype rendertype;
-   std::array<bool, 4> srgb_state;
-   std::string shader_name;
+   const Rendertype rendertype;
+   const std::array<bool, 4> srgb_state;
+   const std::string shader_name;
+
+   Shader_input_layouts input_layouts;
+   Shader_input_layouts input_layouts_compressed;
 };
 
 }

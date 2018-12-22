@@ -9,8 +9,7 @@
           "name": "POSITION",
           "index": 0
         },
-        "format": "R16G16B16A16_SINT",
-        "offset": 0
+        "format": "sint4"
       }
     ]
   },

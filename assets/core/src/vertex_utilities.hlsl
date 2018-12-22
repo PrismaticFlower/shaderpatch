@@ -6,34 +6,6 @@
 
 #pragma warning(disable : 3571)
 
-struct Near_scene
-{
-   float view_z;
-   float fade;
-};
-
-float4 get_projection_matrix_row(const uint i)
-{
-   if (i == 0) {
-      return float4(projection_matrix[0].x, projection_matrix[1].x,
-         projection_matrix[2].x, projection_matrix[3].x);
-   }
-   else if (i == 1) {
-      return float4(projection_matrix[0].y, projection_matrix[1].y,
-         projection_matrix[2].y, projection_matrix[3].y);
-   }
-   else if (i == 2) {
-      return float4(projection_matrix[0].z, projection_matrix[1].z,
-         projection_matrix[2].z, projection_matrix[3].z);
-   }
-   else if (i == 3) {
-      return float4(projection_matrix[0].w, projection_matrix[1].w,
-         projection_matrix[2].w, projection_matrix[3].w);
-   }
-
-   return float4(0, 0, 0, 0);
-}
-
 float2 transform_texcoords(float2 texcoords, float4 x_transform, 
                            float4 y_transform)
 {
@@ -91,48 +63,29 @@ float4 transform_shadowmap_coords(float3 world_position)
 void generate_terrain_tangents(float3 normal, out float3 tangent, 
                                out float3 bitangent)
 {
-   //Pandemic's note: we rely on the fact that the object is world axis aligned
-   tangent = -normal.x * normal + float3(1.0, 0.0, 0.0);
-   tangent *= rsqrt(tangent.x);
-
-   bitangent = -normal.z * normal + float3(0.0, 0.0, 1.0);
-   bitangent *= rsqrt(bitangent);
+   tangent = normalize(-normal.x * normal + float3(1.0, 0.0, 0.0));
+   bitangent = normalize(-normal.z * normal + float3(0.0, 0.0, 1.0));
 }
 
-
-Near_scene calculate_near_scene_fade(float3 world_position)
+float calculate_near_fade(float depthWS)
 {
-   Near_scene result;
-
-   result.view_z = dot(float4(world_position, 1.0), get_projection_matrix_row(3));
-   result.fade = result.view_z * near_scene_fade.x + near_scene_fade.y;
-
-   return result;
+   return depthWS * near_fade_scale + near_fade_offset;
 }
 
-Near_scene clamp_near_scene_fade(Near_scene near_scene)
+float calculate_fog(float heightWS, float depthWS)
 {
-   near_scene.fade = saturate(near_scene.fade);
+   const float depth_fog = depthWS * depth_fog_scale + depth_fog_offset;
+   const float height_fog = heightWS * height_fog_scale + height_fog_offset;
 
-   return near_scene;
+   return saturate(min(depth_fog, height_fog));
 }
 
-float calculate_fog(Near_scene near_scene, float3 world_position)
+void calculate_near_fade_and_fog(float3 positionWS, out float near_fade, out float fog)
 {
-   float x = near_scene.view_z * fog_info.x + fog_info.y;
-   float y = world_position.y * fog_info.z + fog_info.w;
-
-   return min(x, y);
-}
-
-float calculate_fog(float3 world_position)
-{
-   float view_z = dot(float4(world_position, 1.0), get_projection_matrix_row(3));
-
-   float x = view_z * fog_info.x + fog_info.y;
-   float y = world_position.y * fog_info.z + fog_info.w;
-
-   return min(x, y);
+   const float depthWS = distance(view_positionWS, positionWS);
+   
+   near_fade = calculate_near_fade(depthWS);
+   fog = calculate_fog(positionWS.y, depthWS);
 }
 
 #endif

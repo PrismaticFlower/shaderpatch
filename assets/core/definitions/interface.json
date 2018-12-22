@@ -9,24 +9,21 @@
           "name": "POSITION",
           "index": 0
         },
-        "format": "R32G32B32_FLOAT",
-        "offset": 0
+        "format": "float3"
       },
       {
         "semantic": {
           "name": "TEXCOORD",
           "index": 0
         },
-        "format": "R32G32_FLOAT",
-        "offset": 12
+        "format": "float2"
       },
       {
         "semantic": {
           "name": "TEXCOORD",
           "index": 1
         },
-        "format": "R32G32_FLOAT",
-        "offset": 20
+        "format": "float2"
       }
     ],
 
@@ -36,16 +33,14 @@
           "name": "POSITION",
           "index": 0
         },
-        "format": "R32G32B32_FLOAT",
-        "offset": 0
+        "format": "float3"
       },
       {
         "semantic": {
           "name": "COLOR",
           "index": 0
         },
-        "format": "B8G8R8A8_UNORM",
-        "offset": 12
+        "format": "float4"
       }
     ],
 
@@ -55,8 +50,7 @@
           "name": "POSITION",
           "index": 0
         },
-        "format": "R32G32B32_FLOAT",
-        "offset": 0
+        "format": "float3"
       }
     ],
 
@@ -66,16 +60,14 @@
           "name": "POSITION",
           "index": 0
         },
-        "format": "R32G32B32_FLOAT",
-        "offset": 0
+        "format": "float3"
       },
       {
         "semantic": {
           "name": "TEXCOORD",
           "index": 0
         },
-        "format": "R32G32_FLOAT",
-        "offset": 12
+        "format": "float2"
       }
     ]
   },

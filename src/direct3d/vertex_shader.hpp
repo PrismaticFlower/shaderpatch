@@ -37,7 +37,7 @@ public:
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
 
-   auto game_shader() const noexcept -> const core::Game_shader&
+   auto game_shader() const noexcept -> const std::shared_ptr<core::Game_shader>&
    {
       return _game_shader;
    }
@@ -46,7 +46,7 @@ private:
    Vertex_shader(core::Shader_patch& shader_patch, const Shader_metadata metadata) noexcept;
    ~Vertex_shader() = default;
 
-   const core::Game_shader _game_shader;
+   const std::shared_ptr<core::Game_shader> _game_shader;
 
    ULONG _ref_count = 1;
 };

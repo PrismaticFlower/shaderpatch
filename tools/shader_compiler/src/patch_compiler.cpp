@@ -356,16 +356,13 @@ void Patch_compiler::write_entrypoints(
             {
                auto ialo_writer = vari_writer.emplace_child("IALO"_mn);
 
-               ialo_writer.write((vari.first.first & Vertex_shader_flags::compressed) ==
-                                 Vertex_shader_flags::compressed);
                ialo_writer.write(
                   static_cast<std::uint32_t>(vari.second.input_layout.size()));
 
                for (const auto& elem : vari.second.input_layout) {
                   ialo_writer.write(elem.semantic.name);
                   ialo_writer.write(elem.semantic.index);
-                  ialo_writer.write(elem.format);
-                  ialo_writer.write(elem.offset);
+                  ialo_writer.write(elem.type);
                }
             }
          }

@@ -1,9 +1,9 @@
 
-#include "fog_utilities.hlsl"
 #include "generic_vertex_input.hlsl"
 #include "vertex_utilities.hlsl"
 #include "vertex_transformer.hlsl"
 #include "pixel_sampler_states.hlsl"
+#include "pixel_utilities.hlsl"
 
 const static float4 x_texcoords_transform = custom_constants[0];
 const static float4 y_texcoords_transform = custom_constants[1];
@@ -20,7 +20,7 @@ struct Vs_output
    float3 normalWS : NORMALWS;
    float2 texcoords : TEXCOORD0;
    float4 color : COLOR;
-   float fog_eye_distance : DEPTH;
+   float fog : FOG;
 
    float4 positionPS : SV_Position;
 };
@@ -35,14 +35,14 @@ Vs_output near_vs(Vertex_input input)
 
    output.positionPS = transformer.positionPS();
    output.normalWS = transformer.normalWS();
-   output.fog_eye_distance = fog::get_eye_distance(positionWS);
 
    output.texcoords = transformer.texcoords(x_texcoords_transform, y_texcoords_transform);
 
-   Near_scene near_scene = calculate_near_scene_fade(positionWS);
+   float near_fade;
+   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
 
    output.color.rgb = get_material_color(input.color()).rgb;
-   output.color.a = saturate(near_scene.fade);
+   output.color.a = saturate(near_fade);
 
    return output;
 }
@@ -61,7 +61,7 @@ struct Ps_input
    float3 normalWS : NORMALWS;
    float2 texcoords : TEXCOORD0;
    float4 color : COLOR;
-   float fog_eye_distance : DEPTH;
+   float fog : FOG;
 };
 
 float4 near_ps(Ps_input input) : SV_Target0
@@ -78,6 +78,7 @@ float4 near_ps(Ps_input input) : SV_Target0
    const float foam_blend = foam_color.a * input.color.a;
 
    color = lerp(color, foam_color.rgb, foam_blend);
+   color = apply_fog(color, input.fog);
 
    return float4(color, input.color.a);
 }

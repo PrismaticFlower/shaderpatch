@@ -82,7 +82,7 @@
     <Link>
       <AdditionalDependencies>d3d11.lib;DXGI.lib;Bcrypt.lib;dxguid.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>d3d9.def</ModuleDefinitionFile>
-      <AdditionalLibraryDirectories>submodules/vcpkg/installed/x86-windows-static-md/debug/lib;submodules/vcpkg/installed/x86-windows/debug/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <DelayLoadDLLs>
       </DelayLoadDLLs>
     </Link>
@@ -108,7 +108,7 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <PreprocessorDefinitions>GLM_FORCE_CXX03;NOMINMAX;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalIncludeDirectories>submodules/vcpkg/installed/x86-windows-static-md/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4275;4251;4127;4018</DisableSpecificWarnings>
       <ConformanceMode>true</ConformanceMode>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
@@ -120,7 +120,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>d3d11.lib;DXGI.lib;Bcrypt.lib;dxguid.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>d3d9.def</ModuleDefinitionFile>
-      <AdditionalLibraryDirectories>submodules/vcpkg/installed/x86-windows-static-md/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <DelayLoadDLLs>
       </DelayLoadDLLs>
     </Link>
@@ -136,8 +136,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\core\d3d11_helpers.cpp" />
-    <ClCompile Include="src\core\input_layout_cache.cpp" />
-    <ClCompile Include="src\core\input_layout_factory.cpp" />
+    <ClCompile Include="src\core\input_layout_descriptions.cpp" />
+    <ClCompile Include="src\core\sampler_states.cpp" />
+    <ClCompile Include="src\core\shader_input_layouts.cpp" />
     <ClCompile Include="src\core\shader_loader.cpp" />
     <ClCompile Include="src\core\shader_patch.cpp" />
     <ClCompile Include="src\direct3d\device.cpp" />
@@ -199,9 +200,12 @@
     <ClInclude Include="src\core\game_rendertarget.hpp" />
     <ClInclude Include="src\core\game_shader.hpp" />
     <ClInclude Include="src\core\d3d11_helpers.hpp" />
-    <ClInclude Include="src\core\input_layout_cache.hpp" />
-    <ClInclude Include="src\core\input_layout_factory.hpp" />
+    <ClInclude Include="src\core\input_layout_element.hpp" />
+    <ClInclude Include="src\core\input_layout_descriptions.hpp" />
+    <ClInclude Include="src\core\sampler_states.hpp" />
     <ClInclude Include="src\core\shader_database.hpp" />
+    <ClInclude Include="src\core\shader_input_element.hpp" />
+    <ClInclude Include="src\core\shader_input_layouts.hpp" />
     <ClInclude Include="src\core\shader_loader.hpp" />
     <ClInclude Include="src\core\shader_patch.hpp" />
     <ClInclude Include="src\core\game_texture.hpp" />

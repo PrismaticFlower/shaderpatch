@@ -4,6 +4,7 @@
 #include "memory_mapped_file.hpp"
 #include "throw_if_failed.hpp"
 #include "ucfb_reader.hpp"
+#include "utility.hpp"
 
 #include <string>
 #include <vector>
@@ -16,34 +17,25 @@ using namespace std::literals;
 
 namespace {
 
-void read_input_layout(ucfb::Reader_strict<"IALO"_mn> reader,
-                       const gsl::span<const std::byte> bytecode,
-                       Input_layout_factory& input_layout_factory)
+auto read_input_layout(ucfb::Reader_strict<"IALO"_mn> reader)
+   -> std::vector<Shader_input_element>
 {
-   const auto compressed = reader.read_trivial<bool>();
    const auto elem_count = reader.read_trivial<std::uint32_t>();
 
-   std::vector<D3D11_INPUT_ELEMENT_DESC> layout;
+   std::vector<Shader_input_element> layout;
    layout.resize(elem_count);
 
    for (auto& elem : layout) {
-      elem.SemanticName = reader.read_string().data();
-      elem.SemanticIndex = reader.read_trivial<std::uint32_t>();
-      elem.Format = reader.read_trivial<DXGI_FORMAT>();
-      elem.InputSlot = 0;
-      elem.AlignedByteOffset = reader.read_trivial<std::uint32_t>();
-      elem.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+      elem.semantic_name = reader.read_string().data();
+      elem.semantic_index = reader.read_trivial<std::uint32_t>();
+      elem.input_type = reader.read_trivial<Shader_input_type>();
    }
 
-   Com_ptr<ID3D11InputLayout> input_layout;
-
-   if (!input_layout_factory.try_add(gsl::make_span(layout), bytecode, compressed)) {
-      throw std::runtime_error{"Failed to create input layout for shader."};
-   }
+   return layout;
 }
 
-void read_entrypoints(ucfb::Reader_strict<"VSHD"_mn> reader, ID3D11Device& device,
-                      Shader_group& group, Input_layout_factory& input_layout_cache)
+void read_entrypoints(ucfb::Reader_strict<"VSHD"_mn> reader,
+                      ID3D11Device& device, Shader_group& group)
 {
    const auto count =
       reader.read_child_strict<"SIZE"_mn>().read_trivial<std::uint32_t>();
@@ -66,9 +58,8 @@ void read_entrypoints(ucfb::Reader_strict<"VSHD"_mn> reader, ID3D11Device& devic
          const auto static_flags = vari_reader.read_trivial<std::uint32_t>();
          const auto bytecode_size = vari_reader.read_trivial<std::uint32_t>();
          const auto bytecode = vari_reader.read_array<std::byte>(bytecode_size);
-
-         read_input_layout(vari_reader.read_child_strict<"IALO"_mn>(), bytecode,
-                           input_layout_cache);
+         auto input_layout =
+            read_input_layout(vari_reader.read_child_strict<"IALO"_mn>());
 
          Com_ptr<ID3D11VertexShader> shader;
 
@@ -76,7 +67,8 @@ void read_entrypoints(ucfb::Reader_strict<"VSHD"_mn> reader, ID3D11Device& devic
                                                    bytecode.size(), nullptr,
                                                    shader.clear_and_assign()));
 
-         entrypoint.insert(std::move(shader),
+         entrypoint.insert(std::move(shader), make_vector(bytecode),
+                           std::move(input_layout),
                            gsl::narrow_cast<std::uint16_t>(static_flags), flags);
       }
 
@@ -171,8 +163,7 @@ void read_rendertypes(ucfb::Reader_strict<"RTS_"_mn> reader,
 }
 
 void read_shader_pack(ucfb::Reader_strict<"shpk"_mn> reader,
-                      ID3D11Device& device, Shader_database& database,
-                      Input_layout_factory& input_layout_cache)
+                      ID3D11Device& device, Shader_database& database)
 {
    const auto group_name =
       std::string{reader.read_child_strict<"NAME"_mn>().read_string()};
@@ -184,7 +175,7 @@ void read_shader_pack(ucfb::Reader_strict<"shpk"_mn> reader,
    auto entrypoints_reader = reader.read_child_strict<"EPTS"_mn>();
 
    read_entrypoints(entrypoints_reader.read_child_strict<"VSHD"_mn>(), device,
-                    shader_group, input_layout_cache);
+                    shader_group);
    read_entrypoints(entrypoints_reader.read_child_strict<"PSHD"_mn>(), device,
                     shader_group);
 
@@ -196,8 +187,8 @@ void read_shader_pack(ucfb::Reader_strict<"shpk"_mn> reader,
 
 }
 
-auto load_shader_lvl(const std::filesystem::path lvl_path, ID3D11Device& device,
-                     Input_layout_factory& input_layout_cache) noexcept -> Shader_database
+auto load_shader_lvl(const std::filesystem::path lvl_path, ID3D11Device& device) noexcept
+   -> Shader_database
 {
    try {
       win32::Memeory_mapped_file file{lvl_path};
@@ -205,8 +196,7 @@ auto load_shader_lvl(const std::filesystem::path lvl_path, ID3D11Device& device,
       Shader_database database;
 
       while (reader) {
-         read_shader_pack(reader.read_child_strict<"shpk"_mn>(), device,
-                          database, input_layout_cache);
+         read_shader_pack(reader.read_child_strict<"shpk"_mn>(), device, database);
       }
 
       return database;

@@ -4,7 +4,7 @@
 #include "constants_list.hlsl"
 #include "pixel_sampler_states.hlsl"
 
-TextureCube<float3> cube_projected_texture : register(t4);
+TextureCube<float3> cube_projected_texture : register(t127);
 
 float3 blend_tangent_space_normals(float3 N0, float3 N1)
 {
@@ -55,15 +55,13 @@ float3 perturb_normal(Texture2D<float2> tex, SamplerState samp,
 
 float3 sample_projected_light(Texture2D<float3> projected_texture, float4 texcoords)
 {
-   const float w_rcp = rcp(texcoords.w);
-
     if (cube_projtex) {
-       const float3 proj_texcoords = texcoords.xyz * w_rcp;
+       const float3 proj_texcoords = texcoords.xyz / texcoords.w;
     
        return cube_projected_texture.Sample(projtex_sampler, proj_texcoords);
     }
     else {
-      const float2 proj_texcoords = texcoords.xy * w_rcp;
+      const float2 proj_texcoords = texcoords.xy / texcoords.w;
 
       return projected_texture.Sample(projtex_sampler, proj_texcoords);
     }
@@ -101,12 +99,14 @@ float3 gaussian_sample(Texture2D<float3> tex, SamplerState samp,
    return color;
 }
 
-float3 linear_to_srgb(float3 color) {
-   return (color <= 0.0031308) ? (12.92 * color) : mad(1.055, pow(color, 1.0 / 2.4), -0.055);
-}
-
-float3 srgb_to_linear(float3 color) {
-   return (color <= 0.04045) ? (color / 12.92) : pow(mad(color, 1.0 / 1.055, 0.055 / 1.055), 2.4);
+float3 apply_fog(float3 color, float fog)
+{
+   if (fog_enabled) {
+      return lerp(fog_color, color, fog);
+   }
+   else {
+      return color;
+   }
 }
 
 #endif

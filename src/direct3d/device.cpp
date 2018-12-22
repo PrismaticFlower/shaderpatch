@@ -19,9 +19,11 @@
 
 using namespace std::literals;
 
-auto& trace = sp::d3d9::Debug_trace::get();
-
 namespace sp::d3d9 {
+
+namespace {
+constexpr auto projtex_slot = 2;
+}
 
 Com_ptr<Device> Device::create(IDirect3D9& direct3d9, IDXGIAdapter2& adapter,
                                const HWND window) noexcept
@@ -184,6 +186,8 @@ HRESULT Device::Present(const RECT*, const RECT*, HWND, const RGNDATA*) noexcept
    Debug_trace::func(__FUNCSIG__);
 
    _shader_patch.present();
+   _shader_patch.reset_depthstencil(core::Game_depthstencil::farscene);
+   _shader_patch.reset_depthstencil(core::Game_depthstencil::reflectionscene);
 
    Debug_trace::reset();
 
@@ -482,8 +486,13 @@ HRESULT Device::GetDepthStencilSurface(IDirect3DSurface9** z_stencil_surface) no
 
    if (!z_stencil_surface) return D3DERR_INVALIDCALL;
 
-   *z_stencil_surface =
-      static_cast<IDirect3DSurface9*>(_depthstencil.unmanaged_copy());
+   if (_depthstencil) {
+      *z_stencil_surface =
+         static_cast<IDirect3DSurface9*>(_depthstencil.unmanaged_copy());
+   }
+   else {
+      *z_stencil_surface = nullptr;
+   }
 
    return S_OK;
 }
@@ -498,7 +507,7 @@ HRESULT Device::Clear(DWORD count, const D3DRECT* rects, DWORD flags,
          "Attempt to only partially clear rendertarget/depthstencil.");
    }
 
-   if (flags & (D3DCLEAR_ZBUFFER & D3DCLEAR_STENCIL)) {
+   if (flags & D3DCLEAR_ZBUFFER || flags & D3DCLEAR_STENCIL) {
       _shader_patch.clear_depthstencil(z, static_cast<UINT8>(stencil),
                                        (flags & (D3DCLEAR_ZBUFFER)) != 0,
                                        (flags & (D3DCLEAR_STENCIL)) != 0);
@@ -718,9 +727,22 @@ HRESULT Device::SetTexture(DWORD stage, IDirect3DBaseTexture9* texture) noexcept
    Debug_trace::func(__FUNCSIG__);
 
    if (stage > 4) return D3DERR_INVALIDCALL;
-   if (!texture) return D3DERR_INVALIDCALL;
+   if (!texture) return S_OK;
 
    const auto& resource = *reinterpret_cast<Resource*>(texture);
+
+   if (stage == projtex_slot) {
+      if (texture->GetType() == D3DRTYPE_CUBETEXTURE) {
+         _shader_patch.set_projtex_type(core::Projtex_type::texcube);
+
+         resource.visit([&](const core::Game_texture& texture) {
+            _shader_patch.set_projtex_cube(texture);
+         });
+      }
+      else {
+         _shader_patch.set_projtex_type(core::Projtex_type::tex2d);
+      }
+   }
 
    resource.visit([&](const core::Game_texture&
                          texture) { _shader_patch.set_texture(stage, texture); },
@@ -871,8 +893,6 @@ HRESULT Device::SetSamplerState(DWORD sampler, D3DSAMPLERSTATETYPE state, DWORD 
 
    if (sampler > 4) return D3DERR_INVALIDCALL;
 
-   constexpr auto projtex_slot = 2;
-
    if (sampler == projtex_slot && state == D3DSAMP_ADDRESSU) {
       _shader_patch.set_projtex_mode(value == D3DTADDRESS_WRAP
                                         ? core::Projtex_mode::wrap
@@ -932,8 +952,8 @@ HRESULT Device::SetVertexDeclaration(IDirect3DVertexDeclaration9* decl) noexcept
 
    if (!decl) return D3DERR_INVALIDCALL;
 
-   _shader_patch.set_input_layout(static_cast<Vertex_declaration*>(decl)->input_layout(),
-                                  static_cast<Vertex_declaration*>(decl)->_layout_desc);
+   _shader_patch.set_input_layout(
+      static_cast<Vertex_declaration*>(decl)->input_layout());
 
    return S_OK;
 }

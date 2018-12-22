@@ -22,7 +22,7 @@ void Render_state_manager::set(const D3DRENDERSTATETYPE state, const DWORD value
 
       // Depth/Stencil State
    case D3DRS_ZENABLE:
-      _current_depthstencil_state.depth_enable = value;
+      _current_depthstencil_state.depth_enable = (value == D3DZB_TRUE);
       _depthstencil_state_dirty = true;
       break;
    case D3DRS_ZWRITEENABLE:
@@ -102,6 +102,10 @@ void Render_state_manager::set(const D3DRENDERSTATETYPE state, const DWORD value
       break;
    case D3DRS_BLENDOP:
       _current_blend_state.blendop = static_cast<D3DBLENDOP>(value);
+      _blend_state_dirty = true;
+      break;
+   case D3DRS_ALPHABLENDENABLE:
+      _current_blend_state.alpha_blend_enable = value;
       _blend_state_dirty = true;
       break;
    case D3DRS_COLORWRITEENABLE:
@@ -286,9 +290,7 @@ auto Render_state_manager::create_current_blend_state(core::Shader_patch& shader
    };
 
    desc.SrcBlend = map_blend_value(_current_blend_state.src_blend);
-   desc.SrcBlendAlpha = map_alpha_blend_value(_current_blend_state.src_blend);
    desc.DestBlend = map_blend_value(_current_blend_state.dest_blend);
-   desc.DestBlendAlpha = map_alpha_blend_value(_current_blend_state.dest_blend);
 
    const auto map_blendop_value = [](const unsigned int d3d9_blendop) noexcept
    {
@@ -309,7 +311,17 @@ auto Render_state_manager::create_current_blend_state(core::Shader_patch& shader
    };
 
    desc.BlendOp = map_blendop_value(_current_blend_state.blendop);
-   desc.BlendOpAlpha = desc.BlendOp;
+
+   if (_current_blend_state.alpha_blend_enable) {
+      desc.SrcBlendAlpha = map_alpha_blend_value(_current_blend_state.src_blend);
+      desc.DestBlendAlpha = map_alpha_blend_value(_current_blend_state.dest_blend);
+      desc.BlendOpAlpha = desc.BlendOp;
+   }
+   else {
+      desc.SrcBlendAlpha = D3D11_BLEND_ONE;
+      desc.DestBlendAlpha = D3D11_BLEND_ZERO;
+      desc.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+   }
 
    desc.RenderTargetWriteMask = _current_blend_state.writemask;
 
@@ -423,7 +435,7 @@ auto Render_state_manager::create_current_rasterizer_state(core::Shader_patch& s
       case D3DCULL_CCW:
          return D3D11_CULL_BACK;
       default:
-         return D3D11_CULL_BACK;
+         return D3D11_CULL_NONE;
       }
    };
 

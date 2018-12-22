@@ -5,7 +5,7 @@
 namespace sp::core {
 
 struct Game_input_layout {
-   Com_ptr<ID3D11InputLayout> layout;
+   std::uint16_t layout_index;
    bool compressed;
 };
 

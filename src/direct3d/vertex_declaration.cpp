@@ -39,25 +39,47 @@ auto apply_patchups(const gsl::span<const D3DVERTEXELEMENT9> elements)
    return elements;
 }
 
-auto translate_vertex_elements(const gsl::span<const D3DVERTEXELEMENT9> elements)
-   -> std::vector<D3D11_INPUT_ELEMENT_DESC>
+bool is_compressed_input(const gsl::span<const D3DVERTEXELEMENT9> elements) noexcept
 {
-   std::vector<D3D11_INPUT_ELEMENT_DESC> result;
+   for (const auto& elem : elements) {
+      if (is_d3d_decl_type_int(static_cast<D3DDECLTYPE>(elem.Type)))
+         return true;
+   }
+
+   return false;
+}
+
+auto translate_vertex_elements(const gsl::span<const D3DVERTEXELEMENT9> elements)
+   -> std::vector<core::Input_layout_element>
+{
+   std::vector<core::Input_layout_element> result;
    result.reserve(elements.size());
 
    for (const auto& elem : elements) {
-      D3D11_INPUT_ELEMENT_DESC desc{};
-      desc.SemanticName =
-         d3d_decl_usage_to_cstr(static_cast<D3DDECLUSAGE>(elem.Usage));
-      desc.SemanticIndex = elem.UsageIndex;
-      desc.Format = d3d_decl_type_to_dxgi_format(static_cast<D3DDECLTYPE>(elem.Type));
-      desc.InputSlot = elem.Stream;
-      desc.AlignedByteOffset = elem.Offset;
+      core::Input_layout_element desc{};
+      desc.semantic_name =
+         d3d_decl_usage_to_string(static_cast<D3DDECLUSAGE>(elem.Usage));
+      desc.semantic_index = elem.UsageIndex;
+      desc.format = d3d_decl_type_to_dxgi_format(static_cast<D3DDECLTYPE>(elem.Type));
+      desc.input_slot = elem.Stream;
+      desc.aligned_byte_offset = elem.Offset;
 
       result.push_back(desc);
    }
 
    return result;
+}
+
+auto create_input_layout(core::Shader_patch& shader_patch,
+                         gsl::span<const D3DVERTEXELEMENT9> d3d9_elements)
+   -> core::Game_input_layout
+{
+   d3d9_elements = apply_patchups(d3d9_elements);
+   const bool compressed = is_compressed_input(d3d9_elements);
+
+   const auto elements = translate_vertex_elements(d3d9_elements);
+
+   return shader_patch.create_game_input_layout(elements, compressed);
 }
 
 }
@@ -112,9 +134,7 @@ ULONG Vertex_declaration::Release() noexcept
 
 Vertex_declaration::Vertex_declaration(core::Shader_patch& shader_patch,
                                        const gsl::span<const D3DVERTEXELEMENT9> elements) noexcept
-   : _input_layout{shader_patch.create_game_input_layout(
-        translate_vertex_elements(apply_patchups(elements)))},
-     _layout_desc{translate_vertex_elements(apply_patchups(elements))}
+   : _input_layout{create_input_layout(shader_patch, elements)}
 {
 }
 

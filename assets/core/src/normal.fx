@@ -1,7 +1,6 @@
 
 #include "constants_list.hlsl"
 #include "ext_constants_list.hlsl"
-#include "fog_utilities.hlsl"
 #include "generic_vertex_input.hlsl"
 #include "vertex_utilities.hlsl"
 #include "vertex_transformer.hlsl"
@@ -30,7 +29,7 @@ struct Vs_output_unlit
    float2 diffuse_texcoords : TEXCOORD0;
    float2 detail_texcoords : TEXCOORD1;
    float4 material_color_fade : MATCOLOR;
-   float fog_eye_distance : DEPTH;
+   float fog : FOG;
    float4 position : SV_Position;
 };
 
@@ -43,17 +42,17 @@ Vs_output_unlit unlit_main_vs(Vertex_input input)
    float3 positionWS = transformer.positionWS();
 
    output.position = transformer.positionPS();
-   output.fog_eye_distance = fog::get_eye_distance(positionWS);
 
    output.diffuse_texcoords = transformer.texcoords(texture_transforms[0],
                                                     texture_transforms[1]);  
    output.detail_texcoords = transformer.texcoords(texture_transforms[2],
                                                    texture_transforms[3]);
 
-   Near_scene near_scene = calculate_near_scene_fade(positionWS);
+   float near_fade;
+   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
 
    output.material_color_fade.rgb = lighting_scale * lighting_factor.x + lighting_factor.y;
-   output.material_color_fade.a = saturate(near_scene.fade);
+   output.material_color_fade.a = saturate(near_fade);
    output.material_color_fade *= get_material_color(input.color());
 
    return output;
@@ -72,7 +71,7 @@ struct Vs_output
    float4 material_color_fade : MATCOLOR;
    float3 static_lighting : STATICLIGHT;
 
-   float fog_eye_distance : DEPTH;
+   float fog : FOG;
 
    float4 positionPS : SV_Position;
 };
@@ -89,7 +88,6 @@ Vs_output main_vs(Vertex_input input)
    output.positionWS = positionWS;
    output.normalWS = normalWS;
    output.positionPS = transformer.positionPS();
-   output.fog_eye_distance = fog::get_eye_distance(positionWS);
 
    output.diffuse_texcoords = transformer.texcoords(texture_transforms[0],
                                                     texture_transforms[1]);  
@@ -99,10 +97,11 @@ Vs_output main_vs(Vertex_input input)
    output.projection_texcoords = mul(float4(positionWS, 1.0), light_proj_matrix);
    output.shadow_texcoords = transform_shadowmap_coords(positionWS);
 
-   Near_scene near_scene = calculate_near_scene_fade(positionWS);
+   float near_fade;
+   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
 
    output.material_color_fade = get_material_color(input.color());
-   output.material_color_fade.a *= saturate(near_scene.fade);
+   output.material_color_fade.a *= saturate(near_fade);
    output.static_lighting = get_static_diffuse_color(input.color());
 
    return output;
@@ -113,7 +112,7 @@ struct Ps_input_unlit
    float2 diffuse_texcoords : TEXCOORD0;
    float2 detail_texcoords : TEXCOORD1;
    float4 material_color_fade : MATCOLOR;
-   float fog_eye_distance : DEPTH;
+   float fog : FOG;
 };
 
 float get_glow_factor(float4 diffuse_map_color)
@@ -148,7 +147,7 @@ float4 unlit_main_ps(Ps_input_unlit input) : SV_Target0
       if (diffuse_map_color.a < 0.5) discard;
    }
 
-   color = fog::apply(color.rgb, input.fog_eye_distance);
+   color = apply_fog(color, input.fog);
 
    return float4(color, alpha);
 }
@@ -166,7 +165,7 @@ struct Ps_input
    float4 material_color_fade : MATCOLOR;
    float3 static_lighting : STATICLIGHT;
 
-   float fog_eye_distance : DEPTH;
+   float fog : FOG;
 };
 
 float4 main_ps(Ps_input input) : SV_Target0
@@ -233,7 +232,7 @@ float4 main_ps(Ps_input input) : SV_Target0
       alpha = input.material_color_fade.a;
    }
 
-   color = fog::apply(color, input.fog_eye_distance);
+   color = apply_fog(color, input.fog);
 
    return float4(color, alpha);
 }

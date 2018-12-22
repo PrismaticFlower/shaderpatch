@@ -45,8 +45,6 @@ public:
       return _input_layout;
    }
 
-   const std::vector<D3D11_INPUT_ELEMENT_DESC> _layout_desc;
-
 private:
    Vertex_declaration(core::Shader_patch& shader_patch,
                       const gsl::span<const D3DVERTEXELEMENT9> elements) noexcept;

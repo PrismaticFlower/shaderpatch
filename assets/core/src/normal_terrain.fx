@@ -1,6 +1,5 @@
 
 #include "ext_constants_list.hlsl"
-#include "fog_utilities.hlsl"
 #include "vertex_utilities.hlsl"
 #include "lighting_utilities.hlsl"
 #include "pixel_utilities.hlsl"
@@ -30,7 +29,7 @@ struct Vs_blendmap_output
 
    float3 blend_values_fade : BLENDVALUES;
    float3 static_lighting : STATICLIGHT;
-   float fog_eye_distance : DEPTH;
+   float fog : FOG;
 
    float4 positionPS : SV_Position;
 };
@@ -46,20 +45,21 @@ Vs_blendmap_output diffuse_blendmap_vs(Vs_input input)
    output.positionWS = positionWS;
    output.normalWS = mul(normalOS, (float3x3)world_matrix);
    output.positionPS = mul(float4(positionWS, 1.0), projection_matrix);
-   output.fog_eye_distance = fog::get_eye_distance(positionWS);
 
    [unroll] for (int i = 0; i < 4; ++i) {
       output.texcoords[i].x = dot(float4(positionWS, 1.0), x_texcoords_tranforms[i]);
       output.texcoords[i].y = dot(float4(positionWS, 1.0), y_texcoords_tranforms[i]);
    }
 
-   Near_scene near_scene = calculate_near_scene_fade(positionWS);
+   float near_fade, fog;
+   calculate_near_fade_and_fog(positionWS, near_fade, fog);
 
    output.blend_values_fade.x = input.normal.w;
    output.blend_values_fade.y = (float)input.position.w * lighting_constant.w; 
-   output.blend_values_fade.z = saturate(near_scene.fade);
+   output.blend_values_fade.z = saturate(near_fade);
 
    output.static_lighting = get_static_diffuse_color(input.color);
+   output.fog = fog;
 
    return output;
 }
@@ -74,7 +74,7 @@ struct Vs_detail_output
    float4 shadow_map_texcoords : TEXCOORD3;
 
    float3 static_lighting : STATICLIGHT;
-   float fog_eye_distance : DEPTH;
+   float fog : FOG;
 
    float4 positionPS : SV_Position;
 };
@@ -91,7 +91,6 @@ Vs_detail_output detailing_vs(Vs_input input)
    output.positionWS = positionWS;
    output.normalWS = mul(normalOS, (float3x3)world_matrix);
    output.positionPS = mul(float4(positionWS, 1.0), projection_matrix);
-   output.fog_eye_distance = fog::get_eye_distance(positionWS);
 
    [unroll] for (int i = 0; i < 2; ++i) {
       output.detail_texcoords[i].x = dot(float4(positionWS, 1.0), x_texcoords_tranforms[i]);
@@ -101,6 +100,11 @@ Vs_detail_output detailing_vs(Vs_input input)
    output.projection_texcoords = mul(float4(positionWS, 1.0), light_proj_matrix);
    output.shadow_map_texcoords = transform_shadowmap_coords(positionWS);
    output.static_lighting = get_static_diffuse_color(input.color);
+
+   float near_fade, fog;
+   calculate_near_fade_and_fog(positionWS, near_fade, fog);
+
+   output.fog = fog;
 
    return output;
 }
@@ -114,7 +118,7 @@ struct Ps_blendmap_input
 
    float3 blend_values_fade : BLENDVALUES;
    float3 static_lighting : STATICLIGHT;
-   float fog_eye_distance : DEPTH;
+   float fog : FOG;
 };
 
 float4 diffuse_blendmap_ps(Ps_blendmap_input input, 
@@ -145,7 +149,7 @@ float4 diffuse_blendmap_ps(Ps_blendmap_input input,
 
    // Linear Rendering Normalmap Hack
    color = lerp(color, diffuse_color * lighting_scale, rt_multiply_blending_state);
-   color = fog::apply(color, input.fog_eye_distance);
+   color = apply_fog(color, input.fog);
 
    return float4(color, input.blend_values_fade.z);
 }
@@ -160,7 +164,7 @@ struct Ps_detail_input
    float4 shadow_map_texcoords : TEXCOORD3;
 
    float3 static_lighting : STATICLIGHT;
-   float fog_eye_distance : DEPTH;
+   float fog : FOG;
 };
 
 float4 detailing_ps(Ps_detail_input input, 
@@ -196,7 +200,7 @@ float4 detailing_ps(Ps_detail_input input,
 
    // Linear Rendering Normalmap Hack
    color = lerp(color, blended_detail_color, rt_multiply_blending_state);
-   color = fog::apply(color, input.fog_eye_distance);
+   color = apply_fog(color, input.fog);
 
    return float4(color, 1.0);
 }

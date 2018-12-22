@@ -19,9 +19,13 @@ public:
 
    static void func(const char* const funcsig) noexcept
    {
+#ifndef NDEBUG
       std::lock_guard lock{_mutex};
 
       _trace.emplace_back(funcsig);
+#else
+      (void)funcsig;
+#endif
    }
 
    static auto get() noexcept -> const std::vector<const char*>&

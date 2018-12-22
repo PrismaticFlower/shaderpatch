@@ -2,7 +2,7 @@
 #include "constants_list.hlsl"
 #include "pixel_sampler_states.hlsl"
 
-Texture2D<float3> far_scene_texture;
+Texture2D<float3> far_scene_texture : register(t0);
 
 const static float4 skyfog_pos_scale = custom_constants[0]; 
 const static float4 skyfog_z_transform = custom_constants[1];

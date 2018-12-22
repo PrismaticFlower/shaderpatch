@@ -6,8 +6,14 @@ cbuffer SceneConstants : register(b0)
    float4x4 projection_matrix;
    float3 vs_view_positionWS;
    float _bufferPadding0;
-   float4 fog_info; // (camera fog scale, camera fog offset, world fog scale, world fog offset)
-   float4 near_scene_fade; // (nearfade scale, nearfade offset, lighting scale, 1.0)
+   float depth_fog_scale;
+   float depth_fog_offset;
+   float height_fog_scale; 
+   float height_fog_offset;
+   float near_fade_scale;
+   float near_fade_offset;
+   float vs_lighting_scale;
+   float _bufferPadding1;
    float4x3 shadow_map_transform;
    float vertex_color_gamma;
    float time;
@@ -52,20 +58,17 @@ cbuffer PSDrawConstants : register(b0)
    float3 fog_color;
    float stock_tonemap_state;
    float rt_multiply_blending_state;
-   bool fog_enabled;
    bool cube_projtex;
+   bool fog_enabled;
 }
 
 #ifdef __VERTEX_SHADER__
 static const float3 view_positionWS = vs_view_positionWS;
-static const float lighting_scale = near_scene_fade.z;
+static const float lighting_scale = vs_lighting_scale;
 #elif defined(__PIXEL_SHADER__)
 static const float3 view_positionWS = ps_view_positionWS;
 static const float lighting_scale = ps_lighting_scale;
 #endif
-
-// x fog start, y = fog end, z = 1 / (fog end - fog start)
-static const float3 fog_range = {0, 0, 1};
 
 static const float4 light_point_2_color = overlapping_lights[0];
 static const float4 light_point_2_pos = overlapping_lights[1];
