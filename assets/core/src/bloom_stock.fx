@@ -26,11 +26,7 @@ Vs_screenspace_output screenspace_vs(Vs_input input)
 
    output.texcoords = input.texcoords;
 
-   float2 position = input.position;
-
-   position = position + -position_offset.zw;
-   position *= 2.0;
-   position = position * float2(1.0, -1.0) + float2(-1.0, 1.0);
+   const float2 position = (2.0 * input.position) * float2(1.0, -1.0) + float2(-1.0, 1.0);
 
    output.position = float4(position, 0.5, 1.0);
 
@@ -59,11 +55,7 @@ Vs_bloomfilter_output bloomfilter_vs(Vs_input input)
 
    output.texcoords[3] = texcoords * texcoords_offsets.xy + -texcoords_offsets.zw;
 
-   float2 position = input.position;
-
-   position = position + -position_offset.zw;
-   position *= 2.0;
-   position = position * float2(1.0, -1.0) + float2(-1.0, 1.0);
+   const float2 position = (2.0 * input.position) * float2(1.0, -1.0) + float2(-1.0, 1.0);
 
    output.position = float4(position, 0.5, 1.0);
 
