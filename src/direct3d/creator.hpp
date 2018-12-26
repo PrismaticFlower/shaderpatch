@@ -69,17 +69,16 @@ private:
 
    Com_ptr<IDXGIFactory2> _factory;
 
-   std::vector<Com_ptr<IDXGIAdapter2>> _adapters;
-   std::unordered_map<IDXGIAdapter2*, std::vector<Com_ptr<IDXGIOutput1>>> _outputs;
-   std::unordered_map<IDXGIOutput1*, std::vector<DXGI_MODE_DESC1>> _display_modes;
+   Com_ptr<IDXGIAdapter2> _adapter;
+   std::vector<Com_ptr<IDXGIOutput1>> _outputs;
+   std::unordered_map<Com_ptr<IDXGIOutput1>, std::vector<DXGI_MODE_DESC1>> _display_modes;
 
    Com_ptr<Device> _device;
 
    const int _desired_output = 0;
    const DXGI_FORMAT _desired_backbuffer_format = DXGI_FORMAT_B8G8R8A8_UNORM;
 
-   bool _first_device = true;
-   ULONG _ref_count{1};
+   ULONG _ref_count = 1;
 };
 
 }

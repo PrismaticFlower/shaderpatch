@@ -130,6 +130,13 @@ void Patch_compiler::save(const fs::path& output_path) const
       {
          auto entrypoint_writer = writer.emplace_child("EPTS"_mn);
 
+         // write compute entry points
+         {
+            auto cs_writer = entrypoint_writer.emplace_child("CSHD"_mn);
+
+            write_entrypoints(cs_writer, _compute_entrypoints);
+         }
+
          // write vertex entry points
          {
             auto vs_writer = entrypoint_writer.emplace_child("VSHD"_mn);
@@ -186,6 +193,9 @@ void Patch_compiler::compile_entrypoints(
 {
    for (const auto& entrypoint : entrypoints) {
       switch (entrypoint.second.stage) {
+      case shader::Stage::compute:
+         compile_compute_entrypoint(entrypoint);
+         break;
       case shader::Stage::vertex:
          compile_vertex_entrypoint(entrypoint, input_layouts);
          break;
@@ -194,6 +204,38 @@ void Patch_compiler::compile_entrypoints(
          break;
       }
    }
+}
+
+void Patch_compiler::compile_compute_entrypoint(
+   const std::pair<std::string, shader::Entrypoint>& entrypoint)
+{
+   Expects(entrypoint.second.stage == shader::Stage::compute);
+   Expects(!_compute_entrypoints.count(entrypoint.first));
+
+   const std::vector<shader::Compute_variation> variations =
+      entrypoint.second.static_flags.count()
+         ? shader::get_custom_variations<shader::Compute_variation>(
+              entrypoint.second.static_flags)
+         : std::vector{shader::Compute_variation{}};
+
+   Compiled_compute_entrypoint compiled;
+
+   const auto entrypoint_func =
+      entrypoint.second.function_name.value_or(entrypoint.first);
+
+   for (const auto& variation : variations) {
+      compiled.variations
+         .emplace(variation.static_flags,
+                  compile_compute_shader(entrypoint_func,
+                                         combine_defines(entrypoint.second.defines,
+                                                         variation.defines)));
+   }
+
+   const auto static_flags_names = entrypoint.second.static_flags.list_flags();
+   compiled.static_flag_names.assign(std::cbegin(static_flags_names),
+                                     std::cend(static_flags_names));
+
+   _compute_entrypoints.emplace(entrypoint.first, std::move(compiled));
 }
 
 void Patch_compiler::compile_vertex_entrypoint(
@@ -242,7 +284,7 @@ void Patch_compiler::compile_pixel_entrypoint(
    const std::pair<std::string, shader::Entrypoint>& entrypoint)
 {
    Expects(entrypoint.second.stage == shader::Stage::pixel);
-   Expects(!_vertex_entrypoints.count(entrypoint.first));
+   Expects(!_pixel_entrypoints.count(entrypoint.first));
 
    auto& state = std::get<shader::Pixel_state>(entrypoint.second.stage_state);
 
@@ -273,6 +315,16 @@ void Patch_compiler::compile_pixel_entrypoint(
                                      std::cend(static_flags_names));
 
    _pixel_entrypoints.emplace(entrypoint.first, std::move(compiled));
+}
+
+auto Patch_compiler::compile_compute_shader(const std::string& entry_point,
+                                            Preprocessor_defines defines)
+   -> Com_ptr<ID3DBlob>
+{
+   defines.add_define("__COMPUTE_SHADER__"s, "1");
+
+   return compile_shader_impl(_compiler_flags, entry_point, defines.get(),
+                              _source_path, "cs_5_0"s);
 }
 
 auto Patch_compiler::compile_vertex_shader(const std::string& entry_point,
@@ -318,6 +370,50 @@ void Patch_compiler::assemble_rendertypes(
       }
 
       _rendertypes.emplace(rendertype.first, std::move(assembled_rt));
+   }
+}
+
+void Patch_compiler::write_entrypoints(
+   ucfb::Writer& writer,
+   const std::unordered_map<std::string, Compiled_compute_entrypoint>& entrypoints) const
+{
+   writer.emplace_child("SIZE"_mn).write(
+      static_cast<std::uint32_t>(entrypoints.size()));
+
+   for (const auto& entrypoint : entrypoints) {
+      auto ep_writer = writer.emplace_child("EP__"_mn);
+
+      ep_writer.emplace_child("NAME"_mn).write(entrypoint.first);
+
+      // write entry point variations
+      {
+         auto vrs_writer = ep_writer.emplace_child("VRS_"_mn);
+
+         vrs_writer.emplace_child("SIZE"_mn).write(
+            static_cast<std::uint32_t>(entrypoint.second.variations.size()));
+
+         for (const auto& vari : entrypoint.second.variations) {
+            auto vari_writer = vrs_writer.emplace_child("VARI"_mn);
+
+            vari_writer.write(vari.first);
+            vari_writer.write(static_cast<std::uint32_t>(vari.second->GetBufferSize()));
+            vari_writer.write(
+               gsl::span{static_cast<const std::byte*>(vari.second->GetBufferPointer()),
+                         static_cast<gsl::index>(vari.second->GetBufferSize())});
+         }
+      }
+
+      // write entry point flag names
+      {
+         auto flag_names_writer = ep_writer.emplace_child("FLGS"_mn);
+
+         flag_names_writer.write(
+            static_cast<std::uint32_t>(entrypoint.second.static_flag_names.size()));
+
+         for (const auto& name : entrypoint.second.static_flag_names) {
+            flag_names_writer.write(name);
+         }
+      }
    }
 }
 

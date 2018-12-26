@@ -247,3 +247,11 @@ inline auto make_shared_com_ptr(Com_ptr<Class> com_ptr) -> std::shared_ptr<Class
            }};
 }
 }
+
+template<typename Class>
+struct std::hash<sp::Com_ptr<Class>> {
+   auto operator()(const sp::Com_ptr<Class>& ptr) const noexcept
+   {
+      return std::hash<Class*>{}(ptr.get());
+   }
+};

@@ -7,6 +7,7 @@
 #include "render_state_manager.hpp"
 #include "surface_backbuffer.hpp"
 #include "surface_depthstencil.hpp"
+#include "texture_stage_state_manager.hpp"
 
 #include <array>
 
@@ -575,7 +576,7 @@ private:
    auto create_vertex_declaration(const D3DVERTEXELEMENT9* const vertex_elements) noexcept
       -> Com_ptr<IDirect3DVertexDeclaration9>;
 
-   bool draw_common(const D3DPRIMITIVETYPE primitive_type) noexcept;
+   void draw_common(const D3DPRIMITIVETYPE primitive_type) noexcept;
 
    const Com_ref<IDirect3D9> _direct3d9;
    const Com_ref<IDXGIAdapter2> _adapter;
@@ -596,82 +597,89 @@ private:
       Surface_depthstencil::create(core::Game_depthstencil::nearscene, 800, 600)};
 
    D3DVIEWPORT9 _viewport{0, 0, 800, 600, 0.0f, 1.0f};
+   Texture_stage_state_manager _texture_stage_manager{_shader_patch};
 
    ULONG _ref_count = 1;
 };
 
 constexpr auto device_caps = []() -> D3DCAPS9 {
    D3DCAPS9 caps{};
-
    caps.DeviceType = D3DDEVTYPE_HAL;
-   caps.AdapterOrdinal = 0x00000000;
-   caps.Caps = 0x00020000;
-   caps.Caps2 = 0xe0020000;
-   caps.Caps3 = 0x000003a0;
-   caps.PresentationIntervals = 0x8000000f;
-   caps.CursorCaps = 0x00000000;
-   caps.DevCaps = 0x001bbef0;
-   caps.PrimitiveMiscCaps = 0x002fcef2;
-   caps.RasterCaps = 0x07732191;
-   caps.ZCmpCaps = 0x000000ff;
-   caps.SrcBlendCaps = 0x00003fff;
-   caps.DestBlendCaps = 0x00003fff;
-   caps.AlphaCmpCaps = 0x000000ff;
-   caps.ShadeCaps = 0x00084208;
-   caps.TextureCaps = 0x0001ecc5;
-   caps.TextureFilterCaps = 0x03030700;
-   caps.CubeTextureFilterCaps = 0x03030300;
-   caps.VolumeTextureFilterCaps = 0x03030300;
-   caps.TextureAddressCaps = 0x0000003f;
-   caps.VolumeTextureAddressCaps = 0x0000003f;
-   caps.LineCaps = 0x0000001f;
-   caps.MaxTextureWidth = 0x00004000;
-   caps.MaxTextureHeight = 0x00004000;
-   caps.MaxVolumeExtent = 0x00000800;
-   caps.MaxTextureRepeat = 0x00002000;
-   caps.MaxTextureAspectRatio = 0x00004000;
-   caps.MaxAnisotropy = 0x00000010;
+   caps.AdapterOrdinal = 0;
+   caps.Caps = 131072;
+   caps.Caps2 = 3758227456;
+   caps.Caps3 = 928;
+   caps.PresentationIntervals = 2147483663;
+   caps.CursorCaps = 1;
+   caps.DevCaps = 1818352;
+   caps.PrimitiveMiscCaps = 3133170;
+   caps.RasterCaps = 124985745;
+   caps.ZCmpCaps = 255;
+   caps.SrcBlendCaps = 16383;
+   caps.DestBlendCaps = 16383;
+   caps.AlphaCmpCaps = 255;
+   caps.ShadeCaps = 541192;
+   caps.TextureCaps = 126149;
+   caps.TextureFilterCaps = 50530048;
+   caps.CubeTextureFilterCaps = 50529024;
+   caps.VolumeTextureFilterCaps = 50529024;
+   caps.TextureAddressCaps = 63;
+   caps.VolumeTextureAddressCaps = 63;
+   caps.LineCaps = 31;
+   caps.MaxTextureWidth = 16384;
+   caps.MaxTextureHeight = 16384;
+   caps.MaxVolumeExtent = 2048;
+   caps.MaxTextureRepeat = 8192;
+   caps.MaxTextureAspectRatio = 16384;
+   caps.MaxAnisotropy = 16;
    caps.MaxVertexW = 1.00000000e+10;
    caps.GuardBandLeft = -100000000.;
    caps.GuardBandTop = -100000000.;
    caps.GuardBandRight = 100000000.;
    caps.GuardBandBottom = 100000000.;
    caps.ExtentsAdjust = 0.000000000;
-   caps.StencilCaps = 0x000001ff;
-   caps.FVFCaps = 0x00180008;
-   caps.TextureOpCaps = 0x03feffff;
-   caps.MaxTextureBlendStages = 0x00000008;
-   caps.MaxSimultaneousTextures = 0x00000008;
-   caps.VertexProcessingCaps = 0x0000013b;
-   caps.MaxActiveLights = 0x00000008;
-   caps.MaxUserClipPlanes = 0x00000008;
-   caps.MaxVertexBlendMatrices = 0x00000004;
-   caps.MaxVertexBlendMatrixIndex = 0x00000000;
+   caps.StencilCaps = 511;
+   caps.FVFCaps = 1572872;
+   caps.TextureOpCaps = 67043327;
+   caps.MaxTextureBlendStages = 4;
+   caps.MaxSimultaneousTextures = 8;
+   caps.VertexProcessingCaps = 315;
+   caps.MaxActiveLights = 8;
+   caps.MaxUserClipPlanes = 8;
+   caps.MaxVertexBlendMatrices = 4;
+   caps.MaxVertexBlendMatrixIndex = 0;
    caps.MaxPointSize = 8192.00000;
-   caps.MaxPrimitiveCount = 0x00ffffff;
-   caps.MaxVertexIndex = 0x00ffffff;
-   caps.MaxStreams = 0x00000010;
-   caps.MaxStreamStride = 0x000000ff;
-   caps.VertexShaderVersion = 0xfffe0300;
-   caps.MaxVertexShaderConst = 0x00000100;
-   caps.PixelShaderVersion = 0xffff0300;
+   caps.MaxPrimitiveCount = 16777215;
+   caps.MaxVertexIndex = 16777215;
+   caps.MaxStreams = 16;
+   caps.MaxStreamStride = 255;
+   caps.VertexShaderVersion = 4294836992;
+   caps.MaxVertexShaderConst = 256;
+   caps.PixelShaderVersion = 4294902528;
    caps.PixelShader1xMaxValue = 65504.0000;
-   caps.DevCaps2 = 0x00000051;
+   caps.DevCaps2 = 81;
    caps.MaxNpatchTessellationLevel = 0.000000000;
-   caps.Reserved5 = 0x00000000;
-   caps.MasterAdapterOrdinal = 0x00000000;
-   caps.AdapterOrdinalInGroup = 0x00000000;
-   caps.NumberOfAdaptersInGroup = 0x00000001;
-   caps.DeclTypes = 0x0000030f;
-   caps.NumSimultaneousRTs = 0x00000004;
-   caps.StretchRectFilterCaps = 0x03000300;
-   caps.VS20Caps = {0x00000001, 0x00000018, 0x00000020};
-   caps.PS20Caps = {0x0000001f, 0x00000018, 0x00000004, 0x00000200};
-   caps.VertexTextureFilterCaps = 0x03030700;
-   caps.MaxVShaderInstructionsExecuted = 0x0000ffff;
-   caps.MaxPShaderInstructionsExecuted = 0x0000ffff;
-   caps.MaxVertexShader30InstructionSlots = 0x00001000;
-   caps.MaxPixelShader30InstructionSlots = 0x00001000;
+   caps.Reserved5 = 0;
+   caps.MasterAdapterOrdinal = 0;
+   caps.AdapterOrdinalInGroup = 0;
+   caps.NumberOfAdaptersInGroup = 1;
+   caps.DeclTypes = 783;
+   caps.NumSimultaneousRTs = 4;
+   caps.StretchRectFilterCaps = 50332416;
+   caps.VS20Caps.Caps = 1;
+   caps.VS20Caps.DynamicFlowControlDepth = 24;
+   caps.VS20Caps.NumTemps = 32;
+   caps.VS20Caps.StaticFlowControlDepth = 4;
+   caps.PS20Caps.Caps = 31;
+   caps.PS20Caps.DynamicFlowControlDepth = 24;
+   caps.PS20Caps.NumTemps = 32;
+   caps.PS20Caps.StaticFlowControlDepth = 4;
+   caps.PS20Caps.NumInstructionSlots = 512;
+   caps.VertexTextureFilterCaps = 50530048;
+   caps.MaxVShaderInstructionsExecuted = 65535;
+   caps.MaxPShaderInstructionsExecuted = 65535;
+   caps.MaxVertexShader30InstructionSlots = 4096;
+   caps.MaxPixelShader30InstructionSlots = 4096;
 
    return caps;
 }();

@@ -21,6 +21,8 @@ public:
 
    void update_dirty(core::Shader_patch& shader_patch) noexcept;
 
+   auto texture_factor() const noexcept -> DWORD;
+
 private:
    void update_blend_state(core::Shader_patch& shader_patch) noexcept;
 
@@ -44,10 +46,10 @@ private:
       unsigned int dest_blend : 4;
       unsigned int blendop : 2;
       unsigned int writemask : 4;
-      unsigned int alpha_blend_enable : 1;
+      unsigned int blend_enable : 1;
 
       Blend_state() noexcept
-         : src_blend{D3DBLEND_ONE}, dest_blend{D3DBLEND_ZERO}, blendop{D3DBLENDOP_ADD}, writemask{0b1111u}
+         : src_blend{D3DBLEND_ONE}, dest_blend{D3DBLEND_ZERO}, blendop{D3DBLENDOP_ADD}, writemask{0b1111u}, blend_enable{false}
       {
       }
    };
@@ -135,6 +137,7 @@ private:
    std::vector<std::pair<Rasterizer_state, Com_ptr<ID3D11RasterizerState>>> _rasterizer_states;
 
    Fog_state _fog_state;
+   DWORD _texture_factor = 0xffffffff;
 };
 
 }

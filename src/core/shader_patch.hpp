@@ -8,6 +8,7 @@
 #include "game_rendertarget.hpp"
 #include "game_shader.hpp"
 #include "game_texture.hpp"
+#include "image_stretcher.hpp"
 #include "input_layout_descriptions.hpp"
 #include "input_layout_element.hpp"
 #include "sampler_states.hpp"
@@ -154,6 +155,8 @@ public:
    void set_constants(const cb::Draw_tag, const UINT offset,
                       const gsl::span<const std::array<float, 4>> constants) noexcept;
 
+   void set_constants(const cb::Fixedfunction_tag, const glm::vec4 texture_factor) noexcept;
+
    void set_constants(const cb::Skin_tag, const UINT offset,
                       const gsl::span<const std::array<float, 4>> constants) noexcept;
 
@@ -225,6 +228,8 @@ private:
       create_dynamic_constant_buffer(*_device, sizeof(_cb_scene));
    const Com_ptr<ID3D11Buffer> _cb_draw_buffer =
       create_dynamic_constant_buffer(*_device, sizeof(_cb_draw));
+   const Com_ptr<ID3D11Buffer> _cb_fixedfunction_buffer =
+      create_dynamic_constant_buffer(*_device, sizeof(cb::Fixedfunction));
    const Com_ptr<ID3D11Buffer> _cb_draw_ps_buffer =
       create_dynamic_constant_buffer(*_device, sizeof(_cb_draw_ps));
    const Com_ptr<ID3D11Buffer> _cb_skin_buffer =
@@ -257,6 +262,7 @@ private:
       return buffer;
    }();
 
+   const Image_stretcher _image_stretcher{*_device, _shader_database};
    const Sampler_states _sampler_states{*_device};
 };
 

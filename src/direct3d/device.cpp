@@ -22,7 +22,9 @@ using namespace std::literals;
 namespace sp::d3d9 {
 
 namespace {
+
 constexpr auto projtex_slot = 2;
+
 }
 
 Com_ptr<Device> Device::create(IDirect3D9& direct3d9, IDXGIAdapter2& adapter,
@@ -34,8 +36,23 @@ Com_ptr<Device> Device::create(IDirect3D9& direct3d9, IDXGIAdapter2& adapter,
 Device::Device(IDirect3D9& direct3d9, IDXGIAdapter2& adapter, const HWND window) noexcept
    : _direct3d9{direct3d9}, _shader_patch{adapter, window}, _adapter{adapter}, _window{window}
 {
-   SetWindowPos(window, nullptr, 0, 0, 800, 600, SWP_NOSENDCHANGING);
-   ShowWindow(window, SW_FORCEMINIMIZE);
+   //   std::thread{[&] {
+   //      while (true) {
+   //         std::this_thread::yield();
+   //
+   //         WINDOWPOS pos;
+   //
+   //         pos.hwnd = _window;
+   //         pos.hwndInsertAfter = HWND_TOP;
+   //         pos.x = 0;
+   //         pos.y = 0;
+   //         pos.cx = 800;
+   //         pos.cy = 600;
+   //         pos.flags = SWP_NOZORDER;
+   //
+   //         SendMessageA(_window, WM_WINDOWPOSCHANGING, 0, bit_cast<LPARAM>(&pos));
+   //      }
+   //   }};
 }
 
 HRESULT Device::QueryInterface(const IID& iid, void** object) noexcept
@@ -82,6 +99,19 @@ ULONG Device::Release() noexcept
 HRESULT Device::TestCooperativeLevel() noexcept
 {
    Debug_trace::func(__FUNCSIG__);
+
+   SetWindowPos(_window, nullptr, 0, 0, 800, 600, SWP_NOZORDER);
+   // WINDOWPOS pos;
+   //
+   // pos.hwnd = _window;
+   // pos.hwndInsertAfter = HWND_TOP;
+   // pos.x = 0;
+   // pos.y = 0;
+   // pos.cx = 800;
+   // pos.cy = 600;
+   // pos.flags = SWP_NOZORDER;
+   //
+   // SendMessageA(_window, WM_WINDOWPOSCHANGING, 0, bit_cast<LPARAM>(&pos));
 
    return S_OK;
 }
@@ -714,7 +744,7 @@ HRESULT Device::GetTexture(DWORD stage, IDirect3DBaseTexture9** texture) noexcep
 {
    Debug_trace::func(__FUNCSIG__);
 
-   if (stage > 4) return D3DERR_INVALIDCALL;
+   if (stage >= 4) return D3DERR_INVALIDCALL;
    if (!texture) return D3DERR_INVALIDCALL;
 
    *texture = nullptr;
@@ -726,16 +756,16 @@ HRESULT Device::SetTexture(DWORD stage, IDirect3DBaseTexture9* texture) noexcept
 {
    Debug_trace::func(__FUNCSIG__);
 
-   if (stage > 4) return D3DERR_INVALIDCALL;
+   if (stage >= 4) return D3DERR_INVALIDCALL;
    if (!texture) return S_OK;
 
-   const auto& resource = *reinterpret_cast<Resource*>(texture);
+   const auto& base_texture = *reinterpret_cast<Base_texture*>(texture);
 
    if (stage == projtex_slot) {
-      if (texture->GetType() == D3DRTYPE_CUBETEXTURE) {
+      if (base_texture.texture_type == Texture_type::texturecube) {
          _shader_patch.set_projtex_type(core::Projtex_type::texcube);
 
-         resource.visit([&](const core::Game_texture& texture) {
+         base_texture.visit([&](const core::Game_texture& texture) {
             _shader_patch.set_projtex_cube(texture);
          });
       }
@@ -744,11 +774,13 @@ HRESULT Device::SetTexture(DWORD stage, IDirect3DBaseTexture9* texture) noexcept
       }
    }
 
-   resource.visit([&](const core::Game_texture&
-                         texture) { _shader_patch.set_texture(stage, texture); },
-                  [&](const core::Game_rendertarget_id& rendertarget) {
-                     _shader_patch.set_texture(stage, rendertarget);
-                  });
+   base_texture.visit(
+      [&](const core::Game_texture& texture) {
+         _shader_patch.set_texture(stage, texture);
+      },
+      [&](const core::Game_rendertarget_id& rendertarget) {
+         _shader_patch.set_texture(stage, rendertarget);
+      });
 
    return S_OK;
 }
@@ -758,67 +790,12 @@ HRESULT Device::GetTextureStageState(DWORD stage, D3DTEXTURESTAGESTATETYPE state
 {
    Debug_trace::func(__FUNCSIG__);
 
-   if (stage > 4) return D3DERR_INVALIDCALL;
+   if (stage >= 4) return D3DERR_INVALIDCALL;
    if (!value) return D3DERR_INVALIDCALL;
 
-   switch (state) {
-   case D3DTSS_COLOROP:
-      *value = D3DTOP_DISABLE;
-      return S_OK;
-   case D3DTSS_COLORARG1:
-      *value = D3DTA_TEXTURE;
-      return S_OK;
-   case D3DTSS_COLORARG2:
-      *value = D3DTA_CURRENT;
-      return S_OK;
-   case D3DTSS_ALPHAOP:
-      *value = D3DTOP_SELECTARG1;
-      return S_OK;
-   case D3DTSS_ALPHAARG1:
-      *value = D3DTA_DIFFUSE;
-      return S_OK;
-   case D3DTSS_ALPHAARG2:
-      *value = D3DTA_CURRENT;
-      return S_OK;
-   case D3DTSS_BUMPENVMAT00:
-      *value = bit_cast<DWORD>(0.0f);
-      return S_OK;
-   case D3DTSS_BUMPENVMAT01:
-      *value = bit_cast<DWORD>(0.0f);
-      return S_OK;
-   case D3DTSS_BUMPENVMAT10:
-      *value = bit_cast<DWORD>(0.0f);
-      return S_OK;
-   case D3DTSS_BUMPENVMAT11:
-      *value = bit_cast<DWORD>(0.0f);
-      return S_OK;
-   case D3DTSS_TEXCOORDINDEX:
-      *value = stage;
-      return S_OK;
-   case D3DTSS_BUMPENVLSCALE:
-      *value = bit_cast<DWORD>(0.0f);
-      return S_OK;
-   case D3DTSS_BUMPENVLOFFSET:
-      *value = bit_cast<DWORD>(0.0f);
-      return S_OK;
-   case D3DTSS_TEXTURETRANSFORMFLAGS:
-      *value = D3DTTFF_DISABLE;
-      return S_OK;
-   case D3DTSS_COLORARG0:
-      *value = D3DTA_CURRENT;
-      return S_OK;
-   case D3DTSS_ALPHAARG0:
-      *value = D3DTA_CURRENT;
-      return S_OK;
-   case D3DTSS_RESULTARG:
-      *value = D3DTA_CURRENT;
-      return S_OK;
-   case D3DTSS_CONSTANT:
-      *value = 0xffffffff;
-      return S_OK;
-   }
+   *value = _texture_stage_manager.get(stage, state);
 
-   return D3DERR_INVALIDCALL;
+   return S_OK;
 }
 
 HRESULT Device::SetTextureStageState(DWORD stage, D3DTEXTURESTAGESTATETYPE state,
@@ -826,10 +803,7 @@ HRESULT Device::SetTextureStageState(DWORD stage, D3DTEXTURESTAGESTATETYPE state
 {
    Debug_trace::func(__FUNCSIG__);
 
-   // TODO: Fixed function emulation nonsense.
-   (void)stage;
-   (void)state;
-   (void)value;
+   _texture_stage_manager.set(stage, state, value);
 
    return S_OK;
 }
@@ -839,7 +813,7 @@ HRESULT Device::GetSamplerState(DWORD sampler, D3DSAMPLERSTATETYPE state,
 {
    Debug_trace::func(__FUNCSIG__);
 
-   if (sampler > 4) return D3DERR_INVALIDCALL;
+   if (sampler >= 4) return D3DERR_INVALIDCALL;
    if (!value) return D3DERR_INVALIDCALL;
 
    switch (state) {
@@ -891,7 +865,7 @@ HRESULT Device::SetSamplerState(DWORD sampler, D3DSAMPLERSTATETYPE state, DWORD 
 {
    Debug_trace::func(__FUNCSIG__);
 
-   if (sampler > 4) return D3DERR_INVALIDCALL;
+   if (sampler >= 4) return D3DERR_INVALIDCALL;
 
    if (sampler == projtex_slot && state == D3DSAMP_ADDRESSU) {
       _shader_patch.set_projtex_mode(value == D3DTADDRESS_WRAP
@@ -907,7 +881,7 @@ HRESULT Device::DrawPrimitive(D3DPRIMITIVETYPE primitive_type,
 {
    Debug_trace::func(__FUNCSIG__);
 
-   if (!draw_common(primitive_type)) return S_OK;
+   draw_common(primitive_type);
 
    const auto vertex_count =
       d3d_primitive_count_to_vertex_count(primitive_type, primitive_count);
@@ -923,7 +897,7 @@ HRESULT Device::DrawIndexedPrimitive(D3DPRIMITIVETYPE primitive_type,
 {
    Debug_trace::func(__FUNCSIG__);
 
-   if (!draw_common(primitive_type)) return S_OK;
+   draw_common(primitive_type);
 
    const auto vertex_count =
       d3d_primitive_count_to_vertex_count(primitive_type, primitive_count);
@@ -1018,15 +992,15 @@ HRESULT Device::SetVertexShaderConstantF(UINT start_register, const float* const
           gsl::make_span(reinterpret_cast<const std::array<float, 4>*>(constant_data),
                          vector4f_count);
        start_register < 12) {
-      assert(vector4f_count <= 10);
+      assert(vector4f_count + (start_register - 2) <= 10);
       _shader_patch.set_constants(core::cb::scene, start_register - 2, constants);
    }
    else if (start_register < 51) {
-      assert(vector4f_count <= 37);
+      assert(vector4f_count + (start_register - 12) <= 37);
       _shader_patch.set_constants(core::cb::draw, start_register - 12, constants);
    }
    else {
-      assert(vector4f_count <= 45);
+      assert(vector4f_count + (start_register - 51) <= 45);
       _shader_patch.set_constants(core::cb::skin, start_register - 51, constants);
    }
 
@@ -1089,8 +1063,7 @@ HRESULT Device::SetPixelShaderConstantF(UINT start_register, const float* consta
 {
    Debug_trace::func(__FUNCSIG__);
 
-   if (start_register != 0) return S_OK;
-   assert(vector4f_count <= 5);
+   assert(vector4f_count + start_register <= 5);
 
    const auto constants =
       gsl::make_span(reinterpret_cast<const std::array<float, 4>*>(constant_data),
@@ -1236,17 +1209,18 @@ auto Device::create_vertex_declaration(const D3DVERTEXELEMENT9* const vertex_ele
                                      gsl::make_span(vertex_elements, decl_count));
 }
 
-bool Device::draw_common(const D3DPRIMITIVETYPE primitive_type) noexcept
+void Device::draw_common(const D3DPRIMITIVETYPE primitive_type) noexcept
 {
-   if (_fixed_func_active) return false;
-
    if (std::exchange(_last_primitive_type, primitive_type) != primitive_type) {
       _shader_patch.set_primitive_topology(
          d3d_primitive_type_to_d3d11_topology(primitive_type));
    }
 
-   _render_state_manager.update_dirty(_shader_patch);
+   if (_fixed_func_active) {
+      _texture_stage_manager.update(_shader_patch,
+                                    _render_state_manager.texture_factor());
+   }
 
-   return true;
+   _render_state_manager.update_dirty(_shader_patch);
 }
 }

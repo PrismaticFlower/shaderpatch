@@ -187,6 +187,11 @@
     <None Include="definitions\particle.json" />
     <None Include="definitions\patch\bloom.json.ignore" />
     <None Include="definitions\patch\damage_overlay.json.ignore" />
+    <None Include="definitions\patch\fixedfunc_color_fill.json" />
+    <None Include="definitions\patch\fixedfunc_damage_overlay.json" />
+    <None Include="definitions\patch\fixedfunc_plain_texture.json" />
+    <None Include="definitions\patch\fixedfunc_scene_blur.json" />
+    <None Include="definitions\patch\fixedfunc_zoom_blur.json" />
     <None Include="definitions\patch\late_effects_resolve.json.ignore" />
     <None Include="definitions\patch\normal_ext.json" />
     <None Include="definitions\patch\postprocess.json.ignore" />
@@ -196,6 +201,7 @@
     <None Include="definitions\patch\shadows_blur.json.ignore" />
     <None Include="definitions\patch\skyfog_ext.json.ignore" />
     <None Include="definitions\patch\stock_bloom_ext.json.ignore" />
+    <None Include="definitions\patch\stretch_texture.json" />
     <None Include="definitions\perpixeldiffuselighting.json" />
     <None Include="definitions\prereflection.json" />
     <None Include="definitions\rain.json" />
@@ -374,6 +380,30 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\normalmapadder.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\stretch_texture.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\fixedfunc_plain_texture.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\fixedfunc_color_fill.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="src\fixedfunc_damage_overlay.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="src\fixedfunc_scene_blur.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="src\fixedfunc_zoom_blur.fx">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

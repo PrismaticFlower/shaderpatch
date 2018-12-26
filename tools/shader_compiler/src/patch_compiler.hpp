@@ -33,6 +33,11 @@ public:
    Patch_compiler& operator=(Patch_compiler&&) = delete;
 
 private:
+   struct Compiled_compute_entrypoint {
+      std::map<std::uint32_t, Com_ptr<ID3DBlob>> variations;
+      std::vector<std::string> static_flag_names;
+   };
+
    struct Compiled_vertex_variation {
       std::vector<shader::Input_element> input_layout;
       Com_ptr<ID3DBlob> bytecode;
@@ -70,7 +75,12 @@ private:
       const std::pair<std::string, shader::Entrypoint>& entrypoint,
       const std::unordered_map<std::string, std::vector<shader::Input_element>>& input_layouts);
 
+   void compile_compute_entrypoint(const std::pair<std::string, shader::Entrypoint>& entrypoint);
+
    void compile_pixel_entrypoint(const std::pair<std::string, shader::Entrypoint>& entrypoint);
+
+   auto compile_compute_shader(const std::string& entry_point,
+                               Preprocessor_defines defines) -> Com_ptr<ID3DBlob>;
 
    auto compile_vertex_shader(const std::string& entry_point,
                               Preprocessor_defines defines) -> Com_ptr<ID3DBlob>;
@@ -80,6 +90,10 @@ private:
 
    void assemble_rendertypes(
       const std::unordered_map<std::string, shader::Rendertype>& rendertypes);
+
+   void write_entrypoints(
+      ucfb::Writer& writer,
+      const std::unordered_map<std::string, Compiled_compute_entrypoint>& entrypoints) const;
 
    void write_entrypoints(
       ucfb::Writer& writer,
@@ -94,6 +108,7 @@ private:
    std::string _group_name;
    std::filesystem::path _source_path;
 
+   std::unordered_map<std::string, Compiled_compute_entrypoint> _compute_entrypoints;
    std::unordered_map<std::string, Compiled_vertex_entrypoint> _vertex_entrypoints;
    std::unordered_map<std::string, Compiled_pixel_entrypoint> _pixel_entrypoints;
 

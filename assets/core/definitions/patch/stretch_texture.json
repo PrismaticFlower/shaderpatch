@@ -1,0 +1,14 @@
+{
+  "group_name": "stretch_texture",
+  "source_name": "stretch_texture.hlsl",
+
+  "entrypoints": {
+    "main": {
+      "stage": "compute"
+    }
+  },
+
+  "rendertypes": {},
+
+  "states": {}
+}

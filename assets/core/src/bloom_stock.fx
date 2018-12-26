@@ -62,7 +62,7 @@ Vs_bloomfilter_output bloomfilter_vs(Vs_input input)
    return output;
 }
 
-const static float3 luma_weights = ps_custom_constants[0].rgb;
+const static float3 luma_weights = float3(0.300, 0.590, 0.110);
 const static float color_bias = ps_custom_constants[0].a;
 const static float luma_bias = 0.45;
 const static float3 screenspace_tint = ps_custom_constants[2].rgb;

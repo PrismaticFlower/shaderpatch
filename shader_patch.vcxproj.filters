@@ -117,6 +117,12 @@
     <ClCompile Include="src\core\shader_input_layouts.cpp">
       <Filter>src\core</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\image_stretcher.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\direct3d\texture_stage_state_manager.cpp">
+      <Filter>src\direct3d</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -301,6 +307,12 @@
     </ClInclude>
     <ClInclude Include="src\core\shader_input_element.hpp">
       <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\image_stretcher.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\texture_stage_state_manager.hpp">
+      <Filter>src\direct3d</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -7,8 +7,6 @@
 
 const static float2 fade_factor = custom_constants[0].xy;
 const static float4 texcoords_transform = custom_constants[1];
-const static float4x4 blur_projection =
-   {custom_constants[2], custom_constants[3], custom_constants[4], custom_constants[5]};
 
 Texture2D<float4> particle_texture : register(t0);
 Texture2D<float3> blur_buffer : register(t1);
@@ -50,7 +48,6 @@ Vs_normal_output normal_vs(Vertex_input input)
 struct Vs_blur_output
 {
    float2 texcoords : TEXCOORD0;
-   float4 blur_texcoords : TEXCOORD1;
    float4 color : COLOR;
    float fog : FOG;
    float4 positionPS : SV_Position;
@@ -68,7 +65,6 @@ Vs_blur_output blur_vs(Vertex_input input)
    output.positionPS = positionPS;
 
    output.texcoords = input.texcoords() * texcoords_transform.xy + texcoords_transform.zw;
-   output.blur_texcoords = mul(float4(input.normal(), 1.0), blur_projection);
 
    float near_fade;
    calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
@@ -104,14 +100,14 @@ float4 normal_ps(Ps_normal_input input) : SV_Target0
 struct Ps_blur_input
 {
    float2 texcoords : TEXCOORD0;
-   float4 blur_texcoords : TEXCOORD1;
    float4 color : COLOR;
    float fog : FOG;
+   float4 positionSS : SV_Position;
 };
 
 float4 blur_ps(Ps_blur_input input) : SV_Target0
 {
-   const float2 blur_texcoords = input.blur_texcoords.xy / input.blur_texcoords.w;
+   const float2 blur_texcoords = input.positionSS.xy * rt_resolution.zw;
    const float3 scene_color = blur_buffer.SampleLevel(linear_clamp_sampler,
                                                       blur_texcoords,
                                                       0);

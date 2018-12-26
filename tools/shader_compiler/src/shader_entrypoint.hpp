@@ -13,7 +13,7 @@
 
 namespace sp::shader {
 
-enum class Stage { vertex, pixel };
+enum class Stage { compute, vertex, pixel };
 
 struct Vertex_state {
    struct Generic_input {
@@ -50,7 +50,10 @@ inline void from_json(const nlohmann::json& j, Stage& stage)
 {
    using namespace std::literals;
 
-   if (const auto string = j.get<std::string>(); string == "vertex"s) {
+   if (const auto string = j.get<std::string>(); string == "compute"s) {
+      stage = Stage::compute;
+   }
+   else if (string == "vertex"s) {
       stage = Stage::vertex;
    }
    else if (string == "pixel"s) {

@@ -6,6 +6,8 @@
 
 #include <d3d11_1.h>
 
+#include <gsl/gsl>
+
 namespace sp::core {
 
 inline auto rect_to_box(const RECT& rect) noexcept -> D3D11_BOX
@@ -37,4 +39,26 @@ auto create_dynamic_constant_buffer(ID3D11Device1& device, const UINT size) noex
 auto create_dynamic_texture_buffer(ID3D11Device1& device, const UINT size) noexcept
    -> Com_ptr<ID3D11Buffer>;
 
+template<typename Buffer_struct>
+void update_dynamic_buffer(ID3D11DeviceContext1& dc, ID3D11Buffer& buffer,
+                           const Buffer_struct& buffer_struct) noexcept
+{
+#ifndef NDEBUG
+   D3D11_BUFFER_DESC desc;
+
+   buffer.GetDesc(&desc);
+
+   assert(desc.Usage & D3D11_USAGE_DYNAMIC);
+   assert(desc.CPUAccessFlags & D3D11_CPU_ACCESS_WRITE);
+   assert(desc.ByteWidth >= sizeof(Buffer_struct));
+#endif
+
+   D3D11_MAPPED_SUBRESOURCE map;
+
+   dc.Map(&buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &map);
+
+   std::memcpy(map.pData, &buffer_struct, sizeof(Buffer_struct));
+
+   dc.Unmap(&buffer, 0);
+}
 }

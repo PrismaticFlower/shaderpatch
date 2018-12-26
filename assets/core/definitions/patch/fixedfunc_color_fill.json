@@ -1,0 +1,63 @@
+{
+  "group_name": "fixedfunc_color_fill",
+  "source_name": "fixedfunc_color_fill.fx",
+
+  "input_layouts": {
+    "vs_input": [
+      {
+        "semantic": {
+          "name": "POSITIONT",
+          "index": 0
+        },
+        "format": "float4"
+      }
+    ]
+  },
+
+  "entrypoints": {
+    "main_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "vs_input",
+
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "main_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
+    }
+  },
+
+
+  "rendertypes": {
+    "fixedfunc_color_fill": {}
+  },
+
+  "states": {
+    "color fill": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      }
+    }
+  }
+}

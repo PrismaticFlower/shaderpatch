@@ -34,6 +34,43 @@ auto read_input_layout(ucfb::Reader_strict<"IALO"_mn> reader)
    return layout;
 }
 
+void read_entrypoints(ucfb::Reader_strict<"CSHD"_mn> reader,
+                      ID3D11Device& device, Shader_group& group)
+{
+   const auto count =
+      reader.read_child_strict<"SIZE"_mn>().read_trivial<std::uint32_t>();
+
+   for (auto ep_index = 0u; ep_index < count; ++ep_index) {
+      auto ep_reader = reader.read_child_strict<"EP__"_mn>();
+      const auto ep_name = ep_reader.read_child_strict<"NAME"_mn>().read_string();
+
+      auto vrs_reader = ep_reader.read_child_strict<"VRS_"_mn>();
+
+      const auto variation_count =
+         vrs_reader.read_child_strict<"SIZE"_mn>().read_trivial<std::uint32_t>();
+
+      Compute_shader_entrypoint entrypoint;
+
+      for (auto vari_index = 0u; vari_index < variation_count; ++vari_index) {
+         auto vari_reader = vrs_reader.read_child_strict<"VARI"_mn>();
+
+         const auto static_flags = vari_reader.read_trivial<std::uint32_t>();
+         const auto bytecode_size = vari_reader.read_trivial<std::uint32_t>();
+         const auto bytecode = vari_reader.read_array<std::byte>(bytecode_size);
+
+         Com_ptr<ID3D11ComputeShader> shader;
+
+         throw_if_failed(device.CreateComputeShader(bytecode.data(),
+                                                    bytecode.size(), nullptr,
+                                                    shader.clear_and_assign()));
+
+         entrypoint.insert(std::move(shader), static_flags);
+      }
+
+      group.compute.insert(std::string{ep_name}, std::move(entrypoint));
+   }
+}
+
 void read_entrypoints(ucfb::Reader_strict<"VSHD"_mn> reader,
                       ID3D11Device& device, Shader_group& group)
 {
@@ -174,6 +211,8 @@ void read_shader_pack(ucfb::Reader_strict<"shpk"_mn> reader,
 
    auto entrypoints_reader = reader.read_child_strict<"EPTS"_mn>();
 
+   read_entrypoints(entrypoints_reader.read_child_strict<"CSHD"_mn>(), device,
+                    shader_group);
    read_entrypoints(entrypoints_reader.read_child_strict<"VSHD"_mn>(), device,
                     shader_group);
    read_entrypoints(entrypoints_reader.read_child_strict<"PSHD"_mn>(), device,

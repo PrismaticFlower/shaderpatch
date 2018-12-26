@@ -12,6 +12,8 @@ struct Scene_tag {
 };
 struct Draw_tag {
 };
+struct Fixedfunction_tag {
+};
 struct Skin_tag {
 };
 struct Draw_ps_tag {
@@ -19,6 +21,7 @@ struct Draw_ps_tag {
 
 static constexpr Scene_tag scene{};
 static constexpr Draw_tag draw{};
+static constexpr Fixedfunction_tag fixedfunction{};
 static constexpr Skin_tag skin{};
 static constexpr Draw_ps_tag draw_ps{};
 
@@ -62,6 +65,14 @@ struct alignas(16) Draw {
 
 static_assert(sizeof(Draw) == 592);
 
+struct alignas(16) Fixedfunction {
+   glm::vec4 texture_factor;
+   glm::vec2 inv_resolution;
+   std::array<float, 2> _buffer_padding;
+};
+
+static_assert(sizeof(Fixedfunction) == 32);
+
 struct alignas(16) Skin {
    std::array<std::array<glm::vec4, 3>, 15> bone_matrices;
 };
@@ -69,7 +80,7 @@ struct alignas(16) Skin {
 static_assert(sizeof(Skin) == 720);
 
 struct alignas(16) Draw_ps {
-   glm::vec4 ps_custom_constants[5];
+   std::array<glm::vec4, 5> ps_custom_constants;
    glm::vec3 ps_view_positionWS;
    float ps_lighting_scale;
    glm::vec4 rt_resolution; // x = width, y = height, z = 1 / width, w = 1 / height

@@ -73,7 +73,8 @@ auto create_swapchain(ID3D11Device1& device, IDXGIAdapter2& adapter,
    swap_chain_desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
    swap_chain_desc.Stereo = false;
    swap_chain_desc.SampleDesc = {1, 0};
-   swap_chain_desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+   swap_chain_desc.BufferUsage =
+      DXGI_USAGE_SHADER_INPUT | DXGI_USAGE_RENDER_TARGET_OUTPUT;
    swap_chain_desc.BufferCount = 2;
    swap_chain_desc.Scaling = DXGI_SCALING_NONE;
    swap_chain_desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
@@ -190,13 +191,16 @@ auto Shader_patch::create_game_rendertarget(const UINT width, const UINT height)
                             height,
                             1,
                             1,
-                            D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET};
+                            D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET |
+                               D3D11_BIND_UNORDERED_ACCESS};
 
    _device->CreateTexture2D(&texture_desc, nullptr, rt.texture.clear_and_assign());
    _device->CreateRenderTargetView(rt.texture.get(), nullptr,
                                    rt.rtv.clear_and_assign());
    _device->CreateShaderResourceView(rt.texture.get(), nullptr,
                                      rt.srv.clear_and_assign());
+   _device->CreateUnorderedAccessView(rt.texture.get(), nullptr,
+                                      rt.uav.clear_and_assign());
 
    return Game_rendertarget_id{index};
 }
@@ -573,7 +577,17 @@ void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
       dest_rect ? *dest_rect : RECT{0, 0, src_rt.width - 1, src_rt.height - 1});
 
    if (!boxes_same_size(dest_box, src_box)) {
-      // TODO: Implement stretching!
+      _om_targets_dirty = true;
+      _ps_textures_dirty = true;
+
+      std::array<ID3D11ShaderResourceView*, 4> null_srvs{};
+      _device_context->PSSetShaderResources(0, null_srvs.size(), null_srvs.data());
+
+      ID3D11RenderTargetView* null_rtv = nullptr;
+      _device_context->OMSetRenderTargets(0, &null_rtv, nullptr);
+
+      _image_stretcher.stretch(*_device_context, src_box, *src_rt.srv,
+                               *dest_rt.uav, dest_box);
 
       return;
    }
@@ -789,6 +803,19 @@ void Shader_patch::set_constants(const cb::Draw_tag, const UINT offset,
                constants.data(), constants.size_bytes());
 }
 
+void Shader_patch::set_constants(const cb::Fixedfunction_tag,
+                                 const glm::vec4 texture_factor) noexcept
+{
+   const auto& rt = _game_rendertargets[static_cast<int>(_current_game_rendertarget)];
+
+   cb::Fixedfunction constants;
+
+   constants.texture_factor = texture_factor;
+   constants.inv_resolution = {1.0f / rt.width, 1.0f / rt.height};
+
+   update_dynamic_buffer(*_device_context, *_cb_fixedfunction_buffer, constants);
+}
+
 void Shader_patch::set_constants(const cb::Skin_tag, const UINT offset,
                                  const gsl::span<const std::array<float, 4>> constants) noexcept
 {
@@ -860,6 +887,8 @@ auto Shader_patch::get_backbuffer_views() noexcept -> Game_rendertarget
    _swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D),
                          rt.texture.void_clear_and_assign());
 
+   _device->CreateShaderResourceView(rt.texture.get(), nullptr,
+                                     rt.srv.clear_and_assign());
    _device->CreateRenderTargetView(rt.texture.get(), nullptr,
                                    rt.rtv.clear_and_assign());
 
@@ -876,7 +905,8 @@ void Shader_patch::bind_static_resources() noexcept
                                        &empty_vertex_offset);
 
    const auto vs_constant_buffers =
-      std::array{_cb_scene_buffer.get(), _cb_draw_buffer.get()};
+      std::array{_cb_scene_buffer.get(), _cb_draw_buffer.get(),
+                 _cb_fixedfunction_buffer.get()};
 
    _device_context->VSSetConstantBuffers(0, vs_constant_buffers.size(),
                                          vs_constant_buffers.data());
@@ -944,44 +974,19 @@ void Shader_patch::update_dirty_state() noexcept
    }
 
    if (std::exchange(_cb_scene_dirty, false)) {
-      D3D11_MAPPED_SUBRESOURCE map;
-
-      _device_context->Map(_cb_scene_buffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &map);
-
-      std::memcpy(map.pData, &_cb_scene, sizeof(_cb_scene));
-
-      _device_context->Unmap(_cb_scene_buffer.get(), 0);
+      update_dynamic_buffer(*_device_context, *_cb_scene_buffer, _cb_scene);
    }
 
    if (std::exchange(_cb_draw_dirty, false)) {
-      D3D11_MAPPED_SUBRESOURCE map;
-
-      _device_context->Map(_cb_draw_buffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &map);
-
-      std::memcpy(map.pData, &_cb_draw, sizeof(_cb_draw));
-
-      _device_context->Unmap(_cb_draw_buffer.get(), 0);
+      update_dynamic_buffer(*_device_context, *_cb_draw_buffer, _cb_draw);
    }
 
    if (std::exchange(_cb_skin_dirty, false)) {
-      D3D11_MAPPED_SUBRESOURCE map;
-
-      _device_context->Map(_cb_skin_buffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &map);
-
-      std::memcpy(map.pData, &_cb_skin, sizeof(_cb_skin));
-
-      _device_context->Unmap(_cb_skin_buffer.get(), 0);
+      update_dynamic_buffer(*_device_context, *_cb_skin_buffer, _cb_skin);
    }
 
    if (std::exchange(_cb_draw_ps_dirty, false)) {
-      D3D11_MAPPED_SUBRESOURCE map;
-
-      _device_context->Map(_cb_draw_ps_buffer.get(), 0, D3D11_MAP_WRITE_DISCARD,
-                           0, &map);
-
-      std::memcpy(map.pData, &_cb_draw_ps, sizeof(_cb_draw_ps));
-
-      _device_context->Unmap(_cb_draw_ps_buffer.get(), 0);
+      update_dynamic_buffer(*_device_context, *_cb_draw_ps_buffer, _cb_draw_ps);
    }
 }
 

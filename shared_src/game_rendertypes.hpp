@@ -32,7 +32,14 @@ enum class Rendertype {
    stencilshadow,
    Terrain2,
    water,
-   zprepass
+   zprepass,
+
+   // Fixed Func Rendertypes
+   fixedfunc_color_fill,
+   fixedfunc_damage_overlay,
+   fixedfunc_plain_texture,
+   fixedfunc_scene_blur,
+   fixedfunc_zoom_blur
 };
 
 inline Rendertype rendertype_from_string(std::string_view string)
@@ -65,6 +72,11 @@ inline Rendertype rendertype_from_string(std::string_view string)
    if (string == "Terrain2"sv) { return Rendertype::Terrain2; }
    if (string == "water"sv) { return Rendertype::water; }
    if (string == "zprepass"sv) { return Rendertype::zprepass; }
+   if (string == "fixedfunc_color_fill"sv) { return Rendertype::fixedfunc_color_fill; }
+   if (string == "fixedfunc_damage_overlay"sv) { return Rendertype::fixedfunc_damage_overlay; }
+   if (string == "fixedfunc_plain_texture"sv) { return Rendertype::fixedfunc_plain_texture; }
+   if (string == "fixedfunc_scene_blur"sv) { return Rendertype::fixedfunc_scene_blur; }
+   if (string == "fixedfunc_zoom_blur"sv) { return Rendertype::fixedfunc_zoom_blur; }
 
    // clang-format on
 
@@ -72,7 +84,7 @@ inline Rendertype rendertype_from_string(std::string_view string)
                                                   "\" is not a valid Rendertype"sv);
 }
 
-inline std::string to_string(const Rendertype rendertype)
+inline std::string to_string(const Rendertype rendertype) noexcept
 {
    using namespace std::literals;
 
@@ -102,8 +114,15 @@ inline std::string to_string(const Rendertype rendertype)
       case Rendertype::Terrain2: return "Terrain2"s;
       case Rendertype::water: return "water"s;
       case Rendertype::zprepass: return "zprepass"s;
+      case Rendertype::fixedfunc_color_fill: return "fixedfunc_color_fill"s;
+      case Rendertype::fixedfunc_damage_overlay: return "fixedfunc_damage_overlay"s;
+      case Rendertype::fixedfunc_plain_texture: return "fixedfunc_plain_texture"s;
+      case Rendertype::fixedfunc_scene_blur: return "fixedfunc_scene_blur"s;
+      case Rendertype::fixedfunc_zoom_blur: return "fixedfunc_zoom_blur"s;
    }
    // clang-format on
+
+   std::terminate();
 }
 
 }

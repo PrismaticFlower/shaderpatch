@@ -14,6 +14,11 @@
 
 namespace sp::shader {
 
+struct Compute_variation {
+   std::uint32_t static_flags = 0;
+   Preprocessor_defines defines;
+};
+
 struct Vertex_variation {
    Vertex_shader_flags flags = Vertex_shader_flags::none;
    std::uint32_t static_flags = 0;

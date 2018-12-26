@@ -31,6 +31,11 @@ ucft
       // Patch Shaders
       "bloom"
       "damage_overlay"
+      "fixedfunc_color_fill"
+      "fixedfunc_damage_overlay"
+      "fixedfunc_plain_texture"
+      "fixedfunc_scene_blur"
+      "fixedfunc_zoom_blur"
       "gaussian_blur"
       "normal_ext"
       "late_effects_resolve"
@@ -40,6 +45,7 @@ ucft
       "shadows_blur"
       "skyfog_ext"
       "stock_bloom_ext"
+      "stretch_texture"
    }
    
    // Patch Textures

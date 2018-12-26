@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <cwchar>
 #include <limits>
+#include <queue>
 
 namespace sp::d3d9 {
 
@@ -40,12 +41,6 @@ auto enum_adapters_dxgi_1_6(IDXGIFactory6& factory) noexcept
 auto enum_adapaters(IDXGIFactory2& factory) noexcept
    -> std::vector<Com_ptr<IDXGIAdapter2>>
 {
-   // TODO: Enable me!
-   // if (Com_ptr<IDXGIFactory6> factory_1_6;
-   //     SUCCEEDED(factory.QueryInterface(factory_1_6.clear_and_assign()))) {
-   //    return enum_adapters_dxgi_1_6(*factory_1_6);
-   // }
-
    std::vector<Com_ptr<IDXGIAdapter2>> adapaters;
 
    Com_ptr<IDXGIAdapter1> adapater;
@@ -62,29 +57,46 @@ auto enum_adapaters(IDXGIFactory2& factory) noexcept
    return adapaters;
 }
 
-auto enum_outputs(const std::vector<Com_ptr<IDXGIAdapter2>>& adapters) noexcept
+auto select_adapater(IDXGIFactory2& factory) noexcept -> Com_ptr<IDXGIAdapter2>
 {
-   std::unordered_map<IDXGIAdapter2*, std::vector<Com_ptr<IDXGIOutput1>>> adapater_outputs;
+   // if (Com_ptr<IDXGIFactory6> factory_1_6;
+   //     SUCCEEDED(factory.QueryInterface(factory_1_6.clear_and_assign()))) {
+   //    const auto adapters = enum_adapters_dxgi_1_6(*factory_1_6);
+   //
+   //    return adapters[0];
+   // }
 
-   for (auto adapater : adapters) {
-      auto& outputs =
-         adapater_outputs
-            .emplace(std::pair{adapater.get(), std::vector<Com_ptr<IDXGIOutput1>>{}})
-            .first->second;
+   const auto compare_adapaters = [](const Com_ptr<IDXGIAdapter2>& left,
+                                     const Com_ptr<IDXGIAdapter2>& right) {
+      DXGI_ADAPTER_DESC2 ldesc;
+      left->GetDesc2(&ldesc);
 
-      Com_ptr<IDXGIOutput> output;
+      DXGI_ADAPTER_DESC2 rdesc;
+      right->GetDesc2(&rdesc);
 
-      for (int i = 0; adapater->EnumOutputs(i, output.clear_and_assign()) !=
-                      DXGI_ERROR_NOT_FOUND;
-           ++i) {
+      return ldesc.DedicatedVideoMemory < rdesc.DedicatedVideoMemory;
+   };
 
-         if (FAILED(output->QueryInterface(outputs.emplace_back().clear_and_assign()))) {
-            outputs.pop_back();
-         }
+   return std::priority_queue{compare_adapaters, enum_adapaters(factory)}.top();
+}
+
+auto enum_outputs(IDXGIAdapter2& adapter) noexcept
+   -> std::vector<Com_ptr<IDXGIOutput1>>
+{
+   std::vector<Com_ptr<IDXGIOutput1>> outputs;
+
+   Com_ptr<IDXGIOutput> output;
+
+   for (int i = 0;
+        adapter.EnumOutputs(i, output.clear_and_assign()) != DXGI_ERROR_NOT_FOUND;
+        ++i) {
+
+      if (FAILED(output->QueryInterface(outputs.emplace_back().clear_and_assign()))) {
+         outputs.pop_back();
       }
    }
 
-   return adapater_outputs;
+   return outputs;
 }
 
 auto enum_display_modes(IDXGIOutput1& output, DXGI_FORMAT format) noexcept
@@ -117,14 +129,11 @@ Creator::Creator() noexcept
       log_and_terminate("Failed to create IDXGIFactory2!");
    }
 
-   _adapters = enum_adapaters(*_factory);
-   _outputs = enum_outputs(_adapters);
+   _adapter = select_adapater(*_factory);
+   _outputs = enum_outputs(*_adapter);
 
-   for (const auto& adapater_outputs : _outputs) {
-      for (auto output : adapater_outputs.second) {
-         _display_modes[output.get()] =
-            enum_display_modes(*output, _desired_backbuffer_format);
-      }
+   for (auto output : _outputs) {
+      _display_modes[output] = enum_display_modes(*output, _desired_backbuffer_format);
    }
 }
 
@@ -134,12 +143,12 @@ HRESULT Creator::CreateDevice(UINT adapter_index, D3DDEVTYPE, HWND focus_window,
 {
    Debug_trace::func(__FUNCSIG__);
 
-   if (adapter_index >= _adapters.size()) return D3DERR_INVALIDCALL;
+   if (adapter_index != 0) return D3DERR_INVALIDCALL;
    if (!parameters) return D3DERR_INVALIDCALL;
    if (!returned_device_interface) return D3DERR_INVALIDCALL;
 
    if (!_device) {
-      _device = Device::create(*this, *_adapters[adapter_index],
+      _device = Device::create(*this, *_adapter,
                                parameters->hDeviceWindow ? parameters->hDeviceWindow
                                                          : focus_window);
    }
@@ -202,7 +211,7 @@ UINT Creator::GetAdapterCount() noexcept
 {
    Debug_trace::func(__FUNCSIG__);
 
-   return static_cast<UINT>(_adapters.size());
+   return 1;
 }
 
 HRESULT Creator::GetAdapterIdentifier(UINT adapter_index, DWORD,
@@ -211,11 +220,11 @@ HRESULT Creator::GetAdapterIdentifier(UINT adapter_index, DWORD,
    Debug_trace::func(__FUNCSIG__);
 
    if (!identifier) return D3DERR_INVALIDCALL;
-   if (adapter_index >= _adapters.size()) return D3DERR_INVALIDCALL;
+   if (adapter_index != 0) return D3DERR_INVALIDCALL;
 
    DXGI_ADAPTER_DESC2 desc{};
 
-   _adapters[adapter_index]->GetDesc2(&desc);
+   _adapter->GetDesc2(&desc);
 
    *identifier = D3DADAPTER_IDENTIFIER9{};
 
@@ -226,10 +235,15 @@ HRESULT Creator::GetAdapterIdentifier(UINT adapter_index, DWORD,
                sizeof(identifier->Description), &description,
                sizeof(identifier->Description), &mbstate);
 
+   identifier->DriverVersion.QuadPart = 1;
    identifier->VendorId = desc.VendorId;
    identifier->DeviceId = desc.DeviceId;
    identifier->SubSysId = desc.SubSysId;
    identifier->Revision = desc.Revision;
+   identifier->DeviceIdentifier = {0x5b03f4cc,
+                                   0xfa34,
+                                   0x45d6,
+                                   {0xa1, 0xb0, 0x96, 0xf3, 0xfe, 0xd2, 0xb9, 0x21}};
    identifier->WHQLLevel = 1;
 
    return S_OK;
@@ -239,18 +253,13 @@ UINT Creator::GetAdapterModeCount(UINT adapter_index, D3DFORMAT d3d_format) noex
 {
    Debug_trace::func(__FUNCSIG__);
 
+   if (adapter_index != 0) return 0;
    if (d3d_format != D3DFMT_X8R8G8B8) return 0;
 
-   auto* const adapater = _adapters[adapter_index].get();
-
-   if (auto adapater_outputs = _outputs.find(adapater);
-       adapater_outputs != _outputs.end()) {
-      if (adapater_outputs->second.size() > 0) {
-         if (auto output_modes =
-                _display_modes.find(adapater_outputs->second[_desired_output].get());
-             output_modes != _display_modes.end())
-            return static_cast<UINT>(output_modes->second.size());
-      }
+   if (_outputs.size() > 0) {
+      if (auto output_modes = _display_modes.find(_outputs[_desired_output]);
+          output_modes != _display_modes.end())
+         return static_cast<UINT>(output_modes->second.size());
    }
 
    return 0;
@@ -262,18 +271,17 @@ HRESULT Creator::EnumAdapterModes(UINT adapter_index, D3DFORMAT d3d_format,
    Debug_trace::func(__FUNCSIG__);
 
    if (!display_mode) return D3DERR_INVALIDCALL;
-   if (adapter_index >= _adapters.size()) return D3DERR_INVALIDCALL;
+   if (adapter_index != 0) return D3DERR_INVALIDCALL;
    if (d3d_format != D3DFMT_X8R8G8B8) return D3DERR_NOTAVAILABLE;
 
-   auto* const adapater = _adapters[adapter_index].get();
-   const auto& modes = _display_modes[_outputs[adapater][_desired_output].get()];
+   const auto& modes = _display_modes[_outputs[_desired_output]];
 
    if (mode_index >= modes.size()) return D3DERR_INVALIDCALL;
 
    const auto& mode = modes[mode_index];
 
    *display_mode = {mode.Width, mode.Height,
-                    mode.RefreshRate.Numerator / mode.RefreshRate.Denominator,
+                    mode.RefreshRate.Denominator / mode.RefreshRate.Numerator,
                     d3d_format};
 
    return S_OK;
@@ -289,7 +297,7 @@ HRESULT Creator::CheckDeviceType(UINT adapter_index, D3DDEVTYPE, D3DFORMAT adapt
 {
    Debug_trace::func(__FUNCSIG__);
 
-   if (adapter_index >= _adapters.size()) return D3DERR_INVALIDCALL;
+   if (adapter_index != 0) return D3DERR_INVALIDCALL;
    if (adapter_format != D3DFMT_X8R8G8B8) return D3DERR_NOTAVAILABLE;
    if (back_buffer_format != D3DFMT_A8R8G8B8) return D3DERR_NOTAVAILABLE;
 
@@ -302,7 +310,7 @@ HRESULT Creator::CheckDeviceFormat(UINT adapter_index, D3DDEVTYPE, D3DFORMAT, DW
 {
    Debug_trace::func(__FUNCSIG__);
 
-   if (adapter_index >= _adapters.size()) return D3DERR_INVALIDCALL;
+   if (adapter_index != 0) return D3DERR_INVALIDCALL;
 
    if (d3d_to_dxgi_format(check_format) != DXGI_FORMAT_UNKNOWN) return S_OK;
 
@@ -316,9 +324,10 @@ HRESULT Creator::CheckDeviceMultiSampleType(UINT adapter_index, D3DDEVTYPE,
 {
    Debug_trace::func(__FUNCSIG__);
 
-   if (adapter_index >= _adapters.size()) return D3DERR_INVALIDCALL;
+   if (adapter_index != 0) return D3DERR_INVALIDCALL;
 
    switch (multi_sample_type) {
+   case D3DMULTISAMPLE_NONMASKABLE:
    case D3DMULTISAMPLE_2_SAMPLES:
    case D3DMULTISAMPLE_4_SAMPLES:
    case D3DMULTISAMPLE_8_SAMPLES:
@@ -334,7 +343,7 @@ HRESULT Creator::CheckDepthStencilMatch(UINT adapter_index, D3DDEVTYPE,
 {
    Debug_trace::func(__FUNCSIG__);
 
-   if (adapter_index >= _adapters.size()) return D3DERR_INVALIDCALL;
+   if (adapter_index != 0) return D3DERR_INVALIDCALL;
 
    return S_OK;
 }
@@ -344,7 +353,7 @@ HRESULT Creator::CheckDeviceFormatConversion(UINT adapter_index, D3DDEVTYPE,
 {
    Debug_trace::func(__FUNCSIG__);
 
-   if (adapter_index >= _adapters.size()) return D3DERR_INVALIDCALL;
+   if (adapter_index != 0) return D3DERR_INVALIDCALL;
 
    return S_OK;
 }
@@ -353,7 +362,7 @@ HRESULT Creator::GetDeviceCaps(UINT adapter_index, D3DDEVTYPE, D3DCAPS9* caps) n
 {
    Debug_trace::func(__FUNCSIG__);
 
-   if (adapter_index >= _adapters.size()) return D3DERR_INVALIDCALL;
+   if (adapter_index != 0) return D3DERR_INVALIDCALL;
    if (!caps) return D3DERR_INVALIDCALL;
 
    *caps = device_caps;

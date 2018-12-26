@@ -20,6 +20,49 @@
 
 namespace sp::core {
 
+class Compute_shader_entrypoint {
+public:
+   Compute_shader_entrypoint() = default;
+   explicit Compute_shader_entrypoint(const Compute_shader_entrypoint&) = default;
+   Compute_shader_entrypoint(Compute_shader_entrypoint&&) = default;
+   Compute_shader_entrypoint& operator=(Compute_shader_entrypoint&&) = default;
+
+   Compute_shader_entrypoint& operator=(const Compute_shader_entrypoint&) = delete;
+
+   auto get(const std::uint32_t static_flags = 0) const noexcept -> ID3D11ComputeShader*
+   {
+      if (const auto it = _variations.find(static_flags); it != _variations.end()) {
+         return it->second.get();
+      }
+      else {
+         return nullptr;
+      }
+   }
+
+   auto copy(const std::uint32_t static_flags = 0) const noexcept
+      -> Com_ptr<ID3D11ComputeShader>
+   {
+      if (const auto it = _variations.find(static_flags); it != _variations.end()) {
+         return it->second;
+      }
+
+      log_and_terminate("Attempt to copy nonexistant shader!");
+   }
+
+   void bind(ID3D11DeviceContext& dc, const std::uint32_t static_flags = 0) const noexcept
+   {
+      dc.CSSetShader(get(static_flags), nullptr, 0);
+   }
+
+   void insert(Com_ptr<ID3D11ComputeShader> shader, const std::uint32_t static_flags) noexcept
+   {
+      _variations[static_flags] = std::move(shader);
+   }
+
+private:
+   std::unordered_map<std::uint32_t, Com_ptr<ID3D11ComputeShader>> _variations;
+};
+
 class Vertex_shader_entrypoint {
 public:
    Vertex_shader_entrypoint() = default;
@@ -42,6 +85,18 @@ public:
       else {
          return std::nullopt;
       }
+   }
+
+   auto copy(const std::uint16_t static_flags = 0,
+             const Vertex_shader_flags game_flags = {}) const noexcept
+      -> std::tuple<Com_ptr<ID3D11VertexShader>, std::vector<std::byte>, std::vector<Shader_input_element>>
+   {
+      if (const auto it = _variations.find(index(static_flags, game_flags));
+          it != _variations.end()) {
+         return it->second;
+      }
+
+      log_and_terminate("Attempt to copy nonexistant shader!");
    }
 
    void bind(ID3D11DeviceContext& dc, const std::uint16_t static_flags = 0,
@@ -98,6 +153,18 @@ public:
       else {
          return nullptr;
       }
+   }
+
+   auto copy(const std::uint16_t static_flags = 0,
+             const Pixel_shader_flags game_flags = {}) const noexcept
+      -> Com_ptr<ID3D11PixelShader>
+   {
+      if (const auto it = _variations.find(index(static_flags, game_flags));
+          it != _variations.end()) {
+         return it->second;
+      }
+
+      log_and_terminate("Attempt to copy nonexistant shader!");
    }
 
    void bind(ID3D11DeviceContext& dc, const std::uint16_t static_flags = 0,
@@ -198,6 +265,7 @@ struct Shader_group {
 
    Shader_group& operator=(const Shader_group&) = delete;
 
+   Shader_entrypoints<Compute_shader_entrypoint> compute;
    Shader_entrypoints<Vertex_shader_entrypoint> vertex;
    Shader_entrypoints<Pixel_shader_entrypoint> pixel;
 };

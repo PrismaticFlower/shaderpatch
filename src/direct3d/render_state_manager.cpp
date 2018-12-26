@@ -105,7 +105,7 @@ void Render_state_manager::set(const D3DRENDERSTATETYPE state, const DWORD value
       _blend_state_dirty = true;
       break;
    case D3DRS_ALPHABLENDENABLE:
-      _current_blend_state.alpha_blend_enable = value;
+      _current_blend_state.blend_enable = value;
       _blend_state_dirty = true;
       break;
    case D3DRS_COLORWRITEENABLE:
@@ -121,6 +121,11 @@ void Render_state_manager::set(const D3DRENDERSTATETYPE state, const DWORD value
    case D3DRS_FOGCOLOR:
       _fog_state.color = value;
       _fog_state_dirty = true;
+      break;
+
+      // Texture Factor
+   case D3DRS_TEXTUREFACTOR:
+      _texture_factor = value;
       break;
    }
 }
@@ -144,6 +149,11 @@ void Render_state_manager::update_dirty(core::Shader_patch& shader_patch) noexce
    if (_depthstencil_state_dirty) update_depthstencil_state(shader_patch);
    if (_rasterizer_state_dirty) update_rasterizer_state(shader_patch);
    if (_fog_state_dirty) update_fog_state(shader_patch);
+}
+
+auto Render_state_manager::texture_factor() const noexcept -> DWORD
+{
+   return _texture_factor;
 }
 
 void Render_state_manager::update_blend_state(core::Shader_patch& shader_patch) noexcept
@@ -289,9 +299,6 @@ auto Render_state_manager::create_current_blend_state(core::Shader_patch& shader
       }
    };
 
-   desc.SrcBlend = map_blend_value(_current_blend_state.src_blend);
-   desc.DestBlend = map_blend_value(_current_blend_state.dest_blend);
-
    const auto map_blendop_value = [](const unsigned int d3d9_blendop) noexcept
    {
       switch (d3d9_blendop) {
@@ -310,14 +317,20 @@ auto Render_state_manager::create_current_blend_state(core::Shader_patch& shader
       }
    };
 
-   desc.BlendOp = map_blendop_value(_current_blend_state.blendop);
+   desc.BlendEnable = _current_blend_state.blend_enable;
 
-   if (_current_blend_state.alpha_blend_enable) {
+   if (_current_blend_state.blend_enable) {
+      desc.SrcBlend = map_blend_value(_current_blend_state.src_blend);
+      desc.DestBlend = map_blend_value(_current_blend_state.dest_blend);
+      desc.BlendOp = map_blendop_value(_current_blend_state.blendop);
       desc.SrcBlendAlpha = map_alpha_blend_value(_current_blend_state.src_blend);
       desc.DestBlendAlpha = map_alpha_blend_value(_current_blend_state.dest_blend);
       desc.BlendOpAlpha = desc.BlendOp;
    }
    else {
+      desc.SrcBlend = D3D11_BLEND_ONE;
+      desc.DestBlend = D3D11_BLEND_ZERO;
+      desc.BlendOp = D3D11_BLEND_OP_ADD;
       desc.SrcBlendAlpha = D3D11_BLEND_ONE;
       desc.DestBlendAlpha = D3D11_BLEND_ZERO;
       desc.BlendOpAlpha = D3D11_BLEND_OP_ADD;

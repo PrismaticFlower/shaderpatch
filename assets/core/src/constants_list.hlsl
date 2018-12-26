@@ -44,6 +44,12 @@ cbuffer DrawConstants : register(b1)
    float4 custom_constants[9];
 }
 
+cbuffer FixedfuncConstants : register(b2)
+{
+   float4 ff_texture_factor;
+   float2 ff_inv_resolution;
+}
+
 tbuffer SkinConstants : register(t0)
 {
    float4x3 bone_matrices[15];
