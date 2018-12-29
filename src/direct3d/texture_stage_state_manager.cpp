@@ -3,6 +3,8 @@
 
 #include <gsl/gsl>
 
+#include <VersionHelpers.h>
+
 namespace sp::d3d9 {
 
 using namespace std::literals;
@@ -186,7 +188,7 @@ DWORD Texture_stage_state_manager::get(const UINT stage,
 void Texture_stage_state_manager::update(core::Shader_patch& shader_patch,
                                          const DWORD texture_factor) const noexcept
 {
-   if (is_color_fill_state(texture_factor)) {
+   if (is_color_fill_state()) {
       shader_patch.set_game_shader(_color_fill_shader);
    }
    else if (is_damage_overlay_state(texture_factor)) {
@@ -198,7 +200,7 @@ void Texture_stage_state_manager::update(core::Shader_patch& shader_patch,
    else if (is_scene_blur_state()) {
       shader_patch.set_game_shader(_scene_blur_shader);
    }
-   else if (is_zoom_blur_state(texture_factor)) {
+   else if (is_zoom_blur_state()) {
       shader_patch.set_game_shader(_zoom_blur_shader);
    }
    else {
@@ -206,6 +208,11 @@ void Texture_stage_state_manager::update(core::Shader_patch& shader_patch,
    }
 
    shader_patch.set_constants(core::cb::fixedfunction, unpack_d3dcolor(texture_factor));
+}
+
+void Texture_stage_state_manager::reset() noexcept
+{
+   _stages = default_stages_state();
 }
 
 bool Texture_stage_state_manager::is_scene_blur_state() const noexcept
@@ -222,7 +229,7 @@ bool Texture_stage_state_manager::is_scene_blur_state() const noexcept
    return true;
 }
 
-bool Texture_stage_state_manager::is_zoom_blur_state(const DWORD texture_factor) const noexcept
+bool Texture_stage_state_manager::is_zoom_blur_state() const noexcept
 {
    if (_stages[2].colorop != D3DTOP_DISABLE) return false;
    if (_stages[2].alphaop != D3DTOP_DISABLE) return false;
@@ -238,7 +245,6 @@ bool Texture_stage_state_manager::is_zoom_blur_state(const DWORD texture_factor)
    if (_stages[0].alphaop != D3DTOP_MODULATE) return false;
    if (_stages[0].alphaarg1 != D3DTA_TFACTOR) return false;
    if (_stages[0].alphaarg2 != D3DTA_TEXTURE) return false;
-   if (texture_factor != D3DCOLOR_ARGB(0xff, 0xff, 0xff, 0xff)) return false;
 
    return true;
 }
@@ -246,6 +252,8 @@ bool Texture_stage_state_manager::is_zoom_blur_state(const DWORD texture_factor)
 bool Texture_stage_state_manager::is_damage_overlay_state(const DWORD texture_factor) const
    noexcept
 {
+   constexpr DWORD damage_color = D3DCOLOR_ARGB(0x00, 0xdf, 0x20, 0x20);
+
    if (_stages[1].colorop != D3DTOP_DISABLE) return false;
    if (_stages[1].alphaop != D3DTOP_DISABLE) return false;
    if (_stages[0].colorop != D3DTOP_MODULATE) return false;
@@ -254,7 +262,7 @@ bool Texture_stage_state_manager::is_damage_overlay_state(const DWORD texture_fa
    if (_stages[0].alphaop != D3DTOP_MODULATE) return false;
    if (_stages[0].alphaarg1 != D3DTA_TFACTOR) return false;
    if (_stages[0].alphaarg2 != D3DTA_TEXTURE) return false;
-   if (texture_factor != D3DCOLOR_ARGB(0xff, 0xdf, 0x20, 0x20)) return false;
+   if ((texture_factor & damage_color) != damage_color) return false;
 
    return true;
 }
@@ -274,7 +282,7 @@ bool Texture_stage_state_manager::is_plain_texture_state(const DWORD texture_fac
    return true;
 }
 
-bool Texture_stage_state_manager::is_color_fill_state(const DWORD texture_factor) const noexcept
+bool Texture_stage_state_manager::is_color_fill_state() const noexcept
 {
    if (_stages[1].colorop != D3DTOP_DISABLE) return false;
    if (_stages[1].alphaop != D3DTOP_DISABLE) return false;
@@ -284,7 +292,6 @@ bool Texture_stage_state_manager::is_color_fill_state(const DWORD texture_factor
    if (_stages[0].alphaop != D3DTOP_SELECTARG1) return false;
    if (_stages[0].alphaarg1 != D3DTA_TFACTOR) return false;
    if (_stages[0].alphaarg2 != D3DTA_TEXTURE) return false;
-   if (texture_factor != D3DCOLOR_ARGB(0xff, 0x00, 0x00, 0x00)) return false;
 
    return true;
 }

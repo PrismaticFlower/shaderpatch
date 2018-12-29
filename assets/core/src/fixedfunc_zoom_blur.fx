@@ -14,6 +14,7 @@ struct Vs_input {
 struct Vs_output {
    float2 texcoords : TEXCOORD0;
    float2 mask_texcoords : TEXCOORD1;
+   nointerpolation float alpha : ALPHA;
    float4 positionPS : SV_Position;
 };
 
@@ -27,6 +28,7 @@ Vs_output main_vs(Vs_input input)
    output.positionPS = float4(position, 0.0, 1.0);
    output.texcoords = input.texcoords;
    output.mask_texcoords = input.mask_texcoords;
+   output.alpha = ff_texture_factor.a;
    
    return output;
 }
@@ -34,12 +36,13 @@ Vs_output main_vs(Vs_input input)
 struct Ps_input {
    float2 texcoords : TEXCOORD0;
    float2 mask_texcoords : TEXCOORD1;
+   nointerpolation float alpha : ALPHA;
 };
 
 float4 main_ps(Ps_input input) : SV_Target0
 {
    const float3 color = source_texture.SampleLevel(linear_clamp_sampler, input.texcoords, 0);
-   const float mask = mask_texture.SampleLevel(linear_clamp_sampler, input.mask_texcoords, 0).a;
+   const float mask = smoothstep(0.1, 0.5, distance(input.mask_texcoords, float2(0.5, 0.5)));
 
-   return float4(color, mask);
+   return float4(color, mask * input.alpha);
 }

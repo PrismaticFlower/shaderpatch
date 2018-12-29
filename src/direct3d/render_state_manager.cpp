@@ -141,6 +141,7 @@ void Render_state_manager::reset() noexcept
    _current_depthstencil_state = {};
    _current_rasterizer_state = {};
    _fog_state = {};
+   _texture_factor = 0xffffffff;
 }
 
 void Render_state_manager::update_dirty(core::Shader_patch& shader_patch) noexcept

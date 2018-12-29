@@ -20,16 +20,18 @@ public:
    void update(core::Shader_patch& shader_patch, const DWORD texture_factor) const
       noexcept;
 
+   void reset() noexcept;
+
 private:
    bool is_scene_blur_state() const noexcept;
 
-   bool is_zoom_blur_state(const DWORD texture_factor) const noexcept;
+   bool is_zoom_blur_state() const noexcept;
 
    bool is_damage_overlay_state(const DWORD texture_factor) const noexcept;
 
    bool is_plain_texture_state(const DWORD texture_factor) const noexcept;
 
-   bool is_color_fill_state(const DWORD texture_factor) const noexcept;
+   bool is_color_fill_state() const noexcept;
 
    struct Stage_state {
       DWORD colorop;
@@ -93,9 +95,13 @@ private:
                          0xffffffff};
    };
 
-   std::array<Stage_state, 4> _stages{default_state, gen_default_state_disabled(1),
-                                      gen_default_state_disabled(2),
-                                      gen_default_state_disabled(3)};
+   constexpr static auto default_stages_state() noexcept -> std::array<Stage_state, 4>
+   {
+      return {default_state, gen_default_state_disabled(1),
+              gen_default_state_disabled(2), gen_default_state_disabled(3)};
+   }
+
+   std::array<Stage_state, 4> _stages = default_stages_state();
 
    const std::shared_ptr<core::Game_shader> _color_fill_shader;
    const std::shared_ptr<core::Game_shader> _damage_overlay_shader;
