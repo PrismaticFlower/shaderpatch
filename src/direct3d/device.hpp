@@ -18,7 +18,8 @@ namespace sp::d3d9 {
 class Device final : public IDirect3DDevice9 {
 public:
    static Com_ptr<Device> create(IDirect3D9& direct3d9, IDXGIAdapter2& adapter,
-                                 const HWND window) noexcept;
+                                 const HWND window, const UINT width,
+                                 const UINT height) noexcept;
 
    Device(const Device&) = delete;
    Device& operator=(const Device&) = delete;
@@ -548,7 +549,8 @@ public:
    }
 
 private:
-   Device(IDirect3D9& direct3d9, IDXGIAdapter2& adapter, const HWND window) noexcept;
+   Device(IDirect3D9& direct3d9, IDXGIAdapter2& adapter, const HWND window,
+          const UINT width, const UINT height) noexcept;
    ~Device() = default;
 
    auto create_texture2d_managed(const UINT width, const UINT height,
@@ -588,15 +590,18 @@ private:
    D3DPRIMITIVETYPE _last_primitive_type;
    bool _fixed_func_active = true;
 
-   const Com_ref<IUnknown> _backbuffer{
-      Surface_backbuffer::create(_shader_patch.get_back_buffer(), 800, 600)};
+   std::uint16_t _width;
+   std::uint16_t _height;
+
+   Com_ptr<IUnknown> _backbuffer{
+      Surface_backbuffer::create(_shader_patch.get_back_buffer(), _width, _height)};
 
    Com_ptr<IUnknown> _rendertarget{_backbuffer};
 
    Com_ptr<IUnknown> _depthstencil{
-      Surface_depthstencil::create(core::Game_depthstencil::nearscene, 800, 600)};
+      Surface_depthstencil::create(core::Game_depthstencil::nearscene, _width, _height)};
 
-   D3DVIEWPORT9 _viewport{0, 0, 800, 600, 0.0f, 1.0f};
+   D3DVIEWPORT9 _viewport{0, 0, _width, _height, 0.0f, 1.0f};
    Texture_stage_state_manager _texture_stage_manager{_shader_patch};
 
    ULONG _ref_count = 1;

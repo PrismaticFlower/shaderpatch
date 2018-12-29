@@ -188,12 +188,16 @@
     </ClCompile>
     <ClCompile Include="src\fps_unlock.cpp" />
     <ClCompile Include="src\imgui\imgui_impl_dx9.cpp" />
-    <ClCompile Include="src\input_hooker.cpp" />
+    <ClCompile Include="src\input_hooker.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\material.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="src\user_config.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\core\constant_buffers.hpp" />

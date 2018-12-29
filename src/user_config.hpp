@@ -127,12 +127,9 @@ struct User_config {
    }
 
    struct {
-      bool enabled = false;
-      bool windowed = false;
-      glm::ivec2 resolution{800, 600};
-
-      bool borderless = true;
-   } display;
+      std::uint32_t screen_percent = 100;
+      bool centred = false;
+   } window;
 
    struct {
       bool high_res_reflections = true;
@@ -161,20 +158,18 @@ struct User_config {
    {
       ImGui::Begin("User Config", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
-      if (ImGui::CollapsingHeader("Display", ImGuiTreeNodeFlags_DefaultOpen)) {
-         ImGui::Checkbox("Override Enabled", &display.enabled);
-         ImGui::SameLine();
-         ImGui::Checkbox("Windowed", &display.windowed);
+      if (ImGui::CollapsingHeader("Window", ImGuiTreeNodeFlags_DefaultOpen)) {
+         int screen_percent = window.screen_percent;
+         ImGui::DragInt("Screen Percent", &screen_percent, 1.0f, 10, 100);
 
-         ImGui::InputInt2("Resolution", &display.resolution.x);
-         ImGui::SameLine();
-         ImGui::Checkbox("Borderless", &display.borderless);
+         window.screen_percent =
+            static_cast<std::uint32_t>(std::clamp(screen_percent, 10, 100));
+
+         ImGui::Checkbox("Centred", &window.centred);
       }
 
       if (ImGui::CollapsingHeader("Rendering", ImGuiTreeNodeFlags_DefaultOpen)) {
          ImGui::Checkbox("High Resolution Reflections", &rendering.high_res_reflections);
-
-         ImGui::Checkbox("Smooth Bloom", &rendering.smooth_bloom);
 
          ImGui::Checkbox("Gaussian Blur Blur Particles",
                          &rendering.gaussian_blur_blur_particles);
@@ -251,70 +246,71 @@ private:
 
       const auto config = YAML::LoadFile(path);
 
-      display.enabled = config["Display"s]["Enabled"s].as<bool>();
-      display.windowed = config["Display"s]["Windowed"s].as<bool>();
-      display.windowed = config["Display"s]["Borderless"s].as<bool>();
-      display.resolution.x = config["Display"s]["Resolution"s][0].as<int>();
-      display.resolution.y = config["Display"s]["Resolution"s][1].as<int>();
+      window.screen_percent =
+         std::clamp(config["Window"s]["ScreenPercent"s].as<std::uint32_t>(), 10u, 100u);
 
-      rendering.high_res_reflections =
-         config["Rendering"s]["HighResolutionReflections"s].as<bool>();
+      window.centred = config["Window"s]["Centred"s].as<bool>();
 
-      rendering.smooth_bloom = config["Rendering"s]["SmoothBloom"s].as<bool>();
-
-      rendering.gaussian_blur_blur_particles =
-         config["Rendering"s]["GaussianBlurBlurParticles"s].as<bool>();
-
-      rendering.gaussian_scene_blur =
-         config["Rendering"s]["GaussianSceneBlur"s].as<bool>();
-
-      rendering.new_damage_overlay =
-         config["Rendering"s]["NewDamageOverlay"s].as<bool>();
-
-      const auto reflection_scale =
-         config["Rendering"s]["ReflectionBufferScale"s].as<double>();
-
-      rendering.reflection_buffer_factor =
-         static_cast<int>(1.0 / glm::clamp(reflection_scale, 0.01, 1.0));
-
-      const auto refraction_scale =
-         config["Rendering"s]["RefractionBufferScale"s].as<double>();
-
-      rendering.refraction_buffer_factor =
-         static_cast<int>(1.0 / glm::clamp(refraction_scale, 0.01, 1.0));
-
-      rendering.anisotropic_filtering =
-         config["Rendering"s]["AnisotropicFiltering"s].as<int>();
-
-      rendering.force_anisotropic_filtering =
-         config["Rendering"s]["ForceAnisotropicFiltering"s].as<bool>();
-
-      rendering.advertise_presence =
-         config["Rendering"s]["AdvertisePresence"s].as<bool>();
-
-      effects.enabled = config["Effects"s]["Enabled"s].as<bool>();
-
-      effects.color_quality = color_quality_from_string(
-         config["Effects"s]["ColorQuality"].as<std::string>());
-
-      effects.post_aa_quality = aa_quality_from_string(
-         config["Effects"s]["PostAAQuality"s].as<std::string>());
-
-      effects.soft_shadows = config["Effects"s]["SoftShadows"s].as<bool>();
-
-      effects.bloom = config["Effects"s]["Bloom"s].as<bool>();
-
-      effects.vignette = config["Effects"s]["Vignette"s].as<bool>();
-
-      effects.film_grain = config["Effects"s]["FilmGrain"s].as<bool>();
-
-      effects.colored_film_grain =
-         config["Effects"s]["AllowColoredFilmGrain"s].as<bool>();
-
-      developer.toggle_key = config["Developer"s]["ScreenToggle"s].as<int>();
+      // rendering.high_res_reflections =
+      //    config["Rendering"s]["HighResolutionReflections"s].as<bool>();
+      //
+      // rendering.smooth_bloom = config["Rendering"s]["SmoothBloom"s].as<bool>();
+      //
+      // rendering.gaussian_blur_blur_particles =
+      //    config["Rendering"s]["GaussianBlurBlurParticles"s].as<bool>();
+      //
+      // rendering.gaussian_scene_blur =
+      //    config["Rendering"s]["GaussianSceneBlur"s].as<bool>();
+      //
+      // rendering.new_damage_overlay =
+      //    config["Rendering"s]["NewDamageOverlay"s].as<bool>();
+      //
+      // const auto reflection_scale =
+      //    config["Rendering"s]["ReflectionBufferScale"s].as<double>();
+      //
+      // rendering.reflection_buffer_factor =
+      //    static_cast<int>(1.0 / glm::clamp(reflection_scale, 0.01, 1.0));
+      //
+      // const auto refraction_scale =
+      //    config["Rendering"s]["RefractionBufferScale"s].as<double>();
+      //
+      // rendering.refraction_buffer_factor =
+      //    static_cast<int>(1.0 / glm::clamp(refraction_scale, 0.01, 1.0));
+      //
+      // rendering.anisotropic_filtering =
+      //    config["Rendering"s]["AnisotropicFiltering"s].as<int>();
+      //
+      // rendering.force_anisotropic_filtering =
+      //    config["Rendering"s]["ForceAnisotropicFiltering"s].as<bool>();
+      //
+      // rendering.advertise_presence =
+      //    config["Rendering"s]["AdvertisePresence"s].as<bool>();
+      //
+      // effects.enabled = config["Effects"s]["Enabled"s].as<bool>();
+      //
+      // effects.color_quality = color_quality_from_string(
+      //    config["Effects"s]["ColorQuality"].as<std::string>());
+      //
+      // effects.post_aa_quality = aa_quality_from_string(
+      //    config["Effects"s]["PostAAQuality"s].as<std::string>());
+      //
+      // effects.soft_shadows = config["Effects"s]["SoftShadows"s].as<bool>();
+      //
+      // effects.bloom = config["Effects"s]["Bloom"s].as<bool>();
+      //
+      // effects.vignette = config["Effects"s]["Vignette"s].as<bool>();
+      //
+      // effects.film_grain = config["Effects"s]["FilmGrain"s].as<bool>();
+      //
+      // effects.colored_film_grain =
+      //    config["Effects"s]["AllowColoredFilmGrain"s].as<bool>();
+      //
+      // developer.toggle_key = config["Developer"s]["ScreenToggle"s].as<int>();
 
       developer.unlock_fps = config["Developer"s]["UnlockFPS"s].as<bool>();
    }
 };
+
+extern User_config user_config;
 
 }

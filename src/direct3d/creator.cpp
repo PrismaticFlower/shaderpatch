@@ -3,6 +3,7 @@
 #include "../fps_unlock.hpp"
 #include "../logger.hpp"
 #include "../user_config.hpp"
+#include "../window_helpers.hpp"
 #include "check_required_features.hpp"
 #include "debug_trace.hpp"
 #include "device.hpp"
@@ -59,12 +60,13 @@ auto enum_adapaters(IDXGIFactory2& factory) noexcept
 
 auto select_adapater(IDXGIFactory2& factory) noexcept -> Com_ptr<IDXGIAdapter2>
 {
-   // if (Com_ptr<IDXGIFactory6> factory_1_6;
-   //     SUCCEEDED(factory.QueryInterface(factory_1_6.clear_and_assign()))) {
-   //    const auto adapters = enum_adapters_dxgi_1_6(*factory_1_6);
-   //
-   //    return adapters[0];
-   // }
+   if (Com_ptr<IDXGIFactory6> factory_1_6;
+       !IsDebuggerPresent() &&
+       SUCCEEDED(factory.QueryInterface(factory_1_6.clear_and_assign()))) {
+      const auto adapters = enum_adapters_dxgi_1_6(*factory_1_6);
+
+      return adapters[0];
+   }
 
    const auto compare_adapaters = [](const Com_ptr<IDXGIAdapter2>& left,
                                      const Com_ptr<IDXGIAdapter2>& right) {
@@ -118,7 +120,7 @@ auto enum_display_modes(IDXGIOutput1& output, DXGI_FORMAT format) noexcept
 
 Com_ptr<Creator> Creator::create() noexcept
 {
-   if (User_config{"shader patch.yml"s}.developer.unlock_fps) fps_unlock();
+   if (user_config.developer.unlock_fps) fps_unlock();
 
    return Com_ptr{new Creator{}};
 }
@@ -148,9 +150,15 @@ HRESULT Creator::CreateDevice(UINT adapter_index, D3DDEVTYPE, HWND focus_window,
    if (!returned_device_interface) return D3DERR_INVALIDCALL;
 
    if (!_device) {
-      _device = Device::create(*this, *_adapter,
-                               parameters->hDeviceWindow ? parameters->hDeviceWindow
-                                                         : focus_window);
+      win32::make_borderless_window(focus_window);
+
+      _device =
+         Device::create(*this, *_adapter,
+                        parameters->hDeviceWindow ? parameters->hDeviceWindow : focus_window,
+                        parameters->BackBufferWidth, parameters->BackBufferHeight);
+   }
+   else {
+      _device->Reset(parameters);
    }
 
    *returned_device_interface = _device.unmanaged_copy();

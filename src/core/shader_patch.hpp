@@ -40,7 +40,8 @@ enum class Query_result { success, notready, error };
 
 class Shader_patch {
 public:
-   Shader_patch(IDXGIAdapter2& adapter, const HWND window) noexcept;
+   Shader_patch(IDXGIAdapter2& adapter, const HWND window, const UINT width,
+                const UINT height) noexcept;
 
    Shader_patch(const Shader_patch&) = delete;
    Shader_patch& operator=(const Shader_patch&) = delete;
@@ -48,7 +49,7 @@ public:
    Shader_patch(Shader_patch&&) = delete;
    Shader_patch& operator=(Shader_patch&&) = delete;
 
-   void reset() noexcept;
+   void reset(const UINT width, const UINT height) noexcept;
 
    void present() noexcept;
 
@@ -201,8 +202,8 @@ private:
    std::vector<Game_rendertarget> _game_rendertargets = {get_backbuffer_views()};
    Game_rendertarget_id _current_game_rendertarget = _game_backbuffer_index;
 
-   Depthstencil _nearscene_depthstencil{*_device, 800, 600};
-   Depthstencil _farscene_depthstencil{*_device, 800, 600};
+   Depthstencil _nearscene_depthstencil;
+   Depthstencil _farscene_depthstencil;
    Depthstencil _reflectionscene_depthstencil{*_device, 512, 256};
    Depthstencil* _current_depthstencil = &_nearscene_depthstencil;
 
@@ -264,6 +265,8 @@ private:
 
    const Image_stretcher _image_stretcher{*_device, _shader_database};
    const Sampler_states _sampler_states{*_device};
+
+   const HWND _window;
 };
 
 }

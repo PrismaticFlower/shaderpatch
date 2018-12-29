@@ -7,13 +7,14 @@
 
 namespace sp::core {
 
-constexpr auto fixed_width = 800;
-constexpr auto fixed_height = 600;
+constexpr auto rendertarget_format = DXGI_FORMAT_R8G8B8A8_UNORM;
+constexpr auto swapchain_buffer_count = 2;
 constexpr auto projtex_cube_slot = 127;
 
 namespace {
 
 constexpr std::array supported_feature_levels{D3D_FEATURE_LEVEL_11_0};
+constexpr auto swap_chain_buffers = 2;
 
 auto create_device(IDXGIAdapter2&) noexcept -> Com_ptr<ID3D11Device1>
 {
@@ -70,12 +71,12 @@ auto create_swapchain(ID3D11Device1& device, IDXGIAdapter2& adapter,
 
    swap_chain_desc.Width = width;
    swap_chain_desc.Height = height;
-   swap_chain_desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+   swap_chain_desc.Format = rendertarget_format;
    swap_chain_desc.Stereo = false;
    swap_chain_desc.SampleDesc = {1, 0};
    swap_chain_desc.BufferUsage =
       DXGI_USAGE_SHADER_INPUT | DXGI_USAGE_RENDER_TARGET_OUTPUT;
-   swap_chain_desc.BufferCount = 2;
+   swap_chain_desc.BufferCount = swapchain_buffer_count;
    swap_chain_desc.Scaling = DXGI_SCALING_NONE;
    swap_chain_desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
    swap_chain_desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
@@ -91,19 +92,31 @@ auto create_swapchain(ID3D11Device1& device, IDXGIAdapter2& adapter,
                         _com_error{result}.ErrorMessage());
    }
 
-   factory->MakeWindowAssociation(window, DXGI_MWA_NO_ALT_ENTER);
+   Com_ptr<IDXGIFactory1> parent;
+
+   if (const auto result = swapchain->GetParent(__uuidof(IDXGIFactory1),
+                                                parent.void_clear_and_assign());
+       SUCCEEDED(result))
+
+   {
+      parent->MakeWindowAssociation(window, DXGI_MWA_NO_ALT_ENTER);
+   }
 
    return swapchain;
 }
 
 }
 
-Shader_patch::Shader_patch(IDXGIAdapter2& adapter, const HWND window) noexcept
+Shader_patch::Shader_patch(IDXGIAdapter2& adapter, const HWND window,
+                           const UINT width, const UINT height) noexcept
    : _device{create_device(adapter)},
-     _swapchain{create_swapchain(*_device, adapter, window, fixed_width, fixed_height)}
+     _swapchain{create_swapchain(*_device, adapter, window, width, height)},
+     _window{window},
+     _nearscene_depthstencil{*_device, width, height},
+     _farscene_depthstencil{*_device, width, height}
 {
    bind_static_resources();
-   set_viewport(0, 0, fixed_width, fixed_height);
+   set_viewport(0, 0, static_cast<float>(width), static_cast<float>(height));
 
    _cb_scene.vertex_color_gamma = 1.0f;
    _cb_draw_ps.rt_multiply_blending_state = 0.0f;
@@ -111,13 +124,32 @@ Shader_patch::Shader_patch(IDXGIAdapter2& adapter, const HWND window) noexcept
    _cb_draw_ps.cube_projtex = false;
 }
 
-void Shader_patch::reset() noexcept
+void Shader_patch::reset(const UINT width, const UINT height) noexcept
 {
    _device_context->ClearState();
-   _game_rendertargets.resize(1);
+   _game_rendertargets.clear();
+
+   _swapchain->ResizeBuffers(swapchain_buffer_count, width, height,
+                             rendertarget_format, 0);
 
    bind_static_resources();
-   set_viewport(0, 0, fixed_width, fixed_height);
+   set_viewport(0, 0, static_cast<float>(width), static_cast<float>(height));
+
+   _game_rendertargets.emplace_back() = get_backbuffer_views();
+   _nearscene_depthstencil = {*_device, width, height};
+   _farscene_depthstencil = {*_device, width, height};
+   _current_game_rendertarget = _game_backbuffer_index;
+   _game_input_layout = {};
+   _game_shader = {};
+   _game_textures = {};
+
+   _ia_vs_dirty = true;
+   _om_targets_dirty = true;
+   _ps_textures_dirty = true;
+   _cb_scene_dirty = true;
+   _cb_draw_dirty = true;
+   _cb_skin_dirty = true;
+   _cb_draw_ps_dirty = true;
 }
 
 void Shader_patch::present() noexcept
@@ -186,7 +218,7 @@ auto Shader_patch::create_game_rendertarget(const UINT width, const UINT height)
    rt.height = static_cast<std::uint16_t>(height);
 
    const auto texture_desc =
-      CD3D11_TEXTURE2D_DESC{DXGI_FORMAT_B8G8R8A8_UNORM,
+      CD3D11_TEXTURE2D_DESC{rendertarget_format,
                             width,
                             height,
                             1,
@@ -971,6 +1003,8 @@ void Shader_patch::update_dirty_state() noexcept
       _cb_draw_ps_dirty = true;
       _cb_draw_ps.rt_resolution = {rt.width, rt.height, 1.0f / rt.width,
                                    1.0f / rt.height};
+
+      set_viewport(0, 0, rt.width, rt.height);
    }
 
    if (std::exchange(_cb_scene_dirty, false)) {

@@ -1,5 +1,7 @@
 
 #include "device.hpp"
+#include "../user_config.hpp"
+#include "../window_helpers.hpp"
 #include "buffer.hpp"
 #include "debug_trace.hpp"
 #include "helpers.hpp"
@@ -28,13 +30,15 @@ constexpr auto projtex_slot = 2;
 }
 
 Com_ptr<Device> Device::create(IDirect3D9& direct3d9, IDXGIAdapter2& adapter,
-                               const HWND window) noexcept
+                               const HWND window, const UINT width,
+                               const UINT height) noexcept
 {
-   return Com_ptr{new Device{direct3d9, adapter, window}};
+   return Com_ptr{new Device{direct3d9, adapter, window, width, height}};
 }
 
-Device::Device(IDirect3D9& direct3d9, IDXGIAdapter2& adapter, const HWND window) noexcept
-   : _direct3d9{direct3d9}, _shader_patch{adapter, window}, _adapter{adapter}, _window{window}
+Device::Device(IDirect3D9& direct3d9, IDXGIAdapter2& adapter, const HWND window,
+               const UINT width, const UINT height) noexcept
+   : _direct3d9{direct3d9}, _shader_patch{adapter, window, width, height}, _adapter{adapter}, _window{window}
 {
    //   std::thread{[&] {
    //      while (true) {
@@ -99,19 +103,6 @@ ULONG Device::Release() noexcept
 HRESULT Device::TestCooperativeLevel() noexcept
 {
    Debug_trace::func(__FUNCSIG__);
-
-   SetWindowPos(_window, nullptr, 0, 0, 800, 600, SWP_NOZORDER);
-   // WINDOWPOS pos;
-   //
-   // pos.hwnd = _window;
-   // pos.hwndInsertAfter = HWND_TOP;
-   // pos.x = 0;
-   // pos.y = 0;
-   // pos.cx = 800;
-   // pos.cy = 600;
-   // pos.flags = SWP_NOZORDER;
-   //
-   // SendMessageA(_window, WM_WINDOWPOSCHANGING, 0, bit_cast<LPARAM>(&pos));
 
    return S_OK;
 }
@@ -204,9 +195,43 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
 
    if (!params) return D3DERR_INVALIDCALL;
 
+   MONITORINFO info{sizeof(MONITORINFO)};
+   GetMonitorInfoW(MonitorFromWindow(_window, MONITOR_DEFAULTTONEAREST), &info);
+
+   const auto monitor_width =
+      static_cast<std::uint32_t>(info.rcMonitor.right - info.rcMonitor.left);
+   const auto monitor_height =
+      static_cast<std::uint32_t>(info.rcMonitor.bottom - info.rcMonitor.top);
+
+   _width = static_cast<std::uint16_t>(monitor_width *
+                                       user_config.window.screen_percent / 100);
+   _height = static_cast<std::uint16_t>(monitor_height *
+                                        user_config.window.screen_percent / 100);
+
+   win32::resize_window(_window, _width, _height);
+
+   if (user_config.window.centred || user_config.window.screen_percent == 100) {
+      win32::centre_window(_window);
+   }
+   else {
+      win32::leftalign_window(_window);
+   }
+
+   params->BackBufferWidth = _width;
+   params->BackBufferHeight = _height;
+
    _render_state_manager.reset();
-   _shader_patch.reset();
+   _texture_stage_manager.reset();
+   _shader_patch.reset(params->BackBufferWidth, params->BackBufferHeight);
    _last_primitive_type = {};
+   _fixed_func_active = true;
+
+   _backbuffer =
+      Surface_backbuffer::create(_shader_patch.get_back_buffer(), _width, _height);
+   _depthstencil = Surface_depthstencil::create(core::Game_depthstencil::nearscene,
+                                                _width, _height);
+
+   _viewport = {0, 0, _width, _height, 0.0f, 1.0f};
 
    return S_OK;
 }

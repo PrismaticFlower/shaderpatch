@@ -1,121 +1,12 @@
-Display:
-   # Whether or note to override the display settings used by the game.
-   Enabled: no
-   Windowed: no
-   Resolution: [1920, 1080]
+Window:
+   # Precentage of the sceen the game's window will take up. Value from 10 to 100.
+   ScreenPercent: 100
 
-   # When running in a window whether or not to make the window borderless, 
-   # works regardless of what Enabled is set to.
-   Borderless: yes
-
-Rendering:
-   # Enable or disable high resolution water reflections.
-   HighResolutionReflections: yes
-
-   # Enable or disable replacing the stock bloom effect with one that gives smoother,
-   # less blocky results while maintaining radius and intensity.
-   SmoothBloom: yes
-
-   # Enable or disable replacing the blur that blur particles use with a gaussian blur.
-   # This may come at a slight performance cost but may give nicer results.
-   GaussianBlurBlurParticles: yes
+   # Whether to centre the window or not. If `ScreenPercent` is 100 there will be 
+   # no difference between a centred and uncentred window.
+   Centred: yes
    
-   # Enable or disable replacing the scene blur effect some maps use with a gaussian blur.
-   # Once again this may come at a slight performance cost but is definitely 
-   # capable of giving nicer results. In some rare cases it may break the art style of a map.
-   GaussianSceneBlur: yes
-   
-   # Enable or disable replacing the normal damage overlay effect with a fancier one
-   # which may look nicer but comes at a slight performance cost. (And since the last
-   # thing you want is an FPS drop during combat you may want to disable this.)
-   NewDamageOverlay: yes
-
-   # Scale of the water reflection buffer (regardless of HighResolutionReflections), 
-   # in range [0.01...1.0]. Higher is better but may come at a cost in performance.
-   ReflectionBufferScale: 0.5
-
-   # Scale of the refraction buffer used for effects like water and the Droideka's shield, 
-   # in range [0.01...1.0].  Higher is better but may come at a cost in performance.
-   RefractionBufferScale: 0.5
-
-   # Set the desired max samples for anisotropic filtering. Higher is better, but _may_ come at a performance cost.
-   # Will be clamped to [1, DeviceMax],  typically DeviceMax will be 16.
-   AnisotropicFiltering: 16
-   
-   # Force anisotropic filtering on for stock textures that use linear downsampling.
-   # This has no affect on Shader Patch custom materials.
-   ForceAnisotropicFiltering: yes
-   
-   # Enable or disable advertising Shader Patch's presence to mods.
-   AdvertisePresence: yes
-
-# Settings for the Effects system, which allows modders to apply various effects
-# to their mods at their discretion and configuration. Below are options provided to 
-# tweak the performance of this system for low-end/older GPUs.
-Effects:
-   # For some _very_ old or _very_ low-end GPUs the Effects system may prove too much to handle
-   # at an acceptable framerate and in this case this can be used to switch them off.
-   Enabled: yes
-   
-   # Sets quality of the color depth used for render targets when Effects system is active and HDR Rendering isn't
-   # enabled. 
-   # Can be "normal", "high" or "ultra".
-   # There is likely a definite performance cost to having this set to "ultra" and a possible slight performance 
-   # cost to "high". If in dire need of better performance try out "normal" and see if it helps.
-   ColorQuality: high
-   
-   # Set the quality of AA done on maps where the Effects system is active. 
-   # Can be "fastest", "fast", "slower", or "slowest". 
-   # Pessimistically set to "fastest" by default. If you feel confident in your GPU's capabilities you 
-   # can probably go ahead and set this to "slower" ot "slowest", obivously setting it back if you get lag.
-   #
-   # It can also be set to "none" to disable post processing AA outright. The exact on speedup gained by
-   # this will likely vary based on GPU, resolution, etc 
-   #
-   # As a point of reference I tested on my Nvidia GPU and got a slight speedup by setting this to "none". But the game's 
-   # FPS was already in the hundreds so it mattered little. 
-   #
-   # While on my Intel GPU I observed no change in performance between "none" and "fastest". (The FPS went 
-   # from ~32 to... ~32). But by all means set this to "none" if you need the best performance possible, just don't
-   # be surprised if it has less impact than you'd like.
-   PostAAQuality: fastest
-   
-   # Enable or disable a mod using the Soft Shadows effect. This is the most expensive effect and 
-   # the first you should switch off.
-   SoftShadows: yes
-   
-   # Enable or disable a mod using the Bloom effect. This effect is cheap and there is likely
-   # little FPS to be gained from switching it off. Still if you're hitting really low FPS (let's say under 40) having 
-   # it off can increase the framerate by afew a second.
-   Bloom: yes
-   
-   # Enable or disable a mod using the Vignette effect. This effect is really cheap and there is likely
-   # no FPS to be gained from switching it off. But if you're in truely dire need... (Though it is probably better to 
-   # just set Enabled to 'no'.)
-   Vignette: yes
-   
-   # Enable or disable a mod using the Film Grain effect. This either falls in the same baskest as Bloom or can 
-   # actually be worse when Colored Film Grain is being used. (A mod controls if it is or not.) 
-   FilmGrain: yes
-   
-   # Enable or disable a mod using being allowed to use Colored Film Grain. For mods that 
-   # use it colored film grain can definitely looks nicer. However it is more costly to performance to evaluate
-   # it and on low-end GPUs you may wish to switch this off.
-   AllowColoredFilmGrain: yes
-
 Developer:
-   # Toggle key for the developer screen. Giving access to useful things for mod makers and
-   # Shader Patch developers alike.
-   #
-   # The value identifies the virtual key that activates the debug screen, below are some common values
-   # for you to choose from. (Copy and paste the value on the right of your desired key.)
-   #
-   # '~': 0xC0 
-   # '\': 0xDC 
-   # 'Backspace': 0x08 
-   # 'F12': 0x7B
-   ScreenToggle: 0xDC
-   
    # Controls whether or not Shader Patch will attempt to remove the game's FPS cap. This is in part mostly here
    # for people going on performance testing adventures.  As there are certain parts of the game whose simulation 
    # is tied to framerate, in particular UI animation, cloth and bizarrely the physics of hover vehicles.

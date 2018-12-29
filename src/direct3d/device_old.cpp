@@ -126,7 +126,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept
 
    presentation_parameters->EnableAutoDepthStencil = false;
 
-   if (const auto& display = _config.display; display.enabled) {
+   if (const auto& display = _config.window; display.enabled) {
       presentation_parameters->Windowed = display.windowed;
       presentation_parameters->BackBufferWidth = display.resolution.x;
       presentation_parameters->BackBufferHeight = display.resolution.y;
@@ -295,8 +295,8 @@ HRESULT Device::Present(const RECT* source_rect, const RECT* dest_rect,
                         HWND dest_window_override, const RGNDATA* dirty_region) noexcept
 {
    if (std::exchange(_window_dirty, false)) {
-      _config.display.borderless ? make_borderless_window(_window)
-                                 : make_bordered_window(_window);
+      _config.window.borderless ? make_borderless_window(_window)
+                                : make_bordered_window(_window);
 
       resize_window(_window, _resolution);
       centre_window(_window);
