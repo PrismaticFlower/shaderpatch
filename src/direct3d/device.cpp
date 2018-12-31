@@ -616,6 +616,11 @@ HRESULT Device::SetViewport(const D3DVIEWPORT9* viewport) noexcept
 
    _viewport = *viewport;
 
+   _shader_patch.set_viewport(static_cast<float>(_viewport.X),
+                              static_cast<float>(_viewport.Y),
+                              static_cast<float>(_viewport.Width),
+                              static_cast<float>(_viewport.Height));
+
    return S_OK;
 }
 
