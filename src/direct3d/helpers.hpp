@@ -82,10 +82,11 @@ inline auto d3d_to_dxgi_format(const D3DFORMAT format) noexcept -> DXGI_FORMAT
       return DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM;
       // Luminance formats.
    case D3DFMT_L8:
+      return DXGI_FORMAT_R8_UNORM;
    case D3DFMT_A8L8:
+      return DXGI_FORMAT_R8G8_UNORM;
    case D3DFMT_L16:
       return DXGI_FORMAT_UNKNOWN;
-      // No matching format.
    case D3DFMT_R8G8B8:
    case D3DFMT_P8:
    case D3DFMT_R3G3B2:
@@ -115,6 +116,19 @@ inline auto d3d_to_dxgi_format(const D3DFORMAT format) noexcept -> DXGI_FORMAT
    default:
       return DXGI_FORMAT_UNKNOWN;
    }
+}
+
+inline bool is_luminance_format(const D3DFORMAT format)
+{
+   switch (format) {
+   case D3DFMT_L8:
+   case D3DFMT_A8L8:
+   case D3DFMT_L16:
+   case D3DFMT_A4L4:
+      return true;
+   }
+
+   return false;
 }
 
 inline auto d3d_decl_usage_to_string(const D3DDECLUSAGE usage) noexcept -> std::string

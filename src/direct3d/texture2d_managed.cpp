@@ -9,8 +9,10 @@ namespace sp::d3d9 {
 Texture2d_managed::Texture2d_managed(core::Shader_patch& shader_patch,
                                      const UINT width, const UINT height,
                                      const UINT mip_levels, const DXGI_FORMAT format,
-                                     const D3DFORMAT reported_format) noexcept
+                                     const D3DFORMAT reported_format,
+                                     std::unique_ptr<Image_patcher> image_patcher) noexcept
    : Base_texture{Texture_type::texture2d},
+     _image_patcher{std::move(image_patcher)},
      _shader_patch{shader_patch},
      _width{width},
      _height{height},
@@ -31,16 +33,22 @@ Texture2d_managed::Texture2d_managed(core::Shader_patch& shader_patch,
 {
    Expects(mip_levels != 0);
 
-   _upload_image = DirectX::ScratchImage{};
-   _upload_image->Initialize2D(format, width, height, 1, mip_levels);
+   if (_image_patcher) {
+      _upload_image = _image_patcher->create_image(format, width, height, mip_levels);
+   }
+   else {
+      _upload_image = DirectX::ScratchImage{};
+      _upload_image->Initialize2D(format, width, height, 1, mip_levels);
+   }
 }
 
 Com_ptr<Texture2d_managed> Texture2d_managed::create(
    core::Shader_patch& shader_patch, const UINT width, const UINT height,
-   const UINT mip_levels, const DXGI_FORMAT format, const D3DFORMAT reported_format) noexcept
+   const UINT mip_levels, const DXGI_FORMAT format, const D3DFORMAT reported_format,
+   std::unique_ptr<Image_patcher> image_patcher) noexcept
 {
-   return Com_ptr{new Texture2d_managed{shader_patch, width, height, mip_levels,
-                                        format, reported_format}};
+   return Com_ptr{new Texture2d_managed{shader_patch, width, height, mip_levels, format,
+                                        reported_format, std::move(image_patcher)}};
 }
 
 HRESULT Texture2d_managed::QueryInterface(const IID& iid, void** object) noexcept
@@ -165,6 +173,10 @@ HRESULT Texture2d_managed::UnlockRect(UINT level) noexcept
    if (!_upload_image) return D3DERR_INVALIDCALL;
 
    if (level == _last_level) {
+      if (_image_patcher) {
+         _upload_image = _image_patcher->patch_image(*_upload_image);
+      }
+
       this->resource = _shader_patch.create_game_texture2d(*_upload_image);
       _upload_image = std::nullopt;
    }

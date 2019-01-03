@@ -126,6 +126,15 @@
     <ClCompile Include="src\user_config.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\direct3d\volume_resource_texture.cpp">
+      <Filter>src\direct3d</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\texture_database.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\direct3d\image_patcher.cpp">
+      <Filter>src\direct3d</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -159,9 +168,6 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\material.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\texture_database.hpp">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\effects\control.hpp">
@@ -315,6 +321,18 @@
       <Filter>src\core</Filter>
     </ClInclude>
     <ClInclude Include="src\direct3d\texture_stage_state_manager.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\patch_texture.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\volume_resource_texture.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\texture_database.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\image_patcher.hpp">
       <Filter>src\direct3d</Filter>
     </ClInclude>
   </ItemGroup>

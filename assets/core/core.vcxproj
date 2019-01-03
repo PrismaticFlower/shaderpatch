@@ -200,7 +200,6 @@
     <None Include="definitions\patch\scene_blur_apply.json.ignore" />
     <None Include="definitions\patch\shadows_blur.json.ignore" />
     <None Include="definitions\patch\skyfog_ext.json.ignore" />
-    <None Include="definitions\patch\stock_bloom_ext.json.ignore" />
     <None Include="definitions\patch\stretch_texture.json" />
     <None Include="definitions\perpixeldiffuselighting.json" />
     <None Include="definitions\prereflection.json" />

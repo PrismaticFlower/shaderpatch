@@ -6,7 +6,13 @@
 
 namespace sp::d3d9 {
 
-enum class Texture_type { texture2d, texture3d, texturecube, rendertarget };
+enum class Texture_type {
+   texture2d,
+   texture3d,
+   texturecube,
+   rendertarget,
+   resource
+};
 
 class Base_texture : public Resource {
 public:

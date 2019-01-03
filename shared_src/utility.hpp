@@ -96,4 +96,155 @@ inline auto make_vector(const From& from) noexcept
    return {std::cbegin(from), std::cend(from)};
 }
 
+struct Index_iterator {
+   using difference_type = std::ptrdiff_t;
+   using value_type = const difference_type;
+   using pointer = value_type*;
+   using reference = value_type&;
+   using iterator_category = std::random_access_iterator_tag;
+
+   Index_iterator() = default;
+   ~Index_iterator() = default;
+
+   Index_iterator(const Index_iterator&) = default;
+   Index_iterator& operator=(const Index_iterator&) = default;
+   Index_iterator(Index_iterator&&) = default;
+   Index_iterator& operator=(Index_iterator&&) = default;
+
+   auto operator*() const noexcept -> value_type
+   {
+      return _index;
+   }
+
+   auto operator++() noexcept -> Index_iterator&
+   {
+      ++_index;
+
+      return *this;
+   }
+
+   auto operator++(int) const noexcept -> Index_iterator
+   {
+      auto copy = *this;
+
+      ++copy._index;
+
+      return copy;
+   }
+
+   auto operator--() noexcept -> Index_iterator&
+   {
+      --_index;
+
+      return *this;
+   }
+
+   auto operator--(int) const noexcept -> Index_iterator
+   {
+      auto copy = *this;
+
+      --copy._index;
+
+      return copy;
+   }
+
+   auto operator[](const difference_type offset) const noexcept -> value_type
+   {
+      return _index + offset;
+   }
+
+   auto operator+=(const difference_type offset) noexcept -> Index_iterator&
+   {
+      _index += offset;
+
+      return *this;
+   }
+
+   auto operator-=(const difference_type offset) noexcept -> Index_iterator&
+   {
+      _index -= offset;
+
+      return *this;
+   }
+
+   friend bool operator==(const Index_iterator& left, const Index_iterator& right) noexcept;
+
+   friend bool operator!=(const Index_iterator& left, const Index_iterator& right) noexcept;
+
+   friend bool operator<(const Index_iterator& left, const Index_iterator& right) noexcept;
+
+   friend bool operator<=(const Index_iterator& left, const Index_iterator& right) noexcept;
+
+   friend bool operator>(const Index_iterator& left, const Index_iterator& right) noexcept;
+
+   friend bool operator>=(const Index_iterator& left, const Index_iterator& right) noexcept;
+
+private:
+   difference_type _index{};
+};
+
+inline auto operator+(const Index_iterator& iter,
+                      const Index_iterator::difference_type offset) noexcept -> Index_iterator
+{
+   auto copy = iter;
+
+   return copy += offset;
+}
+
+inline auto operator+(const Index_iterator::difference_type offset,
+                      const Index_iterator& iter) noexcept -> Index_iterator
+{
+   return iter + offset;
+}
+
+inline auto operator-(const Index_iterator& iter,
+                      const Index_iterator::difference_type offset) noexcept -> Index_iterator
+{
+   auto copy = iter;
+
+   return copy -= offset;
+}
+
+inline auto operator-(const Index_iterator::difference_type offset,
+                      const Index_iterator& iter) noexcept -> Index_iterator
+{
+   return iter - offset;
+}
+
+inline auto operator-(const Index_iterator& left, const Index_iterator& right) noexcept
+   -> Index_iterator::difference_type
+{
+   return *left - *right;
+}
+
+inline bool operator==(const Index_iterator& left, const Index_iterator& right) noexcept
+{
+   return *left == *right;
+}
+
+inline bool operator!=(const Index_iterator& left, const Index_iterator& right) noexcept
+{
+   return *left != *right;
+}
+
+inline bool operator<(const Index_iterator& left, const Index_iterator& right) noexcept
+{
+   return *left < *right;
+}
+
+inline bool operator<=(const Index_iterator& left, const Index_iterator& right) noexcept
+{
+   return *left <= *right;
+}
+
+inline bool operator>(const Index_iterator& left, const Index_iterator& right) noexcept
+{
+   return *left > *right;
+}
+
+inline bool operator>=(const Index_iterator& left, const Index_iterator& right) noexcept
+{
+   return *left >= *right;
+}
+
 }

@@ -39,7 +39,9 @@ enum class Rendertype {
    fixedfunc_damage_overlay,
    fixedfunc_plain_texture,
    fixedfunc_scene_blur,
-   fixedfunc_zoom_blur
+   fixedfunc_zoom_blur,
+
+   invalid = 0x7fffffff
 };
 
 inline Rendertype rendertype_from_string(std::string_view string)

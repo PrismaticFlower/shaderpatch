@@ -592,6 +592,8 @@ private:
 
    std::uint16_t _width;
    std::uint16_t _height;
+   std::uint16_t _perceived_width;
+   std::uint16_t _perceived_height;
 
    Com_ptr<IUnknown> _backbuffer{
       Surface_backbuffer::create(_shader_patch.get_back_buffer(), _width, _height)};

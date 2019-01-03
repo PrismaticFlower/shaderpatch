@@ -31,11 +31,12 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)memory_mapped_file.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)munge_helpers.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)patch_material.hpp" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)patch_texture.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)patch_texture_io.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)req_file_helpers.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)shader_flags.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)shader_input_type.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)shader_metadata.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)small_function.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)string_utilities.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)synced_io.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)throw_if_failed.hpp" />

@@ -15,6 +15,8 @@
 #include "utility.hpp"
 #include "vertex_declaration.hpp"
 #include "vertex_shader.hpp"
+#include "volume_resource.hpp"
+#include "volume_resource_texture.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -309,8 +311,18 @@ HRESULT Device::CreateVolumeTexture(UINT width, UINT height, UINT depth, UINT le
          "Attempt to create volume texture in unexpected memory pool.");
    }
 
-   *volume_texture =
-      create_texture3d_managed(width, height, depth, levels, format).release();
+   if (const auto type = static_cast<Volume_resource_type>(width);
+       type == Volume_resource_type::texture) {
+      *volume_texture = reinterpret_cast<IDirect3DVolumeTexture9*>(
+         Volume_resource_texture::create(_shader_patch, width, height, depth, format)
+            .release());
+   }
+   else {
+      if (is_luminance_format(format)) return D3DERR_INVALIDCALL;
+
+      *volume_texture =
+         create_texture3d_managed(width, height, depth, levels, format).release();
+   }
 
    return S_OK;
 }
@@ -322,6 +334,7 @@ HRESULT Device::CreateCubeTexture(UINT edge_length, UINT levels, DWORD usage,
    Debug_trace::func(__FUNCSIG__);
 
    if (!cube_texture) return D3DERR_INVALIDCALL;
+   if (is_luminance_format(format)) return D3DERR_INVALIDCALL;
 
    if (usage & D3DUSAGE_DYNAMIC) {
       log_and_terminate("Attempt to create dynamic cube texture.");
@@ -1149,8 +1162,18 @@ auto Device::create_texture2d_managed(const UINT width, const UINT height,
                         static_cast<int>(d3d_format));
    }
 
+   std::unique_ptr<Image_patcher> image_patcher = nullptr;
+
+   if (d3d_format == D3DFMT_L8) {
+      image_patcher = make_l8_image_patcher();
+   }
+   else if (d3d_format == D3DFMT_A8L8) {
+      image_patcher = make_a8l8_image_patcher();
+   }
+
    return Com_ptr{reinterpret_cast<IDirect3DTexture9*>(
-      Texture2d_managed::create(_shader_patch, width, height, mip_levels, format, d3d_format)
+      Texture2d_managed::create(_shader_patch, width, height, mip_levels,
+                                format, d3d_format, std::move(image_patcher))
          .release())};
 }
 

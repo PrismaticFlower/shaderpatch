@@ -94,6 +94,22 @@ public:
       return *this;
    }
 
+   template<typename Other, typename = std::enable_if_t<std::is_convertible_v<Other*, Class*>>>
+   Com_ptr(const std::shared_ptr<Other>& other)
+   {
+      _pointer = static_cast<Class*>(other.get());
+
+      if (_pointer) _pointer->AddRef();
+   }
+
+   template<typename Other, typename = std::enable_if_t<std::is_convertible_v<Other*, Class*>>>
+   Com_ptr& operator=(const std::shared_ptr<Other>& other) noexcept
+   {
+      *this = Com_ptr{other};
+
+      return *this;
+   }
+
    void reset(Class* with) noexcept
    {
       Com_ptr discarded{_pointer};

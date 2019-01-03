@@ -78,6 +78,7 @@
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <DiagnosticsFormat>Caret</DiagnosticsFormat>
     </ClCompile>
     <Link>
       <AdditionalDependencies>d3d11.lib;DXGI.lib;Bcrypt.lib;dxguid.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -114,6 +115,7 @@
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <DiagnosticsFormat>Caret</DiagnosticsFormat>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -142,7 +144,9 @@
     <ClCompile Include="src\core\shader_input_layouts.cpp" />
     <ClCompile Include="src\core\shader_loader.cpp" />
     <ClCompile Include="src\core\shader_patch.cpp" />
+    <ClCompile Include="src\core\texture_database.cpp" />
     <ClCompile Include="src\direct3d\device.cpp" />
+    <ClCompile Include="src\direct3d\image_patcher.cpp" />
     <ClCompile Include="src\direct3d\pixel_shader.cpp" />
     <ClCompile Include="src\direct3d\query.cpp" />
     <ClCompile Include="src\direct3d\render_state_manager.cpp" />
@@ -156,6 +160,7 @@
     <ClCompile Include="src\direct3d\texture_stage_state_manager.cpp" />
     <ClCompile Include="src\direct3d\vertex_declaration.cpp" />
     <ClCompile Include="src\direct3d\vertex_shader.cpp" />
+    <ClCompile Include="src\direct3d\volume_resource_texture.cpp" />
     <ClCompile Include="src\effects\damage_overlay.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
@@ -209,6 +214,7 @@
     <ClInclude Include="src\core\image_stretcher.hpp" />
     <ClInclude Include="src\core\input_layout_element.hpp" />
     <ClInclude Include="src\core\input_layout_descriptions.hpp" />
+    <ClInclude Include="src\core\patch_texture.hpp" />
     <ClInclude Include="src\core\sampler_states.hpp" />
     <ClInclude Include="src\core\shader_database.hpp" />
     <ClInclude Include="src\core\shader_input_element.hpp" />
@@ -216,12 +222,14 @@
     <ClInclude Include="src\core\shader_loader.hpp" />
     <ClInclude Include="src\core\shader_patch.hpp" />
     <ClInclude Include="src\core\game_texture.hpp" />
+    <ClInclude Include="src\core\texture_database.hpp" />
     <ClInclude Include="src\direct3d\base_texture.hpp" />
     <ClInclude Include="src\direct3d\buffer.hpp" />
     <ClInclude Include="src\direct3d\creator.hpp" />
     <ClInclude Include="src\direct3d\debug_trace.hpp" />
     <ClInclude Include="src\direct3d\helpers.hpp" />
     <ClInclude Include="src\direct3d\device.hpp" />
+    <ClInclude Include="src\direct3d\image_patcher.hpp" />
     <ClInclude Include="src\direct3d\pixel_shader.hpp" />
     <ClInclude Include="src\direct3d\query.hpp" />
     <ClInclude Include="src\direct3d\resource.hpp" />
@@ -236,6 +244,7 @@
     <ClInclude Include="src\direct3d\texture_stage_state_manager.hpp" />
     <ClInclude Include="src\direct3d\vertex_declaration.hpp" />
     <ClInclude Include="src\direct3d\vertex_shader.hpp" />
+    <ClInclude Include="src\direct3d\volume_resource_texture.hpp" />
     <ClInclude Include="src\effects\color_helpers.hpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
@@ -295,7 +304,6 @@
     <ClInclude Include="src\resource_handle.hpp" />
     <ClInclude Include="src\shader_constants.hpp" />
     <ClInclude Include="src\texture.hpp" />
-    <ClInclude Include="src\texture_database.hpp" />
     <ClInclude Include="src\unlock_memory.hpp" />
     <ClInclude Include="src\user_config.hpp" />
     <ClInclude Include="src\window_helpers.hpp" />

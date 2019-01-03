@@ -11,10 +11,13 @@
 #include "image_stretcher.hpp"
 #include "input_layout_descriptions.hpp"
 #include "input_layout_element.hpp"
+#include "patch_texture.hpp"
 #include "sampler_states.hpp"
 #include "shader_database.hpp"
 #include "shader_loader.hpp"
 #include "shader_metadata.hpp"
+#include "small_function.hpp"
+#include "texture_database.hpp"
 
 #include <vector>
 
@@ -79,6 +82,9 @@ public:
 
    auto create_game_texture_cube(const DirectX::ScratchImage& image) noexcept
       -> Game_texture;
+
+   auto create_patch_texture(const gsl::span<const std::byte> texture_data) noexcept
+      -> Patch_texture;
 
    auto create_game_input_layout(const gsl::span<const Input_layout_element> layout,
                                  const bool compressed) noexcept -> Game_input_layout;
@@ -181,7 +187,13 @@ private:
 
    void bind_static_resources() noexcept;
 
+   void game_rendertype_changed() noexcept;
+
    void update_dirty_state() noexcept;
+
+   void update_frame_state() noexcept;
+
+   void resolve_refraction_texture() noexcept;
 
    constexpr static auto _game_backbuffer_index = Game_rendertarget_id{0};
 
@@ -201,17 +213,21 @@ private:
 
    std::vector<Game_rendertarget> _game_rendertargets = {get_backbuffer_views()};
    Game_rendertarget_id _current_game_rendertarget = _game_backbuffer_index;
+   Game_rendertarget _refraction_rt;
 
    Depthstencil _nearscene_depthstencil;
    Depthstencil _farscene_depthstencil;
    Depthstencil _reflectionscene_depthstencil{*_device, 512, 256};
    Depthstencil* _current_depthstencil = &_nearscene_depthstencil;
+   Game_depthstencil _current_depthstencil_id = Game_depthstencil::nearscene;
 
    Game_input_layout _game_input_layout{};
    std::shared_ptr<Game_shader> _game_shader{};
+   Rendertype _shader_rendertype = Rendertype::invalid;
 
    std::array<Game_texture, 4> _game_textures;
 
+   bool _shader_rendertype_changed = false;
    bool _ia_vs_dirty = true;
    bool _om_targets_dirty = true;
    bool _ps_textures_dirty = true;
@@ -219,6 +235,12 @@ private:
    bool _cb_draw_dirty = true;
    bool _cb_skin_dirty = true;
    bool _cb_draw_ps_dirty = true;
+
+   // Frame State
+   bool _refraction_farscene_texture_resolve = false;
+   bool _refraction_nearscene_texture_resolve = false;
+
+   Small_function<void() noexcept> _on_rendertype_changed;
 
    cb::Scene _cb_scene{};
    cb::Draw _cb_draw{};
@@ -263,8 +285,46 @@ private:
       return buffer;
    }();
 
+   const Com_ptr<ID3D11RasterizerState> _shield_rasterizer_state = [this] {
+      D3D11_RASTERIZER_DESC desc{};
+
+      desc.FillMode = D3D11_FILL_SOLID;
+      desc.CullMode = D3D11_CULL_BACK;
+      desc.FrontCounterClockwise = true;
+      desc.DepthBias = 0;
+      desc.DepthBiasClamp = 0.0f;
+      desc.SlopeScaledDepthBias = 0.0f;
+      desc.DepthClipEnable = true;
+      desc.ScissorEnable = false;
+      desc.MultisampleEnable = false;
+      desc.AntialiasedLineEnable = false;
+
+      Com_ptr<ID3D11RasterizerState> state;
+      _device->CreateRasterizerState(&desc, state.clear_and_assign());
+
+      return state;
+   }();
+   const Com_ptr<ID3D11BlendState> _shield_blend_state = [this] {
+      D3D11_BLEND_DESC desc{};
+
+      desc.RenderTarget[0].BlendEnable = true;
+      desc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+      desc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+      desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+      desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+      desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+      desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+      desc.RenderTarget[0].RenderTargetWriteMask = 0b111;
+
+      Com_ptr<ID3D11BlendState> state;
+      _device->CreateBlendState(&desc, state.clear_and_assign());
+
+      return state;
+   }();
+
    const Image_stretcher _image_stretcher{*_device, _shader_database};
    const Sampler_states _sampler_states{*_device};
+   Texture_database _texture_database;
 
    const HWND _window;
 };

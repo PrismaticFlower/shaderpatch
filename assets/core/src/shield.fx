@@ -12,8 +12,8 @@ const static float4 shield_constants = custom_constants[3];
 const static float2 near_scene_fade_scale = custom_constants[2].xy;
 
 Texture2D<float4> diffuse_texture : register(t0);
-Texture2D<float2> normal_map_texture : register(t12);
-Texture2D<float3> refraction_buffer : register(t13);
+Texture2D<float2> normal_map_texture : register(t4);
+Texture2D<float3> refraction_buffer : register(t5);
 
 float3 animate_normal(float3 normal)
 {

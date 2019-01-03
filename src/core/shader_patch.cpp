@@ -1,14 +1,20 @@
 
 #include "shader_patch.hpp"
 #include "../logger.hpp"
+#include "patch_texture_io.hpp"
 #include "utility.hpp"
 
+#include <chrono>
+
 #include <comdef.h>
+
+using namespace std::literals;
 
 namespace sp::core {
 
 constexpr auto rendertarget_format = DXGI_FORMAT_R8G8B8A8_UNORM;
 constexpr auto swapchain_buffer_count = 2;
+constexpr auto custom_tex_begin = 4;
 constexpr auto projtex_cube_slot = 127;
 
 namespace {
@@ -113,7 +119,8 @@ Shader_patch::Shader_patch(IDXGIAdapter2& adapter, const HWND window,
      _swapchain{create_swapchain(*_device, adapter, window, width, height)},
      _window{window},
      _nearscene_depthstencil{*_device, width, height},
-     _farscene_depthstencil{*_device, width, height}
+     _farscene_depthstencil{*_device, width, height},
+     _refraction_rt{*_device, rendertarget_format, width / 2, height / 2}
 {
    bind_static_resources();
    set_viewport(0, 0, static_cast<float>(width), static_cast<float>(height));
@@ -138,6 +145,7 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
    _game_rendertargets.emplace_back() = get_backbuffer_views();
    _nearscene_depthstencil = {*_device, width, height};
    _farscene_depthstencil = {*_device, width, height};
+   _refraction_rt = {*_device, rendertarget_format, width / 2, height / 2};
    _current_game_rendertarget = _game_backbuffer_index;
    _game_input_layout = {};
    _game_shader = {};
@@ -162,6 +170,8 @@ void Shader_patch::present() noexcept
    if (_current_game_rendertarget == _game_backbuffer_index) {
       _om_targets_dirty = true;
    }
+
+   update_frame_state();
 }
 
 auto Shader_patch::get_back_buffer() noexcept -> Game_rendertarget_id
@@ -213,26 +223,7 @@ auto Shader_patch::create_game_rendertarget(const UINT width, const UINT height)
    -> Game_rendertarget_id
 {
    const int index = _game_rendertargets.size();
-   auto& rt = _game_rendertargets.emplace_back();
-   rt.width = static_cast<std::uint16_t>(width);
-   rt.height = static_cast<std::uint16_t>(height);
-
-   const auto texture_desc =
-      CD3D11_TEXTURE2D_DESC{rendertarget_format,
-                            width,
-                            height,
-                            1,
-                            1,
-                            D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET |
-                               D3D11_BIND_UNORDERED_ACCESS};
-
-   _device->CreateTexture2D(&texture_desc, nullptr, rt.texture.clear_and_assign());
-   _device->CreateRenderTargetView(rt.texture.get(), nullptr,
-                                   rt.rtv.clear_and_assign());
-   _device->CreateShaderResourceView(rt.texture.get(), nullptr,
-                                     rt.srv.clear_and_assign());
-   _device->CreateUnorderedAccessView(rt.texture.get(), nullptr,
-                                      rt.uav.clear_and_assign());
+   _game_rendertargets.emplace_back(*_device, rendertarget_format, width, height);
 
    return Game_rendertarget_id{index};
 }
@@ -502,6 +493,34 @@ auto Shader_patch::create_game_texture_cube(const DirectX::ScratchImage& image) 
    return Game_texture{std::move(srv), std::move(srgb_srv)};
 }
 
+auto Shader_patch::create_patch_texture(const gsl::span<const std::byte> texture_data) noexcept
+   -> Patch_texture
+{
+   auto [texture, name] = load_patch_texture(ucfb::Reader{texture_data}, *_device);
+
+   Com_ptr<ID3D11ShaderResourceView> srv;
+   {
+      const auto srv_desc =
+         CD3D11_SHADER_RESOURCE_VIEW_DESC{D3D11_SRV_DIMENSION_TEXTURE2D};
+
+      if (const auto result =
+             _device->CreateShaderResourceView(texture.get(), &srv_desc,
+                                               srv.clear_and_assign());
+          FAILED(result)) {
+         log(Log_level::error, "Failed to create game texture SRV! reason: ",
+             _com_error{result}.ErrorMessage());
+
+         return {};
+      }
+   }
+
+   auto shared_srv = make_shared_com_ptr(srv);
+
+   _texture_database.add(name, shared_srv);
+
+   return {std::move(shared_srv)};
+}
+
 auto Shader_patch::create_game_input_layout(const gsl::span<const Input_layout_element> layout,
                                             const bool compressed) noexcept -> Game_input_layout
 {
@@ -703,6 +722,11 @@ void Shader_patch::set_game_shader(std::shared_ptr<Game_shader> shader) noexcept
    _ia_vs_dirty = true;
 
    _device_context->PSSetShader(_game_shader->ps.get(), nullptr, 0);
+
+   const auto rendertype = _game_shader->rendertype;
+
+   _shader_rendertype_changed =
+      std::exchange(_shader_rendertype, rendertype) != rendertype;
 }
 
 void Shader_patch::set_rendertarget(const Game_rendertarget_id rendertarget) noexcept
@@ -714,6 +738,7 @@ void Shader_patch::set_rendertarget(const Game_rendertarget_id rendertarget) noe
 void Shader_patch::set_depthstencil(const Game_depthstencil depthstencil) noexcept
 {
    _om_targets_dirty = true;
+   _current_depthstencil_id = depthstencil;
 
    if (depthstencil == Game_depthstencil::nearscene)
       _current_depthstencil = &_nearscene_depthstencil;
@@ -960,8 +985,74 @@ void Shader_patch::bind_static_resources() noexcept
    _device_context->PSSetSamplers(0, ps_samplers.size(), ps_samplers.data());
 }
 
+void Shader_patch::game_rendertype_changed() noexcept
+{
+   if (_on_rendertype_changed) _on_rendertype_changed();
+
+   if (_shader_rendertype == Rendertype::shield) {
+      resolve_refraction_texture();
+
+      auto normalmap_srv = _texture_database.get("$water");
+
+      const std::array srvs{normalmap_srv.get(), _refraction_rt.srv.get()};
+
+      _device_context->PSSetShaderResources(custom_tex_begin, srvs.size(),
+                                            srvs.data());
+
+      // Save rasterizer and blend state
+      Com_ptr<ID3D11RasterizerState> rs_state;
+      _device_context->RSGetState(rs_state.clear_and_assign());
+
+      std::array<float, 4> blend_factor;
+      UINT sample_mask;
+      Com_ptr<ID3D11BlendState> blend_state;
+      _device_context->OMGetBlendState(blend_state.clear_and_assign(),
+                                       blend_factor.data(), &sample_mask);
+
+      _on_rendertype_changed = [
+         this, rs_state{std::move(rs_state)}, blend_state{std::move(blend_state)}
+      ]() noexcept
+      {
+         _device_context->RSSetState(rs_state.get());
+         _device_context
+            ->OMSetBlendState(blend_state.get(),
+                              std::array<float, 4>{1.f, 1.f, 1.f, 1.f}.data(),
+                              0xffffffff);
+
+         _on_rendertype_changed = nullptr;
+      };
+
+      // Override rasterizer and blend state
+
+      _device_context->RSSetState(_shield_rasterizer_state.get());
+      _device_context->OMSetBlendState(_shield_blend_state.get(),
+                                       std::array<float, 4>{1.f, 1.f, 1.f, 1.f}.data(),
+                                       0xffffffff);
+   }
+   else if (_shader_rendertype == Rendertype::refraction) {
+      resolve_refraction_texture();
+
+      auto* const srv = _refraction_rt.srv.get();
+
+      _device_context->PSSetShaderResources(custom_tex_begin, 1, &srv);
+   }
+   else if (_shader_rendertype == Rendertype::water) {
+      resolve_refraction_texture();
+
+      auto water_srv = _texture_database.get("$water");
+
+      const std::array srvs{water_srv.get(), _refraction_rt.srv.get()};
+
+      _device_context->PSSetShaderResources(custom_tex_begin, srvs.size(),
+                                            srvs.data());
+   }
+}
+
 void Shader_patch::update_dirty_state() noexcept
 {
+   if (std::exchange(_shader_rendertype_changed, false))
+      game_rendertype_changed();
+
    if (std::exchange(_ia_vs_dirty, false)) {
       if (_game_input_layout.compressed) {
          auto& input_layout =
@@ -1022,6 +1113,50 @@ void Shader_patch::update_dirty_state() noexcept
    if (std::exchange(_cb_draw_ps_dirty, false)) {
       update_dynamic_buffer(*_device_context, *_cb_draw_ps_buffer, _cb_draw_ps);
    }
+}
+
+void Shader_patch::update_frame_state() noexcept
+{
+   const auto time = std::chrono::steady_clock{}.now().time_since_epoch();
+
+   _cb_scene_dirty = true;
+   _cb_scene.time = std::chrono::duration<float>{(time % 30s)}.count();
+
+   _refraction_farscene_texture_resolve = false;
+   _refraction_nearscene_texture_resolve = false;
+}
+
+void Shader_patch::resolve_refraction_texture() noexcept
+{
+   if (_current_depthstencil_id == Game_depthstencil::farscene) {
+      if (std::exchange(_refraction_farscene_texture_resolve, true)) return;
+   }
+   else {
+      if (std::exchange(_refraction_nearscene_texture_resolve, true)) return;
+   }
+
+   _om_targets_dirty = true;
+
+   std::array<ID3D11ShaderResourceView*, 2> null_srvs{};
+   _device_context->PSSetShaderResources(custom_tex_begin, null_srvs.size(),
+                                         null_srvs.data());
+
+   ID3D11RenderTargetView* null_rtv = nullptr;
+   _device_context->OMSetRenderTargets(0, &null_rtv, nullptr);
+
+   const auto& src_rt =
+      _game_rendertargets[static_cast<int>(_current_game_rendertarget)];
+
+   const D3D11_BOX src_box{0, 0, 0, src_rt.width, src_rt.height, 1};
+   const D3D11_BOX dest_box{0,
+                            0,
+                            0,
+                            _refraction_rt.width,
+                            _refraction_rt.height,
+                            1};
+
+   _image_stretcher.stretch(*_device_context, src_box, *src_rt.srv,
+                            *_refraction_rt.uav, dest_box);
 }
 
 }

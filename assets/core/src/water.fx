@@ -28,8 +28,8 @@ const static float2 water_direction = {0.5, 1.0};
 const static float specular_exponent = 256;
 const static float bump_scale = 0.075;
 
-Texture2D<float2> normal_map_texture : register(t12);
-Texture2D<float3> refraction_buffer : register(t13);
+Texture2D<float2> normal_map_texture : register(t4);
+Texture2D<float3> refraction_buffer : register(t5);
 
 float4 discard_vs() : SV_Position
 {

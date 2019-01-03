@@ -34,4 +34,14 @@ ucft
       "water"
       "zprepass"
    }
+
+   // Patch Textures
+   REQN
+   {
+      "sptex"
+      "_SP_BUILTIN_water"
+      "_SP_BUILTIN_null_normalmap"
+      "_SP_BUILTIN_null_ao"
+      "_SP_BUILTIN_null_detailmap"
+   }
 }

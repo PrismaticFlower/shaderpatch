@@ -44,7 +44,6 @@ ucft
       "scene_blur_apply"
       "shadows_blur"
       "skyfog_ext"
-      "stock_bloom_ext"
       "stretch_texture"
    }
    
