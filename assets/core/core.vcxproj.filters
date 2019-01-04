@@ -335,10 +335,18 @@
     <None Include="definitions\patch\fixedfunc_zoom_blur.json">
       <Filter>definitions\patch</Filter>
     </None>
-    <None Include="src\fixedfunc_color_fill.fx" />
-    <None Include="src\fixedfunc_damage_overlay.fx" />
-    <None Include="src\fixedfunc_scene_blur.fx" />
-    <None Include="src\fixedfunc_zoom_blur.fx" />
+    <None Include="src\fixedfunc_color_fill.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\fixedfunc_damage_overlay.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\fixedfunc_scene_blur.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\fixedfunc_zoom_blur.fx">
+      <Filter>src</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">
