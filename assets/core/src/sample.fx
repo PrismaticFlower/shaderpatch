@@ -22,7 +22,7 @@ Vs_output sample_vs(int4 sample_locations : POSITION)
 
    float2 locations = decompress_position((float3)sample_locations.xyz).xy;
 
-   output.positionPS = sample_positionPS;
+   output.positionPS = sample_positionPS + float4(0.001, -0.001, 0.0, 0.0);;
    output.texcoords = (locations.xy + sample_scale_offset.zw) * sample_scale_offset.xy;
 
    return output;
