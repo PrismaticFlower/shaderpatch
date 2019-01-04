@@ -60,29 +60,28 @@ private:
 
 #pragma pack(push, 1)
    struct alignas(std::int64_t) Depthstencil_state {
-      bool depth_enable : 1;
-      bool depth_write_enable : 1;
-      bool stencil_enabled : 1;
-      bool stencil_ccw_enabled : 1;
-      unsigned int depth_func : 3;
-      unsigned int stencil_func : 3;
-      unsigned int stencil_ccw_func : 3;
-      unsigned int stencil_pass_op : 3;
-      unsigned int stencil_fail_op : 3;
-      unsigned int stencil_depth_fail_op : 3;
-      unsigned int stencil_ccw_pass_op : 3;
-      unsigned int stencil_ccw_fail_op : 3;
-      unsigned int stencil_ccw_depth_fail_op : 3;
-
-      std::uint8_t stencil_read_mask = 0xff;
-      std::uint8_t stencil_write_mask = 0xff;
-      std::uint8_t stencil_ref = 0xff;
+      unsigned int depth_enable : 1;
+      unsigned int depth_write_enable : 1;
+      unsigned int stencil_enabled : 1;
+      unsigned int stencil_doublesided_enabled : 1;
+      unsigned int depth_func : 4;
+      unsigned int stencil_func : 4;
+      unsigned int stencil_ccw_func : 4;
+      unsigned int stencil_pass_op : 4;
+      unsigned int stencil_fail_op : 4;
+      unsigned int stencil_depth_fail_op : 4;
+      unsigned int stencil_ccw_pass_op : 4;
+      unsigned int stencil_ccw_fail_op : 4;
+      unsigned int stencil_ccw_depth_fail_op : 4;
+      unsigned int stencil_read_mask : 8;
+      unsigned int stencil_write_mask : 8;
+      unsigned int stencil_ref : 8;
 
       Depthstencil_state() noexcept
          : depth_enable{true},
            depth_write_enable{true},
            stencil_enabled{false},
-           stencil_ccw_enabled{false},
+           stencil_doublesided_enabled{false},
            depth_func{D3DCMP_LESSEQUAL},
            stencil_func{D3DCMP_ALWAYS},
            stencil_ccw_func{D3DCMP_ALWAYS},
@@ -91,7 +90,10 @@ private:
            stencil_depth_fail_op{D3DSTENCILOP_KEEP},
            stencil_ccw_pass_op{D3DSTENCILOP_KEEP},
            stencil_ccw_fail_op{D3DSTENCILOP_KEEP},
-           stencil_ccw_depth_fail_op{D3DSTENCILOP_KEEP}
+           stencil_ccw_depth_fail_op{D3DSTENCILOP_KEEP},
+           stencil_read_mask{0xff},
+           stencil_write_mask{0xff},
+           stencil_ref{0xff}
       {
       }
    };

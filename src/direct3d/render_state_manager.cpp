@@ -68,7 +68,7 @@ void Render_state_manager::set(const D3DRENDERSTATETYPE state, const DWORD value
       _depthstencil_state_dirty = true;
       break;
    case D3DRS_TWOSIDEDSTENCILMODE:
-      _current_depthstencil_state.stencil_ccw_enabled = value;
+      _current_depthstencil_state.stencil_doublesided_enabled = value;
       _depthstencil_state_dirty = true;
       break;
    case D3DRS_CCW_STENCILFAIL:
@@ -414,7 +414,7 @@ auto Render_state_manager::create_current_depthstencil_state(core::Shader_patch&
    desc.FrontFace.StencilFunc =
       map_cmp_func_value(_current_depthstencil_state.stencil_func);
 
-   if (_current_depthstencil_state.stencil_ccw_enabled) {
+   if (_current_depthstencil_state.stencil_doublesided_enabled) {
       desc.BackFace.StencilFailOp =
          map_stencil_op_value(_current_depthstencil_state.stencil_ccw_fail_op);
       desc.BackFace.StencilDepthFailOp =
@@ -425,10 +425,7 @@ auto Render_state_manager::create_current_depthstencil_state(core::Shader_patch&
          map_cmp_func_value(_current_depthstencil_state.stencil_ccw_func);
    }
    else {
-      desc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-      desc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
-      desc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-      desc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+      desc.BackFace = desc.FrontFace;
    }
 
    return shader_patch.create_depthstencil_state(desc);
