@@ -1,12 +1,15 @@
 
 #include "shader_patch.hpp"
 #include "../logger.hpp"
+#include "../user_config.hpp"
 #include "patch_texture_io.hpp"
 #include "utility.hpp"
 
 #include <chrono>
 
+#include <VersionHelpers.h>
 #include <comdef.h>
+#include <dxgi1_6.h>
 
 using namespace std::literals;
 
@@ -21,6 +24,18 @@ namespace {
 
 constexpr std::array supported_feature_levels{D3D_FEATURE_LEVEL_11_0};
 constexpr auto swap_chain_buffers = 2;
+
+auto get_swap_chain_effect() -> DXGI_SWAP_EFFECT
+{
+   if (IsWindows10OrGreater()) {
+      return DXGI_SWAP_EFFECT_FLIP_DISCARD;
+   }
+   else if (IsWindows8OrGreater()) {
+      return DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+   }
+
+   return DXGI_SWAP_EFFECT_DISCARD;
+}
 
 auto create_device(IDXGIAdapter2&) noexcept -> Com_ptr<ID3D11Device1>
 {
@@ -45,21 +60,23 @@ auto create_device(IDXGIAdapter2&) noexcept -> Com_ptr<ID3D11Device1>
       log_and_terminate("Failed to create Direct3D 11.1 device!");
    }
 
-   Com_ptr<ID3D11Debug> debug;
-   if (auto result = device->QueryInterface(debug.clear_and_assign());
-       SUCCEEDED(result)) {
-      Com_ptr<ID3D11InfoQueue> infoqueue;
-      if (result = debug->QueryInterface(infoqueue.clear_and_assign());
+   if (user_config.developer.force_d3d11_debug_layer || IsDebuggerPresent()) {
+      Com_ptr<ID3D11Debug> debug;
+      if (auto result = device->QueryInterface(debug.clear_and_assign());
           SUCCEEDED(result)) {
-         infoqueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
-         infoqueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
+         Com_ptr<ID3D11InfoQueue> infoqueue;
+         if (result = debug->QueryInterface(infoqueue.clear_and_assign());
+             SUCCEEDED(result)) {
+            infoqueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
+            infoqueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
 
-         std::array hide{D3D11_MESSAGE_ID_DEVICE_DRAW_VIEW_DIMENSION_MISMATCH};
+            std::array hide{D3D11_MESSAGE_ID_DEVICE_DRAW_VIEW_DIMENSION_MISMATCH};
 
-         D3D11_INFO_QUEUE_FILTER filter{};
-         filter.DenyList.NumIDs = hide.size();
-         filter.DenyList.pIDList = hide.data();
-         infoqueue->AddStorageFilterEntries(&filter);
+            D3D11_INFO_QUEUE_FILTER filter{};
+            filter.DenyList.NumIDs = hide.size();
+            filter.DenyList.pIDList = hide.data();
+            infoqueue->AddStorageFilterEntries(&filter);
+         }
       }
    }
 
@@ -67,8 +84,8 @@ auto create_device(IDXGIAdapter2&) noexcept -> Com_ptr<ID3D11Device1>
 }
 
 auto create_swapchain(ID3D11Device1& device, IDXGIAdapter2& adapter,
-                      const HWND window, const UINT width,
-                      const UINT height) noexcept -> Com_ptr<IDXGISwapChain1>
+                      const HWND window, const UINT width, const UINT height,
+                      const bool allow_tearing) noexcept -> Com_ptr<IDXGISwapChain1>
 {
    Com_ptr<IDXGIFactory2> factory;
    adapter.GetParent(__uuidof(IDXGIFactory2), factory.void_clear_and_assign());
@@ -84,9 +101,9 @@ auto create_swapchain(ID3D11Device1& device, IDXGIAdapter2& adapter,
       DXGI_USAGE_SHADER_INPUT | DXGI_USAGE_RENDER_TARGET_OUTPUT;
    swap_chain_desc.BufferCount = swapchain_buffer_count;
    swap_chain_desc.Scaling = DXGI_SCALING_NONE;
-   swap_chain_desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+   swap_chain_desc.SwapEffect = get_swap_chain_effect();
    swap_chain_desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
-   swap_chain_desc.Flags = 0;
+   swap_chain_desc.Flags = allow_tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
 
    Com_ptr<IDXGISwapChain1> swapchain;
 
@@ -111,16 +128,40 @@ auto create_swapchain(ID3D11Device1& device, IDXGIAdapter2& adapter,
    return swapchain;
 }
 
+bool supports_tearing() noexcept
+{
+   Com_ptr<IDXGIFactory1> factory1;
+
+   if (auto result =
+          CreateDXGIFactory1(IID_IDXGIFactory1, factory1.void_clear_and_assign());
+       SUCCEEDED(result)) {
+      Com_ptr<IDXGIFactory5> factory5;
+      if (result = factory1->QueryInterface(factory5.clear_and_assign());
+          SUCCEEDED(result)) {
+         BOOL supported;
+         if (result = factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING,
+                                                    &supported, sizeof(supported));
+             SUCCEEDED(result)) {
+            return supported != false;
+         }
+      }
+   }
+
+   return false;
+}
+
 }
 
 Shader_patch::Shader_patch(IDXGIAdapter2& adapter, const HWND window,
                            const UINT width, const UINT height) noexcept
    : _device{create_device(adapter)},
-     _swapchain{create_swapchain(*_device, adapter, window, width, height)},
+     _swapchain{create_swapchain(*_device, adapter, window, width, height,
+                                 supports_tearing() && user_config.window.allow_tearing)},
      _window{window},
      _nearscene_depthstencil{*_device, width, height},
      _farscene_depthstencil{*_device, width, height},
-     _refraction_rt{*_device, rendertarget_format, width / 2, height / 2}
+     _refraction_rt{*_device, rendertarget_format, width / 2, height / 2},
+     _allow_tearing{supports_tearing() && user_config.window.allow_tearing}
 {
    bind_static_resources();
    set_viewport(0, 0, static_cast<float>(width), static_cast<float>(height));
@@ -136,8 +177,8 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
    _device_context->ClearState();
    _game_rendertargets.clear();
 
-   _swapchain->ResizeBuffers(swapchain_buffer_count, width, height,
-                             rendertarget_format, 0);
+   _swapchain->ResizeBuffers(swapchain_buffer_count, width, height, rendertarget_format,
+                             _allow_tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0);
 
    bind_static_resources();
    set_viewport(0, 0, static_cast<float>(width), static_cast<float>(height));
@@ -162,7 +203,9 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
 
 void Shader_patch::present() noexcept
 {
-   if (const auto result = _swapchain->Present(0, 0); FAILED(result)) {
+   const auto flags = _allow_tearing ? DXGI_PRESENT_ALLOW_TEARING : 0;
+
+   if (const auto result = _swapchain->Present(0, flags); FAILED(result)) {
       log_and_terminate("Frame Present call failed! reason: ",
                         _com_error{result}.ErrorMessage());
    }

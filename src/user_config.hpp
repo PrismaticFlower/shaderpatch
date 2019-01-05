@@ -128,6 +128,7 @@ struct User_config {
 
    struct {
       std::uint32_t screen_percent = 100;
+      bool allow_tearing = true;
       bool centred = false;
    } window;
 
@@ -151,22 +152,14 @@ struct User_config {
    struct {
       std::uintptr_t toggle_key{0};
 
-      bool unlock_fps = true;
+      bool unlock_fps = false;
+      bool allow_event_queries = false;
+      bool force_d3d11_debug_layer = false;
    } developer;
 
    void show_imgui(bool* apply = nullptr) noexcept
    {
       ImGui::Begin("User Config", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-
-      if (ImGui::CollapsingHeader("Window", ImGuiTreeNodeFlags_DefaultOpen)) {
-         int screen_percent = window.screen_percent;
-         ImGui::DragInt("Screen Percent", &screen_percent, 1.0f, 10, 100);
-
-         window.screen_percent =
-            static_cast<std::uint32_t>(std::clamp(screen_percent, 10, 100));
-
-         ImGui::Checkbox("Centred", &window.centred);
-      }
 
       if (ImGui::CollapsingHeader("Rendering", ImGuiTreeNodeFlags_DefaultOpen)) {
          ImGui::Checkbox("High Resolution Reflections", &rendering.high_res_reflections);
@@ -230,6 +223,10 @@ struct User_config {
          ImGui::Checkbox("Allow Colored Film Grain", &effects.colored_film_grain);
       }
 
+      if (ImGui::CollapsingHeader("Developer")) {
+         ImGui::Checkbox("Allow Event Queries", &developer.allow_event_queries);
+      }
+
       if (apply) {
          ImGui::Separator();
 
@@ -248,6 +245,8 @@ private:
 
       window.screen_percent =
          std::clamp(config["Window"s]["ScreenPercent"s].as<std::uint32_t>(), 10u, 100u);
+
+      window.centred = config["Window"s]["AllowTearing"s].as<bool>();
 
       window.centred = config["Window"s]["Centred"s].as<bool>();
 
@@ -308,6 +307,12 @@ private:
       // developer.toggle_key = config["Developer"s]["ScreenToggle"s].as<int>();
 
       developer.unlock_fps = config["Developer"s]["UnlockFPS"s].as<bool>();
+
+      developer.allow_event_queries =
+         config["Developer"s]["AllowEventQueries"s].as<bool>();
+
+      developer.force_d3d11_debug_layer =
+         config["Developer"s]["ForceD3D11DebugLayer"s].as<bool>();
    }
 };
 

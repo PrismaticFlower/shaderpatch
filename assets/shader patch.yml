@@ -2,6 +2,10 @@ Window:
    # Precentage of the sceen the game's window will take up. Value from 10 to 100.
    ScreenPercent: 100
 
+   # Allow tearing when displaying frames. This allows lower latency and is a prerequisite for 
+   # variable refresh rate technologies to work with Shader Patch.
+   AllowTearing: yes
+   
    # Whether to centre the window or not. If `ScreenPercent` is 100 there will be 
    # no difference between a centred and uncentred window.
    Centred: yes
@@ -12,3 +16,8 @@ Developer:
    # is tied to framerate, in particular UI animation, cloth and bizarrely the physics of hover vehicles.
    # If those downsides sounds acceptable to you then feel free to switch this on.
    UnlockFPS: no
+   
+   # Controls whether or not Shader Patch will allow the game to use GPU event queries.
+   AllowEventQueries: no
+   
+   ForceD3D11DebugLayer: no

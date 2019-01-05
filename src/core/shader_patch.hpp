@@ -227,6 +227,7 @@ private:
 
    std::array<Game_texture, 4> _game_textures;
 
+   const bool _allow_tearing;
    bool _shader_rendertype_changed = false;
    bool _ia_vs_dirty = true;
    bool _om_targets_dirty = true;

@@ -1,5 +1,6 @@
 
 #include "query.hpp"
+#include "../user_config.hpp"
 #include "debug_trace.hpp"
 
 #include <algorithm>
@@ -178,14 +179,23 @@ public:
 
    void end() noexcept
    {
-      _shader_patch.end_query(*_query);
+      if (user_config.developer.allow_event_queries)
+         _shader_patch.end_query(*_query);
    }
 
    auto get_data(const bool flush, gsl::span<std::byte> data) noexcept -> core::Query_result
    {
       Expects(data.size() == sizeof(BOOL));
 
-      return _shader_patch.get_query_data(*_query, flush, data);
+      if (user_config.developer.allow_event_queries) {
+         return _shader_patch.get_query_data(*_query, flush, data);
+      }
+      else {
+         constexpr BOOL v = true;
+         std::memcpy(data.data(), &v, sizeof(BOOL));
+
+         return core::Query_result::success;
+      }
    }
 
 private:
