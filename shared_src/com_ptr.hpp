@@ -75,7 +75,7 @@ public:
 
    Com_ptr& operator=(Com_ptr&& other) noexcept
    {
-      _pointer = other.release();
+      reset(other.release());
 
       return *this;
    }
@@ -89,7 +89,7 @@ public:
    template<typename Other, typename = std::enable_if_t<std::is_convertible_v<Other*, Class*>>>
    Com_ptr& operator=(Com_ptr<Other>&& other) noexcept
    {
-      _pointer = static_cast<Class*>(other.release());
+      reset(static_cast<Class*>(other.release()));
 
       return *this;
    }
@@ -124,10 +124,7 @@ public:
 
    [[nodiscard]] Class* release() noexcept
    {
-      Class* pointer = nullptr;
-      std::swap(pointer, _pointer);
-
-      return pointer;
+      return std::exchange(_pointer, nullptr);
    }
 
    Class* get() const noexcept
