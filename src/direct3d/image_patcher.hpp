@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../core/shader_patch.hpp"
+
 #include <memory>
 
 #include <DirectXTex.h>
@@ -22,6 +24,16 @@ public:
 
    virtual auto patch_image(const DirectX::ScratchImage& input_image) const
       noexcept -> DirectX::ScratchImage = 0;
+
+   virtual auto map_dynamic_image(const DXGI_FORMAT format, const UINT width,
+                                  const UINT height, const UINT mip_level) noexcept
+      -> core::Mapped_texture = 0;
+
+   virtual void unmap_dynamic_image(core::Shader_patch& shader_patch,
+                                    const core::Game_texture& texture,
+                                    const UINT mip_level) noexcept = 0;
+
+   virtual bool is_mapped() const noexcept = 0;
 };
 
 auto make_l8_image_patcher() noexcept -> std::unique_ptr<Image_patcher>;

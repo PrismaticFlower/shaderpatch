@@ -41,6 +41,12 @@ enum class Projtex_type { tex2d, texcube };
 
 enum class Query_result { success, notready, error };
 
+struct Mapped_texture {
+   UINT row_pitch;
+   UINT depth_pitch;
+   std::byte* data;
+};
+
 class Shader_patch {
 public:
    Shader_patch(IDXGIAdapter2& adapter, const HWND window, const UINT width,
@@ -77,6 +83,9 @@ public:
    auto create_game_texture2d(const DirectX::ScratchImage& image) noexcept
       -> Game_texture;
 
+   auto create_game_dynamic_texture2d(const Game_texture& texture) noexcept
+      -> Game_texture;
+
    auto create_game_texture3d(const DirectX::ScratchImage& image) noexcept
       -> Game_texture;
 
@@ -103,6 +112,11 @@ public:
       -> std::byte*;
 
    void unmap_ia_buffer(ID3D11Buffer& buffer) noexcept;
+
+   auto map_dynamic_texture(const Game_texture& texture, const UINT mip_level,
+                            const D3D11_MAP map_type) noexcept -> Mapped_texture;
+
+   void unmap_dynamic_texture(const Game_texture& texture, const UINT mip_level) noexcept;
 
    void stretch_rendertarget(const Game_rendertarget_id source,
                              const RECT* source_rect, const Game_rendertarget_id dest,
@@ -329,7 +343,6 @@ private:
 
    const HWND _window;
 };
-
 }
 
 #pragma warning(default : 4324)

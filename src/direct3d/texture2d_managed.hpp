@@ -134,6 +134,8 @@ private:
    std::optional<DirectX::ScratchImage> _upload_image;
    core::Shader_patch& _shader_patch;
 
+   bool _dynamic_texture = false;
+
    const UINT _width;
    const UINT _height;
    const UINT _mip_levels;
