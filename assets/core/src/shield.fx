@@ -70,11 +70,12 @@ Vs_output shield_vs(Vertex_input input)
    Transformer transformer = create_transformer(input);
 
    const float3 positionWS = transformer.positionWS();
+   const float4 positionPS = transformer.positionPS();
    const float3 normalOS = normalize(-transformer.positionOS());
    const float3 normalWS = mul(normalOS, (float3x3)world_matrix);
    const float3 view_normalWS = normalize(positionWS - view_positionWS);
 
-   output.positionPS = transformer.positionPS();
+   output.positionPS = positionPS;
    output.normalWS = normalWS;
    output.view_normalWS = view_normalWS;
 
@@ -82,7 +83,7 @@ Vs_output shield_vs(Vertex_input input)
    output.normal_texcoords = animate_normal(normalWS);
 
    float near_fade;
-   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
    near_fade = near_fade * near_scene_fade_scale.x + near_scene_fade_scale.y;
 
    output.material_color = get_material_color().rgb;

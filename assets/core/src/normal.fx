@@ -30,7 +30,7 @@ struct Vs_output_unlit
    float2 detail_texcoords : TEXCOORD1;
    float4 material_color_fade : MATCOLOR;
    float fog : FOG;
-   float4 position : SV_Position;
+   float4 positionPS : SV_Position;
 };
 
 Vs_output_unlit unlit_main_vs(Vertex_input input)
@@ -39,9 +39,10 @@ Vs_output_unlit unlit_main_vs(Vertex_input input)
     
    Transformer transformer = create_transformer(input);
 
-   float3 positionWS = transformer.positionWS();
+   const float3 positionWS = transformer.positionWS();
+   const float4 positionPS = transformer.positionPS();
 
-   output.position = transformer.positionPS();
+   output.positionPS = positionPS;
 
    output.diffuse_texcoords = transformer.texcoords(texture_transforms[0],
                                                     texture_transforms[1]);  
@@ -49,7 +50,7 @@ Vs_output_unlit unlit_main_vs(Vertex_input input)
                                                    texture_transforms[3]);
 
    float near_fade;
-   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
 
    output.material_color_fade.rgb = lighting_scale * lighting_factor.x + lighting_factor.y;
    output.material_color_fade.a = saturate(near_fade);
@@ -82,12 +83,13 @@ Vs_output main_vs(Vertex_input input)
 
    Transformer transformer = create_transformer(input);
 
-   float3 positionWS = transformer.positionWS();
-   float3 normalWS = transformer.normalWS();
+   const float3 positionWS = transformer.positionWS();
+   const float4 positionPS = transformer.positionPS();
+   const float3 normalWS = transformer.normalWS();
 
    output.positionWS = positionWS;
    output.normalWS = normalWS;
-   output.positionPS = transformer.positionPS();
+   output.positionPS = positionPS;
 
    output.diffuse_texcoords = transformer.texcoords(texture_transforms[0],
                                                     texture_transforms[1]);  
@@ -98,7 +100,7 @@ Vs_output main_vs(Vertex_input input)
    output.shadow_texcoords = transform_shadowmap_coords(positionWS);
 
    float near_fade;
-   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
 
    output.material_color_fade = get_material_color(input.color());
    output.material_color_fade.a *= saturate(near_fade);

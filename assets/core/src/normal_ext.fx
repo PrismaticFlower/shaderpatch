@@ -66,9 +66,10 @@ Vs_output main_vs(Vertex_input input)
    Transformer transformer = create_transformer(input);
 
    const float3 positionWS = transformer.positionWS();
+   const float4 positionPS = transformer.positionPS();
 
-   output.positionPS = transformer.positionPS();
    output.positionWS = positionWS;
+   output.positionPS = positionPS;
    output.normalWS = transformer.normalWS();
 
    output.diffuse_texcoords = transformer.texcoords(x_diffuse_texcoords_transform,
@@ -82,7 +83,7 @@ Vs_output main_vs(Vertex_input input)
    output.shadow_texcoords = transform_shadowmap_coords(positionWS);
 
    float near_fade;
-   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
 
    output.material_color_fade = get_material_color(input.color());
    output.material_color_fade.a = saturate(near_fade);

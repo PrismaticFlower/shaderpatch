@@ -55,7 +55,7 @@ Vs_fade_output transmissive_pass_fade_vs(Vertex_input input)
    output.positionPS = positionPS;
    output.fade = saturate(positionPS.z * fade_constant.z + fade_constant.w);
    float near_fade;
-   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
 
    return output;
 }
@@ -97,7 +97,7 @@ Vs_lowquality_output lowquality_vs(Vertex_input input)
    output.positionPS = positionPS;
 
    float near_fade;
-   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
    output.fade = saturate(positionPS.z * fade_constant.z + fade_constant.w);
 
    return output;
@@ -135,7 +135,7 @@ Vs_normal_map_output normal_map_vs(Vertex_input input)
    output.texcoords[3] = mul(rotation, texcoords * tex_scales[3]) + (time_scales[3] * time);
 
    float near_fade;
-   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
    output.fade = saturate(positionPS.z * fade_constant.z + fade_constant.w);
 
    return output;

@@ -28,10 +28,11 @@ Vs_nodistortion_output far_vs(Vertex_input input)
 
    Transformer transformer = create_transformer(input);
 
-   float3 positionWS = transformer.positionWS();
+   const float3 positionWS = transformer.positionWS();
+   const float4 positionPS = transformer.positionPS();
 
-   output.positionPS = transformer.positionPS();
    output.positionWS = positionWS;
+   output.positionPS = positionPS;
    output.normalWS = transformer.normalWS();
 
    const float4 x_texcoords_transform = custom_constants[0];
@@ -43,7 +44,7 @@ Vs_nodistortion_output far_vs(Vertex_input input)
    output.static_lighting = get_static_diffuse_color(input.color());
 
    float near_fade;
-   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
 
    return output;
 }
@@ -54,10 +55,11 @@ Vs_nodistortion_output nodistortion_vs(Vertex_input input)
 
    Transformer transformer = create_transformer(input);
 
-   float3 positionWS = transformer.positionWS();
+   const float3 positionWS = transformer.positionWS();
+   const float4 positionPS = transformer.positionPS();
 
-   output.positionPS = transformer.positionPS();
    output.positionWS = positionWS;
+   output.positionPS = positionPS;
    output.normalWS = transformer.normalWS();
 
    const float4 x_texcoords_transform = custom_constants[0];
@@ -66,7 +68,7 @@ Vs_nodistortion_output nodistortion_vs(Vertex_input input)
    output.texcoords = transformer.texcoords(x_texcoords_transform, y_texcoords_transform);
 
    float near_fade;
-   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
    near_fade = saturate(near_fade);
    near_fade *= near_fade;
 
@@ -117,12 +119,13 @@ Vs_distortion_output distortion_vs(Vertex_input input)
 
    Transformer transformer = create_transformer(input);
 
-   float3 positionOS = transformer.positionOS();
-   float3 positionWS = transformer.positionWS();
-   float3 normalOS = transformer.normalOS();
+   const float3 positionOS = transformer.positionOS();
+   const float3 positionWS = transformer.positionWS();
+   const float4 positionPS = transformer.positionPS();
+   const float3 normalOS = transformer.normalOS();
 
-   output.positionPS = transformer.positionPS();
    output.positionWS = positionWS;
+   output.positionPS = positionPS;
    output.normalWS = transformer.normalWS();
 
    output.distortion_texcoords = distortion_texcoords(normalOS, positionOS,
@@ -135,7 +138,7 @@ Vs_distortion_output distortion_vs(Vertex_input input)
                                                     y_diffuse_texcoords_transform);
 
    float near_fade;
-   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
    near_fade = saturate(near_fade);
    near_fade *= near_fade;
 

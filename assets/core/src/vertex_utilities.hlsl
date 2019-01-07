@@ -67,25 +67,24 @@ void generate_terrain_tangents(float3 normal, out float3 tangent,
    bitangent = normalize(-normal.z * normal + float3(0.0, 0.0, 1.0));
 }
 
-float calculate_near_fade(float depthWS)
+float calculate_near_fade(float depthPS)
 {
-   return depthWS * near_fade_scale + near_fade_offset;
+   return depthPS * near_fade_scale + near_fade_offset;
 }
 
-float calculate_fog(float heightWS, float depthWS)
+float calculate_fog(float heightWS, float depthPS)
 {
-   const float depth_fog = depthWS * depth_fog_scale + depth_fog_offset;
+   const float depth_fog = depthPS * depth_fog_scale + depth_fog_offset;
    const float height_fog = heightWS * height_fog_scale + height_fog_offset;
 
    return saturate(min(depth_fog, height_fog));
 }
 
-void calculate_near_fade_and_fog(float3 positionWS, out float near_fade, out float fog)
+void calculate_near_fade_and_fog(float3 positionWS, float4 positionPS,
+                                 out float near_fade, out float fog)
 {
-   const float depthWS = distance(view_positionWS, positionWS);
-   
-   near_fade = calculate_near_fade(depthWS);
-   fog = calculate_fog(positionWS.y, depthWS);
+   near_fade = calculate_near_fade(positionPS.z);
+   fog = calculate_fog(positionWS.y, positionPS.z);
 }
 
 #endif

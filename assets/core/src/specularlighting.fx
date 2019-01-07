@@ -32,24 +32,25 @@ Vs_normalmapped_ouput normalmapped_vs(Vertex_input input)
 
    Transformer transformer = create_transformer(input);
 
-   float3 positionWS = transformer.positionWS();
+   const float3 positionWS = transformer.positionWS();
+   const float4 positionPS = transformer.positionPS();
 
-   output.positionPS = transformer.positionPS();
    output.positionWS = positionWS;
+   output.positionPS = positionPS;
 
    output.texcoords = transformer.texcoords(x_texcoords_transform,
                                             y_texcoords_transform);
    
-   float3 normalWS = transformer.normalWS();
-   float3 tangentWS = transformer.tangentWS();
-   float3 bitangentWS = transformer.bitangentWS();
+   const float3 normalWS = transformer.normalWS();
+   const float3 tangentWS = transformer.tangentWS();
+   const float3 bitangentWS = transformer.bitangentWS();
 
-   float3x3 TBN = {tangentWS, bitangentWS, normalWS};
+   const float3x3 TBN = {tangentWS, bitangentWS, normalWS};
 
    output.TBN = transpose(TBN);
 
    float near_fade;
-   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
 
    return output;
 }
@@ -71,17 +72,18 @@ Vs_blinn_phong_ouput blinn_phong_vs(Vertex_input input)
 
    Transformer transformer = create_transformer(input);
 
-   float3 positionWS = transformer.positionWS();
+   const float3 positionWS = transformer.positionWS();
+   const float4 positionPS = transformer.positionPS();
 
-   output.positionPS = transformer.positionPS();
    output.positionWS = positionWS;
+   output.positionPS = positionPS;
    output.normalWS = transformer.normalWS();
 
    output.texcoords = transformer.texcoords(x_texcoords_transform,
                                             y_texcoords_transform);
 
    float near_fade;
-   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
 
    return output;
 }

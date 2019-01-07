@@ -22,12 +22,13 @@ Vs_output lightbeam_vs(Vertex_input input)
 
    Transformer transformer = create_transformer(input);
 
-   float3 positionWS = transformer.positionWS();
+   const float3 positionWS = transformer.positionWS();
+   const float4 positionPS = transformer.positionPS();
 
-   output.positionPS = transformer.positionPS();
+   output.positionPS = positionPS;
 
    float near_fade;
-   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
    near_fade = saturate(near_fade);
    near_fade *= near_fade;
 

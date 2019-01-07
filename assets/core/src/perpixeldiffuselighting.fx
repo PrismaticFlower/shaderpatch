@@ -47,15 +47,16 @@ Vs_perpixel_output perpixel_vs(Vertex_input input)
 
    Transformer transformer = create_transformer(input);
 
-   float3 positionWS = transformer.positionWS();
+   const float3 positionWS = transformer.positionWS();
+   const float4 positionPS = transformer.positionPS();;
 
-   output.positionPS = transformer.positionPS();
    output.positionWS = positionWS;
+   output.positionPS = positionPS;
    output.normalWS = transformer.normalWS();
    output.static_lighting = get_static_diffuse_color(input.color());
 
    float near_fade;
-   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
 
    return output;
 }
@@ -78,10 +79,11 @@ Vs_normalmapped_output normalmapped_vs(Vertex_input input)
 
    Transformer transformer = create_transformer(input);
 
-   float3 positionWS = transformer.positionWS();
+   const float3 positionWS = transformer.positionWS();
+   const float4 positionPS = transformer.positionPS();
 
-   output.positionPS = transformer.positionPS();
    output.positionWS = positionWS;
+   output.positionPS = positionPS;
 
    if (generate_texcoords) {
       output.texcoords.x = dot(float4(positionWS, 1.0), x_texcoords_transform.xzyw);
@@ -92,7 +94,7 @@ Vs_normalmapped_output normalmapped_vs(Vertex_input input)
                                                y_texcoords_transform);
    }
 
-   float3 normalWS = transformer.normalWS();
+   const float3 normalWS = transformer.normalWS();
    float3 tangentWS; 
    float3 bitangentWS;
 
@@ -104,14 +106,14 @@ Vs_normalmapped_output normalmapped_vs(Vertex_input input)
       bitangentWS = transformer.bitangentWS();
    }
 
-   float3x3 TBN = {tangentWS, bitangentWS, normalWS};
+   const float3x3 TBN = {tangentWS, bitangentWS, normalWS};
 
    output.TBN = transpose(TBN);
 
    output.static_lighting = get_static_diffuse_color(input.color());
 
    float near_fade;
-   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
 
    return output;
 }
@@ -146,15 +148,16 @@ Vs_perpixel_spotlight_output perpixel_spotlight_vs(Vertex_input input)
    Transformer transformer = create_transformer(input);
 
    const float3 positionWS = transformer.positionWS();
+   const float4 positionPS = transformer.positionPS();
 
-   output.positionPS = transformer.positionPS();
    output.positionWS = positionWS;
+   output.positionPS = positionPS;
    output.normalWS = transformer.normalWS();
    output.projection_coords = transform_spotlight_projection(positionWS);
    output.static_lighting = get_static_diffuse_color(input.color());
 
    float near_fade;
-   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
 
    return output;
 }
@@ -178,7 +181,8 @@ Vs_normalmapped_spotlight_output normalmapped_spotlight_vs(Vertex_input input)
 
    Transformer transformer = create_transformer(input);
 
-   float3 positionWS = transformer.positionWS();
+   const float3 positionWS = transformer.positionWS();
+   const float4 positionPS = transformer.positionPS();
 
    output.positionPS = transformer.positionPS();
    output.positionWS = positionWS;
@@ -193,7 +197,7 @@ Vs_normalmapped_spotlight_output normalmapped_spotlight_vs(Vertex_input input)
 
    output.projection_coords = transform_spotlight_projection(positionWS);
 
-   float3 normalWS = transformer.normalWS();
+   const float3 normalWS = transformer.normalWS();
    float3 tangentWS;
    float3 bitangentWS;
 
@@ -205,14 +209,14 @@ Vs_normalmapped_spotlight_output normalmapped_spotlight_vs(Vertex_input input)
       bitangentWS = transformer.bitangentWS();
    }
 
-   float3x3 TBN = {tangentWS, bitangentWS, normalWS};
+   const float3x3 TBN = {tangentWS, bitangentWS, normalWS};
 
    output.TBN = transpose(TBN);
 
    output.static_lighting = get_static_diffuse_color(input.color());
 
    float near_fade;
-   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
 
    return output;
 }

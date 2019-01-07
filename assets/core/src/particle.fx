@@ -33,7 +33,7 @@ Vs_normal_output normal_vs(Vertex_input input)
    output.texcoords = input.texcoords() * texcoords_transform.xy + texcoords_transform.zw;
 
    float near_fade;
-   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
    near_fade = saturate(near_fade);
    near_fade *= near_fade;
 
@@ -59,15 +59,15 @@ Vs_blur_output blur_vs(Vertex_input input)
 
    Transformer transformer = create_transformer(input);
 
-   float3 positionWS = transformer.positionWS();
-   float4 positionPS = transformer.positionPS();
+   const float3 positionWS = transformer.positionWS();
+   const float4 positionPS = transformer.positionPS();
 
    output.positionPS = positionPS;
 
    output.texcoords = input.texcoords() * texcoords_transform.xy + texcoords_transform.zw;
 
    float near_fade;
-   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
    near_fade = saturate(near_fade);
    near_fade *= near_fade;
 

@@ -28,12 +28,13 @@ Vs_output decal_vs(Vs_input input)
    Vs_output output;
 
    const float3 positionWS = mul(float4(input.position, 1.0), world_matrix);
+   const float4 positionPS = mul(float4(positionWS, 1.0), projection_matrix);
 
-   output.positionPS = mul(float4(positionWS, 1.0), projection_matrix);
+   output.positionPS = positionPS;
    output.texcoords = input.texcoords;
 
    float near_fade, fog;
-   calculate_near_fade_and_fog(positionWS, near_fade, fog);
+   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, fog);
 
    float4 color;
    color.rgb = input.color.rgb * material_diffuse_color.rgb;

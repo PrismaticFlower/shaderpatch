@@ -31,15 +31,16 @@ Vs_output near_vs(Vertex_input input)
 
    Transformer transformer = create_transformer(input);
 
-   float3 positionWS = transformer.positionWS();
+   const float3 positionWS = transformer.positionWS();
+   const float4 positionPS = transformer.positionPS();
 
-   output.positionPS = transformer.positionPS();
+   output.positionPS = positionPS;
    output.normalWS = transformer.normalWS();
 
    output.texcoords = transformer.texcoords(x_texcoords_transform, y_texcoords_transform);
 
    float near_fade;
-   calculate_near_fade_and_fog(positionWS, near_fade, output.fog);
+   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
 
    output.color.rgb = get_material_color(input.color()).rgb;
    output.color.a = saturate(near_fade);

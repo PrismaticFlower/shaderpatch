@@ -40,11 +40,12 @@ Vs_blendmap_output diffuse_blendmap_vs(Vs_input input)
 
    const float3 positionOS = decompress_position((float3)input.position.xyz);
    const float3 positionWS = mul(float4(positionOS, 1.0), world_matrix);
+   const float4 positionPS = mul(float4(positionWS, 1.0), projection_matrix);
    const float3 normalOS = input.normal.xyz * 255.0 / 127.0 - 128.0 / 127.0;
 
    output.positionWS = positionWS;
    output.normalWS = mul(normalOS, (float3x3)world_matrix);
-   output.positionPS = mul(float4(positionWS, 1.0), projection_matrix);
+   output.positionPS = positionPS;
 
    [unroll] for (int i = 0; i < 4; ++i) {
       output.texcoords[i].x = dot(float4(positionWS, 1.0), x_texcoords_tranforms[i]);
@@ -52,7 +53,7 @@ Vs_blendmap_output diffuse_blendmap_vs(Vs_input input)
    }
 
    float near_fade, fog;
-   calculate_near_fade_and_fog(positionWS, near_fade, fog);
+   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, fog);
 
    output.blend_values_fade.x = input.normal.w;
    output.blend_values_fade.y = (float)input.position.w * lighting_constant.w; 
@@ -86,11 +87,12 @@ Vs_detail_output detailing_vs(Vs_input input)
 
    const float3 positionOS = decompress_position((float3)input.position.xyz);
    const float3 positionWS = mul(float4(positionOS, 1.0), world_matrix);
+   const float4 positionPS = mul(float4(positionWS, 1.0), projection_matrix);
    const float3 normalOS = input.normal.xyz * 255.0 / 127.0 - 128.0 / 127.0;
 
    output.positionWS = positionWS;
    output.normalWS = mul(normalOS, (float3x3)world_matrix);
-   output.positionPS = mul(float4(positionWS, 1.0), projection_matrix);
+   output.positionPS = positionPS;
 
    [unroll] for (int i = 0; i < 2; ++i) {
       output.detail_texcoords[i].x = dot(float4(positionWS, 1.0), x_texcoords_tranforms[i]);
@@ -101,10 +103,8 @@ Vs_detail_output detailing_vs(Vs_input input)
    output.shadow_map_texcoords = transform_shadowmap_coords(positionWS);
    output.static_lighting = get_static_diffuse_color(input.color);
 
-   float near_fade, fog;
-   calculate_near_fade_and_fog(positionWS, near_fade, fog);
-
-   output.fog = fog;
+   float near_fade;
+   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
 
    return output;
 }
