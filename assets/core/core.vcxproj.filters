@@ -277,19 +277,10 @@
     <None Include="declarations\normalmapadder.json">
       <Filter>declarations</Filter>
     </None>
-    <None Include="definitions\patch\bloom.json.ignore">
-      <Filter>definitions\patch</Filter>
-    </None>
     <None Include="definitions\patch\damage_overlay.json.ignore">
       <Filter>definitions\patch</Filter>
     </None>
     <None Include="definitions\patch\gaussian_blur.json.ignore">
-      <Filter>definitions\patch</Filter>
-    </None>
-    <None Include="definitions\patch\late_effects_resolve.json.ignore">
-      <Filter>definitions\patch</Filter>
-    </None>
-    <None Include="definitions\patch\postprocess.json.ignore">
       <Filter>definitions\patch</Filter>
     </None>
     <None Include="definitions\patch\scene_blur_apply.json.ignore">
@@ -346,6 +337,15 @@
     </None>
     <None Include="src\fixedfunc_zoom_blur.fx">
       <Filter>src</Filter>
+    </None>
+    <None Include="definitions\patch\bloom.json">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="definitions\patch\postprocess.json">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="definitions\patch\late_effects_resolve.json">
+      <Filter>definitions\patch</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

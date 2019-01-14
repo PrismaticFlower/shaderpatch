@@ -1,38 +1,36 @@
 #pragma once
 
+#include "../logger.hpp"
 #include "com_ptr.hpp"
-#include "com_ref.hpp"
-#include "throw_if_failed.hpp"
 
-#include <memory>
 #include <tuple>
+#include <vector>
 
-#include <boost/container/flat_map.hpp>
-#include <boost/smart_ptr/local_shared_ptr.hpp>
-#include <boost/smart_ptr/make_local_shared.hpp>
-#include <glm/vec2.hpp>
-#include <gsl/gsl>
-
-#include <d3d9.h>
+#include <comdef.h>
+#include <d3d11_1.h>
 
 namespace sp::effects {
 
 class Rendertarget_allocator {
-private:
-   template<typename Type>
-   using Local_ptr = boost::local_shared_ptr<Type>;
-   template<typename Key, typename Value>
-   using Container = boost::container::flat_multimap<Key, Value>;
-
 public:
-   Rendertarget_allocator(Com_ref<IDirect3DDevice9> device) : _device{device}
-   {
-      _cache = {boost::make_local_shared<
-         Container<std::tuple<D3DFORMAT, int, int>, Com_ptr<IDirect3DTexture9>>>()};
-   }
+   Rendertarget_allocator(Com_ptr<ID3D11Device1> device) : _device{device} {}
+
+   struct Rendertarget {
+      UINT width;
+      UINT height;
+      DXGI_FORMAT format;
+
+      Com_ptr<ID3D11ShaderResourceView> srv;
+      Com_ptr<ID3D11RenderTargetView> rtv;
+   };
 
    class Handle {
    public:
+      Handle(Rendertarget_allocator& allocator, Rendertarget rendertarget)
+         : _allocator{allocator}, _rendertarget{std::move(rendertarget)}
+      {
+      }
+
       Handle(const Handle&) = delete;
       Handle& operator=(const Handle&) = delete;
       Handle(Handle&&) = default;
@@ -40,74 +38,113 @@ public:
 
       ~Handle()
       {
-         D3DSURFACE_DESC desc;
-         _rt_texture->GetLevelDesc(0, &desc);
-
-         _cache->emplace(std::make_tuple(desc.Format, static_cast<int>(desc.Width),
-                                         static_cast<int>(desc.Height)),
-                         std::move(_rt_texture));
-      };
-
-      gsl::not_null<IDirect3DTexture9*> texture() const noexcept
-      {
-         return gsl::not_null<IDirect3DTexture9*>{_rt_texture.get()};
+         _allocator.return_rendertarget(std::move(_rendertarget));
       }
 
-      gsl::not_null<IDirect3DSurface9*> surface() const noexcept
+      auto srv() const noexcept -> ID3D11ShaderResourceView&
       {
-         return gsl::not_null<IDirect3DSurface9*>{_rt_surface.get()};
+         return *_rendertarget.srv;
+      }
+
+      auto rtv() const noexcept -> ID3D11RenderTargetView&
+      {
+         return *_rendertarget.rtv;
+      }
+
+      auto rendertarget() const noexcept -> const Rendertarget&
+      {
+         return _rendertarget;
       }
 
    private:
-      friend Rendertarget_allocator;
-
-      Handle(gsl::not_null<Com_ptr<IDirect3DTexture9>> rt_texture,
-             gsl::not_null<Local_ptr<Container<std::tuple<D3DFORMAT, int, int>, Com_ptr<IDirect3DTexture9>>>> cache)
-         : _rt_texture{std::move(rt_texture)}, _cache{std::move(cache)}
-      {
-         _rt_texture->GetSurfaceLevel(0, _rt_surface.clear_and_assign());
-      }
-
-      Com_ptr<IDirect3DTexture9> _rt_texture;
-      Com_ptr<IDirect3DSurface9> _rt_surface;
-
-      Local_ptr<Container<std::tuple<D3DFORMAT, int, int>, Com_ptr<IDirect3DTexture9>>> _cache;
+      Rendertarget _rendertarget;
+      Rendertarget_allocator& _allocator;
    };
 
-   auto allocate(D3DFORMAT format, glm::ivec2 resolution) -> Handle
+   auto allocate(const DXGI_FORMAT format, const UINT width, const UINT height) noexcept
+      -> Handle
    {
-      if (auto cached = _cache->find(std::tie(format, resolution.x, resolution.y));
-          cached != std::end(*_cache)) {
-         Com_ptr<IDirect3DTexture9> rt = std::move(cached->second);
-         _cache->erase(cached);
+      if (auto cached = find(format, width, height);
+          cached != std::cend(_rendertargets)) {
 
-         return {gsl::not_null<decltype(rt)>{std::move(rt)},
-                 gsl::not_null<decltype(_cache)>{_cache}};
+         auto rendertarget = std::move(*cached);
+         _rendertargets.erase(cached);
+
+         return {*this, rendertarget};
       }
 
-      return create(format, resolution);
+      return create(format, width, height);
+   }
+
+   void return_rendertarget(Rendertarget rendertarget) noexcept
+   {
+      _rendertargets.emplace_back(std::move(rendertarget));
    }
 
    void reset() noexcept
    {
-      _cache->clear();
+      _rendertargets.clear();
    }
 
 private:
-   auto create(D3DFORMAT format, glm::ivec2 resolution) -> Handle
+   auto find(const DXGI_FORMAT format, const UINT width, const UINT height)
+      -> std::vector<Rendertarget>::const_iterator
    {
-      Com_ptr<IDirect3DTexture9> rt;
-
-      throw_if_failed(_device->CreateTexture(resolution.x, resolution.y, 1,
-                                             D3DUSAGE_RENDERTARGET, format, D3DPOOL_DEFAULT,
-                                             rt.clear_and_assign(), nullptr));
-
-      return {gsl::not_null<decltype(rt)>{std::move(rt)},
-              gsl::not_null<decltype(_cache)>{_cache}};
+      return std::find_if(
+         _rendertargets.cbegin(),
+         _rendertargets.cend(), [&](const Rendertarget& target) noexcept {
+            return std::tie(width, height, format) ==
+                   std::tie(target.width, target.height, target.format);
+         });
    }
 
-   Com_ref<IDirect3DDevice9> _device;
+   auto create(const DXGI_FORMAT format, const UINT width, const UINT height) noexcept
+      -> Handle
+   {
+      const auto texture_desc =
+         CD3D11_TEXTURE2D_DESC{format,
+                               width,
+                               height,
+                               1,
+                               1,
+                               D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET};
 
-   Local_ptr<Container<std::tuple<D3DFORMAT, int, int>, Com_ptr<IDirect3DTexture9>>> _cache;
+      Com_ptr<ID3D11Texture2D> texture;
+
+      if (const auto result = _device->CreateTexture2D(&texture_desc, nullptr,
+                                                       texture.clear_and_assign());
+          FAILED(result)) {
+         log_and_terminate("Failed to create rendertarget texture! reason: ",
+                           _com_error{result}.ErrorMessage());
+      }
+
+      Rendertarget rendertarget;
+
+      if (const auto result =
+             _device->CreateShaderResourceView(texture.get(), nullptr,
+                                               rendertarget.srv.clear_and_assign());
+          FAILED(result)) {
+         log_and_terminate("Failed to create rendertarget SRV! reason: ",
+                           _com_error{result}.ErrorMessage());
+      }
+
+      if (const auto result =
+             _device->CreateRenderTargetView(texture.get(), nullptr,
+                                             rendertarget.rtv.clear_and_assign());
+          FAILED(result)) {
+         log_and_terminate("Failed to create rendertarget RTV! reason: ",
+                           _com_error{result}.ErrorMessage());
+      }
+
+      rendertarget.width = width;
+      rendertarget.height = height;
+      rendertarget.format = format;
+
+      return {*this, std::move(rendertarget)};
+   }
+
+   const Com_ptr<ID3D11Device1> _device;
+
+   std::vector<Rendertarget> _rendertargets;
 };
 }

@@ -12,15 +12,12 @@
 
 #include <imgui.h>
 
-IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg,
-                                                 WPARAM wParam, LPARAM lParam);
+IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg,
+                                                      WPARAM wParam, LPARAM lParam);
 
 namespace sp {
 
 namespace {
-
-constexpr auto window_name = L"Shader Patch Input Window";
-constexpr auto window_class_name = L"Shader Patch Input Window Class";
 
 HWND g_window = nullptr;
 HHOOK g_get_message_hook = nullptr;
@@ -28,7 +25,7 @@ HHOOK g_wnd_proc_hook = nullptr;
 Input_mode g_input_mode = Input_mode::normal;
 
 WPARAM g_hotkey = 0;
-std::function<void()> g_hotkey_func;
+Small_function<void() noexcept> g_hotkey_func;
 
 LRESULT CALLBACK get_message_hook(int code, WPARAM w_param, LPARAM l_param)
 {
@@ -78,18 +75,20 @@ LRESULT CALLBACK get_message_hook(int code, WPARAM w_param, LPARAM l_param)
 
 LRESULT CALLBACK wnd_proc_hook(int code, WPARAM w_param, LPARAM l_param)
 {
-   auto& msg = *reinterpret_cast<CWPSTRUCT*>(l_param);
-
-   const volatile auto val = msg.message;
+   auto& msg = *reinterpret_cast<CWPRETSTRUCT*>(l_param);
 
    if (msg.hwnd != g_window) {
       return CallNextHookEx(g_wnd_proc_hook, code, w_param, l_param);
    }
 
-   // focus handling
-   if (msg.message == WM_ACTIVATEAPP || msg.message == WM_ACTIVATE) {
+   if (g_input_mode != Input_mode::normal && msg.message == WM_SETCURSOR) {
+      ImGui_ImplWin32_WndProcHandler(msg.hwnd, msg.message, msg.wParam, msg.lParam);
+   }
+
+   if (msg.message == WM_ACTIVATEAPP) {
       if (msg.wParam) {
-         clip_cursor_to_window(msg.hwnd);
+         ShowWindow(msg.hwnd, SW_NORMAL);
+         win32::clip_cursor_to_window(msg.hwnd);
       }
       else {
          ClipCursor(nullptr);
@@ -249,7 +248,7 @@ void install_winndow_hook(const DWORD thread_id) noexcept
    Expects(!g_wnd_proc_hook);
 
    g_wnd_proc_hook =
-      SetWindowsHookExW(WH_CALLWNDPROC, &wnd_proc_hook, nullptr, thread_id);
+      SetWindowsHookExW(WH_CALLWNDPROCRET, &wnd_proc_hook, nullptr, thread_id);
 }
 }
 
@@ -280,7 +279,7 @@ void set_input_hotkey(const WPARAM hotkey) noexcept
    g_hotkey = hotkey;
 }
 
-void set_input_hotkey_func(std::function<void()> function) noexcept
+void set_input_hotkey_func(Small_function<void() noexcept> function) noexcept
 {
    g_hotkey_func = std::move(function);
 }

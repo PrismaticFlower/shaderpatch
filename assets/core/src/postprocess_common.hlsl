@@ -1,41 +1,47 @@
 #ifndef POSTPROCESS_COMMON_INCLUDED
 #define POSTPROCESS_COMMON_INCLUDED
 
+#include "pixel_sampler_states.hlsl"
+
 Texture2D<float4> scene_texture : register(t0);
 Texture2D<float4> bloom_texture : register(t1);
 Texture2D<float3> dirt_texture : register(t2);
 Texture3D<float3> color_grading_lut : register(t3);
 Texture2D<float3> blue_noise_texture : register(t4);
 
-float4 scene_pixel_metrics : register(c60);
-float2 bloom_texel_size : register(c61);
-float4 bloom_global_scale_threshold : register(c62);
-float3 bloom_dirt_scale : register(c63);
-float3 exposure_vignette_end_start : register(c64);
-float4 film_grain_params : register(c65);
-float4 randomness : register(c66);
-float3 bloom_local_scale : register(c70);
-
-const static float2 scene_pixel_size = scene_pixel_metrics.xy;
-const static float2 scene_resolution = scene_pixel_metrics.zw;
-
 const static float3 luma_weights = {0.2126, 0.7152, 0.0722};
 const static float3 fxaa_luma_weights = {0.299, 0.587, 0.114};
 const static uint color_grading_lut_size = 32;
-
-const static float3 bloom_global_scale = bloom_global_scale_threshold.xyz;
-const static float bloom_threshold = bloom_global_scale_threshold.w;
 const static float bloom_radius_scale = 1.0;
 
-const static float exposure = exposure_vignette_end_start.x;
+cbuffer PostprocessConstants : register(b0)
+{
+   float2 scene_pixel_size;
+   float vignette_end;
+   float vignette_start;
 
-const static float vignette_end = exposure_vignette_end_start.y;
-const static float vignette_start = exposure_vignette_end_start.z;
+   float3 bloom_global_scale;
+   float bloom_threshold;
+   float3 bloom_dirt_scale;
 
-const static float film_grain_amount = film_grain_params.x;
-const static float film_grain_size = film_grain_params.y;
-const static float film_grain_color_amount = film_grain_params.z;
-const static float film_grain_luma_amount = film_grain_params.w;
+   float exposure;
+
+   float film_grain_amount;
+   float film_grain_aspect;
+   float film_grain_color_amount;
+   float film_grain_luma_amount;
+
+   float2 film_grain_size;
+
+   float4 randomness_flt;
+   uint4 randomness_uint;
+}
+
+cbuffer PostprocessBloomLocalConstants : register(b1)
+{
+   float3 bloom_local_scale;
+   float2 bloom_texel_size;
+}
 
 const static bool bloom = BLOOM_ACTIVE;
 const static bool bloom_use_dirt = BLOOM_USE_DIRT;

@@ -3,8 +3,18 @@
   "source_name": "stretch_texture.hlsl",
 
   "entrypoints": {
-    "main": {
-      "stage": "compute"
+    "main unorm": {
+      "stage": "compute",
+      "function_name": "main",
+
+      "defines": [ [ "UAV_TYPE", "unorm float4" ] ]
+    },
+
+    "main float": {
+      "stage": "compute",
+      "function_name": "main",
+
+      "defines": [ [ "UAV_TYPE", "float4" ] ]
     }
   },
 

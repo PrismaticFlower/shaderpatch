@@ -122,7 +122,9 @@ Com_ptr<Creator> Creator::create() noexcept
 {
    if (user_config.developer.unlock_fps) fps_unlock();
 
-   return Com_ptr{new Creator{}};
+   static auto creator = Com_ptr{new Creator{}};
+
+   return creator;
 }
 
 Creator::Creator() noexcept
@@ -151,6 +153,8 @@ HRESULT Creator::CreateDevice(UINT adapter_index, D3DDEVTYPE, HWND focus_window,
 
    if (!_device) {
       win32::make_borderless_window(focus_window);
+      win32::clip_cursor_to_window(focus_window);
+      ShowWindow(focus_window, SW_NORMAL);
 
       _device =
          Device::create(*this, *_adapter,

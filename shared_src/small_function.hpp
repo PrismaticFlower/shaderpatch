@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <type_traits>
+#include <utility>
 
 namespace sp {
 
@@ -12,6 +13,18 @@ template<typename Return, typename... Args>
 class Small_function<Return(Args...) noexcept> {
 public:
    Small_function() = default;
+
+   Small_function(Small_function&& from) noexcept : Small_function{}
+   {
+      swap(from);
+   }
+
+   Small_function& operator=(Small_function&& from) noexcept
+   {
+      swap(from);
+
+      return *this;
+   }
 
    template<typename Invocable>
    Small_function(Invocable&& invocable) noexcept
@@ -49,8 +62,6 @@ public:
 
    Small_function(const Small_function&) = delete;
    Small_function& operator=(const Small_function&) = delete;
-   Small_function(Small_function&&) = delete;
-   Small_function& operator=(Small_function&&) = delete;
 
    auto operator()(Args... args) const noexcept -> Return
    {
@@ -60,6 +71,15 @@ public:
    explicit operator bool() const noexcept
    {
       return _invoke != nullptr;
+   }
+
+   void swap(Small_function& other) noexcept
+   {
+      using std::swap;
+
+      swap(this->_invoke, other._invoke);
+      swap(this->_destroy, other._destroy);
+      swap(this->_invocable_storage, other._invocable_storage);
    }
 
 private:

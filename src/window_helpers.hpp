@@ -70,4 +70,32 @@ inline void leftalign_window(const HWND window)
                 SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSENDCHANGING);
 }
 
+inline void clip_cursor_to_window(const HWND window)
+{
+   Expects(IsWindow(window));
+
+   RECT rect;
+   GetClientRect(window, &rect);
+
+   POINT upper_left;
+   upper_left.x = rect.left;
+   upper_left.y = rect.top;
+
+   POINT bottom_right;
+   bottom_right.x = rect.right;
+   bottom_right.y = rect.bottom;
+
+   MapWindowPoints(window, nullptr, &upper_left, 1);
+   MapWindowPoints(window, nullptr, &bottom_right, 1);
+
+   RECT translated_rect;
+
+   translated_rect.left = upper_left.x;
+   translated_rect.top = upper_left.y;
+   translated_rect.right = bottom_right.x;
+   translated_rect.bottom = bottom_right.y;
+
+   ClipCursor(&translated_rect);
+}
+
 }

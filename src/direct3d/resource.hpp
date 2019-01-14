@@ -37,7 +37,8 @@ public:
 
    using Resource_variant =
       std::variant<std::monostate, core::Game_texture, core::Game_rendertarget_id,
-                   ID3D11Buffer*, core::Game_depthstencil>;
+                   ID3D11Buffer*, core::Game_depthstencil, core::Patch_texture,
+                   std::shared_ptr<core::Patch_material>, core::Patch_effects_config_handle>;
 
    template<typename Type>
    const Type* get_if() const noexcept

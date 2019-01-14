@@ -33,6 +33,10 @@ constexpr bool boxes_same_size(const D3D11_BOX& test_box,
    return true;
 }
 
+auto create_immutable_constant_buffer(ID3D11Device1& device,
+                                      const gsl::span<const std::byte> data) noexcept
+   -> Com_ptr<ID3D11Buffer>;
+
 auto create_dynamic_constant_buffer(ID3D11Device1& device, const UINT size) noexcept
    -> Com_ptr<ID3D11Buffer>;
 

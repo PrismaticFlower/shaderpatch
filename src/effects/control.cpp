@@ -27,16 +27,12 @@ Color_grading_params show_color_grading_imgui(Color_grading_params params) noexc
 
 Film_grain_params show_film_grain_imgui(Film_grain_params params) noexcept;
 
-Shadows_blur_params show_shadows_blur_imgui(Shadows_blur_params params) noexcept;
-
 }
 
-void Control::user_config(const Effects_user_config& config) noexcept
+Control::Control(Com_ptr<ID3D11Device1> device,
+                 const core::Shader_rendertype_collection& shader_rendertypes) noexcept
+   : _device{device}, postprocess{device, shader_rendertypes}
 {
-   _user_config = config;
-
-   postprocess.user_config(config);
-   shadows_blur.user_config(config);
 }
 
 void Control::show_imgui(HWND game_window) noexcept
@@ -51,13 +47,15 @@ void Control::show_imgui(HWND game_window) noexcept
    if (ImGui::TabItem("Control", nullptr,
                       std::exchange(first_open, false) ? ImGuiTabItemFlags_SetSelected
                                                        : ImGuiTabItemFlags_None)) {
-      ImGui::Text("Device must be reset for effects control settings to be "
-                  "applied correctly!");
-
       ImGui::Checkbox("Enable Effects", &_enabled);
 
       if (ImGui::CollapsingHeader("Effects Config", ImGuiTreeNodeFlags_DefaultOpen)) {
          ImGui::Checkbox("HDR Rendering", &_config.hdr_rendering);
+
+         if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("HDR rendering works best with custom materials "
+                              "and may give poor results without them.");
+         }
       }
 
       ImGui::Separator();
@@ -130,10 +128,6 @@ void Control::show_imgui(HWND game_window) noexcept
       ImGui::EndChild();
    }
 
-   if (ImGui::TabItem("Soft Shadows")) {
-      shadows_blur.params(show_shadows_blur_imgui(shadows_blur.params()));
-   }
-
    ImGui::EndTabBar();
 
    if (post_processing_visable) {
@@ -146,14 +140,8 @@ void Control::show_imgui(HWND game_window) noexcept
    }
 
    ImGui::End();
-}
 
-void Control::drop_device_resources() noexcept
-{
-   postprocess.drop_device_resources();
-   scene_blur.drop_device_resources();
-   shadows_blur.drop_device_resources();
-   damage_overlay.drop_device_resources();
+   config_changed();
 }
 
 void Control::read_config(YAML::Node config)
@@ -167,8 +155,6 @@ void Control::read_config(YAML::Node config)
       config["Vignette"s].as<Vignette_params>(Vignette_params{}));
    postprocess.film_grain_params(
       config["FilmGrain"s].as<Film_grain_params>(Film_grain_params{}));
-   shadows_blur.params(
-      config["SoftShadows"s].as<Shadows_blur_params>(Shadows_blur_params{}));
 }
 
 auto Control::output_params_to_yaml_string() noexcept -> std::string
@@ -180,7 +166,6 @@ auto Control::output_params_to_yaml_string() noexcept -> std::string
    config["Bloom"s] = postprocess.bloom_params();
    config["Vignette"s] = postprocess.vignette_params();
    config["FilmGrain"s] = postprocess.film_grain_params();
-   config["SoftShadows"s] = shadows_blur.params();
 
    std::stringstream stream;
    ;
@@ -285,6 +270,11 @@ void Control::show_post_processing_imgui() noexcept
    }
 
    ImGui::EndTabBar();
+}
+
+void Control::config_changed() noexcept
+{
+   postprocess.hdr_state(_config.hdr_rendering ? Hdr_state::hdr : Hdr_state::stock);
 }
 
 namespace {
@@ -448,16 +438,6 @@ Film_grain_params show_film_grain_imgui(Film_grain_params params) noexcept
    ImGui::DragFloat("Size", &params.size, 0.05f, 1.6f, 3.0f);
    ImGui::DragFloat("Color Amount", &params.color_amount, 0.05f, 0.0f, 1.0f);
    ImGui::DragFloat("Luma Amount", &params.luma_amount, 0.05f, 0.0f, 1.0f);
-
-   return params;
-}
-
-Shadows_blur_params show_shadows_blur_imgui(Shadows_blur_params params) noexcept
-{
-
-   ImGui::Checkbox("Enabled", &params.enabled);
-
-   ImGui::DragFloat("Radius Scale", &params.radius_scale, 0.1f, 1.5f, 16.0f);
 
    return params;
 }

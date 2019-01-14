@@ -52,6 +52,8 @@ void apply_color_grading(inout float3 color)
 
 float fxaa_luma(float3 color)
 {
+   if (stock_hdr) return dot(color, fxaa_luma_weights);
+
    return sqrt(dot(color, fxaa_luma_weights));
 }
 
@@ -59,7 +61,7 @@ float4 postprocess_ps(float2 texcoords : TEXCOORD) : SV_Target0
 {
    float3 color = scene_texture.SampleLevel(linear_clamp_sampler, texcoords, 0).rgb;
 
-   if (stock_hdr) color = srgb_to_linear(color + color);
+   if (stock_hdr) color = color + color;
 
    if (bloom) apply_bloom(texcoords, color);
 
@@ -70,18 +72,16 @@ float4 postprocess_ps(float2 texcoords : TEXCOORD) : SV_Target0
    return float4(color, fxaa_luma(color));
 }
 
-void apply_dithering(inout float3 color, float2 position)
+void apply_dithering(inout float3 color, uint2 position)
 {
-   const float2 texcoords = (position / 64.0) + randomness.xy;
-
-   float3 blue_noise = blue_noise_texture.SampleLevel(linear_wrap_sampler, texcoords, 0);
+   float3 blue_noise = blue_noise_texture[(position + randomness_uint.xy) & 0x3f];
    blue_noise = blue_noise * 2.0 - 1.0;
    blue_noise = sign(blue_noise) * (1.0 - sqrt(1.0 - abs(blue_noise)));
 
    color += (blue_noise / 255.0);
 }
 
-float4 postprocess_finalize_ps(float2 texcoords : TEXCOORD, float2 position : VPOS) : SV_Target0
+float4 postprocess_finalize_ps(float2 texcoords : TEXCOORD, float4 positionSS : SV_Position) : SV_Target0
 {
    float3 color = 0.0;
    
@@ -111,7 +111,7 @@ float4 postprocess_finalize_ps(float2 texcoords : TEXCOORD, float2 position : VP
 
    if (film_grain) filmgrain::apply(texcoords, color);
   
-   apply_dithering(color, position);
+   apply_dithering(color, (uint2)positionSS.xy);
 
    return float4(color, 1.0);
 }

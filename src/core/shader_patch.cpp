@@ -1,48 +1,37 @@
 
 #include "shader_patch.hpp"
+#include "../input_hooker.hpp"
 #include "../logger.hpp"
 #include "../user_config.hpp"
+#include "context_state_guard.hpp"
+#include "patch_material_io.hpp"
 #include "patch_texture_io.hpp"
 #include "utility.hpp"
 
+#include "../imgui/imgui_impl_dx11.h"
+#include "../imgui/imgui_impl_win32.h"
+
 #include <chrono>
 
-#include <VersionHelpers.h>
 #include <comdef.h>
-#include <dxgi1_6.h>
 
 using namespace std::literals;
 
 namespace sp::core {
 
-constexpr auto rendertarget_format = DXGI_FORMAT_R8G8B8A8_UNORM;
-constexpr auto swapchain_buffer_count = 2;
 constexpr auto custom_tex_begin = 4;
 constexpr auto projtex_cube_slot = 127;
 
 namespace {
 
 constexpr std::array supported_feature_levels{D3D_FEATURE_LEVEL_11_0};
-constexpr auto swap_chain_buffers = 2;
 
-auto get_swap_chain_effect() -> DXGI_SWAP_EFFECT
-{
-   if (IsWindows10OrGreater()) {
-      return DXGI_SWAP_EFFECT_FLIP_DISCARD;
-   }
-   else if (IsWindows8OrGreater()) {
-      return DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-   }
-
-   return DXGI_SWAP_EFFECT_DISCARD;
-}
-
-auto create_device(IDXGIAdapter2&) noexcept -> Com_ptr<ID3D11Device1>
+auto create_device(IDXGIAdapter2& adapater) noexcept -> Com_ptr<ID3D11Device1>
 {
    Com_ptr<ID3D11Device> device;
 
    if (const auto result =
-          D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr,
+          D3D11CreateDevice(&adapater, D3D_DRIVER_TYPE_UNKNOWN, nullptr,
                             D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_DEBUG,
                             supported_feature_levels.data(),
                             supported_feature_levels.size(), D3D11_SDK_VERSION,
@@ -83,85 +72,17 @@ auto create_device(IDXGIAdapter2&) noexcept -> Com_ptr<ID3D11Device1>
    return device1;
 }
 
-auto create_swapchain(ID3D11Device1& device, IDXGIAdapter2& adapter,
-                      const HWND window, const UINT width, const UINT height,
-                      const bool allow_tearing) noexcept -> Com_ptr<IDXGISwapChain1>
-{
-   Com_ptr<IDXGIFactory2> factory;
-   adapter.GetParent(__uuidof(IDXGIFactory2), factory.void_clear_and_assign());
-
-   DXGI_SWAP_CHAIN_DESC1 swap_chain_desc;
-
-   swap_chain_desc.Width = width;
-   swap_chain_desc.Height = height;
-   swap_chain_desc.Format = rendertarget_format;
-   swap_chain_desc.Stereo = false;
-   swap_chain_desc.SampleDesc = {1, 0};
-   swap_chain_desc.BufferUsage =
-      DXGI_USAGE_SHADER_INPUT | DXGI_USAGE_RENDER_TARGET_OUTPUT;
-   swap_chain_desc.BufferCount = swapchain_buffer_count;
-   swap_chain_desc.Scaling = DXGI_SCALING_NONE;
-   swap_chain_desc.SwapEffect = get_swap_chain_effect();
-   swap_chain_desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
-   swap_chain_desc.Flags = allow_tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
-
-   Com_ptr<IDXGISwapChain1> swapchain;
-
-   if (const auto result =
-          factory->CreateSwapChainForHwnd(&device, window, &swap_chain_desc, nullptr,
-                                          nullptr, swapchain.clear_and_assign());
-       FAILED(result)) {
-      log_and_terminate("Failed to create Direct3D 11 device! Reason: ",
-                        _com_error{result}.ErrorMessage());
-   }
-
-   Com_ptr<IDXGIFactory1> parent;
-
-   if (const auto result = swapchain->GetParent(__uuidof(IDXGIFactory1),
-                                                parent.void_clear_and_assign());
-       SUCCEEDED(result))
-
-   {
-      parent->MakeWindowAssociation(window, DXGI_MWA_NO_ALT_ENTER);
-   }
-
-   return swapchain;
-}
-
-bool supports_tearing() noexcept
-{
-   Com_ptr<IDXGIFactory1> factory1;
-
-   if (auto result =
-          CreateDXGIFactory1(IID_IDXGIFactory1, factory1.void_clear_and_assign());
-       SUCCEEDED(result)) {
-      Com_ptr<IDXGIFactory5> factory5;
-      if (result = factory1->QueryInterface(factory5.clear_and_assign());
-          SUCCEEDED(result)) {
-         BOOL supported;
-         if (result = factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING,
-                                                    &supported, sizeof(supported));
-             SUCCEEDED(result)) {
-            return supported != false;
-         }
-      }
-   }
-
-   return false;
-}
-
 }
 
 Shader_patch::Shader_patch(IDXGIAdapter2& adapter, const HWND window,
                            const UINT width, const UINT height) noexcept
    : _device{create_device(adapter)},
-     _swapchain{create_swapchain(*_device, adapter, window, width, height,
-                                 supports_tearing() && user_config.window.allow_tearing)},
+     _swapchain{_device, adapter, window, width, height},
      _window{window},
      _nearscene_depthstencil{*_device, width, height},
      _farscene_depthstencil{*_device, width, height},
-     _refraction_rt{*_device, rendertarget_format, width / 2, height / 2},
-     _allow_tearing{supports_tearing() && user_config.window.allow_tearing}
+     _refraction_rt{*_device, Swapchain::format, width / 2, height / 2}
+
 {
    bind_static_resources();
    set_viewport(0, 0, static_cast<float>(width), static_cast<float>(height));
@@ -170,6 +91,24 @@ Shader_patch::Shader_patch(IDXGIAdapter2& adapter, const HWND window,
    _cb_draw_ps.rt_multiply_blending_state = 0.0f;
    _cb_draw_ps.stock_tonemap_state = 0.0f;
    _cb_draw_ps.cube_projtex = false;
+
+   initialize_input_hooks(GetCurrentThreadId(), window);
+   set_input_hotkey(VK_OEM_5);
+   set_input_hotkey_func([this]() noexcept {
+      if (!std::exchange(_imgui_enabled, !_imgui_enabled)) {
+         set_input_mode(Input_mode::imgui);
+      }
+      else {
+         set_input_mode(Input_mode::normal);
+      }
+   });
+
+   ImGui::CreateContext();
+   ImGui_ImplWin32_Init(window);
+   ImGui_ImplDX11_Init(_device.get(), _device_context.get());
+   ImGui_ImplDX11_NewFrame();
+   ImGui_ImplWin32_NewFrame();
+   ImGui::NewFrame();
 }
 
 void Shader_patch::reset(const UINT width, const UINT height) noexcept
@@ -177,16 +116,14 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
    _device_context->ClearState();
    _game_rendertargets.clear();
 
-   _swapchain->ResizeBuffers(swapchain_buffer_count, width, height, rendertarget_format,
-                             _allow_tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0);
-
    bind_static_resources();
    set_viewport(0, 0, static_cast<float>(width), static_cast<float>(height));
 
-   _game_rendertargets.emplace_back() = get_backbuffer_views();
+   _swapchain.resize(width, height);
+   _game_rendertargets.emplace_back() = _swapchain.game_rendertarget();
    _nearscene_depthstencil = {*_device, width, height};
    _farscene_depthstencil = {*_device, width, height};
-   _refraction_rt = {*_device, rendertarget_format, width / 2, height / 2};
+   _refraction_rt = {*_device, Swapchain::format, width / 2, height / 2};
    _current_game_rendertarget = _game_backbuffer_index;
    _game_input_layout = {};
    _game_shader = {};
@@ -203,18 +140,18 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
 
 void Shader_patch::present() noexcept
 {
-   const auto flags = _allow_tearing ? DXGI_PRESENT_ALLOW_TEARING : 0;
+   update_imgui();
 
-   if (const auto result = _swapchain->Present(0, flags); FAILED(result)) {
-      log_and_terminate("Frame Present call failed! reason: ",
-                        _com_error{result}.ErrorMessage());
-   }
+   _om_targets_dirty = true;
 
-   if (_current_game_rendertarget == _game_backbuffer_index) {
-      _om_targets_dirty = true;
-   }
+   _swapchain.present();
 
    update_frame_state();
+   update_effects();
+
+   if (_effects_active) {
+      _game_rendertargets[0] = _effects_backbuffer.game_rendertarget();
+   }
 }
 
 auto Shader_patch::get_back_buffer() noexcept -> Game_rendertarget_id
@@ -266,7 +203,7 @@ auto Shader_patch::create_game_rendertarget(const UINT width, const UINT height)
    -> Game_rendertarget_id
 {
    const int index = _game_rendertargets.size();
-   _game_rendertargets.emplace_back(*_device, rendertarget_format, width, height);
+   _game_rendertargets.emplace_back(*_device, current_rt_format(), width, height);
 
    return Game_rendertarget_id{index};
 }
@@ -642,6 +579,42 @@ auto Shader_patch::create_patch_texture(const gsl::span<const std::byte> texture
    return {std::move(shared_srv)};
 }
 
+auto Shader_patch::create_patch_material(const gsl::span<const std::byte> material_data) noexcept
+   -> std::shared_ptr<Patch_material>
+{
+   return std::make_shared<Patch_material>(read_patch_material(ucfb::Reader{material_data}),
+                                           _shader_database.rendertypes,
+                                           _texture_database, *_device);
+}
+
+auto Shader_patch::create_patch_effects_config(const gsl::span<const std::byte> effects_config) noexcept
+   -> Patch_effects_config_handle
+{
+   try {
+      std::string config_str{reinterpret_cast<const char*>(effects_config.data()),
+                             static_cast<std::size_t>(effects_config.size())};
+
+      while (config_str.back() == '\0') config_str.pop_back();
+
+      _effects.read_config(YAML::Load(config_str));
+      _effects.enabled(true);
+
+      const auto fx_id = _current_effects_id += 1;
+
+      const auto on_destruction = [ fx_id, this ]() noexcept
+      {
+         if (fx_id != _current_effects_id) return;
+
+         _effects.enabled(false);
+      };
+
+      return {on_destruction};
+   }
+   catch (std::exception& e) {
+      log_and_terminate("Exception occured while loading FX Config: "sv, e.what());
+   }
+}
+
 auto Shader_patch::create_game_input_layout(const gsl::span<const Input_layout_element> layout,
                                             const bool compressed) noexcept -> Game_input_layout
 {
@@ -800,7 +773,6 @@ void Shader_patch::color_fill_rendertarget(const Game_rendertarget_id rendertarg
 
 void Shader_patch::clear_rendertarget(const glm::vec4 color) noexcept
 {
-
    _device_context->ClearRenderTargetView(
       _game_rendertargets[static_cast<int>(_current_game_rendertarget)].rtv.get(),
       &color.x);
@@ -988,7 +960,8 @@ void Shader_patch::set_constants(const cb::Scene_tag, const UINT offset,
 
    if (offset < (offsetof(cb::Scene, near_scene_fade) / sizeof(glm::vec4))) {
       _cb_draw_ps_dirty = true;
-      _cb_draw_ps.ps_lighting_scale = _cb_scene.near_scene_fade.z;
+      _cb_draw_ps.ps_lighting_scale =
+         _linear_rendering ? 1.0f : _cb_scene.near_scene_fade.z;
    }
 }
 
@@ -1039,6 +1012,8 @@ void Shader_patch::draw(const UINT vertex_count, const UINT start_vertex) noexce
 {
    update_dirty_state();
 
+   if (_discard_draw_calls) return;
+
    _device_context->Draw(vertex_count, start_vertex);
 }
 
@@ -1046,6 +1021,8 @@ void Shader_patch::draw_indexed(const UINT index_count, const UINT start_index,
                                 const UINT start_vertex) noexcept
 {
    update_dirty_state();
+
+   if (_discard_draw_calls) return;
 
    _device_context->DrawIndexed(index_count, start_index, start_vertex);
 }
@@ -1073,25 +1050,11 @@ auto Shader_patch::get_query_data(ID3D11Query& query, const bool flush,
    return Query_result::error;
 }
 
-auto Shader_patch::get_backbuffer_views() noexcept -> Game_rendertarget
+auto Shader_patch::current_rt_format() const noexcept -> DXGI_FORMAT
 {
-   DXGI_SWAP_CHAIN_DESC1 swap_chain_desc;
-   _swapchain->GetDesc1(&swap_chain_desc);
+   if (_effects.enabled()) return _effects.rt_format();
 
-   Game_rendertarget rt;
-
-   rt.width = static_cast<std::uint16_t>(swap_chain_desc.Width);
-   rt.height = static_cast<std::uint16_t>(swap_chain_desc.Height);
-
-   _swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D),
-                         rt.texture.void_clear_and_assign());
-
-   _device->CreateShaderResourceView(rt.texture.get(), nullptr,
-                                     rt.srv.clear_and_assign());
-   _device->CreateRenderTargetView(rt.texture.get(), nullptr,
-                                   rt.rtv.clear_and_assign());
-
-   return rt;
+   return Swapchain::format;
 }
 
 void Shader_patch::bind_static_resources() noexcept
@@ -1188,6 +1151,30 @@ void Shader_patch::game_rendertype_changed() noexcept
       _device_context->PSSetShaderResources(custom_tex_begin, srvs.size(),
                                             srvs.data());
    }
+
+   if (_effects_active) {
+      if (_shader_rendertype == Rendertype::hdr) {
+         _game_rendertargets[0] = _swapchain.game_rendertarget();
+
+         {
+            Context_state_guard<state_flags::all> state_guard{*_device_context};
+
+            _effects.postprocess.apply(*_device_context, _rendertarget_allocator,
+                                       _texture_database,
+                                       _effects_backbuffer.postprocess_input(),
+                                       _swapchain.postprocess_output());
+         }
+
+         set_linear_rendering(false);
+         _discard_draw_calls = true;
+
+         _on_rendertype_changed = [this]() noexcept
+         {
+            _discard_draw_calls = false;
+            _on_rendertype_changed = nullptr;
+         };
+      }
+   }
 }
 
 void Shader_patch::update_dirty_state() noexcept
@@ -1215,12 +1202,27 @@ void Shader_patch::update_dirty_state() noexcept
    }
 
    if (std::exchange(_ps_textures_dirty, false)) {
-      _device_context->PSSetShaderResources(0, 4,
-                                            std::array{_game_textures[0].srv.get(),
-                                                       _game_textures[1].srv.get(),
-                                                       _game_textures[2].srv.get(),
-                                                       _game_textures[3].srv.get()}
-                                               .data());
+      if (_linear_rendering) {
+         const auto& srgb = _game_shader->srgb_state;
+         _device_context->PSSetShaderResources(
+            0, 4,
+            std::array{srgb[0] ? _game_textures[0].srgb_srv.get()
+                               : _game_textures[0].srv.get(),
+                       srgb[1] ? _game_textures[1].srgb_srv.get()
+                               : _game_textures[1].srv.get(),
+                       srgb[2] ? _game_textures[2].srgb_srv.get()
+                               : _game_textures[2].srv.get(),
+                       srgb[3] ? _game_textures[3].srgb_srv.get()
+                               : _game_textures[3].srv.get()}
+               .data());
+      }
+      else {
+         _device_context->PSSetShaderResources(
+            0, 4,
+            std::array{_game_textures[0].srv.get(), _game_textures[1].srv.get(),
+                       _game_textures[2].srv.get(), _game_textures[3].srv.get()}
+               .data());
+      }
    }
 
    if (std::exchange(_om_targets_dirty, false)) {
@@ -1266,6 +1268,89 @@ void Shader_patch::update_frame_state() noexcept
 
    _refraction_farscene_texture_resolve = false;
    _refraction_nearscene_texture_resolve = false;
+}
+
+void Shader_patch::update_imgui() noexcept
+{
+   if (_imgui_enabled) {
+      _effects.show_imgui(_window);
+
+      ImGui::Render();
+      ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+   }
+   else {
+      ImGui::EndFrame();
+   }
+
+   ImGui_ImplDX11_NewFrame();
+   ImGui_ImplWin32_NewFrame();
+   ImGui::NewFrame();
+}
+
+void Shader_patch::update_effects() noexcept
+{
+   if (std::exchange(_effects_active, _effects.enabled()) != _effects.enabled()) {
+      if (_effects.enabled()) {
+         _effects_backbuffer = {*_device, _effects.rt_format(),
+                                _swapchain.width(), _swapchain.height()};
+      }
+      else {
+         _rendertarget_allocator.reset();
+         _effects_backbuffer = {};
+         _current_effects_rt_format = DXGI_FORMAT_UNKNOWN;
+
+         for (auto i = 1; i < _game_rendertargets.size(); ++i) {
+            _game_rendertargets[i] =
+               Game_rendertarget{*_device, Swapchain::format,
+                                 _game_rendertargets[i].width,
+                                 _game_rendertargets[i].height};
+         }
+      }
+   }
+
+   update_rendertarget_formats();
+   set_linear_rendering(_effects.enabled() && _effects.config().hdr_rendering);
+}
+
+void Shader_patch::update_rendertarget_formats() noexcept
+{
+   if (!_effects.enabled()) return;
+   if (std::exchange(_current_effects_rt_format, _effects.rt_format()) ==
+       _effects.rt_format())
+      return;
+
+   _rendertarget_allocator.reset();
+
+   if (_effects_backbuffer.format != _effects.rt_format()) {
+      _effects_backbuffer =
+         Effects_backbuffer{*_device, _effects.rt_format(), _swapchain.width(),
+                            _swapchain.height()};
+   }
+
+   for (auto i = 1; i < _game_rendertargets.size(); ++i) {
+      _game_rendertargets[i] = Game_rendertarget{*_device, _effects.rt_format(),
+                                                 _game_rendertargets[i].width,
+                                                 _game_rendertargets[i].height};
+   }
+}
+
+void Shader_patch::set_linear_rendering(bool linear_rendering) noexcept
+{
+   if (linear_rendering) {
+      _cb_scene.vertex_color_gamma = 2.2f;
+      _cb_draw_ps.stock_tonemap_state = 1.0f;
+      _cb_draw_ps.ps_lighting_scale = 1.0f;
+   }
+   else {
+      _cb_scene.vertex_color_gamma = 1.0f;
+      _cb_draw_ps.stock_tonemap_state = 0.0f;
+      _cb_draw_ps.ps_lighting_scale = 0.5f;
+   }
+
+   _cb_scene_dirty = true;
+   _cb_draw_ps_dirty = true;
+   _ps_textures_dirty = true;
+   _linear_rendering = linear_rendering;
 }
 
 void Shader_patch::resolve_refraction_texture() noexcept

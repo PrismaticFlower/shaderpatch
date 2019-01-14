@@ -33,9 +33,6 @@
     <ClCompile Include="src\effects\control.cpp">
       <Filter>src\effects</Filter>
     </ClCompile>
-    <ClCompile Include="src\imgui\imgui_impl_dx9.cpp">
-      <Filter>src\imgui</Filter>
-    </ClCompile>
     <ClCompile Include="src\effects\scene_blur.cpp">
       <Filter>src\effects</Filter>
     </ClCompile>
@@ -135,6 +132,24 @@
     <ClCompile Include="src\direct3d\image_patcher.cpp">
       <Filter>src\direct3d</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\patch_material.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui\imgui_impl_dx11.cpp">
+      <Filter>src\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui\imgui_impl_win32.cpp">
+      <Filter>src\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui\imgui_impl_dx11_shaders.hpp">
+      <Filter>src\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\swapchain.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\effects_backbuffer.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -178,9 +193,6 @@
     </ClInclude>
     <ClInclude Include="src\effects\helpers.hpp">
       <Filter>src\effects</Filter>
-    </ClInclude>
-    <ClInclude Include="src\imgui\imgui_impl_dx9.h">
-      <Filter>src\imgui</Filter>
     </ClInclude>
     <ClInclude Include="src\effects\scene_blur.hpp">
       <Filter>src\effects</Filter>
@@ -334,6 +346,30 @@
     </ClInclude>
     <ClInclude Include="src\direct3d\image_patcher.hpp">
       <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\patch_material.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\texture3d_resource.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\imgui\imgui_impl_dx11.h">
+      <Filter>src\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="src\imgui\imgui_impl_win32.h">
+      <Filter>src\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\swapchain.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\effects_backbuffer.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\context_state_guard.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\patch_effects_config_handle.hpp">
+      <Filter>src\core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

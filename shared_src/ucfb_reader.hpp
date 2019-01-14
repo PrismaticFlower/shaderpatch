@@ -119,7 +119,7 @@ public:
    //! \exception std::runtime_error Thrown when reading the array would go past the end
    //! of the chunk.
    template<typename Type>
-   auto read_array(typename const gsl::span<const Type>::index_type size,
+   auto read_array(const typename gsl::span<const Type>::index_type size,
                    const bool unaligned = false) -> gsl::span<const Type>
    {
       static_assert(std::is_trivially_copyable_v<Type>,
@@ -148,7 +148,7 @@ public:
    //! \exception std::runtime_error Thrown when reading the array would go past the end
    //! of the chunk.
    template<typename Type>
-   auto read_array_unaligned(typename const gsl::span<const Type>::index_type size)
+   auto read_array_unaligned(const typename gsl::span<const Type>::index_type size)
       -> gsl::span<const Type>
    {
       return read_array<Type>(size, true);

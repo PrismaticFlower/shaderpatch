@@ -15,7 +15,7 @@ cbuffer InputVars : register(b0)
 }
 
 Texture2D<float4> input_tex;
-RWTexture2D<unorm float4> output_tex;
+RWTexture2D<UAV_TYPE> output_tex;
 
 [numthreads(8, 8, 1)]
 void main(uint3 threadid : SV_DispatchThreadID)

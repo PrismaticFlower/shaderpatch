@@ -13,7 +13,7 @@ struct Game_rendertarget {
 
    Game_rendertarget(ID3D11Device1& device, const DXGI_FORMAT format,
                      const UINT width, const UINT height) noexcept
-      : width{static_cast<std::uint16_t>(width)}, height{static_cast<std::uint16_t>(height)}
+      : format{format}, width{static_cast<std::uint16_t>(width)}, height{static_cast<std::uint16_t>(height)}
    {
       const auto texture_desc =
          CD3D11_TEXTURE2D_DESC{format,
@@ -30,10 +30,26 @@ struct Game_rendertarget {
       device.CreateUnorderedAccessView(texture.get(), nullptr, uav.clear_and_assign());
    }
 
+   Game_rendertarget(Com_ptr<ID3D11Texture2D> texture,
+                     Com_ptr<ID3D11RenderTargetView> rtv,
+                     Com_ptr<ID3D11ShaderResourceView> srv,
+                     Com_ptr<ID3D11UnorderedAccessView> uav, const DXGI_FORMAT format,
+                     const UINT width, const UINT height) noexcept
+      : texture{std::move(texture)},
+        rtv{std::move(rtv)},
+        srv{std::move(srv)},
+        uav{std::move(uav)},
+        format{format},
+        width{static_cast<std::uint16_t>(width)},
+        height{static_cast<std::uint16_t>(height)}
+   {
+   }
+
    Com_ptr<ID3D11Texture2D> texture;
    Com_ptr<ID3D11RenderTargetView> rtv;
    Com_ptr<ID3D11ShaderResourceView> srv;
    Com_ptr<ID3D11UnorderedAccessView> uav;
+   DXGI_FORMAT format;
    std::uint16_t width;
    std::uint16_t height;
 

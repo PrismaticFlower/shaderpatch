@@ -1,9 +1,7 @@
 #pragma once
 
-#include "../effects/damage_overlay.hpp"
 #include "../effects/postprocess.hpp"
-#include "../effects/scene_blur.hpp"
-#include "../effects/shadows_blur.hpp"
+#include "com_ptr.hpp"
 
 #include <filesystem>
 #include <utility>
@@ -27,42 +25,29 @@ struct Effects_control_config {
 
 class Control {
 private:
-   Com_ref<IDirect3DDevice9> _device;
+   const Com_ptr<ID3D11Device1> _device;
 
 public:
-   Control(Com_ref<IDirect3DDevice9> device, const Effects_user_config& user_config)
-      : _device{device}, postprocess{device}
-   {
-      this->user_config(user_config);
-   }
+   Control(Com_ptr<ID3D11Device1> device,
+           const core::Shader_rendertype_collection& shader_rendertypes) noexcept;
 
-   bool enabled(bool enable) noexcept
+   bool enabled(const bool enabled) noexcept
    {
-      _enabled = enable;
+      _enabled = enabled;
 
-      return _enabled && _user_config.enabled;
+      return _enabled && user_config.effects.enabled;
    }
 
    bool enabled() const noexcept
    {
-      return _enabled && _user_config.enabled;
-   }
-
-   bool active(bool active) noexcept
-   {
-      postprocess.hdr_state(_config.hdr_rendering ? Hdr_state::hdr : Hdr_state::stock);
-
-      return _active = active;
-   }
-
-   bool active() const noexcept
-   {
-      return _active;
+      return _enabled && user_config.effects.enabled;
    }
 
    void config(const Effects_control_config& config) noexcept
    {
       _config = config;
+
+      config_changed();
    }
 
    auto config() const noexcept -> Effects_control_config
@@ -70,18 +55,27 @@ public:
       return _config;
    }
 
-   void user_config(const Effects_user_config& config) noexcept;
+   auto rt_format() const noexcept -> DXGI_FORMAT
+   {
+      if (_config.hdr_rendering) return DXGI_FORMAT_R16G16B16A16_FLOAT;
+
+      switch (user_config.effects.color_quality) {
+      case Color_quality::normal:
+         return DXGI_FORMAT_R8G8B8A8_UNORM;
+      case Color_quality::high:
+         return DXGI_FORMAT_R10G10B10A2_UNORM;
+      case Color_quality::ultra:
+         return DXGI_FORMAT_R16G16B16A16_UNORM;
+      }
+
+      return DXGI_FORMAT_R8G8B8A8_UNORM;
+   }
 
    void show_imgui(HWND game_window = nullptr) noexcept;
-
-   void drop_device_resources() noexcept;
 
    void read_config(YAML::Node config);
 
    effects::Postprocess postprocess;
-   effects::Scene_blur scene_blur{_device};
-   effects::Shadows_blur shadows_blur{_device};
-   effects::Damage_overlay damage_overlay{_device};
 
 private:
    auto output_params_to_yaml_string() noexcept -> std::string;
@@ -94,13 +88,13 @@ private:
 
    void show_post_processing_imgui() noexcept;
 
+   void config_changed() noexcept;
+
    bool _enabled = false;
-   bool _active = false;
    bool _open_failure = false;
    bool _save_failure = false;
 
    Effects_control_config _config{};
-   Effects_user_config _user_config{};
 };
 }
 

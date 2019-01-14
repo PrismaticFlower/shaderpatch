@@ -71,9 +71,20 @@ inline glm::vec3 hsv_to_rgb(glm::vec3 hsv)
    return ((rgb - 1.0f) * hsv.y + 1.0f) * hsv.z;
 }
 
+inline float linear_to_srgb(const float v) noexcept
+{
+   return v <= 0.0031308f ? (12.92f * v) : (1.055f * pow(v, 1.0f / 2.4f) + -0.055f);
+}
+
+inline glm::vec3 linear_to_srgb(const glm::vec3 color) noexcept
+{
+   return {linear_to_srgb(color.r), linear_to_srgb(color.g),
+           linear_to_srgb(color.b)};
+}
+
 inline glm::vec3 apply_basic_saturation(glm::vec3 color, float saturation) noexcept
 {
-   constexpr auto saturation_weights = glm::vec3{0.25f, 0.5f, 0.25f};
+   const auto saturation_weights = glm::vec3{0.25f, 0.5f, 0.25f};
 
    float grey = glm::dot(saturation_weights, color);
    color = grey + (saturation * (color - grey));

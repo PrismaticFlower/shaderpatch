@@ -1,14 +1,10 @@
 
-#include "vertex_utilities.hlsl"
+#include "fullscreen_tri_vs.hlsl"
+#include "pixel_sampler_states.hlsl"
 
-Texture2D backbuffer_texture : register(t0);
-
-float4 main_vs(float2 position : POSITION, inout float2 texcoords : TEXCOORD) : POSITION
-{
-   return float4(position, 0.0, 1.0);
-}
+Texture2D<float3> backbuffer_texture : register(t0);
 
 float4 main_ps(float2 texcoords : TEXCOORD) : SV_Target0
 {
-   return backbuffer_texture.SampleLevel(point_clamp_sampler, texcoords, 0);
+   return float4(pow(saturate(backbuffer_texture.SampleLevel(linear_clamp_sampler, texcoords, 0)), 2.2), 1.0);
 }

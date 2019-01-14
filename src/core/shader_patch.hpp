@@ -1,9 +1,12 @@
 #pragma once
 
+#include "../effects/control.hpp"
+#include "../effects/rendertarget_allocator.hpp"
 #include "com_ptr.hpp"
 #include "constant_buffers.hpp"
 #include "d3d11_helpers.hpp"
 #include "depthstencil.hpp"
+#include "effects_backbuffer.hpp"
 #include "game_input_layout.hpp"
 #include "game_rendertarget.hpp"
 #include "game_shader.hpp"
@@ -11,12 +14,15 @@
 #include "image_stretcher.hpp"
 #include "input_layout_descriptions.hpp"
 #include "input_layout_element.hpp"
+#include "patch_effects_config_handle.hpp"
+#include "patch_material.hpp"
 #include "patch_texture.hpp"
 #include "sampler_states.hpp"
 #include "shader_database.hpp"
 #include "shader_loader.hpp"
 #include "shader_metadata.hpp"
 #include "small_function.hpp"
+#include "swapchain.hpp"
 #include "texture_database.hpp"
 
 #include <vector>
@@ -94,6 +100,12 @@ public:
 
    auto create_patch_texture(const gsl::span<const std::byte> texture_data) noexcept
       -> Patch_texture;
+
+   auto create_patch_material(const gsl::span<const std::byte> material_data) noexcept
+      -> std::shared_ptr<Patch_material>;
+
+   auto create_patch_effects_config(const gsl::span<const std::byte> effects_config) noexcept
+      -> Patch_effects_config_handle;
 
    auto create_game_input_layout(const gsl::span<const Input_layout_element> layout,
                                  const bool compressed) noexcept -> Game_input_layout;
@@ -197,7 +209,7 @@ public:
                        gsl::span<std::byte> data) noexcept -> Query_result;
 
 private:
-   auto get_backbuffer_views() noexcept -> Game_rendertarget;
+   auto current_rt_format() const noexcept -> DXGI_FORMAT;
 
    void bind_static_resources() noexcept;
 
@@ -206,6 +218,14 @@ private:
    void update_dirty_state() noexcept;
 
    void update_frame_state() noexcept;
+
+   void update_imgui() noexcept;
+
+   void update_effects() noexcept;
+
+   void update_rendertarget_formats() noexcept;
+
+   void set_linear_rendering(bool linear_rendering) noexcept;
 
    void resolve_refraction_texture() noexcept;
 
@@ -219,13 +239,13 @@ private:
 
       return dc;
    }();
-   const Com_ptr<IDXGISwapChain1> _swapchain;
+   Swapchain _swapchain;
 
    Input_layout_descriptions _input_layout_descriptions;
    const Shader_database _shader_database =
       load_shader_lvl(L"data/shaderpatch/shaders.lvl", *_device);
 
-   std::vector<Game_rendertarget> _game_rendertargets = {get_backbuffer_views()};
+   std::vector<Game_rendertarget> _game_rendertargets = {_swapchain.game_rendertarget()};
    Game_rendertarget_id _current_game_rendertarget = _game_backbuffer_index;
    Game_rendertarget _refraction_rt;
 
@@ -241,7 +261,7 @@ private:
 
    std::array<Game_texture, 4> _game_textures;
 
-   const bool _allow_tearing;
+   bool _discard_draw_calls = false;
    bool _shader_rendertype_changed = false;
    bool _ia_vs_dirty = true;
    bool _om_targets_dirty = true;
@@ -254,6 +274,9 @@ private:
    // Frame State
    bool _refraction_farscene_texture_resolve = false;
    bool _refraction_nearscene_texture_resolve = false;
+   bool _linear_rendering = false;
+
+   bool _imgui_enabled = false;
 
    Small_function<void() noexcept> _on_rendertype_changed;
 
@@ -341,7 +364,15 @@ private:
    const Sampler_states _sampler_states{*_device};
    Texture_database _texture_database;
 
+   Effects_backbuffer _effects_backbuffer;
+   effects::Control _effects{_device, _shader_database.rendertypes};
+   effects::Rendertarget_allocator _rendertarget_allocator{_device};
+
    const HWND _window;
+
+   bool _effects_active = false;
+   DXGI_FORMAT _current_effects_rt_format = DXGI_FORMAT_UNKNOWN;
+   int _current_effects_id = 0;
 };
 }
 

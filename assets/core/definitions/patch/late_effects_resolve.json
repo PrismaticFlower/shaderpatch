@@ -7,15 +7,7 @@
       "stage": "vertex",
 
       "vertex_state": {
-        "generic_input": {
-          "dynamic_compression": false,
-          "position": false,
-          "skinned": false,
-          "normal": false,
-          "tangents": false,
-          "color": false,
-          "texture_coords": false
-        }
+        "input_layout": "$auto"
       }
     },
 

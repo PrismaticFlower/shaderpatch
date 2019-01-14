@@ -1,11 +1,13 @@
 #pragma once
 
-#include "../shader_database.hpp"
-#include "../texture_database.hpp"
+#include "../core/d3d11_helpers.hpp"
+#include "../core/game_rendertarget.hpp"
+#include "../core/shader_database.hpp"
+#include "../core/texture_database.hpp"
 #include "../user_config.hpp"
 #include "color_grading_lut_baker.hpp"
 #include "com_ptr.hpp"
-#include "com_ref.hpp"
+#include "helpers.hpp"
 #include "postprocess_params.hpp"
 #include "rendertarget_allocator.hpp"
 
@@ -16,15 +18,30 @@
 
 #include <glm/glm.hpp>
 
-#include <d3d9.h>
+#include <d3d11_1.h>
 
 namespace sp::effects {
 
-enum class Hdr_state { hdr, stock };
+struct Postprocess_input {
+   ID3D11ShaderResourceView& srv;
+
+   DXGI_FORMAT format;
+   UINT width;
+   UINT height;
+};
+
+struct Postprocess_output {
+   ID3D11RenderTargetView& rtv;
+
+   DXGI_FORMAT format;
+   UINT width;
+   UINT height;
+};
 
 class Postprocess {
 public:
-   Postprocess(Com_ref<IDirect3DDevice9> device);
+   Postprocess(Com_ptr<ID3D11Device1> device,
+               const core::Shader_rendertype_collection& shader_rendertypes);
 
    void bloom_params(const Bloom_params& params) noexcept;
 
@@ -54,94 +71,107 @@ public:
       return _film_grain_params;
    }
 
-   void apply(const Shader_database& shaders, Rendertarget_allocator& allocator,
-              const Texture_database& textures, IDirect3DTexture9& input,
-              IDirect3DSurface9& output) noexcept;
-
-   void drop_device_resources() noexcept;
+   void apply(ID3D11DeviceContext1& dc, Rendertarget_allocator& allocator,
+              const core::Texture_database& textures, const Postprocess_input input,
+              const Postprocess_output output) noexcept;
 
    void hdr_state(Hdr_state state) noexcept;
 
-   void user_config(const Effects_user_config& config) noexcept;
-
 private:
-   void do_bloom_and_color_grading(const Shader_database& shaders,
+   void do_bloom_and_color_grading(ID3D11DeviceContext1& dc,
                                    Rendertarget_allocator& allocator,
-                                   const Texture_database& textures,
-                                   IDirect3DTexture9& input,
-                                   IDirect3DSurface9& output) noexcept;
+                                   const core::Texture_database& textures,
+                                   const Postprocess_input& input,
+                                   ID3D11RenderTargetView& output) noexcept;
 
-   void do_color_grading(const Shader_database& shaders, IDirect3DTexture9& input,
-                         IDirect3DSurface9& output) noexcept;
+   void do_color_grading(ID3D11DeviceContext1& dc, const core::Texture_database& textures,
+                         const Postprocess_input& input,
+                         ID3D11RenderTargetView& output) noexcept;
 
-   void do_finalize(const Shader_database& shaders, const Texture_database& textures,
-                    IDirect3DTexture9& input, IDirect3DSurface9& output);
+   void do_finalize(ID3D11DeviceContext1& dc, ID3D11ShaderResourceView& input,
+                    ID3D11RenderTargetView& output);
 
-   void do_pass(IDirect3DTexture9& input, IDirect3DSurface9& output) noexcept;
+   void do_pass(ID3D11DeviceContext1& dc, ID3D11ShaderResourceView& input,
+                ID3D11RenderTargetView& output) noexcept;
 
-   void do_bloom_pass(IDirect3DTexture9& input, IDirect3DSurface9& output) noexcept;
+   void do_pass(ID3D11DeviceContext1& dc,
+                std::array<ID3D11ShaderResourceView*, 5> inputs,
+                ID3D11RenderTargetView& output) noexcept;
 
-   void linear_resample(IDirect3DSurface9& input, IDirect3DSurface9& output) const
-      noexcept;
+   void do_pass(ID3D11DeviceContext1& dc, ID3D11RenderTargetView& output) noexcept;
 
-   void set_shader_constants() noexcept;
+   void update_and_bind_cb(ID3D11DeviceContext1& dc, const UINT width,
+                           const UINT height) noexcept;
+
+   void bind_bloom_cb(ID3D11DeviceContext1& dc, const UINT index) noexcept;
+
+   auto blue_noise_srv(const core::Texture_database& textures) noexcept
+      -> ID3D11ShaderResourceView*;
 
    void update_randomness() noexcept;
 
-   void bind_blue_noise_texture(const Texture_database& textures) noexcept;
-
-   void setup_vetrex_stream() noexcept;
-
-   void create_resources() noexcept;
-
    void update_shaders_names() noexcept;
 
-   Com_ref<IDirect3DDevice9> _device;
-   Com_ptr<IDirect3DVertexDeclaration9> _vertex_decl;
-   Com_ptr<IDirect3DVertexBuffer9> _vertex_buffer;
+   struct Global_constants {
+      glm::vec2 scene_pixel_size;
 
-   struct {
-      struct {
-         alignas(16) glm::vec3 global{1.0f, 1.0f, 1.0f};
-         float threshold{1.0f};
+      float vignette_end;
+      float vignette_start;
 
-         alignas(16) glm::vec3 dirt{1.0f, 1.0f, 1.0f};
-         float _pad{};
-      } bloom;
+      glm::vec3 bloom_global_scale;
+      float bloom_threshold;
+      glm::vec3 bloom_dirt_scale;
 
-      struct {
-         float exposure;
-      } color_grading;
+      float exposure;
 
-      struct {
-         float end;
-         float start;
-         float _pad{};
-      } vignette;
+      float film_grain_amount;
+      float film_grain_aspect;
+      float film_grain_color_amount;
+      float film_grain_luma_amount;
 
-      struct {
-         alignas(16) float amount;
-         float size;
-         float color_amount;
-         float luma_amount;
-      } film_grain;
+      glm::vec2 film_grain_size;
+      std::array<float, 2> _padding0;
 
-      alignas(16) glm::vec4 randomness{1.0f, 1.0f, 1.0f, 1.0f};
-   } _constants;
+      glm::vec4 randomness_flt;
+      glm::uvec4 randomness_uint;
+   };
 
-   static_assert(sizeof(decltype(_constants)) == 80);
+   static_assert(sizeof(Global_constants) == 112);
 
-   glm::vec3 _bloom_inner_scale;
-   glm::vec3 _bloom_inner_mid_scale;
-   glm::vec3 _bloom_mid_scale;
-   glm::vec3 _bloom_outer_mid_scale;
-   glm::vec3 _bloom_outer_scale;
+   struct Bloom_constants {
+      glm::vec3 bloom_local_scale;
+      float _padding0{};
+      glm::vec2 bloom_texel_size;
+      std::array<float, 2> _padding1{};
+   };
+
+   static_assert(sizeof(Bloom_constants) == 32);
+
+   Global_constants _global_constants;
+   std::array<Bloom_constants, 6> _bloom_constants;
+
+   const Com_ptr<ID3D11Device1> _device;
+   const Com_ptr<ID3D11BlendState> _normal_blend_state =
+      create_normal_blend_state(*_device);
+   const Com_ptr<ID3D11BlendState> _additive_blend_state =
+      create_additive_blend_state(*_device);
+   const Com_ptr<ID3D11Buffer> _global_constant_buffer =
+      core::create_dynamic_constant_buffer(*_device, sizeof(Global_constants));
+   const std::array<Com_ptr<ID3D11Buffer>, 6> _bloom_constant_buffers{
+      core::create_dynamic_constant_buffer(*_device, sizeof(Bloom_constants)),
+      core::create_dynamic_constant_buffer(*_device, sizeof(Bloom_constants)),
+      core::create_dynamic_constant_buffer(*_device, sizeof(Bloom_constants)),
+      core::create_dynamic_constant_buffer(*_device, sizeof(Bloom_constants)),
+      core::create_dynamic_constant_buffer(*_device, sizeof(Bloom_constants)),
+      core::create_dynamic_constant_buffer(*_device, sizeof(Bloom_constants))};
+
+   const core::Shader_rendertype _postprocess_shaders;
+   const core::Shader_rendertype _bloom_shaders;
 
    Bloom_params _bloom_params{};
    Vignette_params _vignette_params{};
    Color_grading_params _color_grading_params{};
    Film_grain_params _film_grain_params{};
-   Effects_user_config _user_config{};
 
    Hdr_state _hdr_state = Hdr_state::hdr;
 
@@ -159,12 +189,17 @@ private:
    std::uniform_real_distribution<float> _random_real_dist{0.0f, 256.0f};
    std::uniform_int<int> _random_int_dist{0, 63};
 
+   std::vector<Com_ptr<ID3D11ShaderResourceView>> _blue_noise_srvs;
    Color_grading_lut_baker _color_grading_lut_baker{_device};
 
-   constexpr static auto bloom_sampler_slot = 1;
-   constexpr static auto dirt_sampler_slot = 2;
-   constexpr static auto lut_sampler_slot = 3;
-   constexpr static auto blue_noise_sampler_slot = 4;
+   constexpr static auto global_cb_slot = 0;
+   constexpr static auto bloom_cb_slot = 1;
+
+   constexpr static auto scene_texture_slot = 0;
+   constexpr static auto bloom_texture_slot = 1;
+   constexpr static auto dirt_texture_slot = 2;
+   constexpr static auto lut_texture_slot = 3;
+   constexpr static auto blue_noise_texture_slot = 4;
 };
 
 }

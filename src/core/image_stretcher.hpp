@@ -24,6 +24,9 @@ public:
                 const D3D11_BOX& dest_box) const noexcept;
 
 private:
+   auto get_correct_shader(ID3D11UnorderedAccessView& uav) const noexcept
+      -> ID3D11ComputeShader*;
+
    struct alignas(16) Input_vars {
       glm::uvec2 dest_start;
       glm::uvec2 dest_end;
@@ -37,7 +40,8 @@ private:
 
    static_assert(sizeof(Input_vars) == 48);
 
-   const Com_ptr<ID3D11ComputeShader> _x_8_y_8_shader;
+   const Com_ptr<ID3D11ComputeShader> _x_8_y_8_shader_float;
+   const Com_ptr<ID3D11ComputeShader> _x_8_y_8_shader_unorm;
    const Com_ptr<ID3D11Buffer> _constant_buffer;
 };
 

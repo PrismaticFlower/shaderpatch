@@ -403,6 +403,22 @@ public:
       return Com_ptr{ps};
    }
 
+   auto bind(ID3D11DeviceContext1& dc, const Vertex_shader_flags vertex_flags = {},
+             const Pixel_shader_flags pixel_flags = {}) const noexcept
+   {
+      if (const auto vs =
+             _vertex_shader_entrypoint.get(_vertex_static_flags, vertex_flags);
+          vs) {
+         dc.VSSetShader(std::get<ID3D11VertexShader*>(*vs), nullptr, 0);
+      }
+      else {
+         dc.VSSetShader(nullptr, nullptr, 0);
+      }
+
+      dc.PSSetShader(_pixel_shader_entrypoint.get(_pixel_static_flags, pixel_flags),
+                     nullptr, 0);
+   }
+
 private:
    const Vertex_shader_entrypoint _vertex_shader_entrypoint;
    const std::uint16_t _vertex_static_flags;

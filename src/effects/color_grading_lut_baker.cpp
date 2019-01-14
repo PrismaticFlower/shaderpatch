@@ -1,8 +1,8 @@
 
 #include "color_grading_lut_baker.hpp"
 #include "../logger.hpp"
-#include "algorithm.hpp"
 #include "color_helpers.hpp"
+#include "utility.hpp"
 
 #include <cstring>
 #include <execution>
@@ -13,95 +13,6 @@
 namespace sp::effects {
 
 using namespace std::literals;
-
-namespace {
-
-constexpr auto lut_dimension = 32;
-
-using Lut_data =
-   std::array<std::array<std::array<glm::uint64, lut_dimension>, lut_dimension>, lut_dimension>;
-
-constexpr Sampler_info lut_sampler_info = {D3DTADDRESS_CLAMP,
-                                           D3DTADDRESS_CLAMP,
-                                           D3DTADDRESS_CLAMP,
-                                           D3DTEXF_LINEAR,
-                                           D3DTEXF_LINEAR,
-                                           D3DTEXF_NONE,
-                                           0.0f,
-                                           false};
-
-auto create_sp_lut(IDirect3DDevice9& device, IDirect3DVolumeTexture9& d3d_texture) -> Texture
-{
-   Com_ptr<IDirect3DBaseTexture9> base_texture;
-   d3d_texture.QueryInterface(IID_IDirect3DBaseTexture9,
-                              base_texture.void_clear_and_assign());
-
-   device.AddRef();
-
-   return Texture{Com_ptr{&device}, std::move(base_texture), lut_sampler_info};
-}
-
-auto create_d3d_system_lut(IDirect3DDevice9& device, const Lut_data& lut_data) noexcept
-   -> Com_ptr<IDirect3DVolumeTexture9>
-{
-   Com_ptr<IDirect3DVolumeTexture9> texture;
-
-   const auto result =
-      device.CreateVolumeTexture(lut_dimension, lut_dimension, lut_dimension, 1,
-                                 0, D3DFMT_A16B16G16R16F, D3DPOOL_SYSTEMMEM,
-                                 texture.clear_and_assign(), nullptr);
-
-   if (FAILED(result)) {
-      log_and_terminate("Failed to create LUT for colour grading."s);
-   }
-
-   D3DLOCKED_BOX box;
-
-   texture->LockBox(0, &box, nullptr, 0);
-
-   Ensures(sizeof(lut_data) == box.SlicePitch * lut_dimension);
-
-   std::memcpy(box.pBits, &lut_data, sizeof(lut_data));
-
-   texture->UnlockBox(0);
-
-   return texture;
-}
-
-auto create_d3d_gpu_lut(IDirect3DDevice9& device,
-                        IDirect3DVolumeTexture9& system_texture) noexcept
-   -> Com_ptr<IDirect3DVolumeTexture9>
-{
-   Com_ptr<IDirect3DVolumeTexture9> gpu_texture;
-
-   const auto result =
-      device.CreateVolumeTexture(lut_dimension, lut_dimension, lut_dimension, 1,
-                                 0, D3DFMT_A16B16G16R16F, D3DPOOL_DEFAULT,
-                                 gpu_texture.clear_and_assign(), nullptr);
-
-   if (FAILED(result)) {
-      log_and_terminate("Failed to create LUT for colour grading."s);
-   }
-
-   device.UpdateTexture(&system_texture, gpu_texture.get());
-
-   return gpu_texture;
-}
-
-auto create_lut(IDirect3DDevice9& device, const Lut_data& lut_data) noexcept -> Texture
-{
-   auto system_texture = create_d3d_system_lut(device, lut_data);
-   auto gpu_texture = create_d3d_gpu_lut(device, *system_texture);
-
-   return create_sp_lut(device, *gpu_texture);
-}
-
-}
-
-void Color_grading_lut_baker::drop_device_resources() noexcept
-{
-   _texture = std::nullopt;
-}
 
 void Color_grading_lut_baker::update_params(const Color_grading_params& params) noexcept
 {
@@ -145,37 +56,45 @@ void Color_grading_lut_baker::update_params(const Color_grading_params& params) 
 
    if (std::memcmp(&eval, &_eval_params, sizeof(Eval_params)) != 0) {
       _eval_params = eval;
-      _texture = std::nullopt;
+      _rebake = true;
    }
 }
 
-void Color_grading_lut_baker::bind_texture(int slot) noexcept
+void Color_grading_lut_baker::hdr_state(const Hdr_state state) noexcept
 {
-   if (!_texture) bake_color_grading_lut();
+   if (std::exchange(_hdr_state, state) == state) return;
 
-   _texture->bind(slot);
+   _rebake = true;
 }
 
-void Color_grading_lut_baker::bake_color_grading_lut() noexcept
+auto Color_grading_lut_baker::srv(ID3D11DeviceContext1& dc) noexcept
+   -> ID3D11ShaderResourceView*
+{
+   if (std::exchange(_rebake, false)) bake_color_grading_lut(dc);
+
+   return _srv.get();
+}
+
+void Color_grading_lut_baker::bake_color_grading_lut(ID3D11DeviceContext1& dc) noexcept
 {
    Lut_data data{};
 
-   for_each(std::execution::par_unseq, index_array<lut_dimension>, [&](int x) {
-      for (int y = 0; y < lut_dimension; ++y) {
-         for (int z = 0; z < lut_dimension; ++z) {
-            glm::vec3 col{static_cast<float>(z), static_cast<float>(y),
-                          static_cast<float>(x)};
+   std::for_each_n(std::execution::par_unseq, Index_iterator{}, lut_dimension, [&](int z) {
+      for (int x = 0; x < lut_dimension; ++x) {
+         for (int y = 0; y < lut_dimension; ++y) {
+            glm::vec3 col{static_cast<float>(x), static_cast<float>(y),
+                          static_cast<float>(z)};
             col /= static_cast<float>(lut_dimension) - 1.0f;
 
             col = logc_to_linear(col);
             col = apply_color_grading(col);
 
-            data[x][y][z] = glm::packHalf4x16({col, 1.0f});
+            data[z][y][x] = glm::packUnorm4x8({col, 1.0f});
          }
       }
    });
 
-   _texture = create_lut(*_device, data);
+   uploade_lut(dc, data);
 }
 
 glm::vec3 Color_grading_lut_baker::apply_color_grading(glm::vec3 color) noexcept
@@ -193,7 +112,17 @@ glm::vec3 Color_grading_lut_baker::apply_color_grading(glm::vec3 color) noexcept
                                  _eval_params.gain_adjust);
    color = filmic::eval(color, _eval_params.filmic_curve);
 
+   if (_hdr_state != Hdr_state::stock) color = linear_to_srgb(color);
+
    return color;
+}
+
+void Color_grading_lut_baker::uploade_lut(ID3D11DeviceContext1& dc,
+                                          const Lut_data& lut_data) noexcept
+{
+   dc.UpdateSubresource(_texture.get(), 0, nullptr, &lut_data,
+                        sizeof(Lut_data::value_type::value_type),
+                        sizeof(Lut_data::value_type));
 }
 
 }

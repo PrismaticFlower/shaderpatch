@@ -13,6 +13,8 @@
 
 namespace sp::effects {
 
+enum class Hdr_state { hdr, stock };
+
 struct Bloom_params {
    bool enabled = true;
 

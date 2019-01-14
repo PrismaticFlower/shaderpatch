@@ -28,7 +28,7 @@ http://machinesdontcare.wordpress.com/2009/06/25/3d-perlin-noise-sphere-vertex-s
 
 float4 rnm(float2 tc)
 {
-   float noise = sin(dot(tc + randomness.w, float2(12.9898, 78.233))) * 43758.5453;
+   float noise = sin(dot(tc + randomness_flt.w, float2(12.9898, 78.233))) * 43758.5453;
 
    float R = frac(noise) * 2.0 - 1.0;
    float G = frac(noise * 1.2154) * 2.0 - 1.0;
@@ -96,7 +96,7 @@ float pnoise3D(float3 p)
 //2d coordinate orientation thing
 float2 coord_rot(float2 tc, float angle)
 {
-   float aspect = scene_resolution.x / scene_resolution.y;
+   float aspect = film_grain_aspect;
    float rotX = 
       ((tc.x * 2.0 - 1.0) * aspect * cos(angle)) - ((tc.y * 2.0 - 1.0) * sin(angle));
    float rotY = 
@@ -110,15 +110,15 @@ float2 coord_rot(float2 tc, float angle)
 void apply(float2 texcoords, inout float3 color)
 {
    const static float3 rot_offset = {1.425, 3.892, 5.835}; // rotation offset values	
-   float2 rot_coords_r = coord_rot(texcoords, randomness.r + rot_offset.x);
+   float2 rot_coords_r = coord_rot(texcoords, randomness_flt.r + rot_offset.x);
    
-   const float2 grainsize = scene_resolution / film_grain_size;
+   const float2 grainsize = film_grain_size;
    
    float3 noise = pnoise3D(float3(rot_coords_r *  grainsize, 0.0));
 
    if (film_grain_colored) {
-      float2 rot_coords_g = coord_rot(texcoords, randomness.g + rot_offset.y);
-      float2 rot_coords_b = coord_rot(texcoords, randomness.b + rot_offset.z);
+      float2 rot_coords_g = coord_rot(texcoords, randomness_flt.g + rot_offset.y);
+      float2 rot_coords_b = coord_rot(texcoords, randomness_flt.b + rot_offset.z);
       noise.g = 
          lerp(noise.r, pnoise3D(float3(rot_coords_g * grainsize, 1.0)), film_grain_color_amount);
       noise.b =

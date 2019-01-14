@@ -1,222 +1,104 @@
 #pragma once
 
-#include "../direct3d/shader_constant.hpp"
-#include "../shader_constants.hpp"
 #include "com_ptr.hpp"
 
 #include <array>
 
 #include <glm/glm.hpp>
 
-#include <d3d9.h>
+#include <d3d11_1.h>
 
 namespace sp::effects {
 
-inline auto create_fs_triangle_buffer(IDirect3DDevice9& device, const glm::ivec2 resolution)
-   -> Com_ptr<IDirect3DVertexBuffer9>
+inline auto srv_format(ID3D11ShaderResourceView& srv) noexcept -> DXGI_FORMAT
 {
-   const auto offset = 1.f / static_cast<glm::vec2>(resolution);
+   D3D11_SHADER_RESOURCE_VIEW_DESC desc;
+   srv.GetDesc(&desc);
 
-   const auto vertices = std::array<float, 12>{{
-      -1.f - offset.x, -1.f + offset.y, // pos 0
-      0.f, 1.f,                         // uv 0
-      -1.f - offset.x, 3.f + offset.y,  // pos 1
-      0.f, -1.f,                        // uv 1
-      3.f - offset.x, -1.f + offset.y,  // pos 2
-      2.f, 1.f                          // uv 2
-   }};
-
-   Com_ptr<IDirect3DVertexBuffer9> buffer;
-
-   device.CreateVertexBuffer(sizeof(vertices), D3DUSAGE_WRITEONLY, 0,
-                             D3DPOOL_DEFAULT, buffer.clear_and_assign(), nullptr);
-
-   void* data_ptr{};
-
-   buffer->Lock(0, sizeof(vertices), &data_ptr, 0);
-
-   *static_cast<std::array<float, 12>*>(data_ptr) = vertices;
-
-   buffer->Unlock();
-
-   return buffer;
+   return desc.Format;
 }
 
-inline auto create_fs_triangle_buffer(IDirect3DDevice9& device)
-   -> Com_ptr<IDirect3DVertexBuffer9>
+inline auto rtv_format(ID3D11RenderTargetView& rtv) noexcept -> DXGI_FORMAT
 {
+   D3D11_RENDER_TARGET_VIEW_DESC desc;
+   rtv.GetDesc(&desc);
 
-   const auto vertices = std::array<float, 12>{{
-      -1.f, -1.f, // pos 0
-      0.f, 1.f,   // uv 0
-      -1.f, 3.f,  // pos 1
-      0.f, -1.f,  // uv 1
-      3.f, -1.f,  // pos 2
-      2.f, 1.f    // uv 2
-   }};
-
-   Com_ptr<IDirect3DVertexBuffer9> buffer;
-
-   device.CreateVertexBuffer(sizeof(vertices), D3DUSAGE_WRITEONLY, 0,
-                             D3DPOOL_DEFAULT, buffer.clear_and_assign(), nullptr);
-
-   void* data_ptr{};
-
-   buffer->Lock(0, sizeof(vertices), &data_ptr, 0);
-
-   *static_cast<std::array<float, 12>*>(data_ptr) = vertices;
-
-   buffer->Unlock();
-
-   return buffer;
+   return desc.Format;
 }
 
-inline auto create_fs_triangle_decl(IDirect3DDevice9& device)
-   -> Com_ptr<IDirect3DVertexDeclaration9>
+inline void set_viewport(ID3D11DeviceContext1& dc, const UINT width,
+                         const UINT height) noexcept
 {
-   constexpr auto declaration = std::array<D3DVERTEXELEMENT9, 3>{
-      {{0, 0, D3DDECLTYPE_FLOAT2, 0, D3DDECLUSAGE_POSITION, 0},
-       {0, 8, D3DDECLTYPE_FLOAT2, 0, D3DDECLUSAGE_TEXCOORD, 0},
-       D3DDECL_END()}};
+   const D3D11_VIEWPORT viewport{0,
+                                 0,
+                                 static_cast<float>(width),
+                                 static_cast<float>(height),
+                                 0.0f,
+                                 1.0f};
 
-   Com_ptr<IDirect3DVertexDeclaration9> vertex_decl;
-
-   device.CreateVertexDeclaration(declaration.data(), vertex_decl.clear_and_assign());
-
-   return vertex_decl;
+   dc.RSSetViewports(1, &viewport);
 }
 
-inline constexpr int fs_triangle_stride = 16;
-
-inline auto get_texture_metrics(IDirect3DTexture9& from)
-   -> std::tuple<D3DFORMAT, glm::ivec2>
+inline auto create_normal_blend_state(ID3D11Device1& device) noexcept
+   -> Com_ptr<ID3D11BlendState>
 {
+   const CD3D11_BLEND_DESC desc{CD3D11_DEFAULT{}};
 
-   D3DSURFACE_DESC desc;
-   from.GetLevelDesc(0, &desc);
+   Com_ptr<ID3D11BlendState> blend_state;
+   device.CreateBlendState(&desc, blend_state.clear_and_assign());
 
-   return std::make_tuple(desc.Format, glm::ivec2{static_cast<int>(desc.Width),
-                                                  static_cast<int>(desc.Height)});
+   return blend_state;
 }
 
-inline auto get_surface_metrics(IDirect3DSurface9& from)
-   -> std::tuple<D3DFORMAT, glm::ivec2>
+inline auto create_additive_blend_state(ID3D11Device1& device) noexcept
+   -> Com_ptr<ID3D11BlendState>
 {
+   CD3D11_BLEND_DESC desc{CD3D11_DEFAULT{}};
 
-   D3DSURFACE_DESC desc;
-   from.GetDesc(&desc);
+   desc.RenderTarget[0].BlendEnable = true;
+   desc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+   desc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+   desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+   desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+   desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+   desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+   desc.RenderTarget[0].RenderTargetWriteMask = 0b1111;
 
-   return std::make_tuple(desc.Format, glm::ivec2{static_cast<int>(desc.Width),
-                                                  static_cast<int>(desc.Height)});
+   Com_ptr<ID3D11BlendState> blend_state;
+   device.CreateBlendState(&desc, blend_state.clear_and_assign());
+
+   return blend_state;
 }
 
-inline void set_fs_pass_state(IDirect3DDevice9& device, IDirect3DSurface9& dest) noexcept
+inline auto create_alpha_blend_state(ID3D11Device1& device) noexcept
+   -> Com_ptr<ID3D11BlendState>
 {
-   auto dest_size = std::get<glm::ivec2>(get_surface_metrics(dest));
+   CD3D11_BLEND_DESC desc{CD3D11_DEFAULT{}};
 
-   d3d9::Vs_2f_shader_constant<constants::vs::post_processing_start>{}
-      .set(device, {-1.0f / dest_size.x, 1.0f / dest_size.y});
+   desc.RenderTarget[0].BlendEnable = true;
+   desc.RenderTarget[0].SrcBlend = D3D11_BLEND_INV_SRC_ALPHA;
+   desc.RenderTarget[0].DestBlend = D3D11_BLEND_SRC_ALPHA;
+   desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+   desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_SRC_ALPHA;
+   desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+   desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+   desc.RenderTarget[0].RenderTargetWriteMask = 0b1111;
 
-   D3DVIEWPORT9 viewport{0,
-                         0,
-                         static_cast<DWORD>(dest_size.x),
-                         static_cast<DWORD>(dest_size.y),
-                         0.0f,
-                         1.0f};
+   Com_ptr<ID3D11BlendState> blend_state;
+   device.CreateBlendState(&desc, blend_state.clear_and_assign());
 
-   device.SetViewport(&viewport);
+   return blend_state;
 }
 
-inline void set_fs_pass_ps_state(IDirect3DDevice9& device, IDirect3DTexture9& source) noexcept
+inline void clear_ia_buffers(ID3D11DeviceContext1& dc) noexcept
 {
-   auto src_size =
-      static_cast<glm::vec2>(std::get<glm::ivec2>(get_texture_metrics(source)));
+   dc.IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
 
-   d3d9::Ps_4f_shader_constant<constants::ps::post_processing_start>{}
-      .set(device, {1.0f / src_size, src_size});
-}
+   const std::array<ID3D11Buffer*, D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT> null_buffers{};
+   const std::array<UINT, D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT> zeros{};
 
-inline void set_blur_pass_state(IDirect3DDevice9& device, IDirect3DTexture9& source,
-                                glm::vec2 direction) noexcept
-{
-   auto src_size =
-      static_cast<glm::vec2>(std::get<glm::ivec2>(get_texture_metrics(source)));
-
-   d3d9::Ps_4f_shader_constant<constants::ps::post_processing_start>{}
-      .set(device, {1.0f / src_size * direction, 1.0f / src_size});
-}
-
-inline constexpr auto colorwrite_all =
-   D3DCOLORWRITEENABLE_RED | D3DCOLORWRITEENABLE_GREEN |
-   D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_ALPHA;
-
-inline void set_fs_pass_blend_state(IDirect3DDevice9& device) noexcept
-{
-   device.SetRenderState(D3DRS_ALPHABLENDENABLE, true);
-   device.SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, true);
-   device.SetRenderState(D3DRS_COLORWRITEENABLE, colorwrite_all);
-   device.SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);
-   device.SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO);
-   device.SetRenderState(D3DRS_SRCBLENDALPHA, D3DBLEND_ONE);
-   device.SetRenderState(D3DRS_DESTBLENDALPHA, D3DBLEND_ZERO);
-   device.SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_ADD);
-}
-
-inline void set_fs_pass_additive_blend_state(IDirect3DDevice9& device) noexcept
-{
-   device.SetRenderState(D3DRS_ALPHABLENDENABLE, true);
-   device.SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, true);
-   device.SetRenderState(D3DRS_COLORWRITEENABLE, colorwrite_all);
-   device.SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);
-   device.SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
-   device.SetRenderState(D3DRS_SRCBLENDALPHA, D3DBLEND_ONE);
-   device.SetRenderState(D3DRS_DESTBLENDALPHA, D3DBLEND_ZERO);
-   device.SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_ADD);
-}
-
-inline void set_fs_pass_alpha_blend_state(IDirect3DDevice9& device) noexcept
-{
-   device.SetRenderState(D3DRS_ALPHABLENDENABLE, true);
-   device.SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, true);
-   device.SetRenderState(D3DRS_COLORWRITEENABLE, colorwrite_all);
-   device.SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
-   device.SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
-   device.SetRenderState(D3DRS_SRCBLENDALPHA, D3DBLEND_ONE);
-   device.SetRenderState(D3DRS_DESTBLENDALPHA, D3DBLEND_ZERO);
-   device.SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_ADD);
-}
-
-inline void set_linear_clamp_sampler(IDirect3DDevice9& device, int slot,
-                                     bool srgb = false) noexcept
-{
-   device.SetSamplerState(slot, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
-   device.SetSamplerState(slot, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
-   device.SetSamplerState(slot, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
-   device.SetSamplerState(slot, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
-   device.SetSamplerState(slot, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
-   device.SetSamplerState(slot, D3DSAMP_SRGBTEXTURE, srgb);
-}
-
-inline void set_linear_mirror_sampler(IDirect3DDevice9& device, int slot,
-                                      bool srgb = false) noexcept
-{
-   device.SetSamplerState(slot, D3DSAMP_ADDRESSU, D3DTADDRESS_MIRROR);
-   device.SetSamplerState(slot, D3DSAMP_ADDRESSV, D3DTADDRESS_MIRROR);
-   device.SetSamplerState(slot, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
-   device.SetSamplerState(slot, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
-   device.SetSamplerState(slot, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
-   device.SetSamplerState(slot, D3DSAMP_SRGBTEXTURE, srgb);
-}
-
-inline void set_point_clamp_sampler(IDirect3DDevice9& device, int slot,
-                                    bool srgb = false) noexcept
-{
-   device.SetSamplerState(slot, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
-   device.SetSamplerState(slot, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
-   device.SetSamplerState(slot, D3DSAMP_MINFILTER, D3DTEXF_POINT);
-   device.SetSamplerState(slot, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
-   device.SetSamplerState(slot, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
-   device.SetSamplerState(slot, D3DSAMP_SRGBTEXTURE, srgb);
+   dc.IASetVertexBuffers(0, null_buffers.size(), null_buffers.data(),
+                         zeros.data(), zeros.data());
 }
 
 }
