@@ -120,13 +120,40 @@ public:
                                                       std::move(input_layout)};
    }
 
+   template<typename Output_func>
+   void copy_all_if(const std::uint16_t static_flags, Output_func output_func) const
+      noexcept
+   {
+      static_assert(
+         std::is_nothrow_invocable_v<Output_func, Vertex_shader_flags,
+                                     std::tuple<Com_ptr<ID3D11VertexShader>, std::vector<std::byte>,
+                                                std::vector<Shader_input_element>>>);
+
+      for (const auto& vari : _variations) {
+         const auto [vari_static_flags, vs_flags] = decompose_index(vari.first);
+
+         if (vari_static_flags != static_flags) continue;
+
+         output_func(vs_flags, vari.second);
+      }
+   }
+
 private:
    static constexpr std::uint32_t index(const std::uint16_t static_flags,
                                         const Vertex_shader_flags game_flags) noexcept
    {
-      static_assert(sizeof(Pixel_shader_flags) <= sizeof(std::uint32_t));
+      static_assert(sizeof(Vertex_shader_flags) <= sizeof(std::uint32_t));
 
       return static_cast<std::uint32_t>(game_flags) | (static_flags << 16u);
+   }
+
+   static constexpr auto decompose_index(const std::uint32_t index) noexcept
+      -> std::pair<std::uint16_t, Vertex_shader_flags>
+   {
+      const auto vs_flags = Vertex_shader_flags{index & 0xffffu};
+      const auto static_flags = static_cast<std::uint16_t>(index >> 16u);
+
+      return {static_flags, vs_flags};
    }
 
    std::unordered_map<std::uint32_t,
@@ -179,6 +206,22 @@ public:
       _variations[index(static_flags, game_flags)] = std::move(shader);
    }
 
+   template<typename Output_func>
+   void copy_all_if(const std::uint16_t static_flags, Output_func output_func) const
+      noexcept
+   {
+      static_assert(
+         std::is_nothrow_invocable_v<Output_func, Pixel_shader_flags, Com_ptr<ID3D11PixelShader>>);
+
+      for (const auto& vari : _variations) {
+         const auto [vari_static_flags, ps_flags] = decompose_index(vari.first);
+
+         if (vari_static_flags != static_flags) continue;
+
+         output_func(ps_flags, vari.second);
+      }
+   }
+
 private:
    static constexpr std::uint32_t index(const std::uint16_t static_flags,
                                         const Pixel_shader_flags game_flags) noexcept
@@ -186,6 +229,15 @@ private:
       static_assert(sizeof(Pixel_shader_flags) <= sizeof(std::uint32_t));
 
       return static_cast<std::uint32_t>(game_flags) | (static_flags << 16u);
+   }
+
+   static constexpr auto decompose_index(const std::uint32_t index) noexcept
+      -> std::pair<std::uint16_t, Pixel_shader_flags>
+   {
+      const auto ps_flags = Pixel_shader_flags{index & 0xffffu};
+      const auto static_flags = static_cast<std::uint16_t>(index >> 16u);
+
+      return {static_flags, ps_flags};
    }
 
    std::unordered_map<std::uint32_t, Com_ptr<ID3D11PixelShader>> _variations;
@@ -419,6 +471,26 @@ public:
                      nullptr, 0);
    }
 
+   auto vs_entrypoint() const noexcept -> const Vertex_shader_entrypoint&
+   {
+      return _vertex_shader_entrypoint;
+   }
+
+   auto vs_static_flags() const noexcept -> std::uint16_t
+   {
+      return _vertex_static_flags;
+   }
+
+   auto ps_entrypoint() const noexcept -> const Pixel_shader_entrypoint&
+   {
+      return _pixel_shader_entrypoint;
+   }
+
+   auto ps_static_flags() const noexcept -> std::uint16_t
+   {
+      return _pixel_static_flags;
+   }
+
 private:
    const Vertex_shader_entrypoint _vertex_shader_entrypoint;
    const std::uint16_t _vertex_static_flags;
@@ -465,6 +537,26 @@ public:
          log_and_terminate("Attempt to replace already loaded shader state "sv,
                            std::quoted(state_name), '.');
       }
+   }
+
+   auto begin() const noexcept
+   {
+      return _states.cbegin();
+   }
+
+   auto end() const noexcept
+   {
+      return _states.cend();
+   }
+
+   auto cbegin() const noexcept
+   {
+      return _states.cbegin();
+   }
+
+   auto cend() const noexcept
+   {
+      return _states.cend();
    }
 
 private:

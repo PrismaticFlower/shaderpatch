@@ -222,9 +222,6 @@
     <None Include="src\decal.fx">
       <FileType>Document</FileType>
     </None>
-    <None Include="src\ext_constants_list.hlsl">
-      <FileType>Document</FileType>
-    </None>
     <None Include="src\film_grain.hlsl" />
     <None Include="src\filtercopy.fx">
       <FileType>Document</FileType>

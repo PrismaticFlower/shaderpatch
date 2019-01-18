@@ -14,6 +14,7 @@
 #include "image_stretcher.hpp"
 #include "input_layout_descriptions.hpp"
 #include "input_layout_element.hpp"
+#include "material_shader_factory.hpp"
 #include "patch_effects_config_handle.hpp"
 #include "patch_material.hpp"
 #include "patch_texture.hpp"
@@ -22,6 +23,7 @@
 #include "shader_loader.hpp"
 #include "shader_metadata.hpp"
 #include "small_function.hpp"
+#include "smart_win32_handle.hpp"
 #include "swapchain.hpp"
 #include "texture_database.hpp"
 
@@ -182,6 +184,8 @@ public:
 
    void set_projtex_cube(const Game_texture& texture) noexcept;
 
+   void set_patch_material(std::shared_ptr<Patch_material> material) noexcept;
+
    void set_constants(const cb::Scene_tag, const UINT offset,
                       const gsl::span<const std::array<float, 4>> constants) noexcept;
 
@@ -217,6 +221,8 @@ private:
 
    void update_dirty_state() noexcept;
 
+   void update_shader() noexcept;
+
    void update_frame_state() noexcept;
 
    void update_imgui() noexcept;
@@ -242,8 +248,9 @@ private:
    Swapchain _swapchain;
 
    Input_layout_descriptions _input_layout_descriptions;
-   const Shader_database _shader_database =
-      load_shader_lvl(L"data/shaderpatch/shaders.lvl", *_device);
+   const std::shared_ptr<Shader_database> _shader_database =
+      std::make_shared<Shader_database>(
+         load_shader_lvl(L"data/shaderpatch/shaders.lvl", *_device));
 
    std::vector<Game_rendertarget> _game_rendertargets = {_swapchain.game_rendertarget()};
    Game_rendertarget_id _current_game_rendertarget = _game_backbuffer_index;
@@ -260,12 +267,14 @@ private:
    Rendertype _shader_rendertype = Rendertype::invalid;
 
    std::array<Game_texture, 4> _game_textures;
+   std::shared_ptr<Patch_material> _patch_material;
 
    bool _discard_draw_calls = false;
    bool _shader_rendertype_changed = false;
-   bool _ia_vs_dirty = true;
+   bool _shader_dirty = true;
    bool _om_targets_dirty = true;
    bool _ps_textures_dirty = true;
+   bool _ps_material_textures_dirty = true;
    bool _cb_scene_dirty = true;
    bool _cb_draw_dirty = true;
    bool _cb_skin_dirty = true;
@@ -360,19 +369,28 @@ private:
       return state;
    }();
 
-   const Image_stretcher _image_stretcher{*_device, _shader_database};
+   const Image_stretcher _image_stretcher{*_device, *_shader_database};
    const Sampler_states _sampler_states{*_device};
    Texture_database _texture_database;
 
    Effects_backbuffer _effects_backbuffer;
-   effects::Control _effects{_device, _shader_database.rendertypes};
+   effects::Control _effects{_device, _shader_database->rendertypes};
    effects::Rendertarget_allocator _rendertarget_allocator{_device};
+
+   Material_shader_factory _material_shader_factory{_device, _shader_database};
 
    const HWND _window;
 
    bool _effects_active = false;
    DXGI_FORMAT _current_effects_rt_format = DXGI_FORMAT_UNKNOWN;
    int _current_effects_id = 0;
+
+   const win32::Unique_handle _sp_advertise_handle = win32::Unique_handle{
+      user_config.rendering.advertise_presence
+         ? CreateFileW(L"data/shaderpatch/installed", GENERIC_READ | GENERIC_WRITE,
+                       FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                       nullptr, OPEN_ALWAYS, FILE_FLAG_DELETE_ON_CLOSE, nullptr)
+         : INVALID_HANDLE_VALUE};
 };
 }
 

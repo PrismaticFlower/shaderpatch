@@ -150,6 +150,12 @@
     <ClCompile Include="src\core\effects_backbuffer.cpp">
       <Filter>src\core</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\material_shader.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\material_shader_factory.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -369,6 +375,12 @@
       <Filter>src\core</Filter>
     </ClInclude>
     <ClInclude Include="src\core\patch_effects_config_handle.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\material_shader.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\material_shader_factory.hpp">
       <Filter>src\core</Filter>
     </ClInclude>
   </ItemGroup>

@@ -11,6 +11,7 @@
 #include <filesystem>
 #include <sstream>
 #include <string>
+#include <string_view>
 
 #include <glm/glm.hpp>
 #include <gsl/gsl>
@@ -30,6 +31,7 @@ struct Material_info {
    Rendertype overridden_rendertype;
    std::vector<std::byte> constant_buffer{};
    std::vector<std::string> textures{};
+   std::int32_t fail_safe_texture_index;
 };
 
 namespace materials {
@@ -105,13 +107,31 @@ inline auto read_patch_material(ucfb::Reader reader) -> Material_info
 
 namespace materials {
 
+namespace legacy {
 inline void trim_textures(std::vector<std::string>& textures) noexcept
 {
    for (auto i = static_cast<gsl::index>(textures.size()) - 1; i >= 0; --i) {
-      if (textures[i].empty()) break;
+      if (!textures[i].empty()) break;
 
       textures.pop_back();
    }
+}
+
+inline auto fail_safe_texture_index(const std::string_view rendertype) noexcept
+   -> std::int32_t
+{
+   using namespace std::literals;
+
+   if (rendertype == "pbr"sv) return 0;
+   if (rendertype == "pbr.basic"sv) return 0;
+   if (rendertype == "pbr.emissive"sv) return 0;
+   if (rendertype == "normal_ext"sv) return 0;
+   if (rendertype == "normal_ext.detail"sv) return 0;
+   if (rendertype == "normal_ext.specular"sv) return 0;
+   if (rendertype == "normal_ext.specular.detail"sv) return 0;
+
+   return -1;
+}
 }
 
 namespace v_3_0_0 {
@@ -146,7 +166,9 @@ inline auto read_patch_material(ucfb::Reader reader) -> Material_info
    info.textures.emplace_back(reader.read_child_strict<"TX10"_mn>().read_string());
    info.textures.emplace_back(reader.read_child_strict<"TX11"_mn>().read_string());
 
-   trim_textures(info.textures);
+   legacy::trim_textures(info.textures);
+
+   info.fail_safe_texture_index = legacy::fail_safe_texture_index(info.rendertype);
 
    return info;
 }
@@ -184,7 +206,9 @@ inline auto read_patch_material(ucfb::Reader reader) -> Material_info
    info.textures.emplace_back(reader.read_child_strict<"TX10"_mn>().read_string());
    info.textures.emplace_back(reader.read_child_strict<"TX11"_mn>().read_string());
 
-   trim_textures(info.textures);
+   legacy::trim_textures(info.textures);
+
+   info.fail_safe_texture_index = legacy::fail_safe_texture_index(info.rendertype);
 
    return info;
 }
@@ -219,7 +243,9 @@ inline auto read_patch_material(ucfb::Reader reader) -> Material_info
    info.textures.emplace_back(reader.read_child_strict<"TX10"_mn>().read_string());
    info.textures.emplace_back(reader.read_child_strict<"TX11"_mn>().read_string());
 
-   trim_textures(info.textures);
+   legacy::trim_textures(info.textures);
+
+   info.fail_safe_texture_index = legacy::fail_safe_texture_index(info.rendertype);
 
    return info;
 }

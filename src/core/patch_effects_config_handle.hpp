@@ -16,11 +16,11 @@ public:
 
    ~Patch_effects_config_handle()
    {
-      _on_destruction();
+      if (_on_destruction) _on_destruction();
    }
 
-   Patch_effects_config_handle(const Patch_effects_config_handle&) = default;
-   Patch_effects_config_handle& operator=(const Patch_effects_config_handle&) = default;
+   Patch_effects_config_handle(const Patch_effects_config_handle&) = delete;
+   Patch_effects_config_handle& operator=(const Patch_effects_config_handle&) = delete;
 
    Patch_effects_config_handle(Patch_effects_config_handle&&) = default;
    Patch_effects_config_handle& operator=(Patch_effects_config_handle&&) = default;

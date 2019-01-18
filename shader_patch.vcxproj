@@ -141,6 +141,8 @@
     <ClCompile Include="src\core\effects_backbuffer.cpp" />
     <ClCompile Include="src\core\image_stretcher.cpp" />
     <ClCompile Include="src\core\input_layout_descriptions.cpp" />
+    <ClCompile Include="src\core\material_shader.cpp" />
+    <ClCompile Include="src\core\material_shader_factory.cpp" />
     <ClCompile Include="src\core\patch_material.cpp" />
     <ClCompile Include="src\core\sampler_states.cpp" />
     <ClCompile Include="src\core\shader_input_layouts.cpp" />
@@ -202,6 +204,8 @@
     <ClInclude Include="src\core\context_state_guard.hpp" />
     <ClInclude Include="src\core\depthstencil.hpp" />
     <ClInclude Include="src\core\effects_backbuffer.hpp" />
+    <ClInclude Include="src\core\material_shader.hpp" />
+    <ClInclude Include="src\core\material_shader_factory.hpp" />
     <ClInclude Include="src\core\patch_effects_config_handle.hpp" />
     <ClInclude Include="src\core\game_input_layout.hpp" />
     <ClInclude Include="src\core\game_rendertarget.hpp" />

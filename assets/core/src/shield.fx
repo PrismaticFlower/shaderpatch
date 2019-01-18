@@ -1,5 +1,4 @@
 
-#include "ext_constants_list.hlsl"
 #include "generic_vertex_input.hlsl"
 #include "vertex_utilities.hlsl"
 #include "vertex_transformer.hlsl"

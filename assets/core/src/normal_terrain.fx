@@ -1,5 +1,4 @@
 
-#include "ext_constants_list.hlsl"
 #include "vertex_utilities.hlsl"
 #include "lighting_utilities.hlsl"
 #include "pixel_utilities.hlsl"

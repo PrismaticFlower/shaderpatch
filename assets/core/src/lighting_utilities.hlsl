@@ -2,7 +2,6 @@
 #define LIGHTING_UTILS_INCLUDED
 
 #include "constants_list.hlsl"
-#include "ext_constants_list.hlsl"
 #include "vertex_utilities.hlsl"
 
 struct Lighting
@@ -175,7 +174,7 @@ float3 brdf_light(float3 diffuse, float3 F0, float roughness, float3 N, float3 L
 {
    const float3 H = normalize(L + V);
 
-   const float NdotL = saturate(dot(N, L));
+   const float NdotL = clamp(dot(N, L), 0.0001, 1.0);
    const float NdotH = saturate(dot(N, H));
 
    const float D = normal_distribution(roughness, NdotH);
@@ -196,7 +195,7 @@ float3 calculate(float3 N, float3 V, float3 world_position, float3 albedo,
    albedo = lerp(albedo * (1 - dielectric), 0.0, metallicness);
 
    const float3 diffuse = diffuse_term(albedo);
-   const float NdotV = saturate(dot(N, V));
+   const float NdotV = clamp(abs(dot(N, V)), 0.0001, 1.0);
 
    float3 light = 0.0;
 

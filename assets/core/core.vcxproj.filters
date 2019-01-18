@@ -67,9 +67,6 @@
     <None Include="src\decal.fx">
       <Filter>src</Filter>
     </None>
-    <None Include="src\ext_constants_list.hlsl">
-      <Filter>src</Filter>
-    </None>
     <None Include="src\filtercopy.fx">
       <Filter>src</Filter>
     </None>

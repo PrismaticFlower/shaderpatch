@@ -1,6 +1,5 @@
 
 #include "constants_list.hlsl"
-#include "ext_constants_list.hlsl"
 #include "generic_vertex_input.hlsl"
 #include "vertex_utilities.hlsl"
 #include "vertex_transformer.hlsl"
@@ -23,12 +22,14 @@ const static float4 blend_constant = ps_custom_constants[0];
 const static float4 x_texcoords_transform = custom_constants[1];
 const static float4 y_texcoords_transform = custom_constants[2];
 
-// Material Constants Mappings
-const static float3 base_color = material_constants[0].xyz;
-const static float base_metallicness = material_constants[0].w;
-const static float base_roughness = material_constants[1].x;
-const static float ao_strength = material_constants[1].y;
-const static float emissive_power = material_constants[1].z;
+cbuffer MaterialConstants : register(b2)
+{
+   float3 base_color;
+   float base_metallicness;
+   float base_roughness;
+   float ao_strength;
+   float emissive_power;
+};
 
 // Shader Feature Controls
 const static bool use_metallic_roughness_map = PBR_USE_METALLIC_ROUGHNESS_MAP;
@@ -84,7 +85,7 @@ struct Ps_input
    float fog : FOG;
 
    float4 positionSS : SV_Position;
-   float vface : VFACE;
+   bool front_face : SV_IsFrontFace;
 };
 
 float4 main_ps(Ps_input input) : SV_Target0
@@ -109,7 +110,7 @@ float4 main_ps(Ps_input input) : SV_Target0
    // Calculate lighting.
    const float3 view_normalWS = normalize(view_positionWS - input.positionWS);
    const float3 normalWS = perturb_normal(normal_map, aniso_wrap_sampler, input.texcoords,
-                                          normalize(input.normalWS * -input.vface), view_normalWS);
+                                          normalize(input.normalWS * input.front_face ? -1.0 : 1.0), view_normalWS);
 
    const float2 shadow_texcoords = input.shadow_texcoords.xy / input.shadow_texcoords.w;
    const float shadow = 

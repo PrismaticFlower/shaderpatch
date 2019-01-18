@@ -1,6 +1,5 @@
 
 #include "constants_list.hlsl"
-#include "ext_constants_list.hlsl"
 #include "generic_vertex_input.hlsl"
 #include "vertex_utilities.hlsl"
 #include "vertex_transformer.hlsl"
@@ -26,13 +25,15 @@ const static float4 y_diffuse_texcoords_transform = custom_constants[2];
 const static float4 x_detail_texcoords_transform  = custom_constants[3];
 const static float4 y_detail_texcoords_transform  = custom_constants[4];
 
-// Material Constants Mappings
-const static float3 base_diffuse_color = material_constants[0].xyz;
-const static float gloss_map_weight = material_constants[0].w;
-const static float3 base_specular_color = material_constants[1].xyz;
-const static float specular_exponent = material_constants[1].w;
-const static float4 height_map_resolution = material_constants[2].x;
-const static float height_scale = material_constants[3].x;
+cbuffer MaterialConstants : register(b2)
+{
+   float3 base_diffuse_color;
+   float gloss_map_weight;
+   float3 base_specular_color;
+   float specular_exponent;
+   float4 height_map_resolution;
+   float height_scale;
+};
 
 // Shader Feature Controls
 const static bool use_detail_maps = NORMAL_EXT_USE_DETAIL_MAPS;
@@ -288,7 +289,7 @@ struct Ps_input
    float fog : FOG;
 
    float4 positionSS : SV_Position;
-   float vface : VFACE;
+   bool front_face : SV_IsFrontFace;
 };
 
 float4 main_ps(Ps_input input) : SV_Target0
@@ -321,7 +322,7 @@ float4 main_ps(Ps_input input) : SV_Target0
    float gloss;
 
    sample_normal_maps_gloss(input.diffuse_texcoords, input.detail_texcoords,
-                            normalize(input.normalWS * -input.vface), 
+                            normalize(input.normalWS * input.front_face ? -1.0 : 1.0),
                             view_normalWS, normalWS, gloss);
 
 

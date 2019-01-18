@@ -2,7 +2,6 @@
 #define VERTEX_UTILS_INCLUDED
 
 #include "constants_list.hlsl"
-#include "ext_constants_list.hlsl"
 
 #pragma warning(disable : 3571)
 
