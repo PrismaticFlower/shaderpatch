@@ -1,6 +1,6 @@
 
 #include "compose_exception.hpp"
-#include "patch_texture.hpp"
+#include "patch_texture_io.hpp"
 #include "process_image.hpp"
 #include "synced_io.hpp"
 
@@ -11,6 +11,7 @@
 #include <string_view>
 #include <utility>
 
+#include <glm/glm.hpp>
 #include <gsl/gsl>
 
 #pragma warning(push)
@@ -24,60 +25,71 @@ namespace sp {
 
 using namespace std::literals;
 namespace fs = std::filesystem;
+namespace DX = DirectX;
 
 namespace {
 
-auto get_sampler_info(YAML::Node config) -> Sampler_info
+constexpr auto mip_res(glm::uint res, glm::uint level) noexcept
 {
-   Sampler_info info;
+   return std::max(res >> level, 1u);
+}
 
-   info.srgb = config["sRGB"s].as<bool>();
-
-   if (const auto wrap_mode = config["WrapMode"s].as<std::string>();
-       wrap_mode == "clamp"sv) {
-      info.address_mode_u = D3DTADDRESS_CLAMP;
-      info.address_mode_v = D3DTADDRESS_CLAMP;
-      info.address_mode_w = D3DTADDRESS_CLAMP;
-   }
-   else if (wrap_mode == "repeat"sv) {
-      info.address_mode_u = D3DTADDRESS_WRAP;
-      info.address_mode_v = D3DTADDRESS_WRAP;
-      info.address_mode_w = D3DTADDRESS_WRAP;
-   }
-   else if (wrap_mode == "mirror"sv) {
-      info.address_mode_u = D3DTADDRESS_MIRROR;
-      info.address_mode_v = D3DTADDRESS_MIRROR;
-      info.address_mode_w = D3DTADDRESS_MIRROR;
-   }
-   else {
-      throw compose_exception<std::runtime_error>("Invalid WrapMode in config "sv,
-                                                  std::quoted(wrap_mode), '.');
+void check_sampler_info(const YAML::Node& config)
+{
+   if (config["WrapMode"s]) {
+      synced_print("Note! Ignoring texture old parameter \"WrapMode\".");
    }
 
-   if (const auto filter = config["Filter"s].as<std::string>(); filter == "point"sv) {
-      info.mag_filter = D3DTEXF_POINT;
-      info.min_filter = D3DTEXF_POINT;
-      info.mip_filter = D3DTEXF_POINT;
+   if (config["Filter"s]) {
+      synced_print("Note! Ignoring texture old parameter \"Filter\".");
    }
-   else if (filter == "linear"sv) {
-      info.mag_filter = D3DTEXF_LINEAR;
-      info.min_filter = D3DTEXF_LINEAR;
-      info.mip_filter = D3DTEXF_LINEAR;
-   }
-   else if (filter == "anioscoptic"sv) {
-      info.mag_filter = D3DTEXF_LINEAR;
-      info.min_filter = D3DTEXF_ANISOTROPIC;
-      info.mip_filter = D3DTEXF_LINEAR;
-   }
-   else {
-      throw compose_exception<std::runtime_error>("Invalid Filter in config "sv,
-                                                  std::quoted(filter), '.');
-   }
+}
 
-   info.mip_lod_bias = 0.0f;
+auto get_texture_info(const DX::ScratchImage& image) -> Texture_info
+{
+   Expects(image.GetMetadata().arraySize == 1 && image.GetMetadata().depth == 1);
+
+   const auto meta = image.GetMetadata();
+
+   Texture_info info;
+
+   info.type = Texture_type::texture2d;
+   info.width = meta.width;
+   info.height = meta.height;
+   info.depth = 1;
+   info.mip_count = meta.mipLevels;
+   info.array_size = 1;
+   info.format = meta.format;
 
    return info;
 }
+
+auto get_texture_data(const DX::ScratchImage& image) -> std::vector<Texture_data>
+{
+   std::vector<Texture_data> texture_data;
+
+   const auto& meta = image.GetMetadata();
+
+   texture_data.reserve(meta.mipLevels * meta.arraySize);
+
+   for (auto index = 0; index < meta.arraySize; ++index) {
+      for (auto mip = 0; mip < meta.mipLevels; ++mip) {
+         auto* const sub_image = image.GetImage(mip, index, 0);
+         const auto depth = mip_res(meta.depth, mip);
+
+         Texture_data data;
+         data.pitch = sub_image->rowPitch;
+         data.slice_pitch = sub_image->slicePitch;
+         data.data = gsl::make_span(reinterpret_cast<std::byte*>(sub_image->pixels),
+                                    sub_image->slicePitch * depth);
+
+         texture_data.emplace_back(data);
+      }
+   }
+
+   return texture_data;
+}
+
 }
 
 void munge_texture(fs::path config_file_path, const fs::path& output_dir) noexcept
@@ -109,10 +121,12 @@ void munge_texture(fs::path config_file_path, const fs::path& output_dir) noexce
 
       auto config = YAML::LoadFile(config_file_path.string());
 
-      auto [texture_info, mip_levels] = process_image(config, image_file_path);
-      auto sampler_info = get_sampler_info(config);
+      check_sampler_info(config);
 
-      write_patch_texture(output_file_path, texture_info, sampler_info, mip_levels);
+      auto image = process_image(config, image_file_path);
+
+      write_patch_texture(output_file_path, get_texture_info(image),
+                          get_texture_data(image));
    }
    catch (std::exception& e) {
       synced_error_print("Error while munging "sv,

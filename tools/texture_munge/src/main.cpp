@@ -9,6 +9,8 @@
 #include <string>
 #include <string_view>
 
+#include <Compressonator.h>
+#include <Windows.h>
 #include <clara.hpp>
 
 using namespace std::literals;
@@ -18,6 +20,9 @@ namespace fs = std::filesystem;
 
 int main(int arg_count, char* args[])
 {
+   CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+   CMP_InitializeBCLibrary();
+
    using namespace clara;
 
    bool help = false;
