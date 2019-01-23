@@ -88,7 +88,8 @@ private:
    {
       using Invocable_type = std::remove_reference_t<std::remove_cv_t<Invocable>>;
 
-      static_assert(sizeof(Invocable_type) <= sizeof(_invocable_storage));
+      static_assert(sizeof(Invocable_type) <= sizeof(_invocable_storage),
+                    "Invocable_type is too large!");
 
       new (&_invocable_storage) Invocable_type{std::forward<Invocable>(invocable)};
 

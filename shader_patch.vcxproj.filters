@@ -27,9 +27,6 @@
     <ClCompile Include="src\direct3d\check_required_features.cpp">
       <Filter>src\direct3d</Filter>
     </ClCompile>
-    <ClCompile Include="src\material.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\effects\control.cpp">
       <Filter>src\effects</Filter>
     </ClCompile>
@@ -177,18 +174,6 @@
       <Filter>src\direct3d</Filter>
     </ClInclude>
     <ClInclude Include="src\user_config.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\texture.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\resource_handle.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\material_resource.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\material.hpp">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\effects\control.hpp">
@@ -382,6 +367,9 @@
     </ClInclude>
     <ClInclude Include="src\core\material_shader_factory.hpp">
       <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\imgui\imgui_ext.hpp">
+      <Filter>src\imgui</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

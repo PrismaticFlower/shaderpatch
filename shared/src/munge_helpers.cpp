@@ -1,15 +1,12 @@
 #pragma once
 
-#include "string_utilities.hpp"
-
-#include <filesystem>
-#include <unordered_map>
+#include "munge_helpers.hpp"
 
 #include <gsl/gsl>
 
 namespace sp {
 
-inline auto build_input_file_map(const std::filesystem::path& in)
+auto build_input_file_map(const std::filesystem::path& in)
    -> std::unordered_map<Ci_string, std::filesystem::path>
 {
    namespace fs = std::filesystem;
@@ -26,4 +23,5 @@ inline auto build_input_file_map(const std::filesystem::path& in)
 
    return results;
 }
+
 }

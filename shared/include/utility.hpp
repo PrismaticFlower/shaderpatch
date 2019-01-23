@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
 #include <cstring>
 #include <iterator>
@@ -245,6 +246,63 @@ inline bool operator>(const Index_iterator& left, const Index_iterator& right) n
 inline bool operator>=(const Index_iterator& left, const Index_iterator& right) noexcept
 {
    return *left >= *right;
+}
+
+template<typename Type, typename Alignment>
+struct Aligned_allocator {
+   static_assert(Alignment::value >= alignof(Type));
+
+   using value_type = Type;
+   using is_always_equal = std::true_type;
+
+   Aligned_allocator() noexcept = default;
+
+   template<typename Other>
+   Aligned_allocator(const Aligned_allocator<Other, Alignment>&) noexcept
+   {
+   }
+
+   [[nodiscard]] auto allocate(const std::size_t count) const noexcept -> Type*
+   {
+      auto* const result = _aligned_malloc(sizeof(Type) * count, Alignment::value);
+
+      if (!result) std::terminate();
+
+      return static_cast<Type*>(result);
+   }
+
+   void deallocate(Type* const mem, const std::size_t) const noexcept
+   {
+      _aligned_free(mem);
+   }
+};
+
+template<typename L, typename La, typename R, typename Ra>
+constexpr bool operator==(const Aligned_allocator<L, La>,
+                          const Aligned_allocator<R, Ra>) noexcept
+{
+   return true;
+}
+
+template<typename L, typename La, typename R, typename Ra>
+constexpr bool operator!=(const Aligned_allocator<L, La>,
+                          const Aligned_allocator<R, Ra>) noexcept
+{
+   return false;
+}
+
+template<typename Type, std::size_t alignment>
+using Aligned_allocator_for =
+   Aligned_allocator<Type, std::integral_constant<std::size_t, alignment>>;
+
+template<typename Type, std::size_t alignment>
+using Aligned_vector = std::vector<Type, Aligned_allocator_for<Type, alignment>>;
+
+template<std::size_t alignment, typename From>
+inline auto make_aligned_vector(const From& from) noexcept
+   -> Aligned_vector<typename From::value_type, alignment>
+{
+   return {std::cbegin(from), std::cend(from)};
 }
 
 }

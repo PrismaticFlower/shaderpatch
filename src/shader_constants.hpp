@@ -2,42 +2,6 @@
 
 namespace sp::constants {
 
-// extension ps constants
-namespace ps {
-constexpr auto light_state = 0u;
-constexpr auto fog_enabled = 5u;
-constexpr auto cubemap_projection = 6u;
-
-constexpr auto fog_range = 51u;
-constexpr auto fog_color = 52u;
-
-constexpr auto rt_resolution = 53u;
-constexpr auto time = 54u;
-
-constexpr auto post_processing_start = 60u;
-constexpr auto post_processing_end = 70u;
-
-constexpr auto linear_state = 98u;
-constexpr auto rt_multiply_blending = 99u;
-
-constexpr auto material_constants_start = 128u;
-constexpr auto material_constants_end = 136u;
-}
-
-// extension vs constants
-namespace vs {
-constexpr auto time = 97u;
-constexpr auto linear_state = 98u;
-
-constexpr auto post_processing_start = 110u;
-constexpr auto post_processing_end = 120u;
-
-constexpr auto material_constants_start = 128u;
-constexpr auto material_constants_end = 136u;
-}
-
-// stock vertex shader constants
-namespace stock {
 // constant that is actually constant with the fixed values: (0.0, 0.5, 1.0, -1.0)
 constexpr auto const0 = 0u;
 // constant that is actually constant with the fixed values: (2.0, 0.25,0.5, index_decompress = 765.001)
@@ -114,5 +78,5 @@ constexpr auto custom_end = 50u;
 // array of 3x4 skinning matrices
 constexpr auto bones_start = 51u;
 constexpr auto bones_end = 96u;
-}
+
 }

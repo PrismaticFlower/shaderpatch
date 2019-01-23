@@ -1,28 +1,19 @@
 #pragma once
 
+#include "file_dialogs.hpp"
 #include "com_ptr.hpp"
 #include "throw_if_failed.hpp"
 
 #include <array>
-#include <filesystem>
-#include <initializer_list>
-#include <optional>
-#include <string>
 
 #include <gsl/gsl>
 
-#include <Windows.h>
-#include <shobjidl.h>
-
 namespace sp::win32 {
 
-using Path = std::filesystem::path;
-
 template<typename Dialog_class, const CLSID& clsid, const IID& iid>
-std::optional<Path> file_dialog(std::initializer_list<COMDLG_FILTERSPEC> filters = {},
-                                HWND owner = nullptr,
-                                Path starting_dir = boost::filesystem::current_path(),
-                                const std::wstring& filename = L""s)
+std::optional<Path> file_dialog(std::initializer_list<COMDLG_FILTERSPEC> filters,
+                                HWND owner, Path starting_dir,
+                                const std::wstring& filename)
 {
    Com_ptr<Dialog_class> dialog;
 
@@ -62,19 +53,17 @@ std::optional<Path> file_dialog(std::initializer_list<COMDLG_FILTERSPEC> filters
    return std::make_optional<Path>(name);
 }
 
-std::optional<Path> open_file_dialog(
-   std::initializer_list<COMDLG_FILTERSPEC> filters = {}, HWND owner = nullptr,
-   Path starting_dir = std::filesystem::current_path(),
-   const std::wstring& filename = L""s)
+std::optional<Path> open_file_dialog(std::initializer_list<COMDLG_FILTERSPEC> filters,
+                                     HWND owner, Path starting_dir,
+                                     const std::wstring& filename)
 {
    return file_dialog<IFileOpenDialog, CLSID_FileOpenDialog, IID_IFileOpenDialog>(
       filters, owner, std::move(starting_dir), filename);
 }
 
-std::optional<Path> save_file_dialog(
-   std::initializer_list<COMDLG_FILTERSPEC> filters = {}, HWND owner = nullptr,
-   Path starting_dir = std::filesystem::current_path(),
-   const std::wstring& filename = L""s)
+std::optional<Path> save_file_dialog(std::initializer_list<COMDLG_FILTERSPEC> filters,
+                                     HWND owner, Path starting_dir,
+                                     const std::wstring& filename)
 {
    return file_dialog<IFileSaveDialog, CLSID_FileSaveDialog, IID_IFileSaveDialog>(
       filters, owner, std::move(starting_dir), filename);

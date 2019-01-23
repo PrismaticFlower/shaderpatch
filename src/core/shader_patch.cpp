@@ -30,6 +30,12 @@ auto create_device(IDXGIAdapter2& adapater) noexcept -> Com_ptr<ID3D11Device1>
 {
    Com_ptr<ID3D11Device> device;
 
+   UINT create_flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+   const auto d3d_debug =
+      user_config.developer.force_d3d11_debug_layer || IsDebuggerPresent();
+
+   if (d3d_debug) create_flags |= D3D11_CREATE_DEVICE_DEBUG;
+
    if (const auto result =
           D3D11CreateDevice(&adapater, D3D_DRIVER_TYPE_UNKNOWN, nullptr,
                             D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_DEBUG,
@@ -49,7 +55,7 @@ auto create_device(IDXGIAdapter2& adapater) noexcept -> Com_ptr<ID3D11Device1>
       log_and_terminate("Failed to create Direct3D 11.1 device!");
    }
 
-   if (user_config.developer.force_d3d11_debug_layer || IsDebuggerPresent()) {
+   if (d3d_debug) {
       Com_ptr<ID3D11Debug> debug;
       if (auto result = device->QueryInterface(debug.clear_and_assign());
           SUCCEEDED(result)) {
@@ -554,23 +560,7 @@ auto Shader_patch::create_game_texture_cube(const DirectX::ScratchImage& image) 
 auto Shader_patch::create_patch_texture(const gsl::span<const std::byte> texture_data) noexcept
    -> Patch_texture
 {
-   auto [texture, name] = load_patch_texture(ucfb::Reader{texture_data}, *_device);
-
-   Com_ptr<ID3D11ShaderResourceView> srv;
-   {
-      const auto srv_desc =
-         CD3D11_SHADER_RESOURCE_VIEW_DESC{D3D11_SRV_DIMENSION_TEXTURE2D};
-
-      if (const auto result =
-             _device->CreateShaderResourceView(texture.get(), &srv_desc,
-                                               srv.clear_and_assign());
-          FAILED(result)) {
-         log(Log_level::error, "Failed to create game texture SRV! reason: ",
-             _com_error{result}.ErrorMessage());
-
-         return {};
-      }
-   }
+   auto [srv, name] = load_patch_texture(ucfb::Reader{texture_data}, *_device);
 
    auto shared_srv = make_shared_com_ptr(srv);
 
@@ -977,6 +967,11 @@ void Shader_patch::set_constants(const cb::Scene_tag, const UINT offset,
       _cb_draw_ps_dirty = true;
       _cb_draw_ps.ps_lighting_scale =
          _linear_rendering ? 1.0f : _cb_scene.near_scene_fade.z;
+   }
+
+   if (offset < (offsetof(cb::Scene, vs_view_positionWS) / sizeof(glm::vec4))) {
+      _cb_draw_ps_dirty = true;
+      _cb_draw_ps.ps_view_positionWS = _cb_scene.vs_view_positionWS;
    }
 }
 

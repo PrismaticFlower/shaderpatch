@@ -1,0 +1,126 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{a86bf329-d850-45b4-a174-be0e666f624d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\algorithm.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\com_ptr.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\com_ref.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\compose_exception.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\config_file.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\file_dialogs.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\file_helpers.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\game_rendertypes.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\glm_yaml_adapters.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\magic_number.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\material_flags.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\memory_mapped_file.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\munge_helpers.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\patch_material_io.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\patch_texture_io.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\req_file_helpers.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\shader_flags.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\shader_input_type.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\shader_metadata.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\small_function.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\smart_win32_handle.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\string_utilities.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\synced_io.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\throw_if_failed.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ucfb_reader.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ucfb_tweaker.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ucfb_writer.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\utility.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\volume_resource.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\patch_texture_io.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\patch_material_io.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\memory_mapped_file.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\file_dialogs.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\req_file_helpers.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\config_file.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\file_helpers.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\munge_helpers.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

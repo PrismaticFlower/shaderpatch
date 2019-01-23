@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include <d3d11_1.h>
+#include <dxgiformat.h>
 
 namespace sp {
 

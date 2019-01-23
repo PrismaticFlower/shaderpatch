@@ -55,8 +55,4 @@ inline void for_each_exception_capable(ExecutionPolicy&& policy,
    if (exception_ptr) std::rethrow_exception(exception_ptr);
 }
 
-template<auto size>
-constexpr auto index_array = detail::generate_index_array_impl(
-   std::make_integer_sequence<decltype(size), size>{});
-
 }

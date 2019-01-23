@@ -85,13 +85,6 @@ Device::Device(IDirect3DDevice9& device, const HWND window,
      _fs_vertex_decl{effects::create_fs_triangle_decl(*_device)}
 {
    init_optional_format_types();
-
-   if (_config.rendering.advertise_presence) {
-      _sp_advertise_handle = win32::Unique_handle{
-         CreateFileW(L"data/shaderpatch/installed", GENERIC_READ | GENERIC_WRITE,
-                     FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                     nullptr, OPEN_ALWAYS, FILE_FLAG_DELETE_ON_CLOSE, nullptr)};
-   }
 }
 
 Device::~Device()

@@ -1,6 +1,6 @@
 
-#include "file_helpers.hpp"
 #include "logger.hpp"
+#include "memory_mapped_file.hpp"
 #include "unlock_memory.hpp"
 
 #include <charconv>
@@ -44,7 +44,7 @@ auto get_process_base_address() -> std::byte*
    return reinterpret_cast<std::byte*>(GetModuleHandleW(nullptr));
 }
 
-auto get_sha256(const std::vector<std::byte>& data) noexcept
+auto get_sha256(gsl::span<const std::byte> data) noexcept
    -> std::optional<std::vector<std::byte>>
 {
    BCRYPT_ALG_HANDLE alg_handle;
@@ -113,7 +113,8 @@ auto stringify_hash(const std::vector<std::byte>& hash) -> std::string
 
 auto get_process_exe_sha256() noexcept -> std::optional<std::string>
 {
-   auto hash = get_sha256(load_vector_file(get_process_exe_path()));
+   auto hash =
+      get_sha256(win32::Memeory_mapped_file{get_process_exe_path()}.bytes());
 
    if (!hash) std::nullopt;
 

@@ -8,6 +8,7 @@
 #include <new>
 #include <optional>
 #include <string>
+#include <tuple>
 #include <type_traits>
 
 namespace sp::ucfb {
@@ -105,6 +106,36 @@ public:
    const Type& read_trivial_unaligned()
    {
       return read_trivial<Type>(true);
+   }
+
+   //! \brief Reads a list of trivial value from the chunk.
+   //!
+   //! \tparam Types A list of types of the values to read. The types must be trivially copyable.
+   //!
+   //! \return A tuple of the values.
+   //!
+   //! \exception std::runtime_error Thrown when reading the value would go past the end
+   //! of the chunk.
+   template<typename... Types>
+   auto read_trivial_multi(const std::array<bool, sizeof...(Types)> unaligned = {})
+      -> std::tuple<Types...>
+   {
+      return read_trivial_multi_impl<Types...>(unaligned,
+                                               std::index_sequence_for<Types...>{});
+   }
+
+   //! \brief Reads a list of trivial unaligned value from the chunk.
+   //!
+   //! \tparam Types A list of types of the values to read. The types must be trivially copyable.
+   //!
+   //! \return A tuple of the values.
+   //!
+   //! \exception std::runtime_error Thrown when reading the value would go past the end
+   //! of the chunk.
+   template<typename... Types>
+   auto read_trivial_multi_unaligned() -> std::tuple<Types...>
+   {
+      return read_trivial_multi<Types...>(std::array{(sizeof(Types), true)...});
    }
 
    //! \brief Reads a variable-length array of trivial values from the chunk.
@@ -446,6 +477,14 @@ private:
       }
 
       return child;
+   }
+
+   template<typename... Types, std::size_t... indices>
+   auto read_trivial_multi_impl(const std::array<bool, sizeof...(Types)> unaligned,
+                                std::index_sequence<indices...>)
+      -> std::tuple<Types...>
+   {
+      return {read_trivial<Types>(unaligned[indices])...};
    }
 
    void check_head()

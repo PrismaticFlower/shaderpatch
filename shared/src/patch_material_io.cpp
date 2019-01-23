@@ -1,5 +1,5 @@
-#pragma once
 
+#include "patch_material_io.hpp"
 #include "game_rendertypes.hpp"
 #include "ucfb_reader.hpp"
 #include "ucfb_writer.hpp"
@@ -13,80 +13,75 @@
 #include <string>
 #include <string_view>
 
-#include <glm/glm.hpp>
 #include <gsl/gsl>
 
 namespace sp {
 
+namespace {
 enum class Material_version : std::uint32_t {
    _1_0_0,
    _2_0_0,
    _3_0_0,
-   current = _3_0_0
+   _4_0_0,
+   current = _4_0_0
 };
 
-struct Material_info {
-   std::string name;
-   std::string rendertype;
-   Rendertype overridden_rendertype;
-   std::vector<std::byte> constant_buffer{};
-   std::vector<std::string> textures{};
-   std::int32_t fail_safe_texture_index;
-};
+inline namespace v_4_0_0 {
+auto read_patch_material_impl(ucfb::Reader reader) -> Material_info;
+}
 
-namespace materials {
-inline namespace v_3_0_0 {
-inline auto read_patch_material(ucfb::Reader reader) -> Material_info;
+namespace v_3_0_0 {
+auto read_patch_material_impl(ucfb::Reader reader) -> Material_info;
 }
 
 namespace v_2_0_0 {
-inline auto read_patch_material(ucfb::Reader reader) -> Material_info;
+auto read_patch_material_impl(ucfb::Reader reader) -> Material_info;
 }
 
 namespace v_1_0_0 {
-inline auto read_patch_material(ucfb::Reader reader) -> Material_info;
+auto read_patch_material_impl(ucfb::Reader reader) -> Material_info;
 }
 }
 
-// inline void write_patch_material(const std::filesystem::path& save_path,
-//                                  const Material_info& info)
-// {
-//    using namespace std::literals;
-//    namespace fs = std::filesystem;
-//
-//    std::ostringstream ostream;
-//
-//    // write material chunk
-//    {
-//       ucfb::Writer writer{ostream, "matl"_mn};
-//
-//       writer.emplace_child("VER_"_mn).write(Material_version::current);
-//
-//       writer.emplace_child("NAME"_mn).write(info.name);
-//       writer.emplace_child("RTYP"_mn).write(info.rendertype);
-//       writer.emplace_child("ORTP"_mn).write(info.overridden_rendertype);
-//       writer.emplace_child("CNST"_mn).write(gsl::make_span(info.constants));
-//       writer.emplace_child("TXSM"_mn).write(gsl::make_span(info.texture_size_mappings));
-//       writer.emplace_child("TX04"_mn).write(info.textures[0]);
-//       writer.emplace_child("TX05"_mn).write(info.textures[1]);
-//       writer.emplace_child("TX06"_mn).write(info.textures[2]);
-//       writer.emplace_child("TX07"_mn).write(info.textures[3]);
-//       writer.emplace_child("TX08"_mn).write(info.textures[4]);
-//       writer.emplace_child("TX09"_mn).write(info.textures[5]);
-//       writer.emplace_child("TX10"_mn).write(info.textures[6]);
-//       writer.emplace_child("TX11"_mn).write(info.textures[7]);
-//    }
-//
-//    const auto matl_data = ostream.str();
-//    const auto matl_span =
-//       gsl::span<const std::byte>(reinterpret_cast<const std::byte*>(matl_data.data()),
-//                                  matl_data.size());
-//
-//    save_volume_resource(save_path.string(), save_path.stem().string(),
-//                         Volume_resource_type::material, matl_span);
-// }
+void write_patch_material(const std::filesystem::path& save_path,
+                          const Material_info& info)
+{
+   using namespace std::literals;
+   namespace fs = std::filesystem;
 
-inline auto read_patch_material(ucfb::Reader reader) -> Material_info
+   std::ostringstream ostream;
+
+   // write material chunk
+   {
+      ucfb::Writer writer{ostream, "matl"_mn};
+
+      writer.emplace_child("VER_"_mn).write(Material_version::current);
+
+      writer.emplace_child("NAME"_mn).write(info.name);
+      writer.emplace_child("RTYP"_mn).write(info.rendertype);
+      writer.emplace_child("ORTP"_mn).write(info.overridden_rendertype);
+      writer.emplace_child("CNST"_mn).write(gsl::make_span(info.constant_buffer));
+
+      {
+         auto texs = writer.emplace_child("TEXS"_mn);
+
+         texs.write<std::uint32_t>(info.textures.size());
+         for (const auto& texture : info.textures) texs.write(texture);
+      }
+
+      writer.emplace_child("FSTX"_mn).write(info.fail_safe_texture_index);
+   }
+
+   const auto matl_data = ostream.str();
+   const auto matl_span =
+      gsl::span<const std::byte>(reinterpret_cast<const std::byte*>(matl_data.data()),
+                                 matl_data.size());
+
+   save_volume_resource(save_path.string(), save_path.stem().string(),
+                        Volume_resource_type::material, matl_span);
+}
+
+auto read_patch_material(ucfb::Reader reader) -> Material_info
 {
    const auto version =
       reader.read_child_strict<"VER_"_mn>().read_trivial<Material_version>();
@@ -95,20 +90,21 @@ inline auto read_patch_material(ucfb::Reader reader) -> Material_info
 
    switch (version) {
    case Material_version::current:
-      return materials::read_patch_material(reader);
+      return read_patch_material_impl(reader);
+   case Material_version::_3_0_0:
+      return v_3_0_0::read_patch_material_impl(reader);
    case Material_version::_2_0_0:
-      return materials::v_2_0_0::read_patch_material(reader);
+      return v_2_0_0::read_patch_material_impl(reader);
    case Material_version::_1_0_0:
-      return materials::v_1_0_0::read_patch_material(reader);
+      return v_1_0_0::read_patch_material_impl(reader);
    default:
       throw std::runtime_error{"material has unknown version"};
    }
 }
 
-namespace materials {
-
+namespace {
 namespace legacy {
-inline void trim_textures(std::vector<std::string>& textures) noexcept
+void trim_textures(std::vector<std::string>& textures) noexcept
 {
    for (auto i = static_cast<gsl::index>(textures.size()) - 1; i >= 0; --i) {
       if (!textures[i].empty()) break;
@@ -117,8 +113,7 @@ inline void trim_textures(std::vector<std::string>& textures) noexcept
    }
 }
 
-inline auto fail_safe_texture_index(const std::string_view rendertype) noexcept
-   -> std::int32_t
+auto fail_safe_texture_index(const std::string_view rendertype) noexcept -> std::int32_t
 {
    using namespace std::literals;
 
@@ -134,8 +129,47 @@ inline auto fail_safe_texture_index(const std::string_view rendertype) noexcept
 }
 }
 
+namespace v_4_0_0 {
+auto read_patch_material_impl(ucfb::Reader reader) -> Material_info
+{
+   Material_info info{};
+
+   const auto version =
+      reader.read_child_strict<"VER_"_mn>().read_trivial<Material_version>();
+
+   Ensures(version == Material_version::_4_0_0);
+
+   info.name = reader.read_child_strict<"NAME"_mn>().read_string();
+   info.rendertype = reader.read_child_strict<"RTYP"_mn>().read_string();
+   info.overridden_rendertype =
+      reader.read_child_strict<"ORTP"_mn>().read_trivial<Rendertype>();
+
+   {
+      auto cnst = reader.read_child_strict<"CNST"_mn>();
+      const auto constants = cnst.read_array<std::byte>(cnst.size());
+
+      info.constant_buffer.assign(constants.cbegin(), constants.cend());
+   }
+
+   {
+      auto texs = reader.read_child_strict<"TEXS"_mn>();
+
+      const auto count = texs.read_trivial<std::uint32_t>();
+      info.textures.reserve(count);
+
+      for (auto i = 0; i < count; ++i)
+         info.textures.emplace_back(texs.read_string());
+   }
+
+   info.fail_safe_texture_index =
+      reader.read_child_strict<"FSTX"_mn>().read_trivial<std::uint32_t>();
+
+   return info;
+}
+}
+
 namespace v_3_0_0 {
-inline auto read_patch_material(ucfb::Reader reader) -> Material_info
+auto read_patch_material_impl(ucfb::Reader reader) -> Material_info
 {
    Material_info info{};
 
@@ -149,10 +183,9 @@ inline auto read_patch_material(ucfb::Reader reader) -> Material_info
    info.overridden_rendertype =
       reader.read_child_strict<"ORTP"_mn>().read_trivial<Rendertype>();
 
-   const auto constants_span =
-      reader.read_child_strict<"CNST"_mn>().read_array<std::byte>(
-         sizeof(std::array<float, 32>));
-   info.constant_buffer.assign(constants_span.cbegin(), constants_span.cend());
+   const auto constants = reader.read_child_strict<"CNST"_mn>().read_array<std::byte>(
+      sizeof(std::array<float, 32>));
+   info.constant_buffer = make_aligned_vector<16>(constants);
 
    // Discard Texture Size Mappings
    reader.read_child_strict<"TXSM"_mn>().read_trivial<std::array<std::int32_t, 8>>();
@@ -175,7 +208,7 @@ inline auto read_patch_material(ucfb::Reader reader) -> Material_info
 }
 
 namespace v_2_0_0 {
-inline auto read_patch_material(ucfb::Reader reader) -> Material_info
+auto read_patch_material_impl(ucfb::Reader reader) -> Material_info
 {
    Material_info info{};
 
@@ -215,7 +248,7 @@ inline auto read_patch_material(ucfb::Reader reader) -> Material_info
 }
 
 namespace v_1_0_0 {
-inline auto read_patch_material(ucfb::Reader reader) -> Material_info
+auto read_patch_material_impl(ucfb::Reader reader) -> Material_info
 {
    Material_info info{};
 
@@ -250,5 +283,6 @@ inline auto read_patch_material(ucfb::Reader reader) -> Material_info
    return info;
 }
 }
+
 }
 }
