@@ -3,16 +3,22 @@
 #include "process_image.hpp"
 #include "compose_exception.hpp"
 #include "format_helpers.hpp"
+#include "image_span.hpp"
+#include "ispc_texcomp/ispc_texcomp.h"
 #include "string_utilities.hpp"
+#include "texture_type.hpp"
+#include "utility.hpp"
 
 #include <cstring>
+#include <execution>
 #include <filesystem>
+#include <functional>
 #include <iomanip>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string_view>
 
-#include <Compressonator.h>
 #include <DirectXTex.h>
 #include <comdef.h>
 #include <glm/glm.hpp>
@@ -28,7 +34,6 @@ namespace fs = std::filesystem;
 namespace DX = DirectX;
 
 namespace {
-constexpr auto min_resolution = 4u;
 
 constexpr bool is_power_of_2(glm::uint i)
 {
@@ -53,20 +58,11 @@ constexpr glm::uint round_next_power_of_2(glm::uint i)
    return i;
 }
 
-constexpr glm::uint round_next_multiple_of_4(glm::uint i)
+auto get_mip_count(const glm::uvec3 resolution) noexcept
 {
-   const auto remainder = i % 4;
+   const auto counts = glm::log2(resolution) + 1u;
 
-   if (remainder != 0) return i + (4 - remainder);
-
-   return i;
-}
-
-auto get_mip_count(const glm::uvec2 resolution) noexcept
-{
-   const auto counts = glm::log2(resolution);
-
-   return glm::max(counts.x, counts.y);
+   return std::max({counts.x, counts.y, counts.z});
 }
 
 auto load_image(const fs::path& image_file_path, bool srgb) -> DirectX::ScratchImage
@@ -93,7 +89,7 @@ auto load_image(const fs::path& image_file_path, bool srgb) -> DirectX::ScratchI
    }
 
    if (FAILED(result)) {
-      throw compose_exception<std::runtime_error>("failed to load texture file reason: "sv,
+      throw compose_exception<std::runtime_error>("failed to load image file reason: "sv,
                                                   _com_error{result}.ErrorMessage());
    }
 
@@ -102,40 +98,140 @@ auto load_image(const fs::path& image_file_path, bool srgb) -> DirectX::ScratchI
    return image;
 }
 
-auto remap_roughness_channels(DX::ScratchImage image) -> DirectX::ScratchImage
+auto load_paired_image(fs::path relative_path, const YAML::Node& config)
+   -> std::optional<DirectX::ScratchImage>
 {
-   DX::ScratchImage swapped_image;
+   if (!config["PairedImage"s]) return std::nullopt;
 
-   const auto result = TransformImage(
-      image.GetImages(), image.GetImageCount(), image.GetMetadata(),
-      [](DX::XMVECTOR* out, const DX::XMVECTOR* in, std::size_t width, std::size_t) {
-         for (size_t i = 0; i < width; ++i) {
-            auto remapped = DX::XMVectorSetByIndex(in[i], 0.0f, DX::XM_SWIZZLE_W);
+   const auto file_name = config["PairedImage"s].as<std::string>();
 
-            out[i] = DX::XMVectorSwizzle<DX::XM_SWIZZLE_W, DX::XM_SWIZZLE_X,
-                                         DX::XM_SWIZZLE_W, DX::XM_SWIZZLE_W>(remapped);
-         }
-      },
-      swapped_image);
+   return load_image(relative_path / file_name, false);
+}
 
-   if (FAILED(result)) {
-      throw std::runtime_error{"Failed to remap colour channels for input roughness map!"s};
+auto change_image_format(DX::ScratchImage image, const DXGI_FORMAT new_format)
+   -> DX::ScratchImage
+{
+   DX::ScratchImage converted_image;
+
+   if (const auto result =
+          DX::Convert(image.GetImages(), image.GetImageCount(), image.GetMetadata(),
+                      new_format, DX::TEX_FILTER_FORCE_NON_WIC | DX::TEX_FILTER_DEFAULT,
+                      DX::TEX_THRESHOLD_DEFAULT, converted_image);
+       FAILED(result)) {
    }
 
-   return swapped_image;
+   return converted_image;
+}
+
+auto remap_roughness_channels(DX::ScratchImage image) -> DirectX::ScratchImage
+{
+   const auto process_image = [&](Image_span dest_image) noexcept
+   {
+      for_each(
+         std::execution::par_unseq, dest_image, [&](const glm::ivec2 index) noexcept {
+            auto value = dest_image.load(index);
+
+            value = {0.0f, value.r, 0.0f, 0.0f};
+
+            dest_image.store(index, value);
+         });
+   };
+
+   for (auto index = 0; index < image.GetMetadata().arraySize; ++index) {
+      for (auto mip = 0; mip < image.GetMetadata().mipLevels; ++mip) {
+         for (auto slice = 0; slice < image.GetMetadata().depth; ++slice) {
+            process_image(*image.GetImage(mip, index, slice));
+         }
+      }
+   }
+
+   return image;
+}
+
+auto specular_anti_alias(DX::ScratchImage source_image, DX::ScratchImage normal_map)
+   -> DX::ScratchImage
+{
+   Expects(source_image.GetMetadata().dimension != DX::TEX_DIMENSION_TEXTURE3D);
+   Expects(normal_map.GetMetadata().dimension == DX::TEX_DIMENSION_TEXTURE2D);
+
+   const glm::uvec2 normal_map_size{normal_map.GetMetadata().width,
+                                    normal_map.GetMetadata().height};
+
+   const auto sample_average_normal = [normal_map_span =
+                                          Image_span{*normal_map.GetImage(0, 0, 0)}](
+      const glm::ivec2 position, const glm::ivec2 radius) noexcept
+   {
+      glm::vec3 normal{};
+
+      const auto offset = position * radius;
+
+      for (auto y = 0; y < radius.y; ++y) {
+         for (auto x = 0; x < radius.x; ++x) {
+            normal += glm::normalize(
+               normal_map_span.load({offset + glm::ivec2{x, y}}).xyz * 2.0f - 1.0f);
+         }
+      }
+
+      return normal / static_cast<float>(radius.x * radius.y);
+   };
+
+   const auto process_mip = [&](const std::size_t index, const std::size_t mip) noexcept
+   {
+      auto dest_image = Image_span{*source_image.GetImage(mip, index, 0)};
+
+      const auto radius = normal_map_size / glm::uvec2{dest_image.size()};
+
+      if (!glm::any(glm::greaterThan(radius, glm::uvec2{1}))) return;
+
+      for_each(
+         std::execution::par_unseq, dest_image, [&](const glm::ivec2 index) noexcept {
+            glm::vec3 average_normal = sample_average_normal(index, radius);
+
+            const float r = length(average_normal);
+            float k = 10000.0f;
+
+            if (r < 1.f) k = (3.f * r - r * r * r) / (1.f - r * r);
+
+            auto value = dest_image.load(index);
+
+            value.g = glm::sqrt(value.g * value.g + (1.f / k));
+
+            dest_image.store(index, value);
+         });
+   };
+
+   for (auto index = 0; index < source_image.GetMetadata().arraySize; ++index) {
+      for (auto mip = 0; mip < source_image.GetMetadata().mipLevels; ++mip) {
+         process_mip(index, mip);
+      }
+   }
+
+   return source_image;
 }
 
 auto premultiply_alpha(DX::ScratchImage image) -> DX::ScratchImage
 {
-   DX::ScratchImage converted_image;
+   const auto process_image = [&](Image_span dest_image) noexcept
+   {
+      for_each(
+         std::execution::par_unseq, dest_image, [&](const glm::ivec2 index) noexcept {
+            auto value = dest_image.load(index);
 
-   if (DX::PremultiplyAlpha(image.GetImages(), image.GetImageCount(),
-                            image.GetMetadata(), DX::TEX_FILTER_DEFAULT,
-                            converted_image)) {
-      throw std::runtime_error{"Failed to premultiply alpha."s};
+            value.rgb = value.rgb * value.a;
+
+            dest_image.store(index, value);
+         });
+   };
+
+   for (auto index = 0; index < image.GetMetadata().arraySize; ++index) {
+      for (auto mip = 0; mip < image.GetMetadata().mipLevels; ++mip) {
+         for (auto slice = 0; slice < image.GetMetadata().depth; ++slice) {
+            process_image(*image.GetImage(mip, index, slice));
+         }
+      }
    }
 
-   return converted_image;
+   return image;
 }
 
 auto make_image_power_of_2(DX::ScratchImage image) -> DX::ScratchImage
@@ -165,9 +261,9 @@ auto make_image_mutliple_of_4(DX::ScratchImage image) -> DX::ScratchImage
    if (!is_multiple_of_4(image_res.x) || !is_multiple_of_4(image_res.y)) {
       DX::ScratchImage resized_image;
 
-      if (FAILED(DX::Resize(image.GetImages(), image.GetImageCount(), image.GetMetadata(),
-                            round_next_multiple_of_4(image_res.x),
-                            round_next_multiple_of_4(image_res.y),
+      if (FAILED(DX::Resize(image.GetImages(), image.GetImageCount(),
+                            image.GetMetadata(), next_multiple_of<4>(image_res.x),
+                            next_multiple_of<4>(image_res.y),
                             DX::TEX_FILTER_CUBIC, resized_image))) {
          throw std::runtime_error{
             "Failed to resize non-mutliple of 4 texture for compression"s};
@@ -183,72 +279,207 @@ auto mipmap_image(DX::ScratchImage image) -> DX::ScratchImage
 {
    DX::ScratchImage mipped_image;
 
-   const glm::uvec2 image_res{image.GetMetadata().width, image.GetMetadata().height};
-
-   if (FAILED(DX::GenerateMipMaps(image.GetImages(), image.GetImageCount(),
-                                  image.GetMetadata(), DX::TEX_FILTER_CUBIC,
-                                  get_mip_count(image_res), mipped_image))) {
-      throw std::runtime_error{"Unable to generate mip maps texture file."s};
+   if (image.GetMetadata().dimension == DX::TEX_DIMENSION_TEXTURE3D) {
+      if (FAILED(DX::GenerateMipMaps3D(image.GetImages(), image.GetImageCount(),
+                                       image.GetMetadata(),
+                                       DX::TEX_FILTER_BOX | DX::TEX_FILTER_FORCE_NON_WIC,
+                                       0, mipped_image))) {
+         throw std::runtime_error{"Unable to generate mip maps"s};
+      }
+   }
+   else if (FAILED(DX::GenerateMipMaps(image.GetImages(), image.GetImageCount(),
+                                       image.GetMetadata(),
+                                       DX::TEX_FILTER_BOX | DX::TEX_FILTER_FORCE_NON_WIC,
+                                       0, mipped_image))) {
+      throw std::runtime_error{"Unable to generate mip maps"s};
    }
 
    return mipped_image;
 }
 
-auto compress_image(const DX::ScratchImage& image, const YAML::Node& config)
-   -> DX::ScratchImage
+auto mipmap_normalmap(DX::ScratchImage image) noexcept
 {
-   CMP_CompressOptions compress_options{sizeof(CMP_CompressOptions)};
+   Expects(image.GetMetadata().dimension != DX::TEX_DIMENSION_TEXTURE3D);
 
-   compress_options.bUseChannelWeighting = true;
-   compress_options.fWeightingRed = 0.3086;
-   compress_options.fWeightingGreen = 0.6094;
-   compress_options.fWeightingBlue = 0.0820;
-   compress_options.bUseAdaptiveWeighting = true;
-   compress_options.bDXT1UseAlpha = true;
-   compress_options.bUseGPUDecompress = false;
-   compress_options.bUseGPUCompress = false;
-   compress_options.nAlphaThreshold = 0x7f;
-   compress_options.nCompressionSpeed = CMP_Speed_Normal;
-   compress_options.dwnumThreads = std::max(std::thread::hardware_concurrency(), 128u);
-   compress_options.fquality = 0.8;
+   auto metadata = image.GetMetadata();
+   metadata.mipLevels = get_mip_count({metadata.width, metadata.height, 1});
+   DX::ScratchImage mipped_image;
+   mipped_image.Initialize(metadata);
 
-   const auto [target_format, dxgi_target_format] =
+   const auto copy_and_normalize_image = [&](const UINT index, const UINT mip) noexcept
+   {
+      const auto src_image = Image_span{*image.GetImage(mip, index, 0)};
+      auto dest_image = Image_span{*mipped_image.GetImage(mip, index, 0)};
+
+      for_each(std::execution::par_unseq, src_image, [&](const glm::ivec2 index) {
+         const auto value = src_image.load(index);
+         const auto normal = glm::normalize(value.xyz * 2.0f - 1.0f);
+
+         dest_image.store(index, {normal * 0.5f + 0.5f, value.w});
+      });
+   };
+
+   for (auto index = 0; index < image.GetMetadata().arraySize; ++index) {
+      // Copy top level mip.
+      copy_and_normalize_image(index, 0);
+
+      for (auto mip = 1; mip < mipped_image.GetMetadata().mipLevels; ++mip) {
+         const auto sample_average_normal = [upper_image =
+                                                Image_span{
+                                                   *mipped_image.GetImage(mip - 1, index,
+                                                                          0)}](
+                                               const glm::ivec2 offset) noexcept->glm::vec4
+         {
+            glm::vec3 normal{};
+            float alpha = 0.0f;
+
+            for (auto y = 0; y < 2; ++y) {
+               for (auto x = 0; x < 2; ++x) {
+                  const auto index = offset + glm::ivec2{x, y};
+                  const auto value = upper_image.load(index);
+
+                  normal += glm::normalize(value.xyz * 2.0f - 1.0f);
+                  alpha = alpha + (value.w / 4.0f);
+               }
+            }
+
+            return {glm::normalize(normal) * 0.5f + 0.5f, alpha};
+         };
+
+         auto dest_image = Image_span{*mipped_image.GetImage(mip, index, 0)};
+
+         for_each(std::execution::par_unseq, dest_image, [&](const glm::ivec2 index) {
+            dest_image.store(index, sample_average_normal(index * 2));
+         });
+      }
+   }
+
+   return mipped_image;
+}
+
+auto compress_image(DX::ScratchImage image, const YAML::Node& config) -> DX::ScratchImage
+{
+   Expects(is_multiple_of_4(image.GetMetadata().width) &&
+           is_multiple_of_4(image.GetMetadata().height) &&
+           (is_multiple_of_4(image.GetMetadata().depth) ||
+            image.GetMetadata().depth == 1));
+
+   const auto src_format = image.GetMetadata().format;
+
+   if (DX::IsCompressed(src_format) || DX::IsPlanar(src_format)) return image;
+
+   const auto [target_format, target_format_dxgi] =
       read_config_format(config["CompressionFormat"s].as<std::string>("BC7"s));
-   const auto source_format = dxgi_format_to_cmp_format(image.GetMetadata().format);
+
+   // Make sure the image format is what the ISPC kernel expects.
+   // It'd be nicer to have a better solution for this.
+   if (target_format == Compression_format::BC6H_UF16 &&
+       src_format != DXGI_FORMAT_R16G16B16A16_FLOAT) {
+      image = change_image_format(std::move(image), DXGI_FORMAT_R16G16B16A16_FLOAT);
+   }
+   else if (make_non_srgb(src_format) != DXGI_FORMAT_R8G8B8A8_UNORM) {
+      image = change_image_format(std::move(image), is_srgb(src_format)
+                                                       ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB
+                                                       : DXGI_FORMAT_R8G8B8A8_UNORM);
+   }
 
    auto dest_metadata = image.GetMetadata();
-   dest_metadata.format = dxgi_target_format;
-   DirectX::ScratchImage dest_image;
+   dest_metadata.format = target_format_dxgi;
+   DX::ScratchImage dest_image;
    dest_image.Initialize(dest_metadata);
+
+   std::function<void(rgba_surface surface, std::uint8_t* const dest)> compressor;
+
+   if (target_format == Compression_format::BC3) {
+      compressor = [](const rgba_surface surface, std::uint8_t* const dest) {
+         CompressBlocksBC3(&surface, dest);
+      };
+   }
+   else if (target_format == Compression_format::BC4) {
+      compressor = [](const rgba_surface surface, std::uint8_t* const dest) {
+         CompressBlocksBC4(&surface, dest);
+      };
+   }
+   else if (target_format == Compression_format::BC5) {
+      compressor = [](const rgba_surface surface, std::uint8_t* const dest) {
+         CompressBlocksBC5(&surface, dest);
+      };
+   }
+   else if (target_format == Compression_format::BC6H_UF16) {
+      compressor = [](const rgba_surface surface, std::uint8_t* const dest) {
+         bc6h_enc_settings settings;
+         GetProfile_bc6h_slow(&settings);
+
+         CompressBlocksBC6H(&surface, dest, &settings);
+      };
+   }
+   else if (target_format == Compression_format::BC7) {
+      compressor = [](const rgba_surface surface, std::uint8_t* const dest) {
+         bc7_enc_settings settings;
+         GetProfile_slow(&settings);
+
+         CompressBlocksBC7(&surface, dest, &settings);
+      };
+   }
+   else if (target_format == Compression_format::BC7_ALPHA) {
+      compressor = [](const rgba_surface surface, std::uint8_t* const dest) {
+         bc7_enc_settings settings;
+         GetProfile_alpha_slow(&settings);
+
+         CompressBlocksBC7(&surface, dest, &settings);
+      };
+   }
 
    for (auto i = 0; i < dest_image.GetImageCount(); ++i) {
       const auto& src_sub_image = image.GetImages()[i];
       auto& dest_sub_image = dest_image.GetImages()[i];
 
-      CMP_Texture source_texture{sizeof(CMP_Texture)};
-      source_texture.dwWidth = src_sub_image.width;
-      source_texture.dwHeight = src_sub_image.height;
-      source_texture.dwPitch = src_sub_image.rowPitch;
-      source_texture.format = source_format;
-      source_texture.nBlockHeight = 4;
-      source_texture.nBlockWidth = 4;
-      source_texture.nBlockDepth = 1;
-      source_texture.dwDataSize = src_sub_image.slicePitch;
-      source_texture.pData = src_sub_image.pixels;
+      const auto work_count = dest_sub_image.height / 4;
 
-      CMP_Texture dest_texture{sizeof(CMP_Texture)};
-      dest_texture.dwWidth = dest_sub_image.width;
-      dest_texture.dwHeight = dest_sub_image.height;
-      dest_texture.dwPitch = dest_sub_image.rowPitch;
-      dest_texture.format = target_format;
-      dest_texture.nBlockHeight = 4;
-      dest_texture.nBlockWidth = 4;
-      dest_texture.nBlockDepth = 1;
-      dest_texture.dwDataSize = dest_sub_image.slicePitch;
-      dest_texture.pData = dest_sub_image.pixels;
+      if (work_count) {
+         std::for_each_n(std::execution::par, Index_iterator{}, work_count, [&](int index) {
+            rgba_surface surface;
+            surface.ptr = src_sub_image.pixels + (index * 4 * src_sub_image.rowPitch);
+            surface.width = src_sub_image.width;
+            surface.height = 4;
+            surface.stride = src_sub_image.rowPitch;
 
-      CMP_ConvertTexture(&source_texture, &dest_texture, &compress_options,
-                         nullptr, 0, 0);
+            auto* const dest =
+               dest_sub_image.pixels + (index * dest_sub_image.rowPitch);
+
+            compressor(surface, dest);
+         });
+      }
+      else {
+         const Image_span src_span{{src_sub_image.width, src_sub_image.height},
+                                   src_sub_image.rowPitch,
+                                   reinterpret_cast<std::byte*>(src_sub_image.pixels),
+                                   src_sub_image.format};
+
+         alignas(16) std::array<std::uint8_t, 64> storage;
+         Image_span padded_span{{4, 4},
+                                16,
+                                reinterpret_cast<std::byte*>(storage.data()),
+                                src_sub_image.format};
+
+         for (auto y = 0; y < padded_span.size().y; ++y) {
+            for (auto x = 0; x < padded_span.size().x; ++x) {
+               padded_span.store({x, y}, src_span.load({x, y}));
+            }
+         }
+
+         rgba_surface surface;
+         surface.ptr = storage.data();
+         surface.width = 4;
+         surface.height = 4;
+         surface.stride = 16;
+
+         compressor(surface, dest_sub_image.pixels);
+      }
+   }
+
+   if (config["sRGB"s].as<bool>(true)) {
+      dest_image.OverrideFormat(DX::MakeSRGB(target_format_dxgi));
    }
 
    return dest_image;
@@ -256,14 +487,19 @@ auto compress_image(const DX::ScratchImage& image, const YAML::Node& config)
 
 }
 
-auto process_image(const YAML::Node& config, std::filesystem::path image_file_path)
-   -> DX::ScratchImage
+auto process_image(const YAML::Node& config,
+                   const std::filesystem::path& image_file_path) -> DX::ScratchImage
 {
    Expects(fs::exists(image_file_path) && fs::is_regular_file(image_file_path));
 
    auto image = load_image(image_file_path, config["sRGB"s].as<bool>(true));
+   const auto type = texture_type_from_string(config["Type"s].as<std::string>());
 
-   if (config["Type"s].as<std::string>() == "roughness"sv) {
+   if (type == Texture_type::passthrough) return image;
+
+   auto paired_image = load_paired_image(image_file_path.parent_path(), config);
+
+   if (type == Texture_type::roughness) {
       image = remap_roughness_channels(std::move(image));
    }
 
@@ -281,13 +517,30 @@ auto process_image(const YAML::Node& config, std::filesystem::path image_file_pa
    }
 
    if (!config["NoMips"s].as<bool>(false)) {
-      image = mipmap_image(std::move(image));
+      if (type == Texture_type::normal_map)
+         image = mipmap_normalmap(std::move(image));
+      else
+         image = mipmap_image(std::move(image));
+   }
+
+   if (type == Texture_type::roughness || type == Texture_type::metellic_roughness) {
+      if (paired_image) {
+         image = specular_anti_alias(std::move(image), std::move(*paired_image));
+      }
+      else {
+         synced_print(
+            "Image ", image_file_path,
+            " is intended for use as a roughness map without "
+            "a paired normal map reference, specular AA can not be "
+            "applied without it. If this is intentional then ignore this.");
+      }
    }
 
    if (!config["Uncompressed"s].as<bool>(false)) {
-      image = compress_image(image, config);
+      image = compress_image(std::move(image), config);
    }
 
    return image;
 }
+
 }

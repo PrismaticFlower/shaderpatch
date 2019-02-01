@@ -16,6 +16,6 @@
 
 namespace sp {
 
-auto process_image(const YAML::Node& config, std::filesystem::path image_file_path)
+auto process_image(const YAML::Node& config, const std::filesystem::path& image_file_path)
    -> DirectX::ScratchImage;
 }

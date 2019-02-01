@@ -1,37 +1,65 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="src">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="src\main.cpp">
+    <ClCompile Include="src\DirectXTexEXR.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\process_image.cpp">
+    <ClCompile Include="src\main.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\munge_texture.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\DirectXTexEXR.cpp">
+    <ClCompile Include="src\process_image.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ispc_texcomp\ispc_texcomp.cpp">
+      <Filter>src\ispc_texcomp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\image_span.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\format_helpers.hpp">
+    <ClInclude Include="src\DirectXTexEXR.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\process_image.hpp">
+    <ClInclude Include="src\format_helpers.hpp">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\munge_texture.hpp">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\DirectXTexEXR.h">
+    <ClInclude Include="src\process_image.hpp">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="src\ispc_texcomp\ispc_texcomp.h">
+      <Filter>src\ispc_texcomp</Filter>
+    </ClInclude>
+    <ClInclude Include="src\texture_type.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\image_span.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="ispc.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ispc.targets" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{ece917c4-9047-4a69-bd3b-7edbdaa5ba24}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\ispc_texcomp">
+      <UniqueIdentifier>{bb1062c5-ac20-4140-b17f-4b266da37935}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ISPC Include="src\ispc_texcomp\kernel.ispc">
+      <Filter>src\ispc_texcomp</Filter>
+    </ISPC>
   </ItemGroup>
 </Project>

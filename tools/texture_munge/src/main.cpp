@@ -9,7 +9,7 @@
 #include <string>
 #include <string_view>
 
-#include <Compressonator.h>
+// #include <Compressonator.h>
 #include <Windows.h>
 #include <clara.hpp>
 
@@ -21,7 +21,7 @@ namespace fs = std::filesystem;
 int main(int arg_count, char* args[])
 {
    CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-   CMP_InitializeBCLibrary();
+   // CMP_InitializeBCLibrary();
 
    using namespace clara;
 
