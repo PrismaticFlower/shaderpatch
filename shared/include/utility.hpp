@@ -97,6 +97,23 @@ inline auto make_vector(const From& from) noexcept
    return {std::cbegin(from), std::cend(from)};
 }
 
+template<auto multiple>
+constexpr auto next_multiple_of(const decltype(multiple) value) noexcept
+   -> decltype(multiple)
+{
+   const auto remainder = value % multiple;
+
+   if (remainder != 0) return value + (multiple - remainder);
+
+   return value;
+}
+
+template<auto multiple>
+constexpr bool is_multiple_of(const decltype(multiple) value) noexcept
+{
+   return (value % multiple) == 0;
+}
+
 struct Index_iterator {
    using difference_type = std::ptrdiff_t;
    using value_type = const difference_type;
