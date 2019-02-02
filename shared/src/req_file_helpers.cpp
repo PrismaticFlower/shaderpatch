@@ -81,9 +81,7 @@ auto parse_req_file(const std::filesystem::path& filepath, std::string_view plat
 
       section >> section_type >> std::ws;
 
-      if (section_type.empty()) {
-         throw std::runtime_error{"Unexpected empty REQN section."s};
-      }
+      if (section_type.empty()) continue;
 
       if (auto unquoted = sectioned_split_split(section_type, "\""sv, "\""sv); unquoted) {
          section_type = (*unquoted)[0];
