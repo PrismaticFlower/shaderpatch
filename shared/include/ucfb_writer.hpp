@@ -1,5 +1,7 @@
 #pragma once
 
+#include "small_function.hpp"
+
 #include <cstdint>
 #include <fstream>
 #include <ostream>
@@ -21,9 +23,15 @@ class Writer_child : public Writer_type {
 
 public:
    Writer_child(Last_act last_act, std::ostream& output_stream, const Magic_number mn)
-      : Writer_type{output_stream, mn}, _last_act{last_act}
+      : Writer_type{output_stream, mn}, _last_act{std::move(last_act)}
    {
    }
+
+   Writer_child(const Writer_child&) = delete;
+   Writer_child& operator=(const Writer_child&) = delete;
+
+   Writer_child(Writer_child&&) = delete;
+   Writer_child& operator=(Writer_child&&) = delete;
 
    ~Writer_child()
    {
@@ -63,18 +71,25 @@ public:
 
    Writer() = delete;
 
+   Writer(const Writer&) = delete;
    Writer& operator=(const Writer&) = delete;
+
+   Writer(Writer&&) = delete;
    Writer& operator=(Writer&&) = delete;
 
    auto emplace_child(const Magic_number mn)
+      -> Writer_child<Small_function<void(std::int64_t) noexcept>, Writer>
    {
-      const auto last_act = [this](auto child_size) { _size += child_size; };
+      const auto last_act = [this](auto child_size) noexcept
+      {
+         _size += child_size;
+      };
 
       align_file();
 
       _size += 8;
 
-      return Writer_child<decltype(last_act), Writer>{last_act, _out, mn};
+      return {last_act, _out, mn};
    }
 
    template<typename Type>
@@ -132,9 +147,6 @@ private:
    friend class Writer_child;
 
    constexpr static std::uint32_t size_place_hold = 0;
-
-   Writer(const Writer&) = default;
-   Writer(Writer&&) = default;
 
    void align_file() noexcept
    {

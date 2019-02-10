@@ -20,15 +20,15 @@ namespace {
 auto read_input_layout(ucfb::Reader_strict<"IALO"_mn> reader)
    -> std::vector<Shader_input_element>
 {
-   const auto elem_count = reader.read_trivial<std::uint32_t>();
+   const auto elem_count = reader.read<std::uint32_t>();
 
    std::vector<Shader_input_element> layout;
    layout.resize(elem_count);
 
    for (auto& elem : layout) {
       elem.semantic_name = reader.read_string().data();
-      elem.semantic_index = reader.read_trivial<std::uint32_t>();
-      elem.input_type = reader.read_trivial<Shader_input_type>();
+      elem.semantic_index = reader.read<std::uint32_t>();
+      elem.input_type = reader.read<Shader_input_type>();
    }
 
    return layout;
@@ -37,8 +37,7 @@ auto read_input_layout(ucfb::Reader_strict<"IALO"_mn> reader)
 void read_entrypoints(ucfb::Reader_strict<"CSHD"_mn> reader,
                       ID3D11Device& device, Shader_group& group)
 {
-   const auto count =
-      reader.read_child_strict<"SIZE"_mn>().read_trivial<std::uint32_t>();
+   const auto count = reader.read_child_strict<"SIZE"_mn>().read<std::uint32_t>();
 
    for (auto ep_index = 0u; ep_index < count; ++ep_index) {
       auto ep_reader = reader.read_child_strict<"EP__"_mn>();
@@ -47,15 +46,15 @@ void read_entrypoints(ucfb::Reader_strict<"CSHD"_mn> reader,
       auto vrs_reader = ep_reader.read_child_strict<"VRS_"_mn>();
 
       const auto variation_count =
-         vrs_reader.read_child_strict<"SIZE"_mn>().read_trivial<std::uint32_t>();
+         vrs_reader.read_child_strict<"SIZE"_mn>().read<std::uint32_t>();
 
       Compute_shader_entrypoint entrypoint;
 
       for (auto vari_index = 0u; vari_index < variation_count; ++vari_index) {
          auto vari_reader = vrs_reader.read_child_strict<"VARI"_mn>();
 
-         const auto static_flags = vari_reader.read_trivial<std::uint32_t>();
-         const auto bytecode_size = vari_reader.read_trivial<std::uint32_t>();
+         const auto static_flags = vari_reader.read<std::uint32_t>();
+         const auto bytecode_size = vari_reader.read<std::uint32_t>();
          const auto bytecode = vari_reader.read_array<std::byte>(bytecode_size);
 
          Com_ptr<ID3D11ComputeShader> shader;
@@ -74,8 +73,7 @@ void read_entrypoints(ucfb::Reader_strict<"CSHD"_mn> reader,
 void read_entrypoints(ucfb::Reader_strict<"VSHD"_mn> reader,
                       ID3D11Device& device, Shader_group& group)
 {
-   const auto count =
-      reader.read_child_strict<"SIZE"_mn>().read_trivial<std::uint32_t>();
+   const auto count = reader.read_child_strict<"SIZE"_mn>().read<std::uint32_t>();
 
    for (auto ep_index = 0u; ep_index < count; ++ep_index) {
       auto ep_reader = reader.read_child_strict<"EP__"_mn>();
@@ -84,16 +82,16 @@ void read_entrypoints(ucfb::Reader_strict<"VSHD"_mn> reader,
       auto vrs_reader = ep_reader.read_child_strict<"VRS_"_mn>();
 
       const auto variation_count =
-         vrs_reader.read_child_strict<"SIZE"_mn>().read_trivial<std::uint32_t>();
+         vrs_reader.read_child_strict<"SIZE"_mn>().read<std::uint32_t>();
 
       Vertex_shader_entrypoint entrypoint;
 
       for (auto vari_index = 0u; vari_index < variation_count; ++vari_index) {
          auto vari_reader = vrs_reader.read_child_strict<"VARI"_mn>();
 
-         const auto flags = vari_reader.read_trivial<Vertex_shader_flags>();
-         const auto static_flags = vari_reader.read_trivial<std::uint32_t>();
-         const auto bytecode_size = vari_reader.read_trivial<std::uint32_t>();
+         const auto flags = vari_reader.read<Vertex_shader_flags>();
+         const auto static_flags = vari_reader.read<std::uint32_t>();
+         const auto bytecode_size = vari_reader.read<std::uint32_t>();
          const auto bytecode = vari_reader.read_array<std::byte>(bytecode_size);
          auto input_layout =
             read_input_layout(vari_reader.read_child_strict<"IALO"_mn>());
@@ -116,8 +114,7 @@ void read_entrypoints(ucfb::Reader_strict<"VSHD"_mn> reader,
 void read_entrypoints(ucfb::Reader_strict<"PSHD"_mn> reader,
                       ID3D11Device& device, Shader_group& group)
 {
-   const auto count =
-      reader.read_child_strict<"SIZE"_mn>().read_trivial<std::uint32_t>();
+   const auto count = reader.read_child_strict<"SIZE"_mn>().read<std::uint32_t>();
 
    for (auto ep_index = 0u; ep_index < count; ++ep_index) {
       auto ep_reader = reader.read_child_strict<"EP__"_mn>();
@@ -126,16 +123,16 @@ void read_entrypoints(ucfb::Reader_strict<"PSHD"_mn> reader,
       auto vrs_reader = ep_reader.read_child_strict<"VRS_"_mn>();
 
       const auto variation_count =
-         vrs_reader.read_child_strict<"SIZE"_mn>().read_trivial<std::uint32_t>();
+         vrs_reader.read_child_strict<"SIZE"_mn>().read<std::uint32_t>();
 
       Pixel_shader_entrypoint entrypoint;
 
       for (auto vari_index = 0u; vari_index < variation_count; ++vari_index) {
          auto vari_reader = vrs_reader.read_child_strict<"VARI"_mn>();
 
-         const auto flags = vari_reader.read_trivial<Pixel_shader_flags>();
-         const auto static_flags = vari_reader.read_trivial<std::uint32_t>();
-         const auto bytecode_size = vari_reader.read_trivial<std::uint32_t>();
+         const auto flags = vari_reader.read<Pixel_shader_flags>();
+         const auto static_flags = vari_reader.read<std::uint32_t>();
+         const auto bytecode_size = vari_reader.read<std::uint32_t>();
          const auto bytecode = vari_reader.read_array<std::byte>(bytecode_size);
 
          Com_ptr<ID3D11PixelShader> shader;
@@ -161,10 +158,10 @@ void read_state(ucfb::Reader_strict<"STAT"_mn> reader,
 
    const auto vs_entrypoint = std::string{info_reader.read_string()};
    const auto vs_static_flags =
-      gsl::narrow_cast<std::uint16_t>(info_reader.read_trivial<std::uint32_t>());
+      gsl::narrow_cast<std::uint16_t>(info_reader.read<std::uint32_t>());
    const auto ps_entrypoint = std::string{info_reader.read_string()};
    const auto ps_static_flags =
-      gsl::narrow_cast<std::uint16_t>(info_reader.read_trivial<std::uint32_t>());
+      gsl::narrow_cast<std::uint16_t>(info_reader.read<std::uint32_t>());
 
    Shader_state state{Vertex_shader_entrypoint{shader_group.vertex.at(vs_entrypoint)},
                       vs_static_flags,
@@ -178,8 +175,7 @@ void read_rendertypes(ucfb::Reader_strict<"RTS_"_mn> reader,
                       const Shader_group& shader_group,
                       Shader_rendertype_collection& rendertype_collection)
 {
-   const auto count =
-      reader.read_child_strict<"SIZE"_mn>().read_trivial<std::uint32_t>();
+   const auto count = reader.read_child_strict<"SIZE"_mn>().read<std::uint32_t>();
 
    for (auto rt_index = 0u; rt_index < count; ++rt_index) {
       auto rtyp_reader = reader.read_child_strict<"RTYP"_mn>();
@@ -187,7 +183,7 @@ void read_rendertypes(ucfb::Reader_strict<"RTS_"_mn> reader,
       const auto rendertype_name =
          std::string{rtyp_reader.read_child_strict<"NAME"_mn>().read_string()};
       const auto state_count =
-         rtyp_reader.read_child_strict<"SIZE"_mn>().read_trivial<std::uint32_t>();
+         rtyp_reader.read_child_strict<"SIZE"_mn>().read<std::uint32_t>();
 
       Shader_rendertype rendertype;
 

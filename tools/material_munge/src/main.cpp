@@ -84,10 +84,10 @@ int main(int arg_count, char* args[])
    }
 
    auto files_result =
-      std::async(std::launch::async, build_input_file_map, source_dir);
+      std::async(std::launch::deferred, build_input_file_map, source_dir);
 
    auto descriptions_async =
-      std::async(std::launch::async, load_material_descriptions, description_dirs);
+      std::async(std::launch::deferred, load_material_descriptions, description_dirs);
 
    auto texture_references = find_texture_references(munged_input_dir);
 

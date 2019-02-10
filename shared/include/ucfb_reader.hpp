@@ -1,6 +1,7 @@
 #pragma once
 
 #include "magic_number.hpp"
+#include "utility.hpp"
 
 #include <gsl/gsl>
 
@@ -44,8 +45,9 @@ public:
    //! \exception std::runtime_error Thrown when the size of the chunk does not
    //! match the size of the span.
    Reader(const gsl::span<const std::byte> bytes)
-      : _mn{reinterpret_cast<const Magic_number&>(bytes[0])},
-        _size{reinterpret_cast<const std::uint32_t&>(bytes[4])},
+      : _mn{bit_cast<Magic_number>(bytes)},
+        _size{bit_cast<std::uint32_t>(
+           bytes.subspan(sizeof(Magic_number), sizeof(std::uint32_t)))},
         _data{&bytes[8]}
    {
       Expects((bytes.size() >= 8));
@@ -56,19 +58,21 @@ public:
       }
    }
 
-   template<Magic_number type_mn>
-   Reader(const Reader_strict<type_mn>&) = delete;
-   template<Magic_number type_mn>
-   Reader& operator=(const Reader_strict<type_mn>&) = delete;
-
-   template<Magic_number type_mn>
-   Reader(Reader_strict<type_mn>&&) = delete;
-   template<Magic_number type_mn>
-   Reader& operator=(Reader_strict<type_mn>&&) = delete;
+   //! \brief Creates a Reader from a magic number and a span of memory.
+   //! The span of memory excludes the magic number and size tag of the chunk.
+   //!
+   //! \param mn The magic number of the reader.
+   //! \param bytes The span of memory holding the ucfb chunk. The size of the
+   //! span must be at least 8.
+   //!
+   Reader(const Magic_number mn, const gsl::span<const std::byte> bytes)
+      : _mn{mn}, _size{static_cast<std::size_t>(bytes.size())}, _data{bytes.data()}
+   {
+   }
 
    //! \brief Reads a trivial value from the chunk.
    //!
-   //! \tparam Type The type of the value to read. The type must be trivially copyable.
+   //! \tparam Type The type of the value to read. The type must be standard layout.
    //!
    //! \param unaligned If the read is unaligned or not.
    //!
@@ -77,10 +81,10 @@ public:
    //! \exception std::runtime_error Thrown when reading the value would go past the end
    //! of the chunk.
    template<typename Type>
-   const Type& read_trivial(const bool unaligned = false)
+   auto read(const bool unaligned = false) -> Type
    {
-      static_assert(std::is_trivially_copyable_v<Type>,
-                    "Type must be trivially copyable.");
+      static_assert(std::is_standard_layout_v<Type>,
+                    "Type must be standard layout.");
       static_assert(!std::is_reference_v<Type>, "Type can not be a reference.");
       static_assert(!std::is_pointer_v<Type>, "Type can not be a pointer.");
 
@@ -91,51 +95,50 @@ public:
 
       if (!unaligned) align_head();
 
-      return reinterpret_cast<const Type&>(_data[cur_pos]);
+      return bit_cast<Type>(gsl::make_span(&_data[cur_pos], sizeof(Type)));
    }
 
    //! \brief Reads a trivial unaligned value from the chunk.
    //!
-   //! \tparam Type The type of the value to read. The type must be trivially copyable.
+   //! \tparam Type The type of the value to read. The type must be standard layout.
    //!
    //! \return A const reference to the value.
    //!
    //! \exception std::runtime_error Thrown when reading the value would go past the end
    //! of the chunk.
    template<typename Type>
-   const Type& read_trivial_unaligned()
+   const Type& read_unaligned()
    {
-      return read_trivial<Type>(true);
+      return read<Type>(true);
    }
 
    //! \brief Reads a list of trivial value from the chunk.
    //!
-   //! \tparam Types A list of types of the values to read. The types must be trivially copyable.
+   //! \tparam Types A list of types of the values to read. The types must be standard layout.
    //!
    //! \return A tuple of the values.
    //!
    //! \exception std::runtime_error Thrown when reading the value would go past the end
    //! of the chunk.
    template<typename... Types>
-   auto read_trivial_multi(const std::array<bool, sizeof...(Types)> unaligned = {})
+   auto read_multi(const std::array<bool, sizeof...(Types)> unaligned = {})
       -> std::tuple<Types...>
    {
-      return read_trivial_multi_impl<Types...>(unaligned,
-                                               std::index_sequence_for<Types...>{});
+      return read_multi_impl<Types...>(unaligned, std::index_sequence_for<Types...>{});
    }
 
    //! \brief Reads a list of trivial unaligned value from the chunk.
    //!
-   //! \tparam Types A list of types of the values to read. The types must be trivially copyable.
+   //! \tparam Types A list of types of the values to read. The types must be standard layout.
    //!
    //! \return A tuple of the values.
    //!
    //! \exception std::runtime_error Thrown when reading the value would go past the end
    //! of the chunk.
    template<typename... Types>
-   auto read_trivial_multi_unaligned() -> std::tuple<Types...>
+   auto read_multi_unaligned() -> std::tuple<Types...>
    {
-      return read_trivial_multi<Types...>(std::array{(sizeof(Types), true)...});
+      return read_multi<Types...>(std::array{(sizeof(Types), true)...});
    }
 
    //! \brief Reads a variable-length array of trivial values from the chunk.
@@ -187,22 +190,18 @@ public:
 
    //! \brief Reads a null-terminated string from a chunk.
    //!
-   //! \tparam Char_type The char type of the values to read. Defaults to `char`.
-   //!
    //! \param unaligned If the read is unaligned or not.
    //!
    //! \return A string_view to the string.
    //!
-   //! \exception std::runtime_error Thrown when reading the string would go past the end
-   //! of the chunk.
-   template<typename Char_type = char>
-   auto read_string(const bool unaligned = false) -> std::basic_string_view<Char_type>
+   //! \exception std::runtime_error Thrown when reading the string would go
+   //! past the end of the chunk.
+   auto read_string(const bool unaligned = false) -> std::string_view
    {
-      const Char_type* const string =
-         reinterpret_cast<const Char_type*>(_data + _head);
+      const char* const string = reinterpret_cast<const char*>(_data + _head);
       const auto string_length = cstring_length(string, _size - _head);
 
-      _head += (string_length + 1) * sizeof(Char_type);
+      _head += (string_length + 1);
 
       check_head();
 
@@ -213,16 +212,13 @@ public:
 
    //! \brief Reads an unaligned null-terminated string from a chunk.
    //!
-   //! \tparam Char_type The char type of the values to read. Defaults to `char`.
-   //!
    //! \return A string_view to the string.
    //!
-   //! \exception std::runtime_error Thrown when reading the string would go past the end
-   //! of the chunk.
-   template<typename Char_type = char>
-   auto read_string_unaligned() -> std::basic_string_view<Char_type>
+   //! \exception std::runtime_error Thrown when reading the string would go
+   //! past the end of the chunk.
+   auto read_string_unaligned() -> std::string_view
    {
-      return read_string<Char_type>(true);
+      return read_string(true);
    }
 
    //! \brief Reads a child chunk.
@@ -235,8 +231,8 @@ public:
    //! the end of the current chunk.
    Reader read_child(const bool unaligned = false)
    {
-      const auto child_mn = read_trivial<Magic_number>();
-      const auto child_size = read_trivial<std::uint32_t>();
+      const auto child_mn = read<Magic_number>();
+      const auto child_size = read<std::uint32_t>();
       const auto child_data_offset = _head;
 
       _head += child_size;
@@ -274,8 +270,8 @@ public:
 
       const auto old_head = _head;
 
-      const auto child_mn = read_trivial<Magic_number>();
-      const auto child_size = read_trivial<std::uint32_t>();
+      const auto child_mn = read<Magic_number>();
+      const auto child_size = read<std::uint32_t>();
       const auto child_data_offset = _head;
 
       _head += child_size;
@@ -480,11 +476,10 @@ private:
    }
 
    template<typename... Types, std::size_t... indices>
-   auto read_trivial_multi_impl(const std::array<bool, sizeof...(Types)> unaligned,
-                                std::index_sequence<indices...>)
-      -> std::tuple<Types...>
+   auto read_multi_impl(const std::array<bool, sizeof...(Types)> unaligned,
+                        std::index_sequence<indices...>) -> std::tuple<Types...>
    {
-      return {read_trivial<Types>(unaligned[indices])...};
+      return {read<Types>(unaligned[indices])...};
    }
 
    void check_head()

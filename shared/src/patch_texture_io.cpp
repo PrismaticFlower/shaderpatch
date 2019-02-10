@@ -50,7 +50,7 @@ auto load_patch_texture(ucfb::Reader reader, ID3D11Device1& device)
    const auto name = reader.read_child_strict<"NAME"_mn>().read_string();
 
    const auto version =
-      reader.read_child_strict<"VER_"_mn>().read_trivial<Texture_version>();
+      reader.read_child_strict<"VER_"_mn>().read<Texture_version>();
 
    reader.reset_head();
 
@@ -238,12 +238,11 @@ auto load_patch_texture_impl(ucfb::Reader reader, ID3D11Device1& device)
    const auto name = reader.read_child_strict<"NAME"_mn>().read_string();
 
    const auto version =
-      reader.read_child_strict<"VER_"_mn>().read_trivial<Texture_version>();
+      reader.read_child_strict<"VER_"_mn>().read<Texture_version>();
 
    Ensures(version == Texture_version::_2_0_0);
 
-   const auto info =
-      reader.read_child_strict<"INFO"_mn>().read_trivial<Texture_info>();
+   const auto info = reader.read_child_strict<"INFO"_mn>().read<Texture_info>();
 
    const auto sub_res_count = info.array_size * info.mip_count;
 
@@ -256,7 +255,7 @@ auto load_patch_texture_impl(ucfb::Reader reader, ID3D11Device1& device)
       auto sub = data.read_child_strict<"SUB_"_mn>();
 
       const auto [pitch, slice_pitch, sub_data_size] =
-         sub.read_trivial_multi<UINT, UINT, std::uint32_t>();
+         sub.read_multi<UINT, UINT, std::uint32_t>();
 
       const auto sub_data = sub.read_array_unaligned<std::byte>(sub_data_size);
 
@@ -349,12 +348,11 @@ auto load_patch_texture_impl(ucfb::Reader reader, ID3D11Device1& device)
    const auto name = reader.read_child_strict<"NAME"_mn>().read_string();
 
    const auto version =
-      reader.read_child_strict<"VER_"_mn>().read_trivial<Texture_version>();
+      reader.read_child_strict<"VER_"_mn>().read<Texture_version>();
 
    Ensures(version == Texture_version::_1_0_0);
 
-   const auto info =
-      reader.read_child_strict<"INFO"_mn>().read_trivial<Texture_info>();
+   const auto info = reader.read_child_strict<"INFO"_mn>().read<Texture_info>();
 
    if (info._reserved != 0) {
       throw compose_exception<std::runtime_error>("Reeserved value in texture "sv,
@@ -363,7 +361,7 @@ auto load_patch_texture_impl(ucfb::Reader reader, ID3D11Device1& device)
    }
 
    const auto sampler_info =
-      reader.read_child_strict<"SAMP"_mn>().read_trivial<Sampler_info>();
+      reader.read_child_strict<"SAMP"_mn>().read<Sampler_info>();
 
    using Block_pair = std::array<std::uint64_t, 2>;
    std::vector<std::unique_ptr<Block_pair[]>> init_patchup_buffers;

@@ -60,8 +60,8 @@ public:
       cleanup();
    }
 
-   Small_function(const Small_function&) = delete;
-   Small_function& operator=(const Small_function&) = delete;
+   Small_function(const Small_function&) noexcept = delete;
+   Small_function& operator=(const Small_function&) noexcept = delete;
 
    auto operator()(Args... args) const noexcept -> Return
    {

@@ -1,5 +1,6 @@
 
 #include "d3d11_helpers.hpp"
+#include "utility.hpp"
 
 namespace sp::core {
 
@@ -7,6 +8,8 @@ auto create_immutable_constant_buffer(ID3D11Device1& device,
                                       const gsl::span<const std::byte> data) noexcept
    -> Com_ptr<ID3D11Buffer>
 {
+   Expects(is_multiple_of<16u>(data.size()));
+
    Com_ptr<ID3D11Buffer> buffer;
 
    const auto size = static_cast<UINT>(data.size());
@@ -23,6 +26,8 @@ auto create_immutable_constant_buffer(ID3D11Device1& device,
 auto create_dynamic_constant_buffer(ID3D11Device1& device, const UINT size) noexcept
    -> Com_ptr<ID3D11Buffer>
 {
+   Expects(is_multiple_of<16u>(size));
+
    Com_ptr<ID3D11Buffer> buffer;
 
    const auto desc = CD3D11_BUFFER_DESC{size, D3D11_BIND_CONSTANT_BUFFER,
@@ -36,6 +41,8 @@ auto create_dynamic_constant_buffer(ID3D11Device1& device, const UINT size) noex
 auto create_dynamic_texture_buffer(ID3D11Device1& device, const UINT size) noexcept
    -> Com_ptr<ID3D11Buffer>
 {
+   Expects(is_multiple_of<16u>(size));
+
    Com_ptr<ID3D11Buffer> buffer;
 
    const auto desc = CD3D11_BUFFER_DESC{size, D3D11_BIND_SHADER_RESOURCE,

@@ -38,7 +38,7 @@ auto find_texture_references(const fs::path& from)
             }
          }
       }
-      catch (std::runtime_error& e) {
+      catch (std::exception& e) {
          synced_print("Error occured while parsing "sv, path, "\n   mesage: "sv,
                       e.what(),
                       "\n\n   You may need to Clean or Manual Clean your munge files."sv);
@@ -57,6 +57,8 @@ auto load_material_descriptions(const std::vector<std::string>& directories)
       if (!fs::exists(path) || !fs::is_directory(path)) {
          synced_error_print("Warning specified material description directory "sv,
                             path, " does not exist!"sv);
+
+         continue;
       }
 
       for (auto entry : fs::directory_iterator{path}) {

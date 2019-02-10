@@ -176,6 +176,7 @@
     <ClInclude Include="include\com_ptr.hpp" />
     <ClInclude Include="include\com_ref.hpp" />
     <ClInclude Include="include\config_file.hpp" />
+    <ClInclude Include="include\enum_flags.hpp" />
     <ClInclude Include="include\file_dialogs.hpp" />
     <ClInclude Include="include\file_helpers.hpp" />
     <ClInclude Include="include\game_rendertypes.hpp" />
@@ -195,6 +196,7 @@
     <ClInclude Include="include\string_utilities.hpp" />
     <ClInclude Include="include\synced_io.hpp" />
     <ClInclude Include="include\throw_if_failed.hpp" />
+    <ClInclude Include="include\ucfb_editor.hpp" />
     <ClInclude Include="include\ucfb_reader.hpp" />
     <ClInclude Include="include\ucfb_tweaker.hpp" />
     <ClInclude Include="include\ucfb_writer.hpp" />
@@ -210,6 +212,7 @@
     <ClCompile Include="src\patch_material_io.cpp" />
     <ClCompile Include="src\patch_texture_io.cpp" />
     <ClCompile Include="src\req_file_helpers.cpp" />
+    <ClCompile Include="src\ucfb_editor.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

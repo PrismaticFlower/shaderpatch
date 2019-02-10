@@ -1,6 +1,6 @@
 #pragma once
 
-#include "patch_material.hpp"
+#include "patch_material_io.hpp"
 
 #pragma warning(push)
 #pragma warning(disable : 4996)

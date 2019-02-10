@@ -96,6 +96,12 @@
     <ClInclude Include="include\volume_resource.hpp">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\ucfb_editor.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\enum_flags.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\patch_texture_io.cpp">
@@ -120,6 +126,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\munge_helpers.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ucfb_editor.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

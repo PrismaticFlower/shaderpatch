@@ -7,6 +7,8 @@
 #include <malloc.h>
 #include <vector>
 
+#include <gsl/gsl>
+
 namespace sp {
 
 template<std::size_t alignment>
@@ -77,15 +79,29 @@ private:
 };
 
 template<typename To, typename From>
-inline To bit_cast(const From from)
+inline To bit_cast(const From from) noexcept
 {
    static_assert(sizeof(From) <= sizeof(To));
-   static_assert(std::is_trivial_v<To>);
+   static_assert(std::is_standard_layout_v<To>);
    static_assert(std::is_trivially_copyable_v<From>);
 
    To to;
 
    std::memcpy(&to, &from, sizeof(From));
+
+   return to;
+}
+
+template<typename To>
+inline To bit_cast(const gsl::span<const std::byte> from) noexcept
+{
+   static_assert(std::is_standard_layout_v<To>);
+
+   Expects(sizeof(To) <= from.size());
+
+   To to;
+
+   std::memcpy(&to, from.data(), sizeof(to));
 
    return to;
 }

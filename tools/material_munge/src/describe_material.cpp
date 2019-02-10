@@ -16,6 +16,8 @@ using namespace std::literals;
 
 namespace {
 
+constexpr auto max_textures = 64;
+
 constexpr auto read_constant_offset(std::string_view string)
 {
    const auto allowed_numeric_part = "0123456789"sv;
@@ -40,8 +42,21 @@ constexpr auto read_constant_offset(std::string_view string)
    return offset;
 }
 
-void read_prop(const std::string& prop_key, const YAML::Node value,
-               const YAML::Node property_mappings, std::array<float, 32>& constants)
+template<typename Value>
+auto set_constant(Aligned_vector<std::byte, 16>& cb,
+                  const std::size_t byte_offset, const Value value)
+{
+   static_assert(std::is_standard_layout_v<Value>);
+
+   const auto needed_size = byte_offset + sizeof(Value);
+
+   if (cb.size() < needed_size) cb.resize(needed_size);
+
+   std::memcpy(cb.data() + byte_offset, &value, sizeof(Value));
+}
+
+auto read_prop(const std::string& prop_key, const YAML::Node value,
+               const YAML::Node property_mappings, Aligned_vector<std::byte, 16>& cb)
 {
    if (!property_mappings[prop_key]) {
       throw compose_exception<std::runtime_error>("Undescribed material property "sv,
@@ -57,7 +72,9 @@ void read_prop(const std::string& prop_key, const YAML::Node value,
    const auto offset = read_constant_offset(desc["Constant"s].as<std::string>());
 
    if (type == "scaler"sv) {
-      constants.at(offset) = std::clamp(value.as<float>(), range[0], range[1]);
+      const auto byte_offset = offset * sizeof(float);
+
+      set_constant(cb, byte_offset, std::clamp(value.as<float>(), range[0], range[1]));
    }
    else {
       auto count = 0;
@@ -75,8 +92,10 @@ void read_prop(const std::string& prop_key, const YAML::Node value,
       }
 
       for (auto i = 0; i < count; ++i) {
-         constants.at(offset + i) =
-            std::clamp(value[i].as<float>(), range[0], range[1]);
+         const auto byte_offset = offset * sizeof(float) + (i * sizeof(float));
+
+         set_constant(cb, byte_offset,
+                      std::clamp(value[i].as<float>(), range[0], range[1]));
       }
    }
 }
@@ -94,18 +113,20 @@ void read_texture_mapping(const std::string& texture_key, const YAML::Node value
 
    auto index = texture["Slot"s].as<int>();
 
-   if (index < 4 || index > 11) {
+   if (index > max_textures) {
       throw compose_exception<std::runtime_error>("Invalid material texture description"sv,
                                                   std::quoted(texture_key),
-                                                  " encountered."sv);
+                                                  " encountered. Texture index is too high!"sv);
    }
 
-   material_info.textures.at(index - 4) = value.as<std::string>();
+   auto texture_name = value.as<std::string>();
 
-   if (texture["Size Constant"s]) {
-      material_info.texture_size_mappings.at(index - 4) =
-         read_constant_offset(texture["Size Constant"s].as<std::string>());
-   }
+   if (texture_name.empty()) return;
+
+   if (index >= material_info.textures.size())
+      material_info.textures.resize(index + 1);
+
+   material_info.textures.at(index) = value.as<std::string>();
 }
 }
 
@@ -122,7 +143,7 @@ auto describe_material(std::string_view name, const YAML::Node description,
    for (auto prop : material["Material"s]) {
       try {
          read_prop(prop.first.as<std::string>(), prop.second,
-                   description["Property Mappings"s], info.constants);
+                   description["Property Mappings"s], info.constant_buffer);
       }
       catch (std::exception& e) {
          throw compose_exception<std::runtime_error>(

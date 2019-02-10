@@ -84,7 +84,7 @@ void write_patch_material(const std::filesystem::path& save_path,
 auto read_patch_material(ucfb::Reader reader) -> Material_info
 {
    const auto version =
-      reader.read_child_strict<"VER_"_mn>().read_trivial<Material_version>();
+      reader.read_child_strict<"VER_"_mn>().read<Material_version>();
 
    reader.reset_head();
 
@@ -135,26 +135,27 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_info
    Material_info info{};
 
    const auto version =
-      reader.read_child_strict<"VER_"_mn>().read_trivial<Material_version>();
+      reader.read_child_strict<"VER_"_mn>().read<Material_version>();
 
    Ensures(version == Material_version::_4_0_0);
 
    info.name = reader.read_child_strict<"NAME"_mn>().read_string();
    info.rendertype = reader.read_child_strict<"RTYP"_mn>().read_string();
    info.overridden_rendertype =
-      reader.read_child_strict<"ORTP"_mn>().read_trivial<Rendertype>();
+      reader.read_child_strict<"ORTP"_mn>().read<Rendertype>();
 
    {
       auto cnst = reader.read_child_strict<"CNST"_mn>();
       const auto constants = cnst.read_array<std::byte>(cnst.size());
 
-      info.constant_buffer.assign(constants.cbegin(), constants.cend());
+      info.constant_buffer.resize(next_multiple_of<16u>(constants.size()));
+      std::memcpy(info.constant_buffer.data(), constants.data(), constants.size());
    }
 
    {
       auto texs = reader.read_child_strict<"TEXS"_mn>();
 
-      const auto count = texs.read_trivial<std::uint32_t>();
+      const auto count = texs.read<std::uint32_t>();
       info.textures.reserve(count);
 
       for (auto i = 0; i < count; ++i)
@@ -162,7 +163,7 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_info
    }
 
    info.fail_safe_texture_index =
-      reader.read_child_strict<"FSTX"_mn>().read_trivial<std::uint32_t>();
+      reader.read_child_strict<"FSTX"_mn>().read<std::uint32_t>();
 
    return info;
 }
@@ -174,21 +175,21 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_info
    Material_info info{};
 
    const auto version =
-      reader.read_child_strict<"VER_"_mn>().read_trivial<Material_version>();
+      reader.read_child_strict<"VER_"_mn>().read<Material_version>();
 
    Ensures(version == Material_version::_3_0_0);
 
    info.name = reader.read_child_strict<"NAME"_mn>().read_string();
    info.rendertype = reader.read_child_strict<"RTYP"_mn>().read_string();
    info.overridden_rendertype =
-      reader.read_child_strict<"ORTP"_mn>().read_trivial<Rendertype>();
+      reader.read_child_strict<"ORTP"_mn>().read<Rendertype>();
 
    const auto constants = reader.read_child_strict<"CNST"_mn>().read_array<std::byte>(
       sizeof(std::array<float, 32>));
-   info.constant_buffer = make_aligned_vector<16>(constants);
+   info.constant_buffer.assign(constants.cbegin(), constants.cend());
 
    // Discard Texture Size Mappings
-   reader.read_child_strict<"TXSM"_mn>().read_trivial<std::array<std::int32_t, 8>>();
+   reader.read_child_strict<"TXSM"_mn>().read<std::array<std::int32_t, 8>>();
 
    info.textures.emplace_back(reader.read_child_strict<"TX04"_mn>().read_string());
    info.textures.emplace_back(reader.read_child_strict<"TX05"_mn>().read_string());
@@ -213,7 +214,7 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_info
    Material_info info{};
 
    const auto version =
-      reader.read_child_strict<"VER_"_mn>().read_trivial<Material_version>();
+      reader.read_child_strict<"VER_"_mn>().read<Material_version>();
 
    Ensures(version == Material_version::_2_0_0);
 
@@ -222,13 +223,12 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_info
    info.overridden_rendertype =
       rendertype_from_string(reader.read_child_strict<"ORTP"_mn>().read_string());
 
-   const auto constants_span =
-      reader.read_child_strict<"CNST"_mn>().read_array<std::byte>(
-         sizeof(std::array<float, 32>));
-   info.constant_buffer.assign(constants_span.cbegin(), constants_span.cend());
+   const auto constants = reader.read_child_strict<"CNST"_mn>().read_array<std::byte>(
+      sizeof(std::array<float, 32>));
+   info.constant_buffer.assign(constants.cbegin(), constants.cend());
 
    // Discard Texture Size Mappings
-   reader.read_child_strict<"TXSM"_mn>().read_trivial<std::array<std::int32_t, 8>>();
+   reader.read_child_strict<"TXSM"_mn>().read<std::array<std::int32_t, 8>>();
 
    info.textures.emplace_back(reader.read_child_strict<"TX04"_mn>().read_string());
    info.textures.emplace_back(reader.read_child_strict<"TX05"_mn>().read_string());
@@ -253,7 +253,7 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_info
    Material_info info{};
 
    const auto version =
-      reader.read_child_strict<"VER_"_mn>().read_trivial<Material_version>();
+      reader.read_child_strict<"VER_"_mn>().read<Material_version>();
 
    Ensures(version == Material_version::_1_0_0);
 
@@ -262,10 +262,9 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_info
    info.overridden_rendertype =
       rendertype_from_string(reader.read_child_strict<"ORTP"_mn>().read_string());
 
-   const auto constants_span =
-      reader.read_child_strict<"CNST"_mn>().read_array<std::byte>(
-         sizeof(std::array<float, 32>));
-   info.constant_buffer.assign(constants_span.cbegin(), constants_span.cend());
+   const auto constants = reader.read_child_strict<"CNST"_mn>().read_array<std::byte>(
+      sizeof(std::array<float, 32>));
+   info.constant_buffer.assign(constants.cbegin(), constants.cend());
 
    info.textures.emplace_back(reader.read_child_strict<"TX04"_mn>().read_string());
    info.textures.emplace_back(reader.read_child_strict<"TX05"_mn>().read_string());

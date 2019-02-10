@@ -4,6 +4,9 @@
     <Filter Include="src">
       <UniqueIdentifier>{fce9739c-b341-48ad-9d7d-285f3e0b85af}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\mikktspace">
+      <UniqueIdentifier>{17770d0f-1384-45ca-a255-52a26076e12b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -18,6 +21,24 @@
     <ClCompile Include="src\describe_material.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\model_patcher.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vertex_buffer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\generate_tangents.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mikktspace\mikktspace.c">
+      <Filter>src\mikktspace</Filter>
+    </ClCompile>
+    <ClCompile Include="src\weld_vertex_list.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\optimize_mesh.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\helpers.hpp">
@@ -27,6 +48,27 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\describe_material.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\model_patcher.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\material_options.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vertex_buffer.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\generate_tangents.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mikktspace\mikktspace.h">
+      <Filter>src\mikktspace</Filter>
+    </ClInclude>
+    <ClInclude Include="src\weld_vertex_list.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\optimize_mesh.hpp">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

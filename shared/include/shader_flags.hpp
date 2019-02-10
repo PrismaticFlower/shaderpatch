@@ -1,5 +1,7 @@
 #pragma once
 
+#include "enum_flags.hpp"
+
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -59,56 +61,24 @@ enum class Pass_flags : std::uint32_t {
    texcoords = 512
 };
 
+template<>
+struct is_enum_flag<Vertex_shader_flags> : std::true_type {
+};
+template<>
+struct is_enum_flag<Pixel_shader_flags> : std::true_type {
+};
+template<>
+struct is_enum_flag<Shader_flags> : std::true_type {
+};
+template<>
+struct is_enum_flag<Pass_flags> : std::true_type {
+};
+
 template<typename Type>
 constexpr bool is_shader_flag_v =
    std::is_same_v<Type, Vertex_shader_flags> ||
    std::is_same_v<Type, Pixel_shader_flags> ||
    std::is_same_v<Type, Shader_flags> || std::is_same_v<Type, Pass_flags>;
-
-template<typename Flags, typename = std::enable_if_t<is_shader_flag_v<Flags>>>
-constexpr Flags operator|(const Flags l, const Flags r) noexcept
-{
-   return Flags{static_cast<std::underlying_type_t<Flags>>(l) |
-                static_cast<std::underlying_type_t<Flags>>(r)};
-}
-
-template<typename Flags, typename = std::enable_if_t<is_shader_flag_v<Flags>>>
-constexpr Flags operator&(Flags l, Flags r) noexcept
-{
-   return Flags{static_cast<std::underlying_type_t<Flags>>(l) &
-                static_cast<std::underlying_type_t<Flags>>(r)};
-}
-
-template<typename Flags, typename = std::enable_if_t<is_shader_flag_v<Flags>>>
-constexpr Flags operator^(const Flags l, const Flags r) noexcept
-{
-   return Flags{static_cast<std::underlying_type_t<Flags>>(l) ^
-                static_cast<std::underlying_type_t<Flags>>(r)};
-}
-
-template<typename Flags, typename = std::enable_if_t<is_shader_flag_v<Flags>>>
-constexpr Flags operator~(const Flags f) noexcept
-{
-   return Flags{~static_cast<std::underlying_type_t<Flags>>(f)};
-}
-
-template<typename Flags, typename = std::enable_if_t<is_shader_flag_v<Flags>>>
-constexpr Flags& operator|=(Flags& l, const Flags r) noexcept
-{
-   return l = l | r;
-}
-
-template<typename Flags, typename = std::enable_if_t<is_shader_flag_v<Flags>>>
-constexpr Flags& operator&=(Flags& l, const Flags r) noexcept
-{
-   return l = l & r;
-}
-
-template<typename Flags, typename = std::enable_if_t<is_shader_flag_v<Flags>>>
-constexpr Flags& operator^=(Flags& l, const Flags r) noexcept
-{
-   return l = l ^ r;
-}
 
 constexpr bool pass_flag_set(const Pass_flags& flags, const Pass_flags& test_flag) noexcept
 {

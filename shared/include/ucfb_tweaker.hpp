@@ -15,6 +15,36 @@
 
 namespace sp::ucfb {
 
+template<typename Type>
+class Tweaker_proxy {
+public:
+   static_assert(std::is_trivially_copyable_v<Type>,
+                 "Type must be trivially copyable.");
+   static_assert(!std::is_reference_v<Type>, "Type can not be a reference.");
+   static_assert(!std::is_pointer_v<Type>, "Type can not be a pointer.");
+
+   Type load() const noexcept
+   {
+      Type val;
+
+      std::memcpy(&val, _memory, sizeof(Type));
+
+      return val;
+   }
+
+   void store(const Type value) noexcept
+   {
+      std::memcpy(_memory, &value, sizeof(Type));
+   }
+
+   friend class Tweaker;
+
+private:
+   explicit Tweaker_proxy(std::byte* memory) noexcept : _memory{memory} {}
+
+   std::byte* _memory;
+};
+
 class Tweaker {
 public:
    Tweaker() = delete;
@@ -38,6 +68,16 @@ public:
       }
    }
 
+   //! \brief Creates a Tweaker from a magic number and a span of memory.
+   //! The span of memory excludes the magic number and size tag of the chunk.
+   //!
+   //! \param mn The magic number of the chunk.
+   //! \param bytes The contents of the chunk.
+   Tweaker(const Magic_number mn, const gsl::span<std::byte> bytes)
+      : _mn{mn}, _data{bytes}
+   {
+   }
+
    //! \brief Fetches a child chunk.
    //!
    //! \param unaligned If the get is unaligned or not.
@@ -49,8 +89,8 @@ public:
    Tweaker get_child(const bool unaligned = false)
    {
       const auto child_offset = _head;
-      const auto child_mn = get<Magic_number>();
-      const auto child_size = get<std::uint32_t>();
+      const auto child_mn = get<Magic_number>().load();
+      const auto child_size = get<std::uint32_t>().load();
 
       _head += child_size;
 
@@ -124,12 +164,12 @@ public:
    //!
    //! \param unaligned If the get is unaligned or not.
    //!
-   //! \return A reference to the value.
+   //! \return A proxy to the value.
    //!
    //! \exception std::runtime_error Thrown when getting the value would go past the end
    //! of the chunk.
    template<typename Type>
-   Type& get(const bool unaligned = false)
+   auto get(const bool unaligned = false) -> Tweaker_proxy<Type>
    {
       static_assert(std::is_trivially_copyable_v<Type>,
                     "Type must be trivially copyable.");
@@ -143,19 +183,19 @@ public:
 
       if (!unaligned) align_head();
 
-      return reinterpret_cast<Type&>(_data[cur_pos]);
+      return Tweaker_proxy<Type>(&_data[cur_pos]);
    }
 
    //! \brief Gets a reference to a trivial unaligned value from the chunk.
    //!
    //! \tparam Type The type of the value to get. The type must be trivially copyable.
    //!
-   //! \return A reference to the value.
+   //! \return A proxy to the value.
    //!
    //! \exception std::runtime_error Thrown when getting the value would go past the end
    //! of the chunk.
    template<typename Type>
-   Type& get_unaligned()
+   auto get_unaligned() -> Tweaker_proxy<Type>
    {
       return get<Type>(true);
    }
@@ -347,4 +387,5 @@ inline auto find_all(Magic_number mn, Tweaker from) -> std::vector<Tweaker>
 
    return matches;
 }
+
 }

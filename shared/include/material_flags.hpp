@@ -1,6 +1,6 @@
 #pragma once
 
-#pragma once
+#include "enum_flags.hpp"
 
 #include <cstdint>
 
@@ -27,41 +27,8 @@ enum class Material_flags : std::uint32_t {
    attached_light = 134217728,
 };
 
-constexpr Material_flags operator|(const Material_flags l, const Material_flags r) noexcept
-{
-   return Material_flags{static_cast<std::uint32_t>(l) |
-                         static_cast<std::uint32_t>(r)};
-}
+template<>
+struct is_enum_flag<Material_flags> : std::true_type {
+};
 
-constexpr Material_flags operator&(Material_flags l, Material_flags r) noexcept
-{
-   return Material_flags{static_cast<std::uint32_t>(l) &
-                         static_cast<std::uint32_t>(r)};
-}
-
-constexpr Material_flags operator^(const Material_flags l, const Material_flags r) noexcept
-{
-   return Material_flags{static_cast<std::uint32_t>(l) ^
-                         static_cast<std::uint32_t>(r)};
-}
-
-constexpr Material_flags operator~(const Material_flags f) noexcept
-{
-   return Material_flags{~static_cast<std::uint32_t>(f)};
-}
-
-constexpr Material_flags& operator|=(Material_flags& l, const Material_flags r) noexcept
-{
-   return l = l | r;
-}
-
-constexpr Material_flags& operator&=(Material_flags& l, const Material_flags r) noexcept
-{
-   return l = l & r;
-}
-
-constexpr Material_flags& operator^=(Material_flags& l, const Material_flags r) noexcept
-{
-   return l = l ^ r;
-}
 }
