@@ -1,5 +1,4 @@
 #include "constants_list.hlsl"
-#include "ext_constants_list.hlsl"
 #include "pixel_utilities.hlsl"
 #include "pixel_sampler_states.hlsl"
 
