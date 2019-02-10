@@ -1,5 +1,6 @@
 
 #include "req_file_helpers.hpp"
+#include "string_utilities.hpp"
 #include "synced_io.hpp"
 #include "ucfb_reader.hpp"
 #include "ucfb_writer.hpp"
@@ -21,7 +22,6 @@
 #include <utility>
 #include <vector>
 
-#include <boost/algorithm/string/case_conv.hpp>
 #include <gsl/gsl>
 
 #include <clara.hpp>
@@ -69,9 +69,9 @@ auto normalize_path(fs::path path) -> fs::path::string_type
 }
 
 auto make_extern_files_set(const std::vector<std::string>& extern_files_list_paths)
-   -> std::unordered_set<std::string>
+   -> std::unordered_set<Ci_string>
 {
-   std::unordered_set<std::string> extern_files;
+   std::vector<std::string> extern_files_vec;
 
    for (fs::path path : extern_files_list_paths) {
       if (!fs::exists(path) || !fs::is_regular_file(path)) {
@@ -80,22 +80,28 @@ auto make_extern_files_set(const std::vector<std::string>& extern_files_list_pat
          continue;
       }
 
-      parse_files_req_file(path, extern_files, std::cbegin(extern_files));
+      parse_files_req_file(path, extern_files_vec, std::cbegin(extern_files_vec));
    }
 
-   return extern_files;
+   std::unordered_set<Ci_string> extern_files_set;
+
+   for (const auto& file : extern_files_vec) {
+      extern_files_set.insert(Ci_string{file.data()});
+   }
+
+   return extern_files_set;
 }
 
 void write_file_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
                        std::unordered_set<fs::path::string_type>& added_files,
                        const std::vector<fs::path>& source_dirs,
-                       const std::unordered_set<std::string>& extern_files,
+                       const std::unordered_set<Ci_string>& extern_files,
                        const fs::path& filepath);
 
 void write_req_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
                       std::unordered_set<fs::path::string_type>& added_files,
                       const std::vector<fs::path>& source_dirs,
-                      const std::unordered_set<std::string>& extern_files,
+                      const std::unordered_set<Ci_string>& extern_files,
                       std::vector<std::pair<std::string, std::vector<std::string>>> req_file_contents);
 
 auto find_file(const std::string& filename, const std::vector<fs::path>& input_dirs)
@@ -132,7 +138,7 @@ auto read_binary_in(const fs::path& path) -> std::vector<std::byte>
 void write_file_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
                        std::unordered_set<fs::path::string_type>& added_files,
                        const std::vector<fs::path>& input_dirs,
-                       const std::unordered_set<std::string>& extern_files,
+                       const std::unordered_set<Ci_string>& extern_files,
                        const fs::path& filepath)
 {
    const auto normalized_path = normalize_path(filepath);
@@ -173,7 +179,7 @@ void write_file_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
 void write_req_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
                       std::unordered_set<fs::path::string_type>& added_files,
                       const std::vector<fs::path>& input_dirs,
-                      const std::unordered_set<std::string>& extern_files,
+                      const std::unordered_set<Ci_string>& extern_files,
                       std::vector<std::pair<std::string, std::vector<std::string>>> req_file_contents)
 {
    for (auto& section : req_file_contents) {
@@ -184,7 +190,7 @@ void write_req_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
             write_file_to_lvl(req_file_path, writer, added_files, input_dirs,
                               extern_files, *path);
          }
-         else if (!extern_files.count(boost::to_lower_copy(filename))) {
+         else if (!extern_files.count(Ci_string{filename.data(), filename.size()})) {
             synced_error_print("Warning nonexistent file "sv, std::quoted(filename),
                                " referenced in "sv, req_file_path, '.');
          }
@@ -194,7 +200,7 @@ void write_req_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
 
 void build_lvl_file(const fs::path& req_file_path, const fs::path& output_directory,
                     const std::vector<fs::path>& input_dirs,
-                    const std::unordered_set<std::string>& extern_files) noexcept
+                    const std::unordered_set<Ci_string>& extern_files) noexcept
 {
    Expects(fs::exists(req_file_path) && fs::exists(output_directory));
 
