@@ -40,7 +40,7 @@ Vs_blendmap_output diffuse_blendmap_vs(Vs_input input)
    const float3 positionOS = decompress_position((float3)input.position.xyz);
    const float3 positionWS = mul(float4(positionOS, 1.0), world_matrix);
    const float4 positionPS = mul(float4(positionWS, 1.0), projection_matrix);
-   const float3 normalOS = input.normal.xyz * 255.0 / 127.0 - 128.0 / 127.0;
+   const float3 normalOS = input.normal.xyz * 2.0 - 1.0;
 
    output.positionWS = positionWS;
    output.normalWS = mul(normalOS, (float3x3)world_matrix);
@@ -87,7 +87,7 @@ Vs_detail_output detailing_vs(Vs_input input)
    const float3 positionOS = decompress_position((float3)input.position.xyz);
    const float3 positionWS = mul(float4(positionOS, 1.0), world_matrix);
    const float4 positionPS = mul(float4(positionWS, 1.0), projection_matrix);
-   const float3 normalOS = input.normal.xyz * 255.0 / 127.0 - 128.0 / 127.0;
+   const float3 normalOS = input.normal.xyz * 2.0 - 1.0;
 
    output.positionWS = positionWS;
    output.normalWS = mul(normalOS, (float3x3)world_matrix);

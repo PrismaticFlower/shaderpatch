@@ -12,7 +12,8 @@ const static float4 y_texcoords_transform = custom_constants[1];
 
 const static float4 light_constants[7] = 
    {light_directional_0_color, light_directional_0_dir, light_directional_1_color,
-    light_directional_1_dir, light_point_0_color, light_point_0_pos, light_point_1_color};
+    light_directional_1_dir, light_point_0_color, float4(light_point_0_pos, light_point_0_inv_range_sqr),
+    light_point_1_color};
 
 const static float3 light_colors[3] = 
    {ps_custom_constants[0].xyz, ps_custom_constants[1].xyz, ps_custom_constants[2].xyz};

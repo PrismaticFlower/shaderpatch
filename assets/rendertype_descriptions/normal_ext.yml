@@ -1,4 +1,5 @@
 Overridden RenderType: "normal"
+Failsafe Texture Index: 0
 
 Property Mappings:
    DiffuseColor:
@@ -23,10 +24,10 @@ Property Mappings:
 
 Texture Mappings:
    DiffuseMap: 
-      Slot: 4
+      Slot: 0
    NormalMap: 
-      Slot: 5
+      Slot: 1
    DetailMap: 
-      Slot: 6
+      Slot: 2
    DetailNormalMap: 
-      Slot: 7
+      Slot: 3

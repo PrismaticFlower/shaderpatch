@@ -25,28 +25,27 @@ float3 ambient(float3 normalWS)
    return color;
 }
 
-float attenuation_point(float3 positionWS, float4 light_positionWS)
+float attenuation_point(float3 unnormalized_light_vector, float inv_range_sqr)
 {
-   const float inv_range_sq = light_positionWS.w;
-   const float light_dst = distance(positionWS, light_positionWS.xyz);
+   const float dist_sqr = dot(unnormalized_light_vector, unnormalized_light_vector);
+   const float attenuation = 1.0 - saturate(dist_sqr *  inv_range_sqr);
 
-   const float attenuation = saturate(1.0 - (light_dst * light_dst) * inv_range_sq);
-
-   return attenuation * attenuation;
+   return attenuation;
 }
 
-float attenuation_spot(float3 positionWS)
+void spot_params(float3 positionWS, out float attenuation, out float3 light_dirWS)
 {
-   const float3 light_dir = normalize(positionWS - light_spot_pos.xyz);
+   const float3 unnormalized_light_vectorWS = light_spot_pos.xyz - positionWS;
 
-   const float attenuation = attenuation_point(positionWS, light_spot_pos);
+   light_dirWS = normalize(unnormalized_light_vectorWS);
 
    const float outer_cone = light_spot_params.x;
 
-   const float theta = max(dot(light_dir, light_spot_dir.xyz), 0.0);
+   const float theta = max(dot(-light_dirWS, light_spot_dir.xyz), 0.0);
    const float cone_falloff = saturate((theta - outer_cone)  * light_spot_params.z);
 
-   return attenuation * cone_falloff;
+   attenuation = attenuation_point(unnormalized_light_vectorWS, light_spot_inv_range_sqr);
+   attenuation *= cone_falloff;
 }
 
 float intensity_directional(float3 normalWS, float4 direction)
@@ -54,22 +53,26 @@ float intensity_directional(float3 normalWS, float4 direction)
    return max(dot(normalWS, -direction.xyz), 0.0);
 }
 
-float intensity_point(float3 normalWS, float3 positionWS, float4 light_positionWS)
+float intensity_point(float3 normal, float3 position, float3 light_position, float inv_range_sqr)
 {
-   const float3 light_dir = normalize(positionWS - light_positionWS.xyz);
+   const float3 unnormalized_light_vector = light_position - position;
+   const float3 light_dir = normalize(unnormalized_light_vector);
+   const float intensity = saturate(dot(normal, light_dir));
+   const float attenuation = attenuation_point(unnormalized_light_vector, inv_range_sqr);
 
-   const float intensity = max(dot(normalWS, -light_dir), 0.0);
-
-   return attenuation_point(positionWS, light_positionWS)  * intensity;
+   return attenuation * intensity;
 }
 
 float intensity_spot(float3 normalWS, float3 positionWS)
 {
-   const float3 light_dir = normalize(positionWS - light_spot_pos.xyz);
+   float3 light_dirWS; 
+   float attenuation;
 
-   const float intensity = max(dot(normalWS, -light_dir), 0.0);
+   spot_params(positionWS, attenuation, light_dirWS);
 
-   return intensity * attenuation_spot(positionWS);
+   const float intensity = saturate(dot(normalWS, light_dirWS));
+
+   return intensity * attenuation;
 }
 
 Lighting calculate(float3 normalWS, float3 positionWS, float3 static_diffuse_lighting,
@@ -89,20 +92,20 @@ Lighting calculate(float3 normalWS, float3 positionWS, float3 static_diffuse_lig
       light += intensity.w * light_directional_1_color;
 
       if (ps_light_active_point_0) {
-         intensity.y = intensity_point(normalWS, positionWS, light_point_0_pos);
+         intensity.y = intensity_point(normalWS, positionWS, light_point_0_pos, light_point_0_inv_range_sqr);
          light += intensity.y * light_point_0_color;
       }
 
       if (ps_light_active_point_1) {
-         intensity.w = intensity_point(normalWS, positionWS, light_point_1_pos);
+         intensity.w = intensity_point(normalWS, positionWS, light_point_1_pos, light_point_1_inv_range_sqr);
          light += intensity.w * light_point_1_color;
       }
 
       if (ps_light_active_point_23) {
-         intensity.w = intensity_point(normalWS, positionWS, light_point_2_pos);
+         intensity.w = intensity_point(normalWS, positionWS, light_point_2_pos, light_point_2_inv_range_sqr);
          light += intensity.w * light_point_2_color;
 
-         intensity.w = intensity_point(normalWS, positionWS, light_point_3_pos);
+         intensity.w = intensity_point(normalWS, positionWS, light_point_3_pos, light_point_3_inv_range_sqr);
          light += intensity.w * light_point_3_color;
       }
       else if (ps_light_active_spot_light) {
@@ -133,35 +136,169 @@ Lighting calculate(float3 normalWS, float3 positionWS, float3 static_diffuse_lig
    return lighting;
 }
 
+namespace blinnphong {
+
+void calculate(inout float4 in_out_diffuse, inout float4 in_out_specular, 
+               float3 N, float3 V, float3 L, float attenuation, float4 light_color, 
+               float exponent, out float out_diffuse_intensity, out float out_specular_intensity)
+{
+   const float3 H = normalize(L + V);
+   const float NdotH = saturate(dot(N, H));
+   const float specular = pow(NdotH, exponent) * attenuation;
+   const float diffuse = saturate(dot(N, L)) * attenuation;
+
+   out_diffuse_intensity = diffuse;
+   out_specular_intensity = specular;
+
+   in_out_diffuse += (diffuse * light_color);
+   in_out_specular += (specular * light_color);
+}
+
+void calculate_point(inout float4 in_out_diffuse, inout float4 in_out_specular, float3 normal,
+                     float3 position, float3 view_normal, float3 light_position, float inv_range_sqr,
+                     float4 light_color, float exponent, out float out_diffuse_intensity, 
+                     out float out_specular_intensity)
+{
+   const float3 unnormalized_light_vector = light_position - position;
+   const float3 light_dir = normalize(unnormalized_light_vector);
+   const float attenuation = attenuation_point(unnormalized_light_vector, inv_range_sqr);
+   
+   calculate(in_out_diffuse, in_out_specular, normal, view_normal, light_dir, attenuation, 
+             light_color, exponent, out_diffuse_intensity, out_specular_intensity);
+}
+
+void calculate_spot(inout float4 in_out_diffuse, inout float4 in_out_specular, 
+                    float3 normalWS, float3 positionWS, float3 view_normalWS, float exponent,
+                    out float out_diffuse_intensity, out float out_specular_intensity)
+{
+   float3 light_dirWS;
+   float attenuation;
+   spot_params(positionWS, attenuation, light_dirWS);
+
+   calculate(in_out_diffuse, in_out_specular, normalWS, view_normalWS, light_dirWS, 
+             attenuation, light_spot_color, exponent, out_diffuse_intensity, out_specular_intensity);
+}
+
+void calculate(inout float4 in_out_diffuse, inout float4 in_out_specular,
+               float3 N, float3 V, float3 L, float attenuation, float4 light_color,
+               float exponent)
+{
+   float2 ignore;
+
+   calculate(in_out_diffuse, in_out_specular, N, V, L, attenuation, light_color, exponent,
+             ignore.x, ignore.y);
+}
+
+void calculate_point(inout float4 in_out_diffuse, inout float4 in_out_specular, float3 normal,
+                     float3 position, float3 view_normal, float3 light_position, float inv_range_sqr,
+                     float4 light_color, float exponent)
+{
+
+   float2 ignore;
+
+   calculate_point(in_out_diffuse, in_out_specular, normal, position, view_normal, light_position, 
+                   inv_range_sqr, light_color, exponent, ignore.x, ignore.y);
+}
+
+void calculate_spot(inout float4 in_out_diffuse, inout float4 in_out_specular, float3 normalWS,
+                    float3 positionWS, float3 view_normalWS, float exponent)
+{
+
+   float2 ignore;
+
+   calculate_spot(in_out_diffuse, in_out_specular, normalWS, positionWS,
+                  view_normalWS, exponent, ignore.x, ignore.y);
+}
+}
+
 namespace pbr
 {
 
-static const float PI = 3.14159265359f;
+static const float PI = 3.14159265359;
+static const float min_roughness = 0.0016;
+static const float sun_angular_radius = 0.00918;
 
-float normal_distribution(float roughness, float NdotH)
+float attenuation_point_smooth(float distance_sqr, float inv_range_sqr)
 {
-   const float a = roughness * roughness;
+   const float factor = distance_sqr * inv_range_sqr;
+   const float smooth_factor = saturate(1.0 - factor * factor);
 
-   const float d = (NdotH * NdotH) * ((a * a) - 1.0) + 1.0;
-
-   return (a * a) / (PI * (d * d));
+   return smooth_factor * smooth_factor;
 }
 
-float geometric_occlusion(float roughness, float NdotL, float NdotV)
+float attenuation_point(float3 unnormalized_light_vector, float inv_range_sqr)
 {
-   const float k = (roughness + 1) * (roughness + 1) / 8;
+   const float dist_sqr = dot(unnormalized_light_vector, unnormalized_light_vector);
+   const float attenuation = 1.0 / max(dist_sqr, 0.01 * 0.01);
 
-   const float g1 = NdotL / (NdotL * (1 - k) + k);
-   const float g2 = NdotV / (NdotV * (1 - k) + k);
-
-   return g1 * g2;
+   return attenuation * attenuation_point_smooth(dist_sqr, inv_range_sqr);
 }
 
-float3 fresnel_schlick(float3 F0, float3 V, float3 H)
+void point_params(float3 position, float3 light_position, float inv_range_sqr, 
+                  out float3 light_dir, out float light_attenuation)
 {
-   const float VdotH = saturate(dot(V, H));
+   const float3 unnormalized_light_vector = light_position - position;
 
-   return F0 + (1.0 - F0) * pow(1.0 - VdotH, 5);
+   light_dir = normalize(unnormalized_light_vector);
+   light_attenuation = attenuation_point(unnormalized_light_vector, inv_range_sqr);
+}
+
+void spot_params(float3 positionWS, out float attenuation, out float3 light_dirWS)
+{
+   float dist_attenuation;
+   point_params(positionWS, light_spot_pos, light_spot_inv_range_sqr,
+                light_dirWS, dist_attenuation);
+
+   const float outer_cone = light_spot_params.x;
+   const float theta = max(dot(-light_dirWS, light_spot_dir.xyz), 0.0);
+   const float cone_falloff = saturate((theta - outer_cone)  * light_spot_params.z);
+
+   attenuation = dist_attenuation * cone_falloff;
+}
+
+float3 sun_direction(float3 direction, float3 view_normal, float3 normal)
+{
+   const float3 D = direction;
+   const float3 R = reflect(-view_normal, normal);
+
+   const float r = sin(sun_angular_radius);
+   const float d = cos(sun_angular_radius);
+   const float DdotR = dot(D, R);
+
+   const float3 S = R - DdotR * D;
+
+   return (DdotR < d) ? normalize(d * D + normalize(S) * r) : R;
+}
+
+float ggx_distribution(float NdotH, float roughness)
+{
+   const float roughness2 = roughness * roughness;
+   const float f = (NdotH * NdotH) * (roughness2 - 1) + 1;
+
+   return roughness2 / (PI * (f * f));
+}
+
+float ggx_vis(float NdotX, float roughness2)
+{
+   return (2.0 * NdotX) / (NdotX + sqrt(roughness2 + (1.0 - roughness2) * (NdotX * NdotX)));
+}
+
+float ggx_occlusion(float NdotL, float NdotV, float roughness)
+{
+   const float roughness2 = roughness * roughness;
+
+   float ggxl = ggx_vis(NdotL, roughness2);
+   float ggxv = ggx_vis(NdotV, roughness2);
+
+   return ggxl * ggxv;
+}
+
+float3 fresnel(float3 F0, float3 L, float3 H)
+{
+   const float LdotH = saturate(dot(L, H));
+   const float3 fresnel = F0 + (1.0 - F0) * pow(1.0 - LdotH, 5);
+
+   return fresnel * saturate(dot(F0, 333.0f));
 }
 
 float3 diffuse_term(float3 albedo)
@@ -174,78 +311,90 @@ float3 brdf_light(float3 diffuse, float3 F0, float roughness, float3 N, float3 L
 {
    const float3 H = normalize(L + V);
 
-   const float NdotL = clamp(dot(N, L), 0.0001, 1.0);
+   const float NdotL = saturate(dot(N, L));
    const float NdotH = saturate(dot(N, H));
 
-   const float D = normal_distribution(roughness, NdotH);
-   const float G = geometric_occlusion(roughness, NdotL, NdotV);
-   const float3 F = fresnel_schlick(F0, V, H);
+   if (NdotL == 0.0) return 0.0;
 
-   const float3 spec_contrib = (D * G * F) / (4.0 * NdotL * NdotV);
-   const float3 diffuse_contrib = (1.0 - F) * diffuse;
+   const float D = ggx_distribution(NdotH, roughness);
+   const float G = ggx_occlusion(NdotL, NdotV, roughness);
+   const float3 F = fresnel(F0, L, H);
+
+   const float3 spec_contrib = (F * G * D) / (4.0 * NdotL * NdotV);
+   const float3 diffuse_contrib = diffuse * (1.0 - F);
 
    return NdotL * light_atten * light_color * (spec_contrib + diffuse_contrib);
 }
 
-float3 calculate(float3 N, float3 V, float3 world_position, float3 albedo,
-                  float metallicness, float roughness, float ao, float shadow)
+float3 calculate(float3 normalWS, float3 view_normalWS, float3 positionWS, float3 albedo,
+                  float metallicness, float perceptual_roughness, float ao, float shadow)
 {
+   const float roughness = max(perceptual_roughness * perceptual_roughness, min_roughness);
    const float dielectric = 0.04;
    const float3 F0 = lerp(dielectric, albedo, metallicness);
    albedo = lerp(albedo * (1 - dielectric), 0.0, metallicness);
 
    const float3 diffuse = diffuse_term(albedo);
-   const float NdotV = clamp(abs(dot(N, V)), 0.0001, 1.0);
+   const float NdotV = max(abs(dot(normalWS, view_normalWS)), 1e-5);
 
    float3 light = 0.0;
 
    if (ps_light_active_directional) {
-      light += brdf_light(diffuse, F0, roughness, N, -light_directional_0_dir.xyz,
-                          V, NdotV, 1.0, light_directional_0_color.rgb);
+      const float3 sun_dirWS = sun_direction(-light_directional_0_dir.xyz, view_normalWS, normalWS);
 
-      light += brdf_light(diffuse, F0, roughness, N, -light_directional_1_dir.xyz,
-                          V, NdotV, 1.0, light_directional_1_color.rgb);
+      light += brdf_light(diffuse, F0, roughness, normalWS, sun_dirWS,
+                          view_normalWS, NdotV, 1.0, light_directional_0_color.rgb);
+
+      light += brdf_light(diffuse, F0, roughness, normalWS, -light_directional_1_dir.xyz,
+                          view_normalWS, NdotV, 1.0, light_directional_1_color.rgb);
 
       light *= shadow;
 
       if (ps_light_active_point_0) {
-         const float3 light_dir = normalize(light_point_0_pos.xyz - world_position);
-         const float attenuation = attenuation_point(world_position, light_point_0_pos);
+         float3 light_dirWS;
+         float attenuation;
 
-         light += brdf_light(diffuse, F0, roughness, N, light_dir,
-                             V, NdotV, attenuation, light_point_0_color.rgb);
+         point_params(positionWS, light_point_0_pos, light_point_0_inv_range_sqr, light_dirWS, attenuation);
+
+         light += brdf_light(diffuse, F0, roughness, normalWS, light_dirWS,
+                             view_normalWS, NdotV, attenuation, light_point_0_color.rgb);
       }
 
       if (ps_light_active_point_1) {
-         const float3 light_dir = normalize(light_point_1_pos.xyz - world_position);
-         const float attenuation = attenuation_point(world_position, light_point_1_pos);
+         float3 light_dirWS;
+         float attenuation;
 
-         light += brdf_light(diffuse, F0, roughness, N, light_dir,
-                             V, NdotV, attenuation, light_point_1_color.rgb);
+         point_params(positionWS, light_point_1_pos, light_point_1_inv_range_sqr, light_dirWS, attenuation);
+
+         light += brdf_light(diffuse, F0, roughness, normalWS, light_dirWS,
+                             view_normalWS, NdotV, attenuation, light_point_1_color.rgb);
       }
 
       if (ps_light_active_point_23) {
-         float3 light_dir = normalize(light_point_2_pos.xyz - world_position);
-         float attenuation = attenuation_point(world_position, light_point_2_pos);
+         float3 light_dirWS;
+         float attenuation;
 
-         light += brdf_light(diffuse, F0, roughness, N, light_dir,
-                             V, NdotV, attenuation, light_point_2_color.rgb);
+         point_params(positionWS, light_point_2_pos, light_point_2_inv_range_sqr, light_dirWS, attenuation);
 
-         light_dir = normalize(light_point_3_pos.xyz - world_position);
-         attenuation = attenuation_point(world_position, light_point_3_pos);
+         light += brdf_light(diffuse, F0, roughness, normalWS, light_dirWS,
+                             view_normalWS, NdotV, attenuation, light_point_2_color.rgb);
 
-         light += brdf_light(diffuse, F0, roughness, N, light_dir,
-                             V, NdotV, attenuation, light_point_3_color.rgb);
+         point_params(positionWS, light_point_3_pos, light_point_3_inv_range_sqr, light_dirWS, attenuation);
+
+         light += brdf_light(diffuse, F0, roughness, normalWS, light_dirWS,
+                             view_normalWS, NdotV, attenuation, light_point_3_color.rgb);
       }
       else if (ps_light_active_spot_light) {
-         const float3 light_dir = normalize(light_spot_pos.xyz - world_position);
-         const float attenuation = attenuation_spot(world_position);
+         float3 light_dirWS;
+         float attenuation;
 
-         light += brdf_light(diffuse, F0, roughness, N, light_dir,
-                             V, NdotV, attenuation, light_spot_color.rgb);
+         spot_params(positionWS, attenuation, light_dirWS);
+
+         light += brdf_light(diffuse, F0, roughness, normalWS, light_dirWS,
+                             view_normalWS, NdotV, attenuation, light_spot_color.rgb);
       }
 
-      light += (ambient(N) * diffuse * ao);
+      light += (ambient(normalWS) * diffuse * ao);
    }
    else {
       light = 0.0;

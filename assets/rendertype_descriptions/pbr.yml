@@ -1,4 +1,5 @@
 Overridden RenderType: "normal"
+Failsafe Texture Index: 0
 
 Property Mappings:
    BaseColor:
@@ -25,22 +26,22 @@ Property Mappings:
       Type: scaler
       Range: [0.0, 2048.0]
       Constant: 1.z
+      Op: exp2
       
    EmissivePower:
       Type: scaler
-      Range: [0.0, 2048.0]
+      Range: [-2048.0, 2048.0]
       Constant: 1.z
+      Op: exp2
 
 Texture Mappings:
    AlbedoMap: 
-      Slot: 4
+      Slot: 0
    NormalMap: 
-      Slot: 5
+      Slot: 1
    MetallicRoughnessMap: 
-      Slot: 6
+      Slot: 2
    AOMap:
-      Slot: 7
-   LightMap:
-      Slot: 8
+      Slot: 3
    EmissiveMap:
-      Slot: 9
+      Slot: 4

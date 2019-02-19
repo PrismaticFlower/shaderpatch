@@ -33,9 +33,11 @@ cbuffer DrawConstants : register(b1)
    float4 light_directional_1_color;
    float4 light_directional_1_dir;
    float4 light_point_0_color;
-   float4 light_point_0_pos;
+   float3 light_point_0_pos;
+   float  light_point_0_inv_range_sqr;
    float4 light_point_1_color;
-   float4 light_point_1_pos;
+   float3 light_point_1_pos;
+   float  light_point_1_inv_range_sqr;
    float4 overlapping_lights[4];
    float4 light_proj_color;
    float4 light_proj_selector;
@@ -77,12 +79,15 @@ static const float lighting_scale = ps_lighting_scale;
 #endif
 
 static const float4 light_point_2_color = overlapping_lights[0];
-static const float4 light_point_2_pos = overlapping_lights[1];
+static const float3 light_point_2_pos = overlapping_lights[1].xyz;
+static const float  light_point_2_inv_range_sqr = overlapping_lights[1].w;
 static const float4 light_point_3_color = overlapping_lights[2];
-static const float4 light_point_3_pos = overlapping_lights[3];
+static const float3 light_point_3_pos = overlapping_lights[3].xyz;
+static const float  light_point_3_inv_range_sqr = overlapping_lights[3].w;
 
 static const float4 light_spot_color = overlapping_lights[0];
-static const float4 light_spot_pos = overlapping_lights[1]; // spot light position, w = 1 / r^2
+static const float3 light_spot_pos = overlapping_lights[1].xyz; // spot light position, w = 1 / r^2
+static const float light_spot_inv_range_sqr = overlapping_lights[1].w;
 static const float4 light_spot_dir = overlapping_lights[2];
 
 // spot light params

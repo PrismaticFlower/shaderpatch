@@ -269,7 +269,7 @@ void Patch_compiler::compile_vertex_entrypoint(
                                             combine_defines(entrypoint.second.defines,
                                                             variation.defines));
 
-      compiled.variations[{variation.flags, variation.static_flags}] =
+      compiled.variations[{variation.flags & state.flags_mask, variation.static_flags}] =
          Compiled_vertex_variation{std::move(input_layout), std::move(bytecode)};
    }
 

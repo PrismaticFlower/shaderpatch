@@ -23,6 +23,10 @@ interface Transformer
 
    float3 bitangentWS();
 
+   float3 patch_tangentOS();
+
+   float3 patch_tangentWS();
+
    float2 texcoords(float4 x_transform, float4 y_transform);
 };
 
@@ -52,7 +56,7 @@ class Transformer_unskinned : Transformer
 
    float3 normalWS()
    {
-      return mul(normalOS(), (float3x3)world_matrix);
+      return normalize(mul(normalOS(), (float3x3)world_matrix));
    }
 
    float3 tangentOS()
@@ -62,7 +66,7 @@ class Transformer_unskinned : Transformer
 
    float3 tangentWS()
    {
-      return mul(tangentOS(), (float3x3)world_matrix);
+      return normalize(mul(tangentOS(), (float3x3)world_matrix));
    }
 
    float3 bitangentOS()
@@ -72,7 +76,17 @@ class Transformer_unskinned : Transformer
 
    float3 bitangentWS()
    {
-      return mul(bitangentOS(), (float3x3)world_matrix);
+      return normalize(mul(bitangentOS(), (float3x3)world_matrix));
+   }
+
+   float3 patch_tangentOS()
+   {
+      return input.patch_tangent();
+   }
+
+   float3 patch_tangentWS()
+   {
+      return normalize(mul(patch_tangentOS(), (float3x3)world_matrix));
    }
 
    float2 texcoords(float4 x_transform, float4 y_transform)
@@ -107,7 +121,7 @@ class Transformer_hard_skinned : Transformer
 
    float3 normalWS()
    {
-      return mul(normalOS(), (float3x3)world_matrix);
+      return normalize(mul(normalOS(), (float3x3)world_matrix));
    }
 
    float3 tangentOS()
@@ -117,7 +131,7 @@ class Transformer_hard_skinned : Transformer
 
    float3 tangentWS()
    {
-      return mul(tangentOS(), (float3x3)world_matrix);
+      return normalize(mul(tangentOS(), (float3x3)world_matrix));
    }
 
    float3 bitangentOS()
@@ -127,7 +141,17 @@ class Transformer_hard_skinned : Transformer
 
    float3 bitangentWS()
    {
-      return mul(bitangentOS(), (float3x3)world_matrix);
+      return normalize(mul(bitangentOS(), (float3x3)world_matrix));
+   }
+
+   float3 patch_tangentOS()
+   {
+      return mul(input.patch_tangent(), (float3x3)bone_matrices[input.bone_index()]);
+   }
+
+   float3 patch_tangentWS()
+   {
+      return normalize(mul(patch_tangentOS(), (float3x3)world_matrix));
    }
 
    float2 texcoords(float4 x_transform, float4 y_transform)
@@ -181,6 +205,16 @@ class Transformer_null : Transformer
    }
 
    float3 bitangentWS()
+   {
+      return 0.0;
+   }
+
+   float3 patch_tangentOS()
+   {
+      return 0.0;
+   }
+
+   float3 patch_tangentWS()
    {
       return 0.0;
    }

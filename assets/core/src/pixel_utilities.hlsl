@@ -6,11 +6,6 @@
 
 TextureCube<float3> cube_projected_texture : register(t127);
 
-float3 blend_tangent_space_normals(float3 N0, float3 N1)
-{
-   return float3(N0.xy + N1.xy, N0.z * N1.z);
-}
-
 // Christian Schüler's Normal Mapping Without Precomputed Tangents code.
 // Taken from http://www.thetenthplanet.de/archives/1180, be sure to go
 // check out his article on it. 
@@ -42,16 +37,55 @@ float3 perturb_normal(Texture2D<float2> tex, SamplerState samp,
 
    float3 map;
    map.xy = tex.Sample(samp, texcoords) * 255. / 127. - 128. / 127.;
-   map.z = sqrt(1. - dot(map.xy, map.xy));
-
-#ifdef WITH_NORMALMAP_GREEN_UP
-   map.y = -map.y;
-#endif
+   map.z = sqrt(1.0 - saturate(dot(map.xy, map.xy)));
 
    float3x3 TBN = cotangent_frame(N, -V, texcoords);
-   return normalize(mul(map, TBN));
+   float3 result = normalize(mul(map, TBN));
+
+   return any(isnan(result)) ? N : result;
 }
 
+float3 sample_normal_map(Texture2D<float2> tex, SamplerState samp, float2 texcoords)
+{
+   float3 normal;
+   normal.xy = tex.Sample(samp, texcoords) * 2.0 - 1.0;
+   normal.z = sqrt(1.0 - saturate(dot(normal.xy, normal.xy)));
+
+   return normal;
+}
+
+float3 sample_normal_map_gloss(Texture2D<float4> tex, SamplerState samp, float2 texcoords, out float gloss)
+{
+   float4 normal_gloss = tex.Sample(samp, texcoords);
+   float3 normal = normal_gloss.xyz * 2.0 - 1.0;
+
+   normal.z = sqrt(1.0 - saturate(dot(normal.xy, normal.xy)));
+
+   gloss = normal_gloss.w;
+
+   return normal;
+}
+
+float3 sample_normal_map_gloss(Texture2D<float4> tex, Texture2D<float2> detail_tex, SamplerState samp, 
+                               float2 texcoords, float2 detail_texcoords, out float gloss)
+{
+   float4 normal_gloss = tex.Sample(samp, texcoords);
+   float3 normal = normal_gloss.xyz * 2.0 - 1.0;
+
+   normal.xy *= (detail_tex.Sample(samp, detail_texcoords) * 2.0 - 1.0);
+   normal.z = sqrt(1.0 - saturate(dot(normal.xy, normal.xy)));
+
+   gloss = normal_gloss.w;
+
+   return normal;
+}
+
+float3 perturb_normal(float3 normalTS, float3 normal, float3 tangent, float bitangent_sign)
+{
+   const float3 bitangent = bitangent_sign * cross(normal, tangent);
+
+   return normalize(normalTS.x * tangent + normalTS.y * bitangent + normalTS.z * normal);
+}
 
 float3 sample_projected_light(Texture2D<float3> projected_texture, float4 texcoords)
 {

@@ -15,7 +15,7 @@ Texture2D<float4> albedo_map : register(t4);
 Texture2D<float2> normal_map : register(t5);
 Texture2D<float2> metallic_roughness_map : register(t6);
 Texture2D<float> ao_map : register(t7);
-Texture2D<float4> emissive_map : register(t9);
+Texture2D<float3> emissive_map : register(t8);
 
 // Game Custom Constants
 const static float4 blend_constant = ps_custom_constants[0];
@@ -42,11 +42,13 @@ struct Vs_output
 {
    float3 positionWS : POSITIONWS;
    float3 normalWS : NORMALWS;
+   float3 tangentWS : TANGENTWS;
    float2 texcoords : TEXCOORD0;
    float4 shadow_texcoords : TEXCOORD1;
 
    float fade : FADE;
    float fog : FOG;
+   float bitangent_sign : BITANGENTSIGN;
 
    float4 positionPS : SV_Position;
 };
@@ -63,6 +65,8 @@ Vs_output main_vs(Vertex_input input)
    output.positionWS = positionWS;
    output.positionPS = positionPS;
    output.normalWS = transformer.normalWS();
+   output.tangentWS = transformer.patch_tangentWS();
+   output.bitangent_sign = input.patch_bitangent_sign();
 
    output.texcoords = transformer.texcoords(x_texcoords_transform, y_texcoords_transform);
    output.shadow_texcoords = transform_shadowmap_coords(positionWS);
@@ -78,11 +82,13 @@ struct Ps_input
 {
    float3 positionWS : POSITIONWS;
    float3 normalWS : NORMALWS;
+   float3 tangentWS : TANGENTWS;
    float2 texcoords : TEXCOORD0;
    float4 shadow_texcoords : TEXCOORD1;
 
    float fade : FADE;
    float fog : FOG;
+   float bitangent_sign : BITANGENTSIGN;
 
    float4 positionSS : SV_Position;
    bool front_face : SV_IsFrontFace;
@@ -108,21 +114,21 @@ float4 main_ps(Ps_input input) : SV_Target0
    }
 
    // Calculate lighting.
-   const float3 view_normalWS = normalize(view_positionWS - input.positionWS);
-   const float3 normalWS = perturb_normal(normal_map, aniso_wrap_sampler, input.texcoords,
-                                          normalize(input.normalWS * input.front_face ? -1.0 : 1.0), view_normalWS);
+   const float3 normalWS = perturb_normal(sample_normal_map(normal_map, aniso_wrap_sampler, input.texcoords),
+                                          input.front_face ? -input.normalWS : input.normalWS, input.tangentWS,
+                                          input.bitangent_sign);
 
    const float2 shadow_texcoords = input.shadow_texcoords.xy / input.shadow_texcoords.w;
    const float shadow = 
       use_shadow_map ? shadow_map.SampleLevel(linear_clamp_sampler, shadow_texcoords, 0).a : 1.0;
    const float ao = ao_map.Sample(aniso_wrap_sampler, input.texcoords) * ao_strength;
 
-   float3 color = light::pbr::calculate(normalWS, view_normalWS, input.positionWS, 
+   float3 color = light::pbr::calculate(normalWS, normalize(view_positionWS - input.positionWS), input.positionWS,
                                         albedo, metallicness, roughness, ao, shadow);
 
    if (use_emissive_map) {
       color += 
-         emissive_map.Sample(aniso_wrap_sampler, input.texcoords).rgb * exp2(emissive_power);
+         emissive_map.Sample(aniso_wrap_sampler, input.texcoords) * emissive_power;
    }
 
    color = apply_fog(color, input.fog);
@@ -133,7 +139,7 @@ float4 main_ps(Ps_input input) : SV_Target0
       alpha = lerp(1.0, albedo_map_color.a, blend_constant.b);
       alpha *= input.fade;
 
-      color /= alpha;
+      color /= max(alpha, 1e-5);
    }
    else {
       alpha = input.fade;

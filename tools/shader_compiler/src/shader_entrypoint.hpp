@@ -3,7 +3,9 @@
 #include "compose_exception.hpp"
 #include "preprocessor_defines.hpp"
 #include "shader_custom_flags.hpp"
+#include "shader_flags.hpp"
 
+#include <limits>
 #include <optional>
 #include <string>
 #include <variant>
@@ -29,6 +31,7 @@ struct Vertex_state {
 
    std::string input_layout;
    Generic_input generic_input;
+   Vertex_shader_flags flags_mask;
 };
 
 struct Pixel_state {
@@ -79,6 +82,24 @@ inline void from_json(const nlohmann::json& j, Vertex_state::Generic_input& gene
    generic_input.texture_coords = j.at("texture_coords"s);
 }
 
+inline auto from_json_flags_mask(const nlohmann::json& j) -> Vertex_shader_flags
+{
+   using namespace std::literals;
+
+   Vertex_shader_flags flags{};
+
+   if (j.value("compressed"s, true)) flags |= Vertex_shader_flags::compressed;
+   if (j.value("position"s, true)) flags |= Vertex_shader_flags::position;
+   if (j.value("normal"s, true)) flags |= Vertex_shader_flags::normal;
+   if (j.value("tangents"s, true)) flags |= Vertex_shader_flags::tangents;
+   if (j.value("texcoords"s, true)) flags |= Vertex_shader_flags::texcoords;
+   if (j.value("color"s, true)) flags |= Vertex_shader_flags::color;
+   if (j.value("hard_skinned"s, true))
+      flags |= Vertex_shader_flags::hard_skinned;
+
+   return flags;
+}
+
 inline void from_json(const nlohmann::json& j, Vertex_state& vertex_state)
 {
    using namespace std::literals;
@@ -86,6 +107,12 @@ inline void from_json(const nlohmann::json& j, Vertex_state& vertex_state)
    vertex_state.input_layout = j.at("input_layout"s).get<std::string>();
    vertex_state.generic_input =
       j.value("generic_input"s, Vertex_state::Generic_input{});
+
+   if (const auto it = j.find("flags_mask"s); it != j.cend())
+      vertex_state.flags_mask = from_json_flags_mask(*it);
+   else
+      vertex_state.flags_mask = Vertex_shader_flags{
+         std::numeric_limits<std::underlying_type_t<Vertex_shader_flags>>::max()};
 }
 
 inline void from_json(const nlohmann::json& j, Pixel_state& pixel_state)

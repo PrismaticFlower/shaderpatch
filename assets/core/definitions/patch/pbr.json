@@ -14,9 +14,13 @@
           "position": true,
           "skinned": true,
           "normal": true,
-          "tangents": false,
+          "tangents": true,
           "color": true,
           "texture_coords": true
+        },
+
+        "flags_mask": {
+          "tangents": false
         }
       },
 

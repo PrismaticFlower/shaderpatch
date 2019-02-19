@@ -55,6 +55,30 @@ auto set_constant(Aligned_vector<std::byte, 16>& cb,
    std::memcpy(cb.data() + byte_offset, &value, sizeof(Value));
 }
 
+auto apply_prop_op(const float val, std::string_view op) -> float
+{
+   if (op == "sqr"sv) {
+      return val * val;
+   }
+   else if (op == "sqrt"sv) {
+      return std::sqrt(val);
+   }
+   else if (op == "exp"sv) {
+      return std::exp(val);
+   }
+   else if (op == "exp2"sv) {
+      return std::exp2(val);
+   }
+   else if (op == "log"sv) {
+      return std::log(val);
+   }
+   else if (op == "log2"sv) {
+      return std::log2(val);
+   }
+
+   throw std::runtime_error{"Invalid property op!"};
+}
+
 auto read_prop(const std::string& prop_key, const YAML::Node value,
                const YAML::Node property_mappings, Aligned_vector<std::byte, 16>& cb)
 {
@@ -73,8 +97,12 @@ auto read_prop(const std::string& prop_key, const YAML::Node value,
 
    if (type == "scaler"sv) {
       const auto byte_offset = offset * sizeof(float);
+      const auto clamped_value = std::clamp(value.as<float>(), range[0], range[1]);
+      const auto final_value =
+         desc["Op"s] ? apply_prop_op(clamped_value, desc["Op"s].as<std::string>())
+                     : clamped_value;
 
-      set_constant(cb, byte_offset, std::clamp(value.as<float>(), range[0], range[1]));
+      set_constant(cb, byte_offset, final_value);
    }
    else {
       auto count = 0;
@@ -93,9 +121,14 @@ auto read_prop(const std::string& prop_key, const YAML::Node value,
 
       for (auto i = 0; i < count; ++i) {
          const auto byte_offset = offset * sizeof(float) + (i * sizeof(float));
+         const auto clamped_value =
+            std::clamp(value[i].as<float>(), range[0], range[1]);
+         const auto final_value =
+            desc["Op"s]
+               ? apply_prop_op(clamped_value, desc["Op"s].as<std::string>())
+               : clamped_value;
 
-         set_constant(cb, byte_offset,
-                      std::clamp(value[i].as<float>(), range[0], range[1]));
+         set_constant(cb, byte_offset, final_value);
       }
    }
 }
