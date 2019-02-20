@@ -2,6 +2,7 @@
 #include "envfx_edits.hpp"
 #include "compose_exception.hpp"
 #include "config_file.hpp"
+#include "string_utilities.hpp"
 #include "synced_io.hpp"
 
 #include <cstdlib>
@@ -22,7 +23,7 @@ auto load_fx_cfg(const fs::path& fx_path) -> cfg::Node
    try {
       return cfg::from_istream(file);
    }
-   catch (Parse_error& e) {
+   catch (std::exception& e) {
       throw compose_exception<std::runtime_error>(
          "Error occured while parsing ", fx_path, ". Message: ", e.what());
    }

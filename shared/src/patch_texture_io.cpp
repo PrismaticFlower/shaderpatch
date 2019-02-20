@@ -89,7 +89,7 @@ void write_patch_texture(const std::filesystem::path& save_path,
             auto sub_writer = data_writer.emplace_child("SUB_"_mn);
 
             sub_writer.write(data.pitch, data.slice_pitch);
-            sub_writer.write(static_cast<std::uint32_t>(data.data.size()));
+            sub_writer.write(gsl::narrow_cast<std::uint32_t>(data.data.size()));
             sub_writer.write_unaligned(data.data); // Much data, such wow.
          }
       }
@@ -378,15 +378,19 @@ auto load_patch_texture_impl(ucfb::Reader reader, ID3D11Device1& device)
       auto level = mips.read_child_strict<"MIP_"_mn>();
       auto data = level.read_array_unaligned<std::byte>(level.size());
 
-      D3D11_SUBRESOURCE_DATA subres_data{};
+      std::size_t row_pitch;
+      std::size_t slice_pitch;
 
       if (const auto result =
-             DirectX::ComputePitch(dxgi_format, info.width >> i, info.height >> i,
-                                   subres_data.SysMemPitch, subres_data.SysMemSlicePitch);
+             DirectX::ComputePitch(dxgi_format, info.width >> i,
+                                   info.height >> i, row_pitch, slice_pitch);
           FAILED(result)) {
          throw compose_exception<std::runtime_error>("Failed to compute pitch for texture "sv,
                                                      std::quoted(name), '.');
       }
+
+      D3D11_SUBRESOURCE_DATA subres_data{nullptr, gsl::narrow_cast<UINT>(row_pitch),
+                                         gsl::narrow_cast<UINT>(slice_pitch)};
 
       // Convert ATI2 block layout to BC5 block layout.
       if (patchup_bc5_layout) {

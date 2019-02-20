@@ -44,7 +44,7 @@ private:
 
 class Writer {
 public:
-   enum class Alignment : bool { unaligned, aligned };
+   enum class Alignment : bool { aligned, unaligned };
 
    Writer(std::ostream& output_stream, const Magic_number root_mn = "ucfb"_mn)
       : _out{output_stream}
@@ -140,6 +140,20 @@ public:
       -> std::enable_if_t<!std::disjunction_v<std::is_same<Alignment, Args>...>>
    {
       (this->write(args, Alignment::unaligned), ...);
+   }
+
+   auto pad(const std::uint32_t amount, Alignment alignment = Alignment::aligned)
+   {
+      for (auto i = 0; i < amount; ++i) _out.put('\0');
+
+      _size += amount;
+
+      if (alignment == Alignment::aligned) align_file();
+   }
+
+   auto pad_unaligned(const std::uint32_t amount)
+   {
+      return pad(amount, Alignment::unaligned);
    }
 
 private:

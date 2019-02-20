@@ -131,5 +131,8 @@
     <ClCompile Include="src\ucfb_editor.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\volume_resource.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

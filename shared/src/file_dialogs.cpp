@@ -20,7 +20,8 @@ std::optional<Path> file_dialog(std::initializer_list<COMDLG_FILTERSPEC> filters
    throw_if_failed(CoCreateInstance(clsid, nullptr, CLSCTX_ALL, iid,
                                     dialog.void_clear_and_assign()));
 
-   throw_if_failed(dialog->SetFileTypes(filters.size(), filters.begin()));
+   throw_if_failed(dialog->SetFileTypes(gsl::narrow_cast<UINT>(filters.size()),
+                                        filters.begin()));
    throw_if_failed(dialog->SetFileName(filename.c_str()));
    throw_if_failed(dialog->SetOptions(FOS_NOCHANGEDIR));
 

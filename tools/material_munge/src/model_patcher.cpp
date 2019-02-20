@@ -160,8 +160,10 @@ void edit_ibuf_vbufs(ucfb::Editor_parent_chunk& segm, const Material_options opt
                        std::get<ucfb::Editor_data_chunk>(info->second).span()};
 
       info_tweaker.get<std::uint32_t>().store(D3DPT_TRIANGLELIST);
-      info_tweaker.get<std::uint32_t>().store(vertex_buffer.count);
-      info_tweaker.get<std::uint32_t>().store(index_buffer.size());
+      info_tweaker.get<std::uint32_t>().store(
+         gsl::narrow_cast<std::uint32_t>(vertex_buffer.count));
+      info_tweaker.get<std::uint32_t>().store(
+         gsl::narrow_cast<std::uint32_t>(index_buffer.size()));
    }
 }
 

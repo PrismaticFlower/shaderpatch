@@ -3,6 +3,7 @@
 #include "compose_exception.hpp"
 #include "envfx_edits.hpp"
 #include "req_file_helpers.hpp"
+#include "string_utilities.hpp"
 #include "synced_io.hpp"
 #include "volume_resource.hpp"
 
@@ -10,7 +11,6 @@
 #include <fstream>
 #include <string_view>
 
-#include <boost/algorithm/string.hpp>
 #include <gsl/gsl>
 
 #pragma warning(push)
@@ -59,7 +59,8 @@ void generate_spfx_req_file(YAML::Node spfx, const fs::path& save_path)
       for (auto key : section.second) {
          if (!key.second.IsScalar()) continue;
 
-         if (boost::icontains(key.first.as<std::string>(), "texture"s)) {
+         if (make_ci_string(key.first.as<std::string>()).find("texture") !=
+             Ci_string::npos) {
             auto texture = key.second.as<std::string>();
 
             if (texture.empty()) continue;

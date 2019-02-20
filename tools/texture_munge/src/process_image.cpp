@@ -35,14 +35,14 @@ namespace DX = DirectX;
 
 namespace {
 
-constexpr bool is_power_of_2(glm::uint i)
+constexpr bool is_power_of_2(std::size_t i)
 {
    return i && !(i & (i - 1));
 }
 
-constexpr bool is_multiple_of_4(glm::uint i)
+constexpr bool is_multiple_of_4(std::size_t i)
 {
-   return i && ((i % 4) == 0);
+   return i && ((i % 4u) == 0u);
 }
 
 constexpr glm::uint round_next_power_of_2(glm::uint i)
@@ -437,12 +437,12 @@ auto compress_image(DX::ScratchImage image, const YAML::Node& config) -> DX::Scr
       const auto work_count = dest_sub_image.height / 4;
 
       if (work_count) {
-         std::for_each_n(std::execution::par, Index_iterator{}, work_count, [&](int index) {
+         std::for_each_n(std::execution::par, Index_iterator{}, work_count, [&](auto index) {
             rgba_surface surface;
             surface.ptr = src_sub_image.pixels + (index * 4 * src_sub_image.rowPitch);
-            surface.width = src_sub_image.width;
+            surface.width = gsl::narrow_cast<std::uint32_t>(src_sub_image.width);
             surface.height = 4;
-            surface.stride = src_sub_image.rowPitch;
+            surface.stride = gsl::narrow_cast<std::uint32_t>(src_sub_image.rowPitch);
 
             auto* const dest =
                dest_sub_image.pixels + (index * dest_sub_image.rowPitch);

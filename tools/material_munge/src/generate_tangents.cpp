@@ -48,7 +48,7 @@ auto init_tangents_vertex_buffer(const std::vector<std::array<std::uint16_t, 3>>
 constexpr SMikkTSpaceInterface mikktspace_interface{
    // m_getNumFaces
    [](const SMikkTSpaceContext* context) -> int {
-      return static_cast<Vertex_buffer*>(context->m_pUserData)->count / 3;
+      return static_cast<int>(static_cast<Vertex_buffer*>(context->m_pUserData)->count) / 3;
    },
 
    // m_getNumVerticesOfFace

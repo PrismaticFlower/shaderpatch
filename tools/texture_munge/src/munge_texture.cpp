@@ -29,9 +29,9 @@ namespace DX = DirectX;
 
 namespace {
 
-constexpr auto mip_res(glm::uint res, glm::uint level) noexcept
+constexpr auto mip_res(std::size_t res, std::size_t level) noexcept
 {
-   return std::max(res >> level, 1u);
+   return std::max(res >> level, std::size_t{1u});
 }
 
 void check_sampler_info(const YAML::Node& config)
@@ -54,10 +54,10 @@ auto get_texture_info(const DX::ScratchImage& image) -> Texture_info
    Texture_info info;
 
    info.type = Texture_type::texture2d;
-   info.width = meta.width;
-   info.height = meta.height;
+   info.width = gsl::narrow_cast<std::uint32_t>(meta.width);
+   info.height = gsl::narrow_cast<std::uint32_t>(meta.height);
    info.depth = 1;
-   info.mip_count = meta.mipLevels;
+   info.mip_count = gsl::narrow_cast<std::uint32_t>(meta.mipLevels);
    info.array_size = 1;
    info.format = meta.format;
 
@@ -78,8 +78,8 @@ auto get_texture_data(const DX::ScratchImage& image) -> std::vector<Texture_data
          const auto depth = mip_res(meta.depth, mip);
 
          Texture_data data;
-         data.pitch = sub_image->rowPitch;
-         data.slice_pitch = sub_image->slicePitch;
+         data.pitch = gsl::narrow_cast<UINT>(sub_image->rowPitch);
+         data.slice_pitch = gsl::narrow_cast<UINT>(sub_image->slicePitch);
          data.data = gsl::make_span(reinterpret_cast<std::byte*>(sub_image->pixels),
                                     sub_image->slicePitch * depth);
 

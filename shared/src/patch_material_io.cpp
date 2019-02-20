@@ -65,7 +65,8 @@ void write_patch_material(const std::filesystem::path& save_path,
       {
          auto texs = writer.emplace_child("TEXS"_mn);
 
-         texs.write<std::uint32_t>(info.textures.size());
+         texs.write<std::uint32_t>(
+            gsl::narrow_cast<std::uint32_t>(info.textures.size()));
          for (const auto& texture : info.textures) texs.write(texture);
       }
 
@@ -148,7 +149,7 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_info
       auto cnst = reader.read_child_strict<"CNST"_mn>();
       const auto constants = cnst.read_array<std::byte>(cnst.size());
 
-      info.constant_buffer.resize(next_multiple_of<16u>(constants.size()));
+      info.constant_buffer.resize(next_multiple_of<std::size_t{16}>(constants.size()));
       std::memcpy(info.constant_buffer.data(), constants.data(), constants.size());
    }
 

@@ -63,7 +63,7 @@ inline void for_each(Policy&& policy, const Image_span& span, Func func) noexcep
 
    if (work_size) {
       std::for_each_n(std::forward<Policy>(policy), Index_iterator{}, threads,
-                      [work_size, span_x_size = span.size().x, &func](const int item) {
+                      [work_size, span_x_size = span.size().x, &func](const auto item) {
                          const auto offset = item * work_size;
 
                          for (auto y = 0; y < work_size; ++y) {
