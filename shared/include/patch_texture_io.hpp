@@ -14,6 +14,8 @@
 
 namespace sp {
 
+enum class Texture_file_type { volume_resource, direct_texture };
+
 enum class Texture_type : std::uint32_t {
    texture1d,
    texture1darray,
@@ -40,11 +42,12 @@ struct Texture_data {
    gsl::span<const std::byte> data;
 };
 
-auto load_patch_texture(ucfb::Reader reader, ID3D11Device1& device)
+auto load_patch_texture(ucfb::Reader_strict<"sptx"_mn> reader, ID3D11Device1& device)
    -> std::pair<Com_ptr<ID3D11ShaderResourceView>, std::string>;
 
 void write_patch_texture(const std::filesystem::path& save_path,
                          const Texture_info& texture_info,
-                         const std::vector<Texture_data>& texture_data);
+                         const std::vector<Texture_data>& texture_data,
+                         const Texture_file_type file_type);
 
 }

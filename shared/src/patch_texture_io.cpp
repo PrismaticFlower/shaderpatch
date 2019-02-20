@@ -32,31 +32,29 @@ namespace sp {
 
 using namespace std::literals;
 
-enum class Texture_version : std::uint32_t { _1_0_0, _2_0_0, current = _2_0_0 };
+enum class Texture_version : std::uint32_t { v_1, current = v_1 };
 
-inline namespace v_2_0_0 {
-auto load_patch_texture_impl(ucfb::Reader reader, ID3D11Device1& device)
+namespace {
+inline namespace v_1 {
+auto load_patch_texture_impl(ucfb::Reader_strict<"sptx"_mn> reader, ID3D11Device1& device)
    -> std::pair<Com_ptr<ID3D11ShaderResourceView>, std::string>;
 }
 
-namespace v_1_0_0 {
-auto load_patch_texture_impl(ucfb::Reader reader, ID3D11Device1& device)
-   -> std::pair<Com_ptr<ID3D11ShaderResourceView>, std::string>;
+void write_sptx(ucfb::Writer& writer, const std::string_view name,
+                const Texture_info& texture_info,
+                const std::vector<Texture_data>& texture_data);
+
 }
 
-auto load_patch_texture(ucfb::Reader reader, ID3D11Device1& device)
+auto load_patch_texture(ucfb::Reader_strict<"sptx"_mn> reader, ID3D11Device1& device)
    -> std::pair<Com_ptr<ID3D11ShaderResourceView>, std::string>
 {
-   const auto name = reader.read_child_strict<"NAME"_mn>().read_string();
-
    const auto version =
       reader.read_child_strict<"VER_"_mn>().read<Texture_version>();
 
    reader.reset_head();
 
    switch (version) {
-   case Texture_version::_1_0_0:
-      return v_1_0_0::load_patch_texture_impl(reader, device);
    case Texture_version::current:
       return load_patch_texture_impl(reader, device);
    default:
@@ -66,45 +64,38 @@ auto load_patch_texture(ucfb::Reader reader, ID3D11Device1& device)
 
 void write_patch_texture(const std::filesystem::path& save_path,
                          const Texture_info& texture_info,
-                         const std::vector<Texture_data>& texture_data)
+                         const std::vector<Texture_data>& texture_data,
+                         const Texture_file_type file_type)
 {
-   using namespace std::literals;
-   namespace fs = std::filesystem;
+   if (file_type == Texture_file_type::volume_resource) {
+      std::ostringstream string_stream;
+      ucfb::Writer writer{string_stream, "sptx"_mn};
 
-   std::ostringstream ostream;
+      write_sptx(writer, save_path.stem().string(), texture_info, texture_data);
 
-   // write sptx chunk
-   {
-      ucfb::Writer writer{ostream, "sptx"_mn};
+      const auto sptx_data = string_stream.str();
+      const auto sptx_span =
+         gsl::span<const std::byte>(reinterpret_cast<const std::byte*>(sptx_data.data()),
+                                    sptx_data.size());
 
-      writer.emplace_child("NAME"_mn).write(save_path.stem().string());
-      writer.emplace_child("VER_"_mn).write(Texture_version::current);
-      writer.emplace_child("INFO"_mn).write(texture_info);
+      save_volume_resource(save_path.string(), save_path.stem().string(),
+                           Volume_resource_type::texture, sptx_span);
+   }
+   else {
+      auto output_file = ucfb::open_file_for_output(save_path);
 
-      // write texture data
+      ucfb::Writer writer{output_file};
+
       {
-         auto data_writer = writer.emplace_child("DATA"_mn);
+         auto sptx_writer = writer.emplace_child("sptx"_mn);
 
-         for (const auto& data : texture_data) {
-            auto sub_writer = data_writer.emplace_child("SUB_"_mn);
-
-            sub_writer.write(data.pitch, data.slice_pitch);
-            sub_writer.write(gsl::narrow_cast<std::uint32_t>(data.data.size()));
-            sub_writer.write_unaligned(data.data); // Much data, such wow.
-         }
+         write_sptx(sptx_writer, save_path.stem().string(), texture_info, texture_data);
       }
    }
-
-   const auto sptx_data = ostream.str();
-   const auto sptx_span =
-      gsl::span<const std::byte>(reinterpret_cast<const std::byte*>(sptx_data.data()),
-                                 sptx_data.size());
-
-   save_volume_resource(save_path.string(), save_path.stem().string(),
-                        Volume_resource_type::texture, sptx_span);
 }
 
-namespace v_2_0_0 {
+namespace {
+namespace v_1 {
 
 auto create_srv(ID3D11Device1& device, ID3D11Resource& resource,
                 const std::string_view name) -> Com_ptr<ID3D11ShaderResourceView>
@@ -230,17 +221,17 @@ auto create_texturecube(ID3D11Device1& device, const Texture_info& info,
    return create_srv(device, *texture, name);
 }
 
-auto load_patch_texture_impl(ucfb::Reader reader, ID3D11Device1& device)
+auto load_patch_texture_impl(ucfb::Reader_strict<"sptx"_mn> reader, ID3D11Device1& device)
    -> std::pair<Com_ptr<ID3D11ShaderResourceView>, std::string>
 {
    using namespace std::literals;
 
-   const auto name = reader.read_child_strict<"NAME"_mn>().read_string();
-
    const auto version =
       reader.read_child_strict<"VER_"_mn>().read<Texture_version>();
 
-   Ensures(version == Texture_version::_2_0_0);
+   Ensures(version == Texture_version::v_1);
+
+   const auto name = reader.read_child_strict<"NAME"_mn>().read_string();
 
    const auto info = reader.read_child_strict<"INFO"_mn>().read<Texture_info>();
 
@@ -284,168 +275,26 @@ auto load_patch_texture_impl(ucfb::Reader reader, ID3D11Device1& device)
 }
 }
 
-namespace v_1_0_0 {
-
-struct Texture_info {
-   std::uint32_t _reserved{0};
-   std::int32_t width;
-   std::int32_t height;
-   std::int32_t mip_count;
-   D3DFORMAT format;
-};
-
-struct Sampler_info {
-   D3DTEXTUREADDRESS address_mode_u;
-   D3DTEXTUREADDRESS address_mode_v;
-   D3DTEXTUREADDRESS address_mode_w;
-   D3DTEXTUREFILTERTYPE mag_filter;
-   D3DTEXTUREFILTERTYPE min_filter;
-   D3DTEXTUREFILTERTYPE mip_filter;
-   float mip_lod_bias;
-   BOOL srgb;
-};
-
-auto map_format(const D3DFORMAT format, const BOOL srgb) -> DXGI_FORMAT
+void write_sptx(ucfb::Writer& writer, const std::string_view name,
+                const Texture_info& texture_info,
+                const std::vector<Texture_data>& texture_data)
 {
-   constexpr auto ati1 = static_cast<D3DFORMAT>(MAKEFOURCC('A', 'T', 'I', '1'));
-   constexpr auto ati2 = static_cast<D3DFORMAT>(MAKEFOURCC('A', 'T', 'I', '2'));
+   writer.emplace_child("VER_"_mn).write(Texture_version::current);
+   writer.emplace_child("NAME"_mn).write(name);
+   writer.emplace_child("INFO"_mn).write(texture_info);
 
-   switch (static_cast<int>(format)) {
-   case D3DFMT_A8R8G8B8:
-      return srgb ? DXGI_FORMAT_B8G8R8A8_UNORM_SRGB : DXGI_FORMAT_B8G8R8A8_UNORM;
-   case D3DFMT_X8R8G8B8:
-      return srgb ? DXGI_FORMAT_B8G8R8X8_UNORM_SRGB : DXGI_FORMAT_B8G8R8X8_UNORM;
-   case D3DFMT_A8B8G8R8:
-      return srgb ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM;
-   case D3DFMT_X8B8G8R8:
-      return srgb ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM;
-   case D3DFMT_A16B16G16R16F:
-      return DXGI_FORMAT_R8G8B8A8_UNORM;
-   case D3DFMT_DXT1:
-      return srgb ? DXGI_FORMAT_BC1_UNORM_SRGB : DXGI_FORMAT_BC1_UNORM;
-   case D3DFMT_DXT2:
-      return srgb ? DXGI_FORMAT_BC2_UNORM_SRGB : DXGI_FORMAT_BC2_UNORM;
-   case D3DFMT_DXT3:
-      return srgb ? DXGI_FORMAT_BC2_UNORM_SRGB : DXGI_FORMAT_BC2_UNORM;
-   case D3DFMT_DXT4:
-      return srgb ? DXGI_FORMAT_BC3_UNORM_SRGB : DXGI_FORMAT_BC3_UNORM;
-   case D3DFMT_DXT5:
-      return srgb ? DXGI_FORMAT_BC3_UNORM_SRGB : DXGI_FORMAT_BC3_UNORM;
-   case ati1:
-      return DXGI_FORMAT_BC4_UNORM;
-   case ati2:
-      return DXGI_FORMAT_BC5_UNORM;
-   }
-
-   throw std::runtime_error{"Texture specifies unsupported format!"};
-}
-
-auto load_patch_texture_impl(ucfb::Reader reader, ID3D11Device1& device)
-   -> std::pair<Com_ptr<ID3D11ShaderResourceView>, std::string>
-{
-   using namespace std::literals;
-
-   const auto name = reader.read_child_strict<"NAME"_mn>().read_string();
-
-   const auto version =
-      reader.read_child_strict<"VER_"_mn>().read<Texture_version>();
-
-   Ensures(version == Texture_version::_1_0_0);
-
-   const auto info = reader.read_child_strict<"INFO"_mn>().read<Texture_info>();
-
-   if (info._reserved != 0) {
-      throw compose_exception<std::runtime_error>("Reeserved value in texture "sv,
-                                                  std::quoted(name),
-                                                  " is non-zero."sv);
-   }
-
-   const auto sampler_info =
-      reader.read_child_strict<"SAMP"_mn>().read<Sampler_info>();
-
-   using Block_pair = std::array<std::uint64_t, 2>;
-   std::vector<std::unique_ptr<Block_pair[]>> init_patchup_buffers;
-   init_patchup_buffers.reserve(info.mip_count);
-   std::vector<D3D11_SUBRESOURCE_DATA> init_data;
-   init_data.reserve(info.mip_count);
-
-   const auto dxgi_format = map_format(info.format, sampler_info.srgb);
-   const auto patchup_bc5_layout = dxgi_format == DXGI_FORMAT_BC5_UNORM;
-
-   auto mips = reader.read_child_strict<"MIPS"_mn>();
-
-   for (auto i = 0; i < info.mip_count; ++i) {
-      auto level = mips.read_child_strict<"MIP_"_mn>();
-      auto data = level.read_array_unaligned<std::byte>(level.size());
-
-      std::size_t row_pitch;
-      std::size_t slice_pitch;
-
-      if (const auto result =
-             DirectX::ComputePitch(dxgi_format, info.width >> i,
-                                   info.height >> i, row_pitch, slice_pitch);
-          FAILED(result)) {
-         throw compose_exception<std::runtime_error>("Failed to compute pitch for texture "sv,
-                                                     std::quoted(name), '.');
-      }
-
-      D3D11_SUBRESOURCE_DATA subres_data{nullptr, gsl::narrow_cast<UINT>(row_pitch),
-                                         gsl::narrow_cast<UINT>(slice_pitch)};
-
-      // Convert ATI2 block layout to BC5 block layout.
-      if (patchup_bc5_layout) {
-         const auto block_pair_count = data.size() / sizeof(Block_pair);
-
-         auto& patchup_buffer = init_patchup_buffers.emplace_back(
-            std::make_unique<Block_pair[]>(block_pair_count));
-
-         std::memcpy(patchup_buffer.get(), data.data(), data.size());
-
-         std::for_each_n(
-            std::execution::par_unseq, patchup_buffer.get(), block_pair_count,
-            [](Block_pair & block_pair) noexcept {
-               std::swap(block_pair[0], block_pair[1]);
-            });
-
-         subres_data.pSysMem = patchup_buffer.get();
-      }
-      else {
-         subres_data.pSysMem = data.data();
-      }
-
-      init_data.emplace_back(subres_data);
-   }
-
-   Com_ptr<ID3D11Texture2D> texture;
-
-   const auto d3d11_desc = CD3D11_TEXTURE2D_DESC{dxgi_format,
-                                                 static_cast<UINT>(info.width),
-                                                 static_cast<UINT>(info.height),
-                                                 1,
-                                                 static_cast<UINT>(info.mip_count),
-                                                 D3D11_BIND_SHADER_RESOURCE,
-                                                 D3D11_USAGE_IMMUTABLE};
-
-   if (const auto result = device.CreateTexture2D(&d3d11_desc, init_data.data(),
-                                                  texture.clear_and_assign());
-       FAILED(result)) {
-      throw compose_exception<std::runtime_error>("failed to create texture "sv,
-                                                  std::quoted(name), '.');
-   }
-
-   Com_ptr<ID3D11ShaderResourceView> srv;
+   // write texture data
    {
-      if (const auto result =
-             device.CreateShaderResourceView(texture.get(), nullptr,
-                                             srv.clear_and_assign());
-          FAILED(result)) {
-         throw compose_exception<std::runtime_error>(
-            "Failed to create game texture SRV! reason: ",
-            _com_error{result}.ErrorMessage());
+      auto data_writer = writer.emplace_child("DATA"_mn);
+
+      for (const auto& data : texture_data) {
+         auto sub_writer = data_writer.emplace_child("SUB_"_mn);
+
+         sub_writer.write(data.pitch, data.slice_pitch);
+         sub_writer.write(gsl::narrow_cast<std::uint32_t>(data.data.size()));
+         sub_writer.write_unaligned(data.data); // Much data, such wow.
       }
    }
-
-   return {srv, std::string{name}};
 }
 
 }

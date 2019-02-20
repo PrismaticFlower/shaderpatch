@@ -1,8 +1,10 @@
 #pragma once
 
+#include "compose_exception.hpp"
 #include "small_function.hpp"
 
 #include <cstdint>
+#include <filesystem>
 #include <fstream>
 #include <ostream>
 #include <stdexcept>
@@ -178,16 +180,17 @@ private:
    std::int64_t _size{};
 };
 
-inline auto open_file_for_output(const std::string& file_name) -> std::ofstream
+inline auto open_file_for_output(const std::filesystem::path& file_path) -> std::ofstream
 {
    using namespace std::literals;
 
    std::ofstream file;
 
-   file.open(file_name, std::ios::binary);
+   file.open(file_path, std::ios::binary);
 
    if (!file.is_open()) {
-      throw std::runtime_error{"Unable to open file \""s + file_name + "\" for output."s};
+      throw compose_exception<std::runtime_error>("Unable to open file "sv,
+                                                  file_path, " for output."sv);
    }
 
    return file;

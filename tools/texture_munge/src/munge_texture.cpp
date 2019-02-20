@@ -125,8 +125,12 @@ void munge_texture(fs::path config_file_path, const fs::path& output_dir) noexce
 
       auto image = process_image(config, image_file_path);
 
+      const auto file_type = config["_SP_DirectTexture"s].as<bool>(false)
+                                ? Texture_file_type::direct_texture
+                                : Texture_file_type::volume_resource;
+
       write_patch_texture(output_file_path, get_texture_info(image),
-                          get_texture_data(image));
+                          get_texture_data(image), file_type);
    }
    catch (std::exception& e) {
       synced_error_print("Error while munging "sv,
