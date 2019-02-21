@@ -71,13 +71,22 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SolutionDir)\bin\$(Configuration)\</OutDir>
-    <IntDir>build\</IntDir>
+    <OutDir>build\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>build\$(Platform)\$(Configuration)\</IntDir>
     <ExtensionsToDeleteOnClean>*.checksum;*.cdf;*.cache;*.obj;*.obj.enc;*.ilk;*.ipdb;*.iobj;*.resources;*.tlb;*.tli;*.tlh;*.tmp;*.rsp;*.pgc;*.pgd;*.meta;*.tlog;*.manifest;*.res;*.pch;*.exp;*.idb;*.rep;*.xdc;*.pdb;*_manifest.rc;*.bsc;*.sbr;*.xml;*.metagen;*.bi</ExtensionsToDeleteOnClean>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ExtensionsToDeleteOnClean>*.checksum;*.cdf;*.cache;*.obj;*.obj.enc;*.ilk;*.ipdb;*.iobj;*.resources;*.tlb;*.tli;*.tlh;*.tmp;*.rsp;*.pgc;*.pgd;*.meta;*.tlog;*.manifest;*.res;*.pch;*.exp;*.idb;*.rep;*.xdc;*.pdb;*_manifest.rc;*.bsc;*.sbr;*.xml;*.metagen;*.bi</ExtensionsToDeleteOnClean>
-    <IntDir>build\</IntDir>
+    <IntDir>build\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>build\$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IntDir>build\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>build\$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IntDir>build\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>build\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -142,14 +151,27 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CustomBuild Include="core.req">
+    <None Include="shader_declarations.req">
       <FileType>Document</FileType>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Core Files</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Core Files</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">powershell -Command  ./munge_core.ps1  -BinPath ../../bin/$(Configuration)/ -CompilerArgs:'-o:0 -d:true'</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">powershell -Command  ./munge_core.ps1  -BinPath ../../bin/$(Configuration)/ -CompilerArgs:'-o:1 -f:true'</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Building core.lvl...</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Building core.lvl...</Message>
+    </None>
+    <CustomBuild Include="build_lvls.ps1">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">powershell -Command  "./build_lvls.ps1"  -BinPath $(SolutionDir)\tools\bin\$(Platform)\Release\ -CompilerArgs:'-o:1 -f:true'</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">powershell -Command  "./build_lvls.ps1"  -BinPath $(SolutionDir)\tools\bin\$(Platform)\Release\ -CompilerArgs:'-o:1 -f:true'</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">powershell -Command  "./build_lvls.ps1"  -BinPath $(SolutionDir)\tools\bin\$(Platform)\Release\ -CompilerArgs:'-o:1 -f:true'</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">powershell -Command  "./build_lvls.ps1"  -BinPath $(SolutionDir)\tools\bin\$(Platform)\Release\ -CompilerArgs:'-o:1 -f:true'</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">handledbytools.ignore</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">handledbytools.ignore</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">handledbytools.ignore</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">handledbytools.ignore</Outputs>
     </CustomBuild>
     <None Include="declarations\bloom_stock.json" />
     <None Include="declarations\decal.json" />
@@ -213,6 +235,7 @@
     <None Include="definitions\stencilshadow.json" />
     <None Include="definitions\water.json" />
     <None Include="definitions\zprepass.json" />
+    <None Include="textures.req" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders.req" />
@@ -341,11 +364,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\normal_ext.fx">
-      <FileType>Document</FileType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="src\lighting_utilities_specular.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

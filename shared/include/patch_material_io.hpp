@@ -24,6 +24,6 @@ struct Material_info {
 void write_patch_material(const std::filesystem::path& save_path,
                           const Material_info& info);
 
-auto read_patch_material(ucfb::Reader reader) -> Material_info;
+auto read_patch_material(ucfb::Reader_strict<"matl"_mn> reader) -> Material_info;
 
 }

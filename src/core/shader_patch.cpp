@@ -560,7 +560,8 @@ auto Shader_patch::create_game_texture_cube(const DirectX::ScratchImage& image) 
 auto Shader_patch::create_patch_texture(const gsl::span<const std::byte> texture_data) noexcept
    -> Patch_texture
 {
-   auto [srv, name] = load_patch_texture(ucfb::Reader{texture_data}, *_device);
+   auto [srv, name] =
+      load_patch_texture(ucfb::Reader_strict<"sptx"_mn>{texture_data}, *_device);
 
    auto shared_srv = make_shared_com_ptr(srv);
 
@@ -572,7 +573,8 @@ auto Shader_patch::create_patch_texture(const gsl::span<const std::byte> texture
 auto Shader_patch::create_patch_material(const gsl::span<const std::byte> material_data) noexcept
    -> std::shared_ptr<Patch_material>
 {
-   return std::make_shared<Patch_material>(read_patch_material(ucfb::Reader{material_data}),
+   return std::make_shared<Patch_material>(read_patch_material(
+                                              ucfb::Reader_strict<"matl"_mn>{material_data}),
                                            _material_shader_factory,
                                            _texture_database, *_device);
 }

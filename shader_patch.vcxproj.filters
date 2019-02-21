@@ -153,6 +153,12 @@
     <ClCompile Include="src\core\material_shader_factory.cpp">
       <Filter>src\core</Filter>
     </ClCompile>
+    <ClCompile Include="src\file_hooks.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\texture_loader.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -370,6 +376,12 @@
     </ClInclude>
     <ClInclude Include="src\imgui\imgui_ext.hpp">
       <Filter>src\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="src\file_hooks.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\texture_loader.hpp">
+      <Filter>src\core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

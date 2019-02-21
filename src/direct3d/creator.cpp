@@ -146,10 +146,13 @@ HRESULT Creator::CreateDevice(UINT adapter_index, D3DDEVTYPE, HWND focus_window,
                               IDirect3DDevice9** returned_device_interface) noexcept
 {
    Debug_trace::func(__FUNCSIG__);
+   std::lock_guard lock{_mutex};
 
    if (adapter_index != 0) return D3DERR_INVALIDCALL;
    if (!parameters) return D3DERR_INVALIDCALL;
    if (!returned_device_interface) return D3DERR_INVALIDCALL;
+
+   log(Log_level::error, GetCurrentThreadId());
 
    if (!_device) {
       win32::make_borderless_window(focus_window);
@@ -215,6 +218,7 @@ ULONG Creator::Release() noexcept
 HRESULT Creator::RegisterSoftwareDevice(void*) noexcept
 {
    Debug_trace::func(__FUNCSIG__);
+   std::lock_guard lock{_mutex};
 
    return E_NOTIMPL;
 }
@@ -230,6 +234,7 @@ HRESULT Creator::GetAdapterIdentifier(UINT adapter_index, DWORD,
                                       D3DADAPTER_IDENTIFIER9* identifier) noexcept
 {
    Debug_trace::func(__FUNCSIG__);
+   std::lock_guard lock{_mutex};
 
    if (!identifier) return D3DERR_INVALIDCALL;
    if (adapter_index != 0) return D3DERR_INVALIDCALL;
@@ -264,6 +269,7 @@ HRESULT Creator::GetAdapterIdentifier(UINT adapter_index, DWORD,
 UINT Creator::GetAdapterModeCount(UINT adapter_index, D3DFORMAT d3d_format) noexcept
 {
    Debug_trace::func(__FUNCSIG__);
+   std::lock_guard lock{_mutex};
 
    if (adapter_index != 0) return 0;
    if (d3d_format != D3DFMT_X8R8G8B8) return 0;
@@ -281,6 +287,7 @@ HRESULT Creator::EnumAdapterModes(UINT adapter_index, D3DFORMAT d3d_format,
                                   UINT mode_index, D3DDISPLAYMODE* display_mode) noexcept
 {
    Debug_trace::func(__FUNCSIG__);
+   std::lock_guard lock{_mutex};
 
    if (!display_mode) return D3DERR_INVALIDCALL;
    if (adapter_index != 0) return D3DERR_INVALIDCALL;
@@ -308,6 +315,7 @@ HRESULT Creator::CheckDeviceType(UINT adapter_index, D3DDEVTYPE, D3DFORMAT adapt
                                  D3DFORMAT back_buffer_format, BOOL) noexcept
 {
    Debug_trace::func(__FUNCSIG__);
+   std::lock_guard lock{_mutex};
 
    if (adapter_index != 0) return D3DERR_INVALIDCALL;
    if (adapter_format != D3DFMT_X8R8G8B8) return D3DERR_NOTAVAILABLE;

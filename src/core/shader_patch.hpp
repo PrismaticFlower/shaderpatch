@@ -26,6 +26,7 @@
 #include "smart_win32_handle.hpp"
 #include "swapchain.hpp"
 #include "texture_database.hpp"
+#include "texture_loader.hpp"
 
 #include <vector>
 
@@ -371,7 +372,8 @@ private:
 
    const Image_stretcher _image_stretcher{*_device, *_shader_database};
    const Sampler_states _sampler_states{*_device};
-   Texture_database _texture_database;
+   Texture_database _texture_database{
+      load_texture_lvl(L"data/shaderpatch/textures.lvl", *_device)};
 
    Effects_backbuffer _effects_backbuffer;
    effects::Control _effects{_device, _shader_database->rendertypes};
@@ -389,7 +391,8 @@ private:
       user_config.rendering.advertise_presence
          ? CreateFileW(L"data/shaderpatch/installed", GENERIC_READ | GENERIC_WRITE,
                        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                       nullptr, OPEN_ALWAYS, FILE_FLAG_DELETE_ON_CLOSE, nullptr)
+                       nullptr, OPEN_ALWAYS,
+                       FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE, nullptr)
          : INVALID_HANDLE_VALUE};
 };
 }

@@ -11,7 +11,7 @@
 #include "texture2d_managed.hpp"
 #include "texture2d_rendertarget.hpp"
 #include "texture3d_managed.hpp"
-#include "texture3d_resource.hpp"
+// #include "texture3d_resource.hpp"
 #include "texturecube_managed.hpp"
 #include "utility.hpp"
 #include "vertex_declaration.hpp"
@@ -313,40 +313,40 @@ HRESULT Device::CreateVolumeTexture(UINT width, UINT height, UINT depth, UINT le
          "Attempt to create volume texture in unexpected memory pool.");
    }
 
-   if (const auto type = static_cast<Volume_resource_type>(width);
-       type == Volume_resource_type::texture) {
-      *volume_texture = reinterpret_cast<IDirect3DVolumeTexture9*>(
-         make_texture3d_resource(
-            [this](const gsl::span<const std::byte> data) noexcept {
-               return _shader_patch.create_patch_texture(data);
-            },
-            width, height, depth, format)
-            .release());
-   }
-   else if (type == Volume_resource_type::material) {
-      *volume_texture = reinterpret_cast<IDirect3DVolumeTexture9*>(
-         make_texture3d_resource(
-            [this](const gsl::span<const std::byte> data) noexcept {
-               return _shader_patch.create_patch_material(data);
-            },
-            width, height, depth, format)
-            .release());
-   }
-   else if (type == Volume_resource_type::fx_config) {
-      *volume_texture = reinterpret_cast<IDirect3DVolumeTexture9*>(
-         make_texture3d_resource(
-            [this](const gsl::span<const std::byte> data) noexcept {
-               return _shader_patch.create_patch_effects_config(data);
-            },
-            width, height, depth, format)
-            .release());
-   }
-   else {
-      if (is_luminance_format(format)) return D3DERR_INVALIDCALL;
+   // if (const auto type = static_cast<Volume_resource_type>(width);
+   //    type == Volume_resource_type::texture) {
+   //   *volume_texture = reinterpret_cast<IDirect3DVolumeTexture9*>(
+   //      make_texture3d_resource(
+   //         [this](const gsl::span<const std::byte> data) noexcept {
+   //            return _shader_patch.create_patch_texture(data);
+   //         },
+   //         width, height, depth, format)
+   //         .release());
+   //}
+   // else if (type == Volume_resource_type::material) {
+   //   *volume_texture = reinterpret_cast<IDirect3DVolumeTexture9*>(
+   //      make_texture3d_resource(
+   //         [this](const gsl::span<const std::byte> data) noexcept {
+   //            return _shader_patch.create_patch_material(data);
+   //         },
+   //         width, height, depth, format)
+   //         .release());
+   //}
+   // else if (type == Volume_resource_type::fx_config) {
+   //   *volume_texture = reinterpret_cast<IDirect3DVolumeTexture9*>(
+   //      make_texture3d_resource(
+   //         [this](const gsl::span<const std::byte> data) noexcept {
+   //            return _shader_patch.create_patch_effects_config(data);
+   //         },
+   //         width, height, depth, format)
+   //         .release());
+   //}
+   // else {
+   if (is_luminance_format(format)) return D3DERR_INVALIDCALL;
 
-      *volume_texture =
-         create_texture3d_managed(width, height, depth, levels, format).release();
-   }
+   *volume_texture =
+      create_texture3d_managed(width, height, depth, levels, format).release();
+   //}
 
    return S_OK;
 }
@@ -1034,10 +1034,23 @@ HRESULT Device::CreateVertexShader(const DWORD* function,
    if (!function) return D3DERR_INVALIDCALL;
    if (!shader) return D3DERR_INVALIDCALL;
 
-   *shader = Vertex_shader::create(_shader_patch,
-                                   deserialize_shader_metadata(
-                                      reinterpret_cast<const std::byte*>(function)))
-                .release();
+   // *shader = Vertex_shader::create(_shader_patch,
+   //                                 deserialize_shader_metadata(
+   //                                    reinterpret_cast<const std::byte*>(function)))
+   //              .release();
+
+   *shader =
+      Vertex_shader::create(_shader_patch,
+                            [] {
+                               Shader_metadata meta{};
+
+                               meta.rendertype = Rendertype::fixedfunc_color_fill;
+                               meta.rendertype_name = to_string(meta.rendertype);
+                               meta.shader_name = "color fill"s;
+
+                               return meta;
+                            }())
+         .release();
 
    return S_OK;
 }

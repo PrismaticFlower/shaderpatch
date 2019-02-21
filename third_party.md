@@ -276,35 +276,6 @@ Nifty as Film Grain shader present in Shader Patch's Effects system. It has been
 but remains largely unchanged. Used under the Creative Commons Attribution 3.0 Unported License which you can see 
 bygoing here https://creativecommons.org/licenses/by/3.0/
 
-
-### [mhook](https://github.com/apriorit/mhook) 
-Used to hook Direct3D 9 in a polite manner in order to play nice with other things that
-also hook D3D9.
-
-> MIT License
-> 
-> Copyright (c) 2015-2018, Apriorit
-> Copyright (c) 2007-2014, Marton Anka
-> Portions Copyright (c) 2007, Matt Conover
-> 
-> Permission is hereby granted, free of charge, to any person obtaining a copy
-> of this software and associated documentation files (the "Software"), to deal
-> in the Software without restriction, including without limitation the rights
-> to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-> copies of the Software, and to permit persons to whom the Software is
-> furnished to do so, subject to the following conditions:
-> 
-> The above copyright notice and this permission notice shall be included in
-> all copies or substantial portions of the Software.
-> 
-> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-> THE SOFTWARE.
-
 ### [John Hable](https://twitter.com/FilmicWorlds) 
 For his incredibly useful posts and examples on [Filmic Tonemapping](http://filmicworlds.com/blog/filmic-tonemapping-with-piecewise-power-curves/)
 and [Color Grading](http://filmicworlds.com/blog/minimal-color-grading-tools/).
@@ -354,4 +325,30 @@ Used to generate tangent vectors by `material_munge`.
 >  2. Altered source versions must be plainly marked as such, and must not be
 >     misrepresented as being the original software.
 >  3. This notice may not be removed or altered from any source distribution.
- 
+
+### [Detours](https://github.com/Microsoft/Detours) 
+Used for API hooking in Shader Patch to live edit `.lvl` files.
+
+> # Copyright (c) Microsoft Corporation
+> 
+> All rights reserved.
+> 
+> # MIT License
+> 
+> Permission is hereby granted, free of charge, to any person obtaining a copy of
+> this software and associated documentation files (the "Software"), to deal in
+> the Software without restriction, including without limitation the rights to
+> use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+> of the Software, and to permit persons to whom the Software is furnished to do
+> so, subject to the following conditions:
+> 
+> The above copyright notice and this permission notice shall be included in all
+> copies or substantial portions of the Software.
+> 
+> THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+> SOFTWARE.

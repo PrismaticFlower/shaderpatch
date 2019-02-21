@@ -21,7 +21,7 @@ Volume_resource_texture::Volume_resource_texture(core::Shader_patch& shader_patc
                                                  const D3DFORMAT reported_format) noexcept
    : Base_texture{Texture_type::resource},
      _shader_patch{shader_patch},
-     _resource_size{unpack_resource_size(height, depth)},
+     _resource_size{width * height * depth},
      _width{width},
      _height{height},
      _depth{depth},

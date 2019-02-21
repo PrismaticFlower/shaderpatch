@@ -149,6 +149,7 @@
     <ClCompile Include="src\core\shader_patch.cpp" />
     <ClCompile Include="src\core\swapchain.cpp" />
     <ClCompile Include="src\core\texture_database.cpp" />
+    <ClCompile Include="src\core\texture_loader.cpp" />
     <ClCompile Include="src\direct3d\device.cpp" />
     <ClCompile Include="src\direct3d\image_patcher.cpp" />
     <ClCompile Include="src\direct3d\pixel_shader.cpp" />
@@ -186,6 +187,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="src\file_hooks.cpp" />
     <ClCompile Include="src\fps_unlock.cpp" />
     <ClCompile Include="src\imgui\imgui_impl_dx11.cpp" />
     <ClCompile Include="src\imgui\imgui_impl_dx11_shaders.hpp" />
@@ -220,6 +222,7 @@
     <ClInclude Include="src\core\game_texture.hpp" />
     <ClInclude Include="src\core\swapchain.hpp" />
     <ClInclude Include="src\core\texture_database.hpp" />
+    <ClInclude Include="src\core\texture_loader.hpp" />
     <ClInclude Include="src\direct3d\base_texture.hpp" />
     <ClInclude Include="src\direct3d\buffer.hpp" />
     <ClInclude Include="src\direct3d\creator.hpp" />
@@ -268,6 +271,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="src\file_hooks.hpp" />
     <ClInclude Include="src\fps_unlock.hpp" />
     <ClInclude Include="src\hook_vtable.hpp" />
     <ClInclude Include="src\imgui\imgui_ext.hpp" />

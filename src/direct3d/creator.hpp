@@ -4,6 +4,8 @@
 #include "device.hpp"
 #include "smart_win32_handle.hpp"
 
+#include <atomic>
+#include <mutex>
 #include <vector>
 
 #include <dxgi1_6.h>
@@ -67,6 +69,8 @@ private:
    Creator() noexcept;
    ~Creator() = default;
 
+   std::mutex _mutex;
+
    Com_ptr<IDXGIFactory2> _factory;
 
    Com_ptr<IDXGIAdapter2> _adapter;
@@ -78,7 +82,7 @@ private:
    const int _desired_output = 0;
    const DXGI_FORMAT _desired_backbuffer_format = DXGI_FORMAT_B8G8R8A8_UNORM;
 
-   ULONG _ref_count = 1;
+   std::atomic<ULONG> _ref_count = 1;
 };
 
 }

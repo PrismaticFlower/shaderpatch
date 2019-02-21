@@ -1,40 +1,5 @@
 ucft
 {
-   // Premunged Chunk
-   REQN
-   {
-      "chunk"
-      "premunged"
-   }
-   
-   // Game Shader Declarations
-   REQN
-   {
-      "shader_declaration"
-      "bloom_stock"
-      "filtercopy"
-      "flare"
-      "interface"
-      "lightbeam"
-      "normal"
-      "normal_terrain"
-      "normalmapadder"
-      "ocean"
-      "particle"
-      "perpixeldiffuselighting"
-      "prereflection"
-      "rain"
-      "refraction"
-      "sample"
-      "shadowquad"
-      "shield"
-      "skyfog"
-      "specularlighting"
-      "stencilshadow"
-      "water"
-      "zprepass"
-   }
-
    // Patch Textures
    REQN
    {
