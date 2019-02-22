@@ -962,7 +962,17 @@ HRESULT Device::DrawPrimitive(D3DPRIMITIVETYPE primitive_type,
    const auto vertex_count =
       d3d_primitive_count_to_vertex_count(primitive_type, primitive_count);
 
-   _shader_patch.draw(vertex_count, start_vertex);
+   // Emulate a triangle fan for underwater overlay quad. As far as I know this
+   // is the only time that the game uses triangle fans, unless some jerk modder
+   // sets the primitive topology in a `modl` `segm` to triangle fans.
+   if (primitive_type == D3DPT_TRIANGLEFAN) {
+      SetIndices(static_cast<IDirect3DIndexBuffer9*>(_triangle_fan_quad_ibuf.get()));
+      _shader_patch.set_primitive_topology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+      _shader_patch.draw_indexed(6, 0, start_vertex);
+   }
+   else {
+      _shader_patch.draw(vertex_count, start_vertex);
+   }
 
    return S_OK;
 }
@@ -1034,23 +1044,10 @@ HRESULT Device::CreateVertexShader(const DWORD* function,
    if (!function) return D3DERR_INVALIDCALL;
    if (!shader) return D3DERR_INVALIDCALL;
 
-   // *shader = Vertex_shader::create(_shader_patch,
-   //                                 deserialize_shader_metadata(
-   //                                    reinterpret_cast<const std::byte*>(function)))
-   //              .release();
-
-   *shader =
-      Vertex_shader::create(_shader_patch,
-                            [] {
-                               Shader_metadata meta{};
-
-                               meta.rendertype = Rendertype::fixedfunc_color_fill;
-                               meta.rendertype_name = to_string(meta.rendertype);
-                               meta.shader_name = "color fill"s;
-
-                               return meta;
-                            }())
-         .release();
+   *shader = Vertex_shader::create(_shader_patch,
+                                   deserialize_shader_metadata(
+                                      reinterpret_cast<const std::byte*>(function)))
+                .release();
 
    return S_OK;
 }

@@ -159,6 +159,9 @@
     <ClCompile Include="src\core\texture_loader.cpp">
       <Filter>src\core</Filter>
     </ClCompile>
+    <ClCompile Include="src\direct3d\helpers.cpp">
+      <Filter>src\direct3d</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">

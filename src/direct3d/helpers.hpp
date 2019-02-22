@@ -1,15 +1,22 @@
 #pragma once
 
+#include "com_ptr.hpp"
+
 #include <cstddef>
 #include <string>
 #include <tuple>
 
 #include <d3d11_1.h>
-#include <d3d9types.h>
+#include <d3d9.h>
 
 #include <glm/glm.hpp>
 
-namespace sp::d3d9 {
+namespace sp {
+namespace core {
+class Shader_patch;
+}
+
+namespace d3d9 {
 
 inline auto d3d_to_dxgi_format(const D3DFORMAT format) noexcept -> DXGI_FORMAT
 {
@@ -298,6 +305,7 @@ inline auto d3d_primitive_count_to_vertex_count(const D3DPRIMITIVETYPE type,
    case D3DPT_TRIANGLELIST:
       return primitive_count * 3;
    case D3DPT_TRIANGLESTRIP:
+   case D3DPT_TRIANGLEFAN:
       return primitive_count > 1 ? primitive_count + 2 : 3;
    default:
       return primitive_count;
@@ -311,6 +319,10 @@ inline auto unpack_d3dcolor(const D3DCOLOR d3dcolor) noexcept -> glm::vec4
    return {color.b, color.g, color.r, color.a};
 }
 
+auto create_triangle_fan_quad_ibuf(core::Shader_patch& shader_patch) noexcept
+   -> Com_ptr<IDirect3DIndexBuffer9>;
+
+}
 }
 
 inline bool operator<(const D3DVERTEXELEMENT9 left, const D3DVERTEXELEMENT9 right) noexcept

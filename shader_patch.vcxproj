@@ -151,6 +151,7 @@
     <ClCompile Include="src\core\texture_database.cpp" />
     <ClCompile Include="src\core\texture_loader.cpp" />
     <ClCompile Include="src\direct3d\device.cpp" />
+    <ClCompile Include="src\direct3d\helpers.cpp" />
     <ClCompile Include="src\direct3d\image_patcher.cpp" />
     <ClCompile Include="src\direct3d\pixel_shader.cpp" />
     <ClCompile Include="src\direct3d\query.cpp" />

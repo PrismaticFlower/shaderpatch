@@ -4,6 +4,7 @@
 #include "../logger.hpp"
 #include "com_ptr.hpp"
 #include "com_ref.hpp"
+#include "helpers.hpp"
 #include "render_state_manager.hpp"
 #include "surface_backbuffer.hpp"
 #include "surface_depthstencil.hpp"
@@ -602,6 +603,9 @@ private:
 
    Com_ptr<IUnknown> _depthstencil{
       Surface_depthstencil::create(core::Game_depthstencil::nearscene, _width, _height)};
+
+   const Com_ptr<IUnknown> _triangle_fan_quad_ibuf{
+      create_triangle_fan_quad_ibuf(_shader_patch)};
 
    D3DVIEWPORT9 _viewport{0, 0, _width, _height, 0.0f, 1.0f};
    Texture_stage_state_manager _texture_stage_manager{_shader_patch};
