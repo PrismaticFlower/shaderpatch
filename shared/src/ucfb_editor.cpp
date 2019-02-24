@@ -63,7 +63,7 @@ void Editor_data_writer::align() noexcept
    if (remainder != 0) {
       const std::array<std::byte, 4> nulls{};
 
-      write(gsl::make_span(nulls.data(), remainder), Alignment::unaligned);
+      write(gsl::make_span(nulls.data(), (4 - remainder)), Alignment::unaligned);
    }
 }
 

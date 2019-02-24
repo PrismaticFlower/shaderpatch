@@ -694,4 +694,5 @@ constexpr auto device_caps = []() -> D3DCAPS9 {
 
    return caps;
 }();
+
 }

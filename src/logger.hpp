@@ -1,5 +1,7 @@
 #pragma once
 
+#include "shader_patch_version.hpp"
+
 #include <ctime>
 #include <exception>
 #include <fstream>
@@ -46,9 +48,6 @@ public:
    void write(const std::string_view what) noexcept
    {
       _log_file << what << '\n';
-
-      _log_history.insert(_log_history.cend(), std::cbegin(what), std::cend(what));
-      _log_history.emplace_back('\n');
    }
 
    void flush() noexcept
@@ -60,10 +59,12 @@ private:
    Logger() noexcept
    {
       _log_file.open(logger_path);
+
+      _log_file << "Shader Patch log started. Shader Patch version is "sv
+                << current_shader_patch_version_string << '\n';
    }
 
    std::ofstream _log_file;
-   std::vector<char> _log_history;
 };
 
 inline Logger& get_logger() noexcept

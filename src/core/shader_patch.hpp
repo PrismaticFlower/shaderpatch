@@ -23,7 +23,6 @@
 #include "shader_loader.hpp"
 #include "shader_metadata.hpp"
 #include "small_function.hpp"
-#include "smart_win32_handle.hpp"
 #include "swapchain.hpp"
 #include "texture_database.hpp"
 #include "texture_loader.hpp"
@@ -386,14 +385,6 @@ private:
    bool _effects_active = false;
    DXGI_FORMAT _current_effects_rt_format = DXGI_FORMAT_UNKNOWN;
    int _current_effects_id = 0;
-
-   const win32::Unique_handle _sp_advertise_handle = win32::Unique_handle{
-      user_config.rendering.advertise_presence
-         ? CreateFileW(L"data/shaderpatch/installed", GENERIC_READ | GENERIC_WRITE,
-                       FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                       nullptr, OPEN_ALWAYS,
-                       FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE, nullptr)
-         : INVALID_HANDLE_VALUE};
 };
 }
 

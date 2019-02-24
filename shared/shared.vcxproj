@@ -195,6 +195,7 @@
     <ClInclude Include="include\shader_flags.hpp" />
     <ClInclude Include="include\shader_input_type.hpp" />
     <ClInclude Include="include\shader_metadata.hpp" />
+    <ClInclude Include="include\shader_patch_version.hpp" />
     <ClInclude Include="include\small_function.hpp" />
     <ClInclude Include="include\smart_win32_handle.hpp" />
     <ClInclude Include="include\string_utilities.hpp" />
@@ -216,6 +217,7 @@
     <ClCompile Include="src\patch_material_io.cpp" />
     <ClCompile Include="src\patch_texture_io.cpp" />
     <ClCompile Include="src\req_file_helpers.cpp" />
+    <ClCompile Include="src\shader_patch_version.cpp" />
     <ClCompile Include="src\ucfb_editor.cpp" />
     <ClCompile Include="src\volume_resource.cpp" />
   </ItemGroup>

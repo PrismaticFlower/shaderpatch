@@ -86,6 +86,8 @@ private:
 
 class Editor_data_chunk : std::vector<std::byte> {
 public:
+   Editor_data_chunk() = default;
+
    explicit Editor_data_chunk(Reader reader) noexcept
    {
       const auto init = reader.read_array<std::byte>(reader.size());
@@ -126,6 +128,8 @@ public:
    using std::vector<value_type>::empty;
    using std::vector<value_type>::size;
    using std::vector<value_type>::max_size;
+   using std::vector<value_type>::reserve;
+   using std::vector<value_type>::capacity;
    using std::vector<value_type>::shrink_to_fit;
 
    using std::vector<value_type>::clear;
@@ -175,6 +179,12 @@ public:
       }
    }
 
+   explicit Editor_parent_chunk(const Editor_parent_chunk&) = default;
+   Editor_parent_chunk& operator=(const Editor_parent_chunk&) = delete;
+
+   Editor_parent_chunk(Editor_parent_chunk&&) = default;
+   Editor_parent_chunk& operator=(Editor_parent_chunk&&) = default;
+
    using value_type =
       std::pair<Magic_number, std::variant<Editor_data_chunk, Editor_parent_chunk>>;
    using size_type = std::uint32_t;
@@ -203,6 +213,8 @@ public:
    using std::vector<value_type>::empty;
    using std::vector<value_type>::size;
    using std::vector<value_type>::max_size;
+   using std::vector<value_type>::reserve;
+   using std::vector<value_type>::capacity;
    using std::vector<value_type>::shrink_to_fit;
 
    using std::vector<value_type>::clear;
@@ -216,6 +228,8 @@ public:
 
 class Editor : public Editor_parent_chunk {
 public:
+   Editor() noexcept = default;
+
    template<typename Filter>
    Editor(Reader_strict<"ucfb"_mn> reader, Filter&& is_parent_chunk) noexcept
       : Editor_parent_chunk{reader, std::forward<Filter>(is_parent_chunk)}
