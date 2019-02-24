@@ -80,7 +80,7 @@ auto make_extern_files_set(const std::vector<std::string>& extern_files_list_pat
          continue;
       }
 
-      parse_files_req_file(path, extern_files_vec, std::cbegin(extern_files_vec));
+      parse_files_req_file(path, extern_files_vec);
    }
 
    std::unordered_set<Ci_string> extern_files_set;

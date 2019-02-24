@@ -19,14 +19,13 @@ void emit_req_file(const std::filesystem::path& filepath,
 void parse_files_req_file(const std::filesystem::path& filepath,
                           Small_function<void(std::string entry) noexcept> callback);
 
-template<typename Container>
+template<typename SequenceContainer>
 inline void parse_files_req_file(const std::filesystem::path& filepath,
-                                 Container& container,
-                                 typename Container::const_iterator insert_after)
+                                 SequenceContainer& container)
 {
    parse_files_req_file(
       filepath, [&](std::string entry) noexcept {
-         container.insert(insert_after, std::move(entry));
+         container.emplace_back(std::move(entry));
       });
 }
 
