@@ -69,9 +69,12 @@ void write_patch_texture(const std::filesystem::path& save_path,
 {
    if (file_type == Texture_file_type::volume_resource) {
       std::ostringstream string_stream;
-      ucfb::Writer writer{string_stream, "sptx"_mn};
 
-      write_sptx(writer, save_path.stem().string(), texture_info, texture_data);
+      {
+         ucfb::Writer writer{string_stream, "sptx"_mn};
+
+         write_sptx(writer, save_path.stem().string(), texture_info, texture_data);
+      }
 
       const auto sptx_data = string_stream.str();
       const auto sptx_span =
@@ -245,8 +248,10 @@ auto load_patch_texture_impl(ucfb::Reader_strict<"sptx"_mn> reader, ID3D11Device
    for (auto i = 0; i < sub_res_count; ++i) {
       auto sub = data.read_child_strict<"SUB_"_mn>();
 
-      const auto [pitch, slice_pitch, sub_data_size] =
-         sub.read_multi<UINT, UINT, std::uint32_t>();
+      const auto [pitch, slice_pitch, sub_data_size, data_offset] =
+         sub.read_multi<UINT, UINT, std::uint32_t, std::uint32_t>();
+
+      sub.consume_unaligned(data_offset);
 
       const auto sub_data = sub.read_array_unaligned<std::byte>(sub_data_size);
 
@@ -292,7 +297,8 @@ void write_sptx(ucfb::Writer& writer, const std::string_view name,
 
          sub_writer.write(data.pitch, data.slice_pitch);
          sub_writer.write(gsl::narrow_cast<std::uint32_t>(data.data.size()));
-         sub_writer.write_unaligned(data.data); // Much data, such wow.
+
+         ucfb::write_at_alignment<16>(sub_writer, data.data);
       }
    }
 }

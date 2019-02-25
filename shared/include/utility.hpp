@@ -106,6 +106,12 @@ inline To bit_cast(const gsl::span<const std::byte> from) noexcept
    return to;
 }
 
+template<typename To>
+inline To bit_cast(const gsl::span<std::byte> from) noexcept
+{
+   return bit_cast<To>(gsl::span<const std::byte>{from});
+}
+
 template<typename From>
 inline auto make_vector(const From& from) noexcept
    -> std::vector<typename From::value_type>

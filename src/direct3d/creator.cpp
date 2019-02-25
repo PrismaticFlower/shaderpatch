@@ -152,8 +152,6 @@ HRESULT Creator::CreateDevice(UINT adapter_index, D3DDEVTYPE, HWND focus_window,
    if (!parameters) return D3DERR_INVALIDCALL;
    if (!returned_device_interface) return D3DERR_INVALIDCALL;
 
-   log(Log_level::error, GetCurrentThreadId());
-
    if (!_device) {
       win32::make_borderless_window(focus_window);
       win32::clip_cursor_to_window(focus_window);

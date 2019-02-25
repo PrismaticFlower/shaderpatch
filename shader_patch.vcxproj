@@ -162,11 +162,11 @@
     <ClCompile Include="src\direct3d\texture2d_managed.cpp" />
     <ClCompile Include="src\direct3d\texture2d_rendertarget.cpp" />
     <ClCompile Include="src\direct3d\texture3d_managed.cpp" />
+    <ClCompile Include="src\direct3d\texture3d_resource.cpp" />
     <ClCompile Include="src\direct3d\texturecube_managed.cpp" />
     <ClCompile Include="src\direct3d\texture_stage_state_manager.cpp" />
     <ClCompile Include="src\direct3d\vertex_declaration.cpp" />
     <ClCompile Include="src\direct3d\vertex_shader.cpp" />
-    <ClCompile Include="src\direct3d\volume_resource_texture.cpp" />
     <ClCompile Include="src\effects\damage_overlay.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
@@ -246,7 +246,6 @@
     <ClInclude Include="src\direct3d\vertex_declaration.hpp" />
     <ClInclude Include="src\direct3d\vertex_shader.hpp" />
     <ClInclude Include="src\direct3d\texture3d_resource.hpp" />
-    <ClInclude Include="src\direct3d\volume_resource_texture.hpp" />
     <ClInclude Include="src\effects\color_helpers.hpp" />
     <ClInclude Include="src\effects\damage_overlay.hpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>

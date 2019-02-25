@@ -120,9 +120,6 @@
     <ClCompile Include="src\user_config.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\direct3d\volume_resource_texture.cpp">
-      <Filter>src\direct3d</Filter>
-    </ClCompile>
     <ClCompile Include="src\core\texture_database.cpp">
       <Filter>src\core</Filter>
     </ClCompile>
@@ -160,6 +157,9 @@
       <Filter>src\core</Filter>
     </ClCompile>
     <ClCompile Include="src\direct3d\helpers.cpp">
+      <Filter>src\direct3d</Filter>
+    </ClCompile>
+    <ClCompile Include="src\direct3d\texture3d_resource.cpp">
       <Filter>src\direct3d</Filter>
     </ClCompile>
   </ItemGroup>
@@ -337,9 +337,6 @@
     </ClInclude>
     <ClInclude Include="src\core\patch_texture.hpp">
       <Filter>src\core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\direct3d\volume_resource_texture.hpp">
-      <Filter>src\direct3d</Filter>
     </ClInclude>
     <ClInclude Include="src\core\texture_database.hpp">
       <Filter>src\core</Filter>

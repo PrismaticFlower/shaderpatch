@@ -11,7 +11,7 @@
 #include "texture2d_managed.hpp"
 #include "texture2d_rendertarget.hpp"
 #include "texture3d_managed.hpp"
-// #include "texture3d_resource.hpp"
+#include "texture3d_resource.hpp"
 #include "texturecube_managed.hpp"
 #include "utility.hpp"
 #include "vertex_declaration.hpp"
@@ -313,40 +313,17 @@ HRESULT Device::CreateVolumeTexture(UINT width, UINT height, UINT depth, UINT le
          "Attempt to create volume texture in unexpected memory pool.");
    }
 
-   // if (const auto type = static_cast<Volume_resource_type>(width);
-   //    type == Volume_resource_type::texture) {
-   //   *volume_texture = reinterpret_cast<IDirect3DVolumeTexture9*>(
-   //      make_texture3d_resource(
-   //         [this](const gsl::span<const std::byte> data) noexcept {
-   //            return _shader_patch.create_patch_texture(data);
-   //         },
-   //         width, height, depth, format)
-   //         .release());
-   //}
-   // else if (type == Volume_resource_type::material) {
-   //   *volume_texture = reinterpret_cast<IDirect3DVolumeTexture9*>(
-   //      make_texture3d_resource(
-   //         [this](const gsl::span<const std::byte> data) noexcept {
-   //            return _shader_patch.create_patch_material(data);
-   //         },
-   //         width, height, depth, format)
-   //         .release());
-   //}
-   // else if (type == Volume_resource_type::fx_config) {
-   //   *volume_texture = reinterpret_cast<IDirect3DVolumeTexture9*>(
-   //      make_texture3d_resource(
-   //         [this](const gsl::span<const std::byte> data) noexcept {
-   //            return _shader_patch.create_patch_effects_config(data);
-   //         },
-   //         width, height, depth, format)
-   //         .release());
-   //}
-   // else {
+   if (format == volume_resource_format) {
+      *volume_texture = reinterpret_cast<IDirect3DVolumeTexture9*>(
+         Texture3d_resource::create(_shader_patch, width, height, depth).release());
+
+      return S_OK;
+   }
+
    if (is_luminance_format(format)) return D3DERR_INVALIDCALL;
 
    *volume_texture =
       create_texture3d_managed(width, height, depth, levels, format).release();
-   //}
 
    return S_OK;
 }

@@ -9,7 +9,7 @@
 
 namespace sp {
 
-const std::uint32_t volume_resource_format = D3DFMT_R3G3B2;
+const std::int32_t volume_resource_format = D3DFMT_L8;
 
 namespace {
 
@@ -65,8 +65,9 @@ void save_volume_resource(const std::string& output_path, std::string_view name,
    {
       auto fmt_writer = writer.emplace_child("FMT_"_mn);
 
-      const auto [data_padded_size, resolution] =
-         pack_size(gsl::narrow_cast<std::uint32_t>(data.size()));
+      const auto payload_size = sizeof(Volume_resource_header) + data.size();
+      const auto [padded_payload_size, resolution] =
+         pack_size(gsl::narrow_cast<std::uint32_t>(payload_size));
 
       // write texture format info
       {
@@ -74,11 +75,12 @@ void save_volume_resource(const std::string& output_path, std::string_view name,
 
          constexpr std::uint32_t volume_texture_id = 1795;
 
-         info_writer.write(volume_resource_format);
-         info_writer.write_unaligned(type);
-         info_writer.write_unaligned(resolution);
-         info_writer.write_unaligned(std::uint16_t{1});
-         info_writer.write_unaligned(volume_texture_id);
+         info_writer.write(volume_resource_format);      // Format
+         info_writer.write_unaligned(resolution[0]);     // Width
+         info_writer.write_unaligned(resolution[1]);     // Height
+         info_writer.write_unaligned(std::uint16_t{1});  // Depth
+         info_writer.write_unaligned(std::uint16_t{1});  // Mipcount
+         info_writer.write_unaligned(volume_texture_id); // Texturetype
       }
 
       // write texture level
@@ -90,17 +92,22 @@ void save_volume_resource(const std::string& output_path, std::string_view name,
          {
             auto info_writer = lvl_writer.emplace_child("INFO"_mn);
 
-            info_writer.write(std::uint32_t{0}); // Write mip level index.
-            info_writer.write(data_padded_size); // Write mip level size.
+            info_writer.write(std::uint32_t{0}); // Mip level index.
+            info_writer.write(payload_size);     // Mip level size.
          }
 
          // write level body
          {
             auto body_writer = lvl_writer.emplace_child("BODY"_mn);
 
+            Volume_resource_header header;
+            header.type = type;
+            header.payload_size = gsl::narrow_cast<std::uint32_t>(data.size());
+
+            body_writer.write_unaligned(header);
             body_writer.write_unaligned(data);
-            body_writer.pad(
-               gsl::narrow_cast<std::uint32_t>(data_padded_size - data.size()));
+            body_writer.pad(gsl::narrow_cast<std::uint32_t>(padded_payload_size -
+                                                            payload_size));
          }
       }
    }

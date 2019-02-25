@@ -2,6 +2,7 @@
 
 #include "compose_exception.hpp"
 #include "small_function.hpp"
+#include "utility.hpp"
 
 #include <cstdint>
 #include <filesystem>
@@ -97,8 +98,10 @@ public:
    template<typename Type>
    void write(const Type& value, Alignment alignment = Alignment::aligned)
    {
-      static_assert(std::is_trivially_copyable_v<Type>,
-                    "Type must be trivially copyable!");
+      static_assert(std::is_standard_layout_v<Type>,
+                    "Type must be standard layout!");
+      static_assert(std::is_trivially_destructible_v<Type>,
+                    "Type must be trivially destructible!");
 
       _out.write(reinterpret_cast<const char*>(&value), sizeof(Type));
       _size += sizeof(Type);
@@ -158,6 +161,11 @@ public:
       return pad(amount, Alignment::unaligned);
    }
 
+   auto absolute_size() const noexcept -> std::uint32_t
+   {
+      return gsl::narrow_cast<std::uint32_t>(_out.tellp());
+   }
+
 private:
    template<typename Last_act, typename Writer_type>
    friend class Writer_child;
@@ -179,6 +187,33 @@ private:
    std::streampos _size_pos;
    std::int64_t _size{};
 };
+
+//! \brief Helping for writing _from_ an alignment in a chunk.
+//!
+//! \tparam alignment The alignment to write till.
+//!
+//! \param writer The writer to write the data to.
+//! \param data The data to write.
+//!
+//! This function does writes two things, first at the current position in writer it writes
+//! the offset (in a uint32) from _after_ it that the data will be written. Then it write the data.
+template<std::size_t alignment>
+inline void write_at_alignment(Writer& writer, const gsl::span<const std::byte> data) noexcept
+{
+   // Calculate needed alignment.
+   const auto align_from_size = writer.absolute_size() + sizeof(std::uint32_t);
+   const auto aligned_offset =
+      next_multiple_of<alignment>(align_from_size) - align_from_size;
+
+   // Write alignment offset.
+   writer.write(gsl::narrow_cast<std::uint32_t>(aligned_offset));
+
+   // Pad until aligned.
+   writer.pad_unaligned(gsl::narrow_cast<std::uint32_t>(aligned_offset));
+
+   // Write data.
+   writer.write(data);
+}
 
 inline auto open_file_for_output(const std::filesystem::path& file_path) -> std::ofstream
 {
