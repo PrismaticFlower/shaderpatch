@@ -93,7 +93,7 @@ Shader_patch::Shader_patch(IDXGIAdapter2& adapter, const HWND window,
    bind_static_resources();
    set_viewport(0, 0, static_cast<float>(width), static_cast<float>(height));
 
-   _cb_scene.vertex_color_gamma = 1.0f;
+   _cb_scene.vertex_color_srgb = true;
    _cb_draw_ps.rt_multiply_blending_state = 0.0f;
    _cb_draw_ps.stock_tonemap_state = 0.0f;
    _cb_draw_ps.cube_projtex = false;
@@ -1382,12 +1382,12 @@ void Shader_patch::update_rendertarget_formats() noexcept
 void Shader_patch::set_linear_rendering(bool linear_rendering) noexcept
 {
    if (linear_rendering) {
-      _cb_scene.vertex_color_gamma = 2.2f;
+      _cb_scene.vertex_color_srgb = true;
       _cb_draw_ps.stock_tonemap_state = 1.0f;
       _cb_draw_ps.ps_lighting_scale = 1.0f;
    }
    else {
-      _cb_scene.vertex_color_gamma = 1.0f;
+      _cb_scene.vertex_color_srgb = false;
       _cb_draw_ps.stock_tonemap_state = 0.0f;
       _cb_draw_ps.ps_lighting_scale = 0.5f;
    }

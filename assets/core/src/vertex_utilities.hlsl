@@ -2,6 +2,7 @@
 #define VERTEX_UTILS_INCLUDED
 
 #include "constants_list.hlsl"
+#include "color_utilities.hlsl"
 
 #pragma warning(disable : 3571)
 
@@ -24,14 +25,31 @@ float3 decompress_position(float3 position)
 
 float4 get_material_color()
 {
-   return float4(pow(material_diffuse_color.rgb, vertex_color_gamma), material_diffuse_color.a);
+   float3 color;
+
+   if (vertex_color_srgb) {
+      color = srgb_to_linear(material_diffuse_color.rgb);
+   }
+   else {
+      color = material_diffuse_color.rgb;
+   }
+
+   return float4(color, material_diffuse_color.a);
 }
 
 float4 get_material_color(float4 color)
 {
 #ifdef __VERTEX_INPUT_COLOR__
-   color.rgb = pow(color.rgb * color_state.y + color_state.x, vertex_color_gamma) *
-               pow(material_diffuse_color.rgb, vertex_color_gamma);
+   if (vertex_color_srgb) {
+      const float3 vertex_lin = srgb_to_linear(color.rgb * color_state.y + color_state.x);
+      const float3 matl_lin = srgb_to_linear(material_diffuse_color.rgb);
+
+      color.rgb = vertex_lin * matl_lin;
+   }
+   else {
+      color.rgb = (color.rgb * color_state.y + color_state.x) * material_diffuse_color.rgb;
+   }
+
    color.a = (color.a * color_state.w + color_state.z) * material_diffuse_color.a;
 #else
    return get_material_color();
@@ -40,11 +58,15 @@ float4 get_material_color(float4 color)
    return color;
 }
 
-
 float3 get_static_diffuse_color(float4 color)
 {
-#ifdef __VERTEX_INPUT_COLOR__
-   return pow(color.rgb * color_state.x + color_state.z, vertex_color_gamma);
+#ifdef __VERTEX_INPUT_COLOR__   
+   if (vertex_color_srgb) {
+      return srgb_to_linear(color.rgb * color_state.x + color_state.z);
+   }
+   else {
+      return color.rgb * color_state.x + color_state.z;
+   }
 #else
    return 0.0;
 #endif

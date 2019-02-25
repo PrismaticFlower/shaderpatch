@@ -341,9 +341,11 @@
     <None Include="definitions\patch\late_effects_resolve.json">
       <Filter>definitions\patch</Filter>
     </None>
-    <None Include="build_lvls.ps1" />
-    <None Include="core.req" />
     <None Include="textures.req" />
+    <None Include="shader_declarations.req" />
+    <None Include="src\color_utilities.hlsl">
+      <Filter>src</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">
@@ -358,5 +360,8 @@
     <Filter Include="declarations">
       <UniqueIdentifier>{2ae5cb42-618b-4f6e-a3b4-ba73d8aa3967}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="build_lvls.ps1" />
   </ItemGroup>
 </Project>

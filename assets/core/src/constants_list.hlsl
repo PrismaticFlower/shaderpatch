@@ -15,7 +15,7 @@ cbuffer SceneConstants : register(b0)
    float vs_lighting_scale;
    float _bufferPadding1;
    float4x3 shadow_map_transform;
-   float vertex_color_gamma;
+   bool vertex_color_srgb;
    float time;
 }
 

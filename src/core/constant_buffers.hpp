@@ -32,7 +32,7 @@ struct alignas(16) Scene {
    glm::vec4 fog_info;
    glm::vec4 near_scene_fade;
    std::array<glm::vec4, 3> shadow_map_transform;
-   float vertex_color_gamma;
+   std::uint32_t vertex_color_srgb;
    float time;
    std::array<float, 2> _buffer_padding1;
 };
