@@ -24,8 +24,11 @@
         }
       },
 
+      "static_flags": [
+        "NORMAL_EXT_USE_DYNAMIC_TANGENTS"
+      ],
+
       "defines": [
-        [ "NORMAL_EXT_USE_DETAIL_MAPS", "false" ],
         [ "NORMAL_EXT_USE_SPECULAR", "false" ],
         [ "NORMAL_EXT_USE_TRANSPARENCY", "false" ],
         [ "NORMAL_EXT_USE_HARDEDGED_TEST", "false" ],
@@ -42,8 +45,8 @@
       },
 
       "static_flags": [
-        "NORMAL_EXT_USE_DETAIL_MAPS",
         "NORMAL_EXT_USE_SPECULAR",
+        "NORMAL_EXT_USE_DYNAMIC_TANGENTS",
         "NORMAL_EXT_USE_TRANSPARENCY",
         "NORMAL_EXT_USE_HARDEDGED_TEST",
         "NORMAL_EXT_USE_SHADOW_MAP",
@@ -55,19 +58,8 @@
   "rendertypes": {
     "normal_ext": {
       "static_flags": {
-        "NORMAL_EXT_USE_DETAIL_MAPS": false,
         "NORMAL_EXT_USE_SPECULAR": false,
-        "NORMAL_EXT_USE_TRANSPARENCY": false,
-        "NORMAL_EXT_USE_HARDEDGED_TEST": false,
-        "NORMAL_EXT_USE_SHADOW_MAP": false,
-        "NORMAL_EXT_USE_PROJECTED_TEXTURE": false
-      }
-    },
-
-    "normal_ext.detail": {
-      "static_flags": {
-        "NORMAL_EXT_USE_DETAIL_MAPS": true,
-        "NORMAL_EXT_USE_SPECULAR": false,
+        "NORMAL_EXT_USE_DYNAMIC_TANGENTS": false,
         "NORMAL_EXT_USE_TRANSPARENCY": false,
         "NORMAL_EXT_USE_HARDEDGED_TEST": false,
         "NORMAL_EXT_USE_SHADOW_MAP": false,
@@ -77,8 +69,8 @@
 
     "normal_ext.specular": {
       "static_flags": {
-        "NORMAL_EXT_USE_DETAIL_MAPS": false,
         "NORMAL_EXT_USE_SPECULAR": true,
+        "NORMAL_EXT_USE_DYNAMIC_TANGENTS": false,
         "NORMAL_EXT_USE_TRANSPARENCY": false,
         "NORMAL_EXT_USE_HARDEDGED_TEST": false,
         "NORMAL_EXT_USE_SHADOW_MAP": false,
@@ -86,10 +78,21 @@
       }
     },
 
-    "normal_ext.specular.detail": {
+    "normal_ext.dynamic": {
       "static_flags": {
-        "NORMAL_EXT_USE_DETAIL_MAPS": true,
+        "NORMAL_EXT_USE_SPECULAR": false,
+        "NORMAL_EXT_USE_DYNAMIC_TANGENTS": true,
+        "NORMAL_EXT_USE_TRANSPARENCY": false,
+        "NORMAL_EXT_USE_HARDEDGED_TEST": false,
+        "NORMAL_EXT_USE_SHADOW_MAP": false,
+        "NORMAL_EXT_USE_PROJECTED_TEXTURE": false
+      }
+    },
+
+    "normal_ext.specular.dynamic": {
+      "static_flags": {
         "NORMAL_EXT_USE_SPECULAR": true,
+        "NORMAL_EXT_USE_DYNAMIC_TANGENTS": true,
         "NORMAL_EXT_USE_TRANSPARENCY": false,
         "NORMAL_EXT_USE_HARDEDGED_TEST": false,
         "NORMAL_EXT_USE_SHADOW_MAP": false,

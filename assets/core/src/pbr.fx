@@ -114,9 +114,12 @@ float4 main_ps(Ps_input input) : SV_Target0
    }
 
    // Calculate lighting.
-   const float3 normalWS = perturb_normal(sample_normal_map(normal_map, aniso_wrap_sampler, input.texcoords),
-                                          input.front_face ? -input.normalWS : input.normalWS, input.tangentWS,
-                                          input.bitangent_sign);
+   float3 normalWS = input.front_face ? -input.normalWS : input.normalWS;
+   const float3 bitangentWS = input.bitangent_sign * cross(normalWS, input.tangentWS);
+   const float3x3 tangent_to_world = {input.tangentWS, bitangentWS, normalWS};
+
+   const float3 normalTS = sample_normal_map(normal_map, aniso_wrap_sampler, input.texcoords);
+   normalWS = normalize(mul(normalTS, tangent_to_world));
 
    const float2 shadow_texcoords = input.shadow_texcoords.xy / input.shadow_texcoords.w;
    const float shadow = 

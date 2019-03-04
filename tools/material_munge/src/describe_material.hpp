@@ -11,6 +11,6 @@
 
 namespace sp {
 
-auto describe_material(std::string_view name, const YAML::Node description,
-                       const YAML::Node material) -> Material_info;
+auto describe_material(std::string_view name, const YAML::Node& description,
+                       const YAML::Node& material) -> Material_info;
 }

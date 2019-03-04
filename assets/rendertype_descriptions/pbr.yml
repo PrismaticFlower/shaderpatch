@@ -4,32 +4,39 @@ Failsafe Texture Index: 0
 Property Mappings:
    BaseColor:
       Type: vec3
+      Default: [1.0, 1.0, 1.0]
       Range: [0.0, 1.0]
       Constant: 0.x
      
    Metallicness:
-      Type: scaler
+      Type: float
+      Default: 0.0
       Range: [0.0, 1.0]
       Constant: 0.w
 
    Roughness:
-      Type: scaler
+      Type: float
+      Default: 1.0
       Range: [0.0, 1.0]
       Constant: 1.x
       
    AOStrength:
-      Type: scaler
+      Type: float
+      Default: 1.0
       Range: [0.0, 2048.0]
       Constant: 1.y
+      Op: rcp
       
    EmissiveStrength:
-      Type: scaler
+      Type: float
+      Default: 0.0
       Range: [0.0, 2048.0]
       Constant: 1.z
       Op: exp2
       
    EmissivePower:
-      Type: scaler
+      Type: float
+      Default: 0.0
       Range: [-2048.0, 2048.0]
       Constant: 1.z
       Op: exp2

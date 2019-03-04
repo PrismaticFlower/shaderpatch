@@ -31,10 +31,14 @@ bool is_degenerate_triangle(const std::array<std::uint16_t, 3> triangle) noexcep
 
 void clean_chunk(ucfb::Editor_parent_chunk& chunk) noexcept
 {
-   for (auto it = chunk.begin(); it != chunk.end(); ++it) {
-      if (const auto mn = it->first; mn == "CSHD"_mn || mn == "VDAT"_mn || mn == "SKIN"_mn)
-         it = chunk.erase(it);
-   }
+   chunk.erase(std::remove_if(chunk.begin(), chunk.end(),
+                              [](const auto& child) {
+                                 const auto mn = child.first;
+
+                                 return mn == "CSHD"_mn || mn == "VDAT"_mn ||
+                                        mn == "SKIN"_mn;
+                              }),
+               chunk.end());
 }
 
 void clean_chunks(ucfb::Editor_parent_chunk& root) noexcept
@@ -73,44 +77,40 @@ auto read_ibuf(ucfb::Reader_strict<"IBUF"_mn> ibuf)
    return index_buffer;
 }
 
-template<bool keep_most_complex, bool keep_least_complex>
 void clean_vbufs(ucfb::Editor_parent_chunk& segm) noexcept
 {
-   static_assert(keep_most_complex ^ keep_least_complex);
+   Vbuf_flags ideal_vbuf{0u};
 
-   Vbuf_flags most_complex{};
-   Vbuf_flags least_complex{0xffffffffu};
-
-   auto first_vbuf = ucfb::find(segm, "VBUF"_mn);
-
-   for (auto it = first_vbuf; it != segm.end();
+   for (auto it = ucfb::find(segm, "VBUF"_mn); it != segm.end();
         it = ucfb::find(it + 1, segm.end(), "VBUF"_mn)) {
       auto [count, stride, flags] =
          ucfb::Reader{it->first, std::get<ucfb::Editor_data_chunk>(it->second).span()}
             .read_multi<std::uint32_t, std::uint32_t, Vbuf_flags>();
 
-      most_complex = std::max(most_complex, flags);
-      least_complex = std::min(least_complex, flags);
+      ideal_vbuf = std::max(ideal_vbuf, flags);
    }
 
-   for (auto it = first_vbuf; it != segm.end();
-        it = ucfb::find(it + 1, segm.end(), "VBUF"_mn)) {
-      auto [count, stride, flags] =
-         ucfb::Reader{it->first, std::get<ucfb::Editor_data_chunk>(it->second).span()}
-            .read_multi<std::uint32_t, std::uint32_t, Vbuf_flags>();
+   segm.erase(std::remove_if(segm.begin(), segm.end(),
+                             [ideal_vbuf](const auto& child) {
+                                if (child.first != "VBUF"_mn) return false;
 
-      if (keep_most_complex && flags == most_complex) continue;
-      if (keep_least_complex && flags == least_complex) continue;
+                                auto [count, stride, flags] =
+                                   ucfb::Reader{child.first,
+                                                std::get<ucfb::Editor_data_chunk>(
+                                                   child.second)
+                                                   .span()}
+                                      .read_multi<std::uint32_t, std::uint32_t, Vbuf_flags>();
 
-      it = segm.erase(it);
-   }
+                                return flags != ideal_vbuf;
+                             }),
+              segm.end());
 }
 
 void edit_ibuf_vbufs(ucfb::Editor_parent_chunk& segm, const Material_options options,
                      const std::array<glm::vec3, 2> vert_box)
 {
    // Remove unused vertex buffers.
-   clean_vbufs<false, true>(segm);
+   clean_vbufs(segm);
 
    auto vbuf = ucfb::find(segm, "VBUF"_mn);
 
@@ -128,16 +128,6 @@ void edit_ibuf_vbufs(ucfb::Editor_parent_chunk& segm, const Material_options opt
    // Optimize triangle and vertex ordering.
    std::tie(index_buffer, vertex_buffer) = optimize_mesh(index_buffer, vertex_buffer);
 
-   // Update VBUF.
-   {
-      auto& vbuf_editor = std::get<ucfb::Editor_data_chunk>(vbuf->second);
-      vbuf_editor.clear();
-
-      auto vbuf_writer = vbuf_editor.writer();
-
-      output_vertex_buffer(vertex_buffer, vbuf_writer, options.compressed, vert_box);
-   }
-
    // Update IBUF.
    {
       auto& ibuf =
@@ -149,6 +139,16 @@ void edit_ibuf_vbufs(ucfb::Editor_parent_chunk& segm, const Material_options opt
 
       ibuf_writer.write(static_cast<std::uint32_t>(index_buffer.size() * 3),
                         gsl::as_bytes(gsl::make_span(index_buffer)));
+   }
+
+   // Update VBUF.
+   {
+      auto& vbuf_editor = std::get<ucfb::Editor_data_chunk>(vbuf->second);
+      vbuf_editor.clear();
+
+      auto vbuf_writer = vbuf_editor.writer();
+
+      output_vertex_buffer(vertex_buffer, vbuf_writer, options.compressed, vert_box);
    }
 
    // Update INFO chunk.

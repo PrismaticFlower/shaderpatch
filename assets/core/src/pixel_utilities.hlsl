@@ -6,43 +6,18 @@
 
 TextureCube<float3> cube_projected_texture : register(t127);
 
-// Christian Schüler's Normal Mapping Without Precomputed Tangents code.
-// Taken from http://www.thetenthplanet.de/archives/1180, be sure to go
-// check out his article on it. 
-
-float3x3 cotangent_frame(float3 N, float3 p, float2 uv)
+float3x3 generate_tangent_to_world(const float3 normalWS, const float3 positionWS, const float2 texcoords)
 {
-   // get edge vectors of the pixel triangle
-   float3 dp1 = ddx(p);
-   float3 dp2 = ddy(p);
-   float2 duv1 = ddx(uv);
-   float2 duv2 = ddy(uv);
+   const float3 pos_dx = ddx(positionWS);
+   const float3 pos_dy = ddy(positionWS);
+   const float2 tex_dx = ddx(texcoords);
+   const float2 tex_dy = ddy(texcoords);
+   const float3 unorm_tangentWS = (tex_dy.y * pos_dx - tex_dx.y * pos_dy) * rcp(tex_dx.x * tex_dy.y - tex_dy.x * tex_dx.y);
+   
+   const float3 tangentWS = normalize(unorm_tangentWS - normalWS * dot(normalWS, unorm_tangentWS));
+   const float3 bitangentWS = cross(normalWS, tangentWS);
 
-   // solve the linear system
-   float3 dp2perp = cross(dp2, N);
-   float3 dp1perp = cross(N, dp1);
-   float3 T = dp2perp * duv1.x + dp1perp * duv2.x;
-   float3 B = dp2perp * duv1.y + dp1perp * duv2.y;
-
-   // construct a scale-invariant frame 
-   float invmax = rsqrt(max(dot(T, T), dot(B, B)));
-   return float3x3(T * invmax, B * invmax, N);
-}
-
-float3 perturb_normal(Texture2D<float2> tex, SamplerState samp, 
-                      float2 texcoords, float3 N, float3 V)
-{
-   // assume N, the interpolated vertex normal and 
-   // V, the view vector (vertex to eye)
-
-   float3 map;
-   map.xy = tex.Sample(samp, texcoords) * 255. / 127. - 128. / 127.;
-   map.z = sqrt(1.0 - saturate(dot(map.xy, map.xy)));
-
-   float3x3 TBN = cotangent_frame(N, -V, texcoords);
-   float3 result = normalize(mul(map, TBN));
-
-   return any(isnan(result)) ? N : result;
+   return float3x3(tangentWS, bitangentWS, normalWS);
 }
 
 float3 sample_normal_map(Texture2D<float2> tex, SamplerState samp, float2 texcoords)
@@ -54,9 +29,31 @@ float3 sample_normal_map(Texture2D<float2> tex, SamplerState samp, float2 texcoo
    return normal;
 }
 
+float3 sample_normal_map(Texture2D<float2> tex, SamplerState samp, float2 texcoords, float lod)
+{
+   float3 normal;
+   normal.xy = tex.SampleLevel(samp, texcoords, lod) * 2.0 - 1.0;
+   normal.z = sqrt(1.0 - saturate(dot(normal.xy, normal.xy)));
+
+   return normal;
+}
+
 float3 sample_normal_map_gloss(Texture2D<float4> tex, SamplerState samp, float2 texcoords, out float gloss)
 {
    float4 normal_gloss = tex.Sample(samp, texcoords);
+   float3 normal = normal_gloss.xyz * 2.0 - 1.0;
+
+   normal.z = sqrt(1.0 - saturate(dot(normal.xy, normal.xy)));
+
+   gloss = normal_gloss.w;
+
+   return normal;
+}
+
+float3 sample_normal_map_gloss(Texture2D<float4> tex, SamplerState samp, float mip_level, 
+                               float2 texcoords, out float gloss)
+{
+   float4 normal_gloss = tex.SampleLevel(samp, texcoords, mip_level);
    float3 normal = normal_gloss.xyz * 2.0 - 1.0;
 
    normal.z = sqrt(1.0 - saturate(dot(normal.xy, normal.xy)));
@@ -80,11 +77,110 @@ float3 sample_normal_map_gloss(Texture2D<float4> tex, Texture2D<float2> detail_t
    return normal;
 }
 
-float3 perturb_normal(float3 normalTS, float3 normal, float3 tangent, float bitangent_sign)
+float2 parallax_occlusion_map(Texture2D<float> height_map, const float height_scale, const float2 texcoords,
+                              const float3 unorm_viewTS, const float3 normalWS, const float3 viewWS)
 {
-   const float3 bitangent = bitangent_sign * cross(normal, tangent);
+   const float fade_start = 12.0;
+   const float fade_length = 20.0;
+   const float max_steps = 64.0;
+   const float min_steps = 16.0;
+   const float mip_level = height_map.CalculateLevelOfDetail(linear_wrap_sampler, texcoords);
 
-   return normalize(normalTS.x * tangent + normalTS.y * bitangent + normalTS.z * normal);
+   const float2 parallax_direction = normalize(unorm_viewTS.xy);
+
+   const float view_length = length(unorm_viewTS);
+   const float parallax_length = sqrt(view_length * view_length - unorm_viewTS.z * unorm_viewTS.z) / unorm_viewTS.z;
+   const float2 parallax_offset = parallax_direction * parallax_length * height_scale;
+
+   const float fade = 1.0 - saturate((view_length - fade_start) / fade_length);
+
+#pragma warning(disable : 4000)
+   [branch] if (fade == 0.0) return texcoords;
+#pragma warning(enable : 4000)
+
+   const uint num_steps = (uint)lerp(max_steps, min_steps, saturate(abs(dot(viewWS, normalWS))));
+
+   const float step_size = 1.0 / (float)(num_steps * 4u);
+   float curr_height = 0.0;
+   float prev_height = 1.0;
+   
+   const float2 offset_per_step = step_size * parallax_offset;
+   float2 current_offset = texcoords;
+   float  current_bound = 1.0;
+   
+   float2 pt1 = 0;
+   float2 pt2 = 0;
+   
+   [loop] for (uint step = 0; step < num_steps; ++step) {
+      float2 step_texcoords[4];
+
+      step_texcoords[0] = current_offset - (offset_per_step);
+      step_texcoords[1] = current_offset - (offset_per_step * 2.0);
+      step_texcoords[2] = current_offset - (offset_per_step * 3.0);
+      step_texcoords[3] = current_offset - (offset_per_step * 4.0);
+
+      float4 step_heights;
+
+      step_heights[0] = height_map.SampleLevel(linear_wrap_sampler, step_texcoords[0], mip_level);
+      step_heights[1] = height_map.SampleLevel(linear_wrap_sampler, step_texcoords[1], mip_level);
+      step_heights[2] = height_map.SampleLevel(linear_wrap_sampler, step_texcoords[2], mip_level);
+      step_heights[3] = height_map.SampleLevel(linear_wrap_sampler, step_texcoords[3], mip_level);
+
+      float4 step_bounds;
+
+      step_bounds[0] = current_bound - (step_size);
+      step_bounds[1] = current_bound - (step_size * 2.0);
+      step_bounds[2] = current_bound - (step_size * 3.0);
+      step_bounds[3] = current_bound - (step_size * 4.0);
+
+      const bool4 intersection = step_heights > step_bounds;
+
+      [branch] if (any(intersection)) {
+         float prev_bound;
+
+         if (intersection[0]) {
+            prev_bound = current_bound;
+            curr_height = step_heights[0];
+            current_bound = step_bounds[0];
+         }
+         else if (intersection[1]) {
+            prev_bound = step_bounds[0];
+            prev_height = step_heights[0];
+            curr_height = step_heights[1];
+            current_bound = step_bounds[1];
+         }
+         else if (intersection[2]) {
+            prev_bound = step_bounds[1];
+            prev_height = step_heights[1];
+            curr_height = step_heights[2];
+            current_bound = step_bounds[2];
+         }
+         else if (intersection[3]) {
+            prev_bound = step_bounds[2];
+            prev_height = step_heights[2];
+            curr_height = step_heights[3];
+            current_bound = step_bounds[3];
+         }
+
+         pt1 = float2(current_bound, curr_height);
+         pt2 = float2(prev_bound, prev_height);
+   
+         break;
+      }
+
+      current_offset = step_texcoords[3];
+      current_bound = step_bounds[3];
+      prev_height = step_heights[3];
+   }
+
+   const float delta2 = pt2.x - pt2.y;
+   const float delta1 = pt1.x - pt1.y;  
+   const float denominator = delta2 - delta1;
+   const float parallax_amount = 
+      (denominator != 0.0) ? (pt1.x * delta2 - pt2.x * delta1) / denominator : 0.0;
+   const float2 final_offset = parallax_offset * (1 - parallax_amount);
+
+   return lerp(texcoords, texcoords - final_offset, fade);
 }
 
 float3 sample_projected_light(Texture2D<float3> projected_texture, float4 texcoords)

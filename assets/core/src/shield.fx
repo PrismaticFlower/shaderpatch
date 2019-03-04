@@ -54,7 +54,7 @@ struct Vs_output
    float2 texcoords : TEXCOORD0;
    float3 normal_texcoords : TEXCOORD1;
    float3 normalWS : NORMALWS;
-   float3 view_normalWS : VIEWNORMALWS;
+   float3 positionWS : POSITIONWS;
    float3 material_color : MATCOLOR;
    float fog : FOG;
    float alpha : ALPHA;
@@ -76,7 +76,7 @@ Vs_output shield_vs(Vertex_input input)
 
    output.positionPS = positionPS;
    output.normalWS = normalWS;
-   output.view_normalWS = view_normalWS;
+   output.positionWS = positionWS;
 
    output.texcoords = input.texcoords() + shield_constants.xy;
    output.normal_texcoords = animate_normal(normalWS);
@@ -123,7 +123,7 @@ struct Ps_input
    float2 texcoords : TEXCOORD0;
    float3 normal_texcoords : TEXCOORD1;
    float3 normalWS : NORMALWS;
-   float3 view_normalWS : VIEWNORMALWS;
+   float3 positionWS : POSITIONWS;
    float3 material_color : MATCOLOR;
    float fog : FOG;
    float alpha : ALPHA;
@@ -132,15 +132,17 @@ struct Ps_input
 
 float4 shield_ps(Ps_input input) : SV_Target0
 {
-   const float3 view_normalWS = normalize(input.view_normalWS);
-   const float3 normalWS = perturb_normal(normal_map_texture, aniso_wrap_sampler,
-                                          map_xyz_to_uv(input.normal_texcoords),
-                                          normalize(input.normalWS), view_normalWS);
+   const float2 texcoords = map_xyz_to_uv(input.normal_texcoords);
+   const float3x3 tangent_to_world = generate_tangent_to_world(normalize(input.normalWS), input.positionWS, texcoords);
+   const float3 normalTS = sample_normal_map(normal_map_texture, aniso_wrap_sampler,
+                                             texcoords);
+   const float3 normalWS = normalize(mul(normalTS, tangent_to_world));
 
-   const float2 scene_coords = input.positionSS.xy * rt_resolution.zw + normalWS.xz * 0.1;
+   const float2 scene_coords = input.positionSS.xy * rt_resolution.zw + normalTS.xy * 0.1;
    const float3 scene_color = refraction_buffer.SampleLevel(linear_clamp_sampler, scene_coords, 0.0);
    const float4 diffuse_color = diffuse_texture.Sample(linear_clamp_sampler, input.texcoords);
 
+   const float3 view_normalWS = normalize(input.positionWS - view_positionWS);
    const float3 H = normalize(light_directional_0_dir.xyz + view_normalWS);
    const float NdotH = saturate(dot(normalWS, H));
    float3 specular = pow(NdotH, 64);

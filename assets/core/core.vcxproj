@@ -156,9 +156,9 @@
     </None>
     <CustomBuild Include="build_lvls.ps1">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">powershell -Command  "./build_lvls.ps1"  -BinPath $(SolutionDir)\tools\bin\$(Platform)\Release\ -CompilerArgs:'-o:1 -f:true'</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">powershell -Command  "./build_lvls.ps1"  -BinPath $(SolutionDir)\tools\bin\$(Platform)\Release\ -CompilerArgs:'-o:1 -f:true -d:true'</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">powershell -Command  "./build_lvls.ps1"  -BinPath $(SolutionDir)\tools\bin\$(Platform)\Release\ -CompilerArgs:'-o:1 -f:true'</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">powershell -Command  "./build_lvls.ps1"  -BinPath $(SolutionDir)\tools\bin\$(Platform)\Release\ -CompilerArgs:'-o:1 -f:true'</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">powershell -Command  "./build_lvls.ps1"  -BinPath $(SolutionDir)\tools\bin\$(Platform)\Release\ -CompilerArgs:'-o:1 -f:true -d:true'</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">powershell -Command  "./build_lvls.ps1"  -BinPath $(SolutionDir)\tools\bin\$(Platform)\Release\ -CompilerArgs:'-o:1 -f:true'</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </Message>

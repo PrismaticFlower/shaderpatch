@@ -4,30 +4,93 @@ Failsafe Texture Index: 0
 Property Mappings:
    DiffuseColor:
       Type: vec3
+      Default: [1.0, 1.0, 1.0]
       Range: [0.0, 1.0]
       Constant: 0.x
      
    GlossMapWeight:
-      Type: scaler
+      Type: float
+      Default: 1.0
       Range: [0.0, 1.0]
       Constant: 0.w
       
    SpecularColor:
       Type: vec3
+      Default: [1.0, 1.0, 1.0]
       Range: [0.0, 1.0]
       Constant: 1.x
 
    SpecularExponent:
-      Type: scaler
+      Type: float
+      Default: 64.0
       Range: [1.0, 2048.0]
       Constant: 1.w
+
+   UseParallaxOcclusionMapping:
+      Type: bool
+      Default: false
+      Constant: 2.x
+      
+   HeightScale:
+      Type: float
+      Default: 0.05
+      Range: [0.0, 2048.0]
+      Constant: 2.y
+
+   UseDetailMaps:
+      Type: bool
+      Default: false
+      Constant: 2.z
+      
+   DetailTextureScale:
+      Type: float
+      Default: 1.0
+      Range: [0.0, 2048.0]
+      Constant: 2.w
+      
+   UseOverlayMaps:
+      Type: bool
+      Default: false
+      Constant: 3.x
+
+   OverlayTextureScale:
+      Type: float
+      Default: 1.0
+      Range: [0.0, 2048.0]
+      Constant: 3.y
+ 
+   UseEmissiveMap:
+      Type: bool
+      Default: false
+      Constant: 3.z
+
+   EmissiveTextureScale:
+      Type: float
+      Default: 1.0
+      Range: [0.0, 2048.0]
+      Constant: 3.w
+
+   EmissivePower:
+      Type: float
+      Default: 0.0
+      Range: [-2048.0, 2048.0]
+      Constant: 4.x
+      Op: exp2
 
 Texture Mappings:
    DiffuseMap: 
       Slot: 0
    NormalMap: 
       Slot: 1
+   HeightMap: 
+      Slot: 2    
    DetailMap: 
-      Slot: 2
-   DetailNormalMap: 
       Slot: 3
+   DetailNormalMap: 
+      Slot: 4
+   EmissiveMap: 
+      Slot: 5
+   OverlayDiffuseMap: 
+      Slot: 6
+   OverlayNormalMap: 
+      Slot: 7
