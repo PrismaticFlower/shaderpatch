@@ -1,11 +1,13 @@
 
 #include "image_patcher.hpp"
 #include "../logger.hpp"
+#include "upload_scratch_buffer.hpp"
 #include "utility.hpp"
 
 #include <array>
 #include <execution>
 
+#include <glm/glm.hpp>
 #include <gsl/gsl>
 
 #include <comdef.h>
@@ -14,43 +16,28 @@ namespace sp::d3d9 {
 
 namespace {
 
+Upload_scratch_buffer patchup_scratch_buffer{524288u, 524288u};
+
 class Image_patcher_l8 final : public Image_patcher {
 public:
-   auto create_image(const DXGI_FORMAT format, const UINT width,
-                     const UINT height, const UINT mip_levels) const noexcept
-      -> DirectX::ScratchImage override
+   auto patch_image(const DXGI_FORMAT format, const UINT width, const UINT height,
+                    const UINT mip_levels, Upload_texture& input_texture) const
+      noexcept -> std::pair<DXGI_FORMAT, std::unique_ptr<Upload_texture>> override
    {
       Expects(format == DXGI_FORMAT_R8_UNORM);
 
-      DirectX::ScratchImage image;
-      image.Initialize2D(format, width, height, 2, mip_levels);
+      auto patched_texture =
+         std::make_unique<Upload_texture>(patchup_scratch_buffer,
+                                          DXGI_FORMAT_R8G8B8A8_UNORM, width,
+                                          height, 1, mip_levels, 1);
 
-      return image;
-   }
-
-   auto patch_image(const DirectX::ScratchImage& input_image) const noexcept
-      -> DirectX::ScratchImage override
-   {
-      Expects(input_image.GetMetadata().format == DXGI_FORMAT_R8_UNORM);
-
-      const auto input_meta = input_image.GetMetadata();
-
-      DirectX::ScratchImage output_image;
-
-      if (const auto result =
-             output_image.Initialize2D(DXGI_FORMAT_R8G8B8A8_UNORM, input_meta.width,
-                                       input_meta.height, 1, input_meta.mipLevels);
-          FAILED(result)) {
-         log_and_terminate("Failed to convert texture format! reason: ",
-                           _com_error{result}.ErrorMessage());
+      for (auto mip = 0; mip < mip_levels; ++mip) {
+         patch_subimage(glm::max(width >> mip, 1u), glm::max(height >> mip, 1u),
+                        input_texture.subresource(mip, 0),
+                        patched_texture->subresource(mip, 0));
       }
 
-      for (auto mip_level = 0; mip_level < input_meta.mipLevels; ++mip_level) {
-         patch_subimage(*input_image.GetImage(mip_level, 0, 0),
-                        *output_image.GetImage(mip_level, 0, 0));
-      }
-
-      return output_image;
+      return {DXGI_FORMAT_R8G8B8A8_UNORM, std::move(patched_texture)};
    }
 
    auto map_dynamic_image(const DXGI_FORMAT format, const UINT width,
@@ -60,18 +47,14 @@ public:
       Expects(format == DXGI_FORMAT_R8_UNORM);
       Expects(!is_mapped());
 
-      if (const auto result =
-             _dynamic_patch_image.Initialize2D(format, width >> mip_level,
-                                               height >> mip_level, 1, 1);
-          FAILED(result)) {
-         log_and_terminate(
-            "Failed to create scratch image for dynamic image patcher.");
-      }
+      _dynamic_width = glm::max(width >> mip_level, 1u);
+      _dynamic_height = glm::max(height >> mip_level, 1u);
 
-      auto* const image = _dynamic_patch_image.GetImage(0, 0, 0);
+      _dynamic_patch_texture =
+         std::make_unique<Upload_texture>(patchup_scratch_buffer, format,
+                                          _dynamic_width, _dynamic_height, 1, 1, 1);
 
-      return {image->rowPitch, image->slicePitch,
-              reinterpret_cast<std::byte*>(image->pixels)};
+      return _dynamic_patch_texture->subresource(0, 0);
    }
 
    void unmap_dynamic_image(core::Shader_patch& shader_patch,
@@ -80,96 +63,66 @@ public:
    {
       Expects(is_mapped());
 
-      auto mapped = shader_patch.map_dynamic_texture(texture, mip_level,
-                                                     D3D11_MAP_WRITE_DISCARD);
+      auto dest = shader_patch.map_dynamic_texture(texture, mip_level,
+                                                   D3D11_MAP_WRITE_DISCARD);
 
-      const auto src_image = *_dynamic_patch_image.GetImage(0, 0, 0);
+      patch_subimage(_dynamic_width, _dynamic_height,
+                     _dynamic_patch_texture->subresource(0, 0), dest);
 
-      DirectX::Image mapped_image;
-      mapped_image.width = src_image.width;
-      mapped_image.height = src_image.height;
-      mapped_image.format = DXGI_FORMAT_R8G8B8A8_UNORM;
-      mapped_image.rowPitch = mapped.row_pitch;
-      mapped_image.slicePitch = mapped.depth_pitch;
-      mapped_image.pixels = reinterpret_cast<std::uint8_t*>(mapped.data);
-
-      patch_subimage(src_image, mapped_image);
-      _dynamic_patch_image = DirectX::ScratchImage{};
-
+      _dynamic_patch_texture = nullptr;
       shader_patch.unmap_dynamic_texture(texture, mip_level);
    }
 
    bool is_mapped() const noexcept override
    {
-      return _dynamic_patch_image.GetImageCount() != 0;
+      return _dynamic_patch_texture != nullptr;
    }
 
 private:
-   static void patch_subimage(const DirectX::Image& source,
-                              const DirectX::Image& dest) noexcept
+   static void patch_subimage(const UINT width, const UINT height,
+                              core::Mapped_texture source,
+                              core::Mapped_texture dest) noexcept
    {
-      Expects(source.format == DXGI_FORMAT_R8_UNORM);
-      Expects(dest.format == DXGI_FORMAT_R8G8B8A8_UNORM);
+      std::for_each_n(std::execution::par_unseq, Index_iterator{}, height, [&](const int y) {
+         const auto src_row = gsl::span{source.data + (source.row_pitch * y),
+                                        static_cast<gsl::index>(source.row_pitch)};
+         auto dest_row = gsl::span{dest.data + (dest.row_pitch * y),
+                                   static_cast<gsl::index>(dest.row_pitch)};
 
-      std::for_each_n(std::execution::par_unseq, Index_iterator{},
-                      source.height, [&](const int y) {
-                         const auto src_row =
-                            gsl::span{source.pixels + (source.rowPitch * y),
-                                      static_cast<gsl::index>(source.rowPitch)};
-                         auto dest_row =
-                            gsl::span{dest.pixels + (dest.rowPitch * y),
-                                      static_cast<gsl::index>(dest.rowPitch)};
+         for (auto x = 0; x < width; ++x) {
+            auto dest_pixel = dest_row.subspan(4 * x, 4);
 
-                         for (auto x = 0; x < source.width; ++x) {
-                            auto dest_pixel = dest_row.subspan(4 * x, 4);
-
-                            dest_pixel[0] = dest_pixel[1] = dest_pixel[2] =
-                               src_row[x];
-                            dest_pixel[3] = 0xff;
-                         }
-                      });
+            dest_pixel[0] = dest_pixel[1] = dest_pixel[2] = src_row[x];
+            dest_pixel[3] = std::byte{0xffu};
+         }
+      });
    }
 
-   DirectX::ScratchImage _dynamic_patch_image;
+   UINT _dynamic_width;
+   UINT _dynamic_height;
+   std::unique_ptr<Upload_texture> _dynamic_patch_texture;
 };
 
 class Image_patcher_a8l8 final : public Image_patcher {
 public:
-   auto create_image(const DXGI_FORMAT format, const UINT width,
-                     const UINT height, const UINT mip_levels) const noexcept
-      -> DirectX::ScratchImage override
+   auto patch_image(const DXGI_FORMAT format, const UINT width, const UINT height,
+                    const UINT mip_levels, Upload_texture& input_texture) const
+      noexcept -> std::pair<DXGI_FORMAT, std::unique_ptr<Upload_texture>> override
    {
       Expects(format == DXGI_FORMAT_R8G8_UNORM);
 
-      DirectX::ScratchImage image;
-      image.Initialize2D(format, width, height, 2, mip_levels);
+      auto patched_texture =
+         std::make_unique<Upload_texture>(patchup_scratch_buffer,
+                                          DXGI_FORMAT_R8G8B8A8_UNORM, width,
+                                          height, 1, mip_levels, 1);
 
-      return image;
-   }
-
-   auto patch_image(const DirectX::ScratchImage& input_image) const noexcept
-      -> DirectX::ScratchImage override
-   {
-      Expects(input_image.GetMetadata().format == DXGI_FORMAT_R8G8_UNORM);
-
-      const auto input_meta = input_image.GetMetadata();
-
-      DirectX::ScratchImage output_image;
-
-      if (const auto result =
-             output_image.Initialize2D(DXGI_FORMAT_R8G8B8A8_UNORM, input_meta.width,
-                                       input_meta.height, 1, input_meta.mipLevels);
-          FAILED(result)) {
-         log_and_terminate("Failed to convert texture format! reason: ",
-                           _com_error{result}.ErrorMessage());
+      for (auto mip = 0; mip < mip_levels; ++mip) {
+         patch_subimage(glm::max(width >> mip, 1u), glm::max(height >> mip, 1u),
+                        input_texture.subresource(mip, 0),
+                        patched_texture->subresource(mip, 0));
       }
 
-      for (auto mip_level = 0; mip_level < input_meta.mipLevels; ++mip_level) {
-         patch_subimage(*input_image.GetImage(mip_level, 0, 0),
-                        *output_image.GetImage(mip_level, 0, 0));
-      }
-
-      return output_image;
+      return {DXGI_FORMAT_R8G8B8A8_UNORM, std::move(patched_texture)};
    }
 
    auto map_dynamic_image(const DXGI_FORMAT format, const UINT width,
@@ -179,18 +132,14 @@ public:
       Expects(format == DXGI_FORMAT_R8G8_UNORM);
       Expects(!is_mapped());
 
-      if (const auto result =
-             _dynamic_patch_image.Initialize2D(format, width >> mip_level,
-                                               height >> mip_level, 1, 1);
-          FAILED(result)) {
-         log_and_terminate(
-            "Failed to create scratch image for dynamic image patcher.");
-      }
+      _dynamic_width = glm::max(width >> mip_level, 1u);
+      _dynamic_height = glm::max(height >> mip_level, 1u);
 
-      auto* const image = _dynamic_patch_image.GetImage(0, 0, 0);
+      _dynamic_patch_texture =
+         std::make_unique<Upload_texture>(patchup_scratch_buffer, format,
+                                          _dynamic_width, _dynamic_height, 1, 1, 1);
 
-      return {image->rowPitch, image->slicePitch,
-              reinterpret_cast<std::byte*>(image->pixels)};
+      return _dynamic_patch_texture->subresource(0, 0);
    }
 
    void unmap_dynamic_image(core::Shader_patch& shader_patch,
@@ -199,58 +148,44 @@ public:
    {
       Expects(is_mapped());
 
-      auto mapped = shader_patch.map_dynamic_texture(texture, mip_level,
-                                                     D3D11_MAP_WRITE_DISCARD);
+      auto dest = shader_patch.map_dynamic_texture(texture, mip_level,
+                                                   D3D11_MAP_WRITE_DISCARD);
 
-      const auto src_image = *_dynamic_patch_image.GetImage(0, 0, 0);
+      patch_subimage(_dynamic_width, _dynamic_height,
+                     _dynamic_patch_texture->subresource(0, 0), dest);
 
-      DirectX::Image mapped_image;
-      mapped_image.width = src_image.width;
-      mapped_image.height = src_image.height;
-      mapped_image.format = DXGI_FORMAT_R8G8B8A8_UNORM;
-      mapped_image.rowPitch = mapped.row_pitch;
-      mapped_image.slicePitch = mapped.depth_pitch;
-      mapped_image.pixels = reinterpret_cast<std::uint8_t*>(mapped.data);
-
-      patch_subimage(src_image, mapped_image);
-      _dynamic_patch_image = DirectX::ScratchImage{};
-
+      _dynamic_patch_texture = nullptr;
       shader_patch.unmap_dynamic_texture(texture, mip_level);
    }
 
    bool is_mapped() const noexcept override
    {
-      return _dynamic_patch_image.GetImageCount() != 0;
+      return _dynamic_patch_texture != nullptr;
    }
 
 private:
-   static void patch_subimage(const DirectX::Image& source,
-                              const DirectX::Image& dest) noexcept
+   static void patch_subimage(const UINT width, const UINT height,
+                              core::Mapped_texture source,
+                              core::Mapped_texture dest) noexcept
    {
-      Expects(source.format == DXGI_FORMAT_R8G8_UNORM);
-      Expects(dest.format == DXGI_FORMAT_R8G8B8A8_UNORM);
+      std::for_each_n(std::execution::par_unseq, Index_iterator{}, height, [&](const int y) {
+         const auto src_row = gsl::span{source.data + (source.row_pitch * y),
+                                        static_cast<gsl::index>(source.row_pitch)};
+         auto dest_row = gsl::span{dest.data + (dest.row_pitch * y),
+                                   static_cast<gsl::index>(dest.row_pitch)};
 
-      std::for_each_n(std::execution::par_unseq, Index_iterator{},
-                      source.height, [&](const int y) {
-                         const auto src_row =
-                            gsl::span{source.pixels + (source.rowPitch * y),
-                                      static_cast<gsl::index>(source.rowPitch)};
-                         auto dest_row =
-                            gsl::span{dest.pixels + (dest.rowPitch * y),
-                                      static_cast<gsl::index>(dest.rowPitch)};
-
-                         for (auto x = 0; x < source.width; ++x) {
-                            const auto src_pixel = src_row.subspan(2 * x, 2);
-                            auto dest_pixel = dest_row.subspan(4 * x, 4);
-
-                            dest_pixel[0] = dest_pixel[1] = dest_pixel[2] =
-                               src_pixel[0];
-                            dest_pixel[3] = src_pixel[1];
-                         }
-                      });
+         for (auto x = 0; x < width; ++x) {
+            dest_row[x * 4] = src_row[x * 2];
+            dest_row[x * 4 + 1] = src_row[x * 2];
+            dest_row[x * 4 + 2] = src_row[x * 2];
+            dest_row[x * 4 + 3] = src_row[x * 2 + 1];
+         }
+      });
    }
 
-   DirectX::ScratchImage _dynamic_patch_image;
+   UINT _dynamic_width;
+   UINT _dynamic_height;
+   std::unique_ptr<Upload_texture> _dynamic_patch_texture;
 };
 
 }

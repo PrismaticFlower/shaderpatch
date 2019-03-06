@@ -162,6 +162,12 @@
     <ClCompile Include="src\direct3d\texture3d_resource.cpp">
       <Filter>src\direct3d</Filter>
     </ClCompile>
+    <ClCompile Include="src\direct3d\upload_scratch_buffer.cpp">
+      <Filter>src\direct3d</Filter>
+    </ClCompile>
+    <ClCompile Include="src\direct3d\upload_texture.cpp">
+      <Filter>src\direct3d</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -382,6 +388,12 @@
     </ClInclude>
     <ClInclude Include="src\core\texture_loader.hpp">
       <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\upload_scratch_buffer.hpp">
+      <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\upload_texture.hpp">
+      <Filter>src\direct3d</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

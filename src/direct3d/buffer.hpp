@@ -4,7 +4,7 @@
 #include "../logger.hpp"
 #include "debug_trace.hpp"
 #include "resource.hpp"
-#include "utility.hpp"
+#include "upload_scratch_buffer.hpp"
 
 #include <type_traits>
 #include <utility>
@@ -153,9 +153,9 @@ public:
 
       _lock_offset = lock_offset;
       _lock_size = lock_size;
+      _lock_data = upload_scratch_buffer.lock(_size - lock_offset);
 
-      _shared_scratch_buffer.ensure_min_size(_size - lock_offset);
-      *data = _shared_scratch_buffer.data();
+      *data = _lock_data;
 
       return S_OK;
    }
@@ -170,9 +170,9 @@ public:
 
       _shader_patch.update_ia_buffer(*_buffer, std::exchange(_lock_offset, 0),
                                      std::exchange(_lock_size, 0),
-                                     _shared_scratch_buffer.data());
+                                     std::exchange(_lock_data, nullptr));
 
-      _shared_scratch_buffer.ensure_within_size(_scratch_buffer_max_persist_size);
+      upload_scratch_buffer.unlock();
 
       return S_OK;
    }
@@ -199,12 +199,10 @@ private:
 
    UINT _lock_offset{};
    UINT _lock_size{};
+   std::byte* _lock_data = nullptr;
+   bool _lock_status = false;
 
    ULONG _ref_count = 1;
-
-   inline static constexpr auto _scratch_buffer_max_persist_size = 32768;
-   inline static Aligned_scratch_buffer<16> _shared_scratch_buffer;
-   inline static bool _lock_status{false};
 };
 
 using Vertex_buffer_managed = Basic_buffer_managed<Buffer_type::vertex_buffer>;

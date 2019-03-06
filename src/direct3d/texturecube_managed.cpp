@@ -28,8 +28,8 @@ Texturecube_managed::Texturecube_managed(core::Shader_patch& shader_patch,
 {
    Expects(mip_levels != 0);
 
-   _upload_image = DirectX::ScratchImage{};
-   _upload_image->InitializeCube(_format, _width, _width, 1, _mip_levels);
+   _upload_texture.emplace(upload_scratch_buffer, format, width, width, 1,
+                           mip_levels, 6);
 }
 
 HRESULT Texturecube_managed::QueryInterface(const IID& iid, void** object) noexcept
@@ -106,8 +106,8 @@ HRESULT Texturecube_managed::GetLevelDesc(UINT level, D3DSURFACE_DESC* desc) noe
    desc->Pool = D3DPOOL_MANAGED;
    desc->MultiSampleType = D3DMULTISAMPLE_NONE;
    desc->MultiSampleQuality = 0;
-   desc->Width = _width / (level + 1);
-   desc->Height = _width / (level + 1);
+   desc->Width = std::max(_width >> level, 1u);
+   desc->Height = desc->Width;
 
    return S_OK;
 }
@@ -124,14 +124,14 @@ HRESULT Texturecube_managed::LockRect(D3DCUBEMAP_FACES face, UINT level,
    if (level >= _mip_levels) return D3DERR_INVALIDCALL;
    if (!locked_rect) return D3DERR_INVALIDCALL;
 
-   if (!_upload_image || rect || flags) {
+   if (!_upload_texture || rect || flags) {
       log_and_terminate("Unexpected texture lock call!");
    }
 
-   const auto* image = _upload_image->GetImage(level, face_index, 0);
+   const auto subresource = _upload_texture->subresource(level, face_index);
 
-   locked_rect->pBits = image->pixels;
-   locked_rect->Pitch = image->rowPitch;
+   locked_rect->pBits = subresource.data;
+   locked_rect->Pitch = subresource.row_pitch;
 
    return S_OK;
 }
@@ -142,11 +142,13 @@ HRESULT Texturecube_managed::UnlockRect(D3DCUBEMAP_FACES face, UINT level) noexc
 
    if (static_cast<UINT>(face) >= 6) return D3DERR_INVALIDCALL;
    if (level >= _mip_levels) return D3DERR_INVALIDCALL;
-   if (!_upload_image) return D3DERR_INVALIDCALL;
+   if (!_upload_texture) return D3DERR_INVALIDCALL;
 
    if (level == _last_level && face == D3DCUBEMAP_FACE_NEGATIVE_Z) {
-      this->resource = _shader_patch.create_game_texture_cube(*_upload_image);
-      _upload_image = std::nullopt;
+      this->resource =
+         _shader_patch.create_game_texture_cube(_width, _width, _mip_levels, _format,
+                                                _upload_texture->subresources());
+      _upload_texture = std::nullopt;
    }
 
    return S_OK;

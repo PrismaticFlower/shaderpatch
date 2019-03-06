@@ -88,16 +88,22 @@ public:
 
    void destroy_game_rendertarget(const Game_rendertarget_id id) noexcept;
 
-   auto create_game_texture2d(const DirectX::ScratchImage& image) noexcept
+   auto create_game_texture2d(const UINT width, const UINT height,
+                              const UINT mip_levels, const DXGI_FORMAT format,
+                              const gsl::span<const Mapped_texture> data) noexcept
       -> Game_texture;
 
    auto create_game_dynamic_texture2d(const Game_texture& texture) noexcept
       -> Game_texture;
 
-   auto create_game_texture3d(const DirectX::ScratchImage& image) noexcept
+   auto create_game_texture3d(const UINT width, const UINT height, const UINT depth,
+                              const UINT mip_levels, const DXGI_FORMAT format,
+                              const gsl::span<const Mapped_texture> data) noexcept
       -> Game_texture;
 
-   auto create_game_texture_cube(const DirectX::ScratchImage& image) noexcept
+   auto create_game_texture_cube(const UINT width, const UINT height,
+                                 const UINT mip_levels, const DXGI_FORMAT format,
+                                 const gsl::span<const Mapped_texture> data) noexcept
       -> Game_texture;
 
    auto create_patch_texture(const gsl::span<const std::byte> texture_data) noexcept

@@ -33,13 +33,9 @@ Texture2d_managed::Texture2d_managed(core::Shader_patch& shader_patch,
 {
    Expects(mip_levels != 0);
 
-   if (_image_patcher) {
-      _upload_image = _image_patcher->create_image(format, width, height, mip_levels);
-   }
-   else {
-      _upload_image = DirectX::ScratchImage{};
-      _upload_image->Initialize2D(format, width, height, 1, mip_levels);
-   }
+   _upload_texture =
+      std::make_unique<Upload_texture>(upload_scratch_buffer, format, width,
+                                       height, 1, mip_levels, 1);
 }
 
 Com_ptr<Texture2d_managed> Texture2d_managed::create(
@@ -125,8 +121,8 @@ HRESULT Texture2d_managed::GetLevelDesc(UINT level, D3DSURFACE_DESC* desc) noexc
    desc->Pool = D3DPOOL_MANAGED;
    desc->MultiSampleType = D3DMULTISAMPLE_NONE;
    desc->MultiSampleQuality = 0;
-   desc->Width = _width / (level + 1);
-   desc->Height = _height / (level + 1);
+   desc->Width = std::max(_width >> level, 1u);
+   desc->Height = std::max(_height >> level, 1u);
 
    return S_OK;
 }
@@ -158,7 +154,7 @@ HRESULT Texture2d_managed::LockRect(UINT level, D3DLOCKED_RECT* locked_rect,
    }
 
    // If this is the second time this texture is being written into convert it into a dynamic texture.
-   if (!_upload_image) {
+   if (!_upload_texture) {
       this->resource = _shader_patch.create_game_dynamic_texture2d(
          std::get<core::Game_texture>(this->resource));
       _dynamic_texture = true;
@@ -176,10 +172,10 @@ HRESULT Texture2d_managed::LockRect(UINT level, D3DLOCKED_RECT* locked_rect,
       locked_rect->pBits = mapped_texture.data;
    }
    else {
-      const auto* image = _upload_image->GetImage(level, 0, 0);
+      const auto subresource = _upload_texture->subresource(level, 0);
 
-      locked_rect->Pitch = image->rowPitch;
-      locked_rect->pBits = image->pixels;
+      locked_rect->Pitch = subresource.row_pitch;
+      locked_rect->pBits = subresource.data;
    }
 
    return S_OK;
@@ -203,15 +199,26 @@ HRESULT Texture2d_managed::UnlockRect(UINT level) noexcept
       }
    }
    else {
-      if (!_upload_image) return D3DERR_INVALIDCALL;
+      if (!_upload_texture) return D3DERR_INVALIDCALL;
 
       if (level == _last_level) {
          if (_image_patcher) {
-            _upload_image = _image_patcher->patch_image(*_upload_image);
+            auto [patched_format, patched_texture] =
+               _image_patcher->patch_image(_format, _width, _height,
+                                           _mip_levels, *_upload_texture);
+
+            this->resource =
+               _shader_patch.create_game_texture2d(_width, _height, _mip_levels,
+                                                   patched_format,
+                                                   patched_texture->subresources());
+         }
+         else {
+            this->resource =
+               _shader_patch.create_game_texture2d(_width, _height, _mip_levels, _format,
+                                                   _upload_texture->subresources());
          }
 
-         this->resource = _shader_patch.create_game_texture2d(*_upload_image);
-         _upload_image = std::nullopt;
+         _upload_texture = nullptr;
       }
    }
 

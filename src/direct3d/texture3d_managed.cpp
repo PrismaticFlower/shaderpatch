@@ -34,8 +34,8 @@ Texture3d_managed::Texture3d_managed(core::Shader_patch& shader_patch,
 {
    Expects(mip_levels != 0);
 
-   _upload_image = DirectX::ScratchImage{};
-   _upload_image->Initialize3D(_format, _width, _height, _depth, _mip_levels);
+   _upload_texture.emplace(upload_scratch_buffer, _format, _width, _height,
+                           _depth, _mip_levels, 1);
 }
 
 HRESULT Texture3d_managed::QueryInterface(const IID& iid, void** object) noexcept
@@ -107,12 +107,12 @@ HRESULT Texture3d_managed::GetLevelDesc(UINT level, D3DVOLUME_DESC* desc) noexce
    if (level >= _mip_levels) return D3DERR_INVALIDCALL;
 
    desc->Format = _reported_format;
-   desc->Type = D3DRTYPE_SURFACE;
+   desc->Type = D3DRTYPE_VOLUME;
    desc->Usage = 0;
    desc->Pool = D3DPOOL_MANAGED;
-   desc->Width = _width / (level + 1);
-   desc->Height = _height / (level + 1);
-   desc->Depth = _depth / (level + 1);
+   desc->Width = std::max(_width >> level, 1u);
+   desc->Height = std::max(_height >> level, 1u);
+   desc->Depth = std::max(_depth >> level, 1u);
 
    return S_OK;
 }
@@ -125,15 +125,15 @@ HRESULT Texture3d_managed::LockBox(UINT level, D3DLOCKED_BOX* locked_box,
    if (level >= _mip_levels) return D3DERR_INVALIDCALL;
    if (!locked_box) return D3DERR_INVALIDCALL;
 
-   if (!_upload_image || box || flags) {
+   if (!_upload_texture || box || flags) {
       log_and_terminate("Unexpected volume texture lock call!");
    }
 
-   const auto* image = _upload_image->GetImage(level, 0, 0);
+   const auto subresource = _upload_texture->subresource(level, 0);
 
-   locked_box->RowPitch = image->rowPitch;
-   locked_box->SlicePitch = image->slicePitch;
-   locked_box->pBits = image->pixels;
+   locked_box->RowPitch = subresource.row_pitch;
+   locked_box->SlicePitch = subresource.depth_pitch;
+   locked_box->pBits = subresource.data;
 
    return S_OK;
 }
@@ -143,11 +143,14 @@ HRESULT Texture3d_managed::UnlockBox(UINT level) noexcept
    Debug_trace::func(__FUNCSIG__);
 
    if (level >= _mip_levels) return D3DERR_INVALIDCALL;
-   if (!_upload_image) return D3DERR_INVALIDCALL;
+   if (!_upload_texture) return D3DERR_INVALIDCALL;
 
    if (level == _last_level) {
-      this->resource = _shader_patch.create_game_texture3d(*_upload_image);
-      _upload_image = std::nullopt;
+      this->resource =
+         _shader_patch.create_game_texture3d(_width, _height, _depth,
+                                             _mip_levels, _format,
+                                             _upload_texture->subresources());
+      _upload_texture = std::nullopt;
    }
 
    return S_OK;

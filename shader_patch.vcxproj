@@ -165,6 +165,8 @@
     <ClCompile Include="src\direct3d\texture3d_resource.cpp" />
     <ClCompile Include="src\direct3d\texturecube_managed.cpp" />
     <ClCompile Include="src\direct3d\texture_stage_state_manager.cpp" />
+    <ClCompile Include="src\direct3d\upload_scratch_buffer.cpp" />
+    <ClCompile Include="src\direct3d\upload_texture.cpp" />
     <ClCompile Include="src\direct3d\vertex_declaration.cpp" />
     <ClCompile Include="src\direct3d\vertex_shader.cpp" />
     <ClCompile Include="src\effects\damage_overlay.cpp">
@@ -224,6 +226,8 @@
     <ClInclude Include="src\core\swapchain.hpp" />
     <ClInclude Include="src\core\texture_database.hpp" />
     <ClInclude Include="src\core\texture_loader.hpp" />
+    <ClInclude Include="src\direct3d\upload_texture.hpp" />
+    <ClInclude Include="src\direct3d\upload_scratch_buffer.hpp" />
     <ClInclude Include="src\direct3d\base_texture.hpp" />
     <ClInclude Include="src\direct3d\buffer.hpp" />
     <ClInclude Include="src\direct3d\creator.hpp" />

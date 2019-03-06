@@ -223,31 +223,33 @@ void Shader_patch::destroy_game_rendertarget(const Game_rendertarget_id id) noex
    }
 }
 
-auto Shader_patch::create_game_texture2d(const DirectX::ScratchImage& image) noexcept
+auto Shader_patch::create_game_texture2d(const UINT width, const UINT height,
+                                         const UINT mip_levels, const DXGI_FORMAT format,
+                                         const gsl::span<const Mapped_texture> data) noexcept
    -> Game_texture
 {
-   Expects(image.GetMetadata().mipLevels != 0 &&
-           image.GetMetadata().arraySize == 1 && image.GetMetadata().depth == 1);
+   Expects(width != 0 && height != 0 && mip_levels != 0);
 
-   const auto& metadata = image.GetMetadata();
-   const auto typeless_format = DirectX::MakeTypeless(metadata.format);
+   const auto typeless_format = DirectX::MakeTypeless(format);
 
-   const auto desc =
-      CD3D11_TEXTURE2D_DESC{typeless_format,      metadata.width,
-                            metadata.height,      1,
-                            metadata.mipLevels,   D3D11_BIND_SHADER_RESOURCE,
-                            D3D11_USAGE_IMMUTABLE};
+   const auto desc = CD3D11_TEXTURE2D_DESC{typeless_format,
+                                           width,
+                                           height,
+                                           1,
+                                           mip_levels,
+                                           D3D11_BIND_SHADER_RESOURCE,
+                                           D3D11_USAGE_IMMUTABLE};
 
    const auto initial_data = [&] {
       std::vector<D3D11_SUBRESOURCE_DATA> initial_data;
-      initial_data.reserve(metadata.mipLevels);
+      initial_data.reserve(data.size());
 
-      for (int mip = 0; mip < metadata.mipLevels; ++mip) {
-         auto& data = initial_data.emplace_back();
+      for (const auto& subres : data) {
+         auto& init = initial_data.emplace_back();
 
-         data.pSysMem = image.GetImage(mip, 0, 0)->pixels;
-         data.SysMemPitch = image.GetImage(mip, 0, 0)->rowPitch;
-         data.SysMemSlicePitch = image.GetImage(mip, 0, 0)->slicePitch;
+         init.pSysMem = subres.data;
+         init.SysMemPitch = subres.row_pitch;
+         init.SysMemSlicePitch = subres.depth_pitch;
       }
 
       return initial_data;
@@ -267,8 +269,7 @@ auto Shader_patch::create_game_texture2d(const DirectX::ScratchImage& image) noe
    Com_ptr<ID3D11ShaderResourceView> srv;
    {
       const auto srv_desc =
-         CD3D11_SHADER_RESOURCE_VIEW_DESC{D3D11_SRV_DIMENSION_TEXTURE2D,
-                                          metadata.format};
+         CD3D11_SHADER_RESOURCE_VIEW_DESC{D3D11_SRV_DIMENSION_TEXTURE2D, format};
 
       if (const auto result =
              _device->CreateShaderResourceView(texture.get(), &srv_desc,
@@ -281,11 +282,9 @@ auto Shader_patch::create_game_texture2d(const DirectX::ScratchImage& image) noe
       }
    }
 
-   const auto srgb_format = DirectX::MakeSRGB(metadata.format);
+   const auto srgb_format = DirectX::MakeSRGB(format);
 
-   if (metadata.format == srgb_format) {
-      return Game_texture{srv, srv};
-   }
+   if (format == srgb_format) return Game_texture{srv, srv};
 
    Com_ptr<ID3D11ShaderResourceView> srgb_srv;
    {
@@ -384,30 +383,34 @@ auto Shader_patch::create_game_dynamic_texture2d(const Game_texture& texture) no
    return Game_texture{std::move(srv), std::move(srgb_srv)};
 }
 
-auto Shader_patch::create_game_texture3d(const DirectX::ScratchImage& image) noexcept
+auto Shader_patch::create_game_texture3d(const UINT width, const UINT height,
+                                         const UINT depth, const UINT mip_levels,
+                                         const DXGI_FORMAT format,
+                                         const gsl::span<const Mapped_texture> data) noexcept
    -> Game_texture
 {
-   Expects(image.GetMetadata().mipLevels != 0 && image.GetMetadata().arraySize == 1);
+   Expects(width != 0 && height != 0 && depth != 0 && mip_levels != 0);
 
-   const auto& metadata = image.GetMetadata();
-   const auto typeless_format = DirectX::MakeTypeless(metadata.format);
+   const auto typeless_format = DirectX::MakeTypeless(format);
 
-   const auto desc =
-      CD3D11_TEXTURE3D_DESC{typeless_format,      metadata.width,
-                            metadata.height,      metadata.depth,
-                            metadata.mipLevels,   D3D11_BIND_SHADER_RESOURCE,
-                            D3D11_USAGE_IMMUTABLE};
+   const auto desc = CD3D11_TEXTURE3D_DESC{typeless_format,
+                                           width,
+                                           height,
+                                           depth,
+                                           mip_levels,
+                                           D3D11_BIND_SHADER_RESOURCE,
+                                           D3D11_USAGE_IMMUTABLE};
 
    const auto initial_data = [&] {
       std::vector<D3D11_SUBRESOURCE_DATA> initial_data;
-      initial_data.reserve(metadata.mipLevels);
+      initial_data.reserve(data.size());
 
-      for (int mip = 0; mip < metadata.mipLevels; ++mip) {
-         auto& data = initial_data.emplace_back();
+      for (const auto& subres : data) {
+         auto& init = initial_data.emplace_back();
 
-         data.pSysMem = image.GetImage(mip, 0, 0)->pixels;
-         data.SysMemPitch = image.GetImage(mip, 0, 0)->rowPitch;
-         data.SysMemSlicePitch = image.GetImage(mip, 0, 0)->slicePitch;
+         init.pSysMem = subres.data;
+         init.SysMemPitch = subres.row_pitch;
+         init.SysMemSlicePitch = subres.depth_pitch;
       }
 
       return initial_data;
@@ -427,8 +430,7 @@ auto Shader_patch::create_game_texture3d(const DirectX::ScratchImage& image) noe
    Com_ptr<ID3D11ShaderResourceView> srv;
    {
       const auto srv_desc =
-         CD3D11_SHADER_RESOURCE_VIEW_DESC{D3D11_SRV_DIMENSION_TEXTURE3D,
-                                          metadata.format};
+         CD3D11_SHADER_RESOURCE_VIEW_DESC{D3D11_SRV_DIMENSION_TEXTURE3D, format};
 
       if (const auto result =
              _device->CreateShaderResourceView(texture.get(), &srv_desc,
@@ -441,11 +443,9 @@ auto Shader_patch::create_game_texture3d(const DirectX::ScratchImage& image) noe
       }
    }
 
-   const auto srgb_format = DirectX::MakeSRGB(metadata.format);
+   const auto srgb_format = DirectX::MakeSRGB(format);
 
-   if (metadata.format == srgb_format) {
-      return Game_texture{srv, srv};
-   }
+   if (format == srgb_format) return Game_texture{srv, srv};
 
    Com_ptr<ID3D11ShaderResourceView> srgb_srv;
    {
@@ -466,20 +466,21 @@ auto Shader_patch::create_game_texture3d(const DirectX::ScratchImage& image) noe
    return Game_texture{std::move(srv), std::move(srgb_srv)};
 }
 
-auto Shader_patch::create_game_texture_cube(const DirectX::ScratchImage& image) noexcept
+auto Shader_patch::create_game_texture_cube(const UINT width, const UINT height,
+                                            const UINT mip_levels,
+                                            const DXGI_FORMAT format,
+                                            const gsl::span<const Mapped_texture> data) noexcept
    -> Game_texture
 {
-   Expects(image.GetMetadata().mipLevels != 0 &&
-           image.GetMetadata().depth == 1 && image.GetMetadata().arraySize == 6);
+   Expects(width != 0 && height != 0 && mip_levels != 0);
 
-   const auto& metadata = image.GetMetadata();
-   const auto typeless_format = DirectX::MakeTypeless(metadata.format);
+   const auto typeless_format = DirectX::MakeTypeless(format);
 
    const auto desc = CD3D11_TEXTURE2D_DESC{typeless_format,
-                                           metadata.width,
-                                           metadata.height,
+                                           width,
+                                           height,
                                            6,
-                                           metadata.mipLevels,
+                                           mip_levels,
                                            D3D11_BIND_SHADER_RESOURCE,
                                            D3D11_USAGE_IMMUTABLE,
                                            0,
@@ -489,16 +490,14 @@ auto Shader_patch::create_game_texture_cube(const DirectX::ScratchImage& image) 
 
    const auto initial_data = [&] {
       std::vector<D3D11_SUBRESOURCE_DATA> initial_data;
-      initial_data.reserve(metadata.mipLevels * 6);
+      initial_data.reserve(data.size());
 
-      for (int item = 0; item < 6; ++item) {
-         for (int mip = 0; mip < metadata.mipLevels; ++mip) {
-            auto& data = initial_data.emplace_back();
+      for (const auto& subres : data) {
+         auto& init = initial_data.emplace_back();
 
-            data.pSysMem = image.GetImage(mip, item, 0)->pixels;
-            data.SysMemPitch = image.GetImage(mip, item, 0)->rowPitch;
-            data.SysMemSlicePitch = image.GetImage(mip, item, 0)->slicePitch;
-         }
+         init.pSysMem = subres.data;
+         init.SysMemPitch = subres.row_pitch;
+         init.SysMemSlicePitch = subres.depth_pitch;
       }
 
       return initial_data;
@@ -518,8 +517,7 @@ auto Shader_patch::create_game_texture_cube(const DirectX::ScratchImage& image) 
    Com_ptr<ID3D11ShaderResourceView> srv;
    {
       const auto srv_desc =
-         CD3D11_SHADER_RESOURCE_VIEW_DESC{D3D11_SRV_DIMENSION_TEXTURECUBE,
-                                          metadata.format};
+         CD3D11_SHADER_RESOURCE_VIEW_DESC{D3D11_SRV_DIMENSION_TEXTURECUBE, format};
 
       if (const auto result =
              _device->CreateShaderResourceView(texture.get(), &srv_desc,
@@ -532,11 +530,9 @@ auto Shader_patch::create_game_texture_cube(const DirectX::ScratchImage& image) 
       }
    }
 
-   const auto srgb_format = DirectX::MakeSRGB(metadata.format);
+   const auto srgb_format = DirectX::MakeSRGB(format);
 
-   if (metadata.format == srgb_format) {
-      return Game_texture{srv, srv};
-   }
+   if (format == srgb_format) return Game_texture{srv, srv};
 
    Com_ptr<ID3D11ShaderResourceView> srgb_srv;
    {
@@ -1430,5 +1426,4 @@ void Shader_patch::resolve_refraction_texture() noexcept
    _image_stretcher.stretch(*_device_context, src_box, *src_rt.srv,
                             *_refraction_rt.uav, dest_box);
 }
-
 }

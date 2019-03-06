@@ -4,6 +4,7 @@
 #include "../logger.hpp"
 #include "base_texture.hpp"
 #include "com_ptr.hpp"
+#include "upload_texture.hpp"
 
 #include <optional>
 
@@ -129,7 +130,7 @@ private:
 
    ~Texturecube_managed() = default;
 
-   std::optional<DirectX::ScratchImage> _upload_image;
+   std::optional<Upload_texture> _upload_texture;
    core::Shader_patch& _shader_patch;
 
    const UINT _width;

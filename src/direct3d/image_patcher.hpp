@@ -1,10 +1,10 @@
 #pragma once
 
 #include "../core/shader_patch.hpp"
+#include "upload_texture.hpp"
 
 #include <memory>
-
-#include <DirectXTex.h>
+#include <utility>
 
 namespace sp::d3d9 {
 
@@ -18,12 +18,10 @@ public:
    Image_patcher(Image_patcher&&) = delete;
    Image_patcher& operator=(Image_patcher&&) = delete;
 
-   virtual auto create_image(const DXGI_FORMAT format, const UINT width,
-                             const UINT height, const UINT mip_levels) const
-      noexcept -> DirectX::ScratchImage = 0;
-
-   virtual auto patch_image(const DirectX::ScratchImage& input_image) const
-      noexcept -> DirectX::ScratchImage = 0;
+   virtual auto patch_image(const DXGI_FORMAT format, const UINT width,
+                            const UINT height, const UINT mip_levels,
+                            Upload_texture& input_texture) const noexcept
+      -> std::pair<DXGI_FORMAT, std::unique_ptr<Upload_texture>> = 0;
 
    virtual auto map_dynamic_image(const DXGI_FORMAT format, const UINT width,
                                   const UINT height, const UINT mip_level) noexcept

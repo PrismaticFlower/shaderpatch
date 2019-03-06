@@ -4,7 +4,6 @@
 #include "../logger.hpp"
 #include "base_texture.hpp"
 #include "com_ptr.hpp"
-#include "utility.hpp"
 
 #include <memory>
 
@@ -130,16 +129,15 @@ private:
 
    void create_resource() noexcept;
 
-   inline static Aligned_scratch_buffer<16> _scratch_buffer;
-   constexpr static auto max_persist_buffer_size = 4194304;
-
    core::Shader_patch& _patch;
 
-   bool _locked = false;
    const UINT _width;
    const UINT _height;
    const UINT _depth;
    const UINT _resource_size{_width * _height * _depth};
+
+   bool _locked = false;
+   std::byte* _lock_data = nullptr;
 
    ULONG _ref_count = 1;
 };

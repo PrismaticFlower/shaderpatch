@@ -5,9 +5,9 @@
 #include "base_texture.hpp"
 #include "com_ptr.hpp"
 #include "image_patcher.hpp"
+#include "upload_texture.hpp"
 
 #include <memory>
-#include <optional>
 #include <vector>
 
 #include <d3d9.h>
@@ -131,7 +131,7 @@ private:
    ~Texture2d_managed() = default;
 
    std::unique_ptr<Image_patcher> _image_patcher;
-   std::optional<DirectX::ScratchImage> _upload_image;
+   std::unique_ptr<Upload_texture> _upload_texture;
    core::Shader_patch& _shader_patch;
 
    bool _dynamic_texture = false;
