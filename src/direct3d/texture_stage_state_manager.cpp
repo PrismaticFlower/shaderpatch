@@ -252,7 +252,7 @@ bool Texture_stage_state_manager::is_zoom_blur_state() const noexcept
 bool Texture_stage_state_manager::is_damage_overlay_state(const DWORD texture_factor) const
    noexcept
 {
-   constexpr DWORD damage_color = D3DCOLOR_ARGB(0x00, 0xdf, 0x20, 0x20);
+   constexpr auto damage_color = 0xdf2020u;
 
    if (_stages[1].colorop != D3DTOP_DISABLE) return false;
    if (_stages[1].alphaop != D3DTOP_DISABLE) return false;
@@ -262,7 +262,7 @@ bool Texture_stage_state_manager::is_damage_overlay_state(const DWORD texture_fa
    if (_stages[0].alphaop != D3DTOP_MODULATE) return false;
    if (_stages[0].alphaarg1 != D3DTA_TFACTOR) return false;
    if (_stages[0].alphaarg2 != D3DTA_TEXTURE) return false;
-   if ((texture_factor & damage_color) != damage_color) return false;
+   if ((texture_factor & 0xffffffu) != damage_color) return false;
 
    return true;
 }
