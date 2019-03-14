@@ -3,8 +3,6 @@
 
 #include <filesystem>
 
-#pragma optimize("", off)
-
 namespace sp {
 
 using namespace std::literals;
