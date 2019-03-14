@@ -10,7 +10,7 @@ Texture3D<float3> color_grading_lut : register(t3);
 Texture2D<float3> blue_noise_texture : register(t4);
 
 const static float3 luma_weights = {0.2126, 0.7152, 0.0722};
-const static float3 fxaa_luma_weights = {0.299, 0.587, 0.114};
+const static float3 stock_luma_weights = {0.299, 0.587, 0.114};
 const static uint color_grading_lut_size = 32;
 const static float bloom_radius_scale = 1.0;
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../effects/control.hpp"
+#include "../effects/profiler.hpp"
 #include "../effects/rendertarget_allocator.hpp"
 #include "com_ptr.hpp"
 #include "constant_buffers.hpp"
@@ -14,6 +15,7 @@
 #include "image_stretcher.hpp"
 #include "input_layout_descriptions.hpp"
 #include "input_layout_element.hpp"
+#include "late_backbuffer_resolver.hpp"
 #include "material_shader_factory.hpp"
 #include "patch_effects_config_handle.hpp"
 #include "patch_material.hpp"
@@ -221,6 +223,8 @@ public:
 private:
    auto current_rt_format() const noexcept -> DXGI_FORMAT;
 
+   auto current_depthstencil() const noexcept -> ID3D11DepthStencilView*;
+
    void bind_static_resources() noexcept;
 
    void game_rendertype_changed() noexcept;
@@ -237,9 +241,13 @@ private:
 
    void update_rendertarget_formats() noexcept;
 
+   void update_aa_rendertargets() noexcept;
+
    void set_linear_rendering(bool linear_rendering) noexcept;
 
    void resolve_refraction_texture() noexcept;
+
+   void patch_backbuffer_resolve() noexcept;
 
    constexpr static auto _game_backbuffer_index = Game_rendertarget_id{0};
 
@@ -258,14 +266,15 @@ private:
       std::make_shared<Shader_database>(
          load_shader_lvl(L"data/shaderpatch/shaders.lvl", *_device));
 
+   Effects_backbuffer _patch_backbuffer;
    std::vector<Game_rendertarget> _game_rendertargets = {_swapchain.game_rendertarget()};
    Game_rendertarget_id _current_game_rendertarget = _game_backbuffer_index;
    Game_rendertarget _refraction_rt;
 
    Depthstencil _nearscene_depthstencil;
    Depthstencil _farscene_depthstencil;
-   Depthstencil _reflectionscene_depthstencil{*_device, 512, 256};
-   Depthstencil* _current_depthstencil = &_nearscene_depthstencil;
+   Depthstencil _reflectionscene_depthstencil;
+   Depthstencil _interface_depthstencil;
    Game_depthstencil _current_depthstencil_id = Game_depthstencil::nearscene;
 
    Game_input_layout _game_input_layout{};
@@ -287,6 +296,7 @@ private:
    bool _cb_draw_ps_dirty = true;
 
    // Frame State
+   bool _use_interface_depthstencil = false;
    bool _refraction_farscene_texture_resolve = false;
    bool _refraction_nearscene_texture_resolve = false;
    bool _linear_rendering = false;
@@ -376,12 +386,12 @@ private:
    }();
 
    const Image_stretcher _image_stretcher{*_device, *_shader_database};
+   const Late_backbuffer_resolver _late_backbuffer_resolver{*_shader_database};
    const Sampler_states _sampler_states{*_device};
    Texture_database _texture_database{
       load_texture_lvl(L"data/shaderpatch/textures.lvl", *_device)};
 
-   Effects_backbuffer _effects_backbuffer;
-   effects::Control _effects{_device, _shader_database->rendertypes};
+   effects::Control _effects{_device, _shader_database->groups};
    effects::Rendertarget_allocator _rendertarget_allocator{_device};
 
    Material_shader_factory _material_shader_factory{_device, _shader_database};
@@ -391,6 +401,8 @@ private:
    bool _effects_active = false;
    DXGI_FORMAT _current_effects_rt_format = DXGI_FORMAT_UNKNOWN;
    int _current_effects_id = 0;
+
+   UINT _rt_sample_count = user_config.graphics.antialiasing_sample_count;
 };
 }
 

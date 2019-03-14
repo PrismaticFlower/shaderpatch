@@ -206,13 +206,13 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
       static_cast<std::uint32_t>(info.rcMonitor.bottom - info.rcMonitor.top);
 
    _width = static_cast<std::uint16_t>(monitor_width *
-                                       user_config.window.screen_percent / 100);
-   _height = static_cast<std::uint16_t>(monitor_height *
-                                        user_config.window.screen_percent / 100);
+                                       user_config.display.screen_percent / 100);
+   _height = static_cast<std::uint16_t>(
+      monitor_height * user_config.display.screen_percent / 100);
 
    win32::resize_window(_window, _width, _height);
 
-   if (user_config.window.centred || user_config.window.screen_percent == 100) {
+   if (user_config.display.centred || user_config.display.screen_percent == 100) {
       win32::centre_window(_window);
    }
    else {

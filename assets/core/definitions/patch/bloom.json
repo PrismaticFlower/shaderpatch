@@ -3,23 +3,6 @@
   "source_name": "bloom.fx",
 
   "entrypoints": {
-    "main_vs": {
-      "stage": "vertex",
-
-      "vertex_state": {
-        "input_layout": "$auto"
-      },
-
-      "defines": [
-        [ "BLOOM_ACTIVE", "false" ],
-        [ "BLOOM_USE_DIRT", "false" ],
-        [ "STOCK_HDR_STATE", "false" ],
-        [ "VIGNETTE_ACTIVE", "false" ],
-        [ "FILM_GRAIN_ACTIVE", "false" ],
-        [ "FILM_GRAIN_COLORED", "false" ]
-      ]
-    },
-
     "downsample_ps": {
       "stage": "pixel",
 
@@ -75,63 +58,7 @@
     }
   },
 
-  "rendertypes": { "bloom": {} },
+  "rendertypes": {},
 
-  "states": {
-    "downsample": {
-      "type": "standard",
-
-      "vertex_shader": {
-        "entrypoint": "main_vs"
-      },
-
-      "pixel_shader": {
-        "entrypoint": "downsample_ps"
-      }
-    },
-
-    "upsample": {
-      "type": "standard",
-
-      "vertex_shader": {
-        "entrypoint": "main_vs"
-      },
-
-      "pixel_shader": {
-        "entrypoint": "upsample_ps"
-      }
-    },
-
-    "downsample threshold": {
-      "type": "standard",
-
-      "vertex_shader": {
-        "entrypoint": "main_vs"
-      },
-
-      "pixel_shader": {
-        "entrypoint": "threshold_ps",
-
-        "static_flags": {
-          "STOCK_HDR_STATE": false
-        }
-      }
-    },
-
-    "downsample threshold stock hdr": {
-      "type": "standard",
-
-      "vertex_shader": {
-        "entrypoint": "main_vs"
-      },
-
-      "pixel_shader": {
-        "entrypoint": "threshold_ps",
-
-        "static_flags": {
-          "STOCK_HDR_STATE": true
-        }
-      }
-    }
-  }
+  "states": {}
 }

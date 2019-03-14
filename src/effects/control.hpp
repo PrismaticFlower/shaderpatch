@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../effects/postprocess.hpp"
+#include "../effects/profiler.hpp"
 #include "com_ptr.hpp"
 
 #include <filesystem>
@@ -29,7 +30,7 @@ private:
 
 public:
    Control(Com_ptr<ID3D11Device1> device,
-           const core::Shader_rendertype_collection& shader_rendertypes) noexcept;
+           const core::Shader_group_collection& shader_groups) noexcept;
 
    bool enabled(const bool enabled) noexcept
    {
@@ -76,6 +77,7 @@ public:
    void read_config(YAML::Node config);
 
    effects::Postprocess postprocess;
+   effects::Profiler profiler;
 
 private:
    auto output_params_to_yaml_string() noexcept -> std::string;

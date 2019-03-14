@@ -151,16 +151,7 @@
     <None Include="src\fullscreen_tri_vs.hlsl">
       <Filter>src</Filter>
     </None>
-    <None Include="src\gaussian_blur.fx">
-      <Filter>src</Filter>
-    </None>
     <None Include="src\postprocess.fx">
-      <Filter>src</Filter>
-    </None>
-    <None Include="src\FXAA3_11.h">
-      <Filter>src</Filter>
-    </None>
-    <None Include="src\aa_quality_levels.hlsl">
       <Filter>src</Filter>
     </None>
     <None Include="src\bloom.fx">
@@ -185,9 +176,6 @@
       <Filter>src</Filter>
     </None>
     <None Include="src\skyfog_ext.fx">
-      <Filter>src</Filter>
-    </None>
-    <None Include="src\late_effects_resolve.fx">
       <Filter>src</Filter>
     </None>
     <None Include="src\generic_vertex_input.hlsl">
@@ -274,15 +262,6 @@
     <None Include="definitions\patch\damage_overlay.json.ignore">
       <Filter>definitions\patch</Filter>
     </None>
-    <None Include="definitions\patch\gaussian_blur.json.ignore">
-      <Filter>definitions\patch</Filter>
-    </None>
-    <None Include="definitions\patch\scene_blur_apply.json.ignore">
-      <Filter>definitions\patch</Filter>
-    </None>
-    <None Include="definitions\patch\shadows_blur.json.ignore">
-      <Filter>definitions\patch</Filter>
-    </None>
     <None Include="definitions\patch\skyfog_ext.json.ignore">
       <Filter>definitions\patch</Filter>
     </None>
@@ -298,9 +277,6 @@
     </None>
     <None Include="definitions\patch\stretch_texture.json">
       <Filter>definitions\patch</Filter>
-    </None>
-    <None Include="src\stretch_texture.hlsl">
-      <Filter>src</Filter>
     </None>
     <None Include="src\fixedfunc_plain_texture.fx">
       <Filter>src</Filter>
@@ -338,13 +314,22 @@
     <None Include="definitions\patch\postprocess.json">
       <Filter>definitions\patch</Filter>
     </None>
-    <None Include="definitions\patch\late_effects_resolve.json">
-      <Filter>definitions\patch</Filter>
-    </None>
     <None Include="textures.req" />
     <None Include="shader_declarations.req" />
     <None Include="src\color_utilities.hlsl">
       <Filter>src</Filter>
+    </None>
+    <None Include="definitions\patch\late_backbuffer_resolve.json">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="src\stretch_texture.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\late_backbuffer_resolve.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="definitions\patch\msaa_hdr_resolve.json">
+      <Filter>definitions\patch</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -363,5 +348,10 @@
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="build_lvls.ps1" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="src\msaa_resolve.hlsl">
+      <Filter>src</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

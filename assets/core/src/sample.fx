@@ -22,7 +22,9 @@ Vs_output sample_vs(int4 sample_locations : POSITION)
 
    float2 locations = decompress_position((float3)sample_locations.xyz).xy;
 
-   output.positionPS = sample_positionPS + float4(0.001, -0.001, 0.0, 0.0);;
+   // This should really use the viewport size buuuut we don't have access to it here so the below hack will have to do for now.
+   // output.positionPS = sample_positionPS + float4(1.0 / viewport_width, -1.0 / viewport_height, 0.0, 0.0);
+   output.positionPS = sample_positionPS + float4(0.01, -0.01, 0.0, 0.0);
    output.texcoords = (locations.xy + sample_scale_offset.zw) * sample_scale_offset.xy;
 
    return output;

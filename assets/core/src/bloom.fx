@@ -1,5 +1,4 @@
 
-#include "fullscreen_tri_vs.hlsl"
 #include "pixel_utilities.hlsl"
 #include "postprocess_common.hlsl"
 
@@ -19,7 +18,7 @@ float4 threshold_ps(float2 texcoords : TEXCOORD) : SV_Target0
 {
    float3 color = bloom_box13_downsample(scene_texture, texcoords);
 
-   if (dot(stock_hdr ? fxaa_luma_weights : luma_weights, color) < bloom_threshold) return 0.0;
+   if (dot(stock_hdr ? stock_luma_weights : luma_weights, color) < bloom_threshold) return 0.0;
 
    return float4(color, 1.0);
 }

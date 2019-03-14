@@ -35,6 +35,12 @@ public:
 
    auto height() const noexcept -> UINT;
 
+   auto texture() const noexcept -> ID3D11Texture2D*;
+
+   auto rtv() const noexcept -> ID3D11RenderTargetView*;
+
+   auto srv() const noexcept -> ID3D11ShaderResourceView*;
+
 private:
    const Com_ptr<ID3D11Device1> _device;
    const Com_ptr<IDXGISwapChain1> _swapchain;

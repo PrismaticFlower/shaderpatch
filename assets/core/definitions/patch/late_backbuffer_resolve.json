@@ -1,6 +1,6 @@
 {
-  "group_name": "stretch_texture",
-  "source_name": "stretch_texture.fx",
+  "group_name": "late_backbuffer_resolve",
+  "source_name": "late_backbuffer_resolve.fx",
 
   "entrypoints": {
     "main_vs": {
@@ -20,6 +20,22 @@
     },
 
     "main_ms_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
+    },
+
+    "main_linear_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
+    },
+
+    "main_linear_ms_ps": {
       "stage": "pixel",
 
       "pixel_state": {

@@ -141,7 +141,10 @@ inline void from_json(const nlohmann::json& j, Entrypoint& entrypoint)
       break;
    }
 
-   entrypoint.static_flags = j.value("static_flags"s, Custom_flags{});
+   entrypoint.static_flags = Custom_flags{
+      j.value("static_flags"s, std::vector<std::string>{}),
+      j.value("static_flags_ops"s,
+              std::unordered_map<std::string, std::unordered_map<std::string, Flag_op>>{})};
 
    entrypoint.defines.move_in_defines(
       j.value("defines"s, std::vector<Shader_define>{}));

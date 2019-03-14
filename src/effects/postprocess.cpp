@@ -1,15 +1,51 @@
 
 #include "postprocess.hpp"
+#include "enum_flags.hpp"
+#include "utility.hpp"
 
 namespace sp::effects {
+
+namespace {
+enum class Postprocess_bloom_flags { stock_hdr_state = 0b1 };
+
+enum class Postprocess_flags {
+   bloom_active = 0b1,
+   bloom_use_dirt = 0b10,
+   stock_hdr_state = 0b100,
+   vignette_active = 0b1000,
+   film_grain_active = 0b10000,
+   film_grain_colored = 0b100000
+};
+
+constexpr bool marked_as_enum_flag(Postprocess_bloom_flags) noexcept
+{
+   return true;
+}
+
+constexpr bool marked_as_enum_flag(Postprocess_flags) noexcept
+{
+   return true;
+}
+
+}
 
 using namespace std::literals;
 
 Postprocess::Postprocess(Com_ptr<ID3D11Device1> device,
-                         const core::Shader_rendertype_collection& shader_rendertypes)
+                         const core::Shader_group_collection& shader_groups)
    : _device{device},
-     _postprocess_shaders{shader_rendertypes.at("postprocess"s)},
-     _bloom_shaders{shader_rendertypes.at("bloom"s)}
+     _postprocess_ps_ep{shader_groups.at("postprocess"s).pixel.at("main_ps"s)},
+     _bloom_threshold_ps_ep{shader_groups.at("bloom"s).pixel.at("threshold_ps"s)},
+     _fullscreen_vs{
+        std::get<0>(shader_groups.at("postprocess"s).vertex.at("main_vs"s).copy())},
+     _msaa_hdr_resolve_x2_ps{
+        shader_groups.at("msaa_hdr_resolve"s).pixel.at("main_x2_ps"s).copy()},
+     _msaa_hdr_resolve_x4_ps{
+        shader_groups.at("msaa_hdr_resolve"s).pixel.at("main_x4_ps"s).copy()},
+     _msaa_hdr_resolve_x8_ps{
+        shader_groups.at("msaa_hdr_resolve"s).pixel.at("main_x8_ps"s).copy()},
+     _bloom_downsample_ps{shader_groups.at("bloom"s).pixel.at("downsample_ps"s).copy()},
+     _bloom_upsample_ps{shader_groups.at("bloom"s).pixel.at("upsample_ps"s).copy()}
 {
    bloom_params(Bloom_params{});
    vignette_params(Vignette_params{});
@@ -40,6 +76,8 @@ void Postprocess::bloom_params(const Bloom_params& params) noexcept
    _bloom_constants[5].bloom_local_scale /= _bloom_constants[4].bloom_local_scale;
 
    _bloom_enabled = user_config.effects.bloom && _bloom_params.enabled;
+
+   _config_changed = true;
 }
 
 void Postprocess::vignette_params(const Vignette_params& params) noexcept
@@ -50,6 +88,8 @@ void Postprocess::vignette_params(const Vignette_params& params) noexcept
    _global_constants.vignette_start = _vignette_params.start;
 
    _vignette_enabled = user_config.effects.vignette && _vignette_params.enabled;
+
+   _config_changed = true;
 }
 
 void Postprocess::color_grading_params(const Color_grading_params& params) noexcept
@@ -60,6 +100,8 @@ void Postprocess::color_grading_params(const Color_grading_params& params) noexc
       glm::exp2(_color_grading_params.exposure) * _color_grading_params.brightness;
 
    _color_grading_lut_baker.update_params(params);
+
+   _config_changed = true;
 }
 
 void Postprocess::film_grain_params(const Film_grain_params& params) noexcept
@@ -73,6 +115,8 @@ void Postprocess::film_grain_params(const Film_grain_params& params) noexcept
    _film_grain_enabled = user_config.effects.film_grain && _film_grain_params.enabled;
    _colored_film_grain_enabled =
       user_config.effects.colored_film_grain && _film_grain_params.colored;
+
+   _config_changed = true;
 }
 
 void Postprocess::hdr_state(Hdr_state state) noexcept
@@ -80,89 +124,162 @@ void Postprocess::hdr_state(Hdr_state state) noexcept
    _hdr_state = state;
 
    _color_grading_lut_baker.hdr_state(state);
+
+   _config_changed = true;
 }
 
-void Postprocess::apply(ID3D11DeviceContext1& dc, Rendertarget_allocator& allocator,
-                        const core::Texture_database& textures,
+void Postprocess::apply(ID3D11DeviceContext1& dc, Rendertarget_allocator& rt_allocator,
+                        Profiler& profiler, const core::Texture_database& textures,
                         const Postprocess_input input,
                         const Postprocess_output output) noexcept
 {
    dc.IASetInputLayout(nullptr);
    clear_ia_buffers(dc);
    dc.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+   dc.VSSetShader(_fullscreen_vs.get(), nullptr, 0);
 
-   update_shaders_names();
+   update_shaders();
    update_and_bind_cb(dc, input.width, input.height);
 
-   auto scratch_rt = allocator.allocate(output.format, output.width, output.height);
+   if (input.sample_count != 1) {
+      auto resolve_target =
+         rt_allocator.allocate(input.format, input.width, input.height);
 
-   if (_bloom_enabled) {
-      do_bloom_and_color_grading(dc, allocator, textures, input, scratch_rt.rtv());
+      msaa_resolve_input(dc, input, resolve_target, profiler);
+
+      const Postprocess_input resolved_input{resolve_target.srv(), input.format,
+                                             input.width, input.height, 1};
+
+      if (_bloom_enabled)
+         do_bloom_and_color_grading(dc, rt_allocator, textures, resolved_input,
+                                    output, profiler);
+      else
+         do_color_grading(dc, textures, resolved_input, output, profiler);
    }
    else {
-      do_color_grading(dc, textures, input, scratch_rt.rtv());
+      if (_bloom_enabled)
+         do_bloom_and_color_grading(dc, rt_allocator, textures, input, output, profiler);
+      else
+         do_color_grading(dc, textures, input, output, profiler);
+   }
+}
+
+void Postprocess::msaa_resolve_input(ID3D11DeviceContext1& dc,
+                                     const Postprocess_input& input,
+                                     Rendertarget_allocator::Handle& output,
+                                     Profiler& profiler) noexcept
+{
+   Expects(input.sample_count > 1);
+
+   Profile profile{profiler, dc, "Postprocessing - AA Resolve"};
+
+   if (_hdr_state == Hdr_state::stock) {
+      Com_ptr<ID3D11Resource> src;
+      Com_ptr<ID3D11Resource> dest;
+
+      input.srv.GetResource(src.clear_and_assign());
+      output.srv().GetResource(dest.clear_and_assign());
+
+      dc.ResolveSubresource(dest.get(), 0, src.get(), 0, input.format);
+
+      return;
    }
 
-   do_finalize(dc, scratch_rt.srv(), output.rtv);
+   // Update constants buffer.
+   const Resolve_constants constants{{input.width - 1, input.height - 1},
+                                     _global_constants.exposure};
+
+   core::update_dynamic_buffer(dc, *_msaa_resolve_constant_buffer, constants);
+
+   auto* const srv = &input.srv;
+   auto* const rtv = &output.rtv();
+   auto* const shader = select_msaa_resolve_shader(input);
+
+   dc.OMSetBlendState(nullptr, nullptr, 0xffffffff);
+   set_viewport(dc, input.width, input.height);
+
+   dc.PSSetShaderResources(0, 1, &srv);
+   dc.PSSetShader(shader, nullptr, 0);
+   dc.OMSetRenderTargets(1, &rtv, nullptr);
+
+   dc.Draw(3, 0);
 }
 
 void Postprocess::do_bloom_and_color_grading(ID3D11DeviceContext1& dc,
                                              Rendertarget_allocator& allocator,
                                              const core::Texture_database& textures,
                                              const Postprocess_input& input,
-                                             ID3D11RenderTargetView& output) noexcept
+                                             const Postprocess_output& output,
+                                             Profiler& profiler) noexcept
 {
+   Expects(input.sample_count == 1);
+
    auto rt_a = allocator.allocate(input.format, input.width / 2, input.height / 2);
    auto rt_b = allocator.allocate(input.format, input.width / 4, input.height / 4);
    auto rt_c = allocator.allocate(input.format, input.width / 8, input.height / 8);
    auto rt_d = allocator.allocate(input.format, input.width / 16, input.height / 16);
    auto rt_e = allocator.allocate(input.format, input.width / 32, input.height / 32);
 
-   _bloom_shaders.at(_threshold_shader).bind(dc);
+   // Bloom Threshold
+   {
+      Profile profile{profiler, dc, "Postprocessing - Bloom Threshold"};
 
-   bind_bloom_cb(dc, 0);
-   set_viewport(dc, input.width / 2, input.height / 2);
-   dc.OMSetBlendState(_normal_blend_state.get(),
-                      std::array{1.f, 1.f, 1.f, 1.f}.data(), 0xffffffff);
-   do_pass(dc, input.srv, rt_a.rtv());
+      dc.PSSetShader(_bloom_threshold_ps.get(), nullptr, 0);
 
-   _bloom_shaders.at("downsample"s).bind(dc);
+      bind_bloom_cb(dc, 0);
+      set_viewport(dc, input.width / 2, input.height / 2);
+      dc.OMSetBlendState(_normal_blend_state.get(), nullptr, 0xffffffff);
+      do_pass(dc, input.srv, rt_a.rtv());
+   }
 
-   bind_bloom_cb(dc, 1);
-   set_viewport(dc, input.width / 4, input.height / 4);
-   do_pass(dc, rt_a.srv(), rt_b.rtv());
+   // Bloom Downsample
+   {
+      Profile profile{profiler, dc, "Postprocessing - Bloom Downsample"};
 
-   bind_bloom_cb(dc, 2);
-   set_viewport(dc, input.width / 8, input.height / 8);
-   do_pass(dc, rt_b.srv(), rt_c.rtv());
+      dc.PSSetShader(_bloom_downsample_ps.get(), nullptr, 0);
 
-   bind_bloom_cb(dc, 3);
-   set_viewport(dc, input.width / 16, input.height / 16);
-   do_pass(dc, rt_c.srv(), rt_d.rtv());
+      bind_bloom_cb(dc, 1);
+      set_viewport(dc, input.width / 4, input.height / 4);
+      do_pass(dc, rt_a.srv(), rt_b.rtv());
 
-   bind_bloom_cb(dc, 4);
-   set_viewport(dc, input.width / 32, input.height / 32);
-   do_pass(dc, rt_d.srv(), rt_e.rtv());
+      bind_bloom_cb(dc, 2);
+      set_viewport(dc, input.width / 8, input.height / 8);
+      do_pass(dc, rt_b.srv(), rt_c.rtv());
 
-   _bloom_shaders.at("upsample"s).bind(dc);
-   dc.OMSetBlendState(_additive_blend_state.get(),
-                      std::array{1.f, 1.f, 1.f, 1.f}.data(), 0xffffffff);
+      bind_bloom_cb(dc, 3);
+      set_viewport(dc, input.width / 16, input.height / 16);
+      do_pass(dc, rt_c.srv(), rt_d.rtv());
 
-   bind_bloom_cb(dc, 5);
-   set_viewport(dc, input.width / 16, input.height / 16);
-   do_pass(dc, rt_e.srv(), rt_d.rtv());
+      bind_bloom_cb(dc, 4);
+      set_viewport(dc, input.width / 32, input.height / 32);
+      do_pass(dc, rt_d.srv(), rt_e.rtv());
+   }
 
-   bind_bloom_cb(dc, 4);
-   set_viewport(dc, input.width / 8, input.height / 8);
-   do_pass(dc, rt_d.srv(), rt_c.rtv());
+   // Bloom Upsample
+   {
+      Profile profile{profiler, dc, "Postprocessing - Bloom Upsample"};
 
-   bind_bloom_cb(dc, 3);
-   set_viewport(dc, input.width / 4, input.height / 4);
-   do_pass(dc, rt_c.srv(), rt_b.rtv());
+      dc.PSSetShader(_bloom_upsample_ps.get(), nullptr, 0);
+      dc.OMSetBlendState(_additive_blend_state.get(), nullptr, 0xffffffff);
 
-   bind_bloom_cb(dc, 2);
-   set_viewport(dc, input.width / 2, input.height / 2);
-   do_pass(dc, rt_b.srv(), rt_a.rtv());
+      bind_bloom_cb(dc, 5);
+      set_viewport(dc, input.width / 16, input.height / 16);
+      do_pass(dc, rt_e.srv(), rt_d.rtv());
+
+      bind_bloom_cb(dc, 4);
+      set_viewport(dc, input.width / 8, input.height / 8);
+      do_pass(dc, rt_d.srv(), rt_c.rtv());
+
+      bind_bloom_cb(dc, 3);
+      set_viewport(dc, input.width / 4, input.height / 4);
+      do_pass(dc, rt_c.srv(), rt_b.rtv());
+
+      bind_bloom_cb(dc, 2);
+      set_viewport(dc, input.width / 2, input.height / 2);
+      do_pass(dc, rt_b.srv(), rt_a.rtv());
+   }
+
+   Profile profile{profiler, dc, "Postprocessing - Final"};
 
    std::array<ID3D11ShaderResourceView*, 5> srvs{};
 
@@ -174,41 +291,35 @@ void Postprocess::do_bloom_and_color_grading(ID3D11DeviceContext1& dc,
    srvs[lut_texture_slot] = _color_grading_lut_baker.srv(dc);
    srvs[blue_noise_texture_slot] = blue_noise_srv(textures);
 
-   _postprocess_shaders.at(_uber_shader).bind(dc);
-
+   dc.PSSetShader(_postprocess_ps.get(), nullptr, 0);
    bind_bloom_cb(dc, 1);
-   dc.OMSetBlendState(_normal_blend_state.get(),
-                      std::array{1.f, 1.f, 1.f, 1.f}.data(), 0xffffffff);
-   set_viewport(dc, input.width, input.height);
+   dc.OMSetBlendState(_normal_blend_state.get(), nullptr, 0xffffffff);
+   set_viewport(dc, output.width, output.height);
 
-   do_pass(dc, srvs, output);
+   do_pass(dc, srvs, output.rtv);
 }
 
 void Postprocess::do_color_grading(ID3D11DeviceContext1& dc,
                                    const core::Texture_database& textures,
                                    const Postprocess_input& input,
-                                   ID3D11RenderTargetView& output) noexcept
+                                   const Postprocess_output& output,
+                                   Profiler& profiler) noexcept
 {
+   Expects(input.sample_count == 1);
+
+   Profile profile{profiler, dc, "Postprocessing - Final"};
+
    std::array<ID3D11ShaderResourceView*, 5> srvs{};
-   dc.OMSetBlendState(_normal_blend_state.get(),
-                      std::array{1.f, 1.f, 1.f, 1.f}.data(), 0xffffffff);
-   set_viewport(dc, input.width, input.height);
+   dc.OMSetBlendState(_normal_blend_state.get(), nullptr, 0xffffffff);
+   set_viewport(dc, output.width, output.height);
 
    srvs[scene_texture_slot] = &input.srv;
    srvs[lut_texture_slot] = _color_grading_lut_baker.srv(dc);
    srvs[blue_noise_texture_slot] = blue_noise_srv(textures);
 
-   _postprocess_shaders.at(_uber_shader).bind(dc);
+   dc.PSSetShader(_postprocess_ps.get(), nullptr, 0);
 
-   do_pass(dc, srvs, output);
-}
-
-void Postprocess::do_finalize(ID3D11DeviceContext1& dc, ID3D11ShaderResourceView& input,
-                              ID3D11RenderTargetView& output)
-{
-   _postprocess_shaders.at(_finalize_shader).bind(dc);
-
-   do_pass(dc, input, output);
+   do_pass(dc, srvs, output.rtv);
 }
 
 void Postprocess::do_pass(ID3D11DeviceContext1& dc, ID3D11ShaderResourceView& input,
@@ -235,12 +346,16 @@ void Postprocess::do_pass(ID3D11DeviceContext1& dc,
    dc.Draw(3, 0);
 }
 
-void Postprocess::do_pass(ID3D11DeviceContext1& dc, ID3D11RenderTargetView& output) noexcept
+auto Postprocess::select_msaa_resolve_shader(const Postprocess_input& input) const
+   noexcept -> ID3D11PixelShader*
 {
-   auto* const rtv = &output;
-   dc.OMSetRenderTargets(1, &rtv, nullptr);
+   Expects(input.sample_count > 1);
 
-   dc.Draw(3, 0);
+   if (input.sample_count == 2) return _msaa_hdr_resolve_x2_ps.get();
+   if (input.sample_count == 4) return _msaa_hdr_resolve_x4_ps.get();
+   if (input.sample_count == 8) return _msaa_hdr_resolve_x8_ps.get();
+
+   std::terminate();
 }
 
 void Postprocess::update_and_bind_cb(ID3D11DeviceContext1& dc, const UINT width,
@@ -304,32 +419,38 @@ void Postprocess::update_randomness() noexcept
                                         _random_engine(), _random_engine()};
 }
 
-void Postprocess::update_shaders_names() noexcept
+void Postprocess::update_shaders() noexcept
 {
+   if (!std::exchange(_config_changed, false)) return;
+
+   Postprocess_flags postprocess_flags{};
+
    if (_bloom_enabled) {
-      _uber_shader = "bloom"s;
+      postprocess_flags |= Postprocess_flags::bloom_active;
 
-      if (_bloom_params.use_dirt) _uber_shader += " dirt"sv;
-      if (_vignette_enabled) _uber_shader += " vignette"sv;
-
-      _uber_shader += " colorgrade"sv;
-   }
-   else {
-      _uber_shader = _vignette_enabled ? "vignette colorgrade"sv : "colorgrade"sv;
+      if (_bloom_params.use_dirt)
+         postprocess_flags |= Postprocess_flags::bloom_use_dirt;
    }
 
-   _threshold_shader = "downsample threshold"s;
-
-   if (_hdr_state == Hdr_state::stock) {
-      _threshold_shader += " stock hdr"sv;
-      _uber_shader += " stock hdr"sv;
-   }
-
-   _finalize_shader = "finalize "s + _aa_quality;
+   if (_vignette_enabled)
+      postprocess_flags |= Postprocess_flags::vignette_active;
 
    if (_film_grain_enabled) {
-      _finalize_shader += " film grain"sv;
-      if (_colored_film_grain_enabled) _finalize_shader += " colored"sv;
+      postprocess_flags |= Postprocess_flags::film_grain_active;
+      if (_colored_film_grain_enabled)
+         postprocess_flags |= Postprocess_flags::film_grain_colored;
    }
+
+   Postprocess_bloom_flags bloom_flags{};
+
+   if (_hdr_state == Hdr_state::stock) {
+      postprocess_flags |= Postprocess_flags::stock_hdr_state;
+      bloom_flags |= Postprocess_bloom_flags::stock_hdr_state;
+   }
+
+   _postprocess_ps =
+      _postprocess_ps_ep.copy(static_cast<std::uint16_t>(postprocess_flags));
+   _bloom_threshold_ps =
+      _bloom_threshold_ps_ep.copy(static_cast<std::uint16_t>(bloom_flags));
 }
 }

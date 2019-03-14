@@ -1,62 +1,50 @@
 #pragma once
 
-#include <cstddef>
-
 #include "com_ptr.hpp"
+#include "enum_flags.hpp"
+
+#include <cstddef>
 
 #include <d3d11_1.h>
 
 namespace sp::core {
+enum class Game_rt_flags : std::uint16_t {
+   none = 0b0,
+   presentation = 0b1,
+   shadow = 0b10,
+   flares = 0b100
+};
+
+constexpr bool marked_as_enum_flag(Game_rt_flags) noexcept
+{
+   return true;
+}
 
 struct Game_rendertarget {
    Game_rendertarget() = default;
 
-   Game_rendertarget(ID3D11Device1& device, const DXGI_FORMAT format,
-                     const UINT width, const UINT height) noexcept
-      : format{format}, width{static_cast<std::uint16_t>(width)}, height{static_cast<std::uint16_t>(height)}
-   {
-      const auto texture_desc =
-         CD3D11_TEXTURE2D_DESC{format,
-                               width,
-                               height,
-                               1,
-                               1,
-                               D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET |
-                                  D3D11_BIND_UNORDERED_ACCESS};
-
-      device.CreateTexture2D(&texture_desc, nullptr, texture.clear_and_assign());
-      device.CreateRenderTargetView(texture.get(), nullptr, rtv.clear_and_assign());
-      device.CreateShaderResourceView(texture.get(), nullptr, srv.clear_and_assign());
-      device.CreateUnorderedAccessView(texture.get(), nullptr, uav.clear_and_assign());
-   }
+   Game_rendertarget(ID3D11Device1& device, const DXGI_FORMAT format, const UINT width,
+                     const UINT height, const UINT sample_count = 1,
+                     Game_rt_flags flags = Game_rt_flags::none) noexcept;
 
    Game_rendertarget(Com_ptr<ID3D11Texture2D> texture,
                      Com_ptr<ID3D11RenderTargetView> rtv,
-                     Com_ptr<ID3D11ShaderResourceView> srv,
-                     Com_ptr<ID3D11UnorderedAccessView> uav, const DXGI_FORMAT format,
-                     const UINT width, const UINT height) noexcept
-      : texture{std::move(texture)},
-        rtv{std::move(rtv)},
-        srv{std::move(srv)},
-        uav{std::move(uav)},
-        format{format},
-        width{static_cast<std::uint16_t>(width)},
-        height{static_cast<std::uint16_t>(height)}
-   {
-   }
+                     Com_ptr<ID3D11ShaderResourceView> srv, const DXGI_FORMAT format,
+                     const UINT width, const UINT height, const UINT sample_count,
+                     Game_rt_flags flags = Game_rt_flags::none) noexcept;
 
    Com_ptr<ID3D11Texture2D> texture;
    Com_ptr<ID3D11RenderTargetView> rtv;
    Com_ptr<ID3D11ShaderResourceView> srv;
-   Com_ptr<ID3D11UnorderedAccessView> uav;
    DXGI_FORMAT format;
    std::uint16_t width;
    std::uint16_t height;
+   std::uint16_t sample_count;
+   Game_rt_flags flags;
 
    bool alive() const noexcept
    {
       return texture != nullptr;
    }
 };
-
 }

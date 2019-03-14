@@ -30,8 +30,8 @@ Film_grain_params show_film_grain_imgui(Film_grain_params params) noexcept;
 }
 
 Control::Control(Com_ptr<ID3D11Device1> device,
-                 const core::Shader_rendertype_collection& shader_rendertypes) noexcept
-   : _device{device}, postprocess{device, shader_rendertypes}
+                 const core::Shader_group_collection& shader_groups) noexcept
+   : _device{device}, postprocess{device, shader_groups}, profiler{device}
 {
 }
 
@@ -57,6 +57,8 @@ void Control::show_imgui(HWND game_window) noexcept
                               "and may give poor results without them.");
          }
       }
+
+      ImGui::Checkbox("Profiler Enabled", &profiler.enabled);
 
       ImGui::Separator();
 

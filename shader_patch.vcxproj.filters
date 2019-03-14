@@ -30,9 +30,6 @@
     <ClCompile Include="src\effects\control.cpp">
       <Filter>src\effects</Filter>
     </ClCompile>
-    <ClCompile Include="src\effects\scene_blur.cpp">
-      <Filter>src\effects</Filter>
-    </ClCompile>
     <ClCompile Include="src\effects\postprocess.cpp">
       <Filter>src\effects</Filter>
     </ClCompile>
@@ -44,12 +41,6 @@
     </ClCompile>
     <ClCompile Include="src\fps_unlock.cpp">
       <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\effects\shadows_blur.cpp">
-      <Filter>src\effects</Filter>
-    </ClCompile>
-    <ClCompile Include="src\effects\damage_overlay.cpp">
-      <Filter>src\effects</Filter>
     </ClCompile>
     <ClCompile Include="src\direct3d\device_old.cpp">
       <Filter>src\direct3d</Filter>
@@ -168,6 +159,15 @@
     <ClCompile Include="src\direct3d\upload_texture.cpp">
       <Filter>src\direct3d</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\game_rendertarget.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\late_backbuffer_resolver.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\effects\profiler.cpp">
+      <Filter>src\effects</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -200,9 +200,6 @@
     <ClInclude Include="src\effects\helpers.hpp">
       <Filter>src\effects</Filter>
     </ClInclude>
-    <ClInclude Include="src\effects\scene_blur.hpp">
-      <Filter>src\effects</Filter>
-    </ClInclude>
     <ClInclude Include="src\effects\postprocess.hpp">
       <Filter>src\effects</Filter>
     </ClInclude>
@@ -217,12 +214,6 @@
     </ClInclude>
     <ClInclude Include="src\unlock_memory.hpp">
       <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\effects\shadows_blur.hpp">
-      <Filter>src\effects</Filter>
-    </ClInclude>
-    <ClInclude Include="src\effects\damage_overlay.hpp">
-      <Filter>src\effects</Filter>
     </ClInclude>
     <ClInclude Include="src\effects\color_helpers.hpp">
       <Filter>src\effects</Filter>
@@ -394,6 +385,12 @@
     </ClInclude>
     <ClInclude Include="src\direct3d\upload_texture.hpp">
       <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\late_backbuffer_resolver.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\effects\profiler.hpp">
+      <Filter>src\effects</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

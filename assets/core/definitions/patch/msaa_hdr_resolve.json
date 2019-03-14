@@ -1,0 +1,43 @@
+{
+  "group_name": "msaa_hdr_resolve",
+  "source_name": "msaa_hdr_resolve.fx",
+
+  "entrypoints": {
+    "main_x2_ps": {
+      "stage": "pixel",
+      "function_name": "main_ps",
+
+      "pixel_state": { "lighting": false },
+
+      "defines": [
+        [ "RESOLVE_SAMPLE_COUNT", "2" ]
+      ]
+    },
+
+    "main_x4_ps": {
+      "stage": "pixel",
+      "function_name": "main_ps",
+
+      "pixel_state": { "lighting": false },
+
+      "defines": [
+        [ "RESOLVE_SAMPLE_COUNT", "4" ]
+      ]
+    },
+
+    "main_x8_ps": {
+      "stage": "pixel",
+      "function_name": "main_ps",
+
+      "pixel_state": { "lighting": false },
+
+      "defines": [
+        [ "RESOLVE_SAMPLE_COUNT", "8" ]
+      ]
+    }
+  },
+
+  "rendertypes": {},
+
+  "states": {}
+}

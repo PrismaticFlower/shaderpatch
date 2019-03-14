@@ -7,6 +7,7 @@
 #include <bitset>
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <vector>
 
@@ -14,6 +15,8 @@
 #include <nlohmann/json.hpp>
 
 namespace sp::shader {
+
+enum class Flag_op { set, clear };
 
 class Custom_flags {
 public:
@@ -23,17 +26,28 @@ public:
 
    Custom_flags() = default;
 
-   template<typename Container>
-   explicit Custom_flags(const Container& container)
+   Custom_flags(std::vector<std::string> flags,
+                std::unordered_map<std::string, std::unordered_map<std::string, Flag_op>> flag_ops)
    {
-      static_assert(
-         std::is_convertible_v<typename Container::value_type, std::string>,
-         "Container::value_type must be convertible to std::string.");
+      using namespace std::literals;
 
-      Expects(container.size() <= static_cast<std::size_t>(max_flags));
+      if (flags.size() > static_cast<std::size_t>(Custom_flags::max_flags)) {
+         throw compose_exception<std::runtime_error>("too many flags max is "s,
+                                                     Custom_flags::max_flags);
+      }
 
-      _flag_count = static_cast<int>(container.size());
-      std::copy(std::begin(container), std::end(container), _flag_names.begin());
+      _flag_count = static_cast<int>(flags.size());
+
+      for (auto i = 0; i < _flag_count; ++i)
+         std::swap(_flag_names[i], flags[i]);
+
+      for (auto& flag_op : flag_ops) {
+         auto& flag_refs = _flag_ops[flag_index(flag_op.first)];
+         flag_refs.reserve(flag_op.second.size());
+
+         for (auto& flag_ref : flag_op.second)
+            flag_refs.emplace_back(flag_index(flag_ref.first), flag_ref.second);
+      }
    }
 
    int count() const noexcept
@@ -54,11 +68,16 @@ public:
       using namespace std::literals;
 
       std::vector<std::pair<Preprocessor_defines, Flag_type>> variations;
+      std::unordered_set<std::bitset<max_flags>> added_variations;
 
       const auto variation_count = static_cast<Flag_type>(1 << _flag_count);
 
       for (Flag_type i = 0; i < variation_count; ++i) {
-         std::bitset<max_flags> flags{i};
+         const std::bitset<max_flags> flags =
+            apply_flag_ops(std::bitset<max_flags>{i});
+
+         if (const auto [it, inserted] = added_variations.emplace(flags); !inserted)
+            continue;
 
          Preprocessor_defines defines;
 
@@ -66,15 +85,55 @@ public:
             defines.add_define(_flag_names[flag], flags[flag] ? "1"s : "0"s);
          }
 
-         variations.emplace_back(std::move(defines), i);
+         variations.emplace_back(std::move(defines), flags.to_ulong());
       }
 
       return variations;
    }
 
 private:
+   auto flag_index(const std::string_view flag) const -> std::size_t
+   {
+      using namespace std::literals;
+
+      for (std::size_t i = 0; i < _flag_names.size(); ++i)
+         if (_flag_names[i] == flag) return i;
+
+      throw compose_exception<std::runtime_error>(std::quoted(flag),
+                                                  " is not a valid flag"s);
+   }
+
+   auto apply_flag_ops(std::bitset<max_flags> flags) const noexcept
+      -> std::bitset<max_flags>
+   {
+      for (auto flag = 0; flag < _flag_count; ++flag) {
+         if (!flags[flag]) continue;
+
+         auto& ops = _flag_ops[flag];
+
+         for (const auto& op : ops) {
+            if (op.second == Flag_op::set) {
+               std::bitset<max_flags> mask{};
+               mask[op.first] = true;
+
+               flags |= mask;
+            }
+            else if (op.second == Flag_op::clear) {
+               std::bitset<max_flags> mask{};
+               mask[op.first] = true;
+               mask = ~mask;
+
+               flags &= mask;
+            }
+         }
+      }
+
+      return flags;
+   }
+
    int _flag_count = 0;
    std::array<std::string, max_flags> _flag_names;
+   std::array<std::vector<std::pair<std::size_t, Flag_op>>, max_flags> _flag_ops;
 };
 
 template<typename Variation_type>
@@ -101,19 +160,18 @@ inline auto get_custom_variations(const Custom_flags& flags) noexcept
    return wrapped_variations;
 }
 
-inline void from_json(const nlohmann::json& j, Custom_flags& custom_flags)
+inline void from_json(const nlohmann::json& j, Flag_op& flag_op)
 {
    using namespace std::literals;
 
-   if (!j.is_array()) {
-      throw std::runtime_error{"flags list is not an array!"s};
-   }
-   else if (j.size() > static_cast<std::size_t>(Custom_flags::max_flags)) {
-      throw compose_exception<std::runtime_error>("too many flags max is "s,
-                                                  Custom_flags::max_flags);
-   }
+   const auto str = j.get<std::string>();
 
-   custom_flags = Custom_flags{j.get<std::vector<std::string>>()};
+   if (str == "set"s)
+      flag_op = Flag_op::set;
+   else if (str == "clear"s)
+      flag_op = Flag_op::clear;
+   else
+      throw std::runtime_error{"flag op is invalid!"s};
 }
 
 }

@@ -9,6 +9,7 @@
 #include "com_ptr.hpp"
 #include "helpers.hpp"
 #include "postprocess_params.hpp"
+#include "profiler.hpp"
 #include "rendertarget_allocator.hpp"
 
 #include <array>
@@ -28,6 +29,7 @@ struct Postprocess_input {
    DXGI_FORMAT format;
    UINT width;
    UINT height;
+   UINT sample_count;
 };
 
 struct Postprocess_output {
@@ -41,7 +43,7 @@ struct Postprocess_output {
 class Postprocess {
 public:
    Postprocess(Com_ptr<ID3D11Device1> device,
-               const core::Shader_rendertype_collection& shader_rendertypes);
+               const core::Shader_group_collection& shader_groups);
 
    void bloom_params(const Bloom_params& params) noexcept;
 
@@ -72,24 +74,26 @@ public:
    }
 
    void apply(ID3D11DeviceContext1& dc, Rendertarget_allocator& allocator,
-              const core::Texture_database& textures, const Postprocess_input input,
-              const Postprocess_output output) noexcept;
+              Profiler& profiler, const core::Texture_database& textures,
+              const Postprocess_input input, const Postprocess_output output) noexcept;
 
    void hdr_state(Hdr_state state) noexcept;
 
 private:
+   void msaa_resolve_input(ID3D11DeviceContext1& dc, const Postprocess_input& input,
+                           Rendertarget_allocator::Handle& output,
+                           Profiler& profiler) noexcept;
+
    void do_bloom_and_color_grading(ID3D11DeviceContext1& dc,
                                    Rendertarget_allocator& allocator,
                                    const core::Texture_database& textures,
                                    const Postprocess_input& input,
-                                   ID3D11RenderTargetView& output) noexcept;
+                                   const Postprocess_output& output,
+                                   Profiler& profiler) noexcept;
 
    void do_color_grading(ID3D11DeviceContext1& dc, const core::Texture_database& textures,
                          const Postprocess_input& input,
-                         ID3D11RenderTargetView& output) noexcept;
-
-   void do_finalize(ID3D11DeviceContext1& dc, ID3D11ShaderResourceView& input,
-                    ID3D11RenderTargetView& output);
+                         const Postprocess_output& output, Profiler& profiler) noexcept;
 
    void do_pass(ID3D11DeviceContext1& dc, ID3D11ShaderResourceView& input,
                 ID3D11RenderTargetView& output) noexcept;
@@ -98,7 +102,8 @@ private:
                 std::array<ID3D11ShaderResourceView*, 5> inputs,
                 ID3D11RenderTargetView& output) noexcept;
 
-   void do_pass(ID3D11DeviceContext1& dc, ID3D11RenderTargetView& output) noexcept;
+   auto select_msaa_resolve_shader(const Postprocess_input& input) const
+      noexcept -> ID3D11PixelShader*;
 
    void update_and_bind_cb(ID3D11DeviceContext1& dc, const UINT width,
                            const UINT height) noexcept;
@@ -110,7 +115,15 @@ private:
 
    void update_randomness() noexcept;
 
-   void update_shaders_names() noexcept;
+   void update_shaders() noexcept;
+
+   struct Resolve_constants {
+      glm::ivec2 input_range;
+      float exposure;
+      float _padding{};
+   };
+
+   static_assert(sizeof(Resolve_constants) == 16);
 
    struct Global_constants {
       glm::vec2 scene_pixel_size;
@@ -155,6 +168,8 @@ private:
       create_normal_blend_state(*_device);
    const Com_ptr<ID3D11BlendState> _additive_blend_state =
       create_additive_blend_state(*_device);
+   const Com_ptr<ID3D11Buffer> _msaa_resolve_constant_buffer =
+      core::create_dynamic_constant_buffer(*_device, sizeof(Resolve_constants));
    const Com_ptr<ID3D11Buffer> _global_constant_buffer =
       core::create_dynamic_constant_buffer(*_device, sizeof(Global_constants));
    const std::array<Com_ptr<ID3D11Buffer>, 6> _bloom_constant_buffers{
@@ -165,8 +180,17 @@ private:
       core::create_dynamic_constant_buffer(*_device, sizeof(Bloom_constants)),
       core::create_dynamic_constant_buffer(*_device, sizeof(Bloom_constants))};
 
-   const core::Shader_rendertype _postprocess_shaders;
-   const core::Shader_rendertype _bloom_shaders;
+   const core::Pixel_shader_entrypoint _postprocess_ps_ep;
+   const core::Pixel_shader_entrypoint _bloom_threshold_ps_ep;
+
+   const Com_ptr<ID3D11VertexShader> _fullscreen_vs;
+   const Com_ptr<ID3D11PixelShader> _msaa_hdr_resolve_x2_ps;
+   const Com_ptr<ID3D11PixelShader> _msaa_hdr_resolve_x4_ps;
+   const Com_ptr<ID3D11PixelShader> _msaa_hdr_resolve_x8_ps;
+   const Com_ptr<ID3D11PixelShader> _bloom_downsample_ps;
+   const Com_ptr<ID3D11PixelShader> _bloom_upsample_ps;
+   Com_ptr<ID3D11PixelShader> _postprocess_ps;
+   Com_ptr<ID3D11PixelShader> _bloom_threshold_ps;
 
    Bloom_params _bloom_params{};
    Vignette_params _vignette_params{};
@@ -175,15 +199,11 @@ private:
 
    Hdr_state _hdr_state = Hdr_state::hdr;
 
+   bool _config_changed = true;
    bool _bloom_enabled = true;
    bool _vignette_enabled = true;
    bool _film_grain_enabled = true;
    bool _colored_film_grain_enabled = true;
-
-   std::string _threshold_shader = "downsample threshold"s;
-   std::string _uber_shader = "bloom vignette colorgrade"s;
-   std::string _aa_quality = "fastest"s;
-   std::string _finalize_shader = "finalize fastest"s;
 
    std::mt19937 _random_engine{std::random_device{}()};
    std::uniform_real_distribution<float> _random_real_dist{0.0f, 256.0f};

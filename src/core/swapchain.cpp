@@ -97,8 +97,8 @@ Swapchain::Swapchain(Com_ptr<ID3D11Device1> device, IDXGIAdapter2& adapter,
                      const HWND window, const UINT width, const UINT height) noexcept
    : _device{device},
      _swapchain{create_swapchain(*device, adapter, window, width, height,
-                                 supports_tearing() && user_config.window.allow_tearing)},
-     _allow_tearing{supports_tearing() && user_config.window.allow_tearing},
+                                 supports_tearing() && user_config.display.allow_tearing)},
+     _allow_tearing{supports_tearing() && user_config.display.allow_tearing},
      _width{width},
      _height{height}
 {
@@ -133,7 +133,8 @@ void Swapchain::present() noexcept
 
 auto Swapchain::game_rendertarget() const noexcept -> Game_rendertarget
 {
-   return {_texture, _rtv, _srv, nullptr, format, _width, _height};
+   return {_texture, _rtv,    _srv, format,
+           _width,   _height, 1,    Game_rt_flags::presentation};
 }
 
 auto Swapchain::postprocess_output() const noexcept -> effects::Postprocess_output
@@ -149,6 +150,21 @@ auto Swapchain::width() const noexcept -> UINT
 auto Swapchain::height() const noexcept -> UINT
 {
    return _height;
+}
+
+auto Swapchain::texture() const noexcept -> ID3D11Texture2D*
+{
+   return _texture.get();
+}
+
+auto Swapchain::rtv() const noexcept -> ID3D11RenderTargetView*
+{
+   return _rtv.get();
+}
+
+auto Swapchain::srv() const noexcept -> ID3D11ShaderResourceView*
+{
+   return _srv.get();
 }
 
 }

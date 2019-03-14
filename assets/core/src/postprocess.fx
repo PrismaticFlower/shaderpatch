@@ -1,11 +1,7 @@
 
-#include "aa_quality_levels.hlsl"
 #include "film_grain.hlsl"
 #include "fullscreen_tri_vs.hlsl"
 #include "pixel_utilities.hlsl"
-#include "postprocess_common.hlsl"
-
-#include "FXAA3_11.h"
 
 #pragma warning(disable : 3571)
 
@@ -50,14 +46,16 @@ void apply_color_grading(inout float3 color)
    color = sample_color_grading_lut(color);
 }
 
-float fxaa_luma(float3 color)
+void apply_dithering(inout float3 color, uint2 position)
 {
-   if (stock_hdr) return dot(color, fxaa_luma_weights);
+   float3 blue_noise = blue_noise_texture[(position + randomness_uint.xy) & 0x3f];
+   blue_noise = blue_noise * 2.0 - 1.0;
+   blue_noise = sign(blue_noise) * (1.0 - sqrt(1.0 - abs(blue_noise)));
 
-   return sqrt(dot(color, fxaa_luma_weights));
+   color += (blue_noise / 255.0);
 }
 
-float4 postprocess_ps(float2 texcoords : TEXCOORD) : SV_Target0
+float4 main_ps(float2 texcoords : TEXCOORD, float4 positionSS : SV_Position) : SV_Target0
 {
    float3 color = scene_texture.SampleLevel(linear_clamp_sampler, texcoords, 0).rgb;
 
@@ -69,48 +67,8 @@ float4 postprocess_ps(float2 texcoords : TEXCOORD) : SV_Target0
 
    apply_color_grading(color);
 
-   return float4(color, fxaa_luma(color));
-}
-
-void apply_dithering(inout float3 color, uint2 position)
-{
-   float3 blue_noise = blue_noise_texture[(position + randomness_uint.xy) & 0x3f];
-   blue_noise = blue_noise * 2.0 - 1.0;
-   blue_noise = sign(blue_noise) * (1.0 - sqrt(1.0 - abs(blue_noise)));
-
-   color += (blue_noise / 255.0);
-}
-
-float4 postprocess_finalize_ps(float2 texcoords : TEXCOORD, float4 positionSS : SV_Position) : SV_Target0
-{
-   float3 color = 0.0;
-   
-   if (fxaa_enabled) {
-      FxaaTex fxaa_tex = {linear_clamp_sampler, scene_texture};
-
-      color = FxaaPixelShader(texcoords,
-                              0.0,
-                              fxaa_tex,
-                              fxaa_tex,
-                              fxaa_tex,
-                              scene_pixel_size,
-                              0.0,
-                              0.0,
-                              0.0,
-                              fxaa_quality_subpix,
-                              fxaa_quality_edge_threshold,
-                              fxaa_quality_edge_threshold_min,
-                              0.0,
-                              0.0,
-                              0.0,
-                              0.0).rgb;
-   }
-   else {
-      color = scene_texture.SampleLevel(linear_clamp_sampler, texcoords, 0).rgb;
-   }
-
    if (film_grain) filmgrain::apply(texcoords, color);
-  
+
    apply_dithering(color, (uint2)positionSS.xy);
 
    return float4(color, 1.0);

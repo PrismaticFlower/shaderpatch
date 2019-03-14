@@ -90,12 +90,11 @@ private:
    auto find(const DXGI_FORMAT format, const UINT width, const UINT height)
       -> std::vector<Rendertarget>::const_iterator
    {
-      return std::find_if(
-         _rendertargets.cbegin(),
-         _rendertargets.cend(), [&](const Rendertarget& target) noexcept {
-            return std::tie(width, height, format) ==
-                   std::tie(target.width, target.height, target.format);
-         });
+      return std::find_if(_rendertargets.cbegin(), _rendertargets.cend(),
+                          [&](const Rendertarget& target) noexcept {
+                             return std::tie(width, height, format) ==
+                                    std::tie(target.width, target.height, target.format);
+                          });
    }
 
    auto create(const DXGI_FORMAT format, const UINT width, const UINT height) noexcept

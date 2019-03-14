@@ -1,4 +1,4 @@
-Window:
+Display:
    # Precentage of the sceen the game's window will take up. Value from 10 to 100.
    ScreenPercent: 100
 
@@ -9,8 +9,58 @@ Window:
    # Whether to centre the window or not. If `ScreenPercent` is 100 there will be 
    # no difference between a centred and uncentred window.
    Centred: yes
+
+Graphics:
+   # Anti-Aliasing method to use, can be "none", "" "MSAAx2", "MSAAx4" or "MSAAx8".
+   AAMethod: MSAAx4
    
-Developer:
+# Settings for the Effects system, which allows modders to apply various effects
+# to their mods at their discretion and configuration. Below are options provided to 
+# tweak the performance of this system for low-end/older GPUs.
+Effects:
+   # For some _very_ old or _very_ low-end GPUs the Effects system may prove too much to handle
+   # at an acceptable framerate and in this case this can be used to switch them off.
+   Enabled: yes
+   
+   # Sets quality of the color depth used for render targets when Effects system is active and HDR Rendering isn't
+   # enabled. 
+   # Can be "normal", "high" or "ultra".
+   # There is likely a definite performance cost to having this set to "ultra" and a possible slight performance 
+   # cost to "high". If in dire need of better performance try out "normal" and see if it helps.
+   ColorQuality: high
+   
+   # Enable or disable a mod using the Bloom effect. This effect is cheap and there is likely
+   # little FPS to be gained from switching it off. Still if you're hitting really low FPS (let's say under 40) having 
+   # it off can increase the framerate by a few a second.
+   Bloom: yes
+   
+   # Enable or disable a mod using the Vignette effect. This effect is really cheap and there is likely
+   # no FPS to be gained from switching it off. But if you're in truely dire need... (Though it is probably better to 
+   # just set Enabled to 'no'.)
+   Vignette: yes
+   
+   # Enable or disable a mod using the Film Grain effect. This either falls in the same baskest as Bloom or can 
+   # actually be worse when Colored Film Grain is being used. (A mod controls if it is or not.) 
+   FilmGrain: yes
+   
+   # Enable or disable a mod using being allowed to use Colored Film Grain. For mods that 
+   # use it colored film grain can definitely looks nicer. However it is more costly to performance to evaluate
+   # it and on low-end GPUs you may wish to switch this off.
+   AllowColoredFilmGrain: yes 
+   
+Developer:   
+   # Toggle key for the developer screen. Giving access to useful things for mod makers and
+   # Shader Patch developers alike.
+   #
+   # The value identifies the virtual key that activates the debug screen, below are some common values
+   # for you to choose from. (Copy and paste the value on the right of your desired key.)
+   #
+   # '~': 0xC0 
+   # '\': 0xDC 
+   # 'Backspace': 0x08 
+   # 'F12': 0x7B
+   ScreenToggle: 0xDC
+   
    # Controls whether or not Shader Patch will attempt to remove the game's FPS cap. This is in part mostly here
    # for people going on performance testing adventures.  As there are certain parts of the game whose simulation 
    # is tied to framerate, in particular UI animation, cloth and bizarrely the physics of hover vehicles.
