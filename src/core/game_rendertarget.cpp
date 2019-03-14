@@ -6,12 +6,12 @@ namespace sp::core {
 Game_rendertarget::Game_rendertarget(ID3D11Device1& device,
                                      const DXGI_FORMAT format, const UINT width,
                                      const UINT height, const UINT sample_count,
-                                     Game_rt_flags flags) noexcept
+                                     const Game_rt_type type) noexcept
    : format{format},
      width{static_cast<std::uint16_t>(width)},
      height{static_cast<std::uint16_t>(height)},
      sample_count{static_cast<std::uint16_t>(sample_count)},
-     flags{flags}
+     type{type}
 {
    const auto texture_desc =
       CD3D11_TEXTURE2D_DESC{format,
@@ -37,7 +37,7 @@ Game_rendertarget::Game_rendertarget(Com_ptr<ID3D11Texture2D> texture,
                                      Com_ptr<ID3D11ShaderResourceView> srv,
                                      const DXGI_FORMAT format, const UINT width,
                                      const UINT height, const UINT sample_count,
-                                     Game_rt_flags flags) noexcept
+                                     const Game_rt_type type) noexcept
    : texture{std::move(texture)},
      rtv{std::move(rtv)},
      srv{std::move(srv)},
@@ -45,7 +45,7 @@ Game_rendertarget::Game_rendertarget(Com_ptr<ID3D11Texture2D> texture,
      width{static_cast<std::uint16_t>(width)},
      height{static_cast<std::uint16_t>(height)},
      sample_count{static_cast<std::uint16_t>(sample_count)},
-     flags{flags}
+     type{type}
 {
 }
 

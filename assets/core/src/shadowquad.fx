@@ -3,9 +3,11 @@
 
 const static float intensity = ps_custom_constants[0].a;
 
-float4 shadowquad_vs(float3 position : POSITION) : SV_Position
+float4 shadowquad_vs(uint id : SV_VertexID) : SV_Position
 {
-   return float4(position.xy, 0.5, 1.0);
+   if (id == 0) return float4(-1.f, -1.f, 0.0, 1.0);
+   else if (id == 1) return float4(-1.f, 3.f, 0.0, 1.0);
+   else return float4(3.f, -1.f, 0.0, 1.0);
 
 }
 

@@ -21,6 +21,7 @@ namespace sp::core {
 
 constexpr auto custom_tex_begin = 4;
 constexpr auto projtex_cube_slot = 127;
+constexpr auto shadow_texture_format = DXGI_FORMAT_A8_UNORM;
 
 namespace {
 
@@ -93,9 +94,12 @@ Shader_patch::Shader_patch(IDXGIAdapter2& adapter, const HWND window,
    bind_static_resources();
    set_viewport(0, 0, static_cast<float>(width), static_cast<float>(height));
 
-   if (_rt_sample_count != 1) {
+   if (_rt_sample_count > 1) {
       _patch_backbuffer = {*_device, Swapchain::format, _swapchain.width(),
                            _swapchain.height(), _rt_sample_count};
+      _shadow_msaa_rt = {*_device,           shadow_texture_format,
+                         _swapchain.width(), _swapchain.height(),
+                         _rt_sample_count,   Game_rt_type::shadow};
       _game_rendertargets[0] = _patch_backbuffer.game_rendertarget();
    }
 
@@ -139,9 +143,12 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
    _game_shader = {};
    _game_textures = {};
 
-   if (_rt_sample_count != 1) {
+   if (_rt_sample_count > 1) {
       _patch_backbuffer = {*_device, Swapchain::format, _swapchain.width(),
                            _swapchain.height(), _rt_sample_count};
+      _shadow_msaa_rt = {*_device,           shadow_texture_format,
+                         _swapchain.width(), _swapchain.height(),
+                         _rt_sample_count,   Game_rt_type::shadow};
       _game_rendertargets[0] = _patch_backbuffer.game_rendertarget();
    }
 
@@ -160,10 +167,8 @@ void Shader_patch::present() noexcept
 
    update_imgui();
 
-   if ((_game_rendertargets[0].flags & Game_rt_flags::presentation) !=
-       Game_rt_flags::presentation) {
+   if (_game_rendertargets[0].type != Game_rt_type::presentation)
       patch_backbuffer_resolve();
-   }
 
    _swapchain.present();
    _om_targets_dirty = true;
@@ -737,13 +742,26 @@ void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
                                         const Game_rendertarget_id dest,
                                         const RECT* dest_rect) noexcept
 {
-   const auto& src_rt = _game_rendertargets[static_cast<int>(source)];
-   const auto& dest_rt = _game_rendertargets[static_cast<int>(dest)];
+   auto& src_rt = _game_rendertargets[static_cast<int>(source)];
+   auto& dest_rt = _game_rendertargets[static_cast<int>(dest)];
+
+   if (_on_stretch_rendertarget)
+      _on_stretch_rendertarget(src_rt, source_rect, dest_rt, dest_rect);
 
    const auto src_box = rect_to_box(
-      source_rect ? *source_rect : RECT{0, 0, src_rt.width, src_rt.height - 1});
-   const auto dest_box = rect_to_box(
-      dest_rect ? *dest_rect : RECT{0, 0, src_rt.width, src_rt.height - 1});
+      source_rect ? *source_rect : RECT{0, 0, src_rt.width, src_rt.height});
+   const auto dest_box =
+      rect_to_box(dest_rect ? *dest_rect : RECT{0, 0, src_rt.width, src_rt.height});
+
+   // Skip any fullscreen resolve or copy operation, as these will be handled as special cases by the shaders that use them.
+   if (glm::uvec2{src_rt.width, src_rt.height} ==
+          glm::uvec2{dest_rt.width, dest_rt.height} &&
+       glm::uvec2{src_rt.width, src_rt.height} ==
+          glm::uvec2{src_box.right - src_box.left, src_box.bottom - src_box.top} &&
+       glm::uvec2{dest_rt.width, dest_rt.height} ==
+          glm::uvec2{dest_box.right - dest_box.left, dest_box.bottom - dest_box.top}) {
+      return;
+   }
 
    Context_state_guard<state_flags::ia_all | state_flags::vs_all | state_flags::hs_shader |
                        state_flags::ds_shader | state_flags::gs_shader |
@@ -1107,7 +1125,52 @@ void Shader_patch::game_rendertype_changed() noexcept
 {
    if (_on_rendertype_changed) _on_rendertype_changed();
 
-   if (_shader_rendertype == Rendertype::shield) {
+   if (_shader_rendertype == Rendertype::zprepass) {
+      _om_targets_dirty = true;
+      _use_null_rendertarget = true;
+   }
+   else if (_shader_rendertype == Rendertype::shadowquad) {
+      _om_targets_dirty = true;
+      _use_null_rendertarget = false;
+      _discard_draw_calls = true;
+
+      _on_stretch_rendertarget = [this](Game_rendertarget&, const RECT*,
+                                        Game_rendertarget& dest, const RECT*) noexcept {
+         _on_stretch_rendertarget = nullptr;
+
+         if (dest.type != Game_rt_type::shadow) {
+            dest = Game_rendertarget{*_device,
+                                     shadow_texture_format,
+                                     _swapchain.width(),
+                                     _swapchain.height(),
+                                     1,
+                                     Game_rt_type::shadow};
+         }
+
+         const bool multisampled = _rt_sample_count > 1;
+         auto* const rtv = multisampled ? _shadow_msaa_rt.rtv.get() : dest.rtv.get();
+         auto* const dsv = current_depthstencil();
+
+         _device_context
+            ->ClearRenderTargetView(rtv, std::array{1.0f, 1.0f, 1.0f, 1.0f}.data());
+         _device_context->OMSetRenderTargets(1, &rtv, dsv);
+         _device_context->Draw(3, 0);
+
+         if (multisampled)
+            _device_context->ResolveSubresource(dest.texture.get(), 0,
+                                                _shadow_msaa_rt.texture.get(),
+                                                0, shadow_texture_format);
+
+         // Skip the next draw call.
+         _on_rendertype_changed = [this]() noexcept {
+            _on_rendertype_changed = [this]() noexcept {
+               _discard_draw_calls = false;
+               _on_rendertype_changed = nullptr;
+            };
+         };
+      };
+   }
+   else if (_shader_rendertype == Rendertype::shield) {
       resolve_refraction_texture();
 
       auto normalmap_srv = _texture_database.get("$water");
@@ -1167,6 +1230,21 @@ void Shader_patch::game_rendertype_changed() noexcept
                                             srvs.data());
 
       _ps_material_textures_dirty = true;
+   }
+   else if (_shader_rendertype == Rendertype::hdr && !_effects_active &&
+            _game_shader->shader_name == "glow threshold"sv) {
+      if (_game_rendertargets[0].sample_count > 1) {
+         Com_ptr<ID3D11Resource> dest;
+         _game_textures[0].srv->GetResource(dest.clear_and_assign());
+
+         _device_context->ResolveSubresource(dest.get(), 0,
+                                             _game_rendertargets[0].texture.get(),
+                                             0, _game_rendertargets[0].format);
+      }
+      else {
+         _ps_textures_dirty = true;
+         _game_textures[0] = {_game_rendertargets[0].srv, _game_rendertargets[0].srv};
+      }
    }
 
    if (_effects_active) {
@@ -1240,7 +1318,9 @@ void Shader_patch::update_dirty_state() noexcept
          _game_rendertargets[static_cast<int>(_current_game_rendertarget)];
       auto* const rtv = rt.rtv.get();
 
-      _device_context->OMSetRenderTargets(1, &rtv, current_depthstencil());
+      _device_context->OMSetRenderTargets(_use_null_rendertarget ? 0 : 1,
+                                          _use_null_rendertarget ? nullptr : &rtv,
+                                          current_depthstencil());
 
       _cb_draw_ps_dirty = true;
       _cb_draw_ps.rt_resolution = {rt.width, rt.height, 1.0f / rt.width,
@@ -1348,7 +1428,7 @@ void Shader_patch::update_effects() noexcept
       else {
          _rendertarget_allocator.reset();
          _patch_backbuffer =
-            (_rt_sample_count != 1)
+            (_rt_sample_count > 1)
                ? Effects_backbuffer{*_device, Swapchain::format, _swapchain.width(),
                                     _swapchain.height(), _rt_sample_count}
                : Effects_backbuffer{};
@@ -1385,6 +1465,9 @@ void Shader_patch::update_rendertarget_formats() noexcept
    }
 
    for (auto i = 1; i < _game_rendertargets.size(); ++i) {
+      if (!_game_rendertargets[i] || _game_rendertargets[i].type != Game_rt_type::untyped)
+         continue;
+
       _game_rendertargets[i] = Game_rendertarget{*_device, _effects.rt_format(),
                                                  _game_rendertargets[i].width,
                                                  _game_rendertargets[i].height};
@@ -1402,14 +1485,19 @@ void Shader_patch::update_aa_rendertargets() noexcept
    _nearscene_depthstencil = {*_device, _swapchain.width(), _swapchain.height(),
                               _rt_sample_count};
 
-   if (_rt_sample_count != 1) {
+   if (_rt_sample_count > 1) {
       _patch_backbuffer =
-         Effects_backbuffer{*_device, _effects.rt_format(), _swapchain.width(),
-                            _swapchain.height(), _rt_sample_count};
+         Effects_backbuffer{*_device,
+                            _effects_active ? _effects.rt_format() : Swapchain::format,
+                            _swapchain.width(), _swapchain.height(), _rt_sample_count};
+      _shadow_msaa_rt = {*_device,           shadow_texture_format,
+                         _swapchain.width(), _swapchain.height(),
+                         _rt_sample_count,   Game_rt_type::shadow};
       _game_rendertargets[0] = _patch_backbuffer.game_rendertarget();
    }
    else {
       _patch_backbuffer = {};
+      _shadow_msaa_rt = {};
       _game_rendertargets[0] = _swapchain.game_rendertarget();
    }
 }
@@ -1468,7 +1556,7 @@ void Shader_patch::resolve_refraction_texture() noexcept
 void Shader_patch::patch_backbuffer_resolve() noexcept
 {
    if (_game_rendertargets[0].format == Swapchain::format) {
-      if (_rt_sample_count != 1) {
+      if (_rt_sample_count > 1) {
          _device_context->ResolveSubresource(_swapchain.texture(), 0,
                                              _game_rendertargets[0].texture.get(),
                                              0, _game_rendertargets[0].format);

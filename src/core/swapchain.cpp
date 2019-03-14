@@ -134,7 +134,7 @@ void Swapchain::present() noexcept
 auto Swapchain::game_rendertarget() const noexcept -> Game_rendertarget
 {
    return {_texture, _rtv,    _srv, format,
-           _width,   _height, 1,    Game_rt_flags::presentation};
+           _width,   _height, 1,    Game_rt_type::presentation};
 }
 
 auto Swapchain::postprocess_output() const noexcept -> effects::Postprocess_output

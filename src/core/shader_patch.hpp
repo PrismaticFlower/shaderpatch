@@ -269,6 +269,7 @@ private:
    Effects_backbuffer _patch_backbuffer;
    std::vector<Game_rendertarget> _game_rendertargets = {_swapchain.game_rendertarget()};
    Game_rendertarget_id _current_game_rendertarget = _game_backbuffer_index;
+   Game_rendertarget _shadow_msaa_rt;
    Game_rendertarget _refraction_rt;
 
    Depthstencil _nearscene_depthstencil;
@@ -288,6 +289,7 @@ private:
    bool _shader_rendertype_changed = false;
    bool _shader_dirty = true;
    bool _om_targets_dirty = true;
+   bool _use_null_rendertarget = false;
    bool _ps_textures_dirty = true;
    bool _ps_material_textures_dirty = true;
    bool _cb_scene_dirty = true;
@@ -303,6 +305,7 @@ private:
 
    bool _imgui_enabled = false;
 
+   Small_function<void(Game_rendertarget&, const RECT*, Game_rendertarget&, const RECT*) noexcept> _on_stretch_rendertarget;
    Small_function<void() noexcept> _on_rendertype_changed;
 
    cb::Scene _cb_scene{};
