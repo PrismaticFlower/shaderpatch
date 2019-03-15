@@ -58,7 +58,7 @@ struct User_config {
 
       bool unlock_fps = false;
       bool allow_event_queries = false;
-      bool force_d3d11_debug_layer = false;
+      bool use_d3d11_debug_layer = false;
    } developer;
 
    void show_imgui() noexcept;
