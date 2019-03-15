@@ -1,6 +1,7 @@
 
 #include "sampler_states.hpp"
 #include "../logger.hpp"
+#include "../user_config.hpp"
 
 #include <comdef.h>
 
@@ -32,11 +33,7 @@ auto make_sampler(ID3D11Device1& device, const D3D11_FILTER filter,
 }
 
 Sampler_states::Sampler_states(ID3D11Device1& device) noexcept
-   : aniso_clamp_sampler{make_sampler(device, D3D11_FILTER_ANISOTROPIC,
-                                      D3D11_TEXTURE_ADDRESS_CLAMP, 16)},
-     aniso_wrap_sampler{make_sampler(device, D3D11_FILTER_ANISOTROPIC,
-                                     D3D11_TEXTURE_ADDRESS_WRAP, 16)},
-     linear_clamp_sampler{make_sampler(device, D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT,
+   : linear_clamp_sampler{make_sampler(device, D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT,
                                        D3D11_TEXTURE_ADDRESS_CLAMP)},
      linear_wrap_sampler{make_sampler(device, D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT,
                                       D3D11_TEXTURE_ADDRESS_WRAP)},
@@ -45,6 +42,36 @@ Sampler_states::Sampler_states(ID3D11Device1& device) noexcept
      point_wrap_sampler{make_sampler(device, D3D11_FILTER_MIN_MAG_MIP_POINT,
                                      D3D11_TEXTURE_ADDRESS_WRAP)}
 {
+   _last_sample_count = to_sample_count(user_config.graphics.anisotropic_filtering);
+
+   aniso_clamp_sampler = make_sampler(device, D3D11_FILTER_ANISOTROPIC,
+                                      D3D11_TEXTURE_ADDRESS_CLAMP, _last_sample_count);
+   aniso_wrap_sampler = make_sampler(device, D3D11_FILTER_ANISOTROPIC,
+                                     D3D11_TEXTURE_ADDRESS_WRAP, _last_sample_count);
+}
+
+void Sampler_states::update_ansio_samplers(ID3D11Device1& device) noexcept
+{
+   const auto new_sample_count =
+      to_sample_count(user_config.graphics.anisotropic_filtering);
+
+   if (std::exchange(_last_sample_count, new_sample_count) == new_sample_count)
+      return;
+
+   if (user_config.graphics.anisotropic_filtering == Anisotropic_filtering::off) {
+      aniso_clamp_sampler = make_sampler(device, D3D11_FILTER_MIN_MAG_MIP_LINEAR,
+                                         D3D11_TEXTURE_ADDRESS_CLAMP);
+      aniso_wrap_sampler = make_sampler(device, D3D11_FILTER_MIN_MAG_MIP_LINEAR,
+                                        D3D11_TEXTURE_ADDRESS_WRAP);
+   }
+   else {
+      aniso_clamp_sampler =
+         make_sampler(device, D3D11_FILTER_ANISOTROPIC,
+                      D3D11_TEXTURE_ADDRESS_CLAMP, _last_sample_count);
+      aniso_wrap_sampler =
+         make_sampler(device, D3D11_FILTER_ANISOTROPIC,
+                      D3D11_TEXTURE_ADDRESS_WRAP, _last_sample_count);
+   }
 }
 
 }

@@ -86,7 +86,7 @@ Shader_patch::Shader_patch(IDXGIAdapter2& adapter, const HWND window,
      _swapchain{_device, adapter, window, width, height},
      _window{window},
      _nearscene_depthstencil{*_device, width, height,
-                             user_config.graphics.antialiasing_sample_count},
+                             to_sample_count(user_config.graphics.antialiasing_method)},
      _farscene_depthstencil{*_device, width, height, 1},
      _reflectionscene_depthstencil{*_device, 512, 256, 1},
      _refraction_rt{*_device, Swapchain::format, width / 2, height / 2}
@@ -176,6 +176,7 @@ void Shader_patch::present() noexcept
    update_frame_state();
    update_effects();
    update_aa_rendertargets();
+   update_samplers();
 
    if (_patch_backbuffer)
       _game_rendertargets[0] = _patch_backbuffer.game_rendertarget();
@@ -1476,8 +1477,10 @@ void Shader_patch::update_rendertarget_formats() noexcept
 
 void Shader_patch::update_aa_rendertargets() noexcept
 {
-   if (std::exchange(_rt_sample_count, user_config.graphics.antialiasing_sample_count) ==
-       user_config.graphics.antialiasing_sample_count)
+   const auto new_sample_count =
+      to_sample_count(user_config.graphics.antialiasing_method);
+
+   if (std::exchange(_rt_sample_count, new_sample_count) == new_sample_count)
       return;
 
    _om_targets_dirty = true;
@@ -1496,10 +1499,23 @@ void Shader_patch::update_aa_rendertargets() noexcept
       _game_rendertargets[0] = _patch_backbuffer.game_rendertarget();
    }
    else {
-      _patch_backbuffer = {};
+      _patch_backbuffer =
+         _effects_active
+            ? Effects_backbuffer{*_device, _effects.rt_format(),
+                                 _swapchain.width(), _swapchain.height(), 1}
+            : Effects_backbuffer{};
       _shadow_msaa_rt = {};
       _game_rendertargets[0] = _swapchain.game_rendertarget();
    }
+}
+
+void Shader_patch::update_samplers() noexcept
+{
+   _sampler_states.update_ansio_samplers(*_device);
+
+   auto* const sampler = _sampler_states.aniso_wrap_sampler.get();
+
+   _device_context->PSSetSamplers(0, 1, &sampler);
 }
 
 void Shader_patch::set_linear_rendering(bool linear_rendering) noexcept

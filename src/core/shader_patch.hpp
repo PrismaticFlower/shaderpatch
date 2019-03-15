@@ -243,6 +243,8 @@ private:
 
    void update_aa_rendertargets() noexcept;
 
+   void update_samplers() noexcept;
+
    void set_linear_rendering(bool linear_rendering) noexcept;
 
    void resolve_refraction_texture() noexcept;
@@ -390,7 +392,7 @@ private:
 
    const Image_stretcher _image_stretcher{*_device, *_shader_database};
    const Late_backbuffer_resolver _late_backbuffer_resolver{*_shader_database};
-   const Sampler_states _sampler_states{*_device};
+   Sampler_states _sampler_states{*_device};
    Texture_database _texture_database{
       load_texture_lvl(L"data/shaderpatch/textures.lvl", *_device)};
 
@@ -405,7 +407,7 @@ private:
    DXGI_FORMAT _current_effects_rt_format = DXGI_FORMAT_UNKNOWN;
    int _current_effects_id = 0;
 
-   UINT _rt_sample_count = user_config.graphics.antialiasing_sample_count;
+   UINT _rt_sample_count = to_sample_count(user_config.graphics.antialiasing_method);
 };
 }
 

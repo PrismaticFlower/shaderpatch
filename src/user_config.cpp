@@ -22,6 +22,54 @@ User_config::User_config(const std::string& path) noexcept
    }
 }
 
+void User_config::show_imgui() noexcept
+{
+   ImGui::Begin("User Config", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+
+   if (ImGui::CollapsingHeader("Graphics", ImGuiTreeNodeFlags_DefaultOpen)) {
+      graphics.antialiasing_method = aa_method_from_string(ImGui::StringPicker(
+         "Anti-Aliasing Method", std::string{to_string(graphics.antialiasing_method)},
+         std::initializer_list<std::string>{to_string(Antialiasing_method::none),
+                                            to_string(Antialiasing_method::msaax2),
+                                            to_string(Antialiasing_method::msaax4),
+                                            to_string(Antialiasing_method::msaax8)}));
+
+      graphics.anisotropic_filtering = anisotropic_filtering_from_string(ImGui::StringPicker(
+         "Anisotropic Filtering", std::string{to_string(graphics.anisotropic_filtering)},
+         std::initializer_list<std::string>{to_string(Anisotropic_filtering::off),
+                                            to_string(Anisotropic_filtering::x2),
+                                            to_string(Anisotropic_filtering::x4),
+                                            to_string(Anisotropic_filtering::x8),
+                                            to_string(Anisotropic_filtering::x16)}));
+   }
+
+   if (ImGui::CollapsingHeader("Effects", ImGuiTreeNodeFlags_DefaultOpen)) {
+      ImGui::Checkbox("Enabled", &effects.enabled);
+
+      effects.color_quality = color_quality_from_string(ImGui::StringPicker(
+         "Color Quality", std::string{to_string(effects.color_quality)},
+         std::initializer_list<std::string>{to_string(Color_quality::normal),
+                                            to_string(Color_quality::high),
+                                            to_string(Color_quality::ultra)}));
+
+      if (ImGui::IsItemHovered()) {
+         ImGui::SetTooltip(
+            "Does not have any effect when HDR Rendering is enabled.");
+      }
+
+      ImGui::Checkbox("Bloom", &effects.bloom);
+      ImGui::Checkbox("Vignette", &effects.vignette);
+      ImGui::Checkbox("Film Grain", &effects.film_grain);
+      ImGui::Checkbox("Allow Colored Film Grain", &effects.colored_film_grain);
+   }
+
+   if (ImGui::CollapsingHeader("Developer")) {
+      ImGui::Checkbox("Allow Event Queries", &developer.allow_event_queries);
+   }
+
+   ImGui::End();
+}
+
 void User_config::parse_file(const std::string& path)
 {
    using namespace std::literals;
@@ -38,7 +86,8 @@ void User_config::parse_file(const std::string& path)
    graphics.antialiasing_method = aa_method_from_string(
       config["Graphics"s]["Anti-Aliasing Method"s].as<std::string>());
 
-   graphics.antialiasing_sample_count = to_sample_count(graphics.antialiasing_method);
+   graphics.anisotropic_filtering = anisotropic_filtering_from_string(
+      config["Graphics"s]["Anisotropic Filtering"s].as<std::string>());
 
    effects.enabled = config["Effects"s]["Enabled"s].as<bool>();
 
@@ -64,4 +113,5 @@ void User_config::parse_file(const std::string& path)
    developer.force_d3d11_debug_layer =
       config["Developer"s]["Force D3D11 Debug Layer"s].as<bool>();
 }
+
 }
