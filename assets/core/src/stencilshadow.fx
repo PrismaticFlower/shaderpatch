@@ -260,7 +260,4 @@ float4 extend_point_softskin_gen_normal_vs(Vs_extend_softskin_gen_normal_input i
    return mul(float4(positionExtrudedWS, 1.0), projection_matrix);
 }
 
-float4 shadow_ps() : SV_Target0
-{
-   return float4(debug_color, 1.0);
-}
+void shadow_ps() {}

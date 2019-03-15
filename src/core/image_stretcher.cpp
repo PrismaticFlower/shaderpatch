@@ -70,9 +70,11 @@ void Image_stretcher::stretch(ID3D11DeviceContext1& dc, const D3D11_BOX& source_
    // Draw
    dc.Draw(3, 0);
 
-   // Clear SRV for D3D11 debug runtime.
+   // Clear SRV and RTV for D3D11 debug runtime.
    ID3D11ShaderResourceView* const null_srv = nullptr;
+   ID3D11RenderTargetView* const null_rtv = nullptr;
    dc.PSSetShaderResources(0, 1, &null_srv);
+   dc.OMSetRenderTargets(1, &null_rtv, nullptr);
 }
 
 auto Image_stretcher::get_pixel_shader(const Game_rendertarget& source) const

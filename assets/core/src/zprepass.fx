@@ -33,17 +33,12 @@ Vs_output hardedged_vs(Vertex_input input)
    return output;
 }
 
-float4 opaque_ps() : SV_Target0
-{
-   return float4(0.0, 0.0, 0.0, 1.0);
-}
+void opaque_ps() {}
 
-float4 hardedged_ps(float2 texcoords : TEXCOORD) : SV_Target0
+void hardedged_ps(float2 texcoords : TEXCOORD)
 {
    const float alpha =
       diffuse_map.Sample(aniso_wrap_sampler, texcoords).a * material_diffuse_color.a;
 
    if (alpha < 0.5) discard;
-
-   return float4(0.0, 0.0, 0.0, 1.0);
 }
