@@ -40,6 +40,8 @@ struct User_config {
 
    explicit User_config(const std::string& path) noexcept;
 
+   bool enabled = true;
+
    struct {
       std::uint32_t screen_percent = 100;
       bool allow_tearing = true;

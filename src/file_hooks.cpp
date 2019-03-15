@@ -6,6 +6,7 @@
 #include "string_utilities.hpp"
 #include "ucfb_editor.hpp"
 #include "ucfb_writer.hpp"
+#include "user_config.hpp"
 
 #include <filesystem>
 #include <iomanip>
@@ -66,10 +67,7 @@ auto create_tmp_file() -> std::pair<std::ofstream, win32::Unique_handle>
 
 auto edit_core_lvl() noexcept -> win32::Unique_handle
 {
-   constexpr static auto is_parent = [](const auto) noexcept
-   {
-      return false;
-   };
+   constexpr static auto is_parent = [](const auto) noexcept { return false; };
 
    win32::Memeory_mapped_file file{"data/_lvl_pc/core.lvl"sv};
 
@@ -114,8 +112,7 @@ auto edit_core_lvl() noexcept -> win32::Unique_handle
 
 auto edit_ingame_lvl() noexcept -> win32::Unique_handle
 {
-   constexpr static auto is_parent = [](const Magic_number mn) noexcept
-   {
+   constexpr static auto is_parent = [](const Magic_number mn) noexcept {
       if (mn == "scr_"_mn) return true;
 
       return false;
@@ -252,8 +249,7 @@ print(string.format("Shader Patch Scripting Extenions loaded. Shader Patch versi
 
 auto get_sp_api_script() noexcept -> win32::Unique_handle
 {
-   constexpr static auto is_parent = [](const Magic_number mn) noexcept
-   {
+   constexpr static auto is_parent = [](const Magic_number mn) noexcept {
       if (mn == "scr_"_mn) return true;
 
       return false;
@@ -362,7 +358,7 @@ extern "C" HANDLE WINAPI CreateFileA_hook(LPCSTR file_name,
                                           DWORD flags_and_attributes,
                                           HANDLE template_file)
 {
-   if (file_name) {
+   if (user_config.enabled && file_name) {
       if (Ci_String_view{file_name} == R"(data\_lvl_pc\core.lvl)"_svci)
          return edit_core_lvl().release();
       else if (Ci_String_view{file_name} == R"(data\_lvl_pc\shader_patch_api.script)"_svci)

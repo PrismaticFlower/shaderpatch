@@ -76,6 +76,8 @@ void User_config::parse_file(const std::string& path)
 
    const auto config = YAML::LoadFile(path);
 
+   enabled = config["Shader Patch Enabled"s].as<bool>();
+
    display.screen_percent =
       std::clamp(config["Display"s]["Screen Percent"s].as<std::uint32_t>(), 10u, 100u);
 

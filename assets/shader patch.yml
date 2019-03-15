@@ -1,3 +1,6 @@
+# This can be used to disable Shader Patch (for say, testing purposes) without uninstalling it.
+Shader Patch Enabled: yes
+
 Display:
    # Precentage of the sceen the game's window will take up. Value from 10 to 100.
    Screen Percent: 100
