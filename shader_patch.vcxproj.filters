@@ -42,9 +42,6 @@
     <ClCompile Include="src\fps_unlock.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\direct3d\device_old.cpp">
-      <Filter>src\direct3d</Filter>
-    </ClCompile>
     <ClCompile Include="src\direct3d\device.cpp">
       <Filter>src\direct3d</Filter>
     </ClCompile>
@@ -223,9 +220,6 @@
     </ClInclude>
     <ClInclude Include="src\effects\postprocess_params.hpp">
       <Filter>src\effects</Filter>
-    </ClInclude>
-    <ClInclude Include="src\direct3d\device_old.hpp">
-      <Filter>src\direct3d</Filter>
     </ClInclude>
     <ClInclude Include="src\direct3d\device.hpp">
       <Filter>src\direct3d</Filter>

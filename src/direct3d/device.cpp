@@ -42,23 +42,6 @@ Device::Device(IDirect3D9& direct3d9, IDXGIAdapter2& adapter, const HWND window,
                const UINT width, const UINT height) noexcept
    : _direct3d9{direct3d9}, _shader_patch{adapter, window, width, height}, _adapter{adapter}, _window{window}
 {
-   //   std::thread{[&] {
-   //      while (true) {
-   //         std::this_thread::yield();
-   //
-   //         WINDOWPOS pos;
-   //
-   //         pos.hwnd = _window;
-   //         pos.hwndInsertAfter = HWND_TOP;
-   //         pos.x = 0;
-   //         pos.y = 0;
-   //         pos.cx = 800;
-   //         pos.cy = 600;
-   //         pos.flags = SWP_NOZORDER;
-   //
-   //         SendMessageA(_window, WM_WINDOWPOSCHANGING, 0, bit_cast<LPARAM>(&pos));
-   //      }
-   //   }};
 }
 
 HRESULT Device::QueryInterface(const IID& iid, void** object) noexcept
