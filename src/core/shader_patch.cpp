@@ -1566,6 +1566,11 @@ void Shader_patch::resolve_refraction_texture() noexcept
                             _refraction_rt.height,
                             1};
 
+   Context_state_guard<state_flags::ia_all | state_flags::vs_all | state_flags::hs_shader |
+                       state_flags::ds_shader | state_flags::gs_shader |
+                       state_flags::rs_all | state_flags::ps_all | state_flags::om_all>
+      state_guard{*_device_context};
+
    _image_stretcher.stretch(*_device_context, src_box, src_rt, dest_box, _refraction_rt);
 }
 
