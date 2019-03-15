@@ -110,8 +110,8 @@ void User_config::parse_file(const std::string& path)
    developer.allow_event_queries =
       config["Developer"s]["Allow Event Queries"s].as<bool>();
 
-   developer.force_d3d11_debug_layer =
-      config["Developer"s]["Force D3D11 Debug Layer"s].as<bool>();
+   developer.use_d3d11_debug_layer =
+      config["Developer"s]["Use D3D11 Debug Layer"s].as<bool>();
 }
 
 }

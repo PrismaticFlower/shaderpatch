@@ -33,7 +33,7 @@ auto create_device(IDXGIAdapter2& adapater) noexcept -> Com_ptr<ID3D11Device1>
 
    UINT create_flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
    const auto d3d_debug =
-      user_config.developer.force_d3d11_debug_layer || IsDebuggerPresent();
+      user_config.developer.use_d3d11_debug_layer && IsDebuggerPresent();
 
    if (d3d_debug) create_flags |= D3D11_CREATE_DEVICE_DEBUG;
 

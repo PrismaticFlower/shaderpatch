@@ -73,4 +73,6 @@ Developer:
    # Controls whether or not Shader Patch will allow the game to use GPU event queries.
    Allow Event Queries: no
    
-   Force D3D11 Debug Layer: no
+   # Enable the D3D11 debug layer, typically requires the Windows SDK to be installed to work.
+   # Even if this flag is true the debug layer will only be enabled if a debugger is attached to the game.
+   Use D3D11 Debug Layer: no
