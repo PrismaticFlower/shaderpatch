@@ -1,10 +1,10 @@
 Display:
    # Precentage of the sceen the game's window will take up. Value from 10 to 100.
-   ScreenPercent: 100
+   Screen Percent: 100
 
    # Allow tearing when displaying frames. This allows lower latency and is a prerequisite for 
    # variable refresh rate technologies to work with Shader Patch.
-   AllowTearing: yes
+   Allow Tearing: yes
    
    # Whether to centre the window or not. If `ScreenPercent` is 100 there will be 
    # no difference between a centred and uncentred window.
@@ -12,7 +12,7 @@ Display:
 
 Graphics:
    # Anti-Aliasing method to use, can be "none", "" "MSAAx2", "MSAAx4" or "MSAAx8".
-   AAMethod: MSAAx4
+   Anti-Aliasing Method: MSAAx4
    
 # Settings for the Effects system, which allows modders to apply various effects
 # to their mods at their discretion and configuration. Below are options provided to 
@@ -27,7 +27,7 @@ Effects:
    # Can be "normal", "high" or "ultra".
    # There is likely a definite performance cost to having this set to "ultra" and a possible slight performance 
    # cost to "high". If in dire need of better performance try out "normal" and see if it helps.
-   ColorQuality: high
+   Color Quality: high
    
    # Enable or disable a mod using the Bloom effect. This effect is cheap and there is likely
    # little FPS to be gained from switching it off. Still if you're hitting really low FPS (let's say under 40) having 
@@ -41,12 +41,12 @@ Effects:
    
    # Enable or disable a mod using the Film Grain effect. This either falls in the same baskest as Bloom or can 
    # actually be worse when Colored Film Grain is being used. (A mod controls if it is or not.) 
-   FilmGrain: yes
+   Film Grain: yes
    
    # Enable or disable a mod using being allowed to use Colored Film Grain. For mods that 
    # use it colored film grain can definitely looks nicer. However it is more costly to performance to evaluate
    # it and on low-end GPUs you may wish to switch this off.
-   AllowColoredFilmGrain: yes 
+   Allow Colored Film Grain: yes 
    
 Developer:   
    # Toggle key for the developer screen. Giving access to useful things for mod makers and
@@ -59,15 +59,15 @@ Developer:
    # '\': 0xDC 
    # 'Backspace': 0x08 
    # 'F12': 0x7B
-   ScreenToggle: 0xDC
+   Screen Toggle: 0xDC
    
    # Controls whether or not Shader Patch will attempt to remove the game's FPS cap. This is in part mostly here
    # for people going on performance testing adventures.  As there are certain parts of the game whose simulation 
    # is tied to framerate, in particular UI animation, cloth and bizarrely the physics of hover vehicles.
    # If those downsides sounds acceptable to you then feel free to switch this on.
-   UnlockFPS: no
+   Unlock FPS: no
    
    # Controls whether or not Shader Patch will allow the game to use GPU event queries.
-   AllowEventQueries: no
+   Allow Event Queries: no
    
-   ForceD3D11DebugLayer: no
+   Force D3D11 Debug Layer: no

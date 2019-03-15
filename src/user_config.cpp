@@ -29,39 +29,39 @@ void User_config::parse_file(const std::string& path)
    const auto config = YAML::LoadFile(path);
 
    display.screen_percent =
-      std::clamp(config["Display"s]["ScreenPercent"s].as<std::uint32_t>(), 10u, 100u);
+      std::clamp(config["Display"s]["Screen Percent"s].as<std::uint32_t>(), 10u, 100u);
 
-   display.allow_tearing = config["Display"s]["AllowTearing"s].as<bool>();
+   display.allow_tearing = config["Display"s]["Allow Tearing"s].as<bool>();
 
    display.centred = config["Display"s]["Centred"s].as<bool>();
 
-   graphics.antialiasing_method =
-      aa_method_from_string(config["Graphics"s]["AAMethod"s].as<std::string>());
+   graphics.antialiasing_method = aa_method_from_string(
+      config["Graphics"s]["Anti-Aliasing Method"s].as<std::string>());
 
    graphics.antialiasing_sample_count = to_sample_count(graphics.antialiasing_method);
 
    effects.enabled = config["Effects"s]["Enabled"s].as<bool>();
 
    effects.color_quality = color_quality_from_string(
-      config["Effects"s]["ColorQuality"].as<std::string>());
+      config["Effects"s]["Color Quality"].as<std::string>());
 
    effects.bloom = config["Effects"s]["Bloom"s].as<bool>();
 
    effects.vignette = config["Effects"s]["Vignette"s].as<bool>();
 
-   effects.film_grain = config["Effects"s]["FilmGrain"s].as<bool>();
+   effects.film_grain = config["Effects"s]["Film Grain"s].as<bool>();
 
    effects.colored_film_grain =
-      config["Effects"s]["AllowColoredFilmGrain"s].as<bool>();
+      config["Effects"s]["Allow Colored Film Grain"s].as<bool>();
 
-   developer.toggle_key = config["Developer"s]["ScreenToggle"s].as<int>();
+   developer.toggle_key = config["Developer"s]["Screen Toggle"s].as<int>();
 
-   developer.unlock_fps = config["Developer"s]["UnlockFPS"s].as<bool>();
+   developer.unlock_fps = config["Developer"s]["Unlock FPS"s].as<bool>();
 
    developer.allow_event_queries =
-      config["Developer"s]["AllowEventQueries"s].as<bool>();
+      config["Developer"s]["Allow Event Queries"s].as<bool>();
 
    developer.force_d3d11_debug_layer =
-      config["Developer"s]["ForceD3D11DebugLayer"s].as<bool>();
+      config["Developer"s]["Force D3D11 Debug Layer"s].as<bool>();
 }
 }
