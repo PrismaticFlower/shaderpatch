@@ -10,7 +10,6 @@ Texture3D<float3> color_grading_lut : register(t3);
 Texture2D<float3> blue_noise_texture : register(t4);
 
 const static float3 luma_weights = {0.2126, 0.7152, 0.0722};
-const static float3 stock_luma_weights = {0.299, 0.587, 0.114};
 const static uint color_grading_lut_size = 32;
 const static float bloom_radius_scale = 1.0;
 
@@ -45,7 +44,6 @@ cbuffer PostprocessBloomLocalConstants : register(b1)
 
 const static bool bloom = BLOOM_ACTIVE;
 const static bool bloom_use_dirt = BLOOM_USE_DIRT;
-const static bool stock_hdr = STOCK_HDR_STATE;
 const static bool vignette = VIGNETTE_ACTIVE;
 const static bool film_grain = FILM_GRAIN_ACTIVE;
 const static bool film_grain_colored = FILM_GRAIN_COLORED;

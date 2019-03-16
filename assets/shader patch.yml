@@ -28,13 +28,6 @@ Effects:
    # at an acceptable framerate and in this case this can be used to switch them off.
    Enabled: yes
    
-   # Sets quality of the color depth used for render targets when Effects system is active and HDR Rendering isn't
-   # enabled. 
-   # Can be "normal", "high" or "ultra".
-   # There is likely a definite performance cost to having this set to "ultra" and a possible slight performance 
-   # cost to "high". If in dire need of better performance try out "normal" and see if it helps.
-   Color Quality: high
-   
    # Enable or disable a mod using the Bloom effect. This effect is cheap and there is likely
    # little FPS to be gained from switching it off. Still if you're hitting really low FPS (let's say under 40) having 
    # it off can increase the framerate by a few a second.

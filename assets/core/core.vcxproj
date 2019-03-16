@@ -152,7 +152,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="definitions\patch\late_backbuffer_resolve.json" />
-    <None Include="definitions\patch\msaa_hdr_resolve.json" />
+    <None Include="definitions\patch\postprocess_bloom.json" />
+    <None Include="definitions\patch\postprocess_msaa_resolve.json" />
     <None Include="shader_declarations.req">
       <FileType>Document</FileType>
     </None>
@@ -209,7 +210,6 @@
     <None Include="definitions\normal_terrain.json" />
     <None Include="definitions\ocean.json" />
     <None Include="definitions\particle.json" />
-    <None Include="definitions\patch\bloom.json" />
     <None Include="definitions\patch\damage_overlay.json.ignore" />
     <None Include="definitions\patch\fixedfunc_color_fill.json" />
     <None Include="definitions\patch\fixedfunc_damage_overlay.json" />
@@ -332,11 +332,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\bloom.fx">
-      <FileType>Document</FileType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="src\postprocess_common.hlsl">
       <FileType>Document</FileType>
     </None>
@@ -414,7 +409,12 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\msaa_hdr_resolve.fx">
+    <None Include="src\postprocess_msaa_resolve.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\postprocess_bloom.fx">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

@@ -1,4 +1,6 @@
 
+#include "color_utilities.hlsl"
+
 cbuffer ResolveConstants : register(b0)
 {
    int2 input_range;
@@ -53,7 +55,7 @@ float filter_bspline(float x_unscaled)
    return 0.0;
 }
 
-float4 main_ps(float2 texcoords : TEXCOORD, float4 positionSS : SV_Position) : SV_Target0
+float4 main_hdr_ps(float2 texcoords : TEXCOORD, float4 positionSS : SV_Position) : SV_Target0
 {
    const int2 pos = (int2)positionSS.xy;
    float3 color = 0.0;
@@ -79,6 +81,39 @@ float4 main_ps(float2 texcoords : TEXCOORD, float4 positionSS : SV_Position) : S
             weight *= luminance / (1.0 + luminance);
 
             color += sample * weight;
+            total_weight += weight;
+         }
+      }
+   }
+
+   color /= max(total_weight, 1e-5);
+
+   return float4(color, 1.0);
+}
+
+float4 main_stock_hdr_ps(float2 texcoords : TEXCOORD, float4 positionSS : SV_Position) : SV_Target0
+{
+   const int2 pos = (int2)positionSS.xy;
+   float3 color = 0.0;
+   float total_weight = 0.0;
+
+   for (int y = -resolve_radius; y <= resolve_radius; ++y) {
+      for (int x = -resolve_radius; x <= resolve_radius; ++x) {
+         const float2 pixel_offset = float2(x, y);
+         const uint2 pixel_pos = clamp(pos + int2(x, y), 0, input_range);
+
+         [unroll] for (uint samp_index = 0; samp_index < sample_count; ++samp_index) {
+            const float2 sample_offset = sample_offsets[samp_index];
+            const float2 sample_distance = abs(sample_offset + pixel_offset) / filter_radius;
+
+            if (!all(sample_distance <= 1.0)) continue;
+
+            const float3 sample_srgb = input.sample[samp_index][pixel_pos];
+            const float3 sample_linear = srgb_to_linear(sample_srgb + sample_srgb);
+
+            const float weight = filter_bspline(sample_distance.x) * filter_bspline(sample_distance.y);
+
+            color += sample_linear * weight;
             total_weight += weight;
          }
       }

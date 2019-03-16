@@ -29,7 +29,6 @@ ucft
       "zprepass"
 
       // Patch Shaders
-      "bloom"
       "damage_overlay"
       "fixedfunc_color_fill"
       "fixedfunc_damage_overlay"
@@ -37,10 +36,11 @@ ucft
       "fixedfunc_scene_blur"
       "fixedfunc_zoom_blur"
       "late_backbuffer_resolve"
-      "msaa_hdr_resolve"
       "normal_ext"
       "pbr"
       "postprocess"
+      "postprocess_bloom"
+      "postprocess_msaa_resolve"
       "scene_blur_apply"
       "shadows_blur"
       "skyfog_ext"

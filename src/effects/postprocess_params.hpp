@@ -18,9 +18,9 @@ enum class Hdr_state { hdr, stock };
 struct Bloom_params {
    bool enabled = true;
 
-   float threshold = 0.5f;
+   float threshold = 1.0f;
 
-   float intensity = 1.0f;
+   float intensity = 0.75f;
    glm::vec3 tint{1.0f, 1.0f, 1.0f};
 
    float inner_scale = 1.0f;

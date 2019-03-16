@@ -15,7 +15,7 @@ namespace sp::effects {
 class Color_grading_lut_baker {
 public:
    constexpr static auto lut_dimension = 32u;
-   constexpr static auto lut_format = DXGI_FORMAT_R8G8B8A8_UNORM;
+   constexpr static auto lut_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 
    Color_grading_lut_baker(Com_ptr<ID3D11Device1> device) noexcept
       : _device{std::move(device)}
@@ -23,8 +23,6 @@ public:
    }
 
    void update_params(const Color_grading_params& params) noexcept;
-
-   void hdr_state(const Hdr_state state) noexcept;
 
    auto srv(ID3D11DeviceContext1& dc) noexcept -> ID3D11ShaderResourceView*;
 

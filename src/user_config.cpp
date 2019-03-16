@@ -46,17 +46,6 @@ void User_config::show_imgui() noexcept
    if (ImGui::CollapsingHeader("Effects", ImGuiTreeNodeFlags_DefaultOpen)) {
       ImGui::Checkbox("Enabled", &effects.enabled);
 
-      effects.color_quality = color_quality_from_string(ImGui::StringPicker(
-         "Color Quality", std::string{to_string(effects.color_quality)},
-         std::initializer_list<std::string>{to_string(Color_quality::normal),
-                                            to_string(Color_quality::high),
-                                            to_string(Color_quality::ultra)}));
-
-      if (ImGui::IsItemHovered()) {
-         ImGui::SetTooltip(
-            "Does not have any effect when HDR Rendering is enabled.");
-      }
-
       ImGui::Checkbox("Bloom", &effects.bloom);
       ImGui::Checkbox("Vignette", &effects.vignette);
       ImGui::Checkbox("Film Grain", &effects.film_grain);
@@ -92,9 +81,6 @@ void User_config::parse_file(const std::string& path)
       config["Graphics"s]["Anisotropic Filtering"s].as<std::string>());
 
    effects.enabled = config["Effects"s]["Enabled"s].as<bool>();
-
-   effects.color_quality = color_quality_from_string(
-      config["Effects"s]["Color Quality"].as<std::string>());
 
    effects.bloom = config["Effects"s]["Bloom"s].as<bool>();
 

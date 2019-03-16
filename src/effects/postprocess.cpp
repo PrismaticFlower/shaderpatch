@@ -6,21 +6,13 @@
 namespace sp::effects {
 
 namespace {
-enum class Postprocess_bloom_flags { stock_hdr_state = 0b1 };
-
 enum class Postprocess_flags {
    bloom_active = 0b1,
    bloom_use_dirt = 0b10,
-   stock_hdr_state = 0b100,
-   vignette_active = 0b1000,
-   film_grain_active = 0b10000,
-   film_grain_colored = 0b100000
+   vignette_active = 0b100,
+   film_grain_active = 0b1000,
+   film_grain_colored = 0b10000
 };
-
-constexpr bool marked_as_enum_flag(Postprocess_bloom_flags) noexcept
-{
-   return true;
-}
 
 constexpr bool marked_as_enum_flag(Postprocess_flags) noexcept
 {
@@ -34,18 +26,32 @@ using namespace std::literals;
 Postprocess::Postprocess(Com_ptr<ID3D11Device1> device,
                          const core::Shader_group_collection& shader_groups)
    : _device{device},
-     _postprocess_ps_ep{shader_groups.at("postprocess"s).pixel.at("main_ps"s)},
-     _bloom_threshold_ps_ep{shader_groups.at("bloom"s).pixel.at("threshold_ps"s)},
      _fullscreen_vs{
         std::get<0>(shader_groups.at("postprocess"s).vertex.at("main_vs"s).copy())},
+     _postprocess_ps_ep{shader_groups.at("postprocess"s).pixel.at("main_ps"s)},
+     _stock_hdr_to_linear_ps{
+        shader_groups.at("postprocess"s).pixel.at("stock_hdr_to_linear_ps"s).copy()},
      _msaa_hdr_resolve_x2_ps{
-        shader_groups.at("msaa_hdr_resolve"s).pixel.at("main_x2_ps"s).copy()},
+        shader_groups.at("postprocess_msaa_resolve"s).pixel.at("main_x2_ps"s).copy()},
      _msaa_hdr_resolve_x4_ps{
-        shader_groups.at("msaa_hdr_resolve"s).pixel.at("main_x4_ps"s).copy()},
+        shader_groups.at("postprocess_msaa_resolve"s).pixel.at("main_x4_ps"s).copy()},
      _msaa_hdr_resolve_x8_ps{
-        shader_groups.at("msaa_hdr_resolve"s).pixel.at("main_x8_ps"s).copy()},
-     _bloom_downsample_ps{shader_groups.at("bloom"s).pixel.at("downsample_ps"s).copy()},
-     _bloom_upsample_ps{shader_groups.at("bloom"s).pixel.at("upsample_ps"s).copy()}
+        shader_groups.at("postprocess_msaa_resolve"s).pixel.at("main_x8_ps"s).copy()},
+     _msaa_stock_hdr_resolve_x2_ps{shader_groups.at("postprocess_msaa_resolve"s)
+                                      .pixel.at("main_stock_hdr_x2_ps"s)
+                                      .copy()},
+     _msaa_stock_hdr_resolve_x4_ps{shader_groups.at("postprocess_msaa_resolve"s)
+                                      .pixel.at("main_stock_hdr_x4_ps"s)
+                                      .copy()},
+     _msaa_stock_hdr_resolve_x8_ps{shader_groups.at("postprocess_msaa_resolve"s)
+                                      .pixel.at("main_stock_hdr_x8_ps"s)
+                                      .copy()},
+     _bloom_downsample_ps{
+        shader_groups.at("postprocess_bloom"s).pixel.at("downsample_ps"s).copy()},
+     _bloom_upsample_ps{
+        shader_groups.at("postprocess_bloom"s).pixel.at("upsample_ps"s).copy()},
+     _bloom_threshold_ps{
+        shader_groups.at("postprocess_bloom"s).pixel.at("threshold_ps"s).copy()}
 {
    bloom_params(Bloom_params{});
    vignette_params(Vignette_params{});
@@ -123,8 +129,6 @@ void Postprocess::hdr_state(Hdr_state state) noexcept
 {
    _hdr_state = state;
 
-   _color_grading_lut_baker.hdr_state(state);
-
    _config_changed = true;
 }
 
@@ -141,14 +145,18 @@ void Postprocess::apply(ID3D11DeviceContext1& dc, Rendertarget_allocator& rt_all
    update_shaders();
    update_and_bind_cb(dc, input.width, input.height);
 
+   const auto process_format = _hdr_state == Hdr_state::hdr
+                                  ? DXGI_FORMAT_R16G16B16A16_FLOAT
+                                  : DXGI_FORMAT_R11G11B10_FLOAT;
+
    if (input.sample_count != 1) {
       auto resolve_target =
-         rt_allocator.allocate(input.format, input.width, input.height);
+         rt_allocator.allocate(process_format, input.width, input.height);
+
+      const Postprocess_input resolved_input{resolve_target.srv(), process_format,
+                                             input.width, input.height, 1};
 
       msaa_resolve_input(dc, input, resolve_target, profiler);
-
-      const Postprocess_input resolved_input{resolve_target.srv(), input.format,
-                                             input.width, input.height, 1};
 
       if (_bloom_enabled)
          do_bloom_and_color_grading(dc, rt_allocator, textures, resolved_input,
@@ -157,10 +165,25 @@ void Postprocess::apply(ID3D11DeviceContext1& dc, Rendertarget_allocator& rt_all
          do_color_grading(dc, textures, resolved_input, output, profiler);
    }
    else {
+      auto linear_target =
+         rt_allocator.allocate(process_format, input.width, input.height);
+
+      const Postprocess_input linear_input = [&] {
+         if (_hdr_state == Hdr_state::stock) {
+            linearize_input(dc, input, linear_target, profiler);
+
+            return Postprocess_input{linear_target.srv(), process_format,
+                                     input.width, input.height, 1};
+         }
+
+         return input;
+      }();
+
       if (_bloom_enabled)
-         do_bloom_and_color_grading(dc, rt_allocator, textures, input, output, profiler);
+         do_bloom_and_color_grading(dc, rt_allocator, textures, linear_input,
+                                    output, profiler);
       else
-         do_color_grading(dc, textures, input, output, profiler);
+         do_color_grading(dc, textures, linear_input, output, profiler);
    }
 }
 
@@ -172,18 +195,6 @@ void Postprocess::msaa_resolve_input(ID3D11DeviceContext1& dc,
    Expects(input.sample_count > 1);
 
    Profile profile{profiler, dc, "Postprocessing - AA Resolve"};
-
-   if (_hdr_state == Hdr_state::stock) {
-      Com_ptr<ID3D11Resource> src;
-      Com_ptr<ID3D11Resource> dest;
-
-      input.srv.GetResource(src.clear_and_assign());
-      output.srv().GetResource(dest.clear_and_assign());
-
-      dc.ResolveSubresource(dest.get(), 0, src.get(), 0, input.format);
-
-      return;
-   }
 
    // Update constants buffer.
    const Resolve_constants constants{{input.width - 1, input.height - 1},
@@ -200,6 +211,27 @@ void Postprocess::msaa_resolve_input(ID3D11DeviceContext1& dc,
 
    dc.PSSetShaderResources(0, 1, &srv);
    dc.PSSetShader(shader, nullptr, 0);
+   dc.OMSetRenderTargets(1, &rtv, nullptr);
+
+   dc.Draw(3, 0);
+}
+
+void Postprocess::linearize_input(ID3D11DeviceContext1& dc,
+                                  const Postprocess_input& input,
+                                  Rendertarget_allocator::Handle& output,
+                                  Profiler& profiler) noexcept
+{
+   Expects(input.sample_count == 1);
+
+   Profile profile{profiler, dc, "Postprocessing - Linearize Input"};
+
+   auto* const srv = &input.srv;
+   auto* const rtv = &output.rtv();
+   dc.OMSetBlendState(nullptr, nullptr, 0xffffffff);
+   set_viewport(dc, input.width, input.height);
+
+   dc.PSSetShaderResources(0, 1, &srv);
+   dc.PSSetShader(_stock_hdr_to_linear_ps.get(), nullptr, 0);
    dc.OMSetRenderTargets(1, &rtv, nullptr);
 
    dc.Draw(3, 0);
@@ -228,7 +260,7 @@ void Postprocess::do_bloom_and_color_grading(ID3D11DeviceContext1& dc,
 
       bind_bloom_cb(dc, 0);
       set_viewport(dc, input.width / 2, input.height / 2);
-      dc.OMSetBlendState(_normal_blend_state.get(), nullptr, 0xffffffff);
+      dc.OMSetBlendState(nullptr, nullptr, 0xffffffff);
       do_pass(dc, input.srv, rt_a.rtv());
    }
 
@@ -293,7 +325,7 @@ void Postprocess::do_bloom_and_color_grading(ID3D11DeviceContext1& dc,
 
    dc.PSSetShader(_postprocess_ps.get(), nullptr, 0);
    bind_bloom_cb(dc, 1);
-   dc.OMSetBlendState(_normal_blend_state.get(), nullptr, 0xffffffff);
+   dc.OMSetBlendState(nullptr, nullptr, 0xffffffff);
    set_viewport(dc, output.width, output.height);
 
    do_pass(dc, srvs, output.rtv);
@@ -310,7 +342,7 @@ void Postprocess::do_color_grading(ID3D11DeviceContext1& dc,
    Profile profile{profiler, dc, "Postprocessing - Final"};
 
    std::array<ID3D11ShaderResourceView*, 5> srvs{};
-   dc.OMSetBlendState(_normal_blend_state.get(), nullptr, 0xffffffff);
+   dc.OMSetBlendState(nullptr, nullptr, 0xffffffff);
    set_viewport(dc, output.width, output.height);
 
    srvs[scene_texture_slot] = &input.srv;
@@ -351,9 +383,16 @@ auto Postprocess::select_msaa_resolve_shader(const Postprocess_input& input) con
 {
    Expects(input.sample_count > 1);
 
-   if (input.sample_count == 2) return _msaa_hdr_resolve_x2_ps.get();
-   if (input.sample_count == 4) return _msaa_hdr_resolve_x4_ps.get();
-   if (input.sample_count == 8) return _msaa_hdr_resolve_x8_ps.get();
+   if (_hdr_state == Hdr_state::hdr) {
+      if (input.sample_count == 2) return _msaa_hdr_resolve_x2_ps.get();
+      if (input.sample_count == 4) return _msaa_hdr_resolve_x4_ps.get();
+      if (input.sample_count == 8) return _msaa_hdr_resolve_x8_ps.get();
+   }
+   else {
+      if (input.sample_count == 2) return _msaa_stock_hdr_resolve_x2_ps.get();
+      if (input.sample_count == 4) return _msaa_stock_hdr_resolve_x4_ps.get();
+      if (input.sample_count == 8) return _msaa_stock_hdr_resolve_x8_ps.get();
+   }
 
    std::terminate();
 }
@@ -441,16 +480,7 @@ void Postprocess::update_shaders() noexcept
          postprocess_flags |= Postprocess_flags::film_grain_colored;
    }
 
-   Postprocess_bloom_flags bloom_flags{};
-
-   if (_hdr_state == Hdr_state::stock) {
-      postprocess_flags |= Postprocess_flags::stock_hdr_state;
-      bloom_flags |= Postprocess_bloom_flags::stock_hdr_state;
-   }
-
    _postprocess_ps =
       _postprocess_ps_ep.copy(static_cast<std::uint16_t>(postprocess_flags));
-   _bloom_threshold_ps =
-      _bloom_threshold_ps_ep.copy(static_cast<std::uint16_t>(bloom_flags));
 }
 }

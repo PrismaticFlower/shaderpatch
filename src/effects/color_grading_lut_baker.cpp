@@ -60,13 +60,6 @@ void Color_grading_lut_baker::update_params(const Color_grading_params& params) 
    }
 }
 
-void Color_grading_lut_baker::hdr_state(const Hdr_state state) noexcept
-{
-   if (std::exchange(_hdr_state, state) == state) return;
-
-   _rebake = true;
-}
-
 auto Color_grading_lut_baker::srv(ID3D11DeviceContext1& dc) noexcept
    -> ID3D11ShaderResourceView*
 {
@@ -99,7 +92,6 @@ void Color_grading_lut_baker::bake_color_grading_lut(ID3D11DeviceContext1& dc) n
 
 glm::vec3 Color_grading_lut_baker::apply_color_grading(glm::vec3 color) noexcept
 {
-
    color *= _eval_params.color_filter;
    color = apply_basic_saturation(color, _eval_params.saturation);
    color = apply_hsv_adjust(color, _eval_params.hsv_adjust);
@@ -112,7 +104,7 @@ glm::vec3 Color_grading_lut_baker::apply_color_grading(glm::vec3 color) noexcept
                                  _eval_params.gain_adjust);
    color = filmic::eval(color, _eval_params.filmic_curve);
 
-   if (_hdr_state != Hdr_state::stock) color = linear_to_srgb(color);
+   color = linear_to_srgb(color);
 
    return color;
 }

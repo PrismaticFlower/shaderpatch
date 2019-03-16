@@ -2,6 +2,7 @@
 #include "film_grain.hlsl"
 #include "fullscreen_tri_vs.hlsl"
 #include "pixel_utilities.hlsl"
+#include "color_utilities.hlsl"
 
 #pragma warning(disable : 3571)
 
@@ -59,17 +60,25 @@ float4 main_ps(float2 texcoords : TEXCOORD, float4 positionSS : SV_Position) : S
 {
    float3 color = scene_texture.SampleLevel(linear_clamp_sampler, texcoords, 0).rgb;
 
-   if (stock_hdr) color = color + color;
-
    if (bloom) apply_bloom(texcoords, color);
 
    if (vignette) apply_vignette(texcoords, color);
 
    apply_color_grading(color);
 
-   if (film_grain) filmgrain::apply(texcoords, color);
+   float3 srgb_color = linear_to_srgb(color);
 
-   apply_dithering(color, (uint2)positionSS.xy);
+   if (film_grain) filmgrain::apply(texcoords, srgb_color);
 
-   return float4(color, 1.0);
+   apply_dithering(srgb_color, (uint2)positionSS.xy);
+
+   return float4(srgb_color, 1.0);
+}
+
+float3 stock_hdr_to_linear_ps(float2 texcoords : TEXCOORD, float4 positionSS : SV_Position) : SV_Target0
+{
+   const float3 color_srgb = scene_texture.SampleLevel(linear_clamp_sampler, texcoords, 0).rgb;
+   const float3 color_linear = srgb_to_linear(color_srgb + color_srgb);
+
+   return color_linear;
 }

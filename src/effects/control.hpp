@@ -60,15 +60,6 @@ public:
    {
       if (_config.hdr_rendering) return DXGI_FORMAT_R16G16B16A16_FLOAT;
 
-      switch (user_config.effects.color_quality) {
-      case Color_quality::normal:
-         return DXGI_FORMAT_R8G8B8A8_UNORM;
-      case Color_quality::high:
-         return DXGI_FORMAT_R10G10B10A2_UNORM;
-      case Color_quality::ultra:
-         return DXGI_FORMAT_R16G16B16A16_UNORM;
-      }
-
       return DXGI_FORMAT_R8G8B8A8_UNORM;
    }
 

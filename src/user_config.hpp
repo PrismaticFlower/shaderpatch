@@ -23,16 +23,12 @@ enum class Antialiasing_method { none, msaax2, msaax4, msaax8 };
 
 enum class Anisotropic_filtering { off, x2, x4, x8, x16 };
 
-enum class Color_quality { normal, high, ultra };
-
 struct Effects_user_config {
    bool enabled = true;
    bool bloom = true;
    bool vignette = true;
    bool film_grain = true;
    bool colored_film_grain = true;
-
-   Color_quality color_quality = Color_quality::high;
 };
 
 struct User_config {
@@ -184,38 +180,6 @@ inline auto anisotropic_filtering_from_string(const std::string_view string) noe
    }
    else {
       return Anisotropic_filtering::off;
-   }
-}
-
-inline auto to_string(const Color_quality detail) noexcept -> std::string
-{
-   using namespace std::literals;
-
-   switch (detail) {
-   case Color_quality::normal:
-      return "normal"s;
-   case Color_quality::high:
-      return "high"s;
-   case Color_quality::ultra:
-      return "ultra"s;
-   }
-
-   std::terminate();
-}
-
-inline auto color_quality_from_string(const std::string_view string) noexcept -> Color_quality
-{
-   if (string == to_string(Color_quality::normal)) {
-      return Color_quality::normal;
-   }
-   else if (string == to_string(Color_quality::high)) {
-      return Color_quality::high;
-   }
-   else if (string == to_string(Color_quality::ultra)) {
-      return Color_quality::ultra;
-   }
-   else {
-      return Color_quality::normal;
    }
 }
 

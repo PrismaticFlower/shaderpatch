@@ -154,9 +154,6 @@
     <None Include="src\postprocess.fx">
       <Filter>src</Filter>
     </None>
-    <None Include="src\bloom.fx">
-      <Filter>src</Filter>
-    </None>
     <None Include="src\postprocess_common.hlsl">
       <Filter>src</Filter>
     </None>
@@ -308,9 +305,6 @@
     <None Include="src\fixedfunc_zoom_blur.fx">
       <Filter>src</Filter>
     </None>
-    <None Include="definitions\patch\bloom.json">
-      <Filter>definitions\patch</Filter>
-    </None>
     <None Include="definitions\patch\postprocess.json">
       <Filter>definitions\patch</Filter>
     </None>
@@ -328,8 +322,17 @@
     <None Include="src\late_backbuffer_resolve.fx">
       <Filter>src</Filter>
     </None>
-    <None Include="definitions\patch\msaa_hdr_resolve.json">
+    <None Include="src\postprocess_msaa_resolve.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="definitions\patch\postprocess_bloom.json">
       <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="definitions\patch\postprocess_msaa_resolve.json">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="src\postprocess_bloom.fx">
+      <Filter>src</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -348,10 +351,5 @@
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="build_lvls.ps1" />
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="src\msaa_resolve.hlsl">
-      <Filter>src</Filter>
-    </FxCompile>
   </ItemGroup>
 </Project>

@@ -84,6 +84,10 @@ private:
                            Rendertarget_allocator::Handle& output,
                            Profiler& profiler) noexcept;
 
+   void linearize_input(ID3D11DeviceContext1& dc, const Postprocess_input& input,
+                        Rendertarget_allocator::Handle& output,
+                        Profiler& profiler) noexcept;
+
    void do_bloom_and_color_grading(ID3D11DeviceContext1& dc,
                                    Rendertarget_allocator& allocator,
                                    const core::Texture_database& textures,
@@ -164,8 +168,6 @@ private:
    std::array<Bloom_constants, 6> _bloom_constants;
 
    const Com_ptr<ID3D11Device1> _device;
-   const Com_ptr<ID3D11BlendState> _normal_blend_state =
-      create_normal_blend_state(*_device);
    const Com_ptr<ID3D11BlendState> _additive_blend_state =
       create_additive_blend_state(*_device);
    const Com_ptr<ID3D11Buffer> _msaa_resolve_constant_buffer =
@@ -181,16 +183,19 @@ private:
       core::create_dynamic_constant_buffer(*_device, sizeof(Bloom_constants))};
 
    const core::Pixel_shader_entrypoint _postprocess_ps_ep;
-   const core::Pixel_shader_entrypoint _bloom_threshold_ps_ep;
 
    const Com_ptr<ID3D11VertexShader> _fullscreen_vs;
+   const Com_ptr<ID3D11PixelShader> _stock_hdr_to_linear_ps;
    const Com_ptr<ID3D11PixelShader> _msaa_hdr_resolve_x2_ps;
    const Com_ptr<ID3D11PixelShader> _msaa_hdr_resolve_x4_ps;
    const Com_ptr<ID3D11PixelShader> _msaa_hdr_resolve_x8_ps;
+   const Com_ptr<ID3D11PixelShader> _msaa_stock_hdr_resolve_x2_ps;
+   const Com_ptr<ID3D11PixelShader> _msaa_stock_hdr_resolve_x4_ps;
+   const Com_ptr<ID3D11PixelShader> _msaa_stock_hdr_resolve_x8_ps;
    const Com_ptr<ID3D11PixelShader> _bloom_downsample_ps;
    const Com_ptr<ID3D11PixelShader> _bloom_upsample_ps;
+   const Com_ptr<ID3D11PixelShader> _bloom_threshold_ps;
    Com_ptr<ID3D11PixelShader> _postprocess_ps;
-   Com_ptr<ID3D11PixelShader> _bloom_threshold_ps;
 
    Bloom_params _bloom_params{};
    Vignette_params _vignette_params{};

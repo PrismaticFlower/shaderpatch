@@ -73,7 +73,7 @@ inline glm::vec3 hsv_to_rgb(glm::vec3 hsv)
 
 inline float linear_to_srgb(const float v) noexcept
 {
-   return v <= 0.0031308f ? (12.92f * v) : (1.055f * pow(v, 1.0f / 2.4f) + -0.055f);
+   return v <= 0.0031308f ? 12.92f * v : 1.055f * pow(v, 1.0f / 2.4f) - 0.055f;
 }
 
 inline glm::vec3 linear_to_srgb(const glm::vec3 color) noexcept

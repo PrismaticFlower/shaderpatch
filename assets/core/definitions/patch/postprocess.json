@@ -13,7 +13,6 @@
       "defines": [
         [ "BLOOM_ACTIVE", "false" ],
         [ "BLOOM_USE_DIRT", "false" ],
-        [ "STOCK_HDR_STATE", "false" ],
         [ "VIGNETTE_ACTIVE", "false" ],
         [ "FILM_GRAIN_ACTIVE", "false" ],
         [ "FILM_GRAIN_COLORED", "false" ]
@@ -30,7 +29,6 @@
       "static_flags": [
         "BLOOM_ACTIVE",
         "BLOOM_USE_DIRT",
-        "STOCK_HDR_STATE",
         "VIGNETTE_ACTIVE",
         "FILM_GRAIN_ACTIVE",
         "FILM_GRAIN_COLORED"
@@ -45,6 +43,22 @@
           "FILM_GRAIN_ACTIVE": "set"
         }
       }
+    },
+
+    "stock_hdr_to_linear_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      },
+
+      "defines": [
+        [ "BLOOM_ACTIVE", "false" ],
+        [ "BLOOM_USE_DIRT", "false" ],
+        [ "VIGNETTE_ACTIVE", "false" ],
+        [ "FILM_GRAIN_ACTIVE", "false" ],
+        [ "FILM_GRAIN_COLORED", "false" ]
+      ]
     }
   },
 
