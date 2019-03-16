@@ -48,6 +48,8 @@ Upload_texture::Upload_texture(Upload_scratch_buffer& scratch_buffer,
                                const UINT mip_levels, const UINT array_size) noexcept
    : _scratch_buffer{scratch_buffer}, _mip_levels{mip_levels}
 {
+   Expects(mip_levels > 0 && array_size >= 1);
+
    const auto size = calc_size(format, width, height, depth, mip_levels, array_size);
    auto* const data = scratch_buffer.lock(size);
 

@@ -134,6 +134,7 @@ private:
    std::unique_ptr<Upload_texture> _upload_texture;
    core::Shader_patch& _shader_patch;
 
+   bool _first_lock = true;
    bool _dynamic_texture = false;
 
    const UINT _width;

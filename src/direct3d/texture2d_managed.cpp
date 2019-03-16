@@ -32,10 +32,6 @@ Texture2d_managed::Texture2d_managed(core::Shader_patch& shader_patch,
      }()}
 {
    Expects(mip_levels != 0);
-
-   _upload_texture =
-      std::make_unique<Upload_texture>(upload_scratch_buffer, format, width,
-                                       height, 1, mip_levels, 1);
 }
 
 Com_ptr<Texture2d_managed> Texture2d_managed::create(
@@ -153,8 +149,12 @@ HRESULT Texture2d_managed::LockRect(UINT level, D3DLOCKED_RECT* locked_rect,
       log_and_terminate("Unexpected texture lock call!");
    }
 
-   // If this is the second time this texture is being written into convert it into a dynamic texture.
-   if (!_upload_texture) {
+   if (std::exchange(_first_lock, false)) {
+      _upload_texture =
+         std::make_unique<Upload_texture>(upload_scratch_buffer, _format,
+                                          _width, _height, 1, _mip_levels, 1);
+   }
+   else if (!_upload_texture && !std::exchange(_dynamic_texture, true)) {
       this->resource = _shader_patch.create_game_dynamic_texture2d(
          std::get<core::Game_texture>(this->resource));
       _dynamic_texture = true;
