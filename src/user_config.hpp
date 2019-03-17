@@ -56,7 +56,6 @@ struct User_config {
    struct {
       std::uintptr_t toggle_key{0};
 
-      bool unlock_fps = false;
       bool allow_event_queries = false;
       bool use_d3d11_debug_layer = false;
    } developer;

@@ -178,7 +178,6 @@
     <ClCompile Include="src\effects\postprocess.cpp" />
     <ClCompile Include="src\effects\profiler.cpp" />
     <ClCompile Include="src\file_hooks.cpp" />
-    <ClCompile Include="src\fps_unlock.cpp" />
     <ClCompile Include="src\imgui\imgui_impl_dx11.cpp" />
     <ClCompile Include="src\imgui\imgui_impl_dx11_shaders.hpp" />
     <ClCompile Include="src\imgui\imgui_impl_win32.cpp" />
@@ -250,7 +249,6 @@
     <ClInclude Include="src\effects\rendertarget_allocator.hpp" />
     <ClInclude Include="src\effects\tonemappers.hpp" />
     <ClInclude Include="src\file_hooks.hpp" />
-    <ClInclude Include="src\fps_unlock.hpp" />
     <ClInclude Include="src\hook_vtable.hpp" />
     <ClInclude Include="src\imgui\imgui_ext.hpp" />
     <ClInclude Include="src\imgui\imgui_impl_dx11.h" />

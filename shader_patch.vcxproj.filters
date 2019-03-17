@@ -39,9 +39,6 @@
     <ClCompile Include="src\direct3d\creator.cpp">
       <Filter>src\direct3d</Filter>
     </ClCompile>
-    <ClCompile Include="src\fps_unlock.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\direct3d\device.cpp">
       <Filter>src\direct3d</Filter>
     </ClCompile>
@@ -205,9 +202,6 @@
     </ClInclude>
     <ClInclude Include="src\direct3d\creator.hpp">
       <Filter>src\direct3d</Filter>
-    </ClInclude>
-    <ClInclude Include="src\fps_unlock.hpp">
-      <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\unlock_memory.hpp">
       <Filter>src</Filter>

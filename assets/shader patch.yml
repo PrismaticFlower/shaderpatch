@@ -68,12 +68,6 @@ Developer:
    # 'F12': 0x7B
    Screen Toggle: 0xDC
    
-   # Controls whether or not Shader Patch will attempt to remove the game's FPS cap. This is in part mostly here
-   # for people going on performance testing adventures.  As there are certain parts of the game whose simulation 
-   # is tied to framerate, in particular UI animation, cloth and bizarrely the physics of hover vehicles.
-   # If those downsides sounds acceptable to you then feel free to switch this on.
-   Unlock FPS: no
-   
    # Controls whether or not Shader Patch will allow the game to use GPU event queries.
    Allow Event Queries: no
    

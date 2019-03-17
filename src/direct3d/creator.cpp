@@ -1,6 +1,5 @@
 
 #include "creator.hpp"
-#include "../fps_unlock.hpp"
 #include "../logger.hpp"
 #include "../user_config.hpp"
 #include "../window_helpers.hpp"
@@ -120,8 +119,6 @@ auto enum_display_modes(IDXGIOutput1& output, DXGI_FORMAT format) noexcept
 
 Com_ptr<Creator> Creator::create() noexcept
 {
-   if (user_config.developer.unlock_fps) fps_unlock();
-
    static auto creator = Com_ptr{new Creator{}};
 
    return creator;

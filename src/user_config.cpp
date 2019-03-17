@@ -103,8 +103,6 @@ void User_config::parse_file(const std::string& path)
 
    developer.toggle_key = config["Developer"s]["Screen Toggle"s].as<int>();
 
-   developer.unlock_fps = config["Developer"s]["Unlock FPS"s].as<bool>();
-
    developer.allow_event_queries =
       config["Developer"s]["Allow Event Queries"s].as<bool>();
 
