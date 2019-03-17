@@ -352,7 +352,8 @@ struct convert<sp::effects::Color_grading_params> {
       params.brightness = node["Brightness"s].as<float>(params.brightness);
       params.contrast = node["Contrast"s].as<float>(params.contrast);
 
-      params.tonemapper = node["Tonemapper"s].as<sp::effects::Tonemapper>();
+      params.tonemapper =
+         node["Tonemapper"s].as<sp::effects::Tonemapper>(params.tonemapper);
 
       params.filmic_toe_strength =
          node["FilmicToeStrength"s].as<float>(params.filmic_toe_strength);
