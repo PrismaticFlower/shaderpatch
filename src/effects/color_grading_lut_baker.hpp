@@ -35,6 +35,8 @@ private:
 
    glm::vec3 apply_color_grading(glm::vec3 color) noexcept;
 
+   glm::vec3 apply_tonemapping(glm::vec3 color) noexcept;
+
    void uploade_lut(ID3D11DeviceContext1& dc, const Lut_data& lut_data) noexcept;
 
    struct Eval_params {
@@ -52,7 +54,9 @@ private:
       glm::vec3 inv_gamma_adjust;
       glm::vec3 gain_adjust;
 
+      Tonemapper tonemapper;
       filmic::Curve filmic_curve;
+      float heji_whitepoint;
    };
 
    static_assert(std::is_trivially_destructible_v<Eval_params>);

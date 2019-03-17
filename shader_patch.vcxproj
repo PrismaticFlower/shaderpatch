@@ -248,6 +248,7 @@
     <ClInclude Include="src\effects\postprocess.hpp" />
     <ClInclude Include="src\effects\profiler.hpp" />
     <ClInclude Include="src\effects\rendertarget_allocator.hpp" />
+    <ClInclude Include="src\effects\tonemappers.hpp" />
     <ClInclude Include="src\file_hooks.hpp" />
     <ClInclude Include="src\fps_unlock.hpp" />
     <ClInclude Include="src\hook_vtable.hpp" />

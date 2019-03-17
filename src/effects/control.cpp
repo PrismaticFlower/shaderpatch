@@ -4,9 +4,11 @@
 #include "../logger.hpp"
 #include "file_dialogs.hpp"
 #include "imgui_tabs.h"
+#include "tonemappers.hpp"
 #include "volume_resource.hpp"
 
 #include <fstream>
+#include <functional>
 #include <sstream>
 #include <string_view>
 
@@ -25,7 +27,11 @@ Vignette_params show_vignette_imgui(Vignette_params params) noexcept;
 
 Color_grading_params show_color_grading_imgui(Color_grading_params params) noexcept;
 
+Color_grading_params show_tonemapping_imgui(Color_grading_params params) noexcept;
+
 Film_grain_params show_film_grain_imgui(Film_grain_params params) noexcept;
+
+void show_tonemapping_curve(std::function<float(float)> tonemapper) noexcept;
 
 }
 
@@ -258,6 +264,11 @@ void Control::show_post_processing_imgui() noexcept
          show_color_grading_imgui(postprocess.color_grading_params()));
    }
 
+   if (ImGui::TabItem("Tonemapping")) {
+      postprocess.color_grading_params(
+         show_tonemapping_imgui(postprocess.color_grading_params()));
+   }
+
    if (ImGui::TabItem("Bloom")) {
       postprocess.bloom_params(show_bloom_imgui(postprocess.bloom_params()));
    }
@@ -397,8 +408,29 @@ Color_grading_params show_color_grading_imgui(Color_grading_params params) noexc
       params.hsv_hue_adjustment /= 360.0f;
    }
 
-   if (ImGui::CollapsingHeader("Filmic Tonemapping")) {
-      filmic::show_imgui_curve(params);
+   ImGui::Separator();
+
+   if (ImGui::Button("Reset Settings")) params = Color_grading_params{};
+
+   if (ImGui::IsItemHovered())
+      ImGui::SetTooltip("Will also reset Tonemapping settings.");
+
+   return params;
+}
+
+Color_grading_params show_tonemapping_imgui(Color_grading_params params) noexcept
+{
+   params.tonemapper = tonemapper_from_string(ImGui::StringPicker(
+      "Tonemapper", std::string{to_string(params.tonemapper)},
+      std::initializer_list<std::string>{to_string(Tonemapper::filmic),
+                                         to_string(Tonemapper::aces_fitted),
+                                         to_string(Tonemapper::filmic_heji2015),
+                                         to_string(Tonemapper::reinhard),
+                                         to_string(Tonemapper::none)}));
+
+   if (params.tonemapper == Tonemapper::filmic) {
+      show_tonemapping_curve([curve = filmic::color_grading_params_to_curve(params)](
+                                const float v) { return filmic::eval(v, curve); });
 
       ImGui::DragFloat("Toe Strength", &params.filmic_toe_strength, 0.01f, 0.0f, 1.0f);
       ImGui::DragFloat("Toe Length", &params.filmic_toe_length, 0.01f, 0.0f, 1.0f);
@@ -409,7 +441,7 @@ Color_grading_params show_color_grading_imgui(Color_grading_params params) noexc
       ImGui::DragFloat("Shoulder Angle", &params.filmic_shoulder_angle, 0.01f,
                        0.0f, 1.0f);
 
-      if (ImGui::Button("Reset To Linear")) {
+      if (ImGui::Button("Reset to Linear")) {
          params.filmic_toe_strength = 0.0f;
          params.filmic_toe_length = 0.5f;
          params.filmic_shoulder_strength = 0.0f;
@@ -417,15 +449,33 @@ Color_grading_params show_color_grading_imgui(Color_grading_params params) noexc
          params.filmic_shoulder_angle = 0.0f;
       }
 
-      if (ImGui::IsItemHovered()) {
+      if (ImGui::IsItemHovered())
          ImGui::SetTooltip("Reset the curve to linear values.");
+
+      ImGui::SameLine();
+
+      if (ImGui::Button("Load Example Starting Point")) {
+         params.filmic_toe_strength = 0.5f;
+         params.filmic_toe_length = 0.5f;
+         params.filmic_shoulder_strength = 2.0f;
+         params.filmic_shoulder_length = 0.5f;
+         params.filmic_shoulder_angle = 1.0f;
       }
    }
+   else if (params.tonemapper == Tonemapper::aces_fitted) {
+      show_tonemapping_curve(
+         [](const float v) { return eval_aces_srgb_fitted(glm::vec3{v}).r; });
+   }
+   else if (params.tonemapper == Tonemapper::filmic_heji2015) {
+      show_tonemapping_curve([whitepoint = params.filmic_heji_whitepoint](const float v) {
+         return eval_filmic_hejl2015(glm::vec3{v}, whitepoint).x;
+      });
 
-   ImGui::Separator();
-
-   if (ImGui::Button("Reset Settings")) {
-      params = Color_grading_params{};
+      ImGui::DragFloat("Whitepoint", &params.filmic_heji_whitepoint, 0.01f);
+   }
+   else if (params.tonemapper == Tonemapper::reinhard) {
+      show_tonemapping_curve(
+         [](const float v) { return eval_reinhard(glm::vec3{v}).x; });
    }
 
    return params;
@@ -442,6 +492,55 @@ Film_grain_params show_film_grain_imgui(Film_grain_params params) noexcept
    ImGui::DragFloat("Luma Amount", &params.luma_amount, 0.05f, 0.0f, 1.0f);
 
    return params;
+}
+
+void show_tonemapping_curve(std::function<float(float)> tonemapper) noexcept
+{
+   static float divisor = 256.0f;
+   static int index_count = 1024;
+
+   const auto plotter = [](void* data, int idx) {
+      const auto& tonemapper = *static_cast<std::function<float(float)>*>(data);
+
+      float v = idx / divisor;
+
+      return tonemapper(v);
+   };
+
+   static int range = 0;
+
+   ImGui::PlotLines("Tonemap Curve", plotter, &tonemapper, index_count);
+   ImGui::SliderInt("Curve Preview Range", &range, 0, 4);
+
+   ImGui::SameLine();
+
+   switch (range) {
+   case 0:
+      divisor = 256.0f;
+      index_count = 1024;
+      ImGui::TextUnformatted("0.0 to 4.0");
+      break;
+   case 1:
+      divisor = 256.0f;
+      index_count = 2048;
+      ImGui::TextUnformatted("0.0 to 8.0");
+      break;
+   case 2:
+      divisor = 256.0f;
+      index_count = 4096;
+      ImGui::TextUnformatted("0.0 to 16.0");
+      break;
+   case 3:
+      divisor = 128.0f;
+      index_count = 4096;
+      ImGui::TextUnformatted("0.0 to 32.0");
+      break;
+   case 4:
+      divisor = 64.0f;
+      index_count = 4096;
+      ImGui::TextUnformatted("0.0 to 64.0");
+      break;
+   }
 }
 
 }

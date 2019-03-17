@@ -71,15 +71,66 @@ inline glm::vec3 hsv_to_rgb(glm::vec3 hsv)
    return ((rgb - 1.0f) * hsv.y + 1.0f) * hsv.z;
 }
 
-inline float linear_to_srgb(const float v) noexcept
+inline float linear_srgb_to_gamma_srgb(const float v) noexcept
 {
    return v <= 0.0031308f ? 12.92f * v : 1.055f * pow(v, 1.0f / 2.4f) - 0.055f;
 }
 
-inline glm::vec3 linear_to_srgb(const glm::vec3 color) noexcept
+inline glm::vec3 linear_srgb_to_gamma_srgb(const glm::vec3 color) noexcept
 {
-   return {linear_to_srgb(color.r), linear_to_srgb(color.g),
-           linear_to_srgb(color.b)};
+   return {linear_srgb_to_gamma_srgb(color.r), linear_srgb_to_gamma_srgb(color.g),
+           linear_srgb_to_gamma_srgb(color.b)};
+}
+
+inline glm::vec3 srgb_to_xyz(const glm::vec3 color) noexcept
+{
+   // clang-format off
+   const glm::mat3 rgb_to_xyz{0.4123564f, 0.3575761f, 0.1804375f,
+                              0.2126729f, 0.7151522f, 0.0721750f,
+                              0.0193339f, 0.1191920f, 0.9503041f};
+
+   return color * rgb_to_xyz;
+   // clang-format on
+}
+
+inline glm::vec3 xyz_to_srgb(const glm::vec3 color) noexcept
+{
+   // clang-format off
+   const glm::mat3 xyz_to_srgb{ 3.2404542f, -1.5371385f, -0.4985314f,
+                               -0.9692660f,  1.8760108f,  0.0415560f,
+                                0.0556434f, -0.2040259f,  1.0572252f};
+
+   return color * xyz_to_srgb;
+   // clang-format on
+}
+
+inline glm::vec3 xyz_to_xyy(const glm::vec3 color) noexcept
+{
+   const float denominator = color.x + color.y + color.z;
+
+   if (denominator == 0.0f) return {0.312727f, 0.329023f, 0.0f};
+
+   return {color.x / denominator, color.y / denominator, color.y};
+}
+
+inline glm::vec3 xyy_to_xyz(const glm::vec3 color) noexcept
+{
+   if (color.y == 0.0f) return {0.0f, 0.0f, 0.0f};
+
+   const float x = (color.x * color.z) / color.y;
+   const float z = ((1.0f - color.x - color.y) * color.z) / color.y;
+
+   return {x, color.z, z};
+}
+
+inline glm::vec3 srgb_to_xyy(const glm::vec3 color) noexcept
+{
+   return xyz_to_xyy(srgb_to_xyz(color));
+}
+
+inline glm::vec3 xyy_to_srgb(const glm::vec3 color) noexcept
+{
+   return xyz_to_srgb(xyy_to_xyz(color));
 }
 
 inline glm::vec3 apply_basic_saturation(glm::vec3 color, float saturation) noexcept

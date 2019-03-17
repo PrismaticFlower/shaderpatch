@@ -3,6 +3,8 @@
 #include "glm_yaml_adapters.hpp"
 
 #include <glm/glm.hpp>
+#include <string>
+#include <string_view>
 
 #pragma warning(push)
 #pragma warning(disable : 4996)
@@ -14,6 +16,8 @@
 namespace sp::effects {
 
 enum class Hdr_state { hdr, stock };
+
+enum class Tonemapper { filmic, aces_fitted, filmic_heji2015, reinhard, none };
 
 struct Bloom_params {
    bool enabled = true;
@@ -58,11 +62,15 @@ struct Color_grading_params {
    float brightness = 1.0f;
    float contrast = 1.0f;
 
+   Tonemapper tonemapper = Tonemapper::filmic;
+
    float filmic_toe_strength = 0.0f;
    float filmic_toe_length = 0.5f;
    float filmic_shoulder_strength = 0.0f;
    float filmic_shoulder_length = 0.5f;
    float filmic_shoulder_angle = 0.0f;
+
+   float filmic_heji_whitepoint = 1.0f;
 
    glm::vec3 shadow_color = {1.0f, 1.0f, 1.0f};
    glm::vec3 midtone_color = {1.0f, 1.0f, 1.0f};
@@ -91,9 +99,61 @@ struct Film_grain_params {
    float luma_amount = 1.0f;
 };
 
+inline auto to_string(const Tonemapper tonemapper) noexcept
+{
+   using namespace std::literals;
+
+   switch (tonemapper) {
+   case Tonemapper::filmic:
+      return "Filmic"s;
+   case Tonemapper::aces_fitted:
+      return "ACES sRGB Fitted"s;
+   case Tonemapper::filmic_heji2015:
+      return "Filmic Heji 2015"s;
+   case Tonemapper::reinhard:
+      return "Reinhard"s;
+   case Tonemapper::none:
+      return "None"s;
+   }
+
+   std::terminate();
+}
+
+inline auto tonemapper_from_string(const std::string_view string) noexcept
+{
+   if (string == to_string(Tonemapper::filmic))
+      return Tonemapper::filmic;
+   else if (string == to_string(Tonemapper::aces_fitted))
+      return Tonemapper::aces_fitted;
+   else if (string == to_string(Tonemapper::filmic_heji2015))
+      return Tonemapper::filmic_heji2015;
+   else if (string == to_string(Tonemapper::reinhard))
+      return Tonemapper::reinhard;
+   else if (string == to_string(Tonemapper::none))
+      return Tonemapper::none;
+
+   return Tonemapper::filmic;
+}
+
 }
 
 namespace YAML {
+
+template<>
+struct convert<sp::effects::Tonemapper> {
+   static Node encode(const sp::effects::Tonemapper tonemapper)
+   {
+      return YAML::Node{to_string(tonemapper)};
+   }
+
+   static bool decode(const Node& node, sp::effects::Tonemapper& tonemapper)
+   {
+      tonemapper = sp::effects::tonemapper_from_string(node.as<std::string>());
+
+      return true;
+   }
+};
+
 template<>
 struct convert<sp::effects::Bloom_params> {
    static Node encode(const sp::effects::Bloom_params& params)
@@ -252,6 +312,8 @@ struct convert<sp::effects::Color_grading_params> {
       node["Brightness"s] = params.brightness;
       node["Contrast"s] = params.contrast;
 
+      node["Tonemapper"s] = params.tonemapper;
+
       node["FilmicToeStrength"s] = params.filmic_toe_strength;
       node["FilmicToeLength"s] = params.filmic_toe_length;
       node["FilmicShoulderStrength"s] = params.filmic_shoulder_strength;
@@ -289,6 +351,8 @@ struct convert<sp::effects::Color_grading_params> {
       params.exposure = node["Exposure"s].as<float>(params.exposure);
       params.brightness = node["Brightness"s].as<float>(params.brightness);
       params.contrast = node["Contrast"s].as<float>(params.contrast);
+
+      params.tonemapper = node["Tonemapper"s].as<sp::effects::Tonemapper>();
 
       params.filmic_toe_strength =
          node["FilmicToeStrength"s].as<float>(params.filmic_toe_strength);

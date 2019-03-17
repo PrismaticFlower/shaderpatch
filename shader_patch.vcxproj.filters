@@ -386,6 +386,9 @@
     <ClInclude Include="src\effects\profiler.hpp">
       <Filter>src\effects</Filter>
     </ClInclude>
+    <ClInclude Include="src\effects\tonemappers.hpp">
+      <Filter>src\effects</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />

@@ -2,6 +2,7 @@
 #include "color_grading_lut_baker.hpp"
 #include "../logger.hpp"
 #include "color_helpers.hpp"
+#include "tonemappers.hpp"
 #include "utility.hpp"
 
 #include <cstring>
@@ -49,7 +50,11 @@ void Color_grading_lut_baker::update_params(const Color_grading_params& params) 
       1.0f / (glm::log(0.5f - eval.lift_adjust) /
               (eval.gain_adjust - eval.lift_adjust) / glm::log(mid_grey));
 
+   eval.tonemapper = params.tonemapper;
+
    eval.filmic_curve = filmic::color_grading_params_to_curve(params);
+
+   eval.heji_whitepoint = params.filmic_heji_whitepoint;
 
    static_assert(std::is_same_v<decltype(eval), decltype(_eval_params)>);
    static_assert(std::is_trivially_destructible_v<decltype(eval)>);
@@ -102,9 +107,27 @@ glm::vec3 Color_grading_lut_baker::apply_color_grading(glm::vec3 color) noexcept
    color = apply_lift_gamma_gain(color, _eval_params.lift_adjust,
                                  _eval_params.inv_gamma_adjust,
                                  _eval_params.gain_adjust);
-   color = filmic::eval(color, _eval_params.filmic_curve);
+   color = apply_tonemapping(color);
 
-   color = linear_to_srgb(color);
+   color = linear_srgb_to_gamma_srgb(color);
+
+   return color;
+}
+
+glm::vec3 Color_grading_lut_baker::apply_tonemapping(glm::vec3 color) noexcept
+{
+   if (_eval_params.tonemapper == Tonemapper::filmic) {
+      color = filmic::eval(color, _eval_params.filmic_curve);
+   }
+   else if (_eval_params.tonemapper == Tonemapper::aces_fitted) {
+      color = eval_aces_srgb_fitted(color);
+   }
+   else if (_eval_params.tonemapper == Tonemapper::filmic_heji2015) {
+      color = eval_filmic_hejl2015(color, _eval_params.heji_whitepoint);
+   }
+   else if (_eval_params.tonemapper == Tonemapper::reinhard) {
+      color = eval_reinhard(color);
+   }
 
    return color;
 }
