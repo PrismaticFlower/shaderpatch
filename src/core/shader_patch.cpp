@@ -1128,11 +1128,9 @@ void Shader_patch::game_rendertype_changed() noexcept
 
    if (_shader_rendertype == Rendertype::zprepass) {
       _om_targets_dirty = true;
-      _use_null_rendertarget = true;
    }
    else if (_shader_rendertype == Rendertype::shadowquad) {
       _om_targets_dirty = true;
-      _use_null_rendertarget = false;
       _discard_draw_calls = true;
 
       _on_stretch_rendertarget = [this](Game_rendertarget&, const RECT*,
@@ -1319,9 +1317,7 @@ void Shader_patch::update_dirty_state() noexcept
          _game_rendertargets[static_cast<int>(_current_game_rendertarget)];
       auto* const rtv = rt.rtv.get();
 
-      _device_context->OMSetRenderTargets(_use_null_rendertarget ? 0 : 1,
-                                          _use_null_rendertarget ? nullptr : &rtv,
-                                          current_depthstencil());
+      _device_context->OMSetRenderTargets(1, &rtv, current_depthstencil());
 
       _cb_draw_ps_dirty = true;
       _cb_draw_ps.rt_resolution = {rt.width, rt.height, 1.0f / rt.width,

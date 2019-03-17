@@ -291,7 +291,6 @@ private:
    bool _shader_rendertype_changed = false;
    bool _shader_dirty = true;
    bool _om_targets_dirty = true;
-   bool _use_null_rendertarget = false;
    bool _ps_textures_dirty = true;
    bool _ps_material_textures_dirty = true;
    bool _cb_scene_dirty = true;
