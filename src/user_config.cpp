@@ -1,5 +1,6 @@
 
 #include "user_config.hpp"
+#include "imgui/imgui_ext.hpp"
 
 #include <filesystem>
 
@@ -41,6 +42,9 @@ void User_config::show_imgui() noexcept
                                             to_string(Anisotropic_filtering::x4),
                                             to_string(Anisotropic_filtering::x8),
                                             to_string(Anisotropic_filtering::x16)}));
+
+      ImGui::Checkbox("Enable User Effects Config", &graphics.enable_user_effects_config);
+      ImGui::InputText("User Effects Config", graphics.user_effects_config);
    }
 
    if (ImGui::CollapsingHeader("Effects", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -79,6 +83,12 @@ void User_config::parse_file(const std::string& path)
 
    graphics.anisotropic_filtering = anisotropic_filtering_from_string(
       config["Graphics"s]["Anisotropic Filtering"s].as<std::string>());
+
+   graphics.enable_user_effects_config =
+      config["Graphics"s]["Enable User Effects Config"s].as<bool>();
+
+   graphics.user_effects_config =
+      config["Graphics"s]["User Effects Config"s].as<std::string>();
 
    effects.enabled = config["Effects"s]["Enabled"s].as<bool>();
 

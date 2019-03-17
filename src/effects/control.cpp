@@ -39,6 +39,25 @@ Control::Control(Com_ptr<ID3D11Device1> device,
                  const core::Shader_group_collection& shader_groups) noexcept
    : _device{device}, postprocess{device, shader_groups}, profiler{device}
 {
+   if (user_config.graphics.enable_user_effects_config)
+      load_params_from_yaml_file(user_config.graphics.user_effects_config);
+}
+
+bool Control::enabled(const bool enabled) noexcept
+{
+   _enabled = enabled;
+
+   if (!_enabled && user_config.graphics.enable_user_effects_config)
+      load_params_from_yaml_file(user_config.graphics.user_effects_config);
+
+   return (_enabled || user_config.graphics.enable_user_effects_config) &&
+          user_config.effects.enabled;
+}
+
+bool Control::enabled() const noexcept
+{
+   return (_enabled || user_config.graphics.enable_user_effects_config) &&
+          user_config.effects.enabled;
 }
 
 void Control::show_imgui(HWND game_window) noexcept

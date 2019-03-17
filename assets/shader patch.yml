@@ -20,6 +20,14 @@ Graphics:
    # Anisotropic Filtering level for textures, can be "off", "x2", "x4", "x8" or "x16".
    Anisotropic Filtering: x16
 
+   # When a map or mod has not loaded an Effects Config Shader Patch can use a user specified 
+   # config.
+   Enable User Effects Config: no
+
+   # The name of the Effects Config to load when `Enable User Effects Config` is true. The config
+   # should be in the same directory as the game's executable.
+   User Effects Config: user.spfx
+
 # Settings for the Effects system, which allows modders to apply various effects
 # to their mods at their discretion and configuration. Below are options provided to 
 # tweak the performance of this system for low-end/older GPUs.

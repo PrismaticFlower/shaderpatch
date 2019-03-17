@@ -32,17 +32,9 @@ public:
    Control(Com_ptr<ID3D11Device1> device,
            const core::Shader_group_collection& shader_groups) noexcept;
 
-   bool enabled(const bool enabled) noexcept
-   {
-      _enabled = enabled;
+   bool enabled(const bool enabled) noexcept;
 
-      return _enabled && user_config.effects.enabled;
-   }
-
-   bool enabled() const noexcept
-   {
-      return _enabled && user_config.effects.enabled;
-   }
+   bool enabled() const noexcept;
 
    void config(const Effects_control_config& config) noexcept
    {
