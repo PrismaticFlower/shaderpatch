@@ -12,7 +12,6 @@ const static float2 near_scene_fade_scale = custom_constants[2].xy;
 
 Texture2D<float4> diffuse_texture : register(t0);
 Texture2D<float2> normal_map_texture : register(t4);
-Texture2D<float3> refraction_buffer : register(t5);
 
 float3 animate_normal(float3 normal)
 {
@@ -138,23 +137,20 @@ float4 shield_ps(Ps_input input) : SV_Target0
                                              texcoords);
    const float3 normalWS = normalize(mul(normalTS, tangent_to_world));
 
-   const float2 scene_coords = input.positionSS.xy * rt_resolution.zw + normalTS.xy * 0.1;
-   const float3 scene_color = refraction_buffer.SampleLevel(linear_clamp_sampler, scene_coords, 0.0);
-   const float4 diffuse_color = diffuse_texture.Sample(linear_clamp_sampler, input.texcoords);
-
    const float3 view_normalWS = normalize(input.positionWS - view_positionWS);
    const float3 H = normalize(light_directional_0_dir.xyz + view_normalWS);
    const float NdotH = saturate(dot(normalWS, H));
    float3 specular = pow(NdotH, 64);
    specular *= specular_color.rgb;
 
-   float3 color = diffuse_color.rgb * input.material_color;
+   const float4 diffuse_color = diffuse_texture.Sample(linear_clamp_sampler, input.texcoords);
 
-   float alpha = material_diffuse_color.a * diffuse_color.a;
+   float3 color = diffuse_color.rgb * input.material_color;
+   const float alpha = input.alpha * material_diffuse_color.a * diffuse_color.a;
 
    color = (color * alpha + specular) * lighting_scale;
 
    color = apply_fog(color, input.fog);
 
-   return float4(color + scene_color, input.alpha);
+   return float4(color, diffuse_color.a);
 }

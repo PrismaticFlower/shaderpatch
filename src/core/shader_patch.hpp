@@ -354,43 +354,6 @@ private:
       return buffer;
    }();
 
-   const Com_ptr<ID3D11RasterizerState> _shield_rasterizer_state = [this] {
-      D3D11_RASTERIZER_DESC desc{};
-
-      desc.FillMode = D3D11_FILL_SOLID;
-      desc.CullMode = D3D11_CULL_BACK;
-      desc.FrontCounterClockwise = true;
-      desc.DepthBias = 0;
-      desc.DepthBiasClamp = 0.0f;
-      desc.SlopeScaledDepthBias = 0.0f;
-      desc.DepthClipEnable = true;
-      desc.ScissorEnable = false;
-      desc.MultisampleEnable = false;
-      desc.AntialiasedLineEnable = false;
-
-      Com_ptr<ID3D11RasterizerState> state;
-      _device->CreateRasterizerState(&desc, state.clear_and_assign());
-
-      return state;
-   }();
-   const Com_ptr<ID3D11BlendState> _shield_blend_state = [this] {
-      D3D11_BLEND_DESC desc{};
-
-      desc.RenderTarget[0].BlendEnable = true;
-      desc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-      desc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-      desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-      desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-      desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
-      desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-      desc.RenderTarget[0].RenderTargetWriteMask = 0b111;
-
-      Com_ptr<ID3D11BlendState> state;
-      _device->CreateBlendState(&desc, state.clear_and_assign());
-
-      return state;
-   }();
-
    const Image_stretcher _image_stretcher{*_device, *_shader_database};
    const Late_backbuffer_resolver _late_backbuffer_resolver{*_shader_database};
    Sampler_states _sampler_states{*_device};

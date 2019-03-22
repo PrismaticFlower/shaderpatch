@@ -1185,38 +1185,9 @@ void Shader_patch::game_rendertype_changed() noexcept
 
       auto normalmap_srv = _texture_database.get("$water");
 
-      const std::array srvs{normalmap_srv.get(), _refraction_rt.srv.get()};
+      auto* const srv = normalmap_srv.get();
 
-      _device_context->PSSetShaderResources(custom_tex_begin, srvs.size(),
-                                            srvs.data());
-
-      // Save rasterizer and blend state
-      Com_ptr<ID3D11RasterizerState> rs_state;
-      _device_context->RSGetState(rs_state.clear_and_assign());
-
-      std::array<float, 4> blend_factor;
-      UINT sample_mask;
-      Com_ptr<ID3D11BlendState> blend_state;
-      _device_context->OMGetBlendState(blend_state.clear_and_assign(),
-                                       blend_factor.data(), &sample_mask);
-
-      _on_rendertype_changed = [this, rs_state{std::move(rs_state)},
-                                blend_state{std::move(blend_state)}]() noexcept {
-         _device_context->RSSetState(rs_state.get());
-         _device_context
-            ->OMSetBlendState(blend_state.get(),
-                              std::array<float, 4>{1.f, 1.f, 1.f, 1.f}.data(),
-                              0xffffffff);
-
-         _on_rendertype_changed = nullptr;
-      };
-
-      // Override rasterizer and blend state
-
-      _device_context->RSSetState(_shield_rasterizer_state.get());
-      _device_context->OMSetBlendState(_shield_blend_state.get(),
-                                       std::array<float, 4>{1.f, 1.f, 1.f, 1.f}.data(),
-                                       0xffffffff);
+      _device_context->PSSetShaderResources(custom_tex_begin, 1, &srv);
    }
    else if (_shader_rendertype == Rendertype::refraction) {
       resolve_refraction_texture();
