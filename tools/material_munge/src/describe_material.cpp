@@ -263,29 +263,141 @@ void read_texture_mapping(const std::string& texture_key, const YAML::Node& valu
                                                   " encountered."sv);
    }
 
-   auto texture = texture_mappings[texture_key];
+   const auto texture_mapping_list = texture_mappings[texture_key];
 
-   auto index = texture["Slot"s].as<int>();
+   for (std::size_t i = 0; i < texture_mapping_list.size(); ++i) {
+      const auto mapping = texture_mapping_list[i];
 
-   if (index > max_textures) {
-      throw compose_exception<std::runtime_error>("Invalid material texture description"sv,
-                                                  std::quoted(texture_key),
-                                                  " encountered. Texture index is too high!"sv);
+      const auto index = mapping["Slot"s].as<std::uint32_t>();
+
+      if (index > max_textures) {
+         throw compose_exception<std::runtime_error>("Invalid material texture description"sv,
+                                                     std::quoted(texture_key),
+                                                     " encountered. Texture index is too high!"sv);
+      }
+
+      auto& textures = [&]() -> std::vector<std::string>& {
+         if (const auto stage = mapping["Stage"s].as<std::string>(); stage == "VS"sv)
+            return material_info.vs_textures;
+         else if (stage == "HS"sv)
+            return material_info.hs_textures;
+         else if (stage == "DS"sv)
+            return material_info.ds_textures;
+         else if (stage == "GS"sv)
+            return material_info.gs_textures;
+         else if (stage == "PS"sv)
+            return material_info.ps_textures;
+
+         throw compose_exception<std::runtime_error>("Invalid material texture description"sv,
+                                                     std::quoted(texture_key),
+                                                     " encountered. Texture stage binding is invalid!"sv);
+      }();
+
+      auto texture_name = value.as<std::string>();
+
+      if (texture_name.empty()) return;
+
+      if (index >= textures.size()) textures.resize(index + 1);
+
+      textures.at(index) = value.as<std::string>();
    }
-
-   auto texture_name = value.as<std::string>();
-
-   if (texture_name.empty()) return;
-
-   if (index >= material_info.textures.size())
-      material_info.textures.resize(index + 1);
-
-   material_info.textures.at(index) = value.as<std::string>();
-}
 }
 
-auto describe_material(std::string_view name, const YAML::Node& description,
-                       const YAML::Node& material) -> Material_info
+auto read_cb_stages(const YAML::Node& node) -> Material_cb_shader_stages
+{
+   Material_cb_shader_stages stages{};
+
+   if (node["VS"s].as<bool>()) stages |= Material_cb_shader_stages::vs;
+   if (node["HS"s].as<bool>()) stages |= Material_cb_shader_stages::hs;
+   if (node["DS"s].as<bool>()) stages |= Material_cb_shader_stages::ds;
+   if (node["GS"s].as<bool>()) stages |= Material_cb_shader_stages::gs;
+   if (node["PS"s].as<bool>()) stages |= Material_cb_shader_stages::ps;
+
+   return stages;
+}
+
+auto read_topology(const YAML::Node& node) -> D3D_PRIMITIVE_TOPOLOGY
+{
+   if (!node) return D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
+
+   const auto topology = node.as<std::string>();
+
+   // clang-format off
+   if (topology == "pointlist"sv) return D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
+   if (topology == "linelist"sv) return D3D_PRIMITIVE_TOPOLOGY_LINELIST;
+   if (topology == "linestrip"sv) return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
+   if (topology == "trianglelist"sv) return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+   if (topology == "trianglestrip"sv) return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+   if (topology == "linelist_adj"sv) return D3D_PRIMITIVE_TOPOLOGY_LINELIST_ADJ;
+   if (topology == "linestrip_adj"sv) return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ;
+   if (topology == "trianglelist_adj"sv) return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST_ADJ;
+   if (topology == "trianglestrip_adj"sv) return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP_ADJ;
+   if (topology == "1_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST;
+   if (topology == "2_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_2_CONTROL_POINT_PATCHLIST;
+   if (topology == "3_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST;
+   if (topology == "4_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST;
+   if (topology == "5_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_5_CONTROL_POINT_PATCHLIST;
+   if (topology == "6_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_6_CONTROL_POINT_PATCHLIST;
+   if (topology == "7_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_7_CONTROL_POINT_PATCHLIST;
+   if (topology == "8_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_8_CONTROL_POINT_PATCHLIST;
+   if (topology == "9_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_9_CONTROL_POINT_PATCHLIST;
+   if (topology == "10_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_10_CONTROL_POINT_PATCHLIST;
+   if (topology == "11_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_11_CONTROL_POINT_PATCHLIST;
+   if (topology == "12_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_12_CONTROL_POINT_PATCHLIST;
+   if (topology == "13_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_13_CONTROL_POINT_PATCHLIST;
+   if (topology == "14_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_14_CONTROL_POINT_PATCHLIST;
+   if (topology == "15_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_15_CONTROL_POINT_PATCHLIST;
+   if (topology == "16_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_16_CONTROL_POINT_PATCHLIST;
+   if (topology == "17_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_17_CONTROL_POINT_PATCHLIST;
+   if (topology == "18_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_18_CONTROL_POINT_PATCHLIST;
+   if (topology == "19_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_19_CONTROL_POINT_PATCHLIST;
+   if (topology == "20_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_20_CONTROL_POINT_PATCHLIST;
+   if (topology == "21_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_21_CONTROL_POINT_PATCHLIST;
+   if (topology == "22_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_22_CONTROL_POINT_PATCHLIST;
+   if (topology == "23_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_23_CONTROL_POINT_PATCHLIST;
+   if (topology == "24_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_24_CONTROL_POINT_PATCHLIST;
+   if (topology == "25_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_25_CONTROL_POINT_PATCHLIST;
+   if (topology == "26_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_26_CONTROL_POINT_PATCHLIST;
+   if (topology == "27_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_27_CONTROL_POINT_PATCHLIST;
+   if (topology == "28_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_28_CONTROL_POINT_PATCHLIST;
+   if (topology == "29_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_29_CONTROL_POINT_PATCHLIST;
+   if (topology == "30_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_30_CONTROL_POINT_PATCHLIST;
+   if (topology == "31_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_31_CONTROL_POINT_PATCHLIST;
+   if (topology == "32_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_32_CONTROL_POINT_PATCHLIST;
+   // clang-format on
+
+   throw compose_exception<std::runtime_error>("Invalid primitive topology in rendertype description "sv,
+                                               std::quoted(topology), "."sv);
+}
+
+auto read_desc_material_options(const YAML::Node& node, Material_options& material_options)
+{
+   for (const auto& opt : node) {
+      if (const auto key = opt.first.as<std::string>(); key == "Transparent"s)
+         material_options.transparent = opt.second.as<bool>();
+      else if (key == "Hard Edged"s)
+         material_options.hard_edged = opt.second.as<bool>();
+      else if (key == "Double Sided"s)
+         material_options.double_sided = opt.second.as<bool>();
+      else if (key == "Statically Lit"s)
+         material_options.statically_lit = opt.second.as<bool>();
+      else if (key == "Unlit"s)
+         material_options.unlit = opt.second.as<bool>();
+      else if (key == "Compressed"s)
+         material_options.compressed = opt.second.as<bool>();
+      else if (key == "Generate Tangents"s)
+         material_options.generate_tangents = opt.second.as<bool>();
+      else
+         throw compose_exception<std::runtime_error>("Invalid material option in rendertype description "sv,
+                                                     std::quoted(key), "."sv);
+   }
+}
+
+}
+
+auto describe_material(const std::string_view name,
+                       const YAML::Node& description, const YAML::Node& material,
+                       Material_options& material_options) -> Material_info
 {
    Material_info info{};
 
@@ -293,9 +405,13 @@ auto describe_material(std::string_view name, const YAML::Node& description,
    info.rendertype = material["RenderType"s].as<std::string>();
    info.overridden_rendertype = rendertype_from_string(
       description["Overridden RenderType"s].as<std::string>());
+   info.cb_shader_stages = read_cb_stages(description["Constant Buffer Stages"s]);
    info.fail_safe_texture_index =
       description["Failsafe Texture Index"s].as<std::uint32_t>();
    info.constant_buffer = init_cb_with_defaults(description["property_mappings"s]);
+   info.tessellation = description["Tessellation"s].as<bool>(false);
+   info.tessellation_primitive_topology =
+      read_topology(description["Tessellation Primitive Topology"s]);
 
    for (auto& prop : material["Material"s]) {
       try {
@@ -320,6 +436,9 @@ auto describe_material(std::string_view name, const YAML::Node& description,
             std::quoted(texture.first.as<std::string>()), ": "sv, e.what());
       }
    }
+
+   if (description["Material Options"s])
+      read_desc_material_options(description["Material Options"s], material_options);
 
    return info;
 }

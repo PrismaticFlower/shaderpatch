@@ -15,7 +15,7 @@
 
 namespace sp::shader {
 
-enum class Stage { compute, vertex, pixel };
+enum class Stage { compute, vertex, hull, domain, geometry, pixel };
 
 struct Vertex_state {
    struct Generic_input {
@@ -53,19 +53,21 @@ inline void from_json(const nlohmann::json& j, Stage& stage)
 {
    using namespace std::literals;
 
-   if (const auto string = j.get<std::string>(); string == "compute"s) {
+   if (const auto string = j.get<std::string>(); string == "compute"s)
       stage = Stage::compute;
-   }
-   else if (string == "vertex"s) {
+   else if (string == "vertex"s)
       stage = Stage::vertex;
-   }
-   else if (string == "pixel"s) {
+   else if (string == "hull"s)
+      stage = Stage::hull;
+   else if (string == "domain"s)
+      stage = Stage::domain;
+   else if (string == "geometry"s)
+      stage = Stage::geometry;
+   else if (string == "pixel"s)
       stage = Stage::pixel;
-   }
-   else {
+   else
       throw compose_exception<std::invalid_argument>('"', string, '"',
                                                      " is not a valid shader stage"s);
-   }
 }
 
 inline void from_json(const nlohmann::json& j, Vertex_state::Generic_input& generic_input)

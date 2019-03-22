@@ -162,8 +162,6 @@ public:
 
    void set_input_layout(const Game_input_layout& input_layout) noexcept;
 
-   void set_primitive_topology(const D3D11_PRIMITIVE_TOPOLOGY topology) noexcept;
-
    void set_game_shader(std::shared_ptr<Game_shader> shader) noexcept;
 
    void set_rendertarget(const Game_rendertarget_id rendertarget) noexcept;
@@ -208,10 +206,11 @@ public:
    void set_constants(const cb::Draw_ps_tag, const UINT offset,
                       const gsl::span<const std::array<float, 4>> constants) noexcept;
 
-   void draw(const UINT vertex_count, const UINT start_vertex) noexcept;
+   void draw(const D3D11_PRIMITIVE_TOPOLOGY topology, const UINT vertex_count,
+             const UINT start_vertex) noexcept;
 
-   void draw_indexed(const UINT index_count, const UINT start_index,
-                     const UINT start_vertex) noexcept;
+   void draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology, const UINT index_count,
+                     const UINT start_index, const UINT start_vertex) noexcept;
 
    void begin_query(ID3D11Query& query) noexcept;
 
@@ -229,7 +228,7 @@ private:
 
    void game_rendertype_changed() noexcept;
 
-   void update_dirty_state() noexcept;
+   void update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primitive_topology) noexcept;
 
    void update_shader() noexcept;
 
@@ -281,6 +280,9 @@ private:
    Game_depthstencil _current_depthstencil_id = Game_depthstencil::nearscene;
 
    Game_input_layout _game_input_layout{};
+   D3D11_PRIMITIVE_TOPOLOGY _primitive_topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
+   D3D11_PRIMITIVE_TOPOLOGY _patch_material_topology =
+      D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
    std::shared_ptr<Game_shader> _game_shader{};
    Rendertype _shader_rendertype = Rendertype::invalid;
 
@@ -290,9 +292,9 @@ private:
    bool _discard_draw_calls = false;
    bool _shader_rendertype_changed = false;
    bool _shader_dirty = true;
+   bool _use_patch_material_topology = false;
    bool _om_targets_dirty = true;
    bool _ps_textures_dirty = true;
-   bool _ps_material_textures_dirty = true;
    bool _cb_scene_dirty = true;
    bool _cb_draw_dirty = true;
    bool _cb_skin_dirty = true;

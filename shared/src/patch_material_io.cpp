@@ -42,17 +42,26 @@ void write_patch_material(const std::filesystem::path& save_path,
       writer.emplace_child("NAME"_mn).write(info.name);
       writer.emplace_child("RTYP"_mn).write(info.rendertype);
       writer.emplace_child("ORTP"_mn).write(info.overridden_rendertype);
-      writer.emplace_child("CNST"_mn).write(gsl::make_span(info.constant_buffer));
+      writer.emplace_child("CBST"_mn).write(info.cb_shader_stages);
+      writer.emplace_child("CB__"_mn).write(gsl::make_span(info.constant_buffer));
 
-      {
-         auto texs = writer.emplace_child("TEXS"_mn);
+      const auto write_textures = [&](const Magic_number mn,
+                                      const std::vector<std::string>& textures) {
+         auto texs = writer.emplace_child(mn);
 
-         texs.write<std::uint32_t>(
-            gsl::narrow_cast<std::uint32_t>(info.textures.size()));
-         for (const auto& texture : info.textures) texs.write(texture);
-      }
+         texs.write<std::uint32_t>(gsl::narrow_cast<std::uint32_t>(textures.size()));
+         for (const auto& texture : textures) texs.write(texture);
+      };
+
+      write_textures("VSSR"_mn, info.vs_textures);
+      write_textures("HSSR"_mn, info.hs_textures);
+      write_textures("DSSR"_mn, info.ds_textures);
+      write_textures("GSSR"_mn, info.gs_textures);
+      write_textures("PSSR"_mn, info.ps_textures);
 
       writer.emplace_child("FSTX"_mn).write(info.fail_safe_texture_index);
+      writer.emplace_child("TESS"_mn).write(info.tessellation,
+                                            info.tessellation_primitive_topology);
    }
 
    const auto matl_data = ostream.str();
@@ -97,26 +106,36 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_info
    info.overridden_rendertype =
       reader.read_child_strict<"ORTP"_mn>().read<Rendertype>();
 
+   info.cb_shader_stages =
+      reader.read_child_strict<"CBST"_mn>().read<Material_cb_shader_stages>();
+
    {
-      auto cnst = reader.read_child_strict<"CNST"_mn>();
-      const auto constants = cnst.read_array<std::byte>(cnst.size());
+      auto cb__ = reader.read_child_strict<"CB__"_mn>();
+      const auto constants = cb__.read_array<std::byte>(cb__.size());
 
       info.constant_buffer.resize(next_multiple_of<std::size_t{16}>(constants.size()));
       std::memcpy(info.constant_buffer.data(), constants.data(), constants.size());
    }
 
-   {
-      auto texs = reader.read_child_strict<"TEXS"_mn>();
-
+   const auto read_textures = [&](auto texs, std::vector<std::string>& textures) {
       const auto count = texs.read<std::uint32_t>();
-      info.textures.reserve(count);
+      textures.reserve(count);
 
       for (auto i = 0; i < count; ++i)
-         info.textures.emplace_back(texs.read_string());
-   }
+         textures.emplace_back(texs.read_string());
+   };
+
+   read_textures(reader.read_child_strict<"VSSR"_mn>(), info.vs_textures);
+   read_textures(reader.read_child_strict<"HSSR"_mn>(), info.hs_textures);
+   read_textures(reader.read_child_strict<"DSSR"_mn>(), info.ds_textures);
+   read_textures(reader.read_child_strict<"GSSR"_mn>(), info.gs_textures);
+   read_textures(reader.read_child_strict<"PSSR"_mn>(), info.ps_textures);
 
    info.fail_safe_texture_index =
       reader.read_child_strict<"FSTX"_mn>().read<std::uint32_t>();
+
+   std::tie(info.tessellation, info.tessellation_primitive_topology) =
+      reader.read_child_strict<"TESS"_mn>().read_multi<bool, D3D11_PRIMITIVE_TOPOLOGY>();
 
    return info;
 }

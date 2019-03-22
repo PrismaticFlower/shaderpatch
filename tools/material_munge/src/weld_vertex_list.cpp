@@ -77,7 +77,7 @@ auto push_back_vertex(const Vertex_buffer& src_vbuf, const int src_index,
    if (src_vbuf.texcoords)
       dest_vbuf.texcoords[index] = src_vbuf.texcoords[src_index];
 
-   return dest_vbuf.count++;
+   return gsl::narrow_cast<int>(dest_vbuf.count++);
 }
 
 bool is_vertex_similar(const Vertex_buffer& left_vbuf, const int left_index,

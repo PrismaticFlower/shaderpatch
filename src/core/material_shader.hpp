@@ -22,6 +22,12 @@ public:
                const Vertex_shader_flags vertex_shader_flags,
                const Pixel_shader_flags pixel_shader_flags) noexcept;
 
+   void update_for_zprepass(ID3D11DeviceContext1& dc,
+                            const Input_layout_descriptions& layout_descriptions,
+                            const std::uint16_t layout_index,
+                            const std::string& shader_name,
+                            const Vertex_shader_flags vertex_shader_flags) noexcept;
+
 private:
    struct Material_vertex_shader {
       Com_ptr<ID3D11VertexShader> vs;
@@ -29,15 +35,20 @@ private:
       Shader_input_layouts input_layouts;
    };
 
-   using State =
-      std::pair<std::unordered_map<Vertex_shader_flags, Material_vertex_shader>,
-                std::unordered_map<Pixel_shader_flags, Com_ptr<ID3D11PixelShader>>>;
+   struct Material_shader_state {
+      std::unordered_map<Vertex_shader_flags, Material_vertex_shader> vertex;
+      std::unordered_map<Pixel_shader_flags, Com_ptr<ID3D11PixelShader>> pixel;
 
-   using Shaders = std::unordered_map<std::string, State>;
+      Com_ptr<ID3D11HullShader> hull;
+      Com_ptr<ID3D11DomainShader> domain;
+      Com_ptr<ID3D11GeometryShader> geometry;
+   };
+
+   using Shaders = std::unordered_map<std::string, Material_shader_state>;
 
    static auto init_shaders(const Shader_rendertype& rendertype) noexcept -> Shaders;
 
-   static auto init_state(const Shader_state& state) noexcept -> State;
+   static auto init_state(const Shader_state& state) noexcept -> Material_shader_state;
 
    static auto init_vs_entrypoint(const Vertex_shader_entrypoint& vs,
                                   const std::uint16_t static_flags) noexcept

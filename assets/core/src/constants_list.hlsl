@@ -17,13 +17,14 @@ cbuffer SceneConstants : register(b0)
    float4x3 shadow_map_transform;
    bool vertex_color_srgb;
    float time;
+   float tessellation_resolution_factor;
 }
 
 cbuffer DrawConstants : register(b1)
 {
-   float4 normaltex_decompress; // (normal decompress = 2 or 1, -1 or 0, texture decompress = 1 / 0x0800 or 1, 1)
-   float4 position_decompress_min; // min_pos = ((bbox (max - min) * 0.5 / 0x7FFF) or (1, 1, 1), 0)
-   float4 position_decompress_max; // max_pos = ((bbox (max + min) * 0.5 / 0x7FFF) or (0, 0, 0), 1)
+   float4 normaltex_decompress;
+   float4 position_decompress_min;
+   float4 position_decompress_max;
    float4 color_state; // whether vertex colors are lighting or material colors (0, 1, 1, 0) or (0, 1, 1, 0) 
    float4x3 world_matrix;
    float4 light_ambient_color_top;
@@ -70,12 +71,12 @@ cbuffer PSDrawConstants : register(b0)
    bool fog_enabled;
 }
 
-#ifdef __VERTEX_SHADER__
-static const float3 view_positionWS = vs_view_positionWS;
-static const float lighting_scale = vs_lighting_scale;
-#elif defined(__PIXEL_SHADER__)
+#ifdef __PIXEL_SHADER__
 static const float3 view_positionWS = ps_view_positionWS;
 static const float lighting_scale = ps_lighting_scale;
+#else
+static const float3 view_positionWS = vs_view_positionWS;
+static const float lighting_scale = vs_lighting_scale;
 #endif
 
 static const float4 light_point_2_color = overlapping_lights[0];
@@ -86,7 +87,7 @@ static const float3 light_point_3_pos = overlapping_lights[3].xyz;
 static const float  light_point_3_inv_range_sqr = overlapping_lights[3].w;
 
 static const float4 light_spot_color = overlapping_lights[0];
-static const float3 light_spot_pos = overlapping_lights[1].xyz; // spot light position, w = 1 / r^2
+static const float3 light_spot_pos = overlapping_lights[1].xyz;
 static const float light_spot_inv_range_sqr = overlapping_lights[1].w;
 static const float4 light_spot_dir = overlapping_lights[2];
 
@@ -121,5 +122,15 @@ const static bool ps_light_active_spot_light = true;
 #else
 const static bool ps_light_active_spot_light = false;
 #endif
+
+
+#ifdef __VERTEX_SHADER__
+#define MATERIAL_CB_INDEX b3
+#elif defined(__PIXEL_SHADER__)
+#define MATERIAL_CB_INDEX b2
+#else
+#define MATERIAL_CB_INDEX b1
+#endif
+
 
 #endif

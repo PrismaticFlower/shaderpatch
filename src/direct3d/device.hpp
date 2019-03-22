@@ -579,7 +579,7 @@ private:
    auto create_vertex_declaration(const D3DVERTEXELEMENT9* const vertex_elements) noexcept
       -> Com_ptr<IDirect3DVertexDeclaration9>;
 
-   void draw_common(const D3DPRIMITIVETYPE primitive_type) noexcept;
+   void draw_common() noexcept;
 
    const Com_ref<IDirect3D9> _direct3d9;
    const Com_ref<IDXGIAdapter2> _adapter;
@@ -588,7 +588,6 @@ private:
    core::Shader_patch _shader_patch;
    Render_state_manager _render_state_manager;
 
-   D3DPRIMITIVETYPE _last_primitive_type;
    bool _fixed_func_active = true;
 
    std::uint16_t _width;

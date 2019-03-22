@@ -1,17 +1,45 @@
 Overridden RenderType: normal
 Failsafe Texture Index: 0
 
+Tessellation: yes
+Tessellation Primitive Topology: 3_control_point_patchlist
+
 Material Options:
+   Hard Edged: yes
    Unlit: no
 
 Constant Buffer Stages:
    VS: no
-   HS: no
-   DS: no
+   HS: yes
+   DS: yes
    GS: no
    PS: yes
 
 Property Mappings:
+   DisplacementScale:
+      Type: float
+      Default: 1.0
+      Range: [-2048.0, 2048.0]
+      Constant: 0.x
+
+   DisplacementOffset:
+      Type: float
+      Default: 0.0
+      Range: [-2048.0, 2048.0]
+      Constant: 0.y
+      
+   TessellationDetail:
+      Type: float
+      Default: 64.0
+      Range: [1.0, 65536.0]
+      Constant: 0.z
+      
+   TessellationSmoothingAmount:
+      Type: float
+      Default: 1.0
+      Range: [0.0, 1.0]
+      Constant: 0.w
+   
    DiffuseColor:
       Type: vec3
       Default: [1.0, 1.0, 1.0]
@@ -36,14 +64,14 @@ Property Mappings:
       Range: [1.0, 2048.0]
       Constant: 2.w
 
-   UseParallaxOcclusionMapping:
+   _SP_UNUSED_UseParallaxOcclusionMapping:
       Type: bool
       Default: false
       Constant: 3.x
       
-   HeightScale:
+   _SP_UNUSED_HeightScale:
       Type: float
-      Default: 0.05
+      Default: 0.0
       Range: [0.0, 2048.0]
       Constant: 3.y
 
@@ -88,35 +116,35 @@ Property Mappings:
       Op: exp2
 
 Texture Mappings:
-   DiffuseMap: 
+   DiffuseMap:
       -
          Stage: PS
          Slot: 0
-   NormalMap: 
+   NormalMap:
       -
          Stage: PS
          Slot: 1
-   HeightMap: 
-      -
-         Stage: PS
-         Slot: 2
-   DetailMap: 
+   DetailMap:
       -
          Stage: PS
          Slot: 3
-   DetailNormalMap: 
+   DetailNormalMap:
       -
          Stage: PS
          Slot: 4
-   EmissiveMap: 
+   EmissiveMap:
       -
          Stage: PS
          Slot: 5
-   OverlayDiffuseMap: 
+   OverlayDiffuseMap:
       -
          Stage: PS
          Slot: 6
-   OverlayNormalMap: 
+   OverlayNormalMap:
       -
          Stage: PS
          Slot: 7
+   DisplacementMap:
+      -
+         Stage: DS
+         Slot: 0

@@ -33,7 +33,7 @@ public:
    Patch_compiler& operator=(Patch_compiler&&) = delete;
 
 private:
-   struct Compiled_compute_entrypoint {
+   struct Compiled_generic_entrypoint {
       std::map<std::uint32_t, Com_ptr<ID3DBlob>> variations;
       std::vector<std::string> static_flag_names;
    };
@@ -59,6 +59,15 @@ private:
 
       std::string ps_entrypoint;
       std::uint32_t ps_static_flags;
+
+      std::optional<std::string> hs_entrypoint;
+      std::uint32_t hs_static_flags;
+
+      std::optional<std::string> ds_entrypoint;
+      std::uint32_t ds_static_flags;
+
+      std::optional<std::string> gs_entrypoint;
+      std::uint32_t gs_static_flags;
    };
 
    struct Assembled_rendertype {
@@ -71,16 +80,21 @@ private:
       const std::unordered_map<std::string, shader::Entrypoint>& entrypoints,
       const std::unordered_map<std::string, std::vector<shader::Input_element>>& input_layouts);
 
+   void compile_generic_entrypoint(
+      const std::pair<std::string, shader::Entrypoint>& entrypoint,
+      const std::string& shader_define, const std::string& shader_profile,
+      std::unordered_map<std::string, Compiled_generic_entrypoint>& out_entrypoints);
+
    void compile_vertex_entrypoint(
       const std::pair<std::string, shader::Entrypoint>& entrypoint,
       const std::unordered_map<std::string, std::vector<shader::Input_element>>& input_layouts);
 
-   void compile_compute_entrypoint(const std::pair<std::string, shader::Entrypoint>& entrypoint);
-
    void compile_pixel_entrypoint(const std::pair<std::string, shader::Entrypoint>& entrypoint);
 
-   auto compile_compute_shader(const std::string& entry_point,
-                               Preprocessor_defines defines) -> Com_ptr<ID3DBlob>;
+   auto compile_generic_shader(const std::string& entry_point,
+                               Preprocessor_defines defines,
+                               const std::string& shader_define,
+                               const std::string& shader_profile) -> Com_ptr<ID3DBlob>;
 
    auto compile_vertex_shader(const std::string& entry_point,
                               Preprocessor_defines defines) -> Com_ptr<ID3DBlob>;
@@ -93,7 +107,7 @@ private:
 
    void write_entrypoints(
       ucfb::Writer& writer,
-      const std::unordered_map<std::string, Compiled_compute_entrypoint>& entrypoints) const;
+      const std::unordered_map<std::string, Compiled_generic_entrypoint>& entrypoints) const;
 
    void write_entrypoints(
       ucfb::Writer& writer,
@@ -108,9 +122,12 @@ private:
    std::string _group_name;
    std::filesystem::path _source_path;
 
-   std::unordered_map<std::string, Compiled_compute_entrypoint> _compute_entrypoints;
+   std::unordered_map<std::string, Compiled_generic_entrypoint> _compute_entrypoints;
    std::unordered_map<std::string, Compiled_vertex_entrypoint> _vertex_entrypoints;
    std::unordered_map<std::string, Compiled_pixel_entrypoint> _pixel_entrypoints;
+   std::unordered_map<std::string, Compiled_generic_entrypoint> _hull_entrypoints;
+   std::unordered_map<std::string, Compiled_generic_entrypoint> _domain_entrypoints;
+   std::unordered_map<std::string, Compiled_generic_entrypoint> _geometry_entrypoints;
 
    std::unordered_map<std::string, Assembled_rendertype> _rendertypes;
 };

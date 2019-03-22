@@ -111,6 +111,113 @@ void read_entrypoints(ucfb::Reader_strict<"VSHD"_mn> reader,
    }
 }
 
+void read_entrypoints(ucfb::Reader_strict<"HSHD"_mn> reader,
+                      ID3D11Device& device, Shader_group& group)
+{
+   const auto count = reader.read_child_strict<"SIZE"_mn>().read<std::uint32_t>();
+
+   for (auto ep_index = 0u; ep_index < count; ++ep_index) {
+      auto ep_reader = reader.read_child_strict<"EP__"_mn>();
+      const auto ep_name = ep_reader.read_child_strict<"NAME"_mn>().read_string();
+
+      auto vrs_reader = ep_reader.read_child_strict<"VRS_"_mn>();
+
+      const auto variation_count =
+         vrs_reader.read_child_strict<"SIZE"_mn>().read<std::uint32_t>();
+
+      Hull_shader_entrypoint entrypoint;
+
+      for (auto vari_index = 0u; vari_index < variation_count; ++vari_index) {
+         auto vari_reader = vrs_reader.read_child_strict<"VARI"_mn>();
+
+         const auto static_flags = vari_reader.read<std::uint32_t>();
+         const auto bytecode_size = vari_reader.read<std::uint32_t>();
+         const auto bytecode = vari_reader.read_array<std::byte>(bytecode_size);
+
+         Com_ptr<ID3D11HullShader> shader;
+
+         throw_if_failed(device.CreateHullShader(bytecode.data(), bytecode.size(),
+                                                 nullptr, shader.clear_and_assign()));
+
+         entrypoint.insert(std::move(shader), static_flags);
+      }
+
+      group.hull.insert(std::string{ep_name}, std::move(entrypoint));
+   }
+}
+
+void read_entrypoints(ucfb::Reader_strict<"DSHD"_mn> reader,
+                      ID3D11Device& device, Shader_group& group)
+{
+   const auto count = reader.read_child_strict<"SIZE"_mn>().read<std::uint32_t>();
+
+   for (auto ep_index = 0u; ep_index < count; ++ep_index) {
+      auto ep_reader = reader.read_child_strict<"EP__"_mn>();
+      const auto ep_name = ep_reader.read_child_strict<"NAME"_mn>().read_string();
+
+      auto vrs_reader = ep_reader.read_child_strict<"VRS_"_mn>();
+
+      const auto variation_count =
+         vrs_reader.read_child_strict<"SIZE"_mn>().read<std::uint32_t>();
+
+      Domain_shader_entrypoint entrypoint;
+
+      for (auto vari_index = 0u; vari_index < variation_count; ++vari_index) {
+         auto vari_reader = vrs_reader.read_child_strict<"VARI"_mn>();
+
+         const auto static_flags = vari_reader.read<std::uint32_t>();
+         const auto bytecode_size = vari_reader.read<std::uint32_t>();
+         const auto bytecode = vari_reader.read_array<std::byte>(bytecode_size);
+
+         Com_ptr<ID3D11DomainShader> shader;
+
+         throw_if_failed(device.CreateDomainShader(bytecode.data(),
+                                                   bytecode.size(), nullptr,
+                                                   shader.clear_and_assign()));
+
+         entrypoint.insert(std::move(shader), static_flags);
+      }
+
+      group.domain.insert(std::string{ep_name}, std::move(entrypoint));
+   }
+}
+
+void read_entrypoints(ucfb::Reader_strict<"GSHD"_mn> reader,
+                      ID3D11Device& device, Shader_group& group)
+{
+   const auto count = reader.read_child_strict<"SIZE"_mn>().read<std::uint32_t>();
+
+   for (auto ep_index = 0u; ep_index < count; ++ep_index) {
+      auto ep_reader = reader.read_child_strict<"EP__"_mn>();
+      const auto ep_name = ep_reader.read_child_strict<"NAME"_mn>().read_string();
+
+      auto vrs_reader = ep_reader.read_child_strict<"VRS_"_mn>();
+
+      const auto variation_count =
+         vrs_reader.read_child_strict<"SIZE"_mn>().read<std::uint32_t>();
+
+      Geometry_shader_entrypoint entrypoint;
+
+      for (auto vari_index = 0u; vari_index < variation_count; ++vari_index) {
+         auto vari_reader = vrs_reader.read_child_strict<"VARI"_mn>();
+
+         const auto static_flags = vari_reader.read<std::uint32_t>();
+         const auto bytecode_size = vari_reader.read<std::uint32_t>();
+         const auto bytecode = vari_reader.read_array<std::byte>(bytecode_size);
+
+         Com_ptr<ID3D11GeometryShader> shader;
+
+         throw_if_failed(device.CreateGeometryShader(bytecode.data(),
+                                                     bytecode.size(), nullptr,
+                                                     shader.clear_and_assign()));
+
+         entrypoint.insert(std::move(shader), static_flags);
+      }
+
+      group.geometry.insert(std::string{ep_name}, std::move(entrypoint));
+   }
+}
+
 void read_entrypoints(ucfb::Reader_strict<"PSHD"_mn> reader,
                       ID3D11Device& device, Shader_group& group)
 {
@@ -163,10 +270,36 @@ void read_state(ucfb::Reader_strict<"STAT"_mn> reader,
    const auto ps_static_flags =
       gsl::narrow_cast<std::uint16_t>(info_reader.read<std::uint32_t>());
 
-   Shader_state state{Vertex_shader_entrypoint{shader_group.vertex.at(vs_entrypoint)},
-                      vs_static_flags,
-                      Pixel_shader_entrypoint{shader_group.pixel.at(ps_entrypoint)},
-                      ps_static_flags};
+   Shader_state state;
+
+   state.vertex = Shader_state_stage_vertex{Vertex_shader_entrypoint{
+                                               shader_group.vertex.at(vs_entrypoint)},
+                                            vs_static_flags};
+   state.pixel = Shader_state_stage_pixel{Pixel_shader_entrypoint{
+                                             shader_group.pixel.at(ps_entrypoint)},
+                                          ps_static_flags};
+
+   const auto hs_use = info_reader.read<bool>();
+   const auto hs_entrypoint = std::string{info_reader.read_string()};
+   const auto hs_static_flags =
+      gsl::narrow_cast<std::uint16_t>(info_reader.read<std::uint32_t>());
+   const auto ds_use = info_reader.read<bool>();
+   const auto ds_entrypoint = std::string{info_reader.read_string()};
+   const auto ds_static_flags =
+      gsl::narrow_cast<std::uint16_t>(info_reader.read<std::uint32_t>());
+   const auto gs_use = info_reader.read<bool>();
+   const auto gs_entrypoint = std::string{info_reader.read_string()};
+   const auto gs_static_flags =
+      gsl::narrow_cast<std::uint16_t>(info_reader.read<std::uint32_t>());
+
+   if (hs_use)
+      state.hull = shader_group.hull.at(hs_entrypoint).copy(hs_static_flags);
+
+   if (ds_use)
+      state.domain = shader_group.domain.at(ds_entrypoint).copy(ds_static_flags);
+
+   if (gs_use)
+      state.geometry = shader_group.geometry.at(gs_entrypoint).copy(gs_static_flags);
 
    rendertype.insert(state_name, std::move(state));
 }
@@ -210,6 +343,12 @@ void read_shader_pack(ucfb::Reader_strict<"shpk"_mn> reader,
    read_entrypoints(entrypoints_reader.read_child_strict<"CSHD"_mn>(), device,
                     shader_group);
    read_entrypoints(entrypoints_reader.read_child_strict<"VSHD"_mn>(), device,
+                    shader_group);
+   read_entrypoints(entrypoints_reader.read_child_strict<"HSHD"_mn>(), device,
+                    shader_group);
+   read_entrypoints(entrypoints_reader.read_child_strict<"DSHD"_mn>(), device,
+                    shader_group);
+   read_entrypoints(entrypoints_reader.read_child_strict<"GSHD"_mn>(), device,
                     shader_group);
    read_entrypoints(entrypoints_reader.read_child_strict<"PSHD"_mn>(), device,
                     shader_group);

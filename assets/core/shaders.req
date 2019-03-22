@@ -37,6 +37,7 @@ ucft
       "fixedfunc_zoom_blur"
       "late_backbuffer_resolve"
       "normal_ext"
+      "normal_ext-tessellated"
       "pbr"
       "postprocess"
       "postprocess_bloom"

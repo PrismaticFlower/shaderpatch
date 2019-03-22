@@ -34,7 +34,8 @@ struct alignas(16) Scene {
    std::array<glm::vec4, 3> shadow_map_transform;
    std::uint32_t vertex_color_srgb;
    float time;
-   std::array<float, 2> _buffer_padding1;
+   float tessellation_resolution_factor;
+   float _buffer_padding1;
 };
 
 static_assert(sizeof(Scene) == 176);

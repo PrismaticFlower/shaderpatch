@@ -233,7 +233,7 @@ Transformer create_transformer(Vertex_input input)
    Transformer_unskinned transformer;
 #elif defined(__VERTEX_TRANSFORM_HARD_SKINNED__)
    Transformer_hard_skinned transformer;
-#elif defined(__PIXEL_SHADER__)
+#elif !defined(__VERTEX_SHADER__)
    Transformer_null transformer;
 #else
 #error vertex_transformer.hlsl included in a vertex shader without a __VERTEX_TRANSFORM_*__ definition

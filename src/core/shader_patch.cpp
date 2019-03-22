@@ -15,6 +15,8 @@
 
 #include <comdef.h>
 
+#pragma optimize("", off)
+
 using namespace std::literals;
 
 namespace sp::core {
@@ -139,6 +141,8 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
    _farscene_depthstencil = {*_device, width, height, 1};
    _refraction_rt = {*_device, Swapchain::format, width / 2, height / 2};
    _current_game_rendertarget = _game_backbuffer_index;
+   _primitive_topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
+   _patch_material_topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
    _game_input_layout = {};
    _game_shader = {};
    _game_textures = {};
@@ -640,13 +644,13 @@ auto Shader_patch::create_game_shader(const Shader_metadata metadata) noexcept
    auto& state =
       _shader_database->rendertypes.at(metadata.rendertype_name).at(metadata.shader_name);
 
-   auto vertex_shader = state.at_if(metadata.vertex_shader_flags);
+   auto vertex_shader = state.vertex.at_if(metadata.vertex_shader_flags);
 
    auto [vs, vs_bytecode, vs_inputlayout] =
       vertex_shader.value_or(decltype(vertex_shader)::value_type{});
 
-   auto vertex_shader_compressed =
-      state.at_if(metadata.vertex_shader_flags | Vertex_shader_flags::compressed);
+   auto vertex_shader_compressed = state.vertex.at_if(
+      metadata.vertex_shader_flags | Vertex_shader_flags::compressed);
 
    auto [vs_compressed, vs_bytecode_compressed, vs_inputlayout_compressed] =
       vertex_shader_compressed.value_or(decltype(vertex_shader)::value_type{});
@@ -654,7 +658,7 @@ auto Shader_patch::create_game_shader(const Shader_metadata metadata) noexcept
    auto game_shader = std::make_shared<Game_shader>(
       Game_shader{std::move(vs),
                   std::move(vs_compressed),
-                  state.at(metadata.pixel_shader_flags),
+                  state.pixel.at(metadata.pixel_shader_flags),
                   metadata.rendertype,
                   metadata.srgb_state,
                   metadata.shader_name,
@@ -835,11 +839,6 @@ void Shader_patch::set_input_layout(const Game_input_layout& input_layout) noexc
    _shader_dirty = true;
 }
 
-void Shader_patch::set_primitive_topology(const D3D11_PRIMITIVE_TOPOLOGY topology) noexcept
-{
-   _device_context->IASetPrimitiveTopology(topology);
-}
-
 void Shader_patch::set_game_shader(std::shared_ptr<Game_shader> shader) noexcept
 {
    _game_shader = shader;
@@ -868,6 +867,10 @@ void Shader_patch::set_viewport(float x, float y, float width, float height) noe
    const auto viewport = CD3D11_VIEWPORT{x, y, width, height};
 
    _device_context->RSSetViewports(1, &viewport);
+
+   _cb_scene_dirty = true;
+   _cb_scene.tessellation_resolution_factor =
+      std::sqrt((width * height) / (1920.0f * 1080.0f));
 }
 
 void Shader_patch::set_rasterizer_state(ID3D11RasterizerState& rasterizer_state) noexcept
@@ -953,13 +956,15 @@ void Shader_patch::set_patch_material(std::shared_ptr<Patch_material> material) 
    _patch_material = std::move(material);
 
    _shader_dirty = true;
-   _ps_material_textures_dirty = true;
 
    if (_patch_material) {
       auto* const cb = _patch_material->constant_buffer.get();
       _device_context->PSSetConstantBuffers(2, 1, &cb);
 
       _game_textures[0] = _patch_material->fail_safe_game_texture;
+
+      _patch_material->bind_constant_buffers(*_device_context);
+      _patch_material->bind_shader_resources(*_device_context);
    }
 }
 
@@ -1027,19 +1032,21 @@ void Shader_patch::set_constants(const cb::Draw_ps_tag, const UINT offset,
                constants.data(), constants.size_bytes());
 }
 
-void Shader_patch::draw(const UINT vertex_count, const UINT start_vertex) noexcept
+void Shader_patch::draw(const D3D11_PRIMITIVE_TOPOLOGY topology,
+                        const UINT vertex_count, const UINT start_vertex) noexcept
 {
-   update_dirty_state();
+   update_dirty_state(topology);
 
    if (_discard_draw_calls) return;
 
    _device_context->Draw(vertex_count, start_vertex);
 }
 
-void Shader_patch::draw_indexed(const UINT index_count, const UINT start_index,
+void Shader_patch::draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
+                                const UINT index_count, const UINT start_index,
                                 const UINT start_vertex) noexcept
 {
-   update_dirty_state();
+   update_dirty_state(topology);
 
    if (_discard_draw_calls) return;
 
@@ -1098,15 +1105,19 @@ void Shader_patch::bind_static_resources() noexcept
                                        &empty_vertex_buffer, &empty_vertex_stride,
                                        &empty_vertex_offset);
 
+   auto* cb_scene = _cb_scene_buffer.get();
    const auto vs_constant_buffers =
-      std::array{_cb_scene_buffer.get(), _cb_draw_buffer.get(),
-                 _cb_fixedfunction_buffer.get()};
+      std::array{cb_scene, _cb_draw_buffer.get(), _cb_fixedfunction_buffer.get()};
 
    _device_context->VSSetConstantBuffers(0, vs_constant_buffers.size(),
                                          vs_constant_buffers.data());
 
    auto* const cb_skin_buffer = _cb_skin_buffer_srv.get();
    _device_context->VSSetShaderResources(0, 1, &cb_skin_buffer);
+
+   _device_context->HSSetConstantBuffers(0, 1, &cb_scene);
+   _device_context->DSSetConstantBuffers(0, 1, &cb_scene);
+   _device_context->GSSetConstantBuffers(0, 1, &cb_scene);
 
    const auto ps_constant_buffers =
       std::array{_cb_draw_ps_buffer.get(), _cb_draw_buffer.get()};
@@ -1179,8 +1190,6 @@ void Shader_patch::game_rendertype_changed() noexcept
       _device_context->PSSetShaderResources(custom_tex_begin, srvs.size(),
                                             srvs.data());
 
-      _ps_material_textures_dirty = true;
-
       // Save rasterizer and blend state
       Com_ptr<ID3D11RasterizerState> rs_state;
       _device_context->RSGetState(rs_state.clear_and_assign());
@@ -1215,8 +1224,6 @@ void Shader_patch::game_rendertype_changed() noexcept
       auto* const srv = _refraction_rt.srv.get();
 
       _device_context->PSSetShaderResources(custom_tex_begin, 1, &srv);
-
-      _ps_material_textures_dirty = true;
    }
    else if (_shader_rendertype == Rendertype::water) {
       resolve_refraction_texture();
@@ -1227,8 +1234,6 @@ void Shader_patch::game_rendertype_changed() noexcept
 
       _device_context->PSSetShaderResources(custom_tex_begin, srvs.size(),
                                             srvs.data());
-
-      _ps_material_textures_dirty = true;
    }
    else if (_shader_rendertype == Rendertype::hdr && !_effects_active &&
             _game_shader->shader_name == "glow threshold"sv) {
@@ -1272,7 +1277,7 @@ void Shader_patch::game_rendertype_changed() noexcept
    }
 }
 
-void Shader_patch::update_dirty_state() noexcept
+void Shader_patch::update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primitive_topology) noexcept
 {
    if (std::exchange(_shader_rendertype_changed, false))
       game_rendertype_changed();
@@ -1280,6 +1285,13 @@ void Shader_patch::update_dirty_state() noexcept
    if (std::exchange(_shader_dirty, false)) {
       update_shader();
    }
+
+   const auto primitive_topology = _use_patch_material_topology
+                                      ? _patch_material_topology
+                                      : draw_primitive_topology;
+
+   if (std::exchange(_primitive_topology, primitive_topology) != primitive_topology)
+      _device_context->IASetPrimitiveTopology(_primitive_topology);
 
    if (std::exchange(_ps_textures_dirty, false)) {
       if (_linear_rendering) {
@@ -1303,13 +1315,6 @@ void Shader_patch::update_dirty_state() noexcept
                        _game_textures[2].srv.get(), _game_textures[3].srv.get()}
                .data());
       }
-   }
-
-   if (std::exchange(_ps_material_textures_dirty, false) && _patch_material) {
-      _device_context
-         ->PSSetShaderResources(4, _patch_material->shader_resources.size(),
-                                reinterpret_cast<ID3D11ShaderResourceView**>(
-                                   _patch_material->shader_resources.data()));
    }
 
    if (std::exchange(_om_targets_dirty, false)) {
@@ -1345,37 +1350,61 @@ void Shader_patch::update_dirty_state() noexcept
 
 void Shader_patch::update_shader() noexcept
 {
-   if (_patch_material && _shader_rendertype == _patch_material->overridden_rendertype) {
+   if (_patch_material) {
       auto vs_flags = _game_shader->vertex_shader_flags;
 
       if (_game_input_layout.compressed)
          vs_flags |= Vertex_shader_flags::compressed;
 
-      _patch_material->shader->update(*_device_context, _input_layout_descriptions,
-                                      _game_input_layout.layout_index,
-                                      _game_shader->shader_name, vs_flags,
-                                      _game_shader->pixel_shader_flags);
+      _use_patch_material_topology = (_patch_material->tessellation &&
+                                      user_config.graphics.enable_tessellation);
+      if (_use_patch_material_topology)
+         _patch_material_topology = _patch_material->tessellation_primitive_topology;
+
+      if (_shader_rendertype == _patch_material->overridden_rendertype) {
+         _patch_material->shader->update(*_device_context, _input_layout_descriptions,
+                                         _game_input_layout.layout_index,
+                                         _game_shader->shader_name, vs_flags,
+                                         _game_shader->pixel_shader_flags);
+         return;
+      }
+      else if (_shader_rendertype == Rendertype::zprepass &&
+               _patch_material->tessellation &&
+               user_config.graphics.enable_tessellation) {
+         vs_flags |= Vertex_shader_flags::normal;
+
+         _patch_material->shader->update_for_zprepass(*_device_context,
+                                                      _input_layout_descriptions,
+                                                      _game_input_layout.layout_index,
+                                                      _game_shader->shader_name,
+                                                      vs_flags);
+         return;
+      }
+   }
+
+   _use_patch_material_topology = false;
+
+   if (_game_input_layout.compressed) {
+      auto& input_layout =
+         _game_shader->input_layouts_compressed.get(*_device, _input_layout_descriptions,
+                                                    _game_input_layout.layout_index);
+
+      _device_context->IASetInputLayout(&input_layout);
+      _device_context->VSSetShader(_game_shader->vs_compressed.get(), nullptr, 0);
    }
    else {
-      if (_game_input_layout.compressed) {
-         auto& input_layout =
-            _game_shader->input_layouts_compressed.get(*_device, _input_layout_descriptions,
-                                                       _game_input_layout.layout_index);
+      auto& input_layout =
+         _game_shader->input_layouts.get(*_device, _input_layout_descriptions,
+                                         _game_input_layout.layout_index);
 
-         _device_context->IASetInputLayout(&input_layout);
-         _device_context->VSSetShader(_game_shader->vs_compressed.get(), nullptr, 0);
-      }
-      else {
-         auto& input_layout =
-            _game_shader->input_layouts.get(*_device, _input_layout_descriptions,
-                                            _game_input_layout.layout_index);
-
-         _device_context->IASetInputLayout(&input_layout);
-         _device_context->VSSetShader(_game_shader->vs.get(), nullptr, 0);
-      }
-
-      _device_context->PSSetShader(_game_shader->ps.get(), nullptr, 0);
+      _device_context->IASetInputLayout(&input_layout);
+      _device_context->VSSetShader(_game_shader->vs.get(), nullptr, 0);
    }
+
+   _device_context->PSSetShader(_game_shader->ps.get(), nullptr, 0);
+   _device_context->HSSetShader(nullptr, nullptr, 0);
+   _device_context->DSSetShader(nullptr, nullptr, 0);
+   _device_context->GSSetShader(nullptr, nullptr, 0);
 }
 
 void Shader_patch::update_frame_state() noexcept

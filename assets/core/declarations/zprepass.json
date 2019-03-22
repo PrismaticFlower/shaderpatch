@@ -7,7 +7,7 @@
 
       "passes": [
         {
-          "name": "opaque",
+          "name": "near opaque",
 
           "skinned": true,
           "lighting": false,
@@ -23,7 +23,7 @@
 
       "passes": [
         {
-          "name": "hardedged",
+          "name": "near opaque hardedged",
 
           "skinned": true,
           "lighting": false,

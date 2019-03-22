@@ -1,0 +1,640 @@
+{
+  "group_name": "normal_ext-tessellated",
+  "source_name": "normal_ext.fx",
+
+  "entrypoints": {
+    "main_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": true,
+          "normal": true,
+          "tangents": true,
+          "color": true,
+          "texture_coords": true
+        },
+
+        "flags_mask": {
+          "tangents": false
+        }
+      },
+
+      "static_flags": [
+        "NORMAL_EXT_USE_DYNAMIC_TANGENTS"
+      ],
+
+      "defines": [
+        [ "NORMAL_EXT_USE_TEXCOORDS_TRANSFORM", "0" ],
+        [ "NORMAL_EXT_USE_SPECULAR", "0" ],
+        [ "NORMAL_EXT_USE_TRANSPARENCY", "0" ],
+        [ "NORMAL_EXT_USE_HARDEDGED_TEST", "0" ],
+        [ "NORMAL_EXT_USE_SHADOW_MAP", "0" ],
+        [ "NORMAL_EXT_USE_PROJECTED_TEXTURE", "0" ],
+        [ "NORMAL_EXT_USE_DISPLACEMENT_MAP", "0" ],
+        [ "NORMAL_EXT_USE_PN_TRIANGLES", "0" ]
+      ]
+    },
+
+    "main_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": true
+      },
+
+      "defines": [
+        [ "NORMAL_EXT_USE_TEXCOORDS_TRANSFORM", "0" ],
+        [ "NORMAL_EXT_USE_HARDEDGED_TEST", "0" ],
+        [ "NORMAL_EXT_USE_DISPLACEMENT_MAP", "0" ],
+        [ "NORMAL_EXT_USE_PN_TRIANGLES", "0" ]
+      ],
+
+      "static_flags": [
+        "NORMAL_EXT_USE_SPECULAR",
+        "NORMAL_EXT_USE_DYNAMIC_TANGENTS",
+        "NORMAL_EXT_USE_TRANSPARENCY",
+        "NORMAL_EXT_USE_SHADOW_MAP",
+        "NORMAL_EXT_USE_PROJECTED_TEXTURE",
+        "NORMAL_EXT_USE_PN_TRIANGLES"
+      ]
+    },
+
+    "main_hs": {
+      "stage": "hull",
+
+      "static_flags": [
+        "NORMAL_EXT_USE_DYNAMIC_TANGENTS",
+        "NORMAL_EXT_USE_PN_TRIANGLES"
+      ],
+
+      "defines": [
+        [ "NORMAL_EXT_USE_TEXCOORDS_TRANSFORM", "0" ],
+        [ "NORMAL_EXT_USE_SPECULAR", "0" ],
+        [ "NORMAL_EXT_USE_TRANSPARENCY", "0" ],
+        [ "NORMAL_EXT_USE_HARDEDGED_TEST", "0" ],
+        [ "NORMAL_EXT_USE_SHADOW_MAP", "0" ],
+        [ "NORMAL_EXT_USE_PROJECTED_TEXTURE", "0" ],
+        [ "NORMAL_EXT_USE_DISPLACEMENT_MAP", "0" ]
+      ]
+    },
+
+    "main_ds": {
+      "stage": "domain",
+
+      "static_flags": [
+        "NORMAL_EXT_USE_DYNAMIC_TANGENTS",
+        "NORMAL_EXT_USE_DISPLACEMENT_MAP",
+        "NORMAL_EXT_USE_PN_TRIANGLES"
+      ],
+
+      "defines": [
+        [ "NORMAL_EXT_USE_TEXCOORDS_TRANSFORM", "0" ],
+        [ "NORMAL_EXT_USE_SPECULAR", "0" ],
+        [ "NORMAL_EXT_USE_TRANSPARENCY", "0" ],
+        [ "NORMAL_EXT_USE_HARDEDGED_TEST", "0" ],
+        [ "NORMAL_EXT_USE_SHADOW_MAP", "0" ],
+        [ "NORMAL_EXT_USE_PROJECTED_TEXTURE", "0" ]
+      ]
+    }
+  },
+
+  "rendertypes": {
+    "normal_ext-tessellated.smoothed": {
+      "static_flags": {
+        "NORMAL_EXT_USE_SPECULAR": false,
+        "NORMAL_EXT_USE_DYNAMIC_TANGENTS": false,
+        "NORMAL_EXT_USE_TRANSPARENCY": false,
+        "NORMAL_EXT_USE_SHADOW_MAP": false,
+        "NORMAL_EXT_USE_PROJECTED_TEXTURE": false,
+        "NORMAL_EXT_USE_DISPLACEMENT_MAP": false,
+        "NORMAL_EXT_USE_PN_TRIANGLES": true
+      }
+    },
+
+    "normal_ext-tessellated.smoothed.specular": {
+      "static_flags": {
+        "NORMAL_EXT_USE_SPECULAR": true,
+        "NORMAL_EXT_USE_DYNAMIC_TANGENTS": false,
+        "NORMAL_EXT_USE_TRANSPARENCY": false,
+        "NORMAL_EXT_USE_SHADOW_MAP": false,
+        "NORMAL_EXT_USE_PROJECTED_TEXTURE": false,
+        "NORMAL_EXT_USE_DISPLACEMENT_MAP": false,
+        "NORMAL_EXT_USE_PN_TRIANGLES": true
+      }
+    },
+
+    "normal_ext-tessellated.smoothed.dynamic": {
+      "static_flags": {
+        "NORMAL_EXT_USE_SPECULAR": false,
+        "NORMAL_EXT_USE_DYNAMIC_TANGENTS": true,
+        "NORMAL_EXT_USE_TRANSPARENCY": false,
+        "NORMAL_EXT_USE_SHADOW_MAP": false,
+        "NORMAL_EXT_USE_PROJECTED_TEXTURE": false,
+        "NORMAL_EXT_USE_DISPLACEMENT_MAP": false,
+        "NORMAL_EXT_USE_PN_TRIANGLES": true
+      }
+    },
+
+    "normal_ext-tessellated.smoothed.specular.dynamic": {
+      "static_flags": {
+        "NORMAL_EXT_USE_SPECULAR": true,
+        "NORMAL_EXT_USE_DYNAMIC_TANGENTS": true,
+        "NORMAL_EXT_USE_TRANSPARENCY": false,
+        "NORMAL_EXT_USE_SHADOW_MAP": false,
+        "NORMAL_EXT_USE_PROJECTED_TEXTURE": false,
+        "NORMAL_EXT_USE_DISPLACEMENT_MAP": false,
+        "NORMAL_EXT_USE_PN_TRIANGLES": true
+      }
+    },
+
+    "normal_ext-tessellated.displacement mapped": {
+      "static_flags": {
+        "NORMAL_EXT_USE_SPECULAR": false,
+        "NORMAL_EXT_USE_DYNAMIC_TANGENTS": false,
+        "NORMAL_EXT_USE_TRANSPARENCY": false,
+        "NORMAL_EXT_USE_SHADOW_MAP": false,
+        "NORMAL_EXT_USE_PROJECTED_TEXTURE": false,
+        "NORMAL_EXT_USE_DISPLACEMENT_MAP": true,
+        "NORMAL_EXT_USE_PN_TRIANGLES": false
+      }
+    },
+
+    "normal_ext-tessellated.displacement mapped.specular": {
+      "static_flags": {
+        "NORMAL_EXT_USE_SPECULAR": true,
+        "NORMAL_EXT_USE_DYNAMIC_TANGENTS": false,
+        "NORMAL_EXT_USE_TRANSPARENCY": false,
+        "NORMAL_EXT_USE_SHADOW_MAP": false,
+        "NORMAL_EXT_USE_PROJECTED_TEXTURE": false,
+        "NORMAL_EXT_USE_DISPLACEMENT_MAP": true,
+        "NORMAL_EXT_USE_PN_TRIANGLES": false
+      }
+    },
+
+    "normal_ext-tessellated.displacement mapped.dynamic": {
+      "static_flags": {
+        "NORMAL_EXT_USE_SPECULAR": false,
+        "NORMAL_EXT_USE_DYNAMIC_TANGENTS": true,
+        "NORMAL_EXT_USE_TRANSPARENCY": false,
+        "NORMAL_EXT_USE_SHADOW_MAP": false,
+        "NORMAL_EXT_USE_PROJECTED_TEXTURE": false,
+        "NORMAL_EXT_USE_DISPLACEMENT_MAP": true,
+        "NORMAL_EXT_USE_PN_TRIANGLES": false
+      }
+    },
+
+    "normal_ext-tessellated.displacement mapped.specular.dynamic": {
+      "static_flags": {
+        "NORMAL_EXT_USE_SPECULAR": true,
+        "NORMAL_EXT_USE_DYNAMIC_TANGENTS": true,
+        "NORMAL_EXT_USE_TRANSPARENCY": false,
+        "NORMAL_EXT_USE_SHADOW_MAP": false,
+        "NORMAL_EXT_USE_PROJECTED_TEXTURE": false,
+        "NORMAL_EXT_USE_DISPLACEMENT_MAP": true,
+        "NORMAL_EXT_USE_PN_TRIANGLES": false
+      }
+    },
+
+    "normal_ext-tessellated.smoothed.displacement mapped": {
+      "static_flags": {
+        "NORMAL_EXT_USE_SPECULAR": false,
+        "NORMAL_EXT_USE_DYNAMIC_TANGENTS": false,
+        "NORMAL_EXT_USE_TRANSPARENCY": false,
+        "NORMAL_EXT_USE_SHADOW_MAP": false,
+        "NORMAL_EXT_USE_PROJECTED_TEXTURE": false,
+        "NORMAL_EXT_USE_DISPLACEMENT_MAP": true,
+        "NORMAL_EXT_USE_PN_TRIANGLES": true
+      }
+    },
+
+    "normal_ext-tessellated.smoothed.displacement mapped.specular": {
+      "static_flags": {
+        "NORMAL_EXT_USE_SPECULAR": true,
+        "NORMAL_EXT_USE_DYNAMIC_TANGENTS": false,
+        "NORMAL_EXT_USE_TRANSPARENCY": false,
+        "NORMAL_EXT_USE_SHADOW_MAP": false,
+        "NORMAL_EXT_USE_PROJECTED_TEXTURE": false,
+        "NORMAL_EXT_USE_DISPLACEMENT_MAP": true,
+        "NORMAL_EXT_USE_PN_TRIANGLES": true
+      }
+    },
+
+    "normal_ext-tessellated.smoothed.displacement mapped.dynamic": {
+      "static_flags": {
+        "NORMAL_EXT_USE_SPECULAR": false,
+        "NORMAL_EXT_USE_DYNAMIC_TANGENTS": true,
+        "NORMAL_EXT_USE_TRANSPARENCY": false,
+        "NORMAL_EXT_USE_SHADOW_MAP": false,
+        "NORMAL_EXT_USE_PROJECTED_TEXTURE": false,
+        "NORMAL_EXT_USE_DISPLACEMENT_MAP": true,
+        "NORMAL_EXT_USE_PN_TRIANGLES": true
+      }
+    },
+
+    "normal_ext-tessellated.smoothed.displacement mapped.specular.dynamic": {
+      "static_flags": {
+        "NORMAL_EXT_USE_SPECULAR": true,
+        "NORMAL_EXT_USE_DYNAMIC_TANGENTS": true,
+        "NORMAL_EXT_USE_TRANSPARENCY": false,
+        "NORMAL_EXT_USE_SHADOW_MAP": false,
+        "NORMAL_EXT_USE_PROJECTED_TEXTURE": false,
+        "NORMAL_EXT_USE_DISPLACEMENT_MAP": true,
+        "NORMAL_EXT_USE_PN_TRIANGLES": true
+      }
+    }
+
+  },
+
+  "states": {
+    "near opaque": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "hull_shader": {
+        "entrypoint": "main_hs"
+      },
+
+      "domain_shader": {
+        "entrypoint": "main_ds"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      }
+    },
+
+    "near opaque hardedged": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "hull_shader": {
+        "entrypoint": "main_hs"
+      },
+
+      "domain_shader": {
+        "entrypoint": "main_ds"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      }
+    },
+
+    "near transparent": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "hull_shader": {
+        "entrypoint": "main_hs"
+      },
+
+      "domain_shader": {
+        "entrypoint": "main_ds"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_TRANSPARENCY": true
+        }
+      }
+    },
+
+    "near transparent hardedged": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "hull_shader": {
+        "entrypoint": "main_hs"
+      },
+
+      "domain_shader": {
+        "entrypoint": "main_ds"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_TRANSPARENCY": true
+        }
+      }
+    },
+
+    "near opaque projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "hull_shader": {
+        "entrypoint": "main_hs"
+      },
+
+      "domain_shader": {
+        "entrypoint": "main_ds"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+        }
+      }
+    },
+
+    "near opaque hardedged projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "hull_shader": {
+        "entrypoint": "main_hs"
+      },
+
+      "domain_shader": {
+        "entrypoint": "main_ds"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+        }
+      }
+    },
+
+    "near transparent projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "hull_shader": {
+        "entrypoint": "main_hs"
+      },
+
+      "domain_shader": {
+        "entrypoint": "main_ds"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_TRANSPARENCY": true,
+          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+        }
+      }
+    },
+
+    "near transparent hardedged projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "hull_shader": {
+        "entrypoint": "main_hs"
+      },
+
+      "domain_shader": {
+        "entrypoint": "main_ds"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_TRANSPARENCY": true,
+          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+        }
+      }
+    },
+
+    "near opaque shadow": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "hull_shader": {
+        "entrypoint": "main_hs"
+      },
+
+      "domain_shader": {
+        "entrypoint": "main_ds"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_SHADOW_MAP": true
+        }
+      }
+    },
+
+    "near opaque hardedged shadow": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "hull_shader": {
+        "entrypoint": "main_hs"
+      },
+
+      "domain_shader": {
+        "entrypoint": "main_ds"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_SHADOW_MAP": true
+        }
+      }
+    },
+
+    "near opaque shadow projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "hull_shader": {
+        "entrypoint": "main_hs"
+      },
+
+      "domain_shader": {
+        "entrypoint": "main_ds"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_SHADOW_MAP": true,
+          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+        }
+      }
+    },
+
+    "near opaque hardedged shadow projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "hull_shader": {
+        "entrypoint": "main_hs"
+      },
+
+      "domain_shader": {
+        "entrypoint": "main_ds"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_SHADOW_MAP": true,
+          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+        }
+      }
+    },
+
+    "near transparent shadow": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "hull_shader": {
+        "entrypoint": "main_hs"
+      },
+
+      "domain_shader": {
+        "entrypoint": "main_ds"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_TRANSPARENCY": true,
+          "NORMAL_EXT_USE_SHADOW_MAP": true
+        }
+      }
+    },
+
+    "near transparent hardedged shadow": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "hull_shader": {
+        "entrypoint": "main_hs"
+      },
+
+      "domain_shader": {
+        "entrypoint": "main_ds"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_TRANSPARENCY": true,
+          "NORMAL_EXT_USE_SHADOW_MAP": true
+        }
+      }
+    },
+
+    "near transparent shadow projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "hull_shader": {
+        "entrypoint": "main_hs"
+      },
+
+      "domain_shader": {
+        "entrypoint": "main_ds"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_TRANSPARENCY": true,
+          "NORMAL_EXT_USE_SHADOW_MAP": true,
+          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+        }
+      }
+    },
+
+    "near transparent hardedged shadow projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "hull_shader": {
+        "entrypoint": "main_hs"
+      },
+
+      "domain_shader": {
+        "entrypoint": "main_ds"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_TRANSPARENCY": true,
+          "NORMAL_EXT_USE_SHADOW_MAP": true,
+          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+        }
+      }
+    }
+  }
+}

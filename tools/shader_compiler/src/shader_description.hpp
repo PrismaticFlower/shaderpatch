@@ -2,6 +2,7 @@
 #include "shader_entrypoint.hpp"
 #include "shader_input_element.hpp"
 
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -16,6 +17,15 @@ struct State {
 
    std::string ps_entrypoint;
    std::unordered_map<std::string, bool> ps_static_flag_values;
+
+   std::optional<std::string> hs_entrypoint;
+   std::unordered_map<std::string, bool> hs_static_flag_values;
+
+   std::optional<std::string> ds_entrypoint;
+   std::unordered_map<std::string, bool> ds_static_flag_values;
+
+   std::optional<std::string> gs_entrypoint;
+   std::unordered_map<std::string, bool> gs_static_flag_values;
 };
 
 struct Rendertype {
@@ -132,6 +142,45 @@ inline auto read_json_shader_state(
    state.ps_static_flag_values = read_json_static_flag_values(
       j_ps.value("static_flags"s, nlohmann::json::object()), j_rt_static_flags,
       entrypoints.at(state.ps_entrypoint).static_flags.list_flags());
+
+   if (const auto hs = j.find("hull_shader"s); hs != j.end()) {
+      state.hs_entrypoint = hs->at("entrypoint"s).get<std::string>();
+
+      if (!entrypoints.count(*state.hs_entrypoint)) {
+         throw compose_exception<std::runtime_error>("no shader entrypoint named \""s,
+                                                     *state.hs_entrypoint, "\"");
+      }
+
+      state.hs_static_flag_values = read_json_static_flag_values(
+         hs->value("static_flags"s, nlohmann::json::object()), j_rt_static_flags,
+         entrypoints.at(*state.hs_entrypoint).static_flags.list_flags());
+   }
+
+   if (const auto ds = j.find("domain_shader"s); ds != j.end()) {
+      state.ds_entrypoint = ds->at("entrypoint"s).get<std::string>();
+
+      if (!entrypoints.count(*state.ds_entrypoint)) {
+         throw compose_exception<std::runtime_error>("no shader entrypoint named \""s,
+                                                     *state.ds_entrypoint, "\"");
+      }
+
+      state.ds_static_flag_values = read_json_static_flag_values(
+         ds->value("static_flags"s, nlohmann::json::object()), j_rt_static_flags,
+         entrypoints.at(*state.ds_entrypoint).static_flags.list_flags());
+   }
+
+   if (const auto gs = j.find("geometry_shader"s); gs != j.end()) {
+      state.gs_entrypoint = gs->at("entrypoint"s).get<std::string>();
+
+      if (!entrypoints.count(*state.gs_entrypoint)) {
+         throw compose_exception<std::runtime_error>("no shader entrypoint named \""s,
+                                                     *state.gs_entrypoint, "\"");
+      }
+
+      state.ds_static_flag_values = read_json_static_flag_values(
+         gs->value("static_flags"s, nlohmann::json::object()), j_rt_static_flags,
+         entrypoints.at(*state.gs_entrypoint).static_flags.list_flags());
+   }
 
    return state;
 }

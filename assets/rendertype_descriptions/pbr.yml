@@ -1,5 +1,15 @@
-Overridden RenderType: "normal"
+Overridden RenderType: normal
 Failsafe Texture Index: 0
+
+Material Options:
+   Unlit: no
+   
+Constant Buffer Stages:
+   VS: no
+   HS: no
+   DS: no
+   GS: no
+   PS: yes
 
 Property Mappings:
    BaseColor:
@@ -42,13 +52,23 @@ Property Mappings:
       Op: exp2
 
 Texture Mappings:
-   AlbedoMap: 
-      Slot: 0
-   NormalMap: 
-      Slot: 1
-   MetallicRoughnessMap: 
-      Slot: 2
+   AlbedoMap:
+      -
+         Stage: PS
+         Slot: 0
+   NormalMap:
+      -
+         Stage: PS
+         Slot: 1
+   MetallicRoughnessMap:
+      -
+         Stage: PS
+         Slot: 2
    AOMap:
-      Slot: 3
+      -
+         Stage: PS
+         Slot: 3
    EmissiveMap:
-      Slot: 4
+      -
+         Stage: PS
+         Slot: 4

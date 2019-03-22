@@ -334,6 +334,9 @@
     <None Include="src\postprocess_bloom.fx">
       <Filter>src</Filter>
     </None>
+    <None Include="definitions\patch\normal_ext-tessellated.json">
+      <Filter>definitions\patch</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">

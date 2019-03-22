@@ -14,7 +14,7 @@
 
 namespace sp::shader {
 
-struct Compute_variation {
+struct Generic_variation {
    std::uint32_t static_flags = 0;
    Preprocessor_defines defines;
 };

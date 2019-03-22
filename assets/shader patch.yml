@@ -20,6 +20,10 @@ Graphics:
    # Anisotropic Filtering level for textures, can be "off", "x2", "x4", "x8" or "x16".
    Anisotropic Filtering: x16
 
+   # Whether to let custom materials use tessellation shaders or not. On older GPUs this
+   # may cause a performance hit.
+   Enable Tessellation: yes
+
    # When a map or mod has not loaded an Effects Config Shader Patch can use a user specified 
    # config.
    Enable User Effects Config: no

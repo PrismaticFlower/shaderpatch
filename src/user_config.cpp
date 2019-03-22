@@ -43,6 +43,8 @@ void User_config::show_imgui() noexcept
                                             to_string(Anisotropic_filtering::x8),
                                             to_string(Anisotropic_filtering::x16)}));
 
+      ImGui::Checkbox("Enable Tessellation", &graphics.enable_tessellation);
+
       ImGui::Checkbox("Enable User Effects Config", &graphics.enable_user_effects_config);
       ImGui::InputText("User Effects Config", graphics.user_effects_config);
    }
@@ -83,6 +85,9 @@ void User_config::parse_file(const std::string& path)
 
    graphics.anisotropic_filtering = anisotropic_filtering_from_string(
       config["Graphics"s]["Anisotropic Filtering"s].as<std::string>());
+
+   graphics.enable_tessellation =
+      config["Graphics"s]["Enable Tessellation"s].as<bool>();
 
    graphics.enable_user_effects_config =
       config["Graphics"s]["Enable User Effects Config"s].as<bool>();

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "material_options.hpp"
 #include "patch_material_io.hpp"
 
 #pragma warning(push)
@@ -11,6 +12,7 @@
 
 namespace sp {
 
-auto describe_material(std::string_view name, const YAML::Node& description,
-                       const YAML::Node& material) -> Material_info;
+auto describe_material(const std::string_view name,
+                       const YAML::Node& description, const YAML::Node& material,
+                       Material_options& material_options) -> Material_info;
 }

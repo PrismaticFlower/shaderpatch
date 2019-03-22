@@ -51,23 +51,62 @@ bool is_compressed_input(const gsl::span<const D3DVERTEXELEMENT9> elements) noex
    return false;
 }
 
-auto add_missing_tangents(const gsl::span<const D3DVERTEXELEMENT9> input_elements,
-                          const bool compressed) noexcept
-   -> std::vector<D3DVERTEXELEMENT9>
+void add_missing_normal(std::vector<D3DVERTEXELEMENT9>& elements,
+                        const bool compressed) noexcept
 {
-   std::vector<D3DVERTEXELEMENT9> elements{input_elements.cbegin(),
-                                           input_elements.cend()};
 
    auto normal =
       std::find_if(elements.cbegin(), elements.cend(), [](const D3DVERTEXELEMENT9 elem) {
          return elem.Usage == D3DDECLUSAGE_NORMAL && elem.UsageIndex == 0;
       });
 
-   if (normal == elements.cend()) return elements;
+   if (normal != elements.cend()) return;
+
+   auto it =
+      std::find_if(elements.cbegin(), elements.cend(), [](const D3DVERTEXELEMENT9 elem) {
+         return elem.Usage == D3DDECLUSAGE_BLENDINDICES && elem.UsageIndex == 0;
+      });
+
+   if (it == elements.cend()) {
+      it = std::find_if(elements.cbegin(), elements.cend(), [](const D3DVERTEXELEMENT9 elem) {
+         return elem.Usage == D3DDECLUSAGE_POSITION && elem.UsageIndex == 0;
+      });
+
+      if (it == elements.cend()) return;
+   }
+
+   auto next_after_it = it + 1;
+
+   if (next_after_it == elements.cend()) return;
+
+   const auto it_elem_size = d3d_decl_type_size(static_cast<D3DDECLTYPE>(it->Type));
+   const auto distance = next_after_it->Offset - (it->Offset + it_elem_size);
+
+   if (compressed && distance == 12 || distance == 4) {
+      elements.insert(next_after_it, {0, static_cast<WORD>(it->Offset + it_elem_size),
+                                      D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT,
+                                      D3DDECLUSAGE_NORMAL, 0});
+   }
+   else if (distance == 36 || distance == 12) {
+      elements.insert(next_after_it, {0, static_cast<WORD>(it->Offset + it_elem_size),
+                                      D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT,
+                                      D3DDECLUSAGE_NORMAL, 0});
+   }
+}
+
+void add_missing_tangents(std::vector<D3DVERTEXELEMENT9>& elements,
+                          const bool compressed) noexcept
+{
+   auto normal =
+      std::find_if(elements.cbegin(), elements.cend(), [](const D3DVERTEXELEMENT9 elem) {
+         return elem.Usage == D3DDECLUSAGE_NORMAL && elem.UsageIndex == 0;
+      });
+
+   if (normal == elements.cend()) return;
 
    auto next_after_normal = normal + 1;
 
-   if (next_after_normal == elements.cend()) return elements;
+   if (next_after_normal == elements.cend()) return;
 
    const auto distance = next_after_normal->Offset - normal->Offset;
 
@@ -93,8 +132,6 @@ auto add_missing_tangents(const gsl::span<const D3DVERTEXELEMENT9> input_element
                                  D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT,
                                  D3DDECLUSAGE_TANGENT, 0});
    }
-
-   return elements;
 }
 
 auto translate_vertex_elements(const gsl::span<const D3DVERTEXELEMENT9> elements) noexcept
@@ -124,9 +161,14 @@ auto create_input_layout(core::Shader_patch& shader_patch,
 {
    d3d9_elements = apply_patchups(d3d9_elements);
    const bool compressed = is_compressed_input(d3d9_elements);
-   const auto elements_with_tangents = add_missing_tangents(d3d9_elements, compressed);
 
-   const auto elements = translate_vertex_elements(elements_with_tangents);
+   std::vector<D3DVERTEXELEMENT9> patched_d3d9_elements{d3d9_elements.cbegin(),
+                                                        d3d9_elements.cend()};
+
+   add_missing_normal(patched_d3d9_elements, compressed);
+   add_missing_tangents(patched_d3d9_elements, compressed);
+
+   const auto elements = translate_vertex_elements(patched_d3d9_elements);
 
    return shader_patch.create_game_input_layout(elements, compressed);
 }

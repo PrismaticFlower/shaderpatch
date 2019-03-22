@@ -59,7 +59,7 @@
   "rendertypes": { "zprepass": {} },
 
   "states": {
-    "opaque": {
+    "near opaque": {
       "type": "standard",
 
       "vertex_shader": {
@@ -71,7 +71,7 @@
       }
     },
 
-    "hardedged": {
+    "near opaque hardedged": {
       "type": "standard",
 
       "vertex_shader": {

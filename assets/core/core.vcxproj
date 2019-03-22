@@ -152,6 +152,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="definitions\patch\late_backbuffer_resolve.json" />
+    <None Include="definitions\patch\normal_ext-tessellated.json" />
     <None Include="definitions\patch\postprocess_bloom.json" />
     <None Include="definitions\patch\postprocess_msaa_resolve.json" />
     <None Include="shader_declarations.req">

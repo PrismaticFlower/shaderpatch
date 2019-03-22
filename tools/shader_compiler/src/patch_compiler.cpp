@@ -144,6 +144,27 @@ void Patch_compiler::save(const fs::path& output_path) const
             write_entrypoints(vs_writer, _vertex_entrypoints);
          }
 
+         // write hull entry points
+         {
+            auto hs_writer = entrypoint_writer.emplace_child("HSHD"_mn);
+
+            write_entrypoints(hs_writer, _hull_entrypoints);
+         }
+
+         // write domain entry points
+         {
+            auto ds_writer = entrypoint_writer.emplace_child("DSHD"_mn);
+
+            write_entrypoints(ds_writer, _domain_entrypoints);
+         }
+
+         // write domain entry points
+         {
+            auto gs_writer = entrypoint_writer.emplace_child("GSHD"_mn);
+
+            write_entrypoints(gs_writer, _geometry_entrypoints);
+         }
+
          // write pixel entry points
          {
             auto ps_writer = entrypoint_writer.emplace_child("PSHD"_mn);
@@ -176,10 +197,19 @@ void Patch_compiler::save(const fs::path& output_path) const
                {
                   auto info_writer = stat_writer.emplace_child("INFO"_mn);
 
-                  info_writer.write(state.second.vs_entrypoint);
-                  info_writer.write(state.second.vs_static_flags);
-                  info_writer.write(state.second.ps_entrypoint);
-                  info_writer.write(state.second.ps_static_flags);
+                  info_writer.write(state.second.vs_entrypoint,
+                                    state.second.vs_static_flags);
+                  info_writer.write(state.second.ps_entrypoint,
+                                    state.second.ps_static_flags);
+                  info_writer.write(bool{state.second.hs_entrypoint},
+                                    state.second.hs_entrypoint.value_or(""s),
+                                    state.second.hs_static_flags);
+                  info_writer.write(bool{state.second.ds_entrypoint},
+                                    state.second.ds_entrypoint.value_or(""s),
+                                    state.second.ds_static_flags);
+                  info_writer.write(bool{state.second.gs_entrypoint},
+                                    state.second.gs_entrypoint.value_or(""s),
+                                    state.second.gs_static_flags);
                }
             }
          }
@@ -194,7 +224,8 @@ void Patch_compiler::compile_entrypoints(
    for (const auto& entrypoint : entrypoints) {
       switch (entrypoint.second.stage) {
       case shader::Stage::compute:
-         compile_compute_entrypoint(entrypoint);
+         compile_generic_entrypoint(entrypoint, "__COMPUTE_SHADER__"s,
+                                    "cs_5_0"s, _compute_entrypoints);
          break;
       case shader::Stage::vertex:
          compile_vertex_entrypoint(entrypoint, input_layouts);
@@ -202,23 +233,36 @@ void Patch_compiler::compile_entrypoints(
       case shader::Stage::pixel:
          compile_pixel_entrypoint(entrypoint);
          break;
+      case shader::Stage::hull:
+         compile_generic_entrypoint(entrypoint, "__HULL_SHADER__"s, "hs_5_0"s,
+                                    _hull_entrypoints);
+         break;
+      case shader::Stage::domain:
+         compile_generic_entrypoint(entrypoint, "__DOMAIN_SHADER__"s, "ds_5_0"s,
+                                    _domain_entrypoints);
+         break;
+      case shader::Stage::geometry:
+         compile_generic_entrypoint(entrypoint, "__GEOMETRY_SHADER__"s,
+                                    "gs_5_0"s, _geometry_entrypoints);
+         break;
       }
    }
 }
 
-void Patch_compiler::compile_compute_entrypoint(
-   const std::pair<std::string, shader::Entrypoint>& entrypoint)
+void Patch_compiler::compile_generic_entrypoint(
+   const std::pair<std::string, shader::Entrypoint>& entrypoint,
+   const std::string& shader_define, const std::string& shader_profile,
+   std::unordered_map<std::string, Compiled_generic_entrypoint>& out_entrypoints)
 {
-   Expects(entrypoint.second.stage == shader::Stage::compute);
-   Expects(!_compute_entrypoints.count(entrypoint.first));
+   Expects(!out_entrypoints.count(entrypoint.first));
 
-   const std::vector<shader::Compute_variation> variations =
+   const std::vector<shader::Generic_variation> variations =
       entrypoint.second.static_flags.count()
-         ? shader::get_custom_variations<shader::Compute_variation>(
+         ? shader::get_custom_variations<shader::Generic_variation>(
               entrypoint.second.static_flags)
-         : std::vector{shader::Compute_variation{}};
+         : std::vector{shader::Generic_variation{}};
 
-   Compiled_compute_entrypoint compiled;
+   Compiled_generic_entrypoint compiled;
 
    const auto entrypoint_func =
       entrypoint.second.function_name.value_or(entrypoint.first);
@@ -226,16 +270,17 @@ void Patch_compiler::compile_compute_entrypoint(
    for (const auto& variation : variations) {
       compiled.variations
          .emplace(variation.static_flags,
-                  compile_compute_shader(entrypoint_func,
+                  compile_generic_shader(entrypoint_func,
                                          combine_defines(entrypoint.second.defines,
-                                                         variation.defines)));
+                                                         variation.defines),
+                                         shader_define, shader_profile));
    }
 
    const auto static_flags_names = entrypoint.second.static_flags.list_flags();
    compiled.static_flag_names.assign(std::cbegin(static_flags_names),
                                      std::cend(static_flags_names));
 
-   _compute_entrypoints.emplace(entrypoint.first, std::move(compiled));
+   out_entrypoints.emplace(entrypoint.first, std::move(compiled));
 }
 
 void Patch_compiler::compile_vertex_entrypoint(
@@ -317,14 +362,16 @@ void Patch_compiler::compile_pixel_entrypoint(
    _pixel_entrypoints.emplace(entrypoint.first, std::move(compiled));
 }
 
-auto Patch_compiler::compile_compute_shader(const std::string& entry_point,
-                                            Preprocessor_defines defines)
+auto Patch_compiler::compile_generic_shader(const std::string& entry_point,
+                                            Preprocessor_defines defines,
+                                            const std::string& shader_define,
+                                            const std::string& shader_profile)
    -> Com_ptr<ID3DBlob>
 {
-   defines.add_define("__COMPUTE_SHADER__"s, "1");
+   defines.add_define(shader_define, "1");
 
    return compile_shader_impl(_compiler_flags, entry_point, defines.get(),
-                              _source_path, "cs_5_0"s);
+                              _source_path, shader_profile.c_str());
 }
 
 auto Patch_compiler::compile_vertex_shader(const std::string& entry_point,
@@ -366,6 +413,27 @@ void Patch_compiler::assemble_rendertypes(
             state.second.ps_static_flag_values,
             _pixel_entrypoints.at(assembled_state.ps_entrypoint).static_flag_names);
 
+         if (state.second.hs_entrypoint) {
+            assembled_state.hs_entrypoint = state.second.hs_entrypoint;
+            assembled_state.hs_static_flags = resolve_state_flags(
+               state.second.hs_static_flag_values,
+               _hull_entrypoints.at(*assembled_state.hs_entrypoint).static_flag_names);
+         }
+
+         if (state.second.ds_entrypoint) {
+            assembled_state.ds_entrypoint = state.second.ds_entrypoint;
+            assembled_state.ds_static_flags = resolve_state_flags(
+               state.second.ds_static_flag_values,
+               _domain_entrypoints.at(*assembled_state.ds_entrypoint).static_flag_names);
+         }
+
+         if (state.second.gs_entrypoint) {
+            assembled_state.gs_entrypoint = state.second.gs_entrypoint;
+            assembled_state.gs_static_flags = resolve_state_flags(
+               state.second.gs_static_flag_values,
+               _domain_entrypoints.at(*assembled_state.gs_entrypoint).static_flag_names);
+         }
+
          assembled_rt.states.emplace(state.first, std::move(assembled_state));
       }
 
@@ -375,7 +443,7 @@ void Patch_compiler::assemble_rendertypes(
 
 void Patch_compiler::write_entrypoints(
    ucfb::Writer& writer,
-   const std::unordered_map<std::string, Compiled_compute_entrypoint>& entrypoints) const
+   const std::unordered_map<std::string, Compiled_generic_entrypoint>& entrypoints) const
 {
    writer.emplace_child("SIZE"_mn).write(
       static_cast<std::uint32_t>(entrypoints.size()));

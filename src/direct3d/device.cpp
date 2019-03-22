@@ -210,7 +210,6 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
    _render_state_manager.reset();
    _texture_stage_manager.reset();
    _shader_patch.reset(params->BackBufferWidth, params->BackBufferHeight);
-   _last_primitive_type = {};
    _fixed_func_active = true;
 
    _backbuffer =
@@ -917,7 +916,7 @@ HRESULT Device::DrawPrimitive(D3DPRIMITIVETYPE primitive_type,
 {
    Debug_trace::func(__FUNCSIG__);
 
-   draw_common(primitive_type);
+   draw_common();
 
    const auto vertex_count =
       d3d_primitive_count_to_vertex_count(primitive_type, primitive_count);
@@ -927,11 +926,12 @@ HRESULT Device::DrawPrimitive(D3DPRIMITIVETYPE primitive_type,
    // sets the primitive topology in a `modl` `segm` to triangle fans.
    if (primitive_type == D3DPT_TRIANGLEFAN) {
       SetIndices(static_cast<IDirect3DIndexBuffer9*>(_triangle_fan_quad_ibuf.get()));
-      _shader_patch.set_primitive_topology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-      _shader_patch.draw_indexed(6, 0, start_vertex);
+      _shader_patch.draw_indexed(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, 6, 0,
+                                 start_vertex);
    }
    else {
-      _shader_patch.draw(vertex_count, start_vertex);
+      _shader_patch.draw(d3d_primitive_type_to_d3d11_topology(primitive_type),
+                         vertex_count, start_vertex);
    }
 
    return S_OK;
@@ -943,12 +943,13 @@ HRESULT Device::DrawIndexedPrimitive(D3DPRIMITIVETYPE primitive_type,
 {
    Debug_trace::func(__FUNCSIG__);
 
-   draw_common(primitive_type);
+   draw_common();
 
    const auto vertex_count =
       d3d_primitive_count_to_vertex_count(primitive_type, primitive_count);
 
-   _shader_patch.draw_indexed(vertex_count, start_index, base_vertex_index);
+   _shader_patch.draw_indexed(d3d_primitive_type_to_d3d11_topology(primitive_type),
+                              vertex_count, start_index, base_vertex_index);
 
    return S_OK;
 }
@@ -1265,13 +1266,8 @@ auto Device::create_vertex_declaration(const D3DVERTEXELEMENT9* const vertex_ele
                                      gsl::make_span(vertex_elements, decl_count));
 }
 
-void Device::draw_common(const D3DPRIMITIVETYPE primitive_type) noexcept
+void Device::draw_common() noexcept
 {
-   if (std::exchange(_last_primitive_type, primitive_type) != primitive_type) {
-      _shader_patch.set_primitive_topology(
-         d3d_primitive_type_to_d3d11_topology(primitive_type));
-   }
-
    if (_fixed_func_active) {
       _texture_stage_manager.update(_shader_patch,
                                     _render_state_manager.texture_factor());
