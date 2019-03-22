@@ -15,8 +15,6 @@
 
 #include <comdef.h>
 
-#pragma optimize("", off)
-
 using namespace std::literals;
 
 namespace sp::core {
