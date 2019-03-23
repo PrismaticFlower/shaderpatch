@@ -1,6 +1,7 @@
 ### Installing ###
 
-Shader Patch should be very simple to get up and running. Just run the installer, select where SWBFII is and hit "Install!".
+Shader Patch should be very simple to get up and running. You can either run the installer or simply copy the contents of this folder
+into your `GameData` folder.
  
 The installer does require you to have .NET Framework 4.6 installed but in the majority of cases it already 
 will be. If it isn't you can grab it from the link below (as of writing this).
@@ -15,25 +16,23 @@ admin elevation.
 
 ### Configuring ###
 
-Shader Patch comes with a number of settings that can be adjusted by the user. See and edit 'shader patch.yml' in 
-your game directory for a list and descriptions of them.
-
-game directory for more information.
+Shader Patch comes with a number of settings that can be adjusted by the user. See and edit the config file 'shader patch.yml' in 
+your game directory for a list and descriptions of them. Checking it out before using Shader Patch is highly recommended.
 
 ### Uninstalling ###
 
-A copy of the installer will have been made in your installation directory, running this will let you 
-completely remove Shader Patch and automatically restore backup files made during the install process.
+If you used the bundled installer then a copy of the installer will have been made in your installation directory, running this 
+will let you completely remove Shader Patch and automatically restore backup files made during the install process.
 
-To manually uninstall remove the files you copied in and restore your own backups you should've made.
+However if you did not run the installer then you must manually delete the files you copied over. Below is a list of files and folders
+you'll need to delete. (Relative to "GameData".)
 
-### Manual Install ###
-
-If you want to manually install Shader Patch you just need to copy the contents of this folder
-into the GameData directory of your SWBFII installation. Backup any duplicate files first (as of 
-v0.6.0 only core.lvl needs to be backed up), when using the installer it will do this for you.
-
-You'll need the Visual Studio 2017 version of the VC++ runtime to use Shader Patch. You can 
-find it (relative to this file) at "data\shaderpatch\bin\VCRedist_x86.exe" or you can download it
-from Microsoft directly over here https://www.visualstudio.com/downloads/ (scroll down to the 
-bottom of the page to find it).
+   ./d3d9.dll
+   ./Microsoft.Expression.Drawing.dll
+   ./shader patch acknowledgements.txt
+   ./Shader Patch Installer.exe
+   ./shader patch license.txt
+   ./shader patch readme.txt
+   ./shader patch.yml
+   ./yaml-cpp.dll
+   ./data/shaderpatch
