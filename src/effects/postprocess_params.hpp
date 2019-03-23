@@ -319,6 +319,7 @@ struct convert<sp::effects::Color_grading_params> {
       node["FilmicShoulderStrength"s] = params.filmic_shoulder_strength;
       node["FilmicShoulderLength"s] = params.filmic_shoulder_length;
       node["FilmicShoulderAngle"s] = params.filmic_shoulder_angle;
+      node["FilmicHejiWhitepoint"s] = params.filmic_heji_whitepoint;
 
       node["ShadowColor"s] = params.shadow_color;
       node["MidtoneColor"s] = params.midtone_color;
@@ -365,6 +366,8 @@ struct convert<sp::effects::Color_grading_params> {
          node["FilmicShoulderLength"s].as<float>(params.filmic_shoulder_length);
       params.filmic_shoulder_angle =
          node["FilmicShoulderAngle"s].as<float>(params.filmic_shoulder_angle);
+      params.filmic_heji_whitepoint =
+         node["FilmicHejiWhitepoint"s].as<float>(params.filmic_heji_whitepoint);
 
       params.shadow_color = node["ShadowColor"s].as<glm::vec3>(params.shadow_color);
       params.midtone_color = node["MidtoneColor"s].as<glm::vec3>(params.midtone_color);
