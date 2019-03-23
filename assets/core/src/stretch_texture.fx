@@ -4,9 +4,8 @@ Texture2DMS<float4> input_ms_tex;
 
 struct Input_vars
 {
-   uint2 dest_length;
-   uint2 src_start;
-   uint2 src_length;
+   float2 src_start;
+   float2 src_end;
 };
 
 cbuffer InputVars : register(b0)
@@ -14,31 +13,38 @@ cbuffer InputVars : register(b0)
    Input_vars input_vars;
 }
 
-float4 main_vs(uint id : SV_VertexID) : SV_Position
+struct Vs_output
 {
-   if (id == 0) return float4(-1.f, -1.f, 0.0, 1.0);
-   else if (id == 1) return float4(-1.f, 3.f, 0.0, 1.0);
-   else return float4(3.f, -1.f, 0.0, 1.0);
+   float2 texcoords : TEXCOORD;
+   float4 positionPS : SV_Position;
+};
+
+Vs_output main_vs(uint id : SV_VertexID)
+{
+   Vs_output output;
+
+   if (id == 0) {
+      output.texcoords = lerp(input_vars.src_start, input_vars.src_end, float2(0.0, 1.0));
+      output.positionPS = float4(-1.f, -1.f, 0.0, 1.0);
+   }
+   else if (id == 1) {
+      output.texcoords = lerp(input_vars.src_start, input_vars.src_end, float2(0.0, -1.0));
+      output.positionPS = float4(-1.f, 3.f, 0.0, 1.0);
+   }
+   else {
+      output.texcoords = lerp(input_vars.src_start, input_vars.src_end, float2(2.0, 1.0));
+      output.positionPS = float4(3.f, -1.f, 0.0, 1.0);
+   }
+
+   return output;
 }
 
-uint2 calc_src_index(float4 positionSS)
+float4 main_ps(float2 texcoords : TEXCOORD) : SV_Target0
 {
-   const uint2 dest_index = (uint2)positionSS.xy;
-   const uint2 src_index = input_vars.src_start + (dest_index * input_vars.src_length / input_vars.dest_length);
-
-   return src_index;
+   return input_tex[(uint2)texcoords];
 }
 
-float4 main_ps(float4 positionSS : SV_Position) : SV_Target0
+float4 main_ms_ps(float2 texcoords : TEXCOORD) : SV_Target0
 {
-   const uint2 src_index = calc_src_index(positionSS);
-
-   return input_tex[src_index];
-}
-
-float4 main_ms_ps(float4 positionSS : SV_Position) : SV_Target0
-{
-   const uint2 src_index = calc_src_index(positionSS);
-
-   return input_ms_tex.sample[0][src_index];
+   return input_ms_tex.sample[0][(uint2)texcoords];
 }

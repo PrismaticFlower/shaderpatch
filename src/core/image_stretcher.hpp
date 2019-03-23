@@ -29,13 +29,11 @@ private:
       -> ID3D11PixelShader*;
 
    struct alignas(16) Input_vars {
-      glm::uvec2 dest_length;
-      glm::uvec2 src_start;
-      glm::uvec2 src_length;
-      glm::uvec2 _padding;
+      glm::vec2 src_start;
+      glm::vec2 src_end;
    };
 
-   static_assert(sizeof(Input_vars) == 32);
+   static_assert(sizeof(Input_vars) == 16);
 
    const Com_ptr<ID3D11VertexShader> _vs;
    const Com_ptr<ID3D11PixelShader> _ps;
