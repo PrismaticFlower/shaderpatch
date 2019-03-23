@@ -1,0 +1,22 @@
+./vcpkg install directxtex:x86-windows
+./vcpkg install directxtmesh:x86-windows
+./vcpkg install openexr:x86-windows
+./vcpkg install zlib:x86-windows
+./vcpkg install stb:x86-windows
+./vcpkg install glm:x86-windows
+./vcpkg install ms-gsl:x86-windows
+./vcpkg install nlohmann-json:x86-windows
+./vcpkg install clara:x86-windows
+./vcpkg install yaml-cpp:x86-windows
+./vcpkg install detours:x86-windows
+
+./vcpkg install directxtex:x64-windows
+./vcpkg install directxtmesh:x64-windows
+./vcpkg install openexr:x64-windows
+./vcpkg install zlib:x64-windows
+./vcpkg install stb:x64-windows
+./vcpkg install glm:x64-windows
+./vcpkg install ms-gsl:x64-windows
+./vcpkg install nlohmann-json:x64-windows
+./vcpkg install clara:x64-windows
+./vcpkg install yaml-cpp:x64-windows
