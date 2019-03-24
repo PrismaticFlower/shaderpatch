@@ -1135,8 +1135,15 @@ void Shader_patch::game_rendertype_changed() noexcept
 {
    if (_on_rendertype_changed) _on_rendertype_changed();
 
-   if (_shader_rendertype == Rendertype::zprepass) {
-      _om_targets_dirty = true;
+   if (_shader_rendertype == Rendertype::stencilshadow) {
+      // Skip the undeeded alpha fill draw.
+      _on_rendertype_changed = [this]() noexcept {
+         _discard_draw_calls = true;
+         _on_rendertype_changed = [this]() noexcept {
+            _discard_draw_calls = false;
+            _on_rendertype_changed = nullptr;
+         };
+      };
    }
    else if (_shader_rendertype == Rendertype::shadowquad) {
       _om_targets_dirty = true;
