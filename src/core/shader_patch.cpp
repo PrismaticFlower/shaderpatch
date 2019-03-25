@@ -27,7 +27,7 @@ namespace {
 
 constexpr std::array supported_feature_levels{D3D_FEATURE_LEVEL_11_0};
 
-auto create_device(IDXGIAdapter2& adapater) noexcept -> Com_ptr<ID3D11Device1>
+auto create_device(IDXGIAdapter2& adapater) noexcept -> Com_ptr<ID3D11Device2>
 {
    Com_ptr<ID3D11Device> device;
 
@@ -48,11 +48,11 @@ auto create_device(IDXGIAdapter2& adapater) noexcept -> Com_ptr<ID3D11Device1>
                         _com_error{result}.ErrorMessage());
    }
 
-   Com_ptr<ID3D11Device1> device1;
+   Com_ptr<ID3D11Device2> device2;
 
-   if (const auto result = device->QueryInterface(device1.clear_and_assign());
+   if (const auto result = device->QueryInterface(device2.clear_and_assign());
        FAILED(result)) {
-      log_and_terminate("Failed to create Direct3D 11.1 device!");
+      log_and_terminate("Failed to create Direct3D 11.2 device!");
    }
 
    if (d3d_debug) {
@@ -75,7 +75,7 @@ auto create_device(IDXGIAdapter2& adapater) noexcept -> Com_ptr<ID3D11Device1>
       }
    }
 
-   return device1;
+   return device2;
 }
 
 }
@@ -1136,22 +1136,31 @@ void Shader_patch::game_rendertype_changed() noexcept
    if (_on_rendertype_changed) _on_rendertype_changed();
 
    if (_shader_rendertype == Rendertype::stencilshadow) {
-      // Skip the undeeded alpha fill draw.
-      _on_rendertype_changed = [this]() noexcept {
-         _discard_draw_calls = true;
-         _on_rendertype_changed = [this]() noexcept {
-            _discard_draw_calls = false;
-            _on_rendertype_changed = nullptr;
-         };
-      };
-   }
-   else if (_shader_rendertype == Rendertype::shadowquad) {
-      _om_targets_dirty = true;
-      _discard_draw_calls = true;
+      const bool multisampled = _rt_sample_count > 1;
+      auto* const final_rtv = [&]() -> ID3D11RenderTargetView* {
+         return nullptr;
+         auto it = std::find_if(_game_rendertargets.cbegin(),
+                                _game_rendertargets.cend(),
+                                [&](const Game_rendertarget& rt) {
+                                   return (rt.type == Game_rt_type::shadow);
+                                });
 
+         return it != _game_rendertargets.cend() ? it->rtv.get() : nullptr;
+      }();
+      auto* const rtv = multisampled ? _shadow_msaa_rt.rtv.get() : final_rtv;
+      auto* const dsv = current_depthstencil();
+
+      if (multisampled)
+         _device_context
+            ->ClearRenderTargetView(rtv, std::array{1.0f, 1.0f, 1.0f, 1.0f}.data());
+
+      _device_context->OMSetRenderTargets(1, &rtv, dsv);
+   }
+   if (_shader_rendertype == Rendertype::shadowquad) {
       _on_stretch_rendertarget = [this](Game_rendertarget&, const RECT*,
                                         Game_rendertarget& dest, const RECT*) noexcept {
          _on_stretch_rendertarget = nullptr;
+         _om_targets_dirty = true;
 
          if (dest.type != Game_rt_type::shadow) {
             dest = Game_rendertarget{*_device,
@@ -1162,27 +1171,10 @@ void Shader_patch::game_rendertype_changed() noexcept
                                      Game_rt_type::shadow};
          }
 
-         const bool multisampled = _rt_sample_count > 1;
-         auto* const rtv = multisampled ? _shadow_msaa_rt.rtv.get() : dest.rtv.get();
-         auto* const dsv = current_depthstencil();
-
-         _device_context
-            ->ClearRenderTargetView(rtv, std::array{1.0f, 1.0f, 1.0f, 1.0f}.data());
-         _device_context->OMSetRenderTargets(1, &rtv, dsv);
-         _device_context->Draw(3, 0);
-
-         if (multisampled)
+         if (_rt_sample_count > 1)
             _device_context->ResolveSubresource(dest.texture.get(), 0,
                                                 _shadow_msaa_rt.texture.get(),
                                                 0, shadow_texture_format);
-
-         // Skip the next draw call.
-         _on_rendertype_changed = [this]() noexcept {
-            _on_rendertype_changed = [this]() noexcept {
-               _discard_draw_calls = false;
-               _on_rendertype_changed = nullptr;
-            };
-         };
       };
    }
    else if (_shader_rendertype == Rendertype::shield) {

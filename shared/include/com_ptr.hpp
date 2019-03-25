@@ -81,6 +81,24 @@ public:
    }
 
    template<typename Other, typename = std::enable_if_t<std::is_convertible_v<Other*, Class*>>>
+   Com_ptr(const Com_ptr<Other>& other)
+   {
+      auto other_copy = other;
+
+      _pointer = static_cast<Class*>(other_copy.release());
+   }
+
+   template<typename Other, typename = std::enable_if_t<std::is_convertible_v<Other*, Class*>>>
+   Com_ptr& operator=(const Com_ptr<Other>& other) noexcept
+   {
+      auto other_copy = other;
+
+      reset(static_cast<Class*>(other_copy.release()));
+
+      return *this;
+   }
+
+   template<typename Other, typename = std::enable_if_t<std::is_convertible_v<Other*, Class*>>>
    Com_ptr(Com_ptr<Other>&& other)
    {
       _pointer = static_cast<Class*>(other.release());
