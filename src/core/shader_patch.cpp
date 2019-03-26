@@ -1177,15 +1177,6 @@ void Shader_patch::game_rendertype_changed() noexcept
                                                 0, shadow_texture_format);
       };
    }
-   else if (_shader_rendertype == Rendertype::shield) {
-      resolve_refraction_texture();
-
-      auto normalmap_srv = _texture_database.get("$water");
-
-      auto* const srv = normalmap_srv.get();
-
-      _device_context->PSSetShaderResources(custom_tex_begin, 1, &srv);
-   }
    else if (_shader_rendertype == Rendertype::refraction) {
       resolve_refraction_texture();
 
