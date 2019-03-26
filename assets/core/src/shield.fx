@@ -11,52 +11,15 @@ const static float4 shield_constants = custom_constants[3];
 const static float2 near_scene_fade_scale = custom_constants[2].xy;
 
 Texture2D<float4> diffuse_texture : register(t0);
-Texture2D<float2> normal_map_texture : register(t4);
-
-float3 animate_normal(float3 normal)
-{
-   float x_angle = lerp(0, 6.283185, shield_constants.y);
-   float y_angle = lerp(0, 6.283185, shield_constants.x);
-
-   float3x3 x_trans = {{cos(x_angle), -sin(x_angle), 0.0},
-                       {sin(x_angle), cos(x_angle), 0.0},
-                       {0.0, 0.0, 1.0}};
-
-   normal = mul(x_trans, normal);
-
-   float3x3 y_trans = {{cos(y_angle), 0.0, sin(y_angle)},
-                       {0.0, 1.0, 0.0},
-                       {-sin(y_angle), 0.0, cos(y_angle)}};
-
-   return mul(y_trans, normal);
-}
-
-float angle_factor(float3 view_normal, float3 normal)
-{
-   float3 reflected_view_normal = reflect(view_normal, normal);
-
-   float view_angle = dot(reflected_view_normal, reflected_view_normal);
-   view_angle = max(view_angle, shield_constants.w);
-
-   float factor = rcp(view_angle);
-   view_angle = dot(view_normal, reflected_view_normal);
-   factor *= view_angle;
-   factor = factor * -0.5 + 0.5;
-   factor *= max(shield_constants.z, 1.0);
-   factor = -factor * material_diffuse_color.a + material_diffuse_color.a;
-
-   return factor;
-}
 
 struct Vs_output
 {
    float2 texcoords : TEXCOORD0;
-   float3 normal_texcoords : TEXCOORD1;
    float3 normalWS : NORMALWS;
    float3 positionWS : POSITIONWS;
    float3 material_color : MATCOLOR;
    float fog : FOG;
-   float alpha : ALPHA;
+   float fade : FADE;
 
    float4 positionPS : SV_Position;
 };
@@ -69,86 +32,59 @@ Vs_output shield_vs(Vertex_input input)
 
    const float3 positionWS = transformer.positionWS();
    const float4 positionPS = transformer.positionPS();
-   const float3 normalOS = normalize(-transformer.positionOS());
-   const float3 normalWS = mul(normalOS, (float3x3)world_matrix);
-   const float3 view_normalWS = normalize(positionWS - view_positionWS);
 
    output.positionPS = positionPS;
-   output.normalWS = normalWS;
+   output.normalWS = transformer.normalWS();
    output.positionWS = positionWS;
-
    output.texcoords = input.texcoords() + shield_constants.xy;
-   output.normal_texcoords = animate_normal(normalWS);
 
    float near_fade;
    calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
    near_fade = near_fade * near_scene_fade_scale.x + near_scene_fade_scale.y;
 
+   output.fade = near_fade;
    output.material_color = get_material_color().rgb;
-   output.alpha = saturate(angle_factor(view_normalWS, normalWS) * near_fade);
 
    return output;
 }
 
-float2 map_xyz_to_uv(float3 pos)
+float angle_alpha(float3 V, float3 R, float alpha)
 {
-   float3 abs_pos = abs(pos);
-   float3 pos_positive = sign(pos) * 0.5 + 0.5;
+   const float VdotR = dot(V, R);
+   const float VdotV = max(dot(V, V), shield_constants.w);
 
-   float max_axis;
-   float2 coords;
-
-   if (abs_pos.x >= abs_pos.y && abs_pos.x >= abs_pos.z) {
-      max_axis = abs_pos.x;
-
-      coords = lerp(float2(pos.z, pos.y), float2(-pos.z, pos.y), pos_positive.x);
-   }
-   else if (abs_pos.y >= abs_pos.z) {
-      max_axis = abs_pos.y;
-
-      coords = lerp(float2(pos.x, pos.z), float2(pos.x, -pos.z), pos_positive.y);
-   }
-   else {
-      max_axis = abs_pos.z;
-
-      coords = lerp(float2(-pos.x, pos.y), float2(pos.x, pos.y), pos_positive.z);
-   }
-
-   return 0.5 * (coords / max_axis + 1.0);
+   return -(((VdotR / VdotV)  * -0.5 + 0.5) * shield_constants.z) * alpha + alpha;
 }
 
 struct Ps_input
 {
    float2 texcoords : TEXCOORD0;
-   float3 normal_texcoords : TEXCOORD1;
    float3 normalWS : NORMALWS;
    float3 positionWS : POSITIONWS;
    float3 material_color : MATCOLOR;
    float fog : FOG;
-   float alpha : ALPHA;
+   float fade : FADE;
    float4 positionSS : SV_Position;
 };
 
 float4 shield_ps(Ps_input input) : SV_Target0
 {
-   const float2 texcoords = map_xyz_to_uv(input.normal_texcoords);
-   const float3x3 tangent_to_world = generate_tangent_to_world(normalize(input.normalWS), input.positionWS, texcoords);
-   const float3 normalTS = sample_normal_map(normal_map_texture, aniso_wrap_sampler,
-                                             texcoords);
-   const float3 normalWS = normalize(mul(normalTS, tangent_to_world));
-
+   const float3 normalWS = normalize(input.normalWS);
    const float3 view_normalWS = normalize(input.positionWS - view_positionWS);
-   const float3 H = normalize(light_directional_0_dir.xyz + view_normalWS);
+   const float3 H = normalize(-light_directional_0_dir.xyz + view_normalWS);
    const float NdotH = saturate(dot(normalWS, H));
-   float3 specular = pow(NdotH, 64);
+   float3 specular = pow(NdotH, 64.0);
    specular *= specular_color.rgb;
 
    const float4 diffuse_color = diffuse_texture.Sample(linear_clamp_sampler, input.texcoords);
+   const float material_alpha = diffuse_color.a * material_diffuse_color.a;
+
+   const float alpha = max(angle_alpha(view_normalWS, reflect(view_normalWS, normalWS), material_alpha), 0.0);
 
    float3 color = diffuse_color.rgb * input.material_color;
-   const float alpha = input.alpha * material_diffuse_color.a * diffuse_color.a;
 
    color = (color * alpha + specular) * lighting_scale;
+   color *= input.fade;
 
    color = apply_fog(color, input.fog);
 
