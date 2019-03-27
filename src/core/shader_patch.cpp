@@ -6,6 +6,7 @@
 #include "context_state_guard.hpp"
 #include "patch_material_io.hpp"
 #include "patch_texture_io.hpp"
+#include "screenshot.hpp"
 #include "utility.hpp"
 
 #include "../imgui/imgui_impl_dx11.h"
@@ -22,6 +23,7 @@ namespace sp::core {
 constexpr auto custom_tex_begin = 4;
 constexpr auto projtex_cube_slot = 127;
 constexpr auto shadow_texture_format = DXGI_FORMAT_A8_UNORM;
+constexpr auto screenshots_folder = L"ScreenShots/";
 
 namespace {
 
@@ -116,6 +118,7 @@ Shader_patch::Shader_patch(IDXGIAdapter2& adapter, const HWND window,
       else
          set_input_mode(Input_mode::normal);
    });
+   set_input_screenshot_func([this]() noexcept { _screenshot_requested = true; });
 
    ImGui::CreateContext();
    ImGui_ImplWin32_Init(window);
@@ -171,6 +174,9 @@ void Shader_patch::present() noexcept
 
    if (_game_rendertargets[0].type != Game_rt_type::presentation)
       patch_backbuffer_resolve();
+
+   if (std::exchange(_screenshot_requested, false))
+      screenshot(*_device, *_device_context, _swapchain, screenshots_folder);
 
    _swapchain.present();
    _om_targets_dirty = true;

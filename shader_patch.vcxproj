@@ -146,6 +146,7 @@
     <ClCompile Include="src\core\material_shader_factory.cpp" />
     <ClCompile Include="src\core\patch_material.cpp" />
     <ClCompile Include="src\core\sampler_states.cpp" />
+    <ClCompile Include="src\core\screenshot.cpp" />
     <ClCompile Include="src\core\shader_input_layouts.cpp" />
     <ClCompile Include="src\core\shader_loader.cpp" />
     <ClCompile Include="src\core\shader_patch.cpp" />
@@ -204,6 +205,7 @@
     <ClInclude Include="src\core\patch_material.hpp" />
     <ClInclude Include="src\core\patch_texture.hpp" />
     <ClInclude Include="src\core\sampler_states.hpp" />
+    <ClInclude Include="src\core\screenshot.hpp" />
     <ClInclude Include="src\core\shader_database.hpp" />
     <ClInclude Include="src\core\shader_input_element.hpp" />
     <ClInclude Include="src\core\shader_input_layouts.hpp" />

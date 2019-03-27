@@ -162,6 +162,9 @@
     <ClCompile Include="src\direct3d\format_patcher.cpp">
       <Filter>src\direct3d</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\screenshot.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -382,6 +385,9 @@
     </ClInclude>
     <ClInclude Include="src\direct3d\format_patcher.hpp">
       <Filter>src\direct3d</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\screenshot.hpp">
+      <Filter>src\core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -307,6 +307,7 @@ private:
    bool _linear_rendering = false;
 
    bool _imgui_enabled = false;
+   bool _screenshot_requested = false;
 
    Small_function<void(Game_rendertarget&, const RECT*, Game_rendertarget&, const RECT*) noexcept> _on_stretch_rendertarget;
    Small_function<void() noexcept> _on_rendertype_changed;

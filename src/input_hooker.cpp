@@ -26,6 +26,7 @@ Input_mode g_input_mode = Input_mode::normal;
 
 WPARAM g_hotkey = 0;
 Small_function<void() noexcept> g_hotkey_func;
+Small_function<void() noexcept> g_screenshot_func;
 
 LRESULT CALLBACK get_message_hook(int code, WPARAM w_param, LPARAM l_param)
 {
@@ -38,6 +39,11 @@ LRESULT CALLBACK get_message_hook(int code, WPARAM w_param, LPARAM l_param)
       if (msg.wParam == g_hotkey && g_hotkey_func) {
          g_hotkey_func();
       }
+   }
+
+   if (msg.message == WM_KEYUP && msg.wParam == VK_SNAPSHOT &&
+       w_param != PM_NOREMOVE && g_screenshot_func) {
+      g_screenshot_func();
    }
 
    if (code < 0 || w_param == PM_NOREMOVE || msg.hwnd != g_window ||
@@ -189,7 +195,12 @@ void install_dinput_hooks() noexcept
       true_get_device_state = hook_vtable<Get_device_state_fn>(
          *device, 9, [](IDirectInputDevice8A& self, DWORD data_size, LPVOID data) {
             if (g_input_mode == Input_mode::normal) {
-               return true_get_device_state(self, data_size, data);
+               const auto result = true_get_device_state(self, data_size, data);
+
+               if (data_size == 256)
+                  std::memset(reinterpret_cast<std::uint8_t*>(data) + DIK_SYSRQ, 0, 1);
+
+               return result;
             }
 
             std::memset(data, 0, data_size);
@@ -282,5 +293,10 @@ void set_input_hotkey(const WPARAM hotkey) noexcept
 void set_input_hotkey_func(Small_function<void() noexcept> function) noexcept
 {
    g_hotkey_func = std::move(function);
+}
+
+void set_input_screenshot_func(Small_function<void() noexcept> function) noexcept
+{
+   g_screenshot_func = std::move(function);
 }
 }

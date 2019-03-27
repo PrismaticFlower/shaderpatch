@@ -22,4 +22,6 @@ void set_input_hotkey(const WPARAM hotkey) noexcept;
 
 void set_input_hotkey_func(Small_function<void() noexcept> function) noexcept;
 
+void set_input_screenshot_func(Small_function<void() noexcept> function) noexcept;
+
 }
