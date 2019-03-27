@@ -10,9 +10,9 @@ Texture2d_managed::Texture2d_managed(core::Shader_patch& shader_patch,
                                      const UINT width, const UINT height,
                                      const UINT mip_levels, const DXGI_FORMAT format,
                                      const D3DFORMAT reported_format,
-                                     std::unique_ptr<Image_patcher> image_patcher) noexcept
+                                     std::unique_ptr<Format_patcher> format_patcher) noexcept
    : Base_texture{Texture_type::texture2d},
-     _image_patcher{std::move(image_patcher)},
+     _format_patcher{std::move(format_patcher)},
      _shader_patch{shader_patch},
      _width{width},
      _height{height},
@@ -37,10 +37,10 @@ Texture2d_managed::Texture2d_managed(core::Shader_patch& shader_patch,
 Com_ptr<Texture2d_managed> Texture2d_managed::create(
    core::Shader_patch& shader_patch, const UINT width, const UINT height,
    const UINT mip_levels, const DXGI_FORMAT format, const D3DFORMAT reported_format,
-   std::unique_ptr<Image_patcher> image_patcher) noexcept
+   std::unique_ptr<Format_patcher> format_patcher) noexcept
 {
    return Com_ptr{new Texture2d_managed{shader_patch, width, height, mip_levels, format,
-                                        reported_format, std::move(image_patcher)}};
+                                        reported_format, std::move(format_patcher)}};
 }
 
 HRESULT Texture2d_managed::QueryInterface(const IID& iid, void** object) noexcept
@@ -162,8 +162,8 @@ HRESULT Texture2d_managed::LockRect(UINT level, D3DLOCKED_RECT* locked_rect,
 
    if (_dynamic_texture) {
       auto mapped_texture =
-         _image_patcher
-            ? _image_patcher->map_dynamic_image(_format, _width, _height, level)
+         _format_patcher
+            ? _format_patcher->map_dynamic_texture(_format, _width, _height, level)
             : _shader_patch.map_dynamic_texture(std::get<core::Game_texture>(
                                                    this->resource),
                                                 level, D3D11_MAP_WRITE_DISCARD);
@@ -188,10 +188,11 @@ HRESULT Texture2d_managed::UnlockRect(UINT level) noexcept
    if (level >= _mip_levels) return D3DERR_INVALIDCALL;
 
    if (_dynamic_texture) {
-      if (_image_patcher) {
-         _image_patcher->unmap_dynamic_image(_shader_patch,
-                                             std::get<core::Game_texture>(this->resource),
-                                             level);
+      if (_format_patcher) {
+         _format_patcher->unmap_dynamic_texture(_shader_patch,
+                                                std::get<core::Game_texture>(
+                                                   this->resource),
+                                                level);
       }
       else {
          _shader_patch.unmap_dynamic_texture(std::get<core::Game_texture>(this->resource),
@@ -202,10 +203,10 @@ HRESULT Texture2d_managed::UnlockRect(UINT level) noexcept
       if (!_upload_texture) return D3DERR_INVALIDCALL;
 
       if (level == _last_level) {
-         if (_image_patcher) {
+         if (_format_patcher) {
             auto [patched_format, patched_texture] =
-               _image_patcher->patch_image(_format, _width, _height,
-                                           _mip_levels, *_upload_texture);
+               _format_patcher->patch_texture(_format, _width, _height,
+                                              _mip_levels, 1, *_upload_texture);
 
             this->resource =
                _shader_patch.create_game_texture2d(_width, _height, _mip_levels,

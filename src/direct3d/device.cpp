@@ -302,8 +302,6 @@ HRESULT Device::CreateVolumeTexture(UINT width, UINT height, UINT depth, UINT le
       return S_OK;
    }
 
-   if (is_luminance_format(format)) return D3DERR_INVALIDCALL;
-
    *volume_texture =
       create_texture3d_managed(width, height, depth, levels, format).release();
 
@@ -317,7 +315,6 @@ HRESULT Device::CreateCubeTexture(UINT edge_length, UINT levels, DWORD usage,
    Debug_trace::func(__FUNCSIG__);
 
    if (!cube_texture) return D3DERR_INVALIDCALL;
-   if (is_luminance_format(format)) return D3DERR_INVALIDCALL;
 
    if (usage & D3DUSAGE_DYNAMIC) {
       log_and_terminate("Attempt to create dynamic cube texture.");
@@ -1166,18 +1163,18 @@ auto Device::create_texture2d_managed(const UINT width, const UINT height,
                         static_cast<int>(d3d_format));
    }
 
-   std::unique_ptr<Image_patcher> image_patcher = nullptr;
+   std::unique_ptr<Format_patcher> format_patcher = nullptr;
 
    if (d3d_format == D3DFMT_L8) {
-      image_patcher = make_l8_image_patcher();
+      format_patcher = make_l8_format_patcher();
    }
    else if (d3d_format == D3DFMT_A8L8) {
-      image_patcher = make_a8l8_image_patcher();
+      format_patcher = make_a8l8_format_patcher();
    }
 
    return Com_ptr{reinterpret_cast<IDirect3DTexture9*>(
       Texture2d_managed::create(_shader_patch, width, height, mip_levels,
-                                format, d3d_format, std::move(image_patcher))
+                                format, d3d_format, std::move(format_patcher))
          .release())};
 }
 
@@ -1217,8 +1214,18 @@ auto Device::create_texturecube_managed(const UINT width, const UINT mip_levels,
                         static_cast<int>(d3d_format));
    }
 
+   std::unique_ptr<Format_patcher> format_patcher = nullptr;
+
+   if (d3d_format == D3DFMT_L8) {
+      format_patcher = make_l8_format_patcher();
+   }
+   else if (d3d_format == D3DFMT_A8L8) {
+      format_patcher = make_a8l8_format_patcher();
+   }
+
    return Com_ptr{reinterpret_cast<IDirect3DCubeTexture9*>(
-      Texturecube_managed::create(_shader_patch, width, mip_levels, format, d3d_format)
+      Texturecube_managed::create(_shader_patch, width, mip_levels, format,
+                                  d3d_format, std::move(format_patcher))
          .release())};
 }
 

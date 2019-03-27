@@ -1,5 +1,5 @@
 
-#include "image_patcher.hpp"
+#include "format_patcher.hpp"
 #include "../logger.hpp"
 #include "upload_scratch_buffer.hpp"
 #include "utility.hpp"
@@ -18,10 +18,11 @@ namespace {
 
 Upload_scratch_buffer patchup_scratch_buffer{524288u, 524288u};
 
-class Image_patcher_l8 final : public Image_patcher {
+class Format_patcher_l8 final : public Format_patcher {
 public:
-   auto patch_image(const DXGI_FORMAT format, const UINT width, const UINT height,
-                    const UINT mip_levels, Upload_texture& input_texture) const
+   auto patch_texture(const DXGI_FORMAT format, const UINT width,
+                      const UINT height, const UINT mip_levels,
+                      const UINT array_size, Upload_texture& input_texture) const
       noexcept -> std::pair<DXGI_FORMAT, std::unique_ptr<Upload_texture>> override
    {
       Expects(format == DXGI_FORMAT_R8_UNORM);
@@ -29,19 +30,21 @@ public:
       auto patched_texture =
          std::make_unique<Upload_texture>(patchup_scratch_buffer,
                                           DXGI_FORMAT_R8G8B8A8_UNORM, width,
-                                          height, 1, mip_levels, 1);
+                                          height, 1, mip_levels, array_size);
 
-      for (auto mip = 0; mip < mip_levels; ++mip) {
-         patch_subimage(glm::max(width >> mip, 1u), glm::max(height >> mip, 1u),
-                        input_texture.subresource(mip, 0),
-                        patched_texture->subresource(mip, 0));
+      for (auto index = 0; index < array_size; ++index) {
+         for (auto mip = 0; mip < mip_levels; ++mip) {
+            patch_subimage(glm::max(width >> mip, 1u), glm::max(height >> mip, 1u),
+                           input_texture.subresource(mip, index),
+                           patched_texture->subresource(mip, index));
+         }
       }
 
       return {DXGI_FORMAT_R8G8B8A8_UNORM, std::move(patched_texture)};
    }
 
-   auto map_dynamic_image(const DXGI_FORMAT format, const UINT width,
-                          const UINT height, const UINT mip_level) noexcept
+   auto map_dynamic_texture(const DXGI_FORMAT format, const UINT width,
+                            const UINT height, const UINT mip_level) noexcept
       -> core::Mapped_texture override
    {
       Expects(format == DXGI_FORMAT_R8_UNORM);
@@ -57,9 +60,9 @@ public:
       return _dynamic_patch_texture->subresource(0, 0);
    }
 
-   void unmap_dynamic_image(core::Shader_patch& shader_patch,
-                            const core::Game_texture& texture,
-                            const UINT mip_level) noexcept override
+   void unmap_dynamic_texture(core::Shader_patch& shader_patch,
+                              const core::Game_texture& texture,
+                              const UINT mip_level) noexcept override
    {
       Expects(is_mapped());
 
@@ -103,10 +106,11 @@ private:
    std::unique_ptr<Upload_texture> _dynamic_patch_texture;
 };
 
-class Image_patcher_a8l8 final : public Image_patcher {
+class Format_patcher_a8l8 final : public Format_patcher {
 public:
-   auto patch_image(const DXGI_FORMAT format, const UINT width, const UINT height,
-                    const UINT mip_levels, Upload_texture& input_texture) const
+   auto patch_texture(const DXGI_FORMAT format, const UINT width,
+                      const UINT height, const UINT mip_levels,
+                      const UINT array_size, Upload_texture& input_texture) const
       noexcept -> std::pair<DXGI_FORMAT, std::unique_ptr<Upload_texture>> override
    {
       Expects(format == DXGI_FORMAT_R8G8_UNORM);
@@ -114,19 +118,21 @@ public:
       auto patched_texture =
          std::make_unique<Upload_texture>(patchup_scratch_buffer,
                                           DXGI_FORMAT_R8G8B8A8_UNORM, width,
-                                          height, 1, mip_levels, 1);
+                                          height, 1, mip_levels, array_size);
 
-      for (auto mip = 0; mip < mip_levels; ++mip) {
-         patch_subimage(glm::max(width >> mip, 1u), glm::max(height >> mip, 1u),
-                        input_texture.subresource(mip, 0),
-                        patched_texture->subresource(mip, 0));
+      for (auto index = 0; index < array_size; ++index) {
+         for (auto mip = 0; mip < mip_levels; ++mip) {
+            patch_subimage(glm::max(width >> mip, 1u), glm::max(height >> mip, 1u),
+                           input_texture.subresource(mip, 0),
+                           patched_texture->subresource(mip, 0));
+         }
       }
 
       return {DXGI_FORMAT_R8G8B8A8_UNORM, std::move(patched_texture)};
    }
 
-   auto map_dynamic_image(const DXGI_FORMAT format, const UINT width,
-                          const UINT height, const UINT mip_level) noexcept
+   auto map_dynamic_texture(const DXGI_FORMAT format, const UINT width,
+                            const UINT height, const UINT mip_level) noexcept
       -> core::Mapped_texture override
    {
       Expects(format == DXGI_FORMAT_R8G8_UNORM);
@@ -142,9 +148,9 @@ public:
       return _dynamic_patch_texture->subresource(0, 0);
    }
 
-   void unmap_dynamic_image(core::Shader_patch& shader_patch,
-                            const core::Game_texture& texture,
-                            const UINT mip_level) noexcept override
+   void unmap_dynamic_texture(core::Shader_patch& shader_patch,
+                              const core::Game_texture& texture,
+                              const UINT mip_level) noexcept override
    {
       Expects(is_mapped());
 
@@ -190,14 +196,14 @@ private:
 
 }
 
-auto make_l8_image_patcher() noexcept -> std::unique_ptr<Image_patcher>
+auto make_l8_format_patcher() noexcept -> std::unique_ptr<Format_patcher>
 {
-   return std::make_unique<Image_patcher_l8>();
+   return std::make_unique<Format_patcher_l8>();
 }
 
-auto make_a8l8_image_patcher() noexcept -> std::unique_ptr<Image_patcher>
+auto make_a8l8_format_patcher() noexcept -> std::unique_ptr<Format_patcher>
 {
-   return std::make_unique<Image_patcher_a8l8>();
+   return std::make_unique<Format_patcher_a8l8>();
 }
 
 }

@@ -108,9 +108,6 @@
     <ClCompile Include="src\core\texture_database.cpp">
       <Filter>src\core</Filter>
     </ClCompile>
-    <ClCompile Include="src\direct3d\image_patcher.cpp">
-      <Filter>src\direct3d</Filter>
-    </ClCompile>
     <ClCompile Include="src\core\patch_material.cpp">
       <Filter>src\core</Filter>
     </ClCompile>
@@ -161,6 +158,9 @@
     </ClCompile>
     <ClCompile Include="src\effects\profiler.cpp">
       <Filter>src\effects</Filter>
+    </ClCompile>
+    <ClCompile Include="src\direct3d\format_patcher.cpp">
+      <Filter>src\direct3d</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -326,9 +326,6 @@
     <ClInclude Include="src\core\texture_database.hpp">
       <Filter>src\core</Filter>
     </ClInclude>
-    <ClInclude Include="src\direct3d\image_patcher.hpp">
-      <Filter>src\direct3d</Filter>
-    </ClInclude>
     <ClInclude Include="src\core\patch_material.hpp">
       <Filter>src\core</Filter>
     </ClInclude>
@@ -382,6 +379,9 @@
     </ClInclude>
     <ClInclude Include="src\effects\tonemappers.hpp">
       <Filter>src\effects</Filter>
+    </ClInclude>
+    <ClInclude Include="src\direct3d\format_patcher.hpp">
+      <Filter>src\direct3d</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

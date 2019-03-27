@@ -6,19 +6,22 @@ namespace sp::d3d9 {
 
 Com_ptr<Texturecube_managed> Texturecube_managed::create(
    core::Shader_patch& shader_patch, const UINT width, const UINT mip_levels,
-   const DXGI_FORMAT format, const D3DFORMAT reported_format) noexcept
+   const DXGI_FORMAT format, const D3DFORMAT reported_format,
+   std::unique_ptr<Format_patcher> format_patcher) noexcept
 {
    Expects(mip_levels != 0);
 
-   return Com_ptr{new Texturecube_managed{shader_patch, width, mip_levels,
-                                          format, reported_format}};
+   return Com_ptr{new Texturecube_managed{shader_patch, width, mip_levels, format,
+                                          reported_format, std::move(format_patcher)}};
 }
 
 Texturecube_managed::Texturecube_managed(core::Shader_patch& shader_patch,
                                          const UINT width, const UINT mip_levels,
                                          const DXGI_FORMAT format,
-                                         const D3DFORMAT reported_format) noexcept
+                                         const D3DFORMAT reported_format,
+                                         std::unique_ptr<Format_patcher> format_patcher) noexcept
    : Base_texture{Texture_type::texturecube},
+     _format_patcher{std::move(format_patcher)},
      _shader_patch{shader_patch},
      _width{width},
      _mip_levels{mip_levels},
@@ -145,9 +148,23 @@ HRESULT Texturecube_managed::UnlockRect(D3DCUBEMAP_FACES face, UINT level) noexc
    if (!_upload_texture) return D3DERR_INVALIDCALL;
 
    if (level == _last_level && face == D3DCUBEMAP_FACE_NEGATIVE_Z) {
-      this->resource =
-         _shader_patch.create_game_texture_cube(_width, _width, _mip_levels, _format,
-                                                _upload_texture->subresources());
+      if (_format_patcher) {
+         auto [patched_format, patched_texture] =
+            _format_patcher->patch_texture(_format, _width, _width, _mip_levels,
+                                           6, *_upload_texture);
+
+         this->resource =
+            _shader_patch.create_game_texture_cube(_width, _width, _mip_levels,
+                                                   patched_format,
+                                                   patched_texture->subresources());
+      }
+      else {
+         this->resource =
+            _shader_patch.create_game_texture_cube(_width, _width, _mip_levels, _format,
+                                                   _upload_texture->subresources());
+      }
+
+      _format_patcher = nullptr;
       _upload_texture = std::nullopt;
    }
 

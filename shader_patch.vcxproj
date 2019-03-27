@@ -153,8 +153,8 @@
     <ClCompile Include="src\core\texture_database.cpp" />
     <ClCompile Include="src\core\texture_loader.cpp" />
     <ClCompile Include="src\direct3d\device.cpp" />
+    <ClCompile Include="src\direct3d\format_patcher.cpp" />
     <ClCompile Include="src\direct3d\helpers.cpp" />
-    <ClCompile Include="src\direct3d\image_patcher.cpp" />
     <ClCompile Include="src\direct3d\pixel_shader.cpp" />
     <ClCompile Include="src\direct3d\query.cpp" />
     <ClCompile Include="src\direct3d\render_state_manager.cpp" />
@@ -213,6 +213,7 @@
     <ClInclude Include="src\core\swapchain.hpp" />
     <ClInclude Include="src\core\texture_database.hpp" />
     <ClInclude Include="src\core\texture_loader.hpp" />
+    <ClInclude Include="src\direct3d\format_patcher.hpp" />
     <ClInclude Include="src\direct3d\upload_texture.hpp" />
     <ClInclude Include="src\direct3d\upload_scratch_buffer.hpp" />
     <ClInclude Include="src\direct3d\base_texture.hpp" />
@@ -221,7 +222,6 @@
     <ClInclude Include="src\direct3d\debug_trace.hpp" />
     <ClInclude Include="src\direct3d\helpers.hpp" />
     <ClInclude Include="src\direct3d\device.hpp" />
-    <ClInclude Include="src\direct3d\image_patcher.hpp" />
     <ClInclude Include="src\direct3d\pixel_shader.hpp" />
     <ClInclude Include="src\direct3d\query.hpp" />
     <ClInclude Include="src\direct3d\resource.hpp" />

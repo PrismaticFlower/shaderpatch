@@ -4,7 +4,7 @@
 #include "../logger.hpp"
 #include "base_texture.hpp"
 #include "com_ptr.hpp"
-#include "image_patcher.hpp"
+#include "format_patcher.hpp"
 #include "upload_texture.hpp"
 
 #include <memory>
@@ -19,7 +19,7 @@ public:
    static Com_ptr<Texture2d_managed> create(
       core::Shader_patch& shader_patch, const UINT width, const UINT height,
       const UINT mip_levels, const DXGI_FORMAT format, const D3DFORMAT reported_format,
-      std::unique_ptr<Image_patcher> image_patcher = nullptr) noexcept;
+      std::unique_ptr<Format_patcher> format_patcher = nullptr) noexcept;
 
    Texture2d_managed(const Texture2d_managed&) = delete;
    Texture2d_managed& operator=(const Texture2d_managed&) = delete;
@@ -126,11 +126,11 @@ private:
    Texture2d_managed(core::Shader_patch& shader_patch, const UINT width,
                      const UINT height, const UINT mip_levels,
                      const DXGI_FORMAT format, const D3DFORMAT reported_format,
-                     std::unique_ptr<Image_patcher> image_patcher) noexcept;
+                     std::unique_ptr<Format_patcher> format_patcher) noexcept;
 
    ~Texture2d_managed() = default;
 
-   std::unique_ptr<Image_patcher> _image_patcher;
+   std::unique_ptr<Format_patcher> _format_patcher;
    std::unique_ptr<Upload_texture> _upload_texture;
    core::Shader_patch& _shader_patch;
 

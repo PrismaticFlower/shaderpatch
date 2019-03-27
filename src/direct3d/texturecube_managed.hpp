@@ -4,8 +4,10 @@
 #include "../logger.hpp"
 #include "base_texture.hpp"
 #include "com_ptr.hpp"
+#include "format_patcher.hpp"
 #include "upload_texture.hpp"
 
+#include <memory>
 #include <optional>
 
 #include <d3d9.h>
@@ -14,10 +16,10 @@ namespace sp::d3d9 {
 
 class Texturecube_managed final : public Base_texture {
 public:
-   static Com_ptr<Texturecube_managed> create(core::Shader_patch& shader_patch,
-                                              const UINT width, const UINT mip_levels,
-                                              const DXGI_FORMAT format,
-                                              const D3DFORMAT reported_format) noexcept;
+   static Com_ptr<Texturecube_managed> create(
+      core::Shader_patch& shader_patch, const UINT width, const UINT mip_levels,
+      const DXGI_FORMAT format, const D3DFORMAT reported_format,
+      std::unique_ptr<Format_patcher> format_patcher) noexcept;
 
    Texturecube_managed(const Texturecube_managed&) = delete;
    Texturecube_managed& operator=(const Texturecube_managed&) = delete;
@@ -126,10 +128,12 @@ public:
 private:
    Texturecube_managed(core::Shader_patch& shader_patch, const UINT width,
                        const UINT mip_levels, const DXGI_FORMAT format,
-                       const D3DFORMAT reported_format) noexcept;
+                       const D3DFORMAT reported_format,
+                       std::unique_ptr<Format_patcher> format_patcher) noexcept;
 
    ~Texturecube_managed() = default;
 
+   std::unique_ptr<Format_patcher> _format_patcher;
    std::optional<Upload_texture> _upload_texture;
    core::Shader_patch& _shader_patch;
 
