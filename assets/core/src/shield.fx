@@ -48,12 +48,13 @@ Vs_output shield_vs(Vertex_input input)
    return output;
 }
 
-float angle_alpha(float3 V, float3 R, float alpha)
+float angle_alpha(float3 V, float3 R)
 {
+   const float alpha = material_diffuse_color.a;
    const float VdotR = dot(V, R);
    const float VdotV = max(dot(V, V), shield_constants.w);
 
-   return -(((VdotR / VdotV)  * -0.5 + 0.5) * shield_constants.z) * alpha + alpha;
+   return saturate(-(((VdotR / VdotV)  * -0.5 + 0.5) * shield_constants.z) * alpha + alpha);
 }
 
 struct Ps_input
@@ -67,6 +68,7 @@ struct Ps_input
    float4 positionSS : SV_Position;
 };
 
+[earlydepthstencil]
 float4 shield_ps(Ps_input input) : SV_Target0
 {
    const float3 normalWS = normalize(input.normalWS);
@@ -77,16 +79,17 @@ float4 shield_ps(Ps_input input) : SV_Target0
    specular *= specular_color.rgb;
 
    const float4 diffuse_color = diffuse_texture.Sample(linear_clamp_sampler, input.texcoords);
-   const float material_alpha = diffuse_color.a * material_diffuse_color.a;
 
-   const float alpha = max(angle_alpha(view_normalWS, reflect(view_normalWS, normalWS), material_alpha), 0.0);
+   const float alpha = angle_alpha(view_normalWS, reflect(view_normalWS, normalWS));
 
    float3 color = diffuse_color.rgb * input.material_color;
 
    color = (color * alpha + specular) * lighting_scale;
-   color *= input.fade;
+   color *= saturate(input.fade);
 
    color = apply_fog(color, input.fog);
 
-   return float4(color, diffuse_color.a);
+   if (diffuse_color.a <= (1.0 / 255.0)) discard;
+
+   return float4(color, 1.0);
 }
