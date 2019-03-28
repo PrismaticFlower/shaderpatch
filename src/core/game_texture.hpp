@@ -11,4 +11,6 @@ struct Game_texture {
    Com_ptr<ID3D11ShaderResourceView> srgb_srv;
 };
 
+inline const Game_texture nullgametex = {nullptr, nullptr};
+
 }

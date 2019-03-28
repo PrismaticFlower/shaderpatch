@@ -780,7 +780,14 @@ HRESULT Device::SetTexture(DWORD stage, IDirect3DBaseTexture9* texture) noexcept
    Debug_trace::func(__FUNCSIG__);
 
    if (stage >= 4) return D3DERR_INVALIDCALL;
-   if (!texture) return S_OK;
+
+   if (!texture) {
+      if (stage == 0) _shader_patch.set_patch_material(nullptr);
+
+      _shader_patch.set_texture(stage, core::nullgametex);
+
+      return S_OK;
+   }
 
    const auto& base_texture = *reinterpret_cast<Base_texture*>(texture);
 
