@@ -644,7 +644,7 @@ HRESULT Device::GetRenderState(D3DRENDERSTATETYPE state, DWORD* value) noexcept
    if (!value) return D3DERR_INVALIDCALL;
 
    const auto float_zero = 0.0f;
-   const auto float_one = 0.0f;
+   const auto float_one = 1.0f;
 
    const static std::unordered_map<D3DRENDERSTATETYPE, DWORD> values = {
       {D3DRS_ZENABLE, D3DZB_TRUE},
