@@ -78,7 +78,8 @@ float4 shield_ps(Ps_input input) : SV_Target0
    float3 specular = pow(NdotH, 64.0);
    specular *= specular_color.rgb;
 
-   const float4 diffuse_color = diffuse_texture.Sample(linear_clamp_sampler, input.texcoords);
+   const float2 texcoords = float2(input.texcoords.x, saturate(input.texcoords.y));
+   const float4 diffuse_color = diffuse_texture.Sample(linear_wrap_sampler, texcoords);
 
    const float alpha = angle_alpha(view_normalWS, reflect(view_normalWS, normalWS));
 
