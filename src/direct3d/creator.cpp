@@ -81,39 +81,10 @@ auto select_adapater(IDXGIFactory2& factory) noexcept -> Com_ptr<IDXGIAdapter2>
    return std::priority_queue{compare_adapaters, enum_adapaters(factory)}.top();
 }
 
-auto enum_outputs(IDXGIAdapter2& adapter) noexcept
-   -> std::vector<Com_ptr<IDXGIOutput1>>
-{
-   std::vector<Com_ptr<IDXGIOutput1>> outputs;
-
-   Com_ptr<IDXGIOutput> output;
-
-   for (int i = 0;
-        adapter.EnumOutputs(i, output.clear_and_assign()) != DXGI_ERROR_NOT_FOUND;
-        ++i) {
-
-      if (FAILED(output->QueryInterface(outputs.emplace_back().clear_and_assign()))) {
-         outputs.pop_back();
-      }
-   }
-
-   return outputs;
-}
-
-auto enum_display_modes(IDXGIOutput1& output, DXGI_FORMAT format) noexcept
-{
-   UINT mode_count{};
-
-   output.GetDisplayModeList1(format, 0, &mode_count, nullptr);
-
-   std::vector<DXGI_MODE_DESC1> display_modes{mode_count};
-
-   if (FAILED(output.GetDisplayModeList1(format, 0, &mode_count, display_modes.data()))) {
-      display_modes.clear();
-   }
-
-   return display_modes;
-}
+const std::initializer_list<D3DDISPLAYMODE>
+   pseudo_display_modes{{640, 480, 60, D3DFMT_X8R8G8B8},
+                        {800, 600, 60, D3DFMT_X8R8G8B8},
+                        {1024, 768, 60, D3DFMT_X8R8G8B8}};
 
 }
 
@@ -131,11 +102,6 @@ Creator::Creator() noexcept
    }
 
    _adapter = select_adapater(*_factory);
-   _outputs = enum_outputs(*_adapter);
-
-   for (auto output : _outputs) {
-      _display_modes[output] = enum_display_modes(*output, _desired_backbuffer_format);
-   }
 }
 
 HRESULT Creator::CreateDevice(UINT adapter_index, D3DDEVTYPE, HWND focus_window,
@@ -212,10 +178,7 @@ ULONG Creator::Release() noexcept
 
 HRESULT Creator::RegisterSoftwareDevice(void*) noexcept
 {
-   Debug_trace::func(__FUNCSIG__);
-   std::lock_guard lock{_mutex};
-
-   return E_NOTIMPL;
+   log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
 }
 
 UINT Creator::GetAdapterCount() noexcept
@@ -269,13 +232,7 @@ UINT Creator::GetAdapterModeCount(UINT adapter_index, D3DFORMAT d3d_format) noex
    if (adapter_index != 0) return 0;
    if (d3d_format != D3DFMT_X8R8G8B8) return 0;
 
-   if (_outputs.size() > 0) {
-      if (auto output_modes = _display_modes.find(_outputs[_desired_output]);
-          output_modes != _display_modes.end())
-         return static_cast<UINT>(output_modes->second.size());
-   }
-
-   return 0;
+   return pseudo_display_modes.size();
 }
 
 HRESULT Creator::EnumAdapterModes(UINT adapter_index, D3DFORMAT d3d_format,
@@ -287,16 +244,9 @@ HRESULT Creator::EnumAdapterModes(UINT adapter_index, D3DFORMAT d3d_format,
    if (!display_mode) return D3DERR_INVALIDCALL;
    if (adapter_index != 0) return D3DERR_INVALIDCALL;
    if (d3d_format != D3DFMT_X8R8G8B8) return D3DERR_NOTAVAILABLE;
+   if (mode_index >= pseudo_display_modes.size()) return D3DERR_INVALIDCALL;
 
-   const auto& modes = _display_modes[_outputs[_desired_output]];
-
-   if (mode_index >= modes.size()) return D3DERR_INVALIDCALL;
-
-   const auto& mode = modes[mode_index];
-
-   *display_mode = {mode.Width, mode.Height,
-                    mode.RefreshRate.Denominator / mode.RefreshRate.Numerator,
-                    d3d_format};
+   *display_mode = pseudo_display_modes.begin()[mode_index];
 
    return S_OK;
 }
@@ -342,7 +292,7 @@ HRESULT Creator::CheckDeviceMultiSampleType(UINT adapter_index, D3DDEVTYPE,
    if (adapter_index != 0) return D3DERR_INVALIDCALL;
 
    switch (multi_sample_type) {
-   case D3DMULTISAMPLE_NONMASKABLE:
+   case D3DMULTISAMPLE_NONE:
    case D3DMULTISAMPLE_2_SAMPLES:
    case D3DMULTISAMPLE_4_SAMPLES:
    case D3DMULTISAMPLE_8_SAMPLES:
