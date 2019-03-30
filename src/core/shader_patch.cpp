@@ -982,9 +982,11 @@ void Shader_patch::set_constants(const cb::Scene_tag, const UINT offset,
                constants.data(), constants.size_bytes());
 
    if (offset < (offsetof(cb::Scene, near_scene_fade) / sizeof(glm::vec4))) {
+      const float scale = _linear_rendering ? 1.0f : _cb_scene.vs_lighting_scale;
+
       _cb_draw_ps_dirty = true;
-      _cb_draw_ps.ps_lighting_scale =
-         _linear_rendering ? 1.0f : _cb_scene.near_scene_fade.z;
+      _cb_scene.vs_lighting_scale = scale;
+      _cb_draw_ps.ps_lighting_scale = scale;
    }
 
    if (offset < (offsetof(cb::Scene, vs_view_positionWS) / sizeof(glm::vec4))) {
@@ -1512,12 +1514,14 @@ void Shader_patch::set_linear_rendering(bool linear_rendering) noexcept
 {
    if (linear_rendering) {
       _cb_scene.vertex_color_srgb = true;
+      _cb_scene.vs_lighting_scale = 1.0f;
       _cb_draw_ps.stock_tonemap_state = 1.0f;
       _cb_draw_ps.ps_lighting_scale = 1.0f;
    }
    else {
       _cb_scene.vertex_color_srgb = false;
       _cb_draw_ps.stock_tonemap_state = 0.0f;
+      _cb_scene.vs_lighting_scale = 0.5f;
       _cb_draw_ps.ps_lighting_scale = 0.5f;
    }
 
