@@ -1146,7 +1146,6 @@ void Shader_patch::game_rendertype_changed() noexcept
    if (_shader_rendertype == Rendertype::stencilshadow) {
       const bool multisampled = _rt_sample_count > 1;
       auto* const final_rtv = [&]() -> ID3D11RenderTargetView* {
-         return nullptr;
          auto it = std::find_if(_game_rendertargets.cbegin(),
                                 _game_rendertargets.cend(),
                                 [&](const Game_rendertarget& rt) {
