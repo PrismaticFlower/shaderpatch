@@ -85,7 +85,7 @@ struct Vs_distortion_output
    float3 normalWS : NORMALWS;
 
    float2 bump_texcoords : TEXCOORD0;
-   float4 distortion_texcoords : TEXCOORD1;
+   float3 distortion_texcoords : TEXCOORD1;
    float2 diffuse_texcoords : TEXCOORD2;
    float4 projection_texcoords : TEXCOORD3;
 
@@ -97,19 +97,19 @@ struct Vs_distortion_output
    float4 positionPS : SV_Position;
 };
 
-float4 distortion_texcoords(float3 normalOS, float3 positionOS, 
+float3 distortion_texcoords(float3 normalOS, float3 positionOS, 
                             float4 distort_constant, float4x4 distort_transform)
 {
    float4 distortion = normalOS.xyzz * distort_constant.zzzw + float4(positionOS, 1.0);
 
-   return mul(distortion, distort_transform).xyww;
+   return mul(distortion, distort_transform).xyw;
 }
 
 Vs_distortion_output distortion_vs(Vertex_input input)
 {
    const float4 distort_constant = custom_constants[0];
    const float4x4 distort_transform = 
-      {custom_constants[1], custom_constants[2], custom_constants[3], custom_constants[4]};
+      transpose(float4x4(custom_constants[1], custom_constants[2], custom_constants[3], custom_constants[4]));
    const float4 x_bump_texcoords_transform = custom_constants[5];
    const float4 y_bump_texcoords_transform = custom_constants[6];
    const float4 x_diffuse_texcoords_transform = custom_constants[7];
@@ -188,7 +188,7 @@ struct Ps_near_input
    float3 normalWS : NORMALWS;
 
    float2 bump_texcoords : TEXCOORD0;
-   float4 distortion_texcoords : TEXCOORD1;
+   float3 distortion_texcoords : TEXCOORD1;
    float2 diffuse_texcoords : TEXCOORD2;
    float4 projection_texcoords : TEXCOORD3;
 
@@ -210,7 +210,7 @@ float4 near_diffuse_ps(Ps_near_input input) : SV_Target0
                                         projection_texture_color);
 
    const float2 distortion_texcoords = 
-      input.distortion_texcoords.xy / input.distortion_texcoords.w;
+      input.distortion_texcoords.xy / input.distortion_texcoords.z;
    const float3 distortion_color = 
       refraction_buffer.SampleLevel(linear_wrap_sampler, distortion_texcoords, 0);
 
@@ -239,7 +239,7 @@ float4 near_ps(Ps_near_input input) : SV_Target0
                                         projection_texture_color);
 
    const float2 distortion_texcoords =
-      input.distortion_texcoords.xy / input.distortion_texcoords.w;
+      input.distortion_texcoords.xy / input.distortion_texcoords.z;
    const float3 distortion_color =
       refraction_buffer.SampleLevel(linear_wrap_sampler, distortion_texcoords, 0);
 
@@ -251,11 +251,11 @@ float4 near_ps(Ps_near_input input) : SV_Target0
    return float4(color, input.material_color_fade.a);
 }
 
-float3 sample_distort_scene(float4 distort_texcoords, float2 bump)
+float3 sample_distort_scene(float3 distort_texcoords, float2 bump)
 {
    const static float2x2 bump_transform = {0.002f, -0.015f, 0.015f, 0.002f};
 
-   float2 texcoords = distort_texcoords.xy / distort_texcoords.w;
+   float2 texcoords = distort_texcoords.xy / distort_texcoords.z;
    texcoords += mul(bump, bump_transform);
 
    return refraction_buffer.Sample(linear_wrap_sampler, texcoords);
