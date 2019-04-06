@@ -134,7 +134,7 @@ float3 do_lighting_diffuse(float3 normalWS, float3 positionWS, float3 diffuse_co
                            float3 static_diffuse_lighting, float shadow)
 {
    float4 diffuse_lighting = 0.0;
-   diffuse_lighting.rgb = (light::ambient(normalWS) + static_diffuse_lighting) * diffuse_color;
+   diffuse_lighting.rgb = light::ambient(normalWS) + static_diffuse_lighting;
 
    if (ps_light_active_directional) {
       float3 proj_intensities = 0.0;
