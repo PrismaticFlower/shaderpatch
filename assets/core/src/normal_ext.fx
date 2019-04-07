@@ -216,7 +216,7 @@ float3 do_lighting(float3 normalWS, float3 positionWS, float3 view_normalWS,
                                    proj_intensities_diffuse[0], proj_intensities_specular[0]);
 
       light::blinnphong::calculate(diffuse_lighting, specular_lighting, normalWS, view_normalWS, 
-                                   -light_directional_0_dir.xyz, 1.0, light_directional_0_color, specular_exponent);
+                                   -light_directional_1_dir.xyz, 1.0, light_directional_1_color, specular_exponent);
 
       if (ps_light_active_point_0) {
          light::blinnphong::calculate_point(diffuse_lighting, specular_lighting, normalWS,
