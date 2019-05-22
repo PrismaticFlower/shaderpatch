@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <cwchar>
+#include <float.h>
 #include <limits>
 #include <queue>
 
@@ -81,6 +82,19 @@ auto select_adapater(IDXGIFactory2& factory) noexcept -> Com_ptr<IDXGIAdapter2>
    return std::priority_queue{compare_adapaters, enum_adapaters(factory)}.top();
 }
 
+void update_fp_control() noexcept
+{
+   unsigned int old_fp;
+   auto result =
+      _controlfp_s(&old_fp, _MCW_DN | _MCW_EM | _MCW_PC,
+                   _DN_FLUSH | _EM_INEXACT | _EM_UNDERFLOW | _EM_OVERFLOW |
+                      _EM_ZERODIVIDE | _EM_INVALID | _EM_DENORMAL | _PC_24);
+
+   if (result)
+      log(Log_level::warning,
+          "Failed to set FP control flags, strange bugs may appear.");
+}
+
 const std::initializer_list<D3DDISPLAYMODE>
    pseudo_display_modes{{640, 480, 60, D3DFMT_X8R8G8B8},
                         {800, 600, 60, D3DFMT_X8R8G8B8},
@@ -105,7 +119,7 @@ Creator::Creator() noexcept
 }
 
 HRESULT Creator::CreateDevice(UINT adapter_index, D3DDEVTYPE, HWND focus_window,
-                              DWORD, D3DPRESENT_PARAMETERS* parameters,
+                              DWORD behavior_flags, D3DPRESENT_PARAMETERS* parameters,
                               IDirect3DDevice9** returned_device_interface) noexcept
 {
    Debug_trace::func(__FUNCSIG__);
@@ -130,6 +144,10 @@ HRESULT Creator::CreateDevice(UINT adapter_index, D3DDEVTYPE, HWND focus_window,
    }
 
    *returned_device_interface = _device.unmanaged_copy();
+
+   if (!((behavior_flags & D3DCREATE_FPU_PRESERVE) == D3DCREATE_FPU_PRESERVE)) {
+      update_fp_control();
+   }
 
    return S_OK;
 }
