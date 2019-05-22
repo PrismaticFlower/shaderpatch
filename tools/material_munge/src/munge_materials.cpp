@@ -198,7 +198,12 @@ void fixup_munged_models(
                                        output_file_path.filename().string(),
                                        " for Shader Patch..."sv);
 
-                          patch_model(output_file_path, material_index);
+                          try {
+                             patch_model(output_file_path, material_index);
+                          }
+                          catch (std::exception& e) {
+                             synced_error_print(e.what());
+                          }
                        });
                  });
 }
