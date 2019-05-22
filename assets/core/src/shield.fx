@@ -8,7 +8,7 @@
 
 const static float3 specular_color = custom_constants[0].xyz;
 const static float4 shield_constants = custom_constants[3]; 
-const static float2 near_scene_fade_scale = custom_constants[2].xy;
+const static float2 near_scene_fade_scale = custom_constants[4].xy;
 
 Texture2D<float4> diffuse_texture : register(t0);
 
