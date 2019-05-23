@@ -1,5 +1,5 @@
 ./vcpkg install directxtex:x86-windows
-./vcpkg install directxtmesh:x86-windows
+./vcpkg install directxmesh:x86-windows
 ./vcpkg install openexr:x86-windows
 ./vcpkg install zlib:x86-windows
 ./vcpkg install stb:x86-windows
@@ -11,7 +11,7 @@
 ./vcpkg install detours:x86-windows
 
 ./vcpkg install directxtex:x64-windows
-./vcpkg install directxtmesh:x64-windows
+./vcpkg install directxmesh:x64-windows
 ./vcpkg install openexr:x64-windows
 ./vcpkg install zlib:x64-windows
 ./vcpkg install stb:x64-windows
