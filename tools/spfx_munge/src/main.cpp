@@ -70,6 +70,12 @@ int main(int arg_count, char* args[])
       if (!fs::is_regular_file(entry.path())) continue;
       if (entry.path().extension() != ".spfx"_svci) continue;
 
-      munge_spfx(entry.path(), output_dir);
+      try {
+         munge_spfx(entry.path(), output_dir);
+      }
+      catch (std::exception& e) {
+         synced_error_print("Error while munging "sv,
+                            entry.path().filename().string(), " :"sv, e.what());
+      }
    }
 }
