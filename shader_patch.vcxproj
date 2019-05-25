@@ -172,7 +172,6 @@
     <ClCompile Include="src\direct3d\upload_texture.cpp" />
     <ClCompile Include="src\direct3d\vertex_declaration.cpp" />
     <ClCompile Include="src\direct3d\vertex_shader.cpp" />
-    <ClCompile Include="src\direct3d\check_required_features.cpp" />
     <ClCompile Include="src\direct3d\creator.cpp" />
     <ClCompile Include="src\effects\color_grading_lut_baker.cpp" />
     <ClCompile Include="src\effects\control.cpp" />
@@ -242,7 +241,6 @@
     <ClInclude Include="src\effects\color_helpers.hpp" />
     <ClInclude Include="src\effects\filmic_tonemapper.hpp" />
     <ClInclude Include="src\effects\postprocess_params.hpp" />
-    <ClInclude Include="src\direct3d\check_required_features.hpp" />
     <ClInclude Include="src\effects\color_grading_lut_baker.hpp" />
     <ClInclude Include="src\effects\control.hpp" />
     <ClInclude Include="src\effects\helpers.hpp" />

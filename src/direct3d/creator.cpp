@@ -3,7 +3,6 @@
 #include "../logger.hpp"
 #include "../user_config.hpp"
 #include "../window_helpers.hpp"
-#include "check_required_features.hpp"
 #include "debug_trace.hpp"
 #include "device.hpp"
 #include "helpers.hpp"

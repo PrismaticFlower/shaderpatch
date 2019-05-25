@@ -24,9 +24,6 @@
     <ClCompile Include="src\input_hooker.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\direct3d\check_required_features.cpp">
-      <Filter>src\direct3d</Filter>
-    </ClCompile>
     <ClCompile Include="src\effects\control.cpp">
       <Filter>src\effects</Filter>
     </ClCompile>
@@ -181,9 +178,6 @@
     </ClInclude>
     <ClInclude Include="src\logger.hpp">
       <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\direct3d\check_required_features.hpp">
-      <Filter>src\direct3d</Filter>
     </ClInclude>
     <ClInclude Include="src\user_config.hpp">
       <Filter>src</Filter>
