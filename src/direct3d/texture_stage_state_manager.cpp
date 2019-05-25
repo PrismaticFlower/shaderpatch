@@ -200,7 +200,7 @@ void Texture_stage_state_manager::update(core::Shader_patch& shader_patch,
    else if (is_scene_blur_state()) {
       shader_patch.set_game_shader(_scene_blur_shader);
    }
-   else if (is_zoom_blur_state()) {
+   else if (is_zoom_blur_state()) { // This state is also used for the endgame screen fade.
       shader_patch.set_game_shader(_zoom_blur_shader);
    }
    else {
