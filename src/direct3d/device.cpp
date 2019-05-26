@@ -28,7 +28,6 @@ namespace sp::d3d9 {
 namespace {
 
 constexpr auto projtex_slot = 2;
-
 }
 
 Com_ptr<Device> Device::create(IDirect3D9& direct3d9, IDXGIAdapter2& adapter,
@@ -183,15 +182,21 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
    MONITORINFO info{sizeof(MONITORINFO)};
    GetMonitorInfoW(MonitorFromWindow(_window, MONITOR_DEFAULTTONEAREST), &info);
 
-   const auto monitor_width =
-      static_cast<std::uint32_t>(info.rcMonitor.right - info.rcMonitor.left);
-   const auto monitor_height =
-      static_cast<std::uint32_t>(info.rcMonitor.bottom - info.rcMonitor.top);
+   if (params->BackBufferWidth == 800 && params->BackBufferHeight == 600) {
+      _width = 800;
+      _height = 600;
+   }
+   else {
+      const auto monitor_width =
+         static_cast<std::uint32_t>(info.rcMonitor.right - info.rcMonitor.left);
+      const auto monitor_height =
+         static_cast<std::uint32_t>(info.rcMonitor.bottom - info.rcMonitor.top);
 
-   _width = static_cast<std::uint16_t>(monitor_width *
-                                       user_config.display.screen_percent / 100);
-   _height = static_cast<std::uint16_t>(
-      monitor_height * user_config.display.screen_percent / 100);
+      _width = static_cast<std::uint16_t>(
+         monitor_width * user_config.display.screen_percent / 100);
+      _height = static_cast<std::uint16_t>(
+         monitor_height * user_config.display.screen_percent / 100);
+   }
 
    win32::resize_window(_window, _width, _height);
 
