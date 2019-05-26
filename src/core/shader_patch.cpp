@@ -54,7 +54,8 @@ auto create_device(IDXGIAdapter2& adapater) noexcept -> Com_ptr<ID3D11Device2>
 
    if (const auto result = device->QueryInterface(device2.clear_and_assign());
        FAILED(result)) {
-      log_and_terminate("Failed to create Direct3D 11.2 device!");
+      log_and_terminate("Failed to create Direct3D 11.2 device! This likely "
+                        "means you're not running Windows 10.");
    }
 
    if (d3d_debug) {
