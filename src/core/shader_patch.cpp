@@ -747,9 +747,9 @@ void Shader_patch::unmap_dynamic_texture(const Game_texture& texture,
 }
 
 void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
-                                        const RECT* source_rect,
+                                        const RECT source_rect,
                                         const Game_rendertarget_id dest,
-                                        const RECT* dest_rect) noexcept
+                                        const RECT dest_rect) noexcept
 {
    auto& src_rt = _game_rendertargets[static_cast<int>(source)];
    auto& dest_rt = _game_rendertargets[static_cast<int>(dest)];
@@ -757,10 +757,8 @@ void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
    if (_on_stretch_rendertarget)
       _on_stretch_rendertarget(src_rt, source_rect, dest_rt, dest_rect);
 
-   const auto src_box = rect_to_box(
-      source_rect ? *source_rect : RECT{0, 0, src_rt.width, src_rt.height});
-   const auto dest_box =
-      rect_to_box(dest_rect ? *dest_rect : RECT{0, 0, src_rt.width, src_rt.height});
+   const auto src_box = rect_to_box(source_rect);
+   const auto dest_box = rect_to_box(dest_rect);
 
    // Skip any fullscreen resolve or copy operation, as these will be handled as special cases by the shaders that use them.
    if (glm::uvec2{src_rt.width, src_rt.height} ==
@@ -1164,8 +1162,8 @@ void Shader_patch::game_rendertype_changed() noexcept
       _device_context->OMSetRenderTargets(1, &rtv, dsv);
    }
    if (_shader_rendertype == Rendertype::shadowquad) {
-      _on_stretch_rendertarget = [this](Game_rendertarget&, const RECT*,
-                                        Game_rendertarget& dest, const RECT*) noexcept {
+      _on_stretch_rendertarget = [this](Game_rendertarget&, const RECT,
+                                        Game_rendertarget& dest, const RECT) noexcept {
          _on_stretch_rendertarget = nullptr;
          _om_targets_dirty = true;
 

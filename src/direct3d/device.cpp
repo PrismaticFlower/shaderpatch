@@ -416,6 +416,31 @@ HRESULT Device::StretchRect(IDirect3DSurface9* source_surface,
    if (!source_surface || !dest_surface) return D3DERR_INVALIDCALL;
    if (source_surface == dest_surface) return D3DERR_INVALIDCALL;
 
+   D3DSURFACE_DESC src_desc{};
+   source_surface->GetDesc(&src_desc);
+
+   const RECT default_source_rect{0, 0, static_cast<LONG>(src_desc.Width),
+                                  static_cast<LONG>(src_desc.Height)};
+
+   D3DSURFACE_DESC dest_desc{};
+   dest_surface->GetDesc(&dest_desc);
+
+   const RECT default_dest_rect{0, 0, static_cast<LONG>(dest_desc.Width),
+                                static_cast<LONG>(dest_desc.Height)};
+
+   if (!source_rect) source_rect = &default_source_rect;
+   if (!dest_rect) dest_rect = &default_dest_rect;
+
+   const auto rect_in_surface = [](RECT rect, D3DSURFACE_DESC desc) -> bool {
+      if ((rect.right - rect.left) > desc.Width) return false;
+      if ((rect.bottom - rect.top) > desc.Height) return false;
+
+      return true;
+   };
+
+   if (!rect_in_surface(*source_rect, src_desc)) return D3DERR_INVALIDCALL;
+   if (!rect_in_surface(*dest_rect, dest_desc)) return D3DERR_INVALIDCALL;
+
    const auto* const source_id =
       reinterpret_cast<Resource*>(source_surface)->get_if<core::Game_rendertarget_id>();
 
@@ -424,7 +449,7 @@ HRESULT Device::StretchRect(IDirect3DSurface9* source_surface,
 
    if (!source_id || !dest_id) return D3DERR_INVALIDCALL;
 
-   _shader_patch.stretch_rendertarget(*source_id, source_rect, *dest_id, dest_rect);
+   _shader_patch.stretch_rendertarget(*source_id, *source_rect, *dest_id, *dest_rect);
 
    return S_OK;
 }

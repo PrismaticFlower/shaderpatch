@@ -141,8 +141,8 @@ public:
    void unmap_dynamic_texture(const Game_texture& texture, const UINT mip_level) noexcept;
 
    void stretch_rendertarget(const Game_rendertarget_id source,
-                             const RECT* source_rect, const Game_rendertarget_id dest,
-                             const RECT* dest_rect) noexcept;
+                             const RECT source_rect, const Game_rendertarget_id dest,
+                             const RECT dest_rect) noexcept;
 
    void color_fill_rendertarget(const Game_rendertarget_id rendertarget,
                                 const glm::vec4 color,
@@ -309,7 +309,7 @@ private:
    bool _imgui_enabled = false;
    bool _screenshot_requested = false;
 
-   Small_function<void(Game_rendertarget&, const RECT*, Game_rendertarget&, const RECT*) noexcept> _on_stretch_rendertarget;
+   Small_function<void(Game_rendertarget&, const RECT, Game_rendertarget&, const RECT) noexcept> _on_stretch_rendertarget;
    Small_function<void() noexcept> _on_rendertype_changed;
 
    cb::Scene _cb_scene{};
