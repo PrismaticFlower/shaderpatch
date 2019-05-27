@@ -182,7 +182,8 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
    MONITORINFO info{sizeof(MONITORINFO)};
    GetMonitorInfoW(MonitorFromWindow(_window, MONITOR_DEFAULTTONEAREST), &info);
 
-   if (params->BackBufferWidth == 800 && params->BackBufferHeight == 600) {
+   if (user_config.display.treat_800x600_as_interface &&
+       params->BackBufferWidth == 800 && params->BackBufferHeight == 600) {
       _width = 800;
       _height = 600;
    }

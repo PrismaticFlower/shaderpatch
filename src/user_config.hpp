@@ -42,6 +42,7 @@ struct User_config {
       std::uint32_t screen_percent = 100;
       bool allow_tearing = true;
       bool centred = false;
+      bool treat_800x600_as_interface = true;
    } display;
 
    struct {

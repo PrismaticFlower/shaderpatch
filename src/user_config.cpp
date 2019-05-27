@@ -80,6 +80,9 @@ void User_config::parse_file(const std::string& path)
 
    display.centred = config["Display"s]["Centred"s].as<bool>();
 
+   display.treat_800x600_as_interface =
+      config["Display"s]["Treat 800x600 As Interface"s].as<bool>();
+
    graphics.antialiasing_method = aa_method_from_string(
       config["Graphics"s]["Anti-Aliasing Method"s].as<std::string>());
 
