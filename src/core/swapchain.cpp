@@ -52,7 +52,7 @@ auto create_swapchain(ID3D11Device1& device, IDXGIAdapter2& adapter,
           factory->CreateSwapChainForHwnd(&device, window, &swap_chain_desc, nullptr,
                                           nullptr, swapchain.clear_and_assign());
        FAILED(result)) {
-      log_and_terminate("Failed to create Direct3D 11 device! Reason: ",
+      log_and_terminate("Failed to create DXGI swapchain! Reason: ",
                         _com_error{result}.ErrorMessage());
    }
 
