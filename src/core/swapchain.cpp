@@ -12,18 +12,6 @@ namespace {
 
 constexpr auto swap_chain_buffers = 2;
 
-auto get_swap_chain_effect() -> DXGI_SWAP_EFFECT
-{
-   if (IsWindows10OrGreater()) {
-      return DXGI_SWAP_EFFECT_FLIP_DISCARD;
-   }
-   else if (IsWindows8OrGreater()) {
-      return DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-   }
-
-   return DXGI_SWAP_EFFECT_DISCARD;
-}
-
 auto create_swapchain(ID3D11Device1& device, IDXGIAdapter2& adapter,
                       const HWND window, const UINT width, const UINT height,
                       const bool allow_tearing) noexcept -> Com_ptr<IDXGISwapChain1>
@@ -42,7 +30,7 @@ auto create_swapchain(ID3D11Device1& device, IDXGIAdapter2& adapter,
       DXGI_USAGE_SHADER_INPUT | DXGI_USAGE_RENDER_TARGET_OUTPUT;
    swap_chain_desc.BufferCount = swap_chain_buffers;
    swap_chain_desc.Scaling = DXGI_SCALING_NONE;
-   swap_chain_desc.SwapEffect = get_swap_chain_effect();
+   swap_chain_desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
    swap_chain_desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
    swap_chain_desc.Flags = allow_tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
 
