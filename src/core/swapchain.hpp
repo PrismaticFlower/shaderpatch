@@ -10,7 +10,7 @@ namespace sp::core {
 
 class Swapchain {
 public:
-   constexpr static auto format = DXGI_FORMAT_B8G8R8A8_UNORM;
+   constexpr static auto format = DXGI_FORMAT_R8G8B8A8_UNORM;
 
    Swapchain(Com_ptr<ID3D11Device1> device, IDXGIAdapter2& adapter,
              const HWND window, const UINT width, const UINT height) noexcept;
