@@ -35,7 +35,7 @@
 #include <gsl/gsl>
 
 #include <DirectXTex.h>
-#include <d3d11_2.h>
+#include <d3d11_4.h>
 
 #pragma warning(disable : 4324)
 
@@ -252,11 +252,15 @@ private:
 
    constexpr static auto _game_backbuffer_index = Game_rendertarget_id{0};
 
-   const Com_ptr<ID3D11Device2> _device;
-   const Com_ptr<ID3D11DeviceContext2> _device_context = [this] {
-      Com_ptr<ID3D11DeviceContext2> dc;
+   const Com_ptr<ID3D11Device5> _device;
+   const Com_ptr<ID3D11DeviceContext4> _device_context = [this] {
+      Com_ptr<ID3D11DeviceContext3> dc3;
 
-      _device->GetImmediateContext2(dc.clear_and_assign());
+      _device->GetImmediateContext3(dc3.clear_and_assign());
+
+      Com_ptr<ID3D11DeviceContext4> dc;
+
+      dc3->QueryInterface(dc.clear_and_assign());
 
       return dc;
    }();

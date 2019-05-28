@@ -29,7 +29,7 @@ namespace {
 
 constexpr std::array supported_feature_levels{D3D_FEATURE_LEVEL_11_0};
 
-auto create_device(IDXGIAdapter2& adapater) noexcept -> Com_ptr<ID3D11Device2>
+auto create_device(IDXGIAdapter2& adapater) noexcept -> Com_ptr<ID3D11Device5>
 {
    Com_ptr<ID3D11Device> device;
 
@@ -50,12 +50,13 @@ auto create_device(IDXGIAdapter2& adapater) noexcept -> Com_ptr<ID3D11Device2>
                         _com_error{result}.ErrorMessage());
    }
 
-   Com_ptr<ID3D11Device2> device2;
+   Com_ptr<ID3D11Device5> device5;
 
-   if (const auto result = device->QueryInterface(device2.clear_and_assign());
+   if (const auto result = device->QueryInterface(device5.clear_and_assign());
        FAILED(result)) {
-      log_and_terminate("Failed to create Direct3D 11.2 device! This likely "
-                        "means you're not running Windows 10.");
+      log_and_terminate(
+         "Failed to create Direct3D 11.4 device! This likely "
+         "means you're not running Windows 10 or it is not up to date.");
    }
 
    if (d3d_debug) {
@@ -78,7 +79,7 @@ auto create_device(IDXGIAdapter2& adapater) noexcept -> Com_ptr<ID3D11Device2>
       }
    }
 
-   return device2;
+   return device5;
 }
 
 }
