@@ -965,6 +965,7 @@ void Shader_patch::set_patch_material(std::shared_ptr<Patch_material> material) 
       _device_context->PSSetConstantBuffers(2, 1, &cb);
 
       _game_textures[0] = _patch_material->fail_safe_game_texture;
+      _ps_textures_dirty = true;
 
       _patch_material->bind_constant_buffers(*_device_context);
       _patch_material->bind_shader_resources(*_device_context);
