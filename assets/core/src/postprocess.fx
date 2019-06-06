@@ -1,10 +1,17 @@
 
+#include "color_utilities.hlsl"
 #include "film_grain.hlsl"
 #include "fullscreen_tri_vs.hlsl"
 #include "pixel_utilities.hlsl"
-#include "color_utilities.hlsl"
+#include "postprocess_common.hlsl"
 
 #pragma warning(disable : 3571)
+
+const static bool vignette = VIGNETTE_ACTIVE;
+const static bool color_grading_active = COLOR_GRADING_ACTIVE;
+const static bool convert_to_srgb = CONVERT_TO_SRGB;
+const static bool dithering_active = DITHERING_ACTIVE;
+const static bool output_cmaa2_luma = OUTPUT_CMAA2_LUMA;
 
 void apply_bloom(float2 texcoords, inout float3 color)
 {
@@ -56,7 +63,16 @@ void apply_dithering(inout float3 color, uint2 position)
    color += (blue_noise / 255.0);
 }
 
-float4 main_ps(float2 texcoords : TEXCOORD, float4 positionSS : SV_Position) : SV_Target0
+struct Postprocessing_output
+{
+   float3 color : SV_Target0;
+
+#  if OUTPUT_CMAA2_LUMA
+      float luma : SV_Target1;
+#  endif
+};
+
+Postprocessing_output main_ps(float2 texcoords : TEXCOORD, float4 positionSS : SV_Position)
 {
    float3 color = scene_texture.SampleLevel(linear_clamp_sampler, texcoords, 0).rgb;
 
@@ -64,15 +80,23 @@ float4 main_ps(float2 texcoords : TEXCOORD, float4 positionSS : SV_Position) : S
 
    if (vignette) apply_vignette(texcoords, color);
 
-   apply_color_grading(color);
+   if (color_grading_active) apply_color_grading(color);
 
-   float3 srgb_color = linear_to_srgb(color);
+   if (convert_to_srgb) color = linear_to_srgb(color);
 
-   if (film_grain) filmgrain::apply(texcoords, srgb_color);
+   if (film_grain) filmgrain::apply(texcoords, color);
 
-   apply_dithering(srgb_color, (uint2)positionSS.xy);
+   if (dithering_active) apply_dithering(color, (uint2)positionSS.xy);
 
-   return float4(srgb_color, 1.0);
+   Postprocessing_output output;
+
+   output.color = color;
+
+#  if OUTPUT_CMAA2_LUMA
+      output.luma = dot(color.rgb, float3(0.299, 0.587, 0.114));
+#  endif
+
+   return output;
 }
 
 float3 stock_hdr_to_linear_ps(float2 texcoords : TEXCOORD, float4 positionSS : SV_Position) : SV_Target0

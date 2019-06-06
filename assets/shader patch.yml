@@ -19,8 +19,8 @@ Display:
    Treat 800x600 As Interface: yes
 
 Graphics:
-   # Anti-Aliasing method to use, can be "none", "MSAAx2", "MSAAx4" or "MSAAx8".
-   Anti-Aliasing Method: MSAAx4
+   # Anti-Aliasing method to use, can be "none", "CMAA2", "MSAAx2", "MSAAx4" or "MSAAx8".
+   Anti-Aliasing Method: CMAA2
 
    # Anisotropic Filtering level for textures, can be "off", "x2", "x4", "x8" or "x16".
    Anisotropic Filtering: x16

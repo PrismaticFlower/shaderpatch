@@ -151,6 +151,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="definitions\patch\cmaa2.json" />
     <None Include="definitions\patch\late_backbuffer_resolve.json" />
     <None Include="definitions\patch\normal_ext-tessellated.json" />
     <None Include="definitions\patch\postprocess_bloom.json" />
@@ -416,6 +417,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\postprocess_bloom.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\CMAA2.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

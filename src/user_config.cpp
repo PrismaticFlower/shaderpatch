@@ -31,6 +31,7 @@ void User_config::show_imgui() noexcept
       graphics.antialiasing_method = aa_method_from_string(ImGui::StringPicker(
          "Anti-Aliasing Method", std::string{to_string(graphics.antialiasing_method)},
          std::initializer_list<std::string>{to_string(Antialiasing_method::none),
+                                            to_string(Antialiasing_method::cmaa2),
                                             to_string(Antialiasing_method::msaax2),
                                             to_string(Antialiasing_method::msaax4),
                                             to_string(Antialiasing_method::msaax8)}));

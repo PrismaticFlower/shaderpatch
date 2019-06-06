@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../effects/cmaa2.hpp"
 #include "../effects/postprocess.hpp"
 #include "../effects/profiler.hpp"
 #include "com_ptr.hpp"
@@ -60,6 +61,7 @@ public:
    void read_config(YAML::Node config);
 
    effects::Postprocess postprocess;
+   effects::CMAA2 cmaa2;
    effects::Profiler profiler;
 
 private:

@@ -7,7 +7,6 @@
 #include "constant_buffers.hpp"
 #include "d3d11_helpers.hpp"
 #include "depthstencil.hpp"
-#include "effects_backbuffer.hpp"
 #include "game_input_layout.hpp"
 #include "game_rendertarget.hpp"
 #include "game_shader.hpp"
@@ -271,9 +270,10 @@ private:
       std::make_shared<Shader_database>(
          load_shader_lvl(L"data/shaderpatch/shaders.lvl", *_device));
 
-   Effects_backbuffer _patch_backbuffer;
    std::vector<Game_rendertarget> _game_rendertargets = {_swapchain.game_rendertarget()};
    Game_rendertarget_id _current_game_rendertarget = _game_backbuffer_index;
+   Game_rendertarget _patch_backbuffer;
+   Game_rendertarget _cmaa2_scratch_texture;
    Game_rendertarget _shadow_msaa_rt;
    Game_rendertarget _refraction_rt;
 
@@ -376,7 +376,8 @@ private:
    DXGI_FORMAT _current_effects_rt_format = DXGI_FORMAT_UNKNOWN;
    int _current_effects_id = 0;
 
-   UINT _rt_sample_count = to_sample_count(user_config.graphics.antialiasing_method);
+   UINT _rt_sample_count = 1;
+   Antialiasing_method _aa_method = Antialiasing_method::none;
 };
 }
 

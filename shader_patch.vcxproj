@@ -54,7 +54,7 @@
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>bin\$(Configuration)\</OutDir>
+    <OutDir>D:\GOG Games\Star Wars - Battlefront 2\GameData\</OutDir>
     <IntDir>build\$(Configuration)\</IntDir>
     <TargetName>d3d9</TargetName>
     <TargetExt>.dll</TargetExt>
@@ -137,7 +137,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\core\d3d11_helpers.cpp" />
-    <ClCompile Include="src\core\effects_backbuffer.cpp" />
     <ClCompile Include="src\core\game_rendertarget.cpp" />
     <ClCompile Include="src\core\image_stretcher.cpp" />
     <ClCompile Include="src\core\input_layout_descriptions.cpp" />
@@ -173,6 +172,7 @@
     <ClCompile Include="src\direct3d\vertex_declaration.cpp" />
     <ClCompile Include="src\direct3d\vertex_shader.cpp" />
     <ClCompile Include="src\direct3d\creator.cpp" />
+    <ClCompile Include="src\effects\cmaa2.cpp" />
     <ClCompile Include="src\effects\color_grading_lut_baker.cpp" />
     <ClCompile Include="src\effects\control.cpp" />
     <ClCompile Include="src\effects\postprocess.cpp" />
@@ -189,7 +189,6 @@
     <ClInclude Include="src\core\constant_buffers.hpp" />
     <ClInclude Include="src\core\context_state_guard.hpp" />
     <ClInclude Include="src\core\depthstencil.hpp" />
-    <ClInclude Include="src\core\effects_backbuffer.hpp" />
     <ClInclude Include="src\core\late_backbuffer_resolver.hpp" />
     <ClInclude Include="src\core\material_shader.hpp" />
     <ClInclude Include="src\core\material_shader_factory.hpp" />
@@ -238,6 +237,7 @@
     <ClInclude Include="src\direct3d\vertex_declaration.hpp" />
     <ClInclude Include="src\direct3d\vertex_shader.hpp" />
     <ClInclude Include="src\direct3d\texture3d_resource.hpp" />
+    <ClInclude Include="src\effects\cmaa2.hpp" />
     <ClInclude Include="src\effects\color_helpers.hpp" />
     <ClInclude Include="src\effects\filmic_tonemapper.hpp" />
     <ClInclude Include="src\effects\postprocess_params.hpp" />

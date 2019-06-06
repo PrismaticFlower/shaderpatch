@@ -29,6 +29,7 @@ ucft
       "zprepass"
 
       // Patch Shaders
+      "cmaa2"
       "damage_overlay"
       "fixedfunc_color_fill"
       "fixedfunc_damage_overlay"

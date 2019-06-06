@@ -44,9 +44,9 @@ cbuffer PostprocessBloomLocalConstants : register(b1)
 
 const static bool bloom = BLOOM_ACTIVE;
 const static bool bloom_use_dirt = BLOOM_USE_DIRT;
-const static bool vignette = VIGNETTE_ACTIVE;
 const static bool film_grain = FILM_GRAIN_ACTIVE;
 const static bool film_grain_colored = FILM_GRAIN_COLORED;
+
 
 float3 bloom_box13_downsample(Texture2D<float4> tex, float2 texcoords)
 {

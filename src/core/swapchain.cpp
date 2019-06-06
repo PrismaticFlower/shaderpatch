@@ -127,7 +127,7 @@ auto Swapchain::game_rendertarget() const noexcept -> Game_rendertarget
 
 auto Swapchain::postprocess_output() const noexcept -> effects::Postprocess_output
 {
-   return {*_rtv, format, _width, _height};
+   return {*_rtv, _width, _height};
 }
 
 auto Swapchain::width() const noexcept -> UINT

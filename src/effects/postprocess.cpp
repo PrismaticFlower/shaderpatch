@@ -14,13 +14,55 @@ enum class Postprocess_flags {
    film_grain_colored = 0b10000
 };
 
+enum class Postprocess_cmaa2_post_flags {
+   film_grain_active = 0b1,
+   film_grain_colored = 0b10
+};
+
 constexpr bool marked_as_enum_flag(Postprocess_flags) noexcept
 {
    return true;
 }
 
+constexpr bool marked_as_enum_flag(Postprocess_cmaa2_post_flags) noexcept
+{
+   return true;
 }
 
+void do_pass(ID3D11DeviceContext1& dc, ID3D11ShaderResourceView& input,
+             ID3D11RenderTargetView& output) noexcept
+{
+   auto* const rtv = &output;
+   dc.OMSetRenderTargets(1, &rtv, nullptr);
+
+   auto* const srv = &input;
+   dc.PSSetShaderResources(0, 1, &srv);
+
+   dc.Draw(3, 0);
+}
+
+void do_pass(ID3D11DeviceContext1& dc, std::array<ID3D11ShaderResourceView*, 5> inputs,
+             ID3D11RenderTargetView& output) noexcept
+{
+   auto* const rtv = &output;
+   dc.OMSetRenderTargets(1, &rtv, nullptr);
+
+   dc.PSSetShaderResources(0, inputs.size(), inputs.data());
+
+   dc.Draw(3, 0);
+}
+
+void do_pass(ID3D11DeviceContext1& dc, std::array<ID3D11ShaderResourceView*, 5> inputs,
+             std::array<ID3D11RenderTargetView*, 2> outputs) noexcept
+{
+   dc.OMSetRenderTargets(outputs.size(), outputs.data(), nullptr);
+
+   dc.PSSetShaderResources(0, inputs.size(), inputs.data());
+
+   dc.Draw(3, 0);
+}
+
+}
 using namespace std::literals;
 
 Postprocess::Postprocess(Com_ptr<ID3D11Device1> device,
@@ -29,6 +71,10 @@ Postprocess::Postprocess(Com_ptr<ID3D11Device1> device,
      _fullscreen_vs{
         std::get<0>(shader_groups.at("postprocess"s).vertex.at("main_vs"s).copy())},
      _postprocess_ps_ep{shader_groups.at("postprocess"s).pixel.at("main_ps"s)},
+     _postprocess_cmaa2_pre_ps_ep{
+        shader_groups.at("postprocess"s).pixel.at("main_cmaa2_pre_ps"s)},
+     _postprocess_cmaa2_post_ps_ep{
+        shader_groups.at("postprocess"s).pixel.at("main_cmaa2_post_ps"s)},
      _stock_hdr_to_linear_ps{
         shader_groups.at("postprocess"s).pixel.at("stock_hdr_to_linear_ps"s).copy()},
      _msaa_hdr_resolve_x2_ps{
@@ -160,9 +206,10 @@ void Postprocess::apply(ID3D11DeviceContext1& dc, Rendertarget_allocator& rt_all
 
       if (_bloom_enabled)
          do_bloom_and_color_grading(dc, rt_allocator, textures, resolved_input,
-                                    output, profiler);
+                                    output, profiler, *_postprocess_ps);
       else
-         do_color_grading(dc, textures, resolved_input, output, profiler);
+         do_color_grading(dc, textures, resolved_input, output, profiler,
+                          *_postprocess_ps);
    }
    else {
       auto linear_target =
@@ -181,9 +228,70 @@ void Postprocess::apply(ID3D11DeviceContext1& dc, Rendertarget_allocator& rt_all
 
       if (_bloom_enabled)
          do_bloom_and_color_grading(dc, rt_allocator, textures, linear_input,
-                                    output, profiler);
+                                    output, profiler, *_postprocess_ps);
       else
-         do_color_grading(dc, textures, linear_input, output, profiler);
+         do_color_grading(dc, textures, linear_input, output, profiler, *_postprocess_ps);
+   }
+}
+
+void Postprocess::apply(ID3D11DeviceContext1& dc,
+                        Rendertarget_allocator& rt_allocator, Profiler& profiler,
+                        const core::Texture_database& textures, CMAA2& cmaa2,
+                        const Postprocess_cmaa2_temp_target cmaa2_target,
+                        const Postprocess_input input,
+                        const Postprocess_output output) noexcept
+{
+   dc.IASetInputLayout(nullptr);
+   clear_ia_buffers(dc);
+   dc.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+   dc.VSSetShader(_fullscreen_vs.get(), nullptr, 0);
+
+   update_shaders();
+   update_and_bind_cb(dc, input.width, input.height);
+
+   const auto process_format = _hdr_state == Hdr_state::hdr
+                                  ? DXGI_FORMAT_R16G16B16A16_FLOAT
+                                  : DXGI_FORMAT_R11G11B10_FLOAT;
+
+   auto linear_target =
+      rt_allocator.allocate(process_format, input.width, input.height);
+
+   const Postprocess_input linear_input = [&] {
+      if (_hdr_state == Hdr_state::stock) {
+         linearize_input(dc, input, linear_target, profiler);
+
+         return Postprocess_input{linear_target.srv(), process_format,
+                                  input.width, input.height, 1};
+      }
+
+      return input;
+   }();
+
+   const Postprocess_output intermediate_output{cmaa2_target.rtv, cmaa2_target.width,
+                                                cmaa2_target.height};
+
+   auto luma_target =
+      rt_allocator.allocate(DXGI_FORMAT_R8_UNORM, input.width, input.height);
+
+   // Apply main postprocessing.
+   if (_bloom_enabled)
+      do_bloom_and_color_grading(dc, rt_allocator, textures, linear_input,
+                                 intermediate_output, profiler,
+                                 *_postprocess_cmaa2_pre_ps, &luma_target.rtv());
+   else
+      do_color_grading(dc, textures, linear_input, intermediate_output,
+                       profiler, *_postprocess_cmaa2_pre_ps, &luma_target.rtv());
+
+   // Apply anti-aliasing.
+   cmaa2.apply(dc, profiler, cmaa2_target.texture, luma_target.srv());
+
+   // Copy the anti-aliased scene into the backbuffer, apply dithering and film grain.
+   {
+      Profile profile{profiler, dc, "Postprocessing - Finalize Output"};
+
+      dc.PSSetShader(_postprocess_cmaa2_post_ps.get(), nullptr, 0);
+
+      do_pass(dc, cmaa2_target.srv, output.rtv);
    }
 }
 
@@ -237,12 +345,11 @@ void Postprocess::linearize_input(ID3D11DeviceContext1& dc,
    dc.Draw(3, 0);
 }
 
-void Postprocess::do_bloom_and_color_grading(ID3D11DeviceContext1& dc,
-                                             Rendertarget_allocator& allocator,
-                                             const core::Texture_database& textures,
-                                             const Postprocess_input& input,
-                                             const Postprocess_output& output,
-                                             Profiler& profiler) noexcept
+void Postprocess::do_bloom_and_color_grading(
+   ID3D11DeviceContext1& dc, Rendertarget_allocator& allocator,
+   const core::Texture_database& textures, const Postprocess_input& input,
+   const Postprocess_output& output, Profiler& profiler,
+   ID3D11PixelShader& postprocess_shader, ID3D11RenderTargetView* luma_rtv) noexcept
 {
    Expects(input.sample_count == 1);
 
@@ -323,19 +430,23 @@ void Postprocess::do_bloom_and_color_grading(ID3D11DeviceContext1& dc,
    srvs[lut_texture_slot] = _color_grading_lut_baker.srv(dc);
    srvs[blue_noise_texture_slot] = blue_noise_srv(textures);
 
-   dc.PSSetShader(_postprocess_ps.get(), nullptr, 0);
+   dc.PSSetShader(&postprocess_shader, nullptr, 0);
    bind_bloom_cb(dc, 1);
    dc.OMSetBlendState(nullptr, nullptr, 0xffffffff);
    set_viewport(dc, output.width, output.height);
 
-   do_pass(dc, srvs, output.rtv);
+   if (luma_rtv)
+      do_pass(dc, srvs, {&output.rtv, luma_rtv});
+   else
+      do_pass(dc, srvs, output.rtv);
 }
 
 void Postprocess::do_color_grading(ID3D11DeviceContext1& dc,
                                    const core::Texture_database& textures,
                                    const Postprocess_input& input,
-                                   const Postprocess_output& output,
-                                   Profiler& profiler) noexcept
+                                   const Postprocess_output& output, Profiler& profiler,
+                                   ID3D11PixelShader& postprocess_shader,
+                                   ID3D11RenderTargetView* luma_rtv) noexcept
 {
    Expects(input.sample_count == 1);
 
@@ -349,33 +460,12 @@ void Postprocess::do_color_grading(ID3D11DeviceContext1& dc,
    srvs[lut_texture_slot] = _color_grading_lut_baker.srv(dc);
    srvs[blue_noise_texture_slot] = blue_noise_srv(textures);
 
-   dc.PSSetShader(_postprocess_ps.get(), nullptr, 0);
+   dc.PSSetShader(&postprocess_shader, nullptr, 0);
 
-   do_pass(dc, srvs, output.rtv);
-}
-
-void Postprocess::do_pass(ID3D11DeviceContext1& dc, ID3D11ShaderResourceView& input,
-                          ID3D11RenderTargetView& output) noexcept
-{
-   auto* const rtv = &output;
-   dc.OMSetRenderTargets(1, &rtv, nullptr);
-
-   auto* const srv = &input;
-   dc.PSSetShaderResources(0, 1, &srv);
-
-   dc.Draw(3, 0);
-}
-
-void Postprocess::do_pass(ID3D11DeviceContext1& dc,
-                          std::array<ID3D11ShaderResourceView*, 5> inputs,
-                          ID3D11RenderTargetView& output) noexcept
-{
-   auto* const rtv = &output;
-   dc.OMSetRenderTargets(1, &rtv, nullptr);
-
-   dc.PSSetShaderResources(0, inputs.size(), inputs.data());
-
-   dc.Draw(3, 0);
+   if (luma_rtv)
+      do_pass(dc, srvs, {&output.rtv, luma_rtv});
+   else
+      do_pass(dc, srvs, output.rtv);
 }
 
 auto Postprocess::select_msaa_resolve_shader(const Postprocess_input& input) const
@@ -474,13 +564,26 @@ void Postprocess::update_shaders() noexcept
    if (_vignette_enabled)
       postprocess_flags |= Postprocess_flags::vignette_active;
 
+   const auto postprocess_cmaa2_pre_flags = postprocess_flags;
+   Postprocess_cmaa2_post_flags postprocess_cmaa2_post_flags{};
+
    if (_film_grain_enabled) {
       postprocess_flags |= Postprocess_flags::film_grain_active;
-      if (_colored_film_grain_enabled)
+      postprocess_cmaa2_post_flags |= Postprocess_cmaa2_post_flags::film_grain_active;
+
+      if (_colored_film_grain_enabled) {
          postprocess_flags |= Postprocess_flags::film_grain_colored;
+         postprocess_cmaa2_post_flags |=
+            Postprocess_cmaa2_post_flags::film_grain_colored;
+      }
    }
 
    _postprocess_ps =
       _postprocess_ps_ep.copy(static_cast<std::uint16_t>(postprocess_flags));
+   _postprocess_cmaa2_pre_ps = _postprocess_cmaa2_pre_ps_ep.copy(
+      static_cast<std::uint16_t>(postprocess_cmaa2_pre_flags));
+   _postprocess_cmaa2_post_ps = _postprocess_cmaa2_post_ps_ep.copy(
+      static_cast<std::uint16_t>(postprocess_cmaa2_post_flags));
 }
+
 }

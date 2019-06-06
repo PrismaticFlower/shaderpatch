@@ -19,13 +19,18 @@ struct Game_rendertarget {
 
    Game_rendertarget(ID3D11Device1& device, const DXGI_FORMAT format, const UINT width,
                      const UINT height, const UINT sample_count = 1,
-                     const Game_rt_type flags = Game_rt_type::untyped) noexcept;
+                     const Game_rt_type type = Game_rt_type::untyped) noexcept;
 
    Game_rendertarget(Com_ptr<ID3D11Texture2D> texture,
                      Com_ptr<ID3D11RenderTargetView> rtv,
                      Com_ptr<ID3D11ShaderResourceView> srv, const DXGI_FORMAT format,
                      const UINT width, const UINT height, const UINT sample_count,
-                     const Game_rt_type flags = Game_rt_type::untyped) noexcept;
+                     const Game_rt_type type = Game_rt_type::untyped) noexcept;
+
+   Game_rendertarget(ID3D11Device1& device, const DXGI_FORMAT resource_format,
+                     const DXGI_FORMAT view_format, const UINT width,
+                     const UINT height, const D3D11_BIND_FLAG extra_bind_flags,
+                     const Game_rt_type type = Game_rt_type::untyped) noexcept;
 
    Com_ptr<ID3D11Texture2D> texture;
    Com_ptr<ID3D11RenderTargetView> rtv;

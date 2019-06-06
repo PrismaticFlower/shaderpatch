@@ -5,6 +5,7 @@
 #include "../core/shader_database.hpp"
 #include "../core/texture_database.hpp"
 #include "../user_config.hpp"
+#include "cmaa2.hpp"
 #include "color_grading_lut_baker.hpp"
 #include "com_ptr.hpp"
 #include "helpers.hpp"
@@ -32,10 +33,18 @@ struct Postprocess_input {
    UINT sample_count;
 };
 
+struct Postprocess_cmaa2_temp_target {
+   ID3D11Texture2D& texture;
+   ID3D11RenderTargetView& rtv;
+   ID3D11ShaderResourceView& srv;
+
+   UINT width;
+   UINT height;
+};
+
 struct Postprocess_output {
    ID3D11RenderTargetView& rtv;
 
-   DXGI_FORMAT format;
    UINT width;
    UINT height;
 };
@@ -73,8 +82,13 @@ public:
       return _film_grain_params;
    }
 
-   void apply(ID3D11DeviceContext1& dc, Rendertarget_allocator& allocator,
+   void apply(ID3D11DeviceContext1& dc, Rendertarget_allocator& rt_allocator,
               Profiler& profiler, const core::Texture_database& textures,
+              const Postprocess_input input, const Postprocess_output output) noexcept;
+
+   void apply(ID3D11DeviceContext1& dc, Rendertarget_allocator& rt_allocator,
+              Profiler& profiler, const core::Texture_database& textures,
+              CMAA2& cmaa2, const Postprocess_cmaa2_temp_target cmaa2_target,
               const Postprocess_input input, const Postprocess_output output) noexcept;
 
    void hdr_state(Hdr_state state) noexcept;
@@ -92,19 +106,15 @@ private:
                                    Rendertarget_allocator& allocator,
                                    const core::Texture_database& textures,
                                    const Postprocess_input& input,
-                                   const Postprocess_output& output,
-                                   Profiler& profiler) noexcept;
+                                   const Postprocess_output& output, Profiler& profiler,
+                                   ID3D11PixelShader& postprocess_shader,
+                                   ID3D11RenderTargetView* luma_rtv = nullptr) noexcept;
 
    void do_color_grading(ID3D11DeviceContext1& dc, const core::Texture_database& textures,
                          const Postprocess_input& input,
-                         const Postprocess_output& output, Profiler& profiler) noexcept;
-
-   void do_pass(ID3D11DeviceContext1& dc, ID3D11ShaderResourceView& input,
-                ID3D11RenderTargetView& output) noexcept;
-
-   void do_pass(ID3D11DeviceContext1& dc,
-                std::array<ID3D11ShaderResourceView*, 5> inputs,
-                ID3D11RenderTargetView& output) noexcept;
+                         const Postprocess_output& output, Profiler& profiler,
+                         ID3D11PixelShader& postprocess_shader,
+                         ID3D11RenderTargetView* luma_rtv = nullptr) noexcept;
 
    auto select_msaa_resolve_shader(const Postprocess_input& input) const
       noexcept -> ID3D11PixelShader*;
@@ -183,6 +193,8 @@ private:
       core::create_dynamic_constant_buffer(*_device, sizeof(Bloom_constants))};
 
    const core::Pixel_shader_entrypoint _postprocess_ps_ep;
+   const core::Pixel_shader_entrypoint _postprocess_cmaa2_pre_ps_ep;
+   const core::Pixel_shader_entrypoint _postprocess_cmaa2_post_ps_ep;
 
    const Com_ptr<ID3D11VertexShader> _fullscreen_vs;
    const Com_ptr<ID3D11PixelShader> _stock_hdr_to_linear_ps;
@@ -196,6 +208,8 @@ private:
    const Com_ptr<ID3D11PixelShader> _bloom_upsample_ps;
    const Com_ptr<ID3D11PixelShader> _bloom_threshold_ps;
    Com_ptr<ID3D11PixelShader> _postprocess_ps;
+   Com_ptr<ID3D11PixelShader> _postprocess_cmaa2_pre_ps;
+   Com_ptr<ID3D11PixelShader> _postprocess_cmaa2_post_ps;
 
    Bloom_params _bloom_params{};
    Vignette_params _vignette_params{};
@@ -226,5 +240,4 @@ private:
    constexpr static auto lut_texture_slot = 3;
    constexpr static auto blue_noise_texture_slot = 4;
 };
-
 }
