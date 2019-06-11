@@ -312,8 +312,7 @@ struct Ps_input
 #     if NORMAL_EXT_USE_DYNAMIC_TANGENTS
          return generate_tangent_to_world(_get_normalWS(), positionWS, texcoords);
 #     else
-         const float3 bitangentWS = bitangent_sign * cross(normalWS, _get_normalWS());
-
+         const float3 bitangentWS = bitangent_sign * cross(_get_normalWS(), tangentWS);
 
          return float3x3(tangentWS, bitangentWS, _get_normalWS());
 #     endif
