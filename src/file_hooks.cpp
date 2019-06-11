@@ -166,8 +166,8 @@ function SP_TestVersion(major, minor, patch, prerelease_stage, prerelease)
    if (minor > spVersion.minor) then return false end
 
    if (prerelease_stage == "preview" or spVersion.prerelease_stage == "preview") then
-      if (prerelease_stage ~= spVersion.prerelease_stage) then return false end
-      if (prerelease ~= spVersion.prerelease) then return false end
+      if ((prerelease_stage == "preview" and spVersion.prerelease_stage == "preview") and (prerelease_stage ~= spVersion.prerelease_stage)) then return false end
+      if ((prerelease ~= spVersion.prerelease) and (minor == spVersion.minor)) then return false end
    end
 
    return true

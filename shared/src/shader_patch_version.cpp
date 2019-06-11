@@ -69,8 +69,15 @@ bool is_version_compatible(const Shader_patch_version& version,
 
    if (version.prerelease_stage == Shader_patch_prerelease_stage::preview ||
        reference.prerelease_stage == Shader_patch_prerelease_stage::preview) {
-      if (version.prerelease_stage != reference.prerelease_stage) return false;
-      if (version.prerelease != reference.prerelease) return false;
+
+      if ((version.prerelease_stage == Shader_patch_prerelease_stage::preview &&
+           reference.prerelease_stage == Shader_patch_prerelease_stage::preview) &&
+          (version.prerelease_stage != reference.prerelease_stage))
+         return false;
+
+      if (version.prerelease == reference.prerelease &&
+          version.minor == reference.minor)
+         return false;
    }
 
    return true;
