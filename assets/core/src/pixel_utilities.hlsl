@@ -80,19 +80,21 @@ float3 sample_normal_map_gloss(Texture2D<float4> tex, Texture2D<float2> detail_t
 float2 parallax_occlusion_map(Texture2D<float> height_map, const float height_scale, const float2 texcoords,
                               const float3 unorm_viewTS, const float3 normalWS, const float3 viewWS)
 {
-   const float fade_start = 12.0;
-   const float fade_length = 20.0;
+   const float fade_start = 20.0;
+   const float fade_length = 32.0;
    const float max_steps = 64.0;
    const float min_steps = 16.0;
    const float mip_level = height_map.CalculateLevelOfDetail(linear_wrap_sampler, texcoords);
 
-   const float2 parallax_direction = normalize(unorm_viewTS.xy);
+   const float3 viewTS = normalize(unorm_viewTS);
+   const float2 parallax_direction = normalize(viewTS.xy);
 
-   const float view_length = length(unorm_viewTS);
-   const float parallax_length = sqrt(view_length * view_length - unorm_viewTS.z * unorm_viewTS.z) / unorm_viewTS.z;
+   const float view_length = length(viewTS);
+   const float parallax_length = sqrt(view_length * view_length - viewTS.z * viewTS.z) / viewTS.z;
    const float2 parallax_offset = parallax_direction * parallax_length * height_scale;
 
-   const float fade = 1.0 - saturate((view_length - fade_start) / fade_length);
+   const float view_distance = length(unorm_viewTS);
+   const float fade = 1.0 - saturate((view_distance - fade_start) / fade_length);
 
 #pragma warning(disable : 4000)
    [branch] if (fade == 0.0) return texcoords;
