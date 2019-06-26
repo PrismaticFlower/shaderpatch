@@ -1,5 +1,4 @@
 
-#include "pixel_utilities.hlsl"
 #include "postprocess_common.hlsl"
 
 Texture2D<float3> bloom_input_texture : register(t0);

@@ -1,4 +1,5 @@
 
+#include "adaptive_oit.hlsl" 
 #include "constants_list.hlsl"
 #include "generic_vertex_input.hlsl"
 #include "vertex_utilities.hlsl"
@@ -205,13 +206,7 @@ float4 main_ps(Ps_input input) : SV_Target0
 
       float shadow = 1.0 - (lighting.intensity * (1.0 - shadow_map_value));
 
-      // Linear Rendering Normalmap Hack
-      color = lerp(color * shadow, diffuse_color * lighting_scale * shadow, rt_multiply_blending_state);
-   }
-   else {
-
-      // Linear Rendering Normalmap Hack
-      color = lerp(color, diffuse_color * lighting_scale, rt_multiply_blending_state);
+      color = color * shadow;
    }
 
    float alpha;
@@ -236,4 +231,19 @@ float4 main_ps(Ps_input input) : SV_Target0
    color = apply_fog(color, input.fog);
 
    return float4(color, alpha);
+}
+
+[earlydepthstencil]
+void oit_unlit_main_ps(Ps_input_unlit input, float4 positionSS : SV_Position, uint coverage : SV_Coverage) {
+   const float4 color = unlit_main_ps(input);
+
+   aoit::write_pixel(positionSS.xy, positionSS.z, coverage, color);
+}
+
+[earlydepthstencil]
+void oit_main_ps(Ps_input input, float4 positionSS : SV_Position, uint coverage : SV_Coverage)
+{
+   const float4 color = main_ps(input);
+
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, coverage, color);
 }

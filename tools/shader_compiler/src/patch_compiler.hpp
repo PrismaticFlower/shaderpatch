@@ -60,6 +60,9 @@ private:
       std::string ps_entrypoint;
       std::uint32_t ps_static_flags;
 
+      std::string ps_oit_entrypoint;
+      std::uint32_t ps_oit_static_flags;
+
       std::optional<std::string> hs_entrypoint;
       std::uint32_t hs_static_flags;
 

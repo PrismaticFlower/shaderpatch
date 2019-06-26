@@ -20,7 +20,8 @@ public:
                const Input_layout_descriptions& layout_descriptions,
                const std::uint16_t layout_index, const std::string& shader_name,
                const Vertex_shader_flags vertex_shader_flags,
-               const Pixel_shader_flags pixel_shader_flags) noexcept;
+               const Pixel_shader_flags pixel_shader_flags,
+               const bool oit_active) noexcept;
 
    void update_for_zprepass(ID3D11DeviceContext1& dc,
                             const Input_layout_descriptions& layout_descriptions,
@@ -38,6 +39,7 @@ private:
    struct Material_shader_state {
       std::unordered_map<Vertex_shader_flags, Material_vertex_shader> vertex;
       std::unordered_map<Pixel_shader_flags, Com_ptr<ID3D11PixelShader>> pixel;
+      std::unordered_map<Pixel_shader_flags, Com_ptr<ID3D11PixelShader>> pixel_oit;
 
       Com_ptr<ID3D11HullShader> hull;
       Com_ptr<ID3D11DomainShader> domain;

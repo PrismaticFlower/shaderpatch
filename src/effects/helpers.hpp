@@ -39,17 +39,6 @@ inline void set_viewport(ID3D11DeviceContext1& dc, const UINT width,
    dc.RSSetViewports(1, &viewport);
 }
 
-inline auto create_normal_blend_state(ID3D11Device1& device) noexcept
-   -> Com_ptr<ID3D11BlendState>
-{
-   const CD3D11_BLEND_DESC desc{CD3D11_DEFAULT{}};
-
-   Com_ptr<ID3D11BlendState> blend_state;
-   device.CreateBlendState(&desc, blend_state.clear_and_assign());
-
-   return blend_state;
-}
-
 inline auto create_additive_blend_state(ID3D11Device1& device) noexcept
    -> Com_ptr<ID3D11BlendState>
 {
@@ -88,17 +77,6 @@ inline auto create_alpha_blend_state(ID3D11Device1& device) noexcept
    device.CreateBlendState(&desc, blend_state.clear_and_assign());
 
    return blend_state;
-}
-
-inline void clear_ia_buffers(ID3D11DeviceContext1& dc) noexcept
-{
-   dc.IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
-
-   const std::array<ID3D11Buffer*, D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT> null_buffers{};
-   const std::array<UINT, D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT> zeros{};
-
-   dc.IASetVertexBuffers(0, null_buffers.size(), null_buffers.data(),
-                         zeros.data(), zeros.data());
 }
 
 }

@@ -269,6 +269,23 @@ inline auto make_shared_com_ptr(Com_ptr<Class> com_ptr) -> std::shared_ptr<Class
               if (ptr) ptr->Release();
            }};
 }
+
+template<typename Class>
+inline auto copy_raw_com_ptr(Class* const com_ptr) -> Com_ptr<Class>
+{
+   Expects(com_ptr != nullptr);
+
+   com_ptr->AddRef();
+
+   return Com_ptr{com_ptr};
+}
+
+template<typename Class>
+inline auto copy_raw_com_ptr(Class& com_ptr) -> Com_ptr<Class>
+{
+   return copy_raw_com_ptr(&com_ptr);
+}
+
 }
 
 template<typename Class>

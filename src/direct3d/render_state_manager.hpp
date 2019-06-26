@@ -33,7 +33,7 @@ private:
    void update_fog_state(core::Shader_patch& shader_patch) noexcept;
 
    auto create_current_blend_state(core::Shader_patch& shader_patch) const
-      noexcept -> Com_ptr<ID3D11BlendState>;
+      noexcept -> Com_ptr<ID3D11BlendState1>;
 
    auto create_current_depthstencil_state(core::Shader_patch& shader_patch) const
       noexcept -> Com_ptr<ID3D11DepthStencilState>;
@@ -130,7 +130,7 @@ private:
    bool _fog_state_dirty = true;
 
    Blend_state _current_blend_state;
-   std::vector<std::pair<Blend_state, Com_ptr<ID3D11BlendState>>> _blend_states;
+   std::vector<std::pair<Blend_state, Com_ptr<ID3D11BlendState1>>> _blend_states;
 
    Depthstencil_state _current_depthstencil_state;
    std::vector<std::pair<Depthstencil_state, Com_ptr<ID3D11DepthStencilState>>> _depthstencil_states;

@@ -1,0 +1,26 @@
+{
+  "group_name": "adaptive oit resolve",
+  "source_name": "adaptive_oit_resolve.fx",
+
+  "entrypoints": {
+    "main_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto"
+      }
+    },
+
+    "main_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
+    }
+  },
+
+  "rendertypes": {},
+
+  "states": {}
+}

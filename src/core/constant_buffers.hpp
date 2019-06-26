@@ -88,13 +88,12 @@ struct alignas(16) Draw_ps {
    float ps_lighting_scale;
    glm::vec4 rt_resolution; // x = width, y = height, z = 1 / width, w = 1 / height
    glm::vec3 fog_color;
-   float stock_tonemap_state;
-   float rt_multiply_blending_state;
+   float rcp_sample_count;
+   std::int32_t additive_blending;
    std::int32_t cube_projtex;
    std::int32_t fog_enabled;
-   std::int32_t _buffer_padding2;
+   std::int32_t limit_normal_shader_bright_lights;
 };
 
 static_assert(sizeof(Draw_ps) == 144);
-
 }

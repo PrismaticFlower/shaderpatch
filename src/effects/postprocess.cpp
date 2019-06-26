@@ -32,6 +32,9 @@ constexpr bool marked_as_enum_flag(Postprocess_cmaa2_post_flags) noexcept
 void do_pass(ID3D11DeviceContext1& dc, ID3D11ShaderResourceView& input,
              ID3D11RenderTargetView& output) noexcept
 {
+   ID3D11ShaderResourceView* const null_srv = nullptr;
+   dc.PSSetShaderResources(0, 1, &null_srv);
+
    auto* const rtv = &output;
    dc.OMSetRenderTargets(1, &rtv, nullptr);
 
@@ -183,10 +186,12 @@ void Postprocess::apply(ID3D11DeviceContext1& dc, Rendertarget_allocator& rt_all
                         const Postprocess_input input,
                         const Postprocess_output output) noexcept
 {
-   dc.IASetInputLayout(nullptr);
-   clear_ia_buffers(dc);
+   dc.ClearState();
    dc.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
    dc.VSSetShader(_fullscreen_vs.get(), nullptr, 0);
+
+   auto* const sampler = _linear_clamp_sampler.get();
+   dc.PSSetSamplers(0, 1, &sampler);
 
    update_shaders();
    update_and_bind_cb(dc, input.width, input.height);
@@ -241,10 +246,12 @@ void Postprocess::apply(ID3D11DeviceContext1& dc,
                         const Postprocess_input input,
                         const Postprocess_output output) noexcept
 {
-   dc.IASetInputLayout(nullptr);
-   clear_ia_buffers(dc);
+   dc.ClearState();
    dc.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
    dc.VSSetShader(_fullscreen_vs.get(), nullptr, 0);
+
+   auto* const sampler = _linear_clamp_sampler.get();
+   dc.PSSetSamplers(0, 1, &sampler);
 
    update_shaders();
    update_and_bind_cb(dc, input.width, input.height);
@@ -289,8 +296,15 @@ void Postprocess::apply(ID3D11DeviceContext1& dc,
    {
       Profile profile{profiler, dc, "Postprocessing - Finalize Output"};
 
+      dc.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+      dc.VSSetShader(_fullscreen_vs.get(), nullptr, 0);
+
+      auto* const cb = _global_constant_buffer.get();
+      dc.PSSetSamplers(0, 1, &sampler);
+      dc.PSSetConstantBuffers(global_cb_slot, 1, &cb);
       dc.PSSetShader(_postprocess_cmaa2_post_ps.get(), nullptr, 0);
 
+      set_viewport(dc, cmaa2_target.width, cmaa2_target.height);
       do_pass(dc, cmaa2_target.srv, output.rtv);
    }
 }
@@ -335,7 +349,6 @@ void Postprocess::linearize_input(ID3D11DeviceContext1& dc,
 
    auto* const srv = &input.srv;
    auto* const rtv = &output.rtv();
-   dc.OMSetBlendState(nullptr, nullptr, 0xffffffff);
    set_viewport(dc, input.width, input.height);
 
    dc.PSSetShaderResources(0, 1, &srv);
@@ -367,7 +380,6 @@ void Postprocess::do_bloom_and_color_grading(
 
       bind_bloom_cb(dc, 0);
       set_viewport(dc, input.width / 2, input.height / 2);
-      dc.OMSetBlendState(nullptr, nullptr, 0xffffffff);
       do_pass(dc, input.srv, rt_a.rtv());
    }
 
@@ -453,7 +465,6 @@ void Postprocess::do_color_grading(ID3D11DeviceContext1& dc,
    Profile profile{profiler, dc, "Postprocessing - Final"};
 
    std::array<ID3D11ShaderResourceView*, 5> srvs{};
-   dc.OMSetBlendState(nullptr, nullptr, 0xffffffff);
    set_viewport(dc, output.width, output.height);
 
    srvs[scene_texture_slot] = &input.srv;

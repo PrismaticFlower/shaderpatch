@@ -15,6 +15,7 @@ struct Game_shader {
    const Com_ptr<ID3D11VertexShader> vs;
    const Com_ptr<ID3D11VertexShader> vs_compressed;
    const Com_ptr<ID3D11PixelShader> ps;
+   const Com_ptr<ID3D11PixelShader> ps_oit;
 
    const Rendertype rendertype;
    const std::array<bool, 4> srgb_state;

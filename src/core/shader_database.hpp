@@ -493,6 +493,7 @@ public:
 
    Shader_state_stage_vertex vertex;
    Shader_state_stage_pixel pixel;
+   Shader_state_stage_pixel pixel_oit;
 
    Com_ptr<ID3D11HullShader> hull;
    Com_ptr<ID3D11DomainShader> domain;

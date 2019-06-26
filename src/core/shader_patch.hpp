@@ -16,6 +16,7 @@
 #include "input_layout_element.hpp"
 #include "late_backbuffer_resolver.hpp"
 #include "material_shader_factory.hpp"
+#include "oit_provider.hpp"
 #include "patch_effects_config_handle.hpp"
 #include "patch_material.hpp"
 #include "patch_texture.hpp"
@@ -79,8 +80,8 @@ public:
    auto create_depthstencil_state(const D3D11_DEPTH_STENCIL_DESC depthstencil_desc) noexcept
       -> Com_ptr<ID3D11DepthStencilState>;
 
-   auto create_blend_state(const D3D11_BLEND_DESC blend_state_desc) noexcept
-      -> Com_ptr<ID3D11BlendState>;
+   auto create_blend_state(const D3D11_BLEND_DESC1 blend_state_desc) noexcept
+      -> Com_ptr<ID3D11BlendState1>;
 
    auto create_query(const D3D11_QUERY_DESC desc) noexcept -> Com_ptr<ID3D11Query>;
 
@@ -167,15 +168,13 @@ public:
 
    void set_depthstencil(const Game_depthstencil depthstencil) noexcept;
 
-   void set_viewport(const float x, const float y, const float width,
-                     const float height) noexcept;
-
    void set_rasterizer_state(ID3D11RasterizerState& rasterizer_state) noexcept;
 
    void set_depthstencil_state(ID3D11DepthStencilState& depthstencil_state,
                                const UINT8 stencil_ref) noexcept;
 
-   void set_blend_state(ID3D11BlendState& blend_state) noexcept;
+   void set_blend_state(ID3D11BlendState1& blend_state,
+                        const bool additive_blending) noexcept;
 
    void set_fog_state(const bool enabled, const glm::vec4 color) noexcept;
 
@@ -225,6 +224,8 @@ private:
 
    void bind_static_resources() noexcept;
 
+   void restore_all_game_state() noexcept;
+
    void game_rendertype_changed() noexcept;
 
    void update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primitive_topology) noexcept;
@@ -246,6 +247,8 @@ private:
    void set_linear_rendering(bool linear_rendering) noexcept;
 
    void resolve_refraction_texture() noexcept;
+
+   void resolve_oit() noexcept;
 
    void patch_backbuffer_resolve() noexcept;
 
@@ -290,14 +293,29 @@ private:
    std::shared_ptr<Game_shader> _game_shader{};
    Rendertype _shader_rendertype = Rendertype::invalid;
 
-   std::array<Game_texture, 4> _game_textures;
+   std::array<Game_texture, 6> _game_textures;
    std::shared_ptr<Patch_material> _patch_material;
+
+   Com_ptr<ID3D11Buffer> _game_index_buffer;
+   UINT _game_index_buffer_offset = 0;
+   Com_ptr<ID3D11Buffer> _game_vertex_buffer;
+   UINT _game_vertex_buffer_offset = 0;
+   UINT _game_vertex_buffer_stride = 0;
+   Com_ptr<ID3D11RasterizerState> _game_rs_state;
+   Com_ptr<ID3D11DepthStencilState> _game_depthstencil_state;
+   Com_ptr<ID3D11BlendState1> _game_blend_state;
 
    bool _discard_draw_calls = false;
    bool _shader_rendertype_changed = false;
-   bool _shader_dirty = true;
    bool _use_patch_material_topology = false;
+   bool _shader_dirty = true;
+   bool _ia_index_buffer_dirty = true;
+   bool _ia_vertex_buffer_dirty = true;
+   bool _rs_state_dirty = true;
    bool _om_targets_dirty = true;
+   UINT8 _game_stencil_ref = 0xff;
+   bool _om_depthstencil_state_dirty = true;
+   bool _om_blend_state_dirty = true;
    bool _ps_textures_dirty = true;
    bool _cb_scene_dirty = true;
    bool _cb_draw_dirty = true;
@@ -309,6 +327,7 @@ private:
    bool _refraction_farscene_texture_resolve = false;
    bool _refraction_nearscene_texture_resolve = false;
    bool _linear_rendering = false;
+   bool _oit_active = false;
 
    bool _imgui_enabled = false;
    bool _screenshot_requested = false;
@@ -347,7 +366,7 @@ private:
    const Com_ptr<ID3D11Buffer> _empty_vertex_buffer = [this] {
       Com_ptr<ID3D11Buffer> buffer;
 
-      const std::array<glm::uvec4, 32> data{};
+      const std::array<std::byte, 32> data{};
 
       const auto desc = CD3D11_BUFFER_DESC{data.size(), D3D11_BIND_VERTEX_BUFFER,
                                            D3D11_USAGE_IMMUTABLE, 0};
@@ -358,6 +377,8 @@ private:
 
       return buffer;
    }();
+
+   OIT_provider _oit_provider{_device, _shader_database->groups};
 
    const Image_stretcher _image_stretcher{*_device, *_shader_database};
    const Late_backbuffer_resolver _late_backbuffer_resolver{*_shader_database};

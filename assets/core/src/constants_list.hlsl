@@ -65,10 +65,11 @@ cbuffer PSDrawConstants : register(b0)
    float ps_lighting_scale;
    float4 rt_resolution; // x = width, y = height, z = 1 / width, w = 1 / height
    float3 fog_color;
-   float stock_tonemap_state;
-   float rt_multiply_blending_state;
+   float rcp_sample_count;
+   bool additive_blending;
    bool cube_projtex;
    bool fog_enabled;
+   bool limit_normal_shader_bright_lights;
 }
 
 #ifdef __PIXEL_SHADER__

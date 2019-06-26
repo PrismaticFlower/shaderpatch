@@ -61,6 +61,29 @@
         [ "NORMAL_EXT_USE_DISPLACEMENT_MAP", "0" ],
         [ "NORMAL_EXT_USE_PN_TRIANGLES", "0" ]
       ]
+    },
+
+    "oit_main_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": true
+      },
+
+      "static_flags": [
+        "NORMAL_EXT_USE_SPECULAR",
+        "NORMAL_EXT_USE_DYNAMIC_TANGENTS",
+        "NORMAL_EXT_USE_HARDEDGED_TEST",
+        "NORMAL_EXT_USE_SHADOW_MAP",
+        "NORMAL_EXT_USE_PROJECTED_TEXTURE"
+      ],
+
+      "defines": [
+        [ "NORMAL_EXT_USE_TEXCOORDS_TRANSFORM", "1" ],
+        [ "NORMAL_EXT_USE_DISPLACEMENT_MAP", "0" ],
+        [ "NORMAL_EXT_USE_PN_TRIANGLES", "0" ],
+        [ "NORMAL_EXT_USE_TRANSPARENCY", "1" ]
+      ]
     }
   },
 
@@ -151,6 +174,10 @@
 
         "static_flags": {
           "NORMAL_EXT_USE_TRANSPARENCY": true
+        },
+
+        "oit_pixel_shader": {
+          "entrypoint": "oit_main_ps"
         }
       }
     },
@@ -167,6 +194,14 @@
 
         "static_flags": {
           "NORMAL_EXT_USE_TRANSPARENCY": true,
+          "NORMAL_EXT_USE_HARDEDGED_TEST": true
+        }
+      },
+
+      "oit_pixel_shader": {
+        "entrypoint": "oit_main_ps",
+
+        "static_flags": {
           "NORMAL_EXT_USE_HARDEDGED_TEST": true
         }
       }
@@ -219,6 +254,14 @@
           "NORMAL_EXT_USE_TRANSPARENCY": true,
           "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
         }
+      },
+
+      "oit_pixel_shader": {
+        "entrypoint": "oit_main_ps",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+        }
       }
     },
 
@@ -234,6 +277,15 @@
 
         "static_flags": {
           "NORMAL_EXT_USE_TRANSPARENCY": true,
+          "NORMAL_EXT_USE_HARDEDGED_TEST": true,
+          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+        }
+      },
+
+      "oit_pixel_shader": {
+        "entrypoint": "oit_main_ps",
+
+        "static_flags": {
           "NORMAL_EXT_USE_HARDEDGED_TEST": true,
           "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
         }
@@ -322,6 +374,14 @@
           "NORMAL_EXT_USE_TRANSPARENCY": true,
           "NORMAL_EXT_USE_SHADOW_MAP": true
         }
+      },
+
+      "oit_pixel_shader": {
+        "entrypoint": "oit_main_ps",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_SHADOW_MAP": true
+        }
       }
     },
 
@@ -337,6 +397,15 @@
 
         "static_flags": {
           "NORMAL_EXT_USE_TRANSPARENCY": true,
+          "NORMAL_EXT_USE_HARDEDGED_TEST": true,
+          "NORMAL_EXT_USE_SHADOW_MAP": true
+        }
+      },
+
+      "oit_pixel_shader": {
+        "entrypoint": "oit_main_ps",
+
+        "static_flags": {
           "NORMAL_EXT_USE_HARDEDGED_TEST": true,
           "NORMAL_EXT_USE_SHADOW_MAP": true
         }
@@ -358,6 +427,15 @@
           "NORMAL_EXT_USE_SHADOW_MAP": true,
           "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
         }
+      },
+
+      "oit_pixel_shader": {
+        "entrypoint": "oit_main_ps",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_SHADOW_MAP": true,
+          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+        }
       }
     },
 
@@ -373,6 +451,16 @@
 
         "static_flags": {
           "NORMAL_EXT_USE_TRANSPARENCY": true,
+          "NORMAL_EXT_USE_HARDEDGED_TEST": true,
+          "NORMAL_EXT_USE_SHADOW_MAP": true,
+          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+        }
+      },
+
+      "oit_pixel_shader": {
+        "entrypoint": "oit_main_ps",
+
+        "static_flags": {
           "NORMAL_EXT_USE_HARDEDGED_TEST": true,
           "NORMAL_EXT_USE_SHADOW_MAP": true,
           "NORMAL_EXT_USE_PROJECTED_TEXTURE": true

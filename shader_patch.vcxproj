@@ -143,6 +143,7 @@
     <ClCompile Include="src\core\late_backbuffer_resolver.cpp" />
     <ClCompile Include="src\core\material_shader.cpp" />
     <ClCompile Include="src\core\material_shader_factory.cpp" />
+    <ClCompile Include="src\core\oit_provider.cpp" />
     <ClCompile Include="src\core\patch_material.cpp" />
     <ClCompile Include="src\core\sampler_states.cpp" />
     <ClCompile Include="src\core\screenshot.cpp" />
@@ -187,11 +188,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\core\constant_buffers.hpp" />
-    <ClInclude Include="src\core\context_state_guard.hpp" />
     <ClInclude Include="src\core\depthstencil.hpp" />
     <ClInclude Include="src\core\late_backbuffer_resolver.hpp" />
     <ClInclude Include="src\core\material_shader.hpp" />
     <ClInclude Include="src\core\material_shader_factory.hpp" />
+    <ClInclude Include="src\core\oit_provider.hpp" />
     <ClInclude Include="src\core\patch_effects_config_handle.hpp" />
     <ClInclude Include="src\core\game_input_layout.hpp" />
     <ClInclude Include="src\core\game_rendertarget.hpp" />

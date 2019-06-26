@@ -1,4 +1,4 @@
-
+#include "adaptive_oit.hlsl" 
 #include "generic_vertex_input.hlsl"
 #include "vertex_utilities.hlsl"
 #include "vertex_transformer.hlsl"
@@ -308,4 +308,47 @@ float4 near_bump_ps(Ps_near_input input) : SV_Target0
    color = apply_fog(color, input.fog);
 
    return float4(color, input.material_color_fade.a);
+}
+
+[earlydepthstencil]
+void oit_nodistortion_ps(Ps_nodistortion_input input, 
+                         float4 positionSS : SV_Position,
+                         uint coverage : SV_Coverage,
+                         Texture2D<float4> diffuse_texture : register(t0))
+{
+   const float4 color = nodistortion_ps(input, diffuse_texture);
+
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, coverage, color);
+}
+
+[earlydepthstencil]
+void oit_near_diffuse_ps(Ps_near_input input, float4 positionSS : SV_Position, uint coverage : SV_Coverage)
+{
+   const float4 color = near_diffuse_ps(input);
+
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, coverage, color);
+}
+
+[earlydepthstencil]
+void oit_near_ps(Ps_near_input input, float4 positionSS : SV_Position, uint coverage : SV_Coverage)
+{
+   const float4 color = near_ps(input);
+
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, coverage, color);
+}
+
+[earlydepthstencil]
+void oit_near_diffuse_bump_ps(Ps_near_input input, float4 positionSS : SV_Position, uint coverage : SV_Coverage)
+{
+   const float4 color = near_diffuse_bump_ps(input);
+
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, coverage, color);
+}
+
+[earlydepthstencil]
+void oit_near_bump_ps(Ps_near_input input, float4 positionSS : SV_Position, uint coverage : SV_Coverage)
+{
+   const float4 color = near_bump_ps(input);
+
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, coverage, color);
 }

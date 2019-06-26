@@ -27,6 +27,14 @@
       "pixel_state": {
         "lighting": false
       }
+    },
+
+    "oit_shield_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
     }
   },
 
@@ -42,6 +50,10 @@
 
       "pixel_shader": {
         "entrypoint": "shield_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_shield_ps"
       }
     }
   }

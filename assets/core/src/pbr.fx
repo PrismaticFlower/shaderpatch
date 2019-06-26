@@ -1,4 +1,4 @@
-
+#include "adaptive_oit.hlsl" 
 #include "constants_list.hlsl"
 #include "generic_vertex_input.hlsl"
 #include "vertex_utilities.hlsl"
@@ -11,11 +11,11 @@
 
 // Samplers
 Texture2D<float4> shadow_map : register(t3);
-Texture2D<float4> albedo_map : register(t4);
-Texture2D<float2> normal_map : register(t5);
-Texture2D<float2> metallic_roughness_map : register(t6);
-Texture2D<float> ao_map : register(t7);
-Texture2D<float3> emissive_map : register(t8);
+Texture2D<float4> albedo_map : register(t6);
+Texture2D<float2> normal_map : register(t7);
+Texture2D<float2> metallic_roughness_map : register(t8);
+Texture2D<float> ao_map : register(t9);
+Texture2D<float3> emissive_map : register(t10);
 
 // Game Custom Constants
 const static float4 blend_constant = ps_custom_constants[0];
@@ -149,4 +149,12 @@ float4 main_ps(Ps_input input) : SV_Target0
    }
 
    return float4(color, alpha);
+}
+
+[earlydepthstencil]
+void oit_main_ps(Ps_input input, uint coverage : SV_Coverage)
+{
+   const float4 color = main_ps(input);
+
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, coverage, color);
 }

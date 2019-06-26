@@ -1,3 +1,4 @@
+#include "adaptive_oit.hlsl" 
 #include "constants_list.hlsl"
 #include "generic_vertex_input.hlsl"
 #include "vertex_utilities.hlsl"
@@ -9,14 +10,14 @@
 // Textures
 Texture2D<float3> projected_light_texture : register(ps, t2);
 Texture2D<float4> shadow_map : register(ps, t3);
-Texture2D<float4> diffuse_map : register(ps, t4);
-Texture2D<float4> normal_map : register(ps, t5);
-Texture2D<float>  height_map : register(ps, t6);
-Texture2D<float3> detail_map : register(ps, t7);
-Texture2D<float2> detail_normal_map : register(ps, t8);
-Texture2D<float3> emissive_map : register(ps, t9);
-Texture2D<float4> overlay_diffuse_map : register(ps, t10);
-Texture2D<float4> overlay_normal_map : register(ps, t11);
+Texture2D<float4> diffuse_map : register(ps, t6);
+Texture2D<float4> normal_map : register(ps, t7);
+Texture2D<float>  height_map : register(ps, t8);
+Texture2D<float3> detail_map : register(ps, t9);
+Texture2D<float2> detail_normal_map : register(ps, t10);
+Texture2D<float3> emissive_map : register(ps, t11);
+Texture2D<float4> overlay_diffuse_map : register(ps, t12);
+Texture2D<float4> overlay_normal_map : register(ps, t13);
 
 Texture2D<float>  displacement_map : register(ds, t0);
 
@@ -432,6 +433,14 @@ float4 main_ps(Ps_input input) : SV_Target0
    }
    
    return float4(color, alpha);
+}
+
+[earlydepthstencil]
+void oit_main_ps(Ps_input input, uint coverage : SV_Coverage)
+{
+   const float4 color = main_ps(input);
+
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, coverage, color);
 }
 
 struct Hs_constant_output

@@ -1,3 +1,4 @@
+#include "adaptive_oit.hlsl" 
 #include "constants_list.hlsl"
 #include "generic_vertex_input.hlsl"
 #include "pixel_utilities.hlsl"
@@ -53,4 +54,12 @@ float4 lightbeam_ps(Ps_input input) : SV_Target0
    color.rgb = apply_fog(color.rgb, input.fog);
 
    return color;
+}
+
+[earlydepthstencil]
+void oit_lightbeam_ps(Ps_input input, float4 positionSS : SV_Position, uint coverage : SV_Coverage)
+{
+   const float4 color = lightbeam_ps(input);
+
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, coverage, color);
 }

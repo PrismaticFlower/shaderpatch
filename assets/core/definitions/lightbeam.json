@@ -27,6 +27,14 @@
       "pixel_state": {
         "lighting": false
       }
+    },
+
+    "oit_lightbeam_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
     }
   },
 
@@ -42,6 +50,10 @@
 
       "pixel_shader": {
         "entrypoint": "lightbeam_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_lightbeam_ps"
       }
     }
   }

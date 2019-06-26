@@ -27,6 +27,14 @@
       "pixel_state": {
         "lighting": false
       }
+    },
+
+    "oit_rain_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
     }
   },
 
@@ -42,6 +50,10 @@
 
       "pixel_shader": {
         "entrypoint": "rain_ps"
+      },
+
+      "oit_pixel_shader": {
+        "entrypoint": "oit_rain_ps"
       }
     }
   }

@@ -48,6 +48,7 @@ struct User_config {
    struct {
       Antialiasing_method antialiasing_method = Antialiasing_method::msaax4;
       Anisotropic_filtering anisotropic_filtering = Anisotropic_filtering::x16;
+      bool enable_oit = false;
       bool enable_tessellation = true;
       bool enable_user_effects_config = false;
       std::string user_effects_config;

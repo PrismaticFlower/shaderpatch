@@ -25,6 +25,10 @@ Graphics:
    # Anisotropic Filtering level for textures, can be "off", "x2", "x4", "x8" or "x16".
    Anisotropic Filtering: x16
 
+   # Enables the use of an Order-Independent Transparency approximation. It should go without saying that this increases the cost of rendering.
+   # Requires a GPU with support for Rasterizer Ordered Views and typed Unordered Access View loads. Known to be buggy on NVIDIA GPUs.
+   Enable Order-Independent Transparency: no
+
    # Whether to let custom materials use tessellation shaders or not. On older GPUs this
    # may cause a performance hit.
    Enable Tessellation: yes

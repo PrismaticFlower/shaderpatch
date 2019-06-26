@@ -1,4 +1,5 @@
 
+#include "adaptive_oit.hlsl"
 #include "generic_vertex_input.hlsl"
 #include "vertex_utilities.hlsl"
 #include "vertex_transformer.hlsl"
@@ -119,4 +120,20 @@ float4 blur_ps(Ps_blur_input input) : SV_Target0
    color = apply_fog(color, input.fog);
 
    return float4(color, saturate(alpha * input.color.a));
+}
+
+[earlydepthstencil]
+void oit_normal_ps(Ps_normal_input input, float4 positionSS : SV_Position, uint coverage : SV_Coverage)
+{
+   const float4 color = normal_ps(input);
+
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, coverage, color);
+}
+
+[earlydepthstencil]
+void oit_blur_ps(Ps_blur_input input, uint coverage : SV_Coverage)
+{
+   const float4 color = blur_ps(input);
+
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, coverage, color);
 }

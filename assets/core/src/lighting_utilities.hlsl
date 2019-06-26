@@ -120,9 +120,11 @@ Lighting calculate(float3 normalWS, float3 positionWS, float3 static_diffuse_lig
          light.rgb += (projected_light_texture_color * light_proj_color.rgb * proj_light_intensity);
       }
 
-      float scale = max(max(light.r, light.g), light.b);
-      scale = max(scale, 1.0);
-      light.rgb = lerp(light.rgb / scale, light.rgb, stock_tonemap_state);
+      if (limit_normal_shader_bright_lights) {
+         const float scale = max(max(max(light.r, light.g), light.b), 1.0);
+         light.rgb *= rcp(scale);
+      }
+
       light.rgb *= lighting_scale;
 
       lighting.color = light.rgb;

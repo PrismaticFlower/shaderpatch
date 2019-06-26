@@ -159,23 +159,25 @@ auto Render_state_manager::texture_factor() const noexcept -> DWORD
 
 void Render_state_manager::update_blend_state(core::Shader_patch& shader_patch) noexcept
 {
+   const bool additive_blending = _current_blend_state.dest_blend == D3DBLEND_ONE;
+
    if (const auto blend_state =
           std::find_if(_blend_states.cbegin(), _blend_states.cend(),
                        [current_blend_state{_current_blend_state}](const auto& pair) {
                           return (current_blend_state == pair.first);
                        });
        blend_state != _blend_states.cend()) {
-      shader_patch.set_blend_state(*blend_state->second);
+      shader_patch.set_blend_state(*blend_state->second, additive_blending);
 
       return;
    }
 
-   ID3D11BlendState& blend_state =
+   ID3D11BlendState1& blend_state =
       *_blend_states
           .emplace_back(_current_blend_state, create_current_blend_state(shader_patch))
           .second;
 
-   shader_patch.set_blend_state(blend_state);
+   shader_patch.set_blend_state(blend_state, additive_blending);
 }
 
 void Render_state_manager::update_depthstencil_state(core::Shader_patch& shader_patch) noexcept
@@ -232,12 +234,11 @@ void Render_state_manager::update_fog_state(core::Shader_patch& shader_patch) no
 }
 
 auto Render_state_manager::create_current_blend_state(core::Shader_patch& shader_patch) const
-   noexcept -> Com_ptr<ID3D11BlendState>
+   noexcept -> Com_ptr<ID3D11BlendState1>
 {
-   D3D11_RENDER_TARGET_BLEND_DESC desc{true};
+   D3D11_RENDER_TARGET_BLEND_DESC1 desc{true, false};
 
-   const auto map_blend_value = [](const unsigned int d3d9_blend) noexcept
-   {
+   const auto map_blend_value = [](const unsigned int d3d9_blend) noexcept {
       switch (d3d9_blend) {
       case D3DBLEND_ZERO:
          return D3D11_BLEND_ZERO;
@@ -270,8 +271,7 @@ auto Render_state_manager::create_current_blend_state(core::Shader_patch& shader
       }
    };
 
-   const auto map_alpha_blend_value = [](const unsigned int d3d9_blend) noexcept
-   {
+   const auto map_alpha_blend_value = [](const unsigned int d3d9_blend) noexcept {
       switch (d3d9_blend) {
       case D3DBLEND_ZERO:
          return D3D11_BLEND_ZERO;
@@ -300,8 +300,7 @@ auto Render_state_manager::create_current_blend_state(core::Shader_patch& shader
       }
    };
 
-   const auto map_blendop_value = [](const unsigned int d3d9_blendop) noexcept
-   {
+   const auto map_blendop_value = [](const unsigned int d3d9_blendop) noexcept {
       switch (d3d9_blendop) {
       case D3DBLENDOP_ADD:
          return D3D11_BLEND_OP_ADD;
@@ -338,6 +337,7 @@ auto Render_state_manager::create_current_blend_state(core::Shader_patch& shader
    }
 
    desc.RenderTargetWriteMask = _current_blend_state.writemask;
+   desc.LogicOp = D3D11_LOGIC_OP_CLEAR;
 
    return shader_patch.create_blend_state({false, false, desc});
 }
@@ -347,8 +347,7 @@ auto Render_state_manager::create_current_depthstencil_state(core::Shader_patch&
 {
    D3D11_DEPTH_STENCIL_DESC desc{};
 
-   const auto map_cmp_func_value = [](const unsigned int func) noexcept->D3D11_COMPARISON_FUNC
-   {
+   const auto map_cmp_func_value = [](const unsigned int func) noexcept -> D3D11_COMPARISON_FUNC {
       switch (func) {
       case D3DCMP_NEVER:
          return D3D11_COMPARISON_NEVER;
@@ -371,8 +370,7 @@ auto Render_state_manager::create_current_depthstencil_state(core::Shader_patch&
       }
    };
 
-   const auto map_stencil_op_value = [](const unsigned int op) noexcept->D3D11_STENCIL_OP
-   {
+   const auto map_stencil_op_value = [](const unsigned int op) noexcept -> D3D11_STENCIL_OP {
       switch (op) {
       case D3DSTENCILOP_KEEP:
          return D3D11_STENCIL_OP_KEEP;
@@ -436,8 +434,7 @@ auto Render_state_manager::create_current_rasterizer_state(core::Shader_patch& s
 {
    D3D11_RASTERIZER_DESC desc{};
 
-   const auto map_cull_mode = [](const unsigned int mode) noexcept->D3D11_CULL_MODE
-   {
+   const auto map_cull_mode = [](const unsigned int mode) noexcept -> D3D11_CULL_MODE {
       switch (mode) {
       case D3DCULL_NONE:
          return D3D11_CULL_NONE;

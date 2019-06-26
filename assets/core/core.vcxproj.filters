@@ -340,6 +340,10 @@
     <None Include="definitions\patch\cmaa2.json">
       <Filter>definitions\patch</Filter>
     </None>
+    <None Include="src\CMAA2.hlsl" />
+    <None Include="definitions\patch\adaptive_oit_resolve.json">
+      <Filter>definitions\patch</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">
@@ -359,7 +363,10 @@
     <CustomBuild Include="build_lvls.ps1" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="src\CMAA2.hlsl">
+    <FxCompile Include="src\adaptive_oit.hlsl">
+      <Filter>src</Filter>
+    </FxCompile>
+    <FxCompile Include="src\adaptive_oit_resolve.fx">
       <Filter>src</Filter>
     </FxCompile>
   </ItemGroup>

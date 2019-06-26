@@ -1,4 +1,4 @@
-
+#include "adaptive_oit.hlsl"
 #include "generic_vertex_input.hlsl"
 #include "vertex_transformer.hlsl"
 
@@ -23,4 +23,10 @@ Vs_output rain_vs(Vertex_input input)
 float4 rain_ps(float4 color : COLOR) : SV_Target0
 {
    return color;
+}
+
+[earlydepthstencil]
+void oit_rain_ps(float4 color : COLOR, float4 positionSS : SV_Position, uint coverage : SV_Coverage) 
+{
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, coverage, color);
 }

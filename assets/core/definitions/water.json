@@ -137,6 +137,62 @@
       "pixel_state": {
         "lighting": false
       }
+    },
+
+    "oit_normal_map_distorted_reflection_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
+    },
+
+    "oit_normal_map_distorted_reflection_specular_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
+    },
+
+    "oit_normal_map_specular_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
+    },
+
+    "oit_normal_map_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
+    },
+
+    "oit_transmissive_pass_fade_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
+    },
+
+    "oit_lowquality_specular_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
+    },
+
+    "oit_lowquality_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
     }
   },
 
@@ -164,6 +220,10 @@
 
       "pixel_shader": {
         "entrypoint": "transmissive_pass_fade_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_transmissive_pass_fade_ps"
       }
     },
 
@@ -176,6 +236,10 @@
 
       "pixel_shader": {
         "entrypoint": "normal_map_distorted_reflection_specular_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_normal_map_distorted_reflection_specular_ps"
       }
     },
 
@@ -188,6 +252,10 @@
 
       "pixel_shader": {
         "entrypoint": "normal_map_distorted_reflection_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_normal_map_distorted_reflection_ps"
       }
     },
 
@@ -200,6 +268,10 @@
 
       "pixel_shader": {
         "entrypoint": "normal_map_distorted_reflection_specular_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_normal_map_distorted_reflection_specular_ps"
       }
     },
 
@@ -212,6 +284,10 @@
 
       "pixel_shader": {
         "entrypoint": "normal_map_distorted_reflection_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_normal_map_distorted_reflection_ps"
       }
     },
 
@@ -224,6 +300,10 @@
 
       "pixel_shader": {
         "entrypoint": "normal_map_distorted_reflection_specular_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_normal_map_distorted_reflection_specular_ps"
       }
     },
 
@@ -236,6 +316,10 @@
 
       "pixel_shader": {
         "entrypoint": "normal_map_distorted_reflection_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_normal_map_distorted_reflection_ps"
       }
     },
 
@@ -248,6 +332,10 @@
 
       "pixel_shader": {
         "entrypoint": "normal_map_specular_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_normal_map_specular_ps"
       }
     },
 
@@ -260,6 +348,10 @@
 
       "pixel_shader": {
         "entrypoint": "normal_map_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_normal_map_ps"
       }
     },
 
@@ -272,6 +364,10 @@
 
       "pixel_shader": {
         "entrypoint": "lowquality_specular_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_lowquality_specular_ps"
       }
     },
 
@@ -284,6 +380,10 @@
 
       "pixel_shader": {
         "entrypoint": "lowquality_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_lowquality_ps"
       }
     }
   }

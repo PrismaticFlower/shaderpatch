@@ -3,7 +3,6 @@
 #include "../input_hooker.hpp"
 #include "../logger.hpp"
 #include "../user_config.hpp"
-#include "context_state_guard.hpp"
 #include "patch_material_io.hpp"
 #include "patch_texture_io.hpp"
 #include "screenshot.hpp"
@@ -20,14 +19,16 @@ using namespace std::literals;
 
 namespace sp::core {
 
-constexpr auto custom_tex_begin = 4;
 constexpr auto projtex_cube_slot = 127;
 constexpr auto shadow_texture_format = DXGI_FORMAT_A8_UNORM;
 constexpr auto screenshots_folder = L"ScreenShots/";
 
 namespace {
 
-constexpr std::array supported_feature_levels{D3D_FEATURE_LEVEL_11_0};
+constexpr std::array supported_feature_levels{D3D_FEATURE_LEVEL_12_1,
+                                              D3D_FEATURE_LEVEL_12_0,
+                                              D3D_FEATURE_LEVEL_11_1,
+                                              D3D_FEATURE_LEVEL_11_0};
 
 auto create_device(IDXGIAdapter2& adapater) noexcept -> Com_ptr<ID3D11Device5>
 {
@@ -45,7 +46,6 @@ auto create_device(IDXGIAdapter2& adapater) noexcept -> Com_ptr<ID3D11Device5>
                             supported_feature_levels.size(), D3D11_SDK_VERSION,
                             device.clear_and_assign(), nullptr, nullptr);
        FAILED(result)) {
-
       log_and_terminate("Failed to create Direct3D 11 device! Reason: ",
                         _com_error{result}.ErrorMessage());
    }
@@ -68,8 +68,10 @@ auto create_device(IDXGIAdapter2& adapater) noexcept -> Com_ptr<ID3D11Device5>
              SUCCEEDED(result)) {
             infoqueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
             infoqueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
+            infoqueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
 
-            std::array hide{D3D11_MESSAGE_ID_DEVICE_DRAW_VIEW_DIMENSION_MISMATCH};
+            std::array hide{D3D11_MESSAGE_ID_DEVICE_DRAW_VIEW_DIMENSION_MISMATCH,
+                            D3D11_MESSAGE_ID_QUERY_BEGIN_ABANDONING_PREVIOUS_RESULTS};
 
             D3D11_INFO_QUEUE_FILTER filter{};
             filter.DenyList.NumIDs = hide.size();
@@ -95,12 +97,11 @@ Shader_patch::Shader_patch(IDXGIAdapter2& adapter, const HWND window,
      _refraction_rt{*_device, Swapchain::format, width / 2, height / 2}
 {
    bind_static_resources();
-   set_viewport(0, 0, static_cast<float>(width), static_cast<float>(height));
    update_aa_rendertargets();
 
-   _cb_scene.vertex_color_srgb = true;
-   _cb_draw_ps.rt_multiply_blending_state = 0.0f;
-   _cb_draw_ps.stock_tonemap_state = 0.0f;
+   _cb_scene.vertex_color_srgb = false;
+   _cb_draw_ps.additive_blending = false;
+   _cb_draw_ps.limit_normal_shader_bright_lights = true;
    _cb_draw_ps.cube_projtex = false;
 
    initialize_input_hooks(GetCurrentThreadId(), window);
@@ -126,9 +127,7 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
    _device_context->ClearState();
    _game_rendertargets.clear();
    _effects.cmaa2.clear_resources();
-
-   bind_static_resources();
-   set_viewport(0, 0, static_cast<float>(width), static_cast<float>(height));
+   _oit_provider.clear_resources();
 
    _swapchain.resize(width, height);
    _game_rendertargets.emplace_back() = _swapchain.game_rendertarget();
@@ -141,17 +140,19 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
    _game_input_layout = {};
    _game_shader = {};
    _game_textures = {};
+   _game_stencil_ref = 0xff;
+   _game_index_buffer_offset = 0;
+   _game_vertex_buffer_offset = 0;
+   _game_vertex_buffer_stride = 0;
+   _game_index_buffer = nullptr;
+   _game_vertex_buffer = nullptr;
+   _game_blend_state = nullptr;
+   _game_rs_state = nullptr;
+   _game_depthstencil_state = nullptr;
    _aa_method = Antialiasing_method::none;
 
    update_aa_rendertargets();
-
-   _shader_dirty = true;
-   _om_targets_dirty = true;
-   _ps_textures_dirty = true;
-   _cb_scene_dirty = true;
-   _cb_draw_dirty = true;
-   _cb_skin_dirty = true;
-   _cb_draw_ps_dirty = true;
+   restore_all_game_state();
 }
 
 void Shader_patch::present() noexcept
@@ -206,12 +207,12 @@ auto Shader_patch::create_depthstencil_state(const D3D11_DEPTH_STENCIL_DESC dept
    return state;
 }
 
-auto Shader_patch::create_blend_state(const D3D11_BLEND_DESC blend_state_desc) noexcept
-   -> Com_ptr<ID3D11BlendState>
+auto Shader_patch::create_blend_state(const D3D11_BLEND_DESC1 blend_state_desc) noexcept
+   -> Com_ptr<ID3D11BlendState1>
 {
-   Com_ptr<ID3D11BlendState> state;
+   Com_ptr<ID3D11BlendState1> state;
 
-   _device->CreateBlendState(&blend_state_desc, state.clear_and_assign());
+   _device->CreateBlendState1(&blend_state_desc, state.clear_and_assign());
 
    return state;
 }
@@ -650,6 +651,7 @@ auto Shader_patch::create_game_shader(const Shader_metadata metadata) noexcept
       Game_shader{std::move(vs),
                   std::move(vs_compressed),
                   state.pixel.at(metadata.pixel_shader_flags),
+                  state.pixel_oit.at_if(metadata.pixel_shader_flags),
                   metadata.rendertype,
                   metadata.srgb_state,
                   metadata.shader_name,
@@ -757,12 +759,8 @@ void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
       return;
    }
 
-   Context_state_guard<state_flags::ia_all | state_flags::vs_all | state_flags::hs_shader |
-                       state_flags::ds_shader | state_flags::gs_shader |
-                       state_flags::rs_all | state_flags::ps_all | state_flags::om_all>
-      state_guard{*_device_context};
-
    _image_stretcher.stretch(*_device_context, src_box, src_rt, dest_box, dest_rt);
+   restore_all_game_state();
 }
 
 void Shader_patch::color_fill_rendertarget(const Game_rendertarget_id rendertarget,
@@ -811,15 +809,18 @@ void Shader_patch::reset_depthstencil(const Game_depthstencil depthstencil) noex
 
 void Shader_patch::set_index_buffer(ID3D11Buffer& buffer, const UINT offset) noexcept
 {
-   _device_context->IASetIndexBuffer(&buffer, DXGI_FORMAT_R16_UINT, offset);
+   _game_index_buffer = copy_raw_com_ptr(buffer);
+   _game_index_buffer_offset = offset;
+   _ia_index_buffer_dirty = true;
 }
 
 void Shader_patch::set_vertex_buffer(ID3D11Buffer& buffer, const UINT offset,
                                      const UINT stride) noexcept
 {
-   auto* ptr_buffer = &buffer;
-
-   _device_context->IASetVertexBuffers(0, 1, &ptr_buffer, &stride, &offset);
+   _game_vertex_buffer = copy_raw_com_ptr(buffer);
+   _game_vertex_buffer_offset = offset;
+   _game_vertex_buffer_stride = stride;
+   _ia_vertex_buffer_dirty = true;
 }
 
 void Shader_patch::set_input_layout(const Game_input_layout& input_layout) noexcept
@@ -851,33 +852,28 @@ void Shader_patch::set_depthstencil(const Game_depthstencil depthstencil) noexce
    _current_depthstencil_id = depthstencil;
 }
 
-void Shader_patch::set_viewport(float x, float y, float width, float height) noexcept
-{
-   const auto viewport = CD3D11_VIEWPORT{x, y, width, height};
-
-   _device_context->RSSetViewports(1, &viewport);
-
-   _cb_scene_dirty = true;
-   _cb_scene.tessellation_resolution_factor =
-      std::sqrt((width * height) / (1920.0f * 1080.0f));
-}
-
 void Shader_patch::set_rasterizer_state(ID3D11RasterizerState& rasterizer_state) noexcept
 {
-   _device_context->RSSetState(&rasterizer_state);
+   _game_rs_state = copy_raw_com_ptr(rasterizer_state);
+   _rs_state_dirty = true;
 }
 
 void Shader_patch::set_depthstencil_state(ID3D11DepthStencilState& depthstencil_state,
                                           const UINT8 stencil_ref) noexcept
 {
-   _device_context->OMSetDepthStencilState(&depthstencil_state, stencil_ref);
+   _game_depthstencil_state = copy_raw_com_ptr(depthstencil_state);
+   _game_stencil_ref = stencil_ref;
+   _om_depthstencil_state_dirty = true;
 }
 
-void Shader_patch::set_blend_state(ID3D11BlendState& blend_state) noexcept
+void Shader_patch::set_blend_state(ID3D11BlendState1& blend_state,
+                                   const bool additive_blending) noexcept
 {
-   constexpr std::array blend_factor{1.f, 1.f, 1.f, 1.f};
+   _game_blend_state = copy_raw_com_ptr(blend_state);
+   _om_blend_state_dirty = true;
 
-   _device_context->OMSetBlendState(&blend_state, blend_factor.data(), 0xffffffff);
+   _cb_draw_ps.additive_blending = additive_blending;
+   _cb_draw_ps_dirty = true;
 }
 
 void Shader_patch::set_fog_state(const bool enabled, const glm::vec4 color) noexcept
@@ -1091,7 +1087,7 @@ auto Shader_patch::current_depthstencil() const noexcept -> ID3D11DepthStencilVi
 void Shader_patch::bind_static_resources() noexcept
 {
    auto* const empty_vertex_buffer = _empty_vertex_buffer.get();
-   const UINT empty_vertex_stride = 64;
+   const UINT empty_vertex_stride = 0;
    const UINT empty_vertex_offset = 0;
    _device_context->IASetVertexBuffers(1, Shader_input_layouts::throwaway_input_slot,
                                        &empty_vertex_buffer, &empty_vertex_stride,
@@ -1173,19 +1169,17 @@ void Shader_patch::game_rendertype_changed() noexcept
    else if (_shader_rendertype == Rendertype::refraction) {
       resolve_refraction_texture();
 
-      auto* const srv = _refraction_rt.srv.get();
-
-      _device_context->PSSetShaderResources(custom_tex_begin, 1, &srv);
+      _game_textures[4] = {_refraction_rt.srv, _refraction_rt.srv};
    }
    else if (_shader_rendertype == Rendertype::water) {
       resolve_refraction_texture();
 
       auto water_srv = _texture_database.get("$water");
 
-      const std::array srvs{water_srv.get(), _refraction_rt.srv.get()};
+      _game_textures[4] = {water_srv, water_srv};
+      _game_textures[5] = {_refraction_rt.srv, _refraction_rt.srv};
 
-      _device_context->PSSetShaderResources(custom_tex_begin, srvs.size(),
-                                            srvs.data());
+      _ps_textures_dirty = true;
    }
    else if (_shader_rendertype == Rendertype::hdr && !_effects_active &&
             _game_shader->shader_name == "glow threshold"sv) {
@@ -1202,10 +1196,46 @@ void Shader_patch::game_rendertype_changed() noexcept
          _game_textures[0] = {_game_rendertargets[0].srv, _game_rendertargets[0].srv};
       }
    }
+   else if (_shader_rendertype == Rendertype::skyfog && _oit_provider.enabled()) {
+      _on_rendertype_changed = [&]() noexcept {
+         _oit_provider.prepare_resources(*_device_context,
+                                         *_game_rendertargets[0].texture,
+                                         *_game_rendertargets[0].rtv);
+         _on_rendertype_changed = nullptr;
+         _om_targets_dirty = true;
+         _oit_active = true;
+
+         _on_stretch_rendertarget = [&](Game_rendertarget&, const RECT,
+                                        Game_rendertarget&,
+                                        const RECT dest_rect) noexcept {
+            if (dest_rect.left == 0 && dest_rect.top == 0 &&
+                dest_rect.bottom == 256 && dest_rect.right == 256)
+               return;
+
+            resolve_oit();
+         };
+      };
+   }
+
+   if (_oit_active) {
+      switch (_shader_rendertype) {
+      case Rendertype::flare:
+      case Rendertype::hdr:
+      case Rendertype::_interface:
+      case Rendertype::prereflection:
+      case Rendertype::sample:
+      case Rendertype::skyfog:
+      case Rendertype::fixedfunc_color_fill:
+      case Rendertype::fixedfunc_damage_overlay:
+      case Rendertype::fixedfunc_plain_texture:
+      case Rendertype::fixedfunc_scene_blur:
+      case Rendertype::fixedfunc_zoom_blur:
+         resolve_oit();
+      }
+   }
 
    if (_effects_active) {
       if (_shader_rendertype == Rendertype::hdr) {
-         _om_targets_dirty = true;
          _use_interface_depthstencil = true;
          _game_rendertargets[0] = _swapchain.game_rendertarget();
 
@@ -1215,8 +1245,7 @@ void Shader_patch::game_rendertype_changed() noexcept
                                                             _patch_backbuffer.height,
                                                             _patch_backbuffer.sample_count};
 
-         if (Context_state_guard<state_flags::all> state_guard{*_device_context};
-             _aa_method == Antialiasing_method::cmaa2) {
+         if (_aa_method == Antialiasing_method::cmaa2) {
             const effects::Postprocess_cmaa2_temp_target cmaa2_target{
                *_cmaa2_scratch_texture.texture, *_cmaa2_scratch_texture.rtv,
                *_cmaa2_scratch_texture.srv, _cmaa2_scratch_texture.width,
@@ -1236,6 +1265,8 @@ void Shader_patch::game_rendertype_changed() noexcept
 
          set_linear_rendering(false);
          _discard_draw_calls = true;
+
+         restore_all_game_state();
 
          _on_rendertype_changed = [this]() noexcept {
             _discard_draw_calls = false;
@@ -1261,42 +1292,89 @@ void Shader_patch::update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primit
    if (std::exchange(_primitive_topology, primitive_topology) != primitive_topology)
       _device_context->IASetPrimitiveTopology(_primitive_topology);
 
+   if (std::exchange(_ia_index_buffer_dirty, false)) {
+      _device_context->IASetIndexBuffer(_game_index_buffer.get(), DXGI_FORMAT_R16_UINT,
+                                        _game_index_buffer_offset);
+   }
+
+   if (std::exchange(_ia_vertex_buffer_dirty, false)) {
+      auto* const buffer = _game_vertex_buffer.get();
+
+      _device_context->IASetVertexBuffers(0, 1, &buffer, &_game_vertex_buffer_stride,
+                                          &_game_vertex_buffer_offset);
+   }
+
+   if (std::exchange(_rs_state_dirty, false)) {
+      _device_context->RSSetState(_game_rs_state.get());
+   }
+
    if (std::exchange(_ps_textures_dirty, false)) {
       if (_linear_rendering) {
          const auto& srgb = _game_shader->srgb_state;
-         _device_context->PSSetShaderResources(
-            0, 4,
-            std::array{srgb[0] ? _game_textures[0].srgb_srv.get()
-                               : _game_textures[0].srv.get(),
-                       srgb[1] ? _game_textures[1].srgb_srv.get()
-                               : _game_textures[1].srv.get(),
-                       srgb[2] ? _game_textures[2].srgb_srv.get()
-                               : _game_textures[2].srv.get(),
-                       srgb[3] ? _game_textures[3].srgb_srv.get()
-                               : _game_textures[3].srv.get()}
-               .data());
+         const std::array srvs{srgb[0] ? _game_textures[0].srgb_srv.get()
+                                       : _game_textures[0].srv.get(),
+                               srgb[1] ? _game_textures[1].srgb_srv.get()
+                                       : _game_textures[1].srv.get(),
+                               srgb[2] ? _game_textures[2].srgb_srv.get()
+                                       : _game_textures[2].srv.get(),
+                               srgb[3] ? _game_textures[3].srgb_srv.get()
+                                       : _game_textures[3].srv.get(),
+                               _game_textures[4].srv.get(),
+                               _game_textures[5].srv.get()};
+
+         _device_context->PSSetShaderResources(0, srvs.size(), srvs.data());
       }
       else {
-         _device_context->PSSetShaderResources(
-            0, 4,
-            std::array{_game_textures[0].srv.get(), _game_textures[1].srv.get(),
-                       _game_textures[2].srv.get(), _game_textures[3].srv.get()}
-               .data());
+         const std::array srvs{_game_textures[0].srv.get(),
+                               _game_textures[1].srv.get(),
+                               _game_textures[2].srv.get(),
+                               _game_textures[3].srv.get(),
+                               _game_textures[4].srv.get(),
+                               _game_textures[5].srv.get()};
+
+         _device_context->PSSetShaderResources(0, srvs.size(), srvs.data());
       }
    }
 
    if (std::exchange(_om_targets_dirty, false)) {
       const auto& rt =
          _game_rendertargets[static_cast<int>(_current_game_rendertarget)];
-      auto* const rtv = rt.rtv.get();
 
-      _device_context->OMSetRenderTargets(1, &rtv, current_depthstencil());
+      if (auto* const rtv = rt.rtv.get(); _oit_active) {
+         const auto uavs = _oit_provider.uavs();
+
+         _device_context->OMSetRenderTargetsAndUnorderedAccessViews(
+            1, &rtv, current_depthstencil(), 1, uavs.size(), uavs.data(), nullptr);
+      }
+      else {
+         _device_context->OMSetRenderTargets(1, &rtv, current_depthstencil());
+      }
 
       _cb_draw_ps_dirty = true;
       _cb_draw_ps.rt_resolution = {rt.width, rt.height, 1.0f / rt.width,
                                    1.0f / rt.height};
 
-      set_viewport(0, 0, rt.width, rt.height);
+      // Update viewport.
+      {
+         const auto viewport =
+            CD3D11_VIEWPORT{0.0f, 0.0f, static_cast<float>(rt.width),
+                            static_cast<float>(rt.height)};
+
+         _device_context->RSSetViewports(1, &viewport);
+
+         _cb_scene_dirty = true;
+         _cb_scene.tessellation_resolution_factor =
+            std::sqrt((viewport.Width * viewport.Height) / (1920.0f * 1080.0f));
+      }
+   }
+
+   if (std::exchange(_om_depthstencil_state_dirty, false)) {
+      _device_context->OMSetDepthStencilState(_game_depthstencil_state.get(),
+                                              _game_stencil_ref);
+   }
+
+   if (std::exchange(_om_blend_state_dirty, false)) {
+      _device_context->OMSetBlendState(_game_blend_state.get(), nullptr, 0xffffffff);
    }
 
    if (std::exchange(_cb_scene_dirty, false)) {
@@ -1333,7 +1411,8 @@ void Shader_patch::update_shader() noexcept
          _patch_material->shader->update(*_device_context, _input_layout_descriptions,
                                          _game_input_layout.layout_index,
                                          _game_shader->shader_name, vs_flags,
-                                         _game_shader->pixel_shader_flags);
+                                         _game_shader->pixel_shader_flags,
+                                         _oit_active);
          return;
       }
       else if (_shader_rendertype == Rendertype::zprepass &&
@@ -1369,7 +1448,9 @@ void Shader_patch::update_shader() noexcept
       _device_context->VSSetShader(_game_shader->vs.get(), nullptr, 0);
    }
 
-   _device_context->PSSetShader(_game_shader->ps.get(), nullptr, 0);
+   _device_context->PSSetShader(_oit_active ? _game_shader->ps_oit.get()
+                                            : _game_shader->ps.get(),
+                                nullptr, 0);
    _device_context->HSSetShader(nullptr, nullptr, 0);
    _device_context->DSSetShader(nullptr, nullptr, 0);
    _device_context->GSSetShader(nullptr, nullptr, 0);
@@ -1385,6 +1466,7 @@ void Shader_patch::update_frame_state() noexcept
    _refraction_farscene_texture_resolve = false;
    _refraction_nearscene_texture_resolve = false;
    _use_interface_depthstencil = false;
+   _oit_active = false;
 }
 
 void Shader_patch::update_imgui() noexcept
@@ -1482,6 +1564,9 @@ void Shader_patch::update_aa_rendertargets() noexcept
    const auto new_sample_count =
       to_sample_count(user_config.graphics.antialiasing_method);
 
+   _cb_draw_ps.rcp_sample_count = 1.0f / new_sample_count;
+   _cb_draw_ps_dirty = true;
+
    if (std::exchange(_aa_method, user_config.graphics.antialiasing_method) ==
        user_config.graphics.antialiasing_method)
       return;
@@ -1556,12 +1641,12 @@ void Shader_patch::set_linear_rendering(bool linear_rendering) noexcept
    if (linear_rendering) {
       _cb_scene.vertex_color_srgb = true;
       _cb_scene.vs_lighting_scale = 1.0f;
-      _cb_draw_ps.stock_tonemap_state = 1.0f;
+      _cb_draw_ps.limit_normal_shader_bright_lights = false;
       _cb_draw_ps.ps_lighting_scale = 1.0f;
    }
    else {
       _cb_scene.vertex_color_srgb = false;
-      _cb_draw_ps.stock_tonemap_state = 0.0f;
+      _cb_draw_ps.limit_normal_shader_bright_lights = true;
       _cb_scene.vs_lighting_scale = 0.5f;
       _cb_draw_ps.ps_lighting_scale = 0.5f;
    }
@@ -1581,15 +1666,6 @@ void Shader_patch::resolve_refraction_texture() noexcept
       if (std::exchange(_refraction_nearscene_texture_resolve, true)) return;
    }
 
-   _om_targets_dirty = true;
-
-   std::array<ID3D11ShaderResourceView*, 2> null_srvs{};
-   _device_context->PSSetShaderResources(custom_tex_begin, null_srvs.size(),
-                                         null_srvs.data());
-
-   ID3D11RenderTargetView* null_rtv = nullptr;
-   _device_context->OMSetRenderTargets(0, &null_rtv, nullptr);
-
    const auto& src_rt =
       _game_rendertargets[static_cast<int>(_current_game_rendertarget)];
 
@@ -1601,12 +1677,20 @@ void Shader_patch::resolve_refraction_texture() noexcept
                             _refraction_rt.height,
                             1};
 
-   Context_state_guard<state_flags::ia_all | state_flags::vs_all | state_flags::hs_shader |
-                       state_flags::ds_shader | state_flags::gs_shader |
-                       state_flags::rs_all | state_flags::ps_all | state_flags::om_all>
-      state_guard{*_device_context};
-
    _image_stretcher.stretch(*_device_context, src_box, src_rt, dest_box, _refraction_rt);
+
+   restore_all_game_state();
+}
+
+void Shader_patch::resolve_oit() noexcept
+{
+   Expects(_oit_active);
+
+   _oit_active = false;
+   _om_targets_dirty = true;
+   _on_stretch_rendertarget = nullptr;
+
+   _oit_provider.resolve(*_device_context);
 }
 
 void Shader_patch::patch_backbuffer_resolve() noexcept
@@ -1629,15 +1713,34 @@ void Shader_patch::patch_backbuffer_resolve() noexcept
       }
    }
    else {
-      Context_state_guard<state_flags::ia_all | state_flags::vs_all | state_flags::hs_shader |
-                          state_flags::ds_shader | state_flags::gs_shader |
-                          state_flags::rs_all | state_flags::ps_all | state_flags::om_all>
-         state_guard{*_device_context};
-
       _late_backbuffer_resolver.resolve(*_device_context,
                                         _game_rendertargets[0], _swapchain);
    }
 
    _game_rendertargets[0] = _swapchain.game_rendertarget();
+
+   restore_all_game_state();
 }
+
+void Shader_patch::restore_all_game_state() noexcept
+{
+   _device_context->ClearState();
+
+   _shader_dirty = true;
+   _ia_index_buffer_dirty = true;
+   _ia_vertex_buffer_dirty = true;
+   _rs_state_dirty = true;
+   _om_targets_dirty = true;
+   _om_depthstencil_state_dirty = true;
+   _om_blend_state_dirty = true;
+   _ps_textures_dirty = true;
+   _cb_scene_dirty = true;
+   _cb_draw_dirty = true;
+   _cb_skin_dirty = true;
+   _cb_draw_ps_dirty = true;
+   _primitive_topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
+
+   bind_static_resources();
+}
+
 }

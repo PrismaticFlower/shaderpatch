@@ -1,4 +1,4 @@
-
+#include "adaptive_oit.hlsl"
 #include "constants_list.hlsl"
 #include "generic_vertex_input.hlsl"
 #include "vertex_utilities.hlsl"
@@ -259,72 +259,6 @@ float4 normal_map_distorted_reflection_specular_ps(Ps_normal_map_input input,
    return float4(color, input.fade);
 }
 
-float4 normal_map_distorted_ps(Ps_normal_map_input input,
-                               Texture2D<float3> reflection_buffer : register(t3)) : SV_Target0
-{
-   float2 bump;
-   float3 normalWS;
-
-   sample_normal_maps(input.texcoords, bump, normalWS);
-
-   float2 reflection_coords = input.positionSS.xy * rt_resolution.zw;
-   reflection_coords += bump;
-
-   const float3 reflection =
-      reflection_buffer.SampleLevel(linear_clamp_sampler, reflection_coords, 0);
-   const float3 refraction =
-      refraction_buffer.SampleLevel(linear_clamp_sampler, reflection_coords, 0);
-
-   const float3 view_normalWS = normalize(input.view_normalWS);
-   const float VdotN = max(dot(view_normalWS, normalWS), 0.0);
-
-   const float fresnel = calc_fresnel(VdotN);
-
-   const float3 water_color =
-      ((refraction_colour.rgb * water_fade) * refraction) + (refraction * (1.0 - water_fade));
-
-   float3 color = lerp(water_color, reflection * reflection_colour.a, fresnel * water_fade);
-
-   color = apply_fog(color, input.fog);
-
-   return float4(color, input.fade);
-}
-
-float4 normal_map_distorted_specular_ps(Ps_normal_map_input input,
-                                        Texture2D<float3> reflection_buffer : register(t3)) : SV_Target0
-{
-   float2 bump;
-   float3 normalWS;
-
-   sample_normal_maps(input.texcoords, bump, normalWS);
-
-   float2 reflection_coords = input.positionSS.xy * rt_resolution.zw;
-   reflection_coords += bump;
-
-   const float3 reflection =
-      reflection_buffer.SampleLevel(linear_clamp_sampler, reflection_coords, 0);
-   const float3 refraction =
-      refraction_buffer.SampleLevel(linear_clamp_sampler, reflection_coords, 0);
-
-   const float3 view_normalWS = normalize(input.view_normalWS);
-   const float VdotN = max(dot(view_normalWS, normalWS), 0.0);
-
-   const float fresnel = calc_fresnel(VdotN);
-
-   const float3 water_color =
-      ((refraction_colour.rgb * water_fade) * refraction) + (refraction * (1.0 - water_fade));
-   
-   float3 color = lerp(water_color, reflection * reflection_colour.a, fresnel * water_fade);
-
-   const float3 half_normalWS = normalize(light_direction.xyz + view_normalWS);
-   const float NdotH = saturate(dot(normalWS, half_normalWS));
-   color += pow(NdotH, specular_exponent);
-
-   color = apply_fog(color, input.fog);
-
-   return float4(color, input.fade);
-}
-
 float4 normal_map_ps(Ps_normal_map_input input) : SV_Target0
 {
    float2 bump;
@@ -412,9 +346,77 @@ float4 lowquality_specular_ps(Ps_lowquality_input input,
    return color;
 }
 
-float4 discard_ps() : SV_Target0
+void discard_ps()
 {
    discard;
+}
 
-   return 0.0;
+// OIT Entrypoints
+
+[earlydepthstencil]
+void oit_transmissive_pass_fade_ps(Ps_fade_input input, float4 positionSS : SV_Position, uint coverage : SV_Coverage)
+{
+   const float4 color = transmissive_pass_fade_ps(input);
+
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, coverage, color);
+}
+
+[earlydepthstencil]
+void oit_normal_map_distorted_reflection_ps(Ps_normal_map_input input,
+                                            uint coverage : SV_Coverage,
+                                            Texture2D<float3> reflection_buffer : register(t3))
+{
+   const float4 color = 
+      normal_map_distorted_reflection_ps(input, reflection_buffer);
+
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, coverage, color);
+}
+
+[earlydepthstencil]
+void oit_normal_map_distorted_reflection_specular_ps(Ps_normal_map_input input,
+                                                     uint coverage : SV_Coverage,
+                                                     Texture2D<float3> reflection_buffer : register(t3)) 
+{
+   const float4 color = 
+      normal_map_distorted_reflection_specular_ps(input, reflection_buffer);
+
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, coverage, color);
+}
+
+[earlydepthstencil]
+void oit_normal_map_ps(Ps_normal_map_input input, uint coverage : SV_Coverage)
+{
+   const float4 color = normal_map_ps(input);
+
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, coverage, color);
+}
+
+[earlydepthstencil]
+void oit_normal_map_specular_ps(Ps_normal_map_input input, uint coverage : SV_Coverage)
+{
+   const float4 color = normal_map_specular_ps(input);
+
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, coverage, color);
+}
+
+[earlydepthstencil]
+void oit_lowquality_ps(Ps_lowquality_input input, float4 positionSS : SV_Position,
+                       uint coverage : SV_Coverage,
+                       Texture2D<float4> diffuse_map_texture : register(t1))
+{
+   const float4 color = lowquality_ps(input, diffuse_map_texture);
+
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, coverage, color);
+}
+
+[earlydepthstencil]
+void oit_lowquality_specular_ps(Ps_lowquality_input input, float4 positionSS : SV_Position,
+                                uint coverage : SV_Coverage,
+                                Texture2D<float4> diffuse_map_texture : register(t1),
+                                Texture2D<float3> specular_mask_textures[2] : register(t2))
+{
+   const float4 color =
+      lowquality_specular_ps(input, diffuse_map_texture, specular_mask_textures);
+
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, coverage, color);
 }

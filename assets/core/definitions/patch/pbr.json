@@ -25,11 +25,11 @@
       },
 
       "defines": [
-        [ "PBR_USE_METALLIC_ROUGHNESS_MAP", "false" ],
-        [ "PBR_USE_EMISSIVE_MAP", "false" ],
-        [ "PBR_USE_TRANSPARENCY", "false" ],
-        [ "PBR_USE_HARDEDGED_TEST", "false" ],
-        [ "PBR_USE_SHADOW_MAP", "false" ]
+        [ "PBR_USE_METALLIC_ROUGHNESS_MAP", "0" ],
+        [ "PBR_USE_EMISSIVE_MAP", "0" ],
+        [ "PBR_USE_TRANSPARENCY", "0" ],
+        [ "PBR_USE_HARDEDGED_TEST", "0" ],
+        [ "PBR_USE_SHADOW_MAP", "0" ]
       ]
     },
 
@@ -46,6 +46,25 @@
         "PBR_USE_TRANSPARENCY",
         "PBR_USE_HARDEDGED_TEST",
         "PBR_USE_SHADOW_MAP"
+      ]
+    },
+
+    "oit_main_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": true
+      },
+
+      "static_flags": [
+        "PBR_USE_METALLIC_ROUGHNESS_MAP",
+        "PBR_USE_EMISSIVE_MAP",
+        "PBR_USE_HARDEDGED_TEST",
+        "PBR_USE_SHADOW_MAP"
+      ],
+
+      "defines": [
+        [ "PBR_USE_TRANSPARENCY", "1" ] 
       ]
     }
   },
@@ -124,6 +143,10 @@
         "static_flags": {
           "PBR_USE_TRANSPARENCY": true
         }
+      },
+
+      "oit_pixel_shader": {
+        "entrypoint": "oit_main_ps"
       }
     },
 
@@ -139,6 +162,14 @@
 
         "static_flags": {
           "PBR_USE_TRANSPARENCY": true,
+          "PBR_USE_HARDEDGED_TEST": true
+        }
+      },
+
+      "oit_pixel_shader": {
+        "entrypoint": "oit_main_ps",
+
+        "static_flags": {
           "PBR_USE_HARDEDGED_TEST": true
         }
       }
@@ -185,6 +216,10 @@
         "static_flags": {
           "PBR_USE_TRANSPARENCY": true
         }
+      },
+
+      "oit_pixel_shader": {
+        "entrypoint": "oit_main_ps"
       }
     },
 
@@ -200,6 +235,14 @@
 
         "static_flags": {
           "PBR_USE_TRANSPARENCY": true,
+          "PBR_USE_HARDEDGED_TEST": true
+        }
+      },
+
+      "oit_pixel_shader": {
+        "entrypoint": "oit_main_ps",
+
+        "static_flags": {
           "PBR_USE_HARDEDGED_TEST": true
         }
       }
@@ -285,6 +328,14 @@
           "PBR_USE_TRANSPARENCY": true,
           "PBR_USE_SHADOW_MAP": true
         }
+      },
+
+      "oit_pixel_shader": {
+        "entrypoint": "oit_main_ps",
+
+        "static_flags": {
+          "PBR_USE_SHADOW_MAP": true
+        }
       }
     },
 
@@ -300,6 +351,15 @@
 
         "static_flags": {
           "PBR_USE_TRANSPARENCY": true,
+          "PBR_USE_HARDEDGED_TEST": true,
+          "PBR_USE_SHADOW_MAP": true
+        }
+      },
+
+      "oit_pixel_shader": {
+        "entrypoint": "oit_main_ps",
+
+        "static_flags": {
           "PBR_USE_HARDEDGED_TEST": true,
           "PBR_USE_SHADOW_MAP": true
         }
@@ -320,6 +380,14 @@
           "PBR_USE_TRANSPARENCY": true,
           "PBR_USE_SHADOW_MAP": true
         }
+      },
+
+      "oit_pixel_shader": {
+        "entrypoint": "oit_main_ps",
+
+        "static_flags": {
+          "PBR_USE_SHADOW_MAP": true
+        }
       }
     },
 
@@ -335,6 +403,15 @@
 
         "static_flags": {
           "PBR_USE_TRANSPARENCY": true,
+          "PBR_USE_HARDEDGED_TEST": true,
+          "PBR_USE_PROJECTED_TEXTURE": true
+        }
+      },
+
+      "oit_pixel_shader": {
+        "entrypoint": "oit_main_ps",
+
+        "static_flags": {
           "PBR_USE_HARDEDGED_TEST": true,
           "PBR_USE_PROJECTED_TEXTURE": true
         }

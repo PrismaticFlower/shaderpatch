@@ -15,7 +15,8 @@ void Material_shader::update(ID3D11DeviceContext1& dc,
                              const std::uint16_t layout_index,
                              const std::string& shader_name,
                              const Vertex_shader_flags vertex_shader_flags,
-                             const Pixel_shader_flags pixel_shader_flags) noexcept
+                             const Pixel_shader_flags pixel_shader_flags,
+                             const bool oit_active) noexcept
 {
    auto& state = _shaders.at(shader_name);
 
@@ -27,7 +28,9 @@ void Material_shader::update(ID3D11DeviceContext1& dc,
    dc.IASetInputLayout(&input_layout);
    dc.VSSetShader(vs.vs.get(), nullptr, 0);
 
-   dc.PSSetShader(state.pixel.at(pixel_shader_flags).get(), nullptr, 0);
+   dc.PSSetShader(oit_active ? state.pixel.at(pixel_shader_flags).get()
+                             : state.pixel_oit.at(pixel_shader_flags).get(),
+                  nullptr, 0);
 
    if (user_config.graphics.enable_tessellation) {
       dc.HSSetShader(state.hull.get(), nullptr, 0);
@@ -84,7 +87,11 @@ auto Material_shader::init_state(const Shader_state& state) noexcept -> Material
 {
    return {init_vs_entrypoint(state.vertex.entrypoint(), state.vertex.static_flags()),
            init_ps_entrypoint(state.pixel.entrypoint(), state.pixel.static_flags()),
-           state.hull, state.domain, state.geometry};
+           init_ps_entrypoint(state.pixel_oit.entrypoint(),
+                              state.pixel_oit.static_flags()),
+           state.hull,
+           state.domain,
+           state.geometry};
 }
 
 auto Material_shader::init_vs_entrypoint(const Vertex_shader_entrypoint& vs,

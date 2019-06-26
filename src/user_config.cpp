@@ -44,6 +44,8 @@ void User_config::show_imgui() noexcept
                                             to_string(Anisotropic_filtering::x8),
                                             to_string(Anisotropic_filtering::x16)}));
 
+      ImGui::Checkbox("Enable Order-Independent Transparency", &graphics.enable_oit);
+
       ImGui::Checkbox("Enable Tessellation", &graphics.enable_tessellation);
 
       ImGui::Checkbox("Enable User Effects Config", &graphics.enable_user_effects_config);
@@ -89,6 +91,9 @@ void User_config::parse_file(const std::string& path)
 
    graphics.anisotropic_filtering = anisotropic_filtering_from_string(
       config["Graphics"s]["Anisotropic Filtering"s].as<std::string>());
+
+   graphics.enable_oit =
+      config["Graphics"s]["Enable Order-Independent Transparency"s].as<bool>();
 
    graphics.enable_tessellation =
       config["Graphics"s]["Enable Tessellation"s].as<bool>();

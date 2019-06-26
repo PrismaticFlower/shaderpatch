@@ -2,7 +2,6 @@
 #include "color_utilities.hlsl"
 #include "film_grain.hlsl"
 #include "fullscreen_tri_vs.hlsl"
-#include "pixel_utilities.hlsl"
 #include "postprocess_common.hlsl"
 
 #pragma warning(disable : 3571)
@@ -74,7 +73,7 @@ struct Postprocessing_output
 
 Postprocessing_output main_ps(float2 texcoords : TEXCOORD, float4 positionSS : SV_Position)
 {
-   float3 color = scene_texture.SampleLevel(linear_clamp_sampler, texcoords, 0).rgb;
+   float3 color = scene_texture[(uint2)positionSS.xy].rgb;
 
    if (bloom) apply_bloom(texcoords, color);
 
@@ -101,7 +100,7 @@ Postprocessing_output main_ps(float2 texcoords : TEXCOORD, float4 positionSS : S
 
 float3 stock_hdr_to_linear_ps(float2 texcoords : TEXCOORD, float4 positionSS : SV_Position) : SV_Target0
 {
-   const float3 color_srgb = scene_texture.SampleLevel(linear_clamp_sampler, texcoords, 0).rgb;
+   const float3 color_srgb = scene_texture[(uint2)positionSS.xy].rgb;
    const float3 color_linear = srgb_to_linear(color_srgb + color_srgb);
 
    return color_linear;

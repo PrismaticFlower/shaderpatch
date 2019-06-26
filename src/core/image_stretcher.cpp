@@ -36,13 +36,10 @@ void Image_stretcher::stretch(ID3D11DeviceContext1& dc, const D3D11_BOX& source_
    update_dynamic_buffer(dc, *_constant_buffer, vars);
 
    // Setup state
-   dc.IASetInputLayout(nullptr);
+   dc.ClearState();
    dc.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
    dc.VSSetShader(_vs.get(), nullptr, 0);
-   dc.HSSetShader(nullptr, nullptr, 0);
-   dc.DSSetShader(nullptr, nullptr, 0);
-   dc.GSSetShader(nullptr, nullptr, 0);
 
    const CD3D11_VIEWPORT viewport{static_cast<float>(dest_box.left),
                                   static_cast<float>(dest_box.top),
@@ -54,11 +51,8 @@ void Image_stretcher::stretch(ID3D11DeviceContext1& dc, const D3D11_BOX& source_
 
    dc.VSSetConstantBuffers(0, 1, &cb);
 
-   dc.RSSetState(nullptr);
    dc.RSSetViewports(1, &viewport);
 
-   dc.OMSetDepthStencilState(nullptr, 0xffu);
-   dc.OMSetBlendState(nullptr, nullptr, 0xffffffffu);
    dc.OMSetRenderTargets(1, &rtv, nullptr);
 
    dc.PSSetShaderResources(0, 1, &srv);
@@ -66,12 +60,6 @@ void Image_stretcher::stretch(ID3D11DeviceContext1& dc, const D3D11_BOX& source_
 
    // Draw
    dc.Draw(3, 0);
-
-   // Clear SRV and RTV for D3D11 debug runtime.
-   ID3D11ShaderResourceView* const null_srv = nullptr;
-   ID3D11RenderTargetView* const null_rtv = nullptr;
-   dc.PSSetShaderResources(0, 1, &null_srv);
-   dc.OMSetRenderTargets(1, &null_rtv, nullptr);
 }
 
 auto Image_stretcher::get_pixel_shader(const Game_rendertarget& source) const

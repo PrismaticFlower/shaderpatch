@@ -18,6 +18,9 @@ struct State {
    std::string ps_entrypoint;
    std::unordered_map<std::string, bool> ps_static_flag_values;
 
+   std::optional<std::string> ps_oit_entrypoint;
+   std::unordered_map<std::string, bool> ps_oit_static_flag_values;
+
    std::optional<std::string> hs_entrypoint;
    std::unordered_map<std::string, bool> hs_static_flag_values;
 
@@ -134,7 +137,7 @@ inline auto read_json_shader_state(
 
    state.ps_entrypoint = j_ps.at("entrypoint"s).get<std::string>();
 
-   if (!entrypoints.count(state.vs_entrypoint)) {
+   if (!entrypoints.count(state.ps_entrypoint)) {
       throw compose_exception<std::runtime_error>("no shader entrypoint named \""s,
                                                   state.ps_entrypoint, "\"");
    }
@@ -142,6 +145,29 @@ inline auto read_json_shader_state(
    state.ps_static_flag_values = read_json_static_flag_values(
       j_ps.value("static_flags"s, nlohmann::json::object()), j_rt_static_flags,
       entrypoints.at(state.ps_entrypoint).static_flags.list_flags());
+
+   if (const auto ps_oit = j.find("pixel_oit_shader"s); ps_oit != j.end()) {
+      state.ps_oit_entrypoint = ps_oit->at("entrypoint"s).get<std::string>();
+
+      if (!entrypoints.count(*state.ps_oit_entrypoint)) {
+         throw compose_exception<std::runtime_error>("no shader entrypoint named \""s,
+                                                     *state.ps_oit_entrypoint, "\"");
+      }
+
+      state.ps_oit_static_flag_values = read_json_static_flag_values(
+         ps_oit->value("static_flags"s, nlohmann::json::object()), j_rt_static_flags,
+         entrypoints.at(*state.ps_oit_entrypoint).static_flags.list_flags());
+   }
+
+   if (const auto oit_entrypoint = j_ps.find("oit_entrypoint"s);
+       oit_entrypoint != j_ps.end()) {
+      state.ps_oit_entrypoint = oit_entrypoint->get<std::string>();
+
+      if (!entrypoints.count(*state.ps_oit_entrypoint)) {
+         throw compose_exception<std::runtime_error>("no shader entrypoint named \""s,
+                                                     *state.ps_oit_entrypoint, "\"");
+      }
+   }
 
    if (const auto hs = j.find("hull_shader"s); hs != j.end()) {
       state.hs_entrypoint = hs->at("entrypoint"s).get<std::string>();
@@ -212,5 +238,4 @@ inline auto read_json_static_flag_values(const nlohmann::json& j,
 
    return set_flags;
 }
-
 }

@@ -14,6 +14,7 @@
 #include "rendertarget_allocator.hpp"
 
 #include <array>
+#include <limits>
 #include <optional>
 #include <random>
 #include <string>
@@ -180,6 +181,24 @@ private:
    const Com_ptr<ID3D11Device1> _device;
    const Com_ptr<ID3D11BlendState> _additive_blend_state =
       create_additive_blend_state(*_device);
+   const Com_ptr<ID3D11SamplerState> _linear_clamp_sampler = [this] {
+      const CD3D11_SAMPLER_DESC desc{D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT,
+                                     D3D11_TEXTURE_ADDRESS_CLAMP,
+                                     D3D11_TEXTURE_ADDRESS_CLAMP,
+                                     D3D11_TEXTURE_ADDRESS_CLAMP,
+                                     0.0f,
+                                     1,
+                                     D3D11_COMPARISON_NEVER,
+                                     nullptr,
+                                     0.0f,
+                                     std::numeric_limits<float>::max()};
+
+      Com_ptr<ID3D11SamplerState> state;
+
+      _device->CreateSamplerState(&desc, state.clear_and_assign());
+
+      return state;
+   }();
    const Com_ptr<ID3D11Buffer> _msaa_resolve_constant_buffer =
       core::create_dynamic_constant_buffer(*_device, sizeof(Resolve_constants));
    const Com_ptr<ID3D11Buffer> _global_constant_buffer =

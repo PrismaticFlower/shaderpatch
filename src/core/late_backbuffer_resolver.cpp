@@ -26,24 +26,17 @@ void Late_backbuffer_resolver::resolve(ID3D11DeviceContext1& dc,
                                        const Game_rendertarget& source,
                                        const Swapchain& swapchain) const noexcept
 {
-   dc.IASetInputLayout(nullptr);
+   dc.ClearState();
    dc.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
    dc.VSSetShader(_vs.get(), nullptr, 0);
-   dc.HSSetShader(nullptr, nullptr, 0);
-   dc.DSSetShader(nullptr, nullptr, 0);
-   dc.GSSetShader(nullptr, nullptr, 0);
 
    const CD3D11_VIEWPORT viewport{0.0f, 0.0f, static_cast<float>(swapchain.width()),
                                   static_cast<float>(swapchain.height())};
    auto* const srv = source.srv.get();
    auto* const rtv = swapchain.rtv();
 
-   dc.RSSetState(nullptr);
    dc.RSSetViewports(1, &viewport);
 
-   dc.OMSetDepthStencilState(nullptr, 0xffu);
-   dc.OMSetBlendState(nullptr, nullptr, 0xffffffffu);
    dc.OMSetRenderTargets(1, &rtv, nullptr);
 
    dc.PSSetShaderResources(0, 1, &srv);

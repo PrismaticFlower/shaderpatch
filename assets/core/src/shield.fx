@@ -1,4 +1,4 @@
-
+#include "adaptive_oit.hlsl" 
 #include "generic_vertex_input.hlsl"
 #include "vertex_utilities.hlsl"
 #include "vertex_transformer.hlsl"
@@ -65,7 +65,6 @@ struct Ps_input
    float3 material_color : MATCOLOR;
    float fog : FOG;
    float fade : FADE;
-   float4 positionSS : SV_Position;
 };
 
 [earlydepthstencil]
@@ -93,4 +92,30 @@ float4 shield_ps(Ps_input input) : SV_Target0
    if (diffuse_color.a <= (1.0 / 255.0)) discard;
 
    return float4(color, 1.0);
+}
+
+[earlydepthstencil] 
+void oit_shield_ps(Ps_input input, float4 positionSS : SV_Position, uint coverage : SV_Coverage)
+{
+   const float3 normalWS = normalize(input.normalWS);
+   const float3 view_normalWS = normalize(input.positionWS - view_positionWS);
+   const float3 H = normalize(-light_directional_0_dir.xyz + view_normalWS);
+   const float NdotH = saturate(dot(normalWS, H));
+   float3 specular = pow(NdotH, 64.0);
+   specular *= specular_color.rgb;
+
+   const float2 texcoords = float2(input.texcoords.x, saturate(input.texcoords.y));
+   const float4 diffuse_color = diffuse_texture.Sample(linear_wrap_sampler, texcoords);
+
+   if (diffuse_color.a <= (1.0 / 255.0)) discard;
+
+   const float alpha =
+      angle_alpha(view_normalWS, reflect(view_normalWS, normalWS)) * saturate(input.fade);
+
+   float3 color = diffuse_color.rgb * input.material_color;
+
+   color = (color + (specular / max(alpha, 1e-5))) * lighting_scale;
+   color = apply_fog(color, input.fog);
+
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, coverage, float4(color, alpha));
 }

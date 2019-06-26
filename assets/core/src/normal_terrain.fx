@@ -146,8 +146,6 @@ float4 diffuse_blendmap_ps(Ps_blendmap_input input,
 
    float3 color = diffuse_color * lighting.color;
 
-   // Linear Rendering Normalmap Hack
-   color = lerp(color, diffuse_color * lighting_scale, rt_multiply_blending_state);
    color = apply_fog(color, input.fog);
 
    return float4(color, input.blend_values_fade.z);
@@ -197,8 +195,6 @@ float4 detailing_ps(Ps_detail_input input,
 
    color *= blended_detail_color;
 
-   // Linear Rendering Normalmap Hack
-   color = lerp(color, blended_detail_color, rt_multiply_blending_state);
    color = apply_fog(color, input.fog);
 
    return float4(color, 1.0);

@@ -1,6 +1,5 @@
 
 #include "cmaa2.hpp"
-#include "../core/context_state_guard.hpp"
 #include "enum_flags.hpp"
 
 #include <array>
@@ -145,9 +144,7 @@ void CMAA2::apply_impl(ID3D11DeviceContext1& dc, Profiler& profiler,
                        ID3D11Texture2D& input_output,
                        ID3D11ShaderResourceView* luma_srv) noexcept
 {
-   core::Context_state_guard<core::state_flags::om_dsv_rtvs> rtv_state{dc};
-
-   dc.OMSetRenderTargets(0, nullptr, nullptr);
+   dc.ClearState();
 
    const bool luma_input = luma_srv != nullptr;
    bool shaders_changed =

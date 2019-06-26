@@ -29,7 +29,7 @@ struct Patch_material {
    static constexpr auto hs_resources_offset = 0;
    static constexpr auto ds_resources_offset = 0;
    static constexpr auto gs_resources_offset = 0;
-   static constexpr auto ps_resources_offset = 4;
+   static constexpr auto ps_resources_offset = 6;
 
    static constexpr auto vs_cb_offset = 3;
    static constexpr auto hs_cb_offset = 1;

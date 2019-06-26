@@ -201,6 +201,8 @@ void Patch_compiler::save(const fs::path& output_path) const
                                     state.second.vs_static_flags);
                   info_writer.write(state.second.ps_entrypoint,
                                     state.second.ps_static_flags);
+                  info_writer.write(state.second.ps_oit_entrypoint,
+                                    state.second.ps_oit_static_flags);
                   info_writer.write(bool{state.second.hs_entrypoint},
                                     state.second.hs_entrypoint.value_or(""s),
                                     state.second.hs_static_flags);
@@ -412,6 +414,17 @@ void Patch_compiler::assemble_rendertypes(
          assembled_state.ps_static_flags = resolve_state_flags(
             state.second.ps_static_flag_values,
             _pixel_entrypoints.at(assembled_state.ps_entrypoint).static_flag_names);
+
+         if (state.second.ps_oit_entrypoint) {
+            assembled_state.ps_oit_entrypoint = *state.second.ps_oit_entrypoint;
+            assembled_state.ps_oit_static_flags = resolve_state_flags(
+               state.second.ps_oit_static_flag_values,
+               _pixel_entrypoints.at(assembled_state.ps_oit_entrypoint).static_flag_names);
+         }
+         else {
+            assembled_state.ps_oit_entrypoint = assembled_state.ps_entrypoint;
+            assembled_state.ps_oit_static_flags = assembled_state.ps_static_flags;
+         }
 
          if (state.second.hs_entrypoint) {
             assembled_state.hs_entrypoint = state.second.hs_entrypoint;

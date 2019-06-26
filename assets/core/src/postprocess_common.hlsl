@@ -1,13 +1,13 @@
 #ifndef POSTPROCESS_COMMON_INCLUDED
 #define POSTPROCESS_COMMON_INCLUDED
 
-#include "pixel_sampler_states.hlsl"
-
 Texture2D<float4> scene_texture : register(t0);
 Texture2D<float4> bloom_texture : register(t1);
 Texture2D<float3> dirt_texture : register(t2);
 Texture3D<float3> color_grading_lut : register(t3);
 Texture2D<float3> blue_noise_texture : register(t4);
+
+SamplerState linear_clamp_sampler : register(s0);
 
 const static float3 luma_weights = {0.2126, 0.7152, 0.0722};
 const static uint color_grading_lut_size = 32;
