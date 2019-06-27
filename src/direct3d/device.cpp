@@ -39,7 +39,12 @@ Com_ptr<Device> Device::create(IDirect3D9& direct3d9, IDXGIAdapter2& adapter,
 
 Device::Device(IDirect3D9& direct3d9, IDXGIAdapter2& adapter, const HWND window,
                const UINT width, const UINT height) noexcept
-   : _direct3d9{direct3d9}, _shader_patch{adapter, window, width, height}, _adapter{adapter}, _window{window}
+   : _direct3d9{direct3d9},
+     _shader_patch{adapter, window, width, height},
+     _adapter{adapter},
+     _window{window},
+     _width{width},
+     _height{height}
 {
 }
 
@@ -220,6 +225,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
 
    _backbuffer =
       Surface_backbuffer::create(_shader_patch.get_back_buffer(), _width, _height);
+   _rendertarget = _backbuffer;
    _depthstencil = Surface_depthstencil::create(core::Game_depthstencil::nearscene,
                                                 _width, _height);
 
