@@ -554,7 +554,7 @@ HRESULT Device::SetDepthStencilSurface(IDirect3DSurface9* new_z_stencil) noexcep
    _shader_patch.set_depthstencil(*depthstencil);
 
    new_z_stencil->AddRef();
-   _rendertarget = Com_ptr{static_cast<IUnknown*>(new_z_stencil)};
+   _depthstencil = Com_ptr{static_cast<IUnknown*>(new_z_stencil)};
 
    return S_OK;
 }
