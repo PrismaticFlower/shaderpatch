@@ -15,9 +15,6 @@
     <ClInclude Include="include\com_ptr.hpp">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="include\com_ref.hpp">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="include\compose_exception.hpp">
       <Filter>include</Filter>
     </ClInclude>

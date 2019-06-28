@@ -19,6 +19,14 @@
 
 namespace sp {
 
+enum class GPU_selection_method {
+   highest_performance,
+   lowest_power_usage,
+   highest_feature_level,
+   most_memory,
+   use_cpu
+};
+
 enum class Antialiasing_method { none, cmaa2, msaax2, msaax4, msaax8 };
 
 enum class Anisotropic_filtering { off, x2, x4, x8, x16 };
@@ -46,6 +54,8 @@ struct User_config {
    } display;
 
    struct {
+      GPU_selection_method gpu_selection_method =
+         GPU_selection_method::highest_performance;
       Antialiasing_method antialiasing_method = Antialiasing_method::msaax4;
       Anisotropic_filtering anisotropic_filtering = Anisotropic_filtering::x16;
       bool enable_oit = false;
@@ -61,6 +71,7 @@ struct User_config {
 
       bool allow_event_queries = false;
       bool use_d3d11_debug_layer = false;
+      bool use_dxgi_1_2_factory = false;
    } developer;
 
    void show_imgui() noexcept;
@@ -70,6 +81,28 @@ private:
 };
 
 extern User_config user_config;
+
+inline auto gpu_selection_method_from_string(const std::string_view string) noexcept
+   -> GPU_selection_method
+{
+   if (string == "Highest Performance") {
+      return GPU_selection_method::highest_performance;
+   }
+   else if (string == "Lowest Power Usage") {
+      return GPU_selection_method::lowest_power_usage;
+   }
+   else if (string == "Highest Feature Level") {
+      return GPU_selection_method::highest_feature_level;
+   }
+   else if (string == "Most Memory") {
+      return GPU_selection_method::most_memory;
+   }
+   else if (string == "Use CPU") {
+      return GPU_selection_method::use_cpu;
+   }
+
+   return GPU_selection_method::highest_performance;
+}
 
 inline auto to_string(const Antialiasing_method quality) noexcept -> std::string
 {

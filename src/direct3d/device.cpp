@@ -30,22 +30,23 @@ namespace {
 constexpr auto projtex_slot = 2;
 }
 
-Com_ptr<Device> Device::create(IDirect3D9& direct3d9, IDXGIAdapter2& adapter,
+Com_ptr<Device> Device::create(IDirect3D9& parent, IDXGIAdapter4& adapter,
                                const HWND window, const UINT width,
                                const UINT height) noexcept
 {
-   return Com_ptr{new Device{direct3d9, adapter, window, width, height}};
+   return Com_ptr{new Device{parent, adapter, window, width, height}};
 }
 
-Device::Device(IDirect3D9& direct3d9, IDXGIAdapter2& adapter, const HWND window,
+Device::Device(IDirect3D9& parent, IDXGIAdapter4& adapter, const HWND window,
                const UINT width, const UINT height) noexcept
-   : _direct3d9{direct3d9},
+   : _parent{parent},
      _shader_patch{adapter, window, width, height},
-     _adapter{adapter},
+     _adapter{copy_raw_com_ptr(adapter)},
      _window{window},
      _width{width},
      _height{height}
 {
+   _parent.AddRef();
 }
 
 HRESULT Device::QueryInterface(const IID& iid, void** object) noexcept
@@ -75,12 +76,16 @@ ULONG Device::AddRef() noexcept
 {
    Debug_trace::func(__FUNCSIG__);
 
+   _parent.AddRef();
+
    return _ref_count += 1;
 }
 
 ULONG Device::Release() noexcept
 {
    Debug_trace::func(__FUNCSIG__);
+
+   _parent.Release();
 
    const auto ref_count = _ref_count -= 1;
 
@@ -115,7 +120,9 @@ HRESULT Device::GetDirect3D(IDirect3D9** d3d9) noexcept
 
    if (!d3d9) return D3DERR_INVALIDCALL;
 
-   *d3d9 = _direct3d9.unmanaged_copy();
+   _parent.AddRef();
+
+   *d3d9 = &_parent;
 
    return S_OK;
 }

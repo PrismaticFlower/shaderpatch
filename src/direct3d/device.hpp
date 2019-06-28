@@ -3,7 +3,6 @@
 #include "../core/shader_patch.hpp"
 #include "../logger.hpp"
 #include "com_ptr.hpp"
-#include "com_ref.hpp"
 #include "helpers.hpp"
 #include "render_state_manager.hpp"
 #include "surface_backbuffer.hpp"
@@ -13,12 +12,13 @@
 #include <array>
 
 #include <d3d9.h>
+#include <dxgi1_6.h>
 
 namespace sp::d3d9 {
 
 class Device final : public IDirect3DDevice9 {
 public:
-   static Com_ptr<Device> create(IDirect3D9& direct3d9, IDXGIAdapter2& adapter,
+   static Com_ptr<Device> create(IDirect3D9& parent, IDXGIAdapter4& adapter,
                                  const HWND window, const UINT width,
                                  const UINT height) noexcept;
 
@@ -550,7 +550,7 @@ public:
    }
 
 private:
-   Device(IDirect3D9& direct3d9, IDXGIAdapter2& adapter, const HWND window,
+   Device(IDirect3D9& parent, IDXGIAdapter4& adapter, const HWND window,
           const UINT width, const UINT height) noexcept;
    ~Device() = default;
 
@@ -581,8 +581,8 @@ private:
 
    void draw_common() noexcept;
 
-   const Com_ref<IDirect3D9> _direct3d9;
-   const Com_ref<IDXGIAdapter2> _adapter;
+   IDirect3D9& _parent;
+   const Com_ptr<IDXGIAdapter4> _adapter;
    const HWND _window;
 
    core::Shader_patch _shader_patch;
@@ -691,5 +691,4 @@ constexpr auto device_caps = []() -> D3DCAPS9 {
 
    return caps;
 }();
-
 }

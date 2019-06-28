@@ -178,7 +178,6 @@
     <ClInclude Include="include\algorithm.hpp" />
     <ClInclude Include="include\compose_exception.hpp" />
     <ClInclude Include="include\com_ptr.hpp" />
-    <ClInclude Include="include\com_ref.hpp" />
     <ClInclude Include="include\config_file.hpp" />
     <ClInclude Include="include\enum_flags.hpp" />
     <ClInclude Include="include\file_dialogs.hpp" />

@@ -86,6 +86,9 @@ void User_config::parse_file(const std::string& path)
    display.treat_800x600_as_interface =
       config["Display"s]["Treat 800x600 As Interface"s].as<bool>();
 
+   graphics.gpu_selection_method = gpu_selection_method_from_string(
+      config["Graphics"s]["GPU Selection Method"s].as<std::string>());
+
    graphics.antialiasing_method = aa_method_from_string(
       config["Graphics"s]["Anti-Aliasing Method"s].as<std::string>());
 
@@ -122,6 +125,9 @@ void User_config::parse_file(const std::string& path)
 
    developer.use_d3d11_debug_layer =
       config["Developer"s]["Use D3D11 Debug Layer"s].as<bool>();
+
+   developer.use_dxgi_1_2_factory =
+      config["Developer"s]["Use DXGI 1.2 Factory"s].as<bool>();
 }
 
 }

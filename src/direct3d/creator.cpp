@@ -8,10 +8,13 @@
 #include "helpers.hpp"
 
 #include <algorithm>
+#include <cstdint>
 #include <cwchar>
 #include <float.h>
 #include <limits>
 #include <queue>
+
+#include <d3d11_4.h>
 
 namespace sp::d3d9 {
 
@@ -19,66 +22,131 @@ using namespace std::literals;
 
 namespace {
 
-auto enum_adapters_dxgi_1_6(IDXGIFactory6& factory) noexcept
-   -> std::vector<Com_ptr<IDXGIAdapter2>>
+auto select_adapter_by_preference(IDXGIFactory7& factory,
+                                  const DXGI_GPU_PREFERENCE preference) noexcept
+   -> Com_ptr<IDXGIAdapter4>
 {
-   Com_ptr<IDXGIAdapter2> adapater;
+   Com_ptr<IDXGIAdapter4> adapater;
 
-   std::vector<Com_ptr<IDXGIAdapter2>> adapaters;
+   factory.EnumAdapterByGpuPreference(0, preference, __uuidof(IDXGIAdapter4),
+                                      adapater.void_clear_and_assign());
 
-   for (int i = 0;
-        factory.EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
-                                           __uuidof(IDXGIAdapter2),
-                                           adapater.void_clear_and_assign()) !=
-        DXGI_ERROR_NOT_FOUND;
-        ++i) {
-      adapaters.emplace_back(std::move(adapater));
+   if (!adapater) {
+      log_and_terminate("Failed to find suitable GPU adapter!");
    }
 
-   return adapaters;
+   return adapater;
 }
 
-auto enum_adapaters(IDXGIFactory2& factory) noexcept
-   -> std::vector<Com_ptr<IDXGIAdapter2>>
+auto select_adapter_by_feature_level(IDXGIFactory7& factory) noexcept
+   -> Com_ptr<IDXGIAdapter4>
 {
-   std::vector<Com_ptr<IDXGIAdapter2>> adapaters;
+   using Adapter_pair = std::pair<D3D_FEATURE_LEVEL, Com_ptr<IDXGIAdapter4>>;
 
-   Com_ptr<IDXGIAdapter1> adapater;
-
-   for (int i = 0;
-        factory.EnumAdapters1(i, adapater.clear_and_assign()) != DXGI_ERROR_NOT_FOUND;
-        ++i) {
-
-      if (FAILED(adapater->QueryInterface(adapaters.emplace_back().clear_and_assign()))) {
-         adapaters.pop_back();
-      }
-   }
-
-   return adapaters;
-}
-
-auto select_adapater(IDXGIFactory2& factory) noexcept -> Com_ptr<IDXGIAdapter2>
-{
-   if (Com_ptr<IDXGIFactory6> factory_1_6;
-       !IsDebuggerPresent() &&
-       SUCCEEDED(factory.QueryInterface(factory_1_6.clear_and_assign()))) {
-      const auto adapters = enum_adapters_dxgi_1_6(*factory_1_6);
-
-      return adapters[0];
-   }
-
-   const auto compare_adapaters = [](const Com_ptr<IDXGIAdapter2>& left,
-                                     const Com_ptr<IDXGIAdapter2>& right) {
-      DXGI_ADAPTER_DESC2 ldesc;
-      left->GetDesc2(&ldesc);
-
-      DXGI_ADAPTER_DESC2 rdesc;
-      right->GetDesc2(&rdesc);
-
-      return ldesc.DedicatedVideoMemory < rdesc.DedicatedVideoMemory;
+   const auto comparator = [](const Adapter_pair& left, const Adapter_pair& right) {
+      return left.first < right.first;
    };
 
-   return std::priority_queue{compare_adapaters, enum_adapaters(factory)}.top();
+   std::priority_queue<Adapter_pair, std::vector<Adapter_pair>, decltype(comparator)> adapaters{
+      comparator};
+
+   constexpr std::array feature_levels{D3D_FEATURE_LEVEL_9_1,
+                                       D3D_FEATURE_LEVEL_9_2,
+                                       D3D_FEATURE_LEVEL_9_3,
+                                       D3D_FEATURE_LEVEL_10_0,
+                                       D3D_FEATURE_LEVEL_10_1,
+                                       D3D_FEATURE_LEVEL_11_0,
+                                       D3D_FEATURE_LEVEL_11_1,
+                                       D3D_FEATURE_LEVEL_12_0,
+                                       D3D_FEATURE_LEVEL_12_1};
+
+   Com_ptr<IDXGIAdapter4> adapter;
+   for (int i = 0;
+        factory.EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_UNSPECIFIED,
+                                           __uuidof(IDXGIAdapter4),
+                                           adapter.void_clear_and_assign()) !=
+        DXGI_ERROR_NOT_FOUND;
+        ++i) {
+      D3D_FEATURE_LEVEL fl;
+      Com_ptr<ID3D11Device> device;
+
+      if (const auto hr = D3D11CreateDevice(adapter.get(), D3D_DRIVER_TYPE_UNKNOWN,
+                                            nullptr, 0, feature_levels.data(),
+                                            feature_levels.size(), D3D11_SDK_VERSION,
+                                            device.clear_and_assign(), &fl, nullptr);
+          FAILED(hr)) {
+         continue;
+      }
+
+      adapaters.push(std::pair{fl, adapter});
+   }
+
+   if (adapaters.empty()) {
+      log_and_terminate("Failed to find suitable GPU adapter!");
+   }
+
+   return adapaters.top().second;
+}
+
+auto select_adapter_by_memory(IDXGIFactory7& factory) noexcept -> Com_ptr<IDXGIAdapter4>
+{
+   const auto comparator = [](const Com_ptr<IDXGIAdapter4>& left,
+                              const Com_ptr<IDXGIAdapter4>& right) {
+      DXGI_ADAPTER_DESC2 left_desc, right_desc;
+
+      left->GetDesc2(&left_desc);
+      right->GetDesc2(&right_desc);
+
+      const auto left_mem = std::uint64_t{left_desc.DedicatedVideoMemory} +
+                            left_desc.DedicatedSystemMemory +
+                            left_desc.SharedSystemMemory;
+
+      const auto right_mem = std::uint64_t{right_desc.DedicatedVideoMemory} +
+                             right_desc.DedicatedSystemMemory +
+                             right_desc.SharedSystemMemory;
+
+      return left_mem < right_mem;
+   };
+
+   std::priority_queue<Com_ptr<IDXGIAdapter4>, std::vector<Com_ptr<IDXGIAdapter4>>, decltype(comparator)> adapaters{
+      comparator};
+
+   Com_ptr<IDXGIAdapter4> adapter;
+   for (int i = 0;
+        factory.EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_UNSPECIFIED,
+                                           __uuidof(IDXGIAdapter4),
+                                           adapter.void_clear_and_assign()) !=
+        DXGI_ERROR_NOT_FOUND;
+        ++i) {
+      adapaters.push(std::move(adapter));
+   }
+
+   if (adapaters.empty()) {
+      log_and_terminate("Failed to find suitable GPU adapter!");
+   }
+
+   return adapaters.top();
+}
+
+auto get_adapater(IDXGIFactory7& factory) noexcept -> Com_ptr<IDXGIAdapter4>
+{
+   switch (user_config.graphics.gpu_selection_method) {
+   case GPU_selection_method::highest_performance:
+      return select_adapter_by_preference(factory, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE);
+   case GPU_selection_method::lowest_power_usage:
+      return select_adapter_by_preference(factory, DXGI_GPU_PREFERENCE_MINIMUM_POWER);
+   case GPU_selection_method::highest_feature_level:
+      return select_adapter_by_feature_level(factory);
+   case GPU_selection_method::most_memory:
+      return select_adapter_by_memory(factory);
+   case GPU_selection_method::use_cpu:
+      Com_ptr<IDXGIAdapter4> adapter;
+      factory.EnumWarpAdapter(__uuidof(IDXGIAdapter4),
+                              adapter.void_clear_and_assign());
+      return adapter;
+   }
+
+   std::terminate();
 }
 
 void update_fp_control() noexcept
@@ -110,11 +178,14 @@ Com_ptr<Creator> Creator::create() noexcept
 
 Creator::Creator() noexcept
 {
-   if (FAILED(CreateDXGIFactory1(IID_IDXGIFactory2, _factory.void_clear_and_assign()))) {
-      log_and_terminate("Failed to create IDXGIFactory2!");
+   if (const auto dxgi_create_flags =
+          user_config.developer.use_d3d11_debug_layer ? DXGI_CREATE_FACTORY_DEBUG : 0x0;
+       user_config.developer.use_dxgi_1_2_factory) {
+      legacy_create_adapter(dxgi_create_flags);
    }
-
-   _adapter = select_adapater(*_factory);
+   else {
+      create_adapter(dxgi_create_flags);
+   }
 }
 
 HRESULT Creator::CreateDevice(UINT adapter_index, D3DDEVTYPE, HWND focus_window,
@@ -356,4 +427,37 @@ HMONITOR Creator::GetAdapterMonitor(UINT) noexcept
 {
    log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
 }
+
+void Creator::create_adapter(const UINT dxgi_create_flags) noexcept
+{
+   Com_ptr<IDXGIFactory7> factory;
+
+   if (FAILED(CreateDXGIFactory2(dxgi_create_flags, __uuidof(IDXGIFactory7),
+                                 factory.void_clear_and_assign()))) {
+      log_and_terminate(
+         "Failed to create DXGI 1.6 factory! This likely means you're not "
+         "running Windows 10 or it is not up to date.");
+   }
+
+   _adapter = get_adapater(*factory);
+}
+
+void Creator::legacy_create_adapter(const UINT dxgi_create_flags) noexcept
+{
+   Com_ptr<IDXGIFactory2> factory;
+
+   if (FAILED(CreateDXGIFactory2(dxgi_create_flags, __uuidof(IDXGIFactory2),
+                                 factory.void_clear_and_assign()))) {
+      log_and_terminate("Failed to create DXGI factory!");
+   }
+
+   Com_ptr<IDXGIAdapter1> adapater;
+
+   if (FAILED(factory->EnumAdapters1(0, adapater.clear_and_assign()))) {
+      log_and_terminate("Failed to create DXGI adapter!");
+   }
+
+   adapater->QueryInterface(_adapter.clear_and_assign());
+}
+
 }

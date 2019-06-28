@@ -36,6 +36,7 @@
 
 #include <DirectXTex.h>
 #include <d3d11_4.h>
+#include <dxgi1_6.h>
 
 #pragma warning(disable : 4324)
 
@@ -59,7 +60,7 @@ struct Mapped_texture {
 
 class Shader_patch {
 public:
-   Shader_patch(IDXGIAdapter2& adapter, const HWND window, const UINT width,
+   Shader_patch(IDXGIAdapter4& adapter, const HWND window, const UINT width,
                 const UINT height) noexcept;
 
    Shader_patch(const Shader_patch&) = delete;

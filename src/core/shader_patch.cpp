@@ -30,7 +30,7 @@ constexpr std::array supported_feature_levels{D3D_FEATURE_LEVEL_12_1,
                                               D3D_FEATURE_LEVEL_11_1,
                                               D3D_FEATURE_LEVEL_11_0};
 
-auto create_device(IDXGIAdapter2& adapater) noexcept -> Com_ptr<ID3D11Device5>
+auto create_device(IDXGIAdapter4& adapater) noexcept -> Com_ptr<ID3D11Device5>
 {
    Com_ptr<ID3D11Device> device;
 
@@ -85,7 +85,7 @@ auto create_device(IDXGIAdapter2& adapater) noexcept -> Com_ptr<ID3D11Device5>
 }
 }
 
-Shader_patch::Shader_patch(IDXGIAdapter2& adapter, const HWND window,
+Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
                            const UINT width, const UINT height) noexcept
    : _device{create_device(adapter)},
      _swapchain{_device, adapter, window, width, height},

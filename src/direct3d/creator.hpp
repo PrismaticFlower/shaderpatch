@@ -69,13 +69,14 @@ private:
    Creator() noexcept;
    ~Creator() = default;
 
+   void create_adapter(const UINT dxgi_create_flags) noexcept;
+
+   void legacy_create_adapter(const UINT dxgi_create_flags) noexcept;
+
    std::mutex _mutex;
 
-   Com_ptr<IDXGIFactory2> _factory;
-   Com_ptr<IDXGIAdapter2> _adapter;
+   Com_ptr<IDXGIAdapter4> _adapter;
    Com_ptr<Device> _device;
-
-   const DXGI_FORMAT _desired_backbuffer_format = DXGI_FORMAT_B8G8R8A8_UNORM;
 
    std::atomic<ULONG> _ref_count = 1;
 };
