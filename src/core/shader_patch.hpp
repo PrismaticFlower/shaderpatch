@@ -6,6 +6,7 @@
 #include "com_ptr.hpp"
 #include "constant_buffers.hpp"
 #include "d3d11_helpers.hpp"
+#include "depth_msaa_resolver.hpp"
 #include "depthstencil.hpp"
 #include "game_input_layout.hpp"
 #include "game_rendertarget.hpp"
@@ -205,6 +206,8 @@ public:
    void set_constants(const cb::Draw_ps_tag, const UINT offset,
                       const gsl::span<const std::array<float, 4>> constants) noexcept;
 
+   void set_informal_projection_matrix(const glm::mat4 matrix) noexcept;
+
    void draw(const D3D11_PRIMITIVE_TOPOLOGY topology, const UINT vertex_count,
              const UINT start_vertex) noexcept;
 
@@ -383,6 +386,7 @@ private:
 
    const Image_stretcher _image_stretcher{*_device, *_shader_database};
    const Late_backbuffer_resolver _late_backbuffer_resolver{*_shader_database};
+   const Depth_msaa_resolver _depth_msaa_resolver{*_device, *_shader_database};
    Sampler_states _sampler_states{*_device};
    Texture_database _texture_database{
       load_texture_lvl(L"data/shaderpatch/textures.lvl", *_device)};
@@ -391,6 +395,8 @@ private:
    effects::Rendertarget_allocator _rendertarget_allocator{_device};
 
    Material_shader_factory _material_shader_factory{_device, _shader_database};
+
+   glm::mat4 _informal_projection_matrix;
 
    const HWND _window;
 

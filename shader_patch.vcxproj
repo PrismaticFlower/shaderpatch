@@ -137,6 +137,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\core\d3d11_helpers.cpp" />
+    <ClCompile Include="src\core\depth_msaa_resolver.cpp" />
     <ClCompile Include="src\core\game_rendertarget.cpp" />
     <ClCompile Include="src\core\image_stretcher.cpp" />
     <ClCompile Include="src\core\input_layout_descriptions.cpp" />
@@ -173,11 +174,16 @@
     <ClCompile Include="src\direct3d\vertex_declaration.cpp" />
     <ClCompile Include="src\direct3d\vertex_shader.cpp" />
     <ClCompile Include="src\direct3d\creator.cpp" />
+    <ClCompile Include="src\effects\assao\ASSAODX11.cpp">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4275;4251;4127;4018;4201;4189;4505;4389</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4275;4251;4127;4018;4201;4189;4505;4389</DisableSpecificWarnings>
+    </ClCompile>
     <ClCompile Include="src\effects\cmaa2.cpp" />
     <ClCompile Include="src\effects\color_grading_lut_baker.cpp" />
     <ClCompile Include="src\effects\control.cpp" />
     <ClCompile Include="src\effects\postprocess.cpp" />
     <ClCompile Include="src\effects\profiler.cpp" />
+    <ClCompile Include="src\effects\ssao.cpp" />
     <ClCompile Include="src\file_hooks.cpp" />
     <ClCompile Include="src\imgui\imgui_impl_dx11.cpp" />
     <ClCompile Include="src\imgui\imgui_impl_dx11_shaders.hpp" />
@@ -189,6 +195,7 @@
   <ItemGroup>
     <ClInclude Include="src\core\constant_buffers.hpp" />
     <ClInclude Include="src\core\depthstencil.hpp" />
+    <ClInclude Include="src\core\depth_msaa_resolver.hpp" />
     <ClInclude Include="src\core\late_backbuffer_resolver.hpp" />
     <ClInclude Include="src\core\material_shader.hpp" />
     <ClInclude Include="src\core\material_shader_factory.hpp" />
@@ -238,6 +245,7 @@
     <ClInclude Include="src\direct3d\vertex_declaration.hpp" />
     <ClInclude Include="src\direct3d\vertex_shader.hpp" />
     <ClInclude Include="src\direct3d\texture3d_resource.hpp" />
+    <ClInclude Include="src\effects\assao\ASSAO.h" />
     <ClInclude Include="src\effects\cmaa2.hpp" />
     <ClInclude Include="src\effects\color_helpers.hpp" />
     <ClInclude Include="src\effects\filmic_tonemapper.hpp" />
@@ -248,6 +256,7 @@
     <ClInclude Include="src\effects\postprocess.hpp" />
     <ClInclude Include="src\effects\profiler.hpp" />
     <ClInclude Include="src\effects\rendertarget_allocator.hpp" />
+    <ClInclude Include="src\effects\ssao.hpp" />
     <ClInclude Include="src\effects\tonemappers.hpp" />
     <ClInclude Include="src\file_hooks.hpp" />
     <ClInclude Include="src\hook_vtable.hpp" />
@@ -268,6 +277,19 @@
     <ProjectReference Include="shared\shared.vcxproj">
       <Project>{cc4890f2-40e7-446f-8971-5114ea566c27}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="src\effects\assao\ASSAO.hlsl">
+      <FileType>Document</FileType>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RelativeDir)assao_shader.hpp</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RelativeDir)assao_shader.hpp</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">powershell -Command  "./%(RelativeDir)assao_shader_package.ps1"  -OuputPath "%(Outputs)" -InputPath "%(Identity)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">powershell -Command  "./%(RelativeDir)assao_shader_package.ps1"  -OuputPath "%(Outputs)" -InputPath "%(Identity)"</Command>
+    </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

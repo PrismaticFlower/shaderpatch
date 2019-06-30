@@ -1,0 +1,55 @@
+{
+  "group_name": "depth msaa resolve",
+  "source_name": "depth_msaa_resolve.fx",
+
+  "entrypoints": {
+    "main_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto"
+      },
+
+      "defines": [
+        [ "SAMPLE_COUNT", "1" ]
+      ]
+    },
+
+    "main_x2_ps": {
+      "stage": "pixel",
+      "function_name": "main_ps",
+
+      "pixel_state": { "lighting": false },
+
+      "defines": [
+        [ "SAMPLE_COUNT", "2" ]
+      ]
+    },
+
+    "main_x4_ps": {
+      "stage": "pixel",
+      "function_name": "main_ps",
+
+      "pixel_state": { "lighting": false },
+
+      "defines": [
+        [ "SAMPLE_COUNT", "4" ]
+      ]
+    },
+
+    "main_x8_ps": {
+      "stage": "pixel",
+      "function_name": "main_ps",
+
+      "pixel_state": { "lighting": false },
+
+      "defines": [
+        [ "SAMPLE_COUNT", "8" ]
+      ]
+    }
+  },
+
+  "rendertypes": {},
+
+  "states": {}
+}

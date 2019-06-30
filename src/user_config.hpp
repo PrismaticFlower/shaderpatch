@@ -31,12 +31,16 @@ enum class Antialiasing_method { none, cmaa2, msaax2, msaax4, msaax8 };
 
 enum class Anisotropic_filtering { off, x2, x4, x8, x16 };
 
+enum class SSAO_quality { fastest, fast, medium, high, highest };
+
 struct Effects_user_config {
    bool enabled = true;
    bool bloom = true;
    bool vignette = true;
    bool film_grain = true;
    bool colored_film_grain = true;
+   bool ssao = true;
+   SSAO_quality ssao_quality = SSAO_quality::medium;
 };
 
 struct User_config {
@@ -223,6 +227,48 @@ inline auto anisotropic_filtering_from_string(const std::string_view string) noe
    }
    else {
       return Anisotropic_filtering::off;
+   }
+}
+
+inline auto to_string(const SSAO_quality quality) noexcept -> std::string
+{
+   using namespace std::literals;
+
+   switch (quality) {
+   case SSAO_quality::fastest:
+      return "Fastest"s;
+   case SSAO_quality::fast:
+      return "Fast"s;
+   case SSAO_quality::medium:
+      return "Medium"s;
+   case SSAO_quality::high:
+      return "High"s;
+   case SSAO_quality::highest:
+      return "Highest"s;
+   }
+
+   std::terminate();
+}
+
+inline auto ssao_quality_from_string(const std::string_view string) noexcept -> SSAO_quality
+{
+   if (string == to_string(SSAO_quality::fastest)) {
+      return SSAO_quality::fastest;
+   }
+   else if (string == to_string(SSAO_quality::fast)) {
+      return SSAO_quality::fast;
+   }
+   else if (string == to_string(SSAO_quality::medium)) {
+      return SSAO_quality::medium;
+   }
+   else if (string == to_string(SSAO_quality::high)) {
+      return SSAO_quality::high;
+   }
+   else if (string == to_string(SSAO_quality::highest)) {
+      return SSAO_quality::highest;
+   }
+   else {
+      return SSAO_quality::medium;
    }
 }
 

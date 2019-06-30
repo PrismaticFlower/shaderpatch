@@ -52,24 +52,27 @@ Effects:
    # at an acceptable framerate and in this case this can be used to switch them off.
    Enabled: yes
    
-   # Enable or disable a mod using the Bloom effect. This effect is cheap and there is likely
-   # little FPS to be gained from switching it off. Still if you're hitting really low FPS (let's say under 40) having 
-   # it off can increase the framerate by a few a second.
+   # Enable or disable a mod using the Bloom effect. This effect is can have a slight performance impact.
    Bloom: yes
    
-   # Enable or disable a mod using the Vignette effect. This effect is really cheap and there is likely
-   # no FPS to be gained from switching it off. But if you're in truely dire need... (Though it is probably better to 
-   # just set Enabled to 'no'.)
+   # Enable or disable a mod using the Vignette effect. This effect is really cheap.
    Vignette: yes
    
-   # Enable or disable a mod using the Film Grain effect. This either falls in the same baskest as Bloom or can 
-   # actually be worse when Colored Film Grain is being used. (A mod controls if it is or not.) 
+   # Enable or disable a mod using the Film Grain effect. This effect is fairly cheap.
    Film Grain: yes
    
-   # Enable or disable a mod using being allowed to use Colored Film Grain. For mods that 
-   # use it colored film grain can definitely looks nicer. However it is more costly to performance to evaluate
-   # it and on low-end GPUs you may wish to switch this off.
+   # Enable or disable a mod using being allowed to use Colored Film Grain. Slightly more expensive than just 
+   # regular Film Grain, if a mod is using it.
    Allow Colored Film Grain: yes 
+   
+   # Enable or disable a mod using Screen Space Ambient Occlusion. (Not actually true Ambient Occlusion as 
+   # it is applied indiscriminately to opaque surfaces.)
+   # Has anywhere from a slight performance impact to significant performance impact depending on the quality setting.
+   SSAO: yes
+   
+   # Quality of SSAO when enabled. Can be "Fastest", "Fast", Medium", "High" or "Highest".
+   # Each step up is usually 1.5x-2.0x more expensive than the last setting.
+   SSAO Quality: Medium
    
 Developer:   
    # Toggle key for the developer screen. Giving access to useful things for mod makers and

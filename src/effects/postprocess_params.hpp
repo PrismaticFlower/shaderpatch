@@ -99,6 +99,17 @@ struct Film_grain_params {
    float luma_amount = 1.0f;
 };
 
+struct SSAO_params {
+   bool enabled = true;
+
+   float radius = 1.2f;
+   float shadow_multiplier = 1.0f;
+   float shadow_power = 1.5f;
+   float detail_shadow_strength = 0.5f;
+   int blur_pass_count = 2;
+   float sharpness = 0.98f;
+};
+
 inline auto to_string(const Tonemapper tonemapper) noexcept
 {
    using namespace std::literals;
@@ -434,4 +445,42 @@ struct convert<sp::effects::Film_grain_params> {
    }
 };
 
+template<>
+struct convert<sp::effects::SSAO_params> {
+   static Node encode(const sp::effects::SSAO_params& params)
+   {
+      using namespace std::literals;
+
+      YAML::Node node;
+
+      node["Enable"s] = params.enabled;
+      node["Radius"s] = params.radius;
+      node["Shadow Multiplier"s] = params.shadow_multiplier;
+      node["Shadow Power"s] = params.shadow_power;
+      node["Detail Shadow Strength"s] = params.detail_shadow_strength;
+      node["Blur Amount"s] = params.blur_pass_count;
+      node["sharpness"s] = params.sharpness;
+
+      return node;
+   }
+
+   static bool decode(const Node& node, sp::effects::SSAO_params& params)
+   {
+      using namespace std::literals;
+
+      params = sp::effects::SSAO_params{};
+
+      params.enabled = node["Enable"s].as<bool>(false);
+      params.radius = node["Radius"s].as<float>(params.radius);
+      params.shadow_multiplier =
+         node["Shadow Multiplier"s].as<float>(params.shadow_multiplier);
+      params.shadow_power = node["Shadow Power"s].as<float>(params.shadow_power);
+      params.detail_shadow_strength =
+         node["Detail Shadow Strength"s].as<float>(params.detail_shadow_strength);
+      params.blur_pass_count = node["Blur Amount"s].as<int>(params.blur_pass_count);
+      params.sharpness = node["sharpness"s].as<float>(params.sharpness);
+
+      return true;
+   }
+};
 }

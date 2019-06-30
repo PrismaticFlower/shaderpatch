@@ -10,22 +10,41 @@ struct Depthstencil {
    Depthstencil(ID3D11Device1& device, const UINT width, const UINT height,
                 const UINT sample_count) noexcept
    {
-      const auto desc =
-         CD3D11_TEXTURE2D_DESC{DXGI_FORMAT_D24_UNORM_S8_UINT,
-                               width,
-                               height,
-                               1,
-                               1,
-                               D3D11_BIND_DEPTH_STENCIL,
-                               D3D11_USAGE_DEFAULT,
-                               0,
-                               sample_count,
-                               (sample_count != 1)
-                                  ? static_cast<UINT>(D3D11_STANDARD_MULTISAMPLE_PATTERN)
-                                  : 0};
+      {
+         const auto desc =
+            CD3D11_TEXTURE2D_DESC{DXGI_FORMAT_R24G8_TYPELESS,
+                                  width,
+                                  height,
+                                  1,
+                                  1,
+                                  D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE,
+                                  D3D11_USAGE_DEFAULT,
+                                  0,
+                                  sample_count,
+                                  (sample_count != 1)
+                                     ? static_cast<UINT>(D3D11_STANDARD_MULTISAMPLE_PATTERN)
+                                     : 0};
 
-      device.CreateTexture2D(&desc, nullptr, texture.clear_and_assign());
-      device.CreateDepthStencilView(texture.get(), nullptr, dsv.clear_and_assign());
+         device.CreateTexture2D(&desc, nullptr, texture.clear_and_assign());
+      }
+
+      const bool ms = sample_count != 1;
+
+      {
+         const CD3D11_DEPTH_STENCIL_VIEW_DESC desc{ms ? D3D11_DSV_DIMENSION_TEXTURE2DMS
+                                                      : D3D11_DSV_DIMENSION_TEXTURE2D,
+                                                   DXGI_FORMAT_D24_UNORM_S8_UINT};
+
+         device.CreateDepthStencilView(texture.get(), &desc, dsv.clear_and_assign());
+      }
+
+      {
+         const CD3D11_SHADER_RESOURCE_VIEW_DESC desc{ms ? D3D11_SRV_DIMENSION_TEXTURE2DMS
+                                                        : D3D11_SRV_DIMENSION_TEXTURE2D,
+                                                     DXGI_FORMAT_R24_UNORM_X8_TYPELESS};
+
+         device.CreateShaderResourceView(texture.get(), &desc, srv.clear_and_assign());
+      }
    }
 
    Depthstencil() = default;
@@ -42,6 +61,10 @@ struct Depthstencil {
 
    Com_ptr<ID3D11Texture2D> texture;
    Com_ptr<ID3D11DepthStencilView> dsv;
+   Com_ptr<ID3D11ShaderResourceView> srv;
+   Com_ptr<ID3D11RenderTargetView> rtv;
+
+   constexpr static auto format = DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
 };
 
 }

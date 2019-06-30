@@ -1020,6 +1020,11 @@ void Shader_patch::set_constants(const cb::Draw_ps_tag, const UINT offset,
                constants.data(), constants.size_bytes());
 }
 
+void Shader_patch::set_informal_projection_matrix(const glm::mat4 matrix) noexcept
+{
+   _informal_projection_matrix = matrix;
+}
+
 void Shader_patch::draw(const D3D11_PRIMITIVE_TOPOLOGY topology,
                         const UINT vertex_count, const UINT start_vertex) noexcept
 {
@@ -1235,7 +1240,24 @@ void Shader_patch::game_rendertype_changed() noexcept
    }
 
    if (_effects_active) {
-      if (_shader_rendertype == Rendertype::hdr) {
+      if (_shader_rendertype == Rendertype::skyfog && _effects.ssao.enabled()) {
+         auto* const depth_srv = [&] {
+            if (_rt_sample_count != 1) {
+               _depth_msaa_resolver.resolve(*_device_context, _nearscene_depthstencil,
+                                            _interface_depthstencil);
+
+               return _interface_depthstencil.srv.get();
+            }
+
+            return _nearscene_depthstencil.srv.get();
+         }();
+
+         _effects.ssao.apply(_effects.profiler, *_device_context, *depth_srv,
+                             *_game_rendertargets[0].rtv, _informal_projection_matrix);
+
+         restore_all_game_state();
+      }
+      else if (_shader_rendertype == Rendertype::hdr) {
          _use_interface_depthstencil = true;
          _game_rendertargets[0] = _swapchain.game_rendertarget();
 
@@ -1742,5 +1764,4 @@ void Shader_patch::restore_all_game_state() noexcept
 
    bind_static_resources();
 }
-
 }

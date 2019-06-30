@@ -626,9 +626,13 @@ HRESULT Device::EndScene() noexcept
    return S_OK;
 }
 
-HRESULT Device::SetTransform(D3DTRANSFORMSTATETYPE, const D3DMATRIX*) noexcept
+HRESULT Device::SetTransform(D3DTRANSFORMSTATETYPE type, const D3DMATRIX* matrix) noexcept
 {
    Debug_trace::func(__FUNCSIG__);
+
+   if (type == D3DTS_PROJECTION) {
+      _shader_patch.set_informal_projection_matrix(bit_cast<glm::mat4>(*matrix));
+   }
 
    return S_OK;
 }

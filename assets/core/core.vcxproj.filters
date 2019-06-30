@@ -344,6 +344,11 @@
     <None Include="definitions\patch\adaptive_oit_resolve.json">
       <Filter>definitions\patch</Filter>
     </None>
+    <None Include="src\adaptive_oit.hlsl" />
+    <None Include="src\adaptive_oit_resolve.fx" />
+    <None Include="definitions\patch\depth_msaa_resolve.json">
+      <Filter>definitions\patch</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">
@@ -363,10 +368,7 @@
     <CustomBuild Include="build_lvls.ps1" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="src\adaptive_oit.hlsl">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\adaptive_oit_resolve.fx">
+    <FxCompile Include="src\depth_msaa_resolve.fx">
       <Filter>src</Filter>
     </FxCompile>
   </ItemGroup>

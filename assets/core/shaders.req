@@ -32,6 +32,7 @@ ucft
       "adaptive_oit_resolve"
       "cmaa2"
       "damage_overlay"
+      "depth_msaa_resolve"
       "fixedfunc_color_fill"
       "fixedfunc_damage_overlay"
       "fixedfunc_plain_texture"

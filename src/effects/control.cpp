@@ -31,13 +31,14 @@ Color_grading_params show_tonemapping_imgui(Color_grading_params params) noexcep
 
 Film_grain_params show_film_grain_imgui(Film_grain_params params) noexcept;
 
-void show_tonemapping_curve(std::function<float(float)> tonemapper) noexcept;
+SSAO_params show_ssao_imgui(SSAO_params params) noexcept;
 
+void show_tonemapping_curve(std::function<float(float)> tonemapper) noexcept;
 }
 
-Control::Control(Com_ptr<ID3D11Device1> device,
+Control::Control(Com_ptr<ID3D11Device4> device,
                  const core::Shader_group_collection& shader_groups) noexcept
-   : _device{device}, postprocess{device, shader_groups}, cmaa2{device, shader_groups}, profiler{device}
+   : postprocess{device, shader_groups}, cmaa2{device, shader_groups}, ssao{device}, profiler{device}
 {
    if (user_config.graphics.enable_user_effects_config)
       load_params_from_yaml_file(user_config.graphics.user_effects_config);
@@ -182,6 +183,7 @@ void Control::read_config(YAML::Node config)
       config["Vignette"s].as<Vignette_params>(Vignette_params{}));
    postprocess.film_grain_params(
       config["FilmGrain"s].as<Film_grain_params>(Film_grain_params{}));
+   ssao.params(config["SSAO"s].as<SSAO_params>(SSAO_params{false}));
 }
 
 auto Control::output_params_to_yaml_string() noexcept -> std::string
@@ -193,9 +195,10 @@ auto Control::output_params_to_yaml_string() noexcept -> std::string
    config["Bloom"s] = postprocess.bloom_params();
    config["Vignette"s] = postprocess.vignette_params();
    config["FilmGrain"s] = postprocess.film_grain_params();
+   config["SSAO"s] = ssao.params();
 
    std::stringstream stream;
-   ;
+
    stream << "# Auto-Generated Effects Config. May have less than ideal formatting.\n"sv;
 
    stream << config;
@@ -299,6 +302,10 @@ void Control::show_post_processing_imgui() noexcept
    if (ImGui::TabItem("Film Grain")) {
       postprocess.film_grain_params(
          show_film_grain_imgui(postprocess.film_grain_params()));
+   }
+
+   if (ImGui::TabItem("SSAO")) {
+      ssao.params(show_ssao_imgui(ssao.params()));
    }
 
    ImGui::EndTabBar();
@@ -513,6 +520,21 @@ Film_grain_params show_film_grain_imgui(Film_grain_params params) noexcept
    return params;
 }
 
+SSAO_params show_ssao_imgui(SSAO_params params) noexcept
+{
+   ImGui::Checkbox("Enabled", &params.enabled);
+
+   ImGui::DragFloat("Radius", &params.radius, 0.1f, 0.1f, 2.0f);
+   ImGui::DragFloat("Shadow Multiplier", &params.shadow_multiplier, 0.05f, 0.0f, 5.0f);
+   ImGui::DragFloat("Shadow Poweer", &params.shadow_power, 0.05f, 0.0f, 5.0f);
+   ImGui::DragFloat("Detail Shadow Strength", &params.detail_shadow_strength,
+                    0.05f, 0.0f, 5.0f);
+   ImGui::DragInt("Blur Amount", &params.blur_pass_count, 0.25f, 0, 6);
+   ImGui::DragFloat("Sharpness", &params.sharpness, 0.01f, 0.0f, 1.0f);
+
+   return params;
+}
+
 void show_tonemapping_curve(std::function<float(float)> tonemapper) noexcept
 {
    static float divisor = 256.0f;
@@ -561,6 +583,5 @@ void show_tonemapping_curve(std::function<float(float)> tonemapper) noexcept
       break;
    }
 }
-
 }
 }

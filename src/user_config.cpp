@@ -59,6 +59,15 @@ void User_config::show_imgui() noexcept
       ImGui::Checkbox("Vignette", &effects.vignette);
       ImGui::Checkbox("Film Grain", &effects.film_grain);
       ImGui::Checkbox("Allow Colored Film Grain", &effects.colored_film_grain);
+      ImGui::Checkbox("SSAO", &effects.ssao);
+
+      effects.ssao_quality = ssao_quality_from_string(ImGui::StringPicker(
+         "SSAO Quality", std::string{to_string(effects.ssao_quality)},
+         std::initializer_list<std::string>{to_string(SSAO_quality::fastest),
+                                            to_string(SSAO_quality::fast),
+                                            to_string(SSAO_quality::medium),
+                                            to_string(SSAO_quality::high),
+                                            to_string(SSAO_quality::highest)}));
    }
 
    if (ImGui::CollapsingHeader("Developer")) {
@@ -117,6 +126,11 @@ void User_config::parse_file(const std::string& path)
 
    effects.colored_film_grain =
       config["Effects"s]["Allow Colored Film Grain"s].as<bool>();
+
+   effects.ssao = config["Effects"s]["SSAO"s].as<bool>();
+
+   effects.ssao_quality = ssao_quality_from_string(
+      config["Effects"s]["SSAO Quality"s].as<std::string>());
 
    developer.toggle_key = config["Developer"s]["Screen Toggle"s].as<int>();
 

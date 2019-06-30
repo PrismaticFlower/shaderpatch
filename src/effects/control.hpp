@@ -3,6 +3,7 @@
 #include "../effects/cmaa2.hpp"
 #include "../effects/postprocess.hpp"
 #include "../effects/profiler.hpp"
+#include "../effects/ssao.hpp"
 #include "com_ptr.hpp"
 
 #include <filesystem>
@@ -26,11 +27,8 @@ struct Effects_control_config {
 };
 
 class Control {
-private:
-   const Com_ptr<ID3D11Device1> _device;
-
 public:
-   Control(Com_ptr<ID3D11Device1> device,
+   Control(Com_ptr<ID3D11Device4> device,
            const core::Shader_group_collection& shader_groups) noexcept;
 
    bool enabled(const bool enabled) noexcept;
@@ -62,6 +60,7 @@ public:
 
    effects::Postprocess postprocess;
    effects::CMAA2 cmaa2;
+   effects::SSAO ssao;
    effects::Profiler profiler;
 
 private:
@@ -110,5 +109,4 @@ struct convert<sp::effects::Effects_control_config> {
       return true;
    }
 };
-
 }

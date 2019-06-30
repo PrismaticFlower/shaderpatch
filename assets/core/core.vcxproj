@@ -153,6 +153,7 @@
   <ItemGroup>
     <None Include="definitions\patch\adaptive_oit_resolve.json" />
     <None Include="definitions\patch\cmaa2.json" />
+    <None Include="definitions\patch\depth_msaa_resolve.json" />
     <None Include="definitions\patch\late_backbuffer_resolve.json" />
     <None Include="definitions\patch\normal_ext-tessellated.json" />
     <None Include="definitions\patch\postprocess_bloom.json" />
@@ -433,6 +434,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\adaptive_oit_resolve.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\depth_msaa_resolve.fx">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

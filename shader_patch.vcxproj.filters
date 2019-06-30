@@ -16,6 +16,9 @@
     <Filter Include="src\core">
       <UniqueIdentifier>{5dbc8ed0-a3c6-4114-8b1e-5967ed35fd7c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\effects\assao">
+      <UniqueIdentifier>{7a772774-5ad0-490b-9594-aa633ef4ae12}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -163,6 +166,15 @@
       <Filter>src\effects</Filter>
     </ClCompile>
     <ClCompile Include="src\core\oit_provider.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\effects\assao\ASSAODX11.cpp">
+      <Filter>src\effects\assao</Filter>
+    </ClCompile>
+    <ClCompile Include="src\effects\ssao.cpp">
+      <Filter>src\effects</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\depth_msaa_resolver.cpp">
       <Filter>src\core</Filter>
     </ClCompile>
   </ItemGroup>
@@ -386,8 +398,22 @@
     <ClInclude Include="src\core\oit_provider.hpp">
       <Filter>src\core</Filter>
     </ClInclude>
+    <ClInclude Include="src\effects\assao\ASSAO.h">
+      <Filter>src\effects\assao</Filter>
+    </ClInclude>
+    <ClInclude Include="src\effects\ssao.hpp">
+      <Filter>src\effects</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\depth_msaa_resolver.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="src\effects\assao\ASSAO.hlsl">
+      <Filter>src\effects\assao</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>
