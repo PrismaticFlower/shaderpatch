@@ -80,8 +80,8 @@ float3 sample_normal_map_gloss(Texture2D<float4> tex, Texture2D<float2> detail_t
 float2 parallax_occlusion_map(Texture2D<float> height_map, const float height_scale, const float2 texcoords,
                               const float3 unorm_viewTS, const float3 normalWS, const float3 viewWS)
 {
-   const float fade_start = 20.0;
-   const float fade_length = 32.0;
+   const float fade_start = 32.0;
+   const float fade_length = 128.0;
    const float max_steps = 64.0;
    const float min_steps = 16.0;
    const float mip_level = height_map.CalculateLevelOfDetail(linear_wrap_sampler, texcoords);
