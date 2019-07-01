@@ -22,7 +22,7 @@ using namespace std::literals;
 
 namespace {
 
-auto select_adapter_by_preference(IDXGIFactory7& factory,
+auto select_adapter_by_preference(IDXGIFactory6& factory,
                                   const DXGI_GPU_PREFERENCE preference) noexcept
    -> Com_ptr<IDXGIAdapter4>
 {
@@ -38,7 +38,7 @@ auto select_adapter_by_preference(IDXGIFactory7& factory,
    return adapater;
 }
 
-auto select_adapter_by_feature_level(IDXGIFactory7& factory) noexcept
+auto select_adapter_by_feature_level(IDXGIFactory6& factory) noexcept
    -> Com_ptr<IDXGIAdapter4>
 {
    using Adapter_pair = std::pair<D3D_FEATURE_LEVEL, Com_ptr<IDXGIAdapter4>>;
@@ -88,7 +88,7 @@ auto select_adapter_by_feature_level(IDXGIFactory7& factory) noexcept
    return adapaters.top().second;
 }
 
-auto select_adapter_by_memory(IDXGIFactory7& factory) noexcept -> Com_ptr<IDXGIAdapter4>
+auto select_adapter_by_memory(IDXGIFactory6& factory) noexcept -> Com_ptr<IDXGIAdapter4>
 {
    const auto comparator = [](const Com_ptr<IDXGIAdapter4>& left,
                               const Com_ptr<IDXGIAdapter4>& right) {
@@ -128,7 +128,7 @@ auto select_adapter_by_memory(IDXGIFactory7& factory) noexcept -> Com_ptr<IDXGIA
    return adapaters.top();
 }
 
-auto get_adapater(IDXGIFactory7& factory) noexcept -> Com_ptr<IDXGIAdapter4>
+auto get_adapater(IDXGIFactory6& factory) noexcept -> Com_ptr<IDXGIAdapter4>
 {
    switch (user_config.graphics.gpu_selection_method) {
    case GPU_selection_method::highest_performance:
@@ -430,9 +430,9 @@ HMONITOR Creator::GetAdapterMonitor(UINT) noexcept
 
 void Creator::create_adapter(const UINT dxgi_create_flags) noexcept
 {
-   Com_ptr<IDXGIFactory7> factory;
+   Com_ptr<IDXGIFactory6> factory;
 
-   if (FAILED(CreateDXGIFactory2(dxgi_create_flags, __uuidof(IDXGIFactory7),
+   if (FAILED(CreateDXGIFactory2(dxgi_create_flags, __uuidof(IDXGIFactory6),
                                  factory.void_clear_and_assign()))) {
       log_and_terminate(
          "Failed to create DXGI 1.6 factory! This likely means you're not "
