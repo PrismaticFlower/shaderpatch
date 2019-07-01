@@ -4,7 +4,7 @@
 #include "constants_list.hlsl"
 #include "pixel_sampler_states.hlsl"
 
-TextureCube<float3> cube_projected_texture : register(t127);
+TextureCube<float3> cube_projected_texture : register(t4);
 
 float3x3 generate_tangent_to_world(const float3 normalWS, const float3 positionWS, const float2 texcoords)
 {

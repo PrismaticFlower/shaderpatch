@@ -19,7 +19,7 @@ using namespace std::literals;
 
 namespace sp::core {
 
-constexpr auto projtex_cube_slot = 127;
+constexpr auto projtex_cube_slot = 4;
 constexpr auto shadow_texture_format = DXGI_FORMAT_A8_UNORM;
 constexpr auto screenshots_folder = L"ScreenShots/";
 
@@ -931,9 +931,8 @@ void Shader_patch::set_projtex_type(const Projtex_type type) noexcept
 
 void Shader_patch::set_projtex_cube(const Game_texture& texture) noexcept
 {
-   auto* const srv = texture.srv.get();
-
-   _device_context->PSSetShaderResources(projtex_cube_slot, 1, &srv);
+   _game_textures[projtex_cube_slot] = texture;
+   _ps_textures_dirty = true;
 }
 
 void Shader_patch::set_patch_material(std::shared_ptr<Patch_material> material) noexcept
