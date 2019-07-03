@@ -46,6 +46,9 @@ void User_config::show_imgui() noexcept
 
       ImGui::Checkbox("Enable Order-Independent Transparency", &graphics.enable_oit);
 
+      ImGui::Checkbox("Enable 16-Bit Color Channel Rendering",
+                      &graphics.enable_16bit_color_rendering);
+
       ImGui::Checkbox("Enable Tessellation", &graphics.enable_tessellation);
 
       ImGui::Checkbox("Enable User Effects Config", &graphics.enable_user_effects_config);
@@ -106,6 +109,9 @@ void User_config::parse_file(const std::string& path)
 
    graphics.enable_oit =
       config["Graphics"s]["Enable Order-Independent Transparency"s].as<bool>();
+
+   graphics.enable_16bit_color_rendering =
+      config["Graphics"s]["Enable 16-Bit Color Channel Rendering"s].as<bool>();
 
    graphics.enable_tessellation =
       config["Graphics"s]["Enable Tessellation"s].as<bool>();

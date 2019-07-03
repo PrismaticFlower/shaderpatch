@@ -47,13 +47,6 @@ public:
       return _config;
    }
 
-   auto rt_format() const noexcept -> DXGI_FORMAT
-   {
-      if (_config.hdr_rendering) return DXGI_FORMAT_R16G16B16A16_FLOAT;
-
-      return DXGI_FORMAT_R8G8B8A8_UNORM;
-   }
-
    void show_imgui(HWND game_window = nullptr) noexcept;
 
    void read_config(YAML::Node config);

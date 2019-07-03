@@ -190,6 +190,7 @@
     <ClInclude Include="include\munge_helpers.hpp" />
     <ClInclude Include="include\patch_material_io.hpp" />
     <ClInclude Include="include\patch_texture_io.hpp" />
+    <ClInclude Include="include\random.hpp" />
     <ClInclude Include="include\req_file_helpers.hpp" />
     <ClInclude Include="include\shader_flags.hpp" />
     <ClInclude Include="include\shader_input_type.hpp" />

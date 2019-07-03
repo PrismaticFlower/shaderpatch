@@ -27,6 +27,12 @@ Graphics:
 
    # Anisotropic Filtering level for textures, can be "off", "x2", "x4", "x8" or "x16".
    Anisotropic Filtering: x16
+   
+   # Controls whether R1G16B16A16 rendertargets will be used or not. Due to the way SWBFII is drawn using them can cut down significantly
+   # on banding. Additionally when they are enabled dithering will be applied when they are copied into R88B8A8 textures for display to further reduce banding.
+   #
+   # If Effects are enabled and HDR rendering is enabled by a map then this setting has no effect.
+   Enable 16-Bit Color Channel Rendering: yes
 
    # Enables the use of an Order-Independent Transparency approximation. It should go without saying that this increases the cost of rendering.
    # Requires a GPU with support for Rasterizer Ordered Views and typed Unordered Access View loads. Known to be buggy on NVIDIA GPUs.

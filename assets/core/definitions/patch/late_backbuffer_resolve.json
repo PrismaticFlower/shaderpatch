@@ -8,7 +8,11 @@
 
       "vertex_state": {
         "input_layout": "$auto"
-      }
+      },
+
+      "defines": [
+        [ "SAMPLE_COUNT", "1" ]
+      ]
     },
 
     "main_ps": {
@@ -16,15 +20,53 @@
 
       "pixel_state": {
         "lighting": false
-      }
+      },
+
+      "defines": [
+        [ "SAMPLE_COUNT", "1" ]
+      ]
     },
 
-    "main_ms_ps": {
+    "main_x2_ps": {
       "stage": "pixel",
+
+      "function_name": "main_ms_ps",
 
       "pixel_state": {
         "lighting": false
-      }
+      },
+
+      "defines": [
+        [ "SAMPLE_COUNT", "2" ]
+      ]
+    },
+
+    "main_x4_ps": {
+      "stage": "pixel",
+
+      "function_name": "main_ms_ps",
+
+      "pixel_state": {
+        "lighting": false
+      },
+
+      "defines": [
+        [ "SAMPLE_COUNT", "4" ]
+      ]
+    },
+
+    "main_x8_ps": {
+      "stage": "pixel",
+
+      "function_name": "main_ms_ps",
+
+      "pixel_state": {
+        "lighting": false
+      },
+
+      "defines": [
+        [ "SAMPLE_COUNT", "8" ]
+      ]
     },
 
     "main_linear_ps": {
@@ -32,15 +74,53 @@
 
       "pixel_state": {
         "lighting": false
-      }
+      },
+
+      "defines": [
+        [ "SAMPLE_COUNT", "1" ]
+      ]
     },
 
-    "main_linear_ms_ps": {
+    "main_linear_x2_ps": {
       "stage": "pixel",
+
+      "function_name": "main_linear_ms_ps",
 
       "pixel_state": {
         "lighting": false
-      }
+      },
+
+      "defines": [
+        [ "SAMPLE_COUNT", "2" ]
+      ]
+    },
+
+    "main_linear_x4_ps": {
+      "stage": "pixel",
+
+      "function_name": "main_linear_ms_ps",
+
+      "pixel_state": {
+        "lighting": false
+      },
+
+      "defines": [
+        [ "SAMPLE_COUNT", "4" ]
+      ]
+    },
+
+    "main_linear_x8_ps": {
+      "stage": "pixel",
+
+      "function_name": "main_linear_ms_ps",
+
+      "pixel_state": {
+        "lighting": false
+      },
+
+      "defines": [
+        [ "SAMPLE_COUNT", "8" ]
+      ]
     }
   },
 

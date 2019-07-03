@@ -222,8 +222,6 @@ public:
                        gsl::span<std::byte> data) noexcept -> Query_result;
 
 private:
-   auto current_rt_format() const noexcept -> DXGI_FORMAT;
-
    auto current_depthstencil() const noexcept -> ID3D11DepthStencilView*;
 
    void bind_static_resources() noexcept;
@@ -242,9 +240,7 @@ private:
 
    void update_effects() noexcept;
 
-   void update_rendertarget_formats() noexcept;
-
-   void update_aa_rendertargets() noexcept;
+   void update_rendertargets() noexcept;
 
    void update_samplers() noexcept;
 
@@ -385,7 +381,7 @@ private:
    OIT_provider _oit_provider{_device, _shader_database->groups};
 
    const Image_stretcher _image_stretcher{*_device, *_shader_database};
-   const Late_backbuffer_resolver _late_backbuffer_resolver{*_shader_database};
+   Late_backbuffer_resolver _late_backbuffer_resolver{*_device, *_shader_database};
    const Depth_msaa_resolver _depth_msaa_resolver{*_device, *_shader_database};
    Sampler_states _sampler_states{*_device};
    Texture_database _texture_database{
@@ -401,7 +397,7 @@ private:
    const HWND _window;
 
    bool _effects_active = false;
-   DXGI_FORMAT _current_effects_rt_format = DXGI_FORMAT_UNKNOWN;
+   DXGI_FORMAT _current_rt_format = Swapchain::format;
    int _current_effects_id = 0;
 
    UINT _rt_sample_count = 1;

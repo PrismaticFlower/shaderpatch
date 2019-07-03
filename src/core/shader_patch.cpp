@@ -97,7 +97,7 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
      _refraction_rt{*_device, Swapchain::format, width / 2, height / 2}
 {
    bind_static_resources();
-   update_aa_rendertargets();
+   update_rendertargets();
 
    _cb_scene.vertex_color_srgb = false;
    _cb_draw_ps.additive_blending = false;
@@ -151,7 +151,7 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
    _game_depthstencil_state = nullptr;
    _aa_method = Antialiasing_method::none;
 
-   update_aa_rendertargets();
+   update_rendertargets();
    restore_all_game_state();
 }
 
@@ -172,7 +172,7 @@ void Shader_patch::present() noexcept
 
    update_frame_state();
    update_effects();
-   update_aa_rendertargets();
+   update_rendertargets();
    update_samplers();
 
    if (_patch_backbuffer) _game_rendertargets[0] = _patch_backbuffer;
@@ -231,7 +231,7 @@ auto Shader_patch::create_game_rendertarget(const UINT width, const UINT height)
    -> Game_rendertarget_id
 {
    const int index = _game_rendertargets.size();
-   _game_rendertargets.emplace_back(*_device, current_rt_format(), width, height);
+   _game_rendertargets.emplace_back(*_device, _current_rt_format, width, height);
 
    return Game_rendertarget_id{index};
 }
@@ -1068,13 +1068,6 @@ auto Shader_patch::get_query_data(ID3D11Query& query, const bool flush,
    return Query_result::error;
 }
 
-auto Shader_patch::current_rt_format() const noexcept -> DXGI_FORMAT
-{
-   if (_effects.enabled()) return _effects.rt_format();
-
-   return Swapchain::format;
-}
-
 auto Shader_patch::current_depthstencil() const noexcept -> ID3D11DepthStencilView*
 {
    if (_current_depthstencil_id == Game_depthstencil::nearscene)
@@ -1518,79 +1511,42 @@ void Shader_patch::update_imgui() noexcept
 void Shader_patch::update_effects() noexcept
 {
    if (std::exchange(_effects_active, _effects.enabled()) != _effects.enabled()) {
-      _om_targets_dirty = true;
       _use_interface_depthstencil = false;
 
       if (_effects.enabled()) {
-         _patch_backbuffer = {*_device, _effects.rt_format(), _swapchain.width(),
-                              _swapchain.height(), _rt_sample_count};
          _interface_depthstencil = {*_device, _swapchain.width(),
                                     _swapchain.height(), 1};
       }
       else {
-         _rendertarget_allocator.reset();
-         _patch_backbuffer =
-            (_rt_sample_count > 1)
-               ? Game_rendertarget{*_device, Swapchain::format, _swapchain.width(),
-                                   _swapchain.height(), _rt_sample_count}
-               : Game_rendertarget{};
          _interface_depthstencil = {};
-         _current_effects_rt_format = DXGI_FORMAT_UNKNOWN;
-
-         for (auto i = 1; i < _game_rendertargets.size(); ++i) {
-            _game_rendertargets[i] =
-               Game_rendertarget{*_device, Swapchain::format,
-                                 _game_rendertargets[i].width,
-                                 _game_rendertargets[i].height};
-         }
       }
-
-      // Force AA targets to be updated.
-      _aa_method = Antialiasing_method::none;
-      update_aa_rendertargets();
    }
 
-   update_rendertarget_formats();
+   update_rendertargets();
    set_linear_rendering(_effects.enabled() && _effects.config().hdr_rendering);
 }
 
-void Shader_patch::update_rendertarget_formats() noexcept
+void Shader_patch::update_rendertargets() noexcept
 {
-   if (!_effects.enabled()) return;
-   if (std::exchange(_current_effects_rt_format, _effects.rt_format()) ==
-       _effects.rt_format())
+   const auto new_format = [&] {
+      if (_effects_active && _effects.config().hdr_rendering)
+         return DXGI_FORMAT_R16G16B16A16_FLOAT;
+      else if (user_config.graphics.enable_16bit_color_rendering)
+         return DXGI_FORMAT_R16G16B16A16_UNORM;
+      else
+         return Swapchain::format;
+   }();
+
+   if ((std::exchange(_current_rt_format, new_format) == new_format) &&
+       (std::exchange(_aa_method, user_config.graphics.antialiasing_method) ==
+        user_config.graphics.antialiasing_method))
       return;
 
-   _om_targets_dirty = true;
-   _rendertarget_allocator.reset();
-
-   if (_patch_backbuffer.format != _effects.rt_format()) {
-      _patch_backbuffer =
-         Game_rendertarget{*_device, _effects.rt_format(), _swapchain.width(),
-                           _swapchain.height(), _rt_sample_count};
-   }
-
-   for (auto i = 1; i < _game_rendertargets.size(); ++i) {
-      if (!_game_rendertargets[i] || _game_rendertargets[i].type != Game_rt_type::untyped)
-         continue;
-
-      _game_rendertargets[i] = Game_rendertarget{*_device, _effects.rt_format(),
-                                                 _game_rendertargets[i].width,
-                                                 _game_rendertargets[i].height};
-   }
-}
-
-void Shader_patch::update_aa_rendertargets() noexcept
-{
    const auto new_sample_count =
       to_sample_count(user_config.graphics.antialiasing_method);
 
    _cb_draw_ps.rcp_sample_count = 1.0f / new_sample_count;
    _cb_draw_ps_dirty = true;
-
-   if (std::exchange(_aa_method, user_config.graphics.antialiasing_method) ==
-       user_config.graphics.antialiasing_method)
-      return;
 
    _rt_sample_count = to_sample_count(user_config.graphics.antialiasing_method);
    _om_targets_dirty = true;
@@ -1603,30 +1559,20 @@ void Shader_patch::update_aa_rendertargets() noexcept
 
    if (_rt_sample_count > 1) {
       _patch_backbuffer =
-         Game_rendertarget{*_device,
-                           _effects_active ? _effects.rt_format() : Swapchain::format,
-                           _swapchain.width(), _swapchain.height(), _rt_sample_count};
+         Game_rendertarget{*_device, _current_rt_format, _swapchain.width(),
+                           _swapchain.height(), _rt_sample_count};
       _shadow_msaa_rt = {*_device,           shadow_texture_format,
                          _swapchain.width(), _swapchain.height(),
                          _rt_sample_count,   Game_rt_type::shadow};
    }
-   else if (_effects_active) {
-      if (_aa_method == Antialiasing_method::cmaa2 &&
-          _effects.rt_format() == DXGI_FORMAT_R8G8B8A8_UNORM) {
-         _patch_backbuffer = Game_rendertarget{*_device,
-                                               DXGI_FORMAT_R8G8B8A8_TYPELESS,
-                                               DXGI_FORMAT_R8G8B8A8_UNORM,
-                                               _swapchain.width(),
-                                               _swapchain.height(),
-                                               D3D11_BIND_UNORDERED_ACCESS};
-      }
-      else {
-         _patch_backbuffer =
-            Game_rendertarget{*_device, _effects.rt_format(),
-                              _swapchain.width(), _swapchain.height(), 1};
-      }
+   else if (_effects_active || user_config.graphics.enable_16bit_color_rendering) {
+      _patch_backbuffer =
+         Game_rendertarget{*_device, _current_rt_format, _swapchain.width(),
+                           _swapchain.height(), 1};
+   }
 
-      if (_aa_method == Antialiasing_method::cmaa2) {
+   if (_aa_method == Antialiasing_method::cmaa2) {
+      if (user_config.graphics.enable_16bit_color_rendering || _effects_active) {
          _cmaa2_scratch_texture = Game_rendertarget{*_device,
                                                     DXGI_FORMAT_R8G8B8A8_TYPELESS,
                                                     DXGI_FORMAT_R8G8B8A8_UNORM,
@@ -1634,18 +1580,29 @@ void Shader_patch::update_aa_rendertargets() noexcept
                                                     _swapchain.height(),
                                                     D3D11_BIND_UNORDERED_ACCESS};
       }
-   }
-   else if (_aa_method == Antialiasing_method::cmaa2) {
-      _patch_backbuffer = Game_rendertarget{*_device,
-                                            DXGI_FORMAT_R8G8B8A8_TYPELESS,
-                                            DXGI_FORMAT_R8G8B8A8_UNORM,
-                                            _swapchain.width(),
-                                            _swapchain.height(),
-                                            D3D11_BIND_UNORDERED_ACCESS};
+      else {
+         _patch_backbuffer = Game_rendertarget{*_device,
+                                               DXGI_FORMAT_R8G8B8A8_TYPELESS,
+                                               DXGI_FORMAT_R8G8B8A8_UNORM,
+                                               _swapchain.width(),
+                                               _swapchain.height(),
+                                               D3D11_BIND_UNORDERED_ACCESS};
+      }
    }
 
    _game_rendertargets[0] =
       _patch_backbuffer ? _patch_backbuffer : _swapchain.game_rendertarget();
+
+   _rendertarget_allocator.reset();
+
+   for (auto i = 1; i < _game_rendertargets.size(); ++i) {
+      if (!_game_rendertargets[i] || _game_rendertargets[i].type != Game_rt_type::untyped)
+         continue;
+
+      _game_rendertargets[i] = Game_rendertarget{*_device, _current_rt_format,
+                                                 _game_rendertargets[i].width,
+                                                 _game_rendertargets[i].height};
+   }
 }
 
 void Shader_patch::update_samplers() noexcept
@@ -1733,9 +1690,20 @@ void Shader_patch::patch_backbuffer_resolve() noexcept
                                        _game_rendertargets[0].texture.get());
       }
    }
+   else if (user_config.graphics.antialiasing_method == Antialiasing_method::cmaa2) {
+      _late_backbuffer_resolver.resolve(*_device_context, _texture_database,
+                                        _game_rendertargets[0],
+                                        *_cmaa2_scratch_texture.rtv);
+
+      _effects.cmaa2.apply(*_device_context, _effects.profiler,
+                           *_cmaa2_scratch_texture.texture);
+
+      _device_context->CopyResource(_swapchain.texture(),
+                                    _cmaa2_scratch_texture.texture.get());
+   }
    else {
-      _late_backbuffer_resolver.resolve(*_device_context,
-                                        _game_rendertargets[0], _swapchain);
+      _late_backbuffer_resolver.resolve(*_device_context, _texture_database,
+                                        _game_rendertargets[0], *_swapchain.rtv());
    }
 
    _game_rendertargets[0] = _swapchain.game_rendertarget();

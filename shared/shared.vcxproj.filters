@@ -102,6 +102,9 @@
     <ClInclude Include="include\shader_patch_version.hpp">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\random.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\patch_texture_io.cpp">
