@@ -5,9 +5,9 @@ Display:
    # Precentage of the sceen the game's window will take up. Value from 10 to 100.
    Screen Percent: 100
 
-   # Allow tearing when displaying frames. This allows lower latency and is a prerequisite for 
-   # variable refresh rate technologies to work with Shader Patch.
-   Allow Tearing: yes
+   # Allow tearing when displaying frames. This can allow lower latency and is also required for 
+   # variable refresh rate technologies to work.
+   Allow Tearing: no
    
    # Whether to centre the window or not. If `ScreenPercent` is 100 there will be 
    # no difference between a centred and uncentred window.
