@@ -21,6 +21,7 @@ namespace sp::core {
 
 constexpr auto projtex_cube_slot = 4;
 constexpr auto shadow_texture_format = DXGI_FORMAT_A8_UNORM;
+constexpr auto flares_texture_format = DXGI_FORMAT_A8_UNORM;
 constexpr auto screenshots_folder = L"ScreenShots/";
 
 namespace {
@@ -1177,6 +1178,24 @@ void Shader_patch::game_rendertype_changed() noexcept
       _game_textures[5] = {_refraction_rt.srv, _refraction_rt.srv};
 
       _ps_textures_dirty = true;
+   }
+   else if (_shader_rendertype == Rendertype::flare ||
+            _shader_rendertype == Rendertype::sample) {
+      auto* const srv = _game_textures[0].srv.get();
+      for (auto& rt : _game_rendertargets) {
+         if (rt.srv != srv) continue;
+
+         if (rt.type != Game_rt_type::flares || rt.format != flares_texture_format) {
+            rt = Game_rendertarget{*_device, flares_texture_format,
+                                   rt.width, rt.height,
+                                   1,        Game_rt_type::flares};
+
+            _game_textures[0] = {rt.srv, rt.srv};
+            _om_targets_dirty = true;
+         }
+
+         break;
+      }
    }
    else if (_shader_rendertype == Rendertype::hdr && !_effects_active &&
             _game_shader->shader_name == "glow threshold"sv) {
