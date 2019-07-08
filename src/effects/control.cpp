@@ -526,7 +526,7 @@ SSAO_params show_ssao_imgui(SSAO_params params) noexcept
 
    ImGui::DragFloat("Radius", &params.radius, 0.1f, 0.1f, 2.0f);
    ImGui::DragFloat("Shadow Multiplier", &params.shadow_multiplier, 0.05f, 0.0f, 5.0f);
-   ImGui::DragFloat("Shadow Poweer", &params.shadow_power, 0.05f, 0.0f, 5.0f);
+   ImGui::DragFloat("Shadow Power", &params.shadow_power, 0.05f, 0.0f, 5.0f);
    ImGui::DragFloat("Detail Shadow Strength", &params.detail_shadow_strength,
                     0.05f, 0.0f, 5.0f);
    ImGui::DragInt("Blur Amount", &params.blur_pass_count, 0.25f, 0, 6);
