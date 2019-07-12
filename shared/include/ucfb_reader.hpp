@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <new>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <type_traits>
@@ -76,7 +77,7 @@ public:
    //!
    //! \param unaligned If the read is unaligned or not.
    //!
-   //! \return A const reference to the value.
+   //! \return The read value.
    //!
    //! \exception std::runtime_error Thrown when reading the value would go past the end
    //! of the chunk.
@@ -102,12 +103,12 @@ public:
    //!
    //! \tparam Type The type of the value to read. The type must be standard layout.
    //!
-   //! \return A const reference to the value.
+   //! \return The read value.
    //!
    //! \exception std::runtime_error Thrown when reading the value would go past the end
    //! of the chunk.
    template<typename Type>
-   const Type& read_unaligned()
+   auto read_unaligned() -> Type
    {
       return read<Type>(true);
    }
@@ -156,8 +157,8 @@ public:
    auto read_array(const typename gsl::span<const Type>::index_type size,
                    const bool unaligned = false) -> gsl::span<const Type>
    {
-      static_assert(std::is_trivially_copyable_v<Type>,
-                    "Type must be trivially copyable.");
+      static_assert(std::is_standard_layout_v<Type>,
+                    "Type must be standard layout.");
       static_assert(!std::is_reference_v<Type>, "Type can not be a reference.");
       static_assert(!std::is_pointer_v<Type>, "Type can not be a pointer.");
 
@@ -550,4 +551,27 @@ private:
 
    Reader_strict(Reader ucfb_reader, Unchecked_tag) : Reader{ucfb_reader} {}
 };
+
+//! \brief Read children from a chunk until one with the specified magic number is found.
+//!
+//! \tparam mn The magic number to search for.
+//!
+//! \param reader A reference to the Reader to search through.
+//!
+//! \return A Reader_strict of the first child found with the specified magic number.
+//!
+//! \exception std::runtime_error Thrown when a child with  can not be found.
+template<Magic_number mn>
+inline auto skip_to_child(Reader& reader) -> Reader_strict<mn>
+{
+   while (reader) {
+      auto child = reader.read_child();
+
+      if (child.magic_number() == mn) return Reader_strict<mn>{child};
+   }
+
+   throw std::runtime_error{
+      "couldn't find child with expected magic number in ucfb reader"};
+}
+
 }

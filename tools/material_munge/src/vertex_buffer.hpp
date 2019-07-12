@@ -4,7 +4,9 @@
 #include "ucfb_editor.hpp"
 #include "ucfb_reader.hpp"
 
+#include <array>
 #include <cstddef>
+#include <limits>
 #include <memory>
 
 #include <glm/glm.hpp>
@@ -56,4 +58,51 @@ void output_vertex_buffer(const Vertex_buffer& vertex_buffer,
                           ucfb::Editor_data_writer& writer, const bool compressed,
                           const std::array<glm::vec3, 2> vert_box);
 
+class Vertex_position_decompress {
+public:
+   Vertex_position_decompress(const std::array<glm::vec3, 2> vert_box) noexcept
+   {
+      low = vert_box[0];
+      mul = (vert_box[1] - vert_box[0]);
+   }
+
+   glm::vec3 operator()(const glm::i16vec4 compressed) const noexcept
+   {
+      const auto c = static_cast<glm::vec3>(compressed);
+      constexpr float i16min = std::numeric_limits<glm::int16>::min();
+      constexpr float i16max = std::numeric_limits<glm::int16>::max();
+
+      return low + (c - i16min) * mul / (i16max - i16min);
+   }
+
+private:
+   glm::vec3 low;
+   glm::vec3 mul;
+};
+
+class Vertex_position_compress {
+public:
+   Vertex_position_compress(const std::array<glm::vec3, 2> vert_box) noexcept
+   {
+      min = vert_box[0];
+      max = vert_box[1];
+      div = (vert_box[1] - vert_box[0]);
+   }
+
+   glm::i16vec4 operator()(const glm::vec3 pos) const noexcept
+   {
+      constexpr float i16min = std::numeric_limits<glm::int16>::min();
+      constexpr float i16max = std::numeric_limits<glm::int16>::max();
+
+      const auto clamped = glm::clamp(pos, min, max);
+      const auto compressed = i16min + (pos - min) * (i16max - i16min) / div;
+
+      return {static_cast<glm::i16vec3>(compressed), 0};
+   }
+
+private:
+   glm::vec3 min;
+   glm::vec3 max;
+   glm::vec3 div;
+};
 }

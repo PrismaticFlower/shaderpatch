@@ -160,6 +160,7 @@
     <ClCompile Include="src\describe_material.cpp" />
     <ClCompile Include="src\generate_tangents.cpp" />
     <ClCompile Include="src\helpers.cpp" />
+    <ClCompile Include="src\index_buffer.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\mikktspace\mikktspace.c">
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
@@ -169,7 +170,11 @@
     </ClCompile>
     <ClCompile Include="src\model_patcher.cpp" />
     <ClCompile Include="src\munge_materials.cpp" />
+    <ClCompile Include="src\munge_terrain_materials.cpp" />
     <ClCompile Include="src\optimize_mesh.cpp" />
+    <ClCompile Include="src\terrain_modelify.cpp" />
+    <ClCompile Include="src\terrain_model_segment.cpp" />
+    <ClCompile Include="src\terrain_vertex_buffer.cpp" />
     <ClCompile Include="src\vertex_buffer.cpp" />
     <ClCompile Include="src\weld_vertex_list.cpp" />
   </ItemGroup>
@@ -177,11 +182,18 @@
     <ClInclude Include="src\generate_tangents.hpp" />
     <ClInclude Include="src\helpers.hpp" />
     <ClInclude Include="src\describe_material.hpp" />
+    <ClInclude Include="src\index_buffer.hpp" />
     <ClInclude Include="src\material_options.hpp" />
     <ClInclude Include="src\mikktspace\mikktspace.h" />
     <ClInclude Include="src\model_patcher.hpp" />
     <ClInclude Include="src\munge_materials.hpp" />
+    <ClInclude Include="src\munge_terrain_materials.hpp" />
     <ClInclude Include="src\optimize_mesh.hpp" />
+    <ClInclude Include="src\terrain_constants.hpp" />
+    <ClInclude Include="src\terrain_modelify.hpp" />
+    <ClInclude Include="src\terrain_model_segment.hpp" />
+    <ClInclude Include="src\terrain_texture_transform.hpp" />
+    <ClInclude Include="src\terrain_vertex_buffer.hpp" />
     <ClInclude Include="src\vertex_buffer.hpp" />
     <ClInclude Include="src\weld_vertex_list.hpp" />
   </ItemGroup>

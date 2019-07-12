@@ -86,6 +86,67 @@ constexpr SMikkTSpaceInterface mikktspace_interface{
    },
 
    nullptr};
+
+struct Terrain_userdata {
+   Terrain_triangle_list& tris;
+   const std::array<Terrain_texture_transform, 16>& tex_transforms;
+};
+
+constexpr SMikkTSpaceInterface mikktspace_terrain_interface{
+   // m_getNumFaces
+   [](const SMikkTSpaceContext* context) -> int {
+      return static_cast<int>(
+         static_cast<Terrain_userdata*>(context->m_pUserData)->tris.size());
+   },
+
+   // m_getNumVerticesOfFace
+   [](const SMikkTSpaceContext*, const int) -> int { return 3; },
+
+   // m_getPosition
+   [](const SMikkTSpaceContext* context, float pos_out[], const int face, const int vert) {
+      auto& tris = static_cast<Terrain_userdata*>(context->m_pUserData)->tris;
+
+      std::memcpy(pos_out, &tris[face][vert].position, sizeof(glm::vec3));
+   },
+
+   // m_getNormal
+   [](const SMikkTSpaceContext* context, float norm_out[], const int face, const int vert) {
+      auto& tris = static_cast<Terrain_userdata*>(context->m_pUserData)->tris;
+
+      std::memcpy(norm_out, &tris[face][vert].normal, sizeof(glm::vec3));
+   },
+
+   // m_getTexCoord
+   [](const SMikkTSpaceContext* context, float texcoord_out[], const int face,
+      const int vert) {
+      auto& tris = static_cast<Terrain_userdata*>(context->m_pUserData)->tris;
+      auto& vertex = tris[face][vert];
+      const auto& transforms =
+         static_cast<Terrain_userdata*>(context->m_pUserData)->tex_transforms;
+
+      const std::array texcoords{transforms.at(vertex.texture_indices[0])(vertex.position),
+                                 transforms.at(vertex.texture_indices[1])(vertex.position),
+                                 transforms.at(vertex.texture_indices[2])(vertex.position)};
+
+      const auto blended_texcoords =
+         (texcoords[0] * (1.0f - vertex.blend_weights[1] - vertex.blend_weights[0])) +
+         (texcoords[1] * vertex.blend_weights[0]) +
+         (texcoords[2] * vertex.blend_weights[1]);
+
+      std::memcpy(texcoord_out, &blended_texcoords, sizeof(glm::vec2));
+   },
+
+   // m_setTSpaceBasic
+   [](const SMikkTSpaceContext* context, const float tangent[],
+      const float sign, const int face, const int vert) {
+      auto& tris = static_cast<Terrain_userdata*>(context->m_pUserData)->tris;
+      auto& vertex = tris[face][vert];
+
+      std::memcpy(&vertex.tangent, tangent, sizeof(glm::vec3));
+      vertex.bitangent_sign = sign;
+   },
+
+   nullptr};
 }
 
 auto generate_tangents(const std::vector<std::array<std::uint16_t, 3>>& index_buffer,
@@ -102,6 +163,20 @@ auto generate_tangents(const std::vector<std::array<std::uint16_t, 3>>& index_bu
    genTangSpaceDefault(&context);
 
    return weld_vertex_list(results_vbuf);
+}
+
+auto generate_tangents(Terrain_triangle_list triangles,
+                       const std::array<Terrain_texture_transform, 16>& texture_transforms) noexcept
+   -> Terrain_triangle_list
+{
+   Terrain_userdata userdata{triangles, texture_transforms};
+
+   auto interface = mikktspace_terrain_interface;
+   const SMikkTSpaceContext context{&interface, &userdata};
+
+   genTangSpaceDefault(&context);
+
+   return triangles;
 }
 
 }

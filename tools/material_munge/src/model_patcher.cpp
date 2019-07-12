@@ -2,6 +2,7 @@
 #include "model_patcher.hpp"
 #include "compose_exception.hpp"
 #include "generate_tangents.hpp"
+#include "index_buffer.hpp"
 #include "material_flags.hpp"
 #include "memory_mapped_file.hpp"
 #include "optimize_mesh.hpp"
@@ -22,12 +23,6 @@ using namespace std::literals;
 namespace sp {
 
 namespace {
-
-bool is_degenerate_triangle(const std::array<std::uint16_t, 3> triangle) noexcept
-{
-   return triangle[0] == triangle[1] || triangle[0] == triangle[2] ||
-          triangle[1] == triangle[2];
-}
 
 void clean_chunk(ucfb::Editor_parent_chunk& chunk) noexcept
 {
@@ -50,31 +45,6 @@ void clean_chunks(ucfb::Editor_parent_chunk& root) noexcept
 
       clean_chunk(std::get<ucfb::Editor_parent_chunk>(chunk.second));
    }
-}
-
-auto read_ibuf(ucfb::Reader_strict<"IBUF"_mn> ibuf)
-   -> std::vector<std::array<std::uint16_t, 3>>
-{
-   const auto index_count = ibuf.read<std::uint32_t>();
-
-   if (index_count < 3) return {};
-
-   std::vector<std::array<std::uint16_t, 3>> index_buffer;
-   index_buffer.reserve(index_count);
-
-   auto strips = ibuf.read_array<std::uint16_t>(index_count);
-
-   for (auto i = 0; i < (index_count - 2); ++i) {
-      const bool even = (i & 1) == 0;
-      const auto tri = even ? std::array{strips[i], strips[i + 1], strips[i + 2]}
-                            : std::array{strips[i + 2], strips[i + 1], strips[i]};
-
-      if (is_degenerate_triangle(tri)) continue;
-
-      index_buffer.emplace_back(tri);
-   }
-
-   return index_buffer;
 }
 
 void clean_vbufs(ucfb::Editor_parent_chunk& segm) noexcept
@@ -114,8 +84,8 @@ void edit_ibuf_vbufs(ucfb::Editor_parent_chunk& segm, const Material_options opt
 
    auto vbuf = ucfb::find(segm, "VBUF"_mn);
 
-   auto index_buffer =
-      read_ibuf(ucfb::make_strict_reader<"IBUF"_mn>(ucfb::find(segm, "IBUF"_mn)));
+   auto index_buffer = create_index_buffer(
+      ucfb::make_strict_reader<"IBUF"_mn>(ucfb::find(segm, "IBUF"_mn)));
    auto vertex_buffer =
       create_vertex_buffer(ucfb::make_strict_reader<"VBUF"_mn>(vbuf), vert_box);
 
@@ -316,7 +286,6 @@ void edit_modl_chunks(ucfb::Editor_parent_chunk& root,
       edit_modl(std::get<ucfb::Editor_parent_chunk>(it->second), material_index);
    }
 }
-
 }
 
 void patch_model(const std::filesystem::path& model_path,
@@ -326,8 +295,7 @@ void patch_model(const std::filesystem::path& model_path,
       ucfb::Editor editor = [&] {
          win32::Memeory_mapped_file file{model_path,
                                          win32::Memeory_mapped_file::Mode::read};
-         const auto is_parent = [](const Magic_number mn) noexcept
-         {
+         const auto is_parent = [](const Magic_number mn) noexcept {
             if (mn == "modl"_mn || mn == "shdw"_mn || mn == "segm"_mn)
                return true;
 

@@ -287,4 +287,19 @@ inline auto make_aligned_vector(const From& from) noexcept
    return {std::cbegin(from), std::cend(from)};
 }
 
+template<typename... Args>
+inline auto safe_min(Args&&... args)
+{
+   auto result = std::min(std::forward<Args>(args)...);
+
+   return result;
+}
+
+template<typename... Args>
+inline auto safe_max(Args&&... args)
+{
+   auto result = std::max(std::forward<Args>(args)...);
+
+   return result;
+}
 }

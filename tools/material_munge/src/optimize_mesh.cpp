@@ -48,7 +48,7 @@ auto init_dest_vertex_buffer(const Vertex_buffer& old) noexcept -> Vertex_buffer
    return vertex_buffer;
 }
 
-auto optimize_index_buffer(std::vector<std::array<std::uint16_t, 3>> index_buffer)
+auto optimize_index_buffer(Index_buffer_16 index_buffer)
    -> std::vector<std::array<std::uint16_t, 3>>
 {
    std::vector<std::uint32_t> remap;
@@ -70,8 +70,7 @@ auto optimize_index_buffer(std::vector<std::array<std::uint16_t, 3>> index_buffe
    return index_buffer;
 }
 
-auto optimize_vertex_buffer(std::vector<std::array<std::uint16_t, 3>> index_buffer,
-                            const Vertex_buffer& vertex_buffer)
+auto optimize_vertex_buffer(Index_buffer_16 index_buffer, const Vertex_buffer& vertex_buffer)
    -> std::pair<std::vector<std::array<std::uint16_t, 3>>, Vertex_buffer>
 {
    std::vector<std::uint32_t> remap;
@@ -127,13 +126,48 @@ auto optimize_vertex_buffer(std::vector<std::array<std::uint16_t, 3>> index_buff
    return {std::move(index_buffer), std::move(dest_vertex_buffer)};
 }
 
+auto optimize_vertex_buffer(Index_buffer_16 index_buffer, Terrain_vertex_buffer vertex_buffer)
+   -> std::pair<Index_buffer_16, Terrain_vertex_buffer>
+{
+   std::vector<std::uint32_t> remap;
+   remap.resize(vertex_buffer.size());
+
+   if (const auto result =
+          DirectX::OptimizeVertices(index_buffer[0].data(), index_buffer.size(),
+                                    remap.size(), remap.data());
+       FAILED(result)) {
+      std::terminate();
+   }
+
+   if (const auto result =
+          DirectX::FinalizeIB(index_buffer[0].data(), index_buffer.size(),
+                              remap.data(), remap.size());
+       FAILED(result)) {
+      std::terminate();
+   }
+
+   auto dest_vertex_buffer = vertex_buffer;
+
+   for (auto i = 0; i < vertex_buffer.size(); ++i) {
+      dest_vertex_buffer[i] = vertex_buffer[remap[i]];
+   }
+
+   return {std::move(index_buffer), std::move(dest_vertex_buffer)};
+}
 }
 
-auto optimize_mesh(const std::vector<std::array<std::uint16_t, 3>>& index_buffer,
+auto optimize_mesh(const Index_buffer_16& index_buffer,
                    const Vertex_buffer& vertex_buffer) noexcept
-   -> std::pair<std::vector<std::array<std::uint16_t, 3>>, Vertex_buffer>
+   -> std::pair<Index_buffer_16, Vertex_buffer>
 {
    return optimize_vertex_buffer(optimize_index_buffer(index_buffer), vertex_buffer);
+}
+
+auto optimize_mesh(Index_buffer_16 index_buffer, Terrain_vertex_buffer vertex_buffer) noexcept
+   -> std::pair<Index_buffer_16, Terrain_vertex_buffer>
+{
+   return optimize_vertex_buffer(optimize_index_buffer(std::move(index_buffer)),
+                                 std::move(vertex_buffer));
 }
 
 }

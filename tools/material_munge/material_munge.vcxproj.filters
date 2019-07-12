@@ -39,6 +39,21 @@
     <ClCompile Include="src\optimize_mesh.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\munge_terrain_materials.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\terrain_modelify.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\index_buffer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\terrain_vertex_buffer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\terrain_model_segment.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\helpers.hpp">
@@ -69,6 +84,27 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\optimize_mesh.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\munge_terrain_materials.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\terrain_modelify.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\terrain_vertex_buffer.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\index_buffer.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\terrain_texture_transform.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\terrain_model_segment.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\terrain_constants.hpp">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

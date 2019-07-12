@@ -10,6 +10,7 @@ namespace {
 constexpr auto pos_max_diff = 0.00025f;
 constexpr auto normal_threshold = 1.0f - (1.f / 128.5f);
 constexpr auto texcoords_max_diff = 1.f / 2048.f;
+constexpr auto terrain_blend_threshold = (1.f / 255.5f);
 
 auto init_vertex_buffer(const Vertex_buffer& old_vbuf) noexcept -> Vertex_buffer
 {
@@ -137,6 +138,28 @@ bool is_vertex_similar(const Vertex_buffer& left_vbuf, const int left_index,
    return true;
 }
 
+bool is_vertex_similar(const Terrain_vertex& left, const Terrain_vertex& right) noexcept
+{
+   if (left.texture_indices != right.texture_indices) return false;
+
+   if (left.static_lighting != right.static_lighting) return false;
+
+   if (glm::distance(left.position, right.position) > pos_max_diff)
+      return false;
+
+   if (glm::dot(left.normal, right.normal) < normal_threshold) return false;
+
+   if (glm::dot(left.tangent, right.tangent) < normal_threshold) return false;
+
+   if (left.bitangent_sign > right.bitangent_sign) return false;
+
+   if (glm::any(glm::greaterThan(glm::abs(left.blend_weights - right.blend_weights),
+                                 glm::vec2{terrain_blend_threshold})))
+      return false;
+
+   return false;
+}
+
 auto find_similar_vertex(const Vertex_buffer& ref_vbuf, const int ref_index,
                          const Vertex_buffer& in_vbuf) noexcept -> int
 {
@@ -147,14 +170,24 @@ auto find_similar_vertex(const Vertex_buffer& ref_vbuf, const int ref_index,
    return -1;
 }
 
+auto find_similar_vertex(const Terrain_vertex& ref_vertex,
+                         const Terrain_vertex_buffer& vertices) noexcept -> int
+{
+   for (auto v = 0; v < vertices.size(); ++v) {
+      if (is_vertex_similar(ref_vertex, vertices[v])) return v;
+   }
+
+   return -1;
+}
+
 }
 
 auto weld_vertex_list(const Vertex_buffer& vertex_buffer) noexcept
-   -> std::pair<std::vector<std::array<std::uint16_t, 3>>, Vertex_buffer>
+   -> std::pair<Index_buffer_16, Vertex_buffer>
 {
    Expects((vertex_buffer.count % 3u) == 0u);
 
-   std::vector<std::array<std::uint16_t, 3>> ibuf;
+   Index_buffer_16 ibuf;
    auto welded_vbuf = init_vertex_buffer(vertex_buffer);
 
    const auto face_count = vertex_buffer.count / 3u;
@@ -176,6 +209,34 @@ auto weld_vertex_list(const Vertex_buffer& vertex_buffer) noexcept
    }
 
    return {std::move(ibuf), std::move(welded_vbuf)};
+}
+
+auto weld_vertex_list(const Terrain_triangle_list& triangles) noexcept
+   -> std::pair<Index_buffer_32, Terrain_vertex_buffer>
+{
+   Expects((triangles.size() * 3) < std::numeric_limits<std::int32_t>::max());
+
+   std::pair<Index_buffer_32, Terrain_vertex_buffer> result;
+
+   result.first.reserve(triangles.size());
+   result.second.reserve(triangles.size());
+
+   for (auto f = 0; f < triangles.size(); ++f) {
+      auto& new_tri = result.first.emplace_back();
+
+      for (auto v = 0; v < 3; ++v) {
+         if (const auto index = find_similar_vertex(triangles[f][v], result.second);
+             index != -1) {
+            new_tri[v] = static_cast<std::uint16_t>(index);
+         }
+         else {
+            new_tri[v] = static_cast<std::uint32_t>(result.second.size());
+            result.second.emplace_back(triangles[f][v]);
+         }
+      }
+   }
+
+   return result;
 }
 
 }

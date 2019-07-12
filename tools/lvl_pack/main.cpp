@@ -1,6 +1,7 @@
 
 #include "req_file_helpers.hpp"
 #include "string_utilities.hpp"
+#include "swbf_fnv_1a.hpp"
 #include "synced_io.hpp"
 #include "ucfb_reader.hpp"
 #include "ucfb_writer.hpp"
@@ -32,23 +33,6 @@ using namespace sp;
 using namespace std::literals;
 
 namespace {
-
-constexpr std::uint32_t fnv_1a_hash(std::string_view str)
-{
-   constexpr std::uint32_t FNV_prime = 16777619;
-   constexpr std::uint32_t offset_basis = 2166136261;
-
-   std::uint32_t hash = offset_basis;
-
-   for (auto c : str) {
-      c |= 0x20;
-
-      hash ^= c;
-      hash *= FNV_prime;
-   }
-
-   return hash;
-}
 
 constexpr Magic_number lvl_name_hash(std::string_view str)
 {

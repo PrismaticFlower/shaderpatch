@@ -2,6 +2,7 @@
 #include "helpers.hpp"
 #include "munge_helpers.hpp"
 #include "munge_materials.hpp"
+#include "munge_terrain_materials.hpp"
 #include "synced_io.hpp"
 
 #include <filesystem>
@@ -84,10 +85,10 @@ int main(int arg_count, char* args[])
    }
 
    auto files_result =
-      std::async(std::launch::deferred, build_input_file_map, source_dir);
+      std::async(std::launch::async, build_input_file_map, source_dir);
 
    auto descriptions_async =
-      std::async(std::launch::deferred, load_material_descriptions, description_dirs);
+      std::async(std::launch::async, load_material_descriptions, description_dirs);
 
    auto texture_references = find_texture_references(munged_input_dir);
 
@@ -95,6 +96,7 @@ int main(int arg_count, char* args[])
    auto descriptions = descriptions_async.get();
 
    munge_materials(output_dir, texture_references, files, descriptions);
+   munge_terrain_materials(files, output_dir, munged_input_dir, output_dir);
 
    return 0;
 }
