@@ -342,9 +342,30 @@ float4 main_ps(Ps_input input) : SV_Target0
    float2 texcoords;
    
    if (use_parallax_occlusion_mapping) {
-      texcoords = parallax_occlusion_map(height_map, height_scale, input.texcoords,
-                                         mul(view_positionWS - input.positionWS, transpose(tangent_to_world)),
-                                         tangent_to_world[2], view_normalWS);
+      class Parallax_texture : Parallax_input_texture {
+         float CalculateLevelOfDetail(SamplerState samp, float2 texcoords)
+         {
+            return height_map.CalculateLevelOfDetail(samp, texcoords);
+         }
+
+         float SampleLevel(SamplerState samp, float2 texcoords, float mip)
+         {
+            return height_map.SampleLevel(samp, texcoords, mip);
+         }
+
+         float Sample(SamplerState samp, float2 texcoords)
+         {
+            return height_map.Sample(samp, texcoords);
+         }
+
+         Texture2D<float> height_map;
+      };
+
+      Parallax_texture parallax_texture;
+      parallax_texture.height_map = height_map;
+
+      texcoords = parallax_occlusion_map(parallax_texture, height_scale, input.texcoords,
+                                         mul(view_positionWS - input.positionWS, transpose(tangent_to_world)));
    }
    else {
       texcoords = input.texcoords;

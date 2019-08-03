@@ -156,6 +156,7 @@
     <None Include="definitions\patch\depth_msaa_resolve.json" />
     <None Include="definitions\patch\late_backbuffer_resolve.json" />
     <None Include="definitions\patch\normal_ext-tessellated.json" />
+    <None Include="definitions\patch\pbr_terrain.json" />
     <None Include="definitions\patch\postprocess_bloom.json" />
     <None Include="definitions\patch\postprocess_msaa_resolve.json" />
     <None Include="shader_declarations.req">
@@ -439,6 +440,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\depth_msaa_resolve.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\pbr_terrain.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\terrain_common.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

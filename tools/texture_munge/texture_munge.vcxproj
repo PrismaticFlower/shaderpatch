@@ -164,7 +164,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\DirectXTexEXR.cpp" />
-    <ClCompile Include="src\image_span.cpp" />
     <ClCompile Include="src\ispc_texcomp\ispc_texcomp.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\munge_texture.cpp" />
@@ -173,7 +172,6 @@
   <ItemGroup>
     <ClInclude Include="src\DirectXTexEXR.h" />
     <ClInclude Include="src\format_helpers.hpp" />
-    <ClInclude Include="src\image_span.hpp" />
     <ClInclude Include="src\ispc_texcomp\ispc_texcomp.h" />
     <ClInclude Include="src\munge_texture.hpp" />
     <ClInclude Include="src\process_image.hpp" />

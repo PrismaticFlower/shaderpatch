@@ -42,6 +42,7 @@ ucft
       "normal_ext"
       "normal_ext-tessellated"
       "pbr"
+      "pbr_terrain"
       "postprocess"
       "postprocess_bloom"
       "postprocess_msaa_resolve"

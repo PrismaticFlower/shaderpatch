@@ -340,14 +340,24 @@
     <None Include="definitions\patch\cmaa2.json">
       <Filter>definitions\patch</Filter>
     </None>
-    <None Include="src\CMAA2.hlsl" />
     <None Include="definitions\patch\adaptive_oit_resolve.json">
       <Filter>definitions\patch</Filter>
     </None>
-    <None Include="src\adaptive_oit.hlsl" />
-    <None Include="src\adaptive_oit_resolve.fx" />
     <None Include="definitions\patch\depth_msaa_resolve.json">
       <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="src\depth_msaa_resolve.fx" />
+    <None Include="src\adaptive_oit.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\adaptive_oit_resolve.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="definitions\patch\pbr_terrain.json">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="src\CMAA2.hlsl">
+      <Filter>src</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -368,7 +378,10 @@
     <CustomBuild Include="build_lvls.ps1" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="src\depth_msaa_resolve.fx">
+    <FxCompile Include="src\pbr_terrain.fx">
+      <Filter>src</Filter>
+    </FxCompile>
+    <FxCompile Include="src\terrain_common.hlsl">
       <Filter>src</Filter>
     </FxCompile>
   </ItemGroup>

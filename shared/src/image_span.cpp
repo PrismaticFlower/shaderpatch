@@ -1,4 +1,6 @@
 
+#pragma warning(disable : 4701) // For GLM - potentially uninitialized local variable used
+
 #include "image_span.hpp"
 
 #include <glm/gtc/color_space.hpp>
@@ -917,5 +919,4 @@ auto Image_span::size() const noexcept -> glm::ivec2
 {
    return _bounds + 1;
 }
-
 }

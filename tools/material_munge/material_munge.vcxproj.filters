@@ -54,6 +54,24 @@
     <ClCompile Include="src\terrain_model_segment.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\terrain_model_shadows.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\terrain_assemble_textures.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\terrain_save_material.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\terrain_map.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\terrain_save_normal_map.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\terrain_downsample.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\helpers.hpp">
@@ -105,6 +123,30 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\terrain_constants.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\terrain_model_shadows.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\terrain_materials_config.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\terrain_assemble_textures.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\terrain_save_material.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\terrain_map.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\terrain_cut.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\terrain_save_normal_map.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\terrain_downsample.hpp">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,0 +1,248 @@
+{
+  "group_name": "pbr_terrain",
+  "source_name": "pbr_terrain.fx",
+
+  "input_layouts": {
+    "packed_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "sint4"
+      },
+      {
+        "semantic": {
+          "name": "NORMAL",
+          "index": 0
+        },
+        "format": "float4"
+      },
+      {
+        "semantic": {
+          "name": "TANGENT",
+          "index": 0
+        },
+        "format": "float4"
+      }
+    ]
+  },
+
+  "entrypoints": {
+    "main_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "packed_input",
+
+        "generic_input": {
+          "always_compressed": true,
+          "position": true,
+          "skinned": false,
+          "normal": true,
+          "tangents": true,
+          "color": false,
+          "texture_coords": true
+        },
+
+        "flags_mask": {
+          "tangents": false
+        }
+      },
+
+      "defines": [
+        [ "TERRAIN_COMMON_USE_SHADOW_MAP", "0" ],
+        [ "TERRAIN_COMMON_USE_PROJ_LIGHT", "0" ],
+        [ "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING", "0" ],
+        [ "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING", "0" ],
+        [ "TERRAIN_COMMON_LOW_DETAIL", "0" ]
+      ]
+    },
+
+    "main_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": true
+      },
+
+      "static_flags": [
+        "TERRAIN_COMMON_USE_SHADOW_MAP",
+        "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING",
+        "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING",
+        "TERRAIN_COMMON_LOW_DETAIL"
+      ],
+
+      "static_flags_ops": {
+        "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": {
+          "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": "clear"
+        },
+
+        "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": {
+          "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": "clear"
+        },
+
+        "TERRAIN_COMMON_LOW_DETAIL": {
+          "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": "clear",
+          "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": "clear"
+        }
+      },
+
+      "defines": [
+        [ "TERRAIN_COMMON_USE_PROJ_LIGHT", "0" ]
+      ]
+    }
+  },
+
+  "rendertypes": {
+    "pbr_terrain": {
+      "static_flags": {
+        "TERRAIN_COMMON_USE_SHADOW_MAP": false,
+        "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": false,
+        "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": false,
+        "TERRAIN_COMMON_LOW_DETAIL": false
+      }
+    },
+
+    "pbr_terrain.parallax offset mapping": {
+      "static_flags": {
+        "TERRAIN_COMMON_USE_SHADOW_MAP": false,
+        "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": true,
+        "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": false,
+        "TERRAIN_COMMON_LOW_DETAIL": false
+      }
+    },
+
+    "pbr_terrain.parallax occlusion mapping": {
+      "static_flags": {
+        "TERRAIN_COMMON_USE_SHADOW_MAP": false,
+        "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": false,
+        "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": true,
+        "TERRAIN_COMMON_LOW_DETAIL": false
+      }
+    },
+
+    "pbr_terrain.low detail": {
+      "static_flags": {
+        "TERRAIN_COMMON_USE_SHADOW_MAP": false,
+        "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": false,
+        "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": false,
+        "TERRAIN_COMMON_LOW_DETAIL": true
+      }
+    }
+  },
+
+  "states": {
+    "near opaque": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      }
+    },
+
+    "near opaque projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      }
+    },
+
+    "near opaque shadow": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "TERRAIN_COMMON_USE_SHADOW_MAP": true
+        }
+      }
+    },
+
+    "near opaque shadow projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "TERRAIN_COMMON_USE_SHADOW_MAP": true
+        }
+      }
+    },
+
+    "near transparent": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      }
+    },
+
+    "near transparent projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      }
+    },
+
+    "near transparent shadow": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "TERRAIN_COMMON_USE_SHADOW_MAP": true
+        }
+      }
+    },
+
+    "near transparent shadow projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "TERRAIN_COMMON_USE_SHADOW_MAP": true
+        }
+      }
+    }
+  }
+}

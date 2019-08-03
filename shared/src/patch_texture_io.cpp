@@ -38,6 +38,11 @@ namespace {
 inline namespace v_1 {
 auto load_patch_texture_impl(ucfb::Reader_strict<"sptx"_mn> reader, ID3D11Device1& device)
    -> std::pair<Com_ptr<ID3D11ShaderResourceView>, std::string>;
+
+void load_patch_texture_impl(
+   ucfb::Reader_strict<"sptx"_mn> reader,
+   std::function<void(const Texture_info info)> info_callback,
+   std::function<void(const std::uint32_t item, const std::uint32_t mip, const Texture_data data)> data_callback);
 }
 
 void write_sptx(ucfb::Writer& writer, const std::string_view name,
@@ -62,6 +67,25 @@ auto load_patch_texture(ucfb::Reader_strict<"sptx"_mn> reader, ID3D11Device1& de
    }
 }
 
+void load_patch_texture(
+   ucfb::Reader_strict<"sptx"_mn> reader,
+   std::function<void(const Texture_info info)> info_callback,
+   std::function<void(const std::uint32_t item, const std::uint32_t mip, const Texture_data data)> data_callback)
+{
+   const auto version =
+      reader.read_child_strict<"VER_"_mn>().read<Texture_version>();
+
+   reader.reset_head();
+
+   switch (version) {
+   case Texture_version::current:
+      return load_patch_texture_impl(reader, std::move(info_callback),
+                                     std::move(data_callback));
+   default:
+      throw std::runtime_error{"texture has unknown version"};
+   }
+}
+
 void write_patch_texture(const std::filesystem::path& save_path,
                          const Texture_info& texture_info,
                          const std::vector<Texture_data>& texture_data,
@@ -81,7 +105,7 @@ void write_patch_texture(const std::filesystem::path& save_path,
          gsl::span<const std::byte>(reinterpret_cast<const std::byte*>(sptx_data.data()),
                                     sptx_data.size());
 
-      save_volume_resource(save_path.string(), save_path.stem().string(),
+      save_volume_resource(save_path, save_path.stem().string(),
                            Volume_resource_type::texture, sptx_span);
    }
    else {
@@ -276,6 +300,47 @@ auto load_patch_texture_impl(ucfb::Reader_strict<"sptx"_mn> reader, ID3D11Device
       return {create_texturecube(device, info, init_data, name), std::string{name}};
    default:
       std::terminate();
+   }
+}
+
+void load_patch_texture_impl(
+   ucfb::Reader_strict<"sptx"_mn> reader,
+   std::function<void(const Texture_info info)> info_callback,
+   std::function<void(const std::uint32_t item, const std::uint32_t mip, const Texture_data data)> data_callback)
+{
+   using namespace std::literals;
+
+   const auto version =
+      reader.read_child_strict<"VER_"_mn>().read<Texture_version>();
+
+   Ensures(version == Texture_version::v_1);
+
+   const auto name = reader.read_child_strict<"NAME"_mn>().read_string();
+
+   const auto info = reader.read_child_strict<"INFO"_mn>().read<Texture_info>();
+
+   info_callback(info);
+
+   const auto sub_res_count = info.array_size * info.mip_count;
+
+   std::vector<D3D11_SUBRESOURCE_DATA> init_data;
+   init_data.reserve(sub_res_count);
+
+   auto data = reader.read_child_strict<"DATA"_mn>();
+
+   for (auto item = 0; item < info.array_size; ++item) {
+      for (auto mip = 0; mip < info.mip_count; ++mip) {
+         auto sub = data.read_child_strict<"SUB_"_mn>();
+
+         const auto [pitch, slice_pitch, sub_data_size, data_offset] =
+            sub.read_multi<UINT, UINT, std::uint32_t, std::uint32_t>();
+
+         sub.consume_unaligned(data_offset);
+
+         const auto sub_data = sub.read_array_unaligned<std::byte>(sub_data_size);
+
+         data_callback(item, mip, {pitch, slice_pitch, sub_data});
+      }
    }
 }
 }

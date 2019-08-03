@@ -263,7 +263,7 @@ float4 normalmapped_ps(Ps_normalmapped_input input,
                        Texture2D<float3> normal_map : register(t0)) : SV_Target0
 {
    const float3 normalTS = 
-      normal_map.Sample(aniso_wrap_sampler, input.texcoords).rgb * 2.0 - 1.0;;
+      normal_map.Sample(aniso_wrap_sampler, input.texcoords).rgb * (255.0 / 127.0) - (128.0 / 127.0);
 
    const float3 normalWS = normalize(mul(input.TBN, normalTS));
 
@@ -375,7 +375,7 @@ float4 normalmapped_spotlight_ps(Ps_normalmapped_spotlight_input input,
                                                           input.projection_coords);
 
    const float3 normalTS =
-      normal_map.Sample(aniso_wrap_sampler, input.texcoords) * 2.0 - 1.0;
+      normal_map.Sample(aniso_wrap_sampler, input.texcoords) * (255.0 / 127.0) - (128.0 / 127.0);
 
    const float3 normalWS = normalize(mul(input.TBN, normalTS));
 

@@ -1,5 +1,7 @@
 
 #include "volume_resource.hpp"
+#include "memory_mapped_file.hpp"
+#include "ucfb_reader.hpp"
 #include "ucfb_writer.hpp"
 
 #include <cmath>
@@ -34,8 +36,9 @@ auto pack_size(const std::uint32_t size) noexcept
 
 }
 
-void save_volume_resource(const std::string& output_path, std::string_view name,
-                          Volume_resource_type type, gsl::span<const std::byte> data)
+void save_volume_resource(const std::filesystem::path& output_path,
+                          const std::string_view name, const Volume_resource_type type,
+                          gsl::span<const std::byte> data)
 {
    if (data.size() > resource_max_byte_size) {
       throw std::runtime_error{"Resource is too large to store!"};
@@ -113,4 +116,41 @@ void save_volume_resource(const std::string& output_path, std::string_view name,
    }
 }
 
+auto load_volume_resource(const std::filesystem::path& path)
+   -> std::pair<Volume_resource_header, std::vector<std::byte>>
+{
+   const auto file_mapping =
+      win32::Memeory_mapped_file{path, win32::Memeory_mapped_file::Mode::read};
+
+   ucfb::Reader reader{file_mapping.bytes()};
+
+   auto tex = reader.read_child_strict<"tex_"_mn>();
+   tex.read_child_strict<"NAME"_mn>();
+   tex.read_child_strict<"INFO"_mn>();
+
+   {
+      auto fmt = tex.read_child_strict<"FMT_"_mn>();
+      fmt.read_child_strict<"INFO"_mn>();
+
+      {
+         auto face = fmt.read_child_strict<"FACE"_mn>();
+
+         {
+            auto lvl = face.read_child_strict<"LVL_"_mn>();
+
+            lvl.read_child_strict<"INFO"_mn>();
+
+            {
+               auto body = lvl.read_child_strict<"BODY"_mn>();
+
+               const auto header = body.read_unaligned<Volume_resource_header>();
+               const auto data =
+                  body.read_array_unaligned<std::byte>(header.payload_size);
+
+               return {header, {data.cbegin(), data.cend()}};
+            }
+         }
+      }
+   }
+}
 }

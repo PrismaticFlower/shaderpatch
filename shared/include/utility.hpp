@@ -79,6 +79,19 @@ constexpr bool is_multiple_of(const decltype(multiple) value) noexcept
    return (value % multiple) == 0;
 }
 
+constexpr auto next_power_of_2(std::uint32_t value) -> std::uint32_t
+{
+   value--;
+   value |= value >> 1u;
+   value |= value >> 2u;
+   value |= value >> 4u;
+   value |= value >> 8u;
+   value |= value >> 16u;
+   value++;
+
+   return value;
+}
+
 struct Index_iterator {
    using difference_type = std::ptrdiff_t;
    using value_type = const difference_type;

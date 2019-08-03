@@ -415,6 +415,66 @@ inline bool operator>=(const std::string_view& l, const Ci_String_view& r)
    return view_as_ci_string(l) >= r;
 }
 
+inline bool operator==(const Ci_String_view& l, const std::string& r)
+{
+   return l == view_as_ci_string(r);
+}
+
+inline bool operator==(const std::string& l, const Ci_String_view& r)
+{
+   return view_as_ci_string(l) == r;
+}
+
+inline bool operator!=(const Ci_String_view& l, const std::string& r)
+{
+   return l != view_as_ci_string(r);
+}
+
+inline bool operator!=(const std::string& l, const Ci_String_view& r)
+{
+   return view_as_ci_string(l) != r;
+}
+
+inline bool operator<(const Ci_String_view& l, const std::string& r)
+{
+   return l < view_as_ci_string(r);
+}
+
+inline bool operator<(const std::string& l, const Ci_String_view& r)
+{
+   return view_as_ci_string(l) < r;
+}
+
+inline bool operator<=(const Ci_String_view& l, const std::string& r)
+{
+   return l <= view_as_ci_string(r);
+}
+
+inline bool operator<=(const std::string& l, const Ci_String_view& r)
+{
+   return view_as_ci_string(l) <= r;
+}
+
+inline bool operator>(const Ci_String_view& l, const std::string& r)
+{
+   return l > view_as_ci_string(r);
+}
+
+inline bool operator>(const std::string& l, const Ci_String_view& r)
+{
+   return view_as_ci_string(l) > r;
+}
+
+inline bool operator>=(const Ci_String_view& l, const std::string& r)
+{
+   return l >= view_as_ci_string(r);
+}
+
+inline bool operator>=(const std::string& l, const Ci_String_view& r)
+{
+   return view_as_ci_string(l) >= r;
+}
+
 constexpr Ci_String_view operator""_svci(const char* chars, std::size_t size) noexcept
 {
    return Ci_String_view{chars, size};

@@ -15,9 +15,11 @@ struct Terrain_model_segment {
    std::array<glm::vec3, 2> bbox;
 };
 
-auto create_terrain_model_segments(const Terrain_triangle_list& triangles,
-                                   const float terrain_length)
+auto create_terrain_model_segments(const Terrain_triangle_list& triangles)
    -> std::vector<Terrain_model_segment>;
+
+auto create_terrain_low_detail_model_segment(const Terrain_triangle_list& triangles)
+   -> Terrain_model_segment;
 
 auto optimize_terrain_model_segments(std::vector<Terrain_model_segment> segments) noexcept
    -> std::vector<Terrain_model_segment>;

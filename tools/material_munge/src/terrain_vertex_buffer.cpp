@@ -1,6 +1,12 @@
 #include "terrain_vertex_buffer.hpp"
+#include "generate_tangents.hpp"
+#include "image_span.hpp"
 #include "vertex_buffer.hpp"
 
+#include <algorithm>
+#include <execution>
+#include <iterator>
+#include <memory>
 #include <stdexcept>
 
 #include <glm/gtc/color_space.hpp>
@@ -8,41 +14,9 @@
 namespace sp {
 
 namespace {
-struct Compressed_input_terrain_vertex {
-   glm::i16vec3 position;
-   glm::int16 blend_weight_1;
-
-   glm::u8vec3 normal;
-   glm::uint8 blend_weight_2;
-
-   glm::uint32 static_lighting;
-};
-
-static_assert(sizeof(Compressed_input_terrain_vertex) == 16);
-
-auto decompress_vertex(const Compressed_input_terrain_vertex compressed,
-                       const std::array<std::uint8_t, 3> texture_indices,
-                       const Vertex_position_decompress pos_decompress) noexcept
-   -> Terrain_vertex
-{
-   Terrain_vertex vertex;
-
-   vertex.position = pos_decompress(glm::i16vec4{compressed.position, 0});
-   vertex.normal =
-      glm::vec3{compressed.normal.z, compressed.normal.y, compressed.normal.x} /
-         255.0f * 2.0f -
-      1.0f;
-   vertex.static_lighting = compressed.static_lighting;
-   vertex.blend_weights =
-      glm::vec2{compressed.blend_weight_1, compressed.blend_weight_2} / 255.0f;
-   vertex.texture_indices = texture_indices;
-
-   return vertex;
-}
-
 struct Packed_output_terrain_vertex {
    glm::i16vec3 position;
-   glm::uint16 texture_indices_tbn_signs;
+   glm::uint16 texture_indices;
    glm::uint32 normal;
    glm::uint32 tangent;
 };
@@ -54,84 +28,155 @@ constexpr auto packed_vertex_flags =
    Vbuf_flags::texcoords | Vbuf_flags::position_compressed |
    Vbuf_flags::normal_compressed | Vbuf_flags::texcoord_compressed;
 
-auto get_shadowing(const glm::uint static_lighting) -> float
+auto select_terrain_tri_textures(const Terrain_map& terrain,
+                                 const std::array<int, 3> tri)
+   -> std::array<std::uint8_t, 3>
 {
-   auto unpacked = glm::unpackUnorm4x8(static_lighting);
+   std::array tri_weights{terrain.texture_weights[tri[0]],
+                          terrain.texture_weights[tri[1]],
+                          terrain.texture_weights[tri[2]]};
 
-   unpacked = glm::convertSRGBToLinear(unpacked);
+   for (auto& weights : tri_weights) {
+      for (std::ptrdiff_t i = 0; i < weights.size() - 1; ++i) {
+         weights[i] *= (1.0f - weights[i + 1]);
+      }
+   }
 
-   const float shadowing =
-      glm::dot(glm::vec3{unpacked}, glm::vec3{0.2126f, 0.7152f, 0.0722f});
+   std::array<float, 16> total_tri_weights{};
 
-   return glm::convertLinearToSRGB(glm::vec1{shadowing}).x;
+   for (auto i = 0; i < 16; ++i) {
+      total_tri_weights[i] += tri_weights[0][i];
+      total_tri_weights[i] += tri_weights[1][i];
+      total_tri_weights[i] += tri_weights[2][i];
+   }
+
+   std::array<std::uint8_t, 3> indices;
+
+   const auto select_index = [&](const std::ptrdiff_t start) {
+      for (std::ptrdiff_t i = start; i > 0; --i) {
+         if (total_tri_weights[i] <= 0.0f) continue;
+
+         return static_cast<std::uint8_t>(i);
+      }
+
+      return std::uint8_t{0};
+   };
+
+   indices[0] = select_index(total_tri_weights.size() - 1);
+   indices[1] = select_index(int{indices[0]} - 1);
+   indices[2] = select_index(int{indices[1]} - 1);
+
+   return indices;
+}
+
+auto fetch_texture_weights(const std::array<float, 16>& weights,
+                           const std::array<std::uint8_t, 3> indices) noexcept
+   -> std::array<float, 2>
+{
+   auto premult_weights = weights;
+
+   for (std::ptrdiff_t i = 0; i < weights.size() - 1; ++i) {
+      premult_weights[i] *= (1.0f - premult_weights[i + 1]);
+   }
+
+   return {premult_weights[indices[0]], premult_weights[indices[1]]};
+}
+
+auto create_terrain_triangles(const Terrain_map& terrain) -> Terrain_triangle_list
+{
+   Terrain_triangle_list tris;
+   tris.reserve((terrain.length - 1) * (terrain.length - 1) * 2);
+
+   for (auto y = 0; y < (terrain.length - 1); ++y) {
+      for (auto x = 0; x < (terrain.length - 1); ++x) {
+         const auto i0 = x + (y * terrain.length);
+         const auto i1 = x + ((y + 1) * terrain.length);
+         const auto i2 = (x + 1) + (y * terrain.length);
+         const auto i3 = (x + 1) + ((y + 1) * terrain.length);
+
+         Terrain_vertex v0;
+         Terrain_vertex v1;
+         Terrain_vertex v2;
+         Terrain_vertex v3;
+
+         v0.position = terrain.position[i0];
+         v0.diffuse_lighting = terrain.diffuse_lighting[i0];
+         v0.base_color = terrain.color[i0];
+
+         v1.position = terrain.position[i1];
+         v1.diffuse_lighting = terrain.diffuse_lighting[i1];
+         v1.base_color = terrain.color[i1];
+
+         v2.position = terrain.position[i2];
+         v2.diffuse_lighting = terrain.diffuse_lighting[i2];
+         v2.base_color = terrain.color[i2];
+
+         v3.position = terrain.position[i3];
+         v3.diffuse_lighting = terrain.diffuse_lighting[i3];
+         v3.base_color = terrain.color[i3];
+
+         auto& tri0 = tris.emplace_back(std::array{v0, v2, v3});
+         auto& tri1 = tris.emplace_back(std::array{v0, v3, v1});
+
+         tri0[0].texture_indices = tri0[1].texture_indices = tri0[2].texture_indices =
+            select_terrain_tri_textures(terrain, {i0, i2, i3});
+         tri1[0].texture_indices = tri1[1].texture_indices = tri1[2].texture_indices =
+            select_terrain_tri_textures(terrain, {i0, i3, i1});
+
+         tri0[0].texture_blend = fetch_texture_weights(terrain.texture_weights[i0],
+                                                       tri0[0].texture_indices);
+         tri0[1].texture_blend = fetch_texture_weights(terrain.texture_weights[i2],
+                                                       tri0[0].texture_indices);
+         tri0[2].texture_blend = fetch_texture_weights(terrain.texture_weights[i3],
+                                                       tri0[0].texture_indices);
+
+         tri1[0].texture_blend = fetch_texture_weights(terrain.texture_weights[i0],
+                                                       tri1[0].texture_indices);
+         tri1[1].texture_blend = fetch_texture_weights(terrain.texture_weights[i3],
+                                                       tri1[0].texture_indices);
+         tri1[2].texture_blend = fetch_texture_weights(terrain.texture_weights[i1],
+                                                       tri1[0].texture_indices);
+      }
+   }
+
+   return tris;
 }
 
 auto pack_vertex(const Terrain_vertex& vertex,
-                 const Vertex_position_compress& pos_compress) noexcept
-   -> Packed_output_terrain_vertex
+                 const Vertex_position_compress& pos_compress,
+                 const bool pack_lighting) noexcept -> Packed_output_terrain_vertex
 {
    Packed_output_terrain_vertex packed{};
 
    packed.position = pos_compress(vertex.position);
 
-   packed.texture_indices_tbn_signs |= (vertex.normal.z >= 0.0f);
-   packed.texture_indices_tbn_signs |= (vertex.tangent.z >= 0.0f) << 1;
-   packed.texture_indices_tbn_signs |= (vertex.bitangent_sign >= 0.0f) << 2;
-   packed.texture_indices_tbn_signs |= (vertex.texture_indices[0] & 0xf) << 3;
-   packed.texture_indices_tbn_signs |= (vertex.texture_indices[1] & 0xf) << 7;
-   packed.texture_indices_tbn_signs |= (vertex.texture_indices[2] & 0xf) << 11;
+   packed.texture_indices |= (vertex.texture_indices[0] & 0xf);
+   packed.texture_indices |= (vertex.texture_indices[1] & 0xf) << 4;
+   packed.texture_indices |= (vertex.texture_indices[2] & 0xf) << 8;
 
-   packed.normal |=
-      static_cast<glm::uint>(glm::clamp(vertex.normal.x * 0.5f + 0.5f, 0.0f, 1.0f) * 255.0f)
-      << 16;
-   packed.normal |=
-      static_cast<glm::uint>(glm::clamp(vertex.normal.y * 0.5f + 0.5f, 0.0f, 1.0f) * 255.0f)
-      << 8;
-   packed.normal |= static_cast<glm::uint>(
-      glm::clamp(vertex.tangent.x * 0.5f + 0.5f, 0.0f, 1.0f) * 255.0f);
-   packed.normal |=
-      static_cast<glm::uint>(glm::clamp(vertex.tangent.y * 0.5f + 0.5f, 0.0f, 1.0f) * 255.0f)
-      << 24;
+   const auto pack_unorm = [](const float v) -> glm::uint {
+      return static_cast<glm::uint>(glm::clamp(v, 0.0f, 1.0f) * 255.0f + 0.5f);
+   };
 
-   packed.tangent |=
-      static_cast<glm::uint>(glm::clamp(vertex.blend_weights[0], 0.0f, 1.0f) * 255.0f)
-      << 16;
-   packed.tangent |=
-      static_cast<glm::uint>(glm::clamp(vertex.blend_weights[1], 0.0f, 1.0f) * 255.0f)
-      << 8;
-   packed.tangent |= static_cast<glm::uint>(
-      glm::clamp(get_shadowing(vertex.static_lighting), 0.0f, 1.0f) * 255.0f);
+   packed.normal |= pack_unorm(vertex.texture_blend[0]) << 16;
+   packed.normal |= pack_unorm(vertex.texture_blend[1]) << 8;
+
+   const auto srgb_color = glm::convertLinearToSRGB(
+      pack_lighting ? vertex.diffuse_lighting : vertex.base_color);
+
+   packed.tangent |= pack_unorm(srgb_color.r) << 16;
+   packed.tangent |= pack_unorm(srgb_color.g) << 8;
+   packed.tangent |= pack_unorm(srgb_color.b);
 
    return packed;
 }
-
 }
 
-auto create_terrain_vertex_buffer(ucfb::Reader_strict<"VBUF"_mn> vbuf,
-                                  const std::array<std::uint8_t, 3> texture_indices,
-                                  const std::array<glm::vec3, 2> vert_box) -> Terrain_vertex_buffer
+auto create_terrain_triangle_list(const Terrain_map& terrain) -> Terrain_triangle_list
 {
-   auto [count, stride, flags] =
-      vbuf.read_multi<std::uint32_t, std::uint32_t, Vbuf_flags>();
+   if (terrain.length < 2) return {};
 
-   constexpr auto expected_flags =
-      Vbuf_flags::position | Vbuf_flags::normal | Vbuf_flags::static_lighting |
-      Vbuf_flags::position_compressed | Vbuf_flags::normal_compressed;
-
-   if (flags != expected_flags) {
-      throw std::runtime_error{"Terrain VBUF has unexpected vertex flags!"};
-   }
-
-   Terrain_vertex_buffer result;
-   result.reserve(count);
-
-   const Vertex_position_decompress pos_decompress{vert_box};
-
-   for (auto vert : vbuf.read_array<Compressed_input_terrain_vertex>(count)) {
-      result.emplace_back(decompress_vertex(vert, texture_indices, pos_decompress));
-   }
-
-   return result;
+   return create_terrain_triangles(terrain);
 }
 
 void output_vertex_buffer(const Terrain_vertex_buffer& vertex_buffer,
@@ -146,11 +191,9 @@ void output_vertex_buffer(const Terrain_vertex_buffer& vertex_buffer,
    const Vertex_position_compress pos_compress{vert_box};
 
    for (const auto& vertex : vertex_buffer) {
-      writer.write(pack_vertex(vertex, pos_compress));
+      writer.write(pack_vertex(vertex, pos_compress, false));
    }
 
-   // Write padding to account for stride overshoot.
-   writer.write(std::array<std::byte, 8>{});
+   writer.write(std::uint64_t{}); // trailing unused texcoords & binormal
 }
-
 }

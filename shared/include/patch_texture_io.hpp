@@ -4,6 +4,7 @@
 #include "ucfb_reader.hpp"
 
 #include <filesystem>
+#include <functional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -44,6 +45,11 @@ struct Texture_data {
 
 auto load_patch_texture(ucfb::Reader_strict<"sptx"_mn> reader, ID3D11Device1& device)
    -> std::pair<Com_ptr<ID3D11ShaderResourceView>, std::string>;
+
+void load_patch_texture(
+   ucfb::Reader_strict<"sptx"_mn> reader,
+   std::function<void(const Texture_info info)> info_callback,
+   std::function<void(const std::uint32_t item, const std::uint32_t mip, const Texture_data data)> data_callback);
 
 void write_patch_texture(const std::filesystem::path& save_path,
                          const Texture_info& texture_info,

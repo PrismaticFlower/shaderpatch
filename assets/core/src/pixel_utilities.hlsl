@@ -23,7 +23,7 @@ float3x3 generate_tangent_to_world(const float3 normalWS, const float3 positionW
 float3 sample_normal_map(Texture2D<float2> tex, SamplerState samp, float2 texcoords)
 {
    float3 normal;
-   normal.xy = tex.Sample(samp, texcoords) * 2.0 - 1.0;
+   normal.xy = tex.Sample(samp, texcoords) * (255.0 / 127.0) - (128.0 / 127.0);
    normal.z = sqrt(1.0 - saturate(dot(normal.xy, normal.xy)));
 
    return normal;
@@ -32,7 +32,7 @@ float3 sample_normal_map(Texture2D<float2> tex, SamplerState samp, float2 texcoo
 float3 sample_normal_map(Texture2D<float2> tex, SamplerState samp, float2 texcoords, float lod)
 {
    float3 normal;
-   normal.xy = tex.SampleLevel(samp, texcoords, lod) * 2.0 - 1.0;
+   normal.xy = tex.SampleLevel(samp, texcoords, lod) * (255.0 / 127.0) - (128.0 / 127.0);
    normal.z = sqrt(1.0 - saturate(dot(normal.xy, normal.xy)));
 
    return normal;
@@ -41,7 +41,7 @@ float3 sample_normal_map(Texture2D<float2> tex, SamplerState samp, float2 texcoo
 float3 sample_normal_map_gloss(Texture2D<float4> tex, SamplerState samp, float2 texcoords, out float gloss)
 {
    float4 normal_gloss = tex.Sample(samp, texcoords);
-   float3 normal = normal_gloss.xyz * 2.0 - 1.0;
+   float3 normal = normal_gloss.xyz * (255.0 / 127.0) - (128.0 / 127.0);
 
    normal.z = sqrt(1.0 - saturate(dot(normal.xy, normal.xy)));
 
@@ -54,7 +54,7 @@ float3 sample_normal_map_gloss(Texture2D<float4> tex, SamplerState samp, float m
                                float2 texcoords, out float gloss)
 {
    float4 normal_gloss = tex.SampleLevel(samp, texcoords, mip_level);
-   float3 normal = normal_gloss.xyz * 2.0 - 1.0;
+   float3 normal = normal_gloss.xyz * (255.0 / 127.0) - (128.0 / 127.0);
 
    normal.z = sqrt(1.0 - saturate(dot(normal.xy, normal.xy)));
 
@@ -67,9 +67,9 @@ float3 sample_normal_map_gloss(Texture2D<float4> tex, Texture2D<float2> detail_t
                                float2 texcoords, float2 detail_texcoords, out float gloss)
 {
    float4 normal_gloss = tex.Sample(samp, texcoords);
-   float3 normal = normal_gloss.xyz * 2.0 - 1.0;
+   float3 normal = normal_gloss.xyz * (255.0 / 127.0) - (128.0 / 127.0);
 
-   normal.xy *= (detail_tex.Sample(samp, detail_texcoords) * 2.0 - 1.0);
+   normal.xy *= (detail_tex.Sample(samp, detail_texcoords) * (255.0 / 127.0) - (128.0 / 127.0));
    normal.z = sqrt(1.0 - saturate(dot(normal.xy, normal.xy)));
 
    gloss = normal_gloss.w;
@@ -77,13 +77,21 @@ float3 sample_normal_map_gloss(Texture2D<float4> tex, Texture2D<float2> detail_t
    return normal;
 }
 
-float2 parallax_occlusion_map(Texture2D<float> height_map, const float height_scale, const float2 texcoords,
-                              const float3 unorm_viewTS, const float3 normalWS, const float3 viewWS)
+interface Parallax_input_texture
 {
-   const float fade_start = 32.0;
-   const float fade_length = 128.0;
-   const float max_steps = 64.0;
-   const float min_steps = 16.0;
+   float CalculateLevelOfDetail(SamplerState samp, float2 texcoords);
+
+   float SampleLevel(SamplerState samp, float2 texcoords, float mip);
+
+   float Sample(SamplerState samp, float2 texcoords);
+};
+
+float2 parallax_occlusion_map(Parallax_input_texture height_map, const float height_scale, 
+                              const float2 texcoords, const float3 unorm_viewTS)
+{
+   const float fade_start = 64.0;
+   const float fade_length = 256.0;
+   const uint num_steps = 16;
    const float mip_level = height_map.CalculateLevelOfDetail(linear_wrap_sampler, texcoords);
 
    const float3 viewTS = normalize(unorm_viewTS);
@@ -99,8 +107,6 @@ float2 parallax_occlusion_map(Texture2D<float> height_map, const float height_sc
 #pragma warning(disable : 4000)
    [branch] if (fade == 0.0) return texcoords;
 #pragma warning(enable : 4000)
-
-   const uint num_steps = (uint)lerp(max_steps, min_steps, saturate(abs(dot(viewWS, normalWS))));
 
    const float step_size = 1.0 / (float)(num_steps * 4u);
    float curr_height = 0.0;
@@ -185,18 +191,28 @@ float2 parallax_occlusion_map(Texture2D<float> height_map, const float height_sc
    return lerp(texcoords, texcoords - final_offset, fade);
 }
 
+float2 parallax_offset_map(Parallax_input_texture height_map, const float height_scale,
+                           const float2 texcoords, const float3 viewTS)
+{
+   const float height = height_map.Sample(aniso_wrap_sampler, texcoords);
+
+   const float2 offset = viewTS.xy * (height * height_scale);
+
+   return texcoords - offset;
+}
+
 float3 sample_projected_light(Texture2D<float3> projected_texture, float4 texcoords)
 {
-    if (cube_projtex) {
-       const float3 proj_texcoords = texcoords.xyz / texcoords.w;
-    
-       return cube_projected_texture.Sample(projtex_sampler, proj_texcoords);
-    }
-    else {
-      const float2 proj_texcoords = texcoords.xy / texcoords.w;
-
-      return projected_texture.Sample(projtex_sampler, proj_texcoords);
-    }
+   if (cube_projtex) {
+      const float3 proj_texcoords = texcoords.xyz / texcoords.w;
+   
+      return cube_projected_texture.Sample(projtex_sampler, proj_texcoords);
+   }
+   else {
+     const float2 proj_texcoords = texcoords.xy / texcoords.w;
+   
+     return projected_texture.Sample(projtex_sampler, proj_texcoords);
+   }
 }
 
 float3 gaussian_sample(Texture2D<float3> tex, SamplerState samp,

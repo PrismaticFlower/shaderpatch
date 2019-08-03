@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ucfb_editor.hpp"
+
 #include <array>
 #include <cstdint>
 
@@ -46,18 +48,6 @@ public:
    auto get_scale() const noexcept -> float
    {
       return _scale;
-   }
-
-   void set_rotation(const float rotation) noexcept
-   {
-      _rotation = rotation;
-
-      update();
-   }
-
-   auto get_rotation() const noexcept -> float
-   {
-      return _rotation;
    }
 
    auto get_transform() const noexcept -> glm::mat2x3
@@ -128,23 +118,19 @@ private:
    {
       const auto [x, y] = axis_index();
       const auto sign = axis_sign();
+      const auto scale = (sign * (1.0f / _scale));
 
-      _transform = {};
+      _transform = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
 
-      _transform[0][x] = glm::cos(_rotation);
-      _transform[0][y] = -glm::sin(_rotation);
-
-      _transform[1][x] = glm::sin(_rotation);
-      _transform[1][y] = glm::cos(_rotation);
-
-      _transform *= (sign * (1.0f / _scale));
+      _transform[0][x] = scale;
+      _transform[1][y] = scale;
    }
 
-   float _scale{};
-   float _rotation{};
+   float _scale = 1.0f;
 
    glm::mat2x3 _transform{};
 
    Terrain_texture_axis _axis{};
 };
+
 }

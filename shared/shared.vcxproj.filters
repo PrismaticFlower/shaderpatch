@@ -108,6 +108,9 @@
     <ClInclude Include="include\swbf_fnv_1a.hpp">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\image_span.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\patch_texture_io.cpp">
@@ -141,6 +144,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\shader_patch_version.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\image_span.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

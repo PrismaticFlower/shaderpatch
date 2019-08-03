@@ -16,9 +16,6 @@
     <ClCompile Include="src\ispc_texcomp\ispc_texcomp.cpp">
       <Filter>src\ispc_texcomp</Filter>
     </ClCompile>
-    <ClCompile Include="src\image_span.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\DirectXTexEXR.h">
@@ -37,9 +34,6 @@
       <Filter>src\ispc_texcomp</Filter>
     </ClInclude>
     <ClInclude Include="src\texture_type.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\image_span.hpp">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

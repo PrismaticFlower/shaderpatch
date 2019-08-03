@@ -141,7 +141,7 @@ float4 normalmapped_ps(Ps_normalmapped_input input,
 
    float4 normal_map_gloss = normal_map.Sample(aniso_wrap_sampler, input.texcoords);
 
-   float3 normalTS = normal_map_gloss.xyz * 2.0 - 1.0;
+   float3 normalTS = normal_map_gloss.xyz * (255.0 / 127.0) - (128.0 / 127.0);
 
    float3 normalWS = normalize(mul(input.TBN, normalTS));
 
@@ -164,7 +164,7 @@ float4 normalmapped_envmap_ps(Ps_normalmapped_input input,
 {
    float4 normal_map_gloss = normal_map.Sample(aniso_wrap_sampler, input.texcoords);
 
-   float3 normalTS = normal_map_gloss.xyz * 2.0 - 1.0;
+   float3 normalTS = normal_map_gloss.xyz * (255.0 / 127.0) - (128.0 / 127.0);
 
    float3 normalWS = normalize(mul(input.TBN, normalTS));
 

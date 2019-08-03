@@ -16,6 +16,8 @@
 
 #include <clara.hpp>
 
+#include <Windows.h>
+
 using namespace std::literals;
 using namespace sp;
 
@@ -23,6 +25,8 @@ namespace fs = std::filesystem;
 
 int main(int arg_count, char* args[])
 {
+   CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+
    using namespace clara;
 
    bool help = false;

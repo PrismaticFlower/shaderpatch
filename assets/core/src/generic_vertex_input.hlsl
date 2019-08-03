@@ -51,7 +51,7 @@ struct Vertex_input
    {
 #  ifdef __VERTEX_INPUT_NORMAL__
 #     ifdef __VERTEX_INPUT_IS_COMPRESSED__
-         return _normal.xyz * 2.0 - 1.0;
+         return _normal.xyz * (255.0 / 127.0) - (128.0 / 127.0);
       #else
          return _normal;
       #endif
@@ -64,7 +64,7 @@ struct Vertex_input
    {
 #  ifdef __VERTEX_INPUT_TANGENTS__
 #     ifdef __VERTEX_INPUT_IS_COMPRESSED__
-         return _tangent.xyz * 2.0 - 1.0;
+         return _tangent.xyz * (255.0 / 127.0) - (128.0 / 127.0);
       #else
          return _tangent;
       #endif
@@ -77,7 +77,7 @@ struct Vertex_input
    {
 #  ifdef __VERTEX_INPUT_TANGENTS__
 #     ifdef __VERTEX_INPUT_IS_COMPRESSED__
-         return _bitangent.xyz * 2.0 - 1.0;
+         return _bitangent.xyz * (255.0 / 127.0) - (128.0 / 127.0);
       #else
          return _bitangent;
       #endif
@@ -90,7 +90,7 @@ struct Vertex_input
    {
 #  ifdef __VERTEX_INPUT_TANGENTS__
 #     ifdef __VERTEX_INPUT_IS_COMPRESSED__
-      return _bitangent.xyz * 2.0 - 1.0;
+      return _bitangent.xyz * (255.0 / 127.0) - (128.0 / 127.0);
 #else
       return _bitangent;
 #endif

@@ -69,7 +69,7 @@ void write_patch_material(const std::filesystem::path& save_path,
       gsl::span<const std::byte>(reinterpret_cast<const std::byte*>(matl_data.data()),
                                  matl_data.size());
 
-   save_volume_resource(save_path.string(), save_path.stem().string(),
+   save_volume_resource(save_path, save_path.stem().string(),
                         Volume_resource_type::material, matl_span);
 }
 
