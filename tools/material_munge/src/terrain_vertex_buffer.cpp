@@ -162,7 +162,7 @@ auto pack_vertex(const Terrain_vertex& vertex,
    packed.normal |= pack_unorm(vertex.texture_blend[1]) << 8;
 
    const auto srgb_color = glm::convertLinearToSRGB(
-      pack_lighting ? vertex.diffuse_lighting : vertex.base_color);
+      pack_lighting ? vertex.diffuse_lighting : glm::vec3{0.0f});
 
    packed.tangent |= pack_unorm(srgb_color.r) << 16;
    packed.tangent |= pack_unorm(srgb_color.g) << 8;
@@ -181,7 +181,8 @@ auto create_terrain_triangle_list(const Terrain_map& terrain) -> Terrain_triangl
 
 void output_vertex_buffer(const Terrain_vertex_buffer& vertex_buffer,
                           ucfb::Editor_data_writer& writer,
-                          const std::array<glm::vec3, 2> vert_box)
+                          const std::array<glm::vec3, 2> vert_box,
+                          const bool pack_lighting)
 {
    writer.write<std::uint32_t, std::uint32_t>(static_cast<std::uint32_t>(
                                                  vertex_buffer.size()),
@@ -191,7 +192,7 @@ void output_vertex_buffer(const Terrain_vertex_buffer& vertex_buffer,
    const Vertex_position_compress pos_compress{vert_box};
 
    for (const auto& vertex : vertex_buffer) {
-      writer.write(pack_vertex(vertex, pos_compress, false));
+      writer.write(pack_vertex(vertex, pos_compress, true));
    }
 
    writer.write(std::uint64_t{}); // trailing unused texcoords & binormal

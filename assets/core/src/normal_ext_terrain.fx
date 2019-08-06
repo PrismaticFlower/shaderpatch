@@ -1,33 +1,40 @@
 
 #include "color_utilities.hlsl"
 #include "constants_list.hlsl"
+#include "normal_ext_common.hlsl"
 #include "pixel_sampler_states.hlsl"
 #include "pixel_utilities.hlsl"
 #include "terrain_common.hlsl"
 #include "lighting_utilities.hlsl"
 
-const static bool pbr_terrain_use_shadow_map = PBR_TERRAIN_USE_SHADOW_MAP;
-
+Texture2D<float3> projected_light_texture : register(t2);
 Texture2D<float4> shadow_map : register(t3);
 Texture2D<float3> terrain_normal_map : register(t6);
 Texture2DArray<float1> height_maps : register(t7);
-Texture2DArray<float4> albedo_ao_maps : register(t8);
-Texture2DArray<float4> normal_mr_maps : register(t9);
+Texture2DArray<float4> diffuse_ao_maps : register(t8);
+Texture2DArray<float3> normal_gloss_maps : register(t9);
+TextureCube<float3> envmap : register(t10);
+
+struct Texture_vars {
+   float height_scale;
+   float specular_exponent;
+   uint2 padding;
+};
 
 cbuffer MaterialConstants : register(MATERIAL_CB_INDEX) {
-   float3 base_color;
-   float base_metallicness;
-   float base_roughness;
+   float3 diffuse_color;
+   float3 specular_color;
+   bool use_envmap;
 
    float3x2 texture_transforms[16];
 
-   float texture_height_scales[16];
+   Texture_vars texture_vars[16];
 };
 
 struct Vs_output {
    float3 positionWS : POSITIONWS;
    float fog : FOG;
-   float3 static_lighting : STATICLIGHT;
+   float3 static_diffuse_lighting : STATICLIGHT;
    float texture_blend0 : TEXBLEND0;
    float2 terrain_coords : TERCOORDS;
    float texture_blend1 : TEXBLEND1;
@@ -40,7 +47,7 @@ struct Vs_output {
 
 Vs_output main_vs(Packed_terrain_vertex packed_vertex)
 {
-   Terrain_vertex input = unpack_vertex(packed_vertex, true);
+   Terrain_vertex input = unpack_vertex(packed_vertex, vertex_color_srgb);
 
    Vs_output output;
 
@@ -49,7 +56,7 @@ Vs_output main_vs(Packed_terrain_vertex packed_vertex)
    output.texture_blend1 = input.texture_blend[1];
    output.texture_indices = input.texture_indices;
    output.terrain_coords = input.terrain_coords;
-   output.static_lighting = input.color;
+   output.static_diffuse_lighting = input.color;
 
    output.positionPS = mul(float4(output.positionWS, 1.0), projection_matrix);
 
@@ -61,17 +68,17 @@ Vs_output main_vs(Packed_terrain_vertex packed_vertex)
    return output;
 }
 
-struct Pbr_unpacked_textures {
-   float3 albedo;
+struct Unpacked_textures {
+   float3 diffuse;
    float ao;
    float3 normalTS;
-   float metallicness;
-   float roughness;
+   float gloss;
+   float specular_exponent;
 };
 
-Pbr_unpacked_textures sample_textures(const Vs_output input, const float3x3 tangent_to_world)
+Unpacked_textures sample_textures(const Vs_output input, const float3x3 tangent_to_world)
 {
-   Pbr_unpacked_textures unpacked;
+   Unpacked_textures unpacked;
 
    const uint i0 = input.texture_indices[0];
    const uint i1 = input.texture_indices[1];
@@ -81,9 +88,9 @@ Pbr_unpacked_textures sample_textures(const Vs_output input, const float3x3 tang
                           {mul(input.positionWS, texture_transforms[i1]), i1},
                           {mul(input.positionWS, texture_transforms[i2]), i2}};
 
-   const float3 height_scales = {texture_height_scales[i0],
-                                 texture_height_scales[i1],
-                                 texture_height_scales[i2]};
+   const float3 height_scales = {texture_vars[i0].height_scale,
+                                 texture_vars[i1].height_scale,
+                                 texture_vars[i2].height_scale};
    const float3 vertex_texture_blend = {input.texture_blend0, input.texture_blend1,
                                         1.0 - input.texture_blend0 - input.texture_blend1};
    const float3 unorm_viewTS = mul(view_positionWS - input.positionWS, transpose(tangent_to_world));
@@ -96,27 +103,29 @@ Pbr_unpacked_textures sample_textures(const Vs_output input, const float3x3 tang
    const float3 blend =
       terrain_blend_weights(heights, vertex_texture_blend);
 
-   float4 albedo_ao = 0.0;
-   float4 normal_mr = 0.0;
+   float4 diffuse_ao = 0.0;
+   float3 normal_gloss = 0.0;
 
    [unroll] for (int i = 0; i < 3; ++i) {
       [branch] if (blend[i] > 0.0) {
-         albedo_ao +=
-            albedo_ao_maps.Sample(aniso_wrap_sampler, texcoords[i]) * blend[i];
-         normal_mr +=
-            normal_mr_maps.Sample(aniso_wrap_sampler, texcoords[i]) * blend[i];
+         diffuse_ao +=
+            diffuse_ao_maps.Sample(aniso_wrap_sampler, texcoords[i]) * blend[i];
+         normal_gloss +=
+            normal_gloss_maps.Sample(aniso_wrap_sampler, texcoords[i]) * blend[i];
       }
    }
 
-   unpacked.albedo = albedo_ao.rgb;
-   unpacked.ao = albedo_ao.a;
+   unpacked.diffuse = diffuse_ao.rgb;
+   unpacked.ao = diffuse_ao.a;
 
-   unpacked.normalTS.xy = normal_mr.xy * (255.0 / 127.0) - (128.0 / 127.0);
+   unpacked.normalTS.xy = normal_gloss.xy * (255.0 / 127.0) - (128.0 / 127.0);
    unpacked.normalTS.z =
       sqrt(1.0 - saturate(dot(unpacked.normalTS.xy, unpacked.normalTS.xy)));
 
-   unpacked.metallicness = normal_mr.z;
-   unpacked.roughness = normal_mr.w;
+   unpacked.gloss = normal_gloss.z;
+   unpacked.specular_exponent = texture_vars[i0].specular_exponent * blend[0] +
+                                texture_vars[i1].specular_exponent * blend[1] +
+                                texture_vars[i2].specular_exponent * blend[2];
 
    return unpacked;
 }
@@ -126,22 +135,32 @@ float4 main_ps(Vs_output input) : SV_Target0
    const float3x3 tangent_to_world =
       terrain_sample_normal_map(terrain_normal_map, input.terrain_coords);
 
-   const Pbr_unpacked_textures textures = sample_textures(input, tangent_to_world);
+   const Unpacked_textures textures = sample_textures(input, tangent_to_world);
 
    const uint2 shadow_coords = (uint2)input.positionPS.xy;
-   const float shadow = pbr_terrain_use_shadow_map ? shadow_map[shadow_coords].a : 1.0;
-   const float3 albedo = textures.albedo * base_color;
-   const float ao = textures.ao;
-   const float metallicness = textures.metallicness * base_metallicness;
-   const float roughness = textures.roughness * base_roughness;
+   const float shadow =
+      normal_ext_use_shadow_map ? shadow_map[shadow_coords].a : 1.0;
+   const float3 static_diffuse_lighting = input.static_diffuse_lighting;
+   const float3 diffuse = textures.diffuse * diffuse_color;
+   const float3 specular = textures.gloss * specular_color;
+   const float  specular_exponent = textures.specular_exponent;
+   const float  ao = textures.ao;
    const float3 normalWS = normalize(mul(textures.normalTS, tangent_to_world));
    const float3 viewWS = normalize(view_positionWS - input.positionWS);
 
-   float3 color = light::pbr::calculate(normalWS, viewWS, input.positionWS, 
-                                        albedo, metallicness, roughness,
-                                        ao, shadow);
+   float3 color = do_lighting(normalWS, input.positionWS, viewWS, diffuse,
+                              static_diffuse_lighting, specular, specular_exponent,
+                              shadow, ao, projected_light_texture);
 
-   color += (input.static_lighting * ao * (albedo / light::pbr::PI));
+   [branch] if (use_envmap) {
+      const float3 env_coords = calculate_envmap_reflection(normalWS, viewWS);
+      const float3 env = envmap.Sample(aniso_wrap_sampler, env_coords);
+      const float roughness = light::specular_exp_to_roughness(specular_exponent);
+      const float so =
+         light::pbr::specular_occlusion(saturate(dot(normalWS, viewWS)), ao, roughness);
+
+      color += (so * env * specular);
+   }
 
    color = apply_fog(color, input.fog);
 

@@ -234,6 +234,7 @@ auto create_texturecube(ID3D11Device1& device, const Texture_info& info,
                                                  info.mip_count,
                                                  D3D11_BIND_SHADER_RESOURCE,
                                                  D3D11_USAGE_IMMUTABLE,
+                                                 0,
                                                  1,
                                                  0,
                                                  D3D10_RESOURCE_MISC_TEXTURECUBE};

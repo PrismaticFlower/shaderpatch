@@ -12,7 +12,7 @@ using namespace std::literals;
 
 namespace sp {
 
-struct Terrain_material_constants {
+struct Terrain_pbr_material_constants {
    glm::vec3 base_color;
    float base_metallicness;
    float base_roughness;
@@ -30,19 +30,45 @@ struct Terrain_material_constants {
    std::array<glm::vec4, 16> texture_height_scales;
 };
 
-static_assert(sizeof(Terrain_material_constants) == 800);
+static_assert(sizeof(Terrain_pbr_material_constants) == 800);
+
+struct Terrain_normal_ext_material_constants {
+   glm::vec3 diffuse_color;
+   float _padding0{};
+   glm::vec3 specular_color;
+   glm::uint32 use_envmap;
+
+   struct Texture_transform {
+      glm::vec3 row0;
+      float _padding0{};
+      glm::vec3 row1;
+      float _padding1{};
+   };
+
+   std::array<Texture_transform, 16> texture_transforms;
+
+   struct Texture_vars {
+      float height_scale;
+      float specular_exponent;
+      glm::vec2 _padding;
+   };
+
+   std::array<Texture_vars, 16> texture_vars;
+};
+
+static_assert(sizeof(Terrain_normal_ext_material_constants) == 800);
 
 namespace {
 
-auto create_constant_buffer(const Terrain_materials_config& config,
-                            const std::array<Terrain_texture_transform, 16>& texture_transforms,
-                            const std::vector<std::string> textures_order)
+auto create_pbr_constant_buffer(const Terrain_materials_config& config,
+                                const std::array<Terrain_texture_transform, 16>& texture_transforms,
+                                const std::vector<std::string>& textures_order)
    -> Aligned_vector<std::byte, 16>
 {
    Aligned_vector<std::byte, 16> cb_data;
-   cb_data.resize(sizeof(Terrain_material_constants));
+   cb_data.resize(sizeof(Terrain_pbr_material_constants));
 
-   auto* const cb = new (cb_data.data()) Terrain_material_constants{};
+   auto* const cb = new (cb_data.data()) Terrain_pbr_material_constants{};
 
    cb->base_color = config.base_color;
    cb->base_metallicness = config.base_metallicness;
@@ -63,6 +89,53 @@ auto create_constant_buffer(const Terrain_materials_config& config,
    }
 
    return cb_data;
+}
+
+auto create_normal_ext_constant_buffer(
+   const Terrain_materials_config& config,
+   const std::array<Terrain_texture_transform, 16>& texture_transforms,
+   const std::vector<std::string>& textures_order) -> Aligned_vector<std::byte, 16>
+{
+   Aligned_vector<std::byte, 16> cb_data;
+   cb_data.resize(sizeof(Terrain_normal_ext_material_constants));
+
+   auto* const cb = new (cb_data.data()) Terrain_normal_ext_material_constants{};
+
+   cb->diffuse_color = config.diffuse_color;
+   cb->specular_color = config.specular_color;
+
+   cb->use_envmap = config.use_envmap;
+
+   for (auto i = 0; i < texture_transforms.size(); ++i) {
+      const auto transform = texture_transforms[i].get_transform();
+      cb->texture_transforms[i].row0 = transform[0];
+      cb->texture_transforms[i].row1 = transform[1];
+   }
+
+   for (auto i = 0; i < safe_min(textures_order.size(), std::size_t{16}); ++i) {
+      auto it = config.materials.find(textures_order[i]);
+
+      if (it == config.materials.cend()) continue;
+
+      cb->texture_vars[i].height_scale = it->second.height_scale;
+      cb->texture_vars[i].specular_exponent = it->second.specular_exponent;
+   }
+
+   return cb_data;
+}
+
+auto create_constant_buffer(const Terrain_materials_config& config,
+                            const std::array<Terrain_texture_transform, 16>& texture_transforms,
+                            const std::vector<std::string>& textures_order)
+   -> Aligned_vector<std::byte, 16>
+{
+   if (config.rendertype == Terrain_rendertype::pbr) {
+      return create_pbr_constant_buffer(config, texture_transforms, textures_order);
+   }
+   else {
+      return create_normal_ext_constant_buffer(config, texture_transforms,
+                                               textures_order);
+   }
 }
 
 auto select_rendertype(const Terrain_materials_config& config) noexcept -> std::string
@@ -104,10 +177,10 @@ auto select_textures(const Terrain_materials_config& config,
       return {std::string{terrain_normal_map_texture_name} += suffix,
               std::string{terrain_height_texture_name} += suffix,
               std::string{terrain_diffuse_ao_texture_name} += suffix,
-              std::string{terrain_normal_gloss_texture_name} += suffix};
+              std::string{terrain_normal_gloss_texture_name} += suffix,
+              config.use_envmap ? config.envmap_name : ""s};
    }
 }
-
 }
 
 void terrain_save_material(const Terrain_materials_config& config,

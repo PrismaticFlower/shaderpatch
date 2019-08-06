@@ -156,6 +156,7 @@
     <None Include="definitions\patch\depth_msaa_resolve.json" />
     <None Include="definitions\patch\late_backbuffer_resolve.json" />
     <None Include="definitions\patch\normal_ext-tessellated.json" />
+    <None Include="definitions\patch\normal_ext_terrain.json" />
     <None Include="definitions\patch\pbr_terrain.json" />
     <None Include="definitions\patch\postprocess_bloom.json" />
     <None Include="definitions\patch\postprocess_msaa_resolve.json" />
@@ -450,6 +451,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\terrain_common.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\normal_ext_terrain.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\normal_ext_common.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

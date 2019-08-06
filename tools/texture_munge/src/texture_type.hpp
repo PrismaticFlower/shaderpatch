@@ -11,7 +11,8 @@ enum class Texture_type {
    image,
    roughness,
    metellic_roughness,
-   normal_map
+   normal_map,
+   cubemap
 };
 
 inline auto texture_type_from_string(const std::string_view type) -> Texture_type
@@ -37,6 +38,9 @@ inline auto texture_type_from_string(const std::string_view type) -> Texture_typ
    }
    else if (type == "normalmap"_svci) {
       return Texture_type::normal_map;
+   }
+   else if (type == "cubemap"_svci) {
+      return Texture_type::cubemap;
    }
 
    throw std::invalid_argument{"Invalid texture type"};

@@ -1,6 +1,6 @@
 {
-  "group_name": "pbr_terrain",
-  "source_name": "pbr_terrain.fx",
+  "group_name": "normal_ext_terrain",
+  "source_name": "normal_ext_terrain.fx",
 
   "input_layouts": {
     "packed_input": [
@@ -54,7 +54,8 @@
         [ "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING", "0" ],
         [ "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING", "0" ],
         [ "TERRAIN_COMMON_LOW_DETAIL", "0" ],
-        [ "PBR_TERRAIN_USE_SHADOW_MAP", "0" ]
+        [ "NORMAL_EXT_USE_SHADOW_MAP", "0" ],
+        [ "NORMAL_EXT_USE_PROJECTED_TEXTURE", "0" ]
       ]
     },
 
@@ -69,7 +70,8 @@
         "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING",
         "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING",
         "TERRAIN_COMMON_LOW_DETAIL",
-        "PBR_TERRAIN_USE_SHADOW_MAP"
+        "NORMAL_EXT_USE_SHADOW_MAP",
+        "NORMAL_EXT_USE_PROJECTED_TEXTURE"
       ],
 
       "static_flags_ops": {
@@ -90,39 +92,43 @@
   },
 
   "rendertypes": {
-    "pbr_terrain": {
+    "normal_ext_terrain": {
       "static_flags": {
         "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": false,
         "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": false,
         "TERRAIN_COMMON_LOW_DETAIL": false,
-        "PBR_TERRAIN_USE_SHADOW_MAP": false
+        "NORMAL_EXT_USE_SHADOW_MAP": false,
+        "NORMAL_EXT_USE_PROJECTED_TEXTURE": false
       }
     },
 
-    "pbr_terrain.parallax offset mapping": {
+    "normal_ext_terrain.parallax offset mapping": {
       "static_flags": {
         "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": true,
         "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": false,
         "TERRAIN_COMMON_LOW_DETAIL": false,
-        "PBR_TERRAIN_USE_SHADOW_MAP": false
+        "NORMAL_EXT_USE_SHADOW_MAP": false,
+        "NORMAL_EXT_USE_PROJECTED_TEXTURE": false
       }
     },
 
-    "pbr_terrain.parallax occlusion mapping": {
+    "normal_ext_terrain.parallax occlusion mapping": {
       "static_flags": {
         "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": false,
         "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": true,
         "TERRAIN_COMMON_LOW_DETAIL": false,
-        "PBR_TERRAIN_USE_SHADOW_MAP": false
+        "NORMAL_EXT_USE_SHADOW_MAP": false,
+        "NORMAL_EXT_USE_PROJECTED_TEXTURE": false
       }
     },
 
-    "pbr_terrain.low detail": {
+    "normal_ext_terrain.low detail": {
       "static_flags": {
         "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": false,
         "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": false,
         "TERRAIN_COMMON_LOW_DETAIL": true,
-        "PBR_TERRAIN_USE_SHADOW_MAP": false
+        "NORMAL_EXT_USE_SHADOW_MAP": false,
+        "NORMAL_EXT_USE_PROJECTED_TEXTURE": false
       }
     }
   },
@@ -148,7 +154,11 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "main_ps"
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+        }
       }
     },
 
@@ -163,7 +173,7 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "PBR_TERRAIN_USE_SHADOW_MAP": true
+          "NORMAL_EXT_USE_SHADOW_MAP": true
         }
       }
     },
@@ -179,7 +189,8 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "PBR_TERRAIN_USE_SHADOW_MAP": true
+          "NORMAL_EXT_USE_SHADOW_MAP": true,
+          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
         }
       }
     },
@@ -204,7 +215,11 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "main_ps"
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+        }
       }
     },
 
@@ -219,7 +234,7 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "PBR_TERRAIN_USE_SHADOW_MAP": true
+          "NORMAL_EXT_USE_SHADOW_MAP": true
         }
       }
     },
@@ -235,7 +250,8 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "PBR_TERRAIN_USE_SHADOW_MAP": true
+          "NORMAL_EXT_USE_SHADOW_MAP": true,
+          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
         }
       }
     }

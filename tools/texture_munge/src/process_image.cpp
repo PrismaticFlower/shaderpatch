@@ -110,6 +110,50 @@ auto change_image_format(DX::ScratchImage image, const DXGI_FORMAT new_format)
    return converted_image;
 }
 
+auto fold_cubemap(DX::ScratchImage image)
+{
+   Expects(image.GetMetadata().dimension == DX::TEX_DIMENSION_TEXTURE2D);
+
+   auto& meta = image.GetMetadata();
+
+   const auto width = (meta.width / 4);
+   const auto height = (meta.height / 3);
+
+   if (width * 4 != meta.width || height * 3 != meta.height) {
+      throw compose_exception<std::runtime_error>(
+         "Invalid texture dimensions for cubemap!");
+   }
+
+   DX::ScratchImage cubemap;
+   cubemap.InitializeCube(meta.format, width, height, 1, 1);
+
+   // +X
+   DX::CopyRectangle(*image.GetImage(0, 0, 0), {width * 2, height, width, height},
+                     *cubemap.GetImage(0, 0, 0), DX::TEX_FILTER_FORCE_NON_WIC, 0, 0);
+
+   // -X
+   DX::CopyRectangle(*image.GetImage(0, 0, 0), {0, height, width, height},
+                     *cubemap.GetImage(0, 1, 0), DX::TEX_FILTER_FORCE_NON_WIC, 0, 0);
+
+   // +Y
+   DX::CopyRectangle(*image.GetImage(0, 0, 0), {width, 0, width, height},
+                     *cubemap.GetImage(0, 2, 0), DX::TEX_FILTER_FORCE_NON_WIC, 0, 0);
+
+   // -Y
+   DX::CopyRectangle(*image.GetImage(0, 0, 0), {width, height * 2, width, height},
+                     *cubemap.GetImage(0, 3, 0), DX::TEX_FILTER_FORCE_NON_WIC, 0, 0);
+
+   // +Z
+   DX::CopyRectangle(*image.GetImage(0, 0, 0), {width, height, width, height},
+                     *cubemap.GetImage(0, 4, 0), DX::TEX_FILTER_FORCE_NON_WIC, 0, 0);
+
+   // +Z
+   DX::CopyRectangle(*image.GetImage(0, 0, 0), {width * 3, height, width, height},
+                     *cubemap.GetImage(0, 5, 0), DX::TEX_FILTER_FORCE_NON_WIC, 0, 0);
+
+   return cubemap;
+}
+
 auto remap_roughness_channels(DX::ScratchImage image) -> DirectX::ScratchImage
 {
    const auto process_image = [&](Image_span dest_image) noexcept {
@@ -473,6 +517,10 @@ auto process_image(const YAML::Node& config,
    const auto type = texture_type_from_string(config["Type"s].as<std::string>());
 
    if (type == Texture_type::passthrough) return image;
+
+   if (type == Texture_type::cubemap) {
+      image = fold_cubemap(std::move(image));
+   }
 
    auto paired_image = load_paired_image(image_file_path.parent_path(), config);
 

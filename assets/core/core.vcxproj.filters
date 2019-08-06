@@ -359,6 +359,11 @@
     <None Include="src\CMAA2.hlsl">
       <Filter>src</Filter>
     </None>
+    <None Include="src\pbr_terrain.fx" />
+    <None Include="src\terrain_common.hlsl" />
+    <None Include="definitions\patch\normal_ext_terrain.json">
+      <Filter>definitions\patch</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">
@@ -378,10 +383,10 @@
     <CustomBuild Include="build_lvls.ps1" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="src\pbr_terrain.fx">
+    <FxCompile Include="src\normal_ext_terrain.fx">
       <Filter>src</Filter>
     </FxCompile>
-    <FxCompile Include="src\terrain_common.hlsl">
+    <FxCompile Include="src\normal_ext_common.hlsl">
       <Filter>src</Filter>
     </FxCompile>
   </ItemGroup>

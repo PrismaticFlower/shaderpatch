@@ -27,5 +27,6 @@ auto create_terrain_triangle_list(const Terrain_map& terrain) -> Terrain_triangl
 
 void output_vertex_buffer(const Terrain_vertex_buffer& vertex_buffer,
                           ucfb::Editor_data_writer& writer,
-                          const std::array<glm::vec3, 2> vert_box);
+                          const std::array<glm::vec3, 2> vert_box,
+                          const bool pack_lighting);
 }

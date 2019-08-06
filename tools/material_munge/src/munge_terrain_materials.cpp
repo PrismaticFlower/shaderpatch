@@ -91,17 +91,17 @@ void munge_terrain_materials(const std::unordered_map<Ci_string, std::filesystem
 
          const auto terrain_map = load_terrain(file.second);
          const auto terrain_suffix = file.second.stem().string();
+         const auto config = load_terrain_materials_config(file.second);
 
          if (const auto terrain_output_file_path =
                 output_munge_files_dir / munged_terrain_file_name;
              should_modelify_terrain(config_last_write_time, munged_terrain_input_file_path,
                                      terrain_output_file_path)) {
-            terrain_modelify(terrain_map, terrain_suffix, munged_terrain_input_file_path,
-                             terrain_output_file_path);
+            terrain_modelify(terrain_map, terrain_suffix, config.use_ze_static_lighting,
+                             munged_terrain_input_file_path, terrain_output_file_path);
             terrain_save_normal_map(terrain_map, terrain_suffix, output_munge_files_dir);
          }
 
-         const auto config = load_terrain_materials_config(file.second);
          const auto terrain_textures = get_terrain_textures(terrain_map);
 
          terrain_assemble_textures(config, terrain_suffix, terrain_textures,

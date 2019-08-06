@@ -25,21 +25,25 @@ struct Terrain_material {
    std::string diffuse_map;
    std::string gloss_map;
    float height_scale;
+   float specular_exponent;
 };
 
 struct Terrain_materials_config {
    bool use_envmap = false;
    std::string envmap_name;
 
+   bool use_ze_static_lighting = false;
+   bool srgb_diffuse_maps = false;
+
    Terrain_bumpmapping bumpmapping = Terrain_bumpmapping::parallax_offset_mapping;
    Terrain_rendertype rendertype = Terrain_rendertype::normal_ext;
-
-   bool use_global_detail_map = false;
-   std::string global_detail_map;
 
    glm::vec3 base_color;
    float base_metallicness;
    float base_roughness;
+
+   glm::vec3 diffuse_color;
+   glm::vec3 specular_color;
 
    std::map<std::string, Terrain_material, std::less<>> materials;
 };
@@ -62,6 +66,7 @@ struct convert<sp::Terrain_material> {
       material.diffuse_map = node["DiffuseMap"s].as<std::string>("$null_diffusemap"s);
       material.gloss_map = node["GlossMap"s].as<std::string>("$null_glossmap"s);
       material.height_scale = node["HeightScale"s].as<float>(0.05f);
+      material.specular_exponent = node["SpecularExponent"s].as<float>(64.0f);
 
       return true;
    }
@@ -77,6 +82,8 @@ struct convert<sp::Terrain_materials_config> {
 
       config.use_envmap = global["UseEnvironmentMapping"s].as<bool>(false);
       config.envmap_name = global["EnvironmentMap"s].as<std::string>(""s);
+      config.use_ze_static_lighting = global["UseZEStaticLighting"s].as<bool>(false);
+      config.srgb_diffuse_maps = global["sRGBDiffuseMaps"s].as<bool>(true);
 
       const auto bumpmapping =
          global["BumpMappingType"s].as<std::string>("Parallax Offset Mapping"s);
@@ -106,14 +113,15 @@ struct convert<sp::Terrain_materials_config> {
          throw std::runtime_error{"Invalid Rendertype"s};
       }
 
-      config.use_global_detail_map = global["UseGlobalDetailMap"s].as<bool>(false);
-      config.global_detail_map =
-         global["GlobalDetailMap"s].as<std::string>("$null_detailmap"s);
-
       config.base_color =
          global["BaseColor"s].as<glm::vec3>(glm::vec3{1.f, 1.f, 1.f});
       config.base_metallicness = global["BaseMetallicness"s].as<float>(1.f);
       config.base_roughness = global["BaseRoughness"s].as<float>(1.f);
+
+      config.diffuse_color =
+         global["DiffuseColor"s].as<glm::vec3>(glm::vec3{1.f, 1.f, 1.f});
+      config.specular_color =
+         global["SpecularColor"s].as<glm::vec3>(glm::vec3{1.f, 1.f, 1.f});
 
       for (auto& entry : node["Materials"s]) {
          config.materials.emplace(entry.first.as<std::string>(),

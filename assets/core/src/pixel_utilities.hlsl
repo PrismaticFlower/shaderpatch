@@ -91,8 +91,15 @@ float2 parallax_occlusion_map(Parallax_input_texture height_map, const float hei
 {
    const float fade_start = 64.0;
    const float fade_length = 256.0;
-   const uint num_steps = 16;
-   const float mip_level = height_map.CalculateLevelOfDetail(linear_wrap_sampler, texcoords);
+   const uint min_num_steps = 16;
+   const uint max_num_steps = 32;
+
+   const float view_distance = length(unorm_viewTS);
+   const float fade = 1.0 - saturate((view_distance - fade_start) / fade_length);
+
+#pragma warning(disable : 4000)
+   [branch] if (fade == 0.0) return texcoords;
+#pragma warning(enable : 4000)
 
    const float3 viewTS = normalize(unorm_viewTS);
    const float2 parallax_direction = normalize(viewTS.xy);
@@ -101,12 +108,9 @@ float2 parallax_occlusion_map(Parallax_input_texture height_map, const float hei
    const float parallax_length = sqrt(view_length * view_length - viewTS.z * viewTS.z) / viewTS.z;
    const float2 parallax_offset = parallax_direction * parallax_length * height_scale;
 
-   const float view_distance = length(unorm_viewTS);
-   const float fade = 1.0 - saturate((view_distance - fade_start) / fade_length);
+   const float mip_level = height_map.CalculateLevelOfDetail(linear_wrap_sampler, texcoords);
 
-#pragma warning(disable : 4000)
-   [branch] if (fade == 0.0) return texcoords;
-#pragma warning(enable : 4000)
+   const uint num_steps = (uint)lerp(max_num_steps, min_num_steps, abs(viewTS.z));
 
    const float step_size = 1.0 / (float)(num_steps * 4u);
    float curr_height = 0.0;
@@ -213,6 +217,15 @@ float3 sample_projected_light(Texture2D<float3> projected_texture, float4 texcoo
    
      return projected_texture.Sample(projtex_sampler, proj_texcoords);
    }
+}
+
+float3 calculate_envmap_reflection(float3 normal, float3 view_normal)
+{
+   float NdotN = dot(normal, normal);
+   float NdotV = dot(normal, view_normal);
+
+   float3 refl = normal * (NdotV * 2.0);
+   return -view_normal * NdotN + refl;
 }
 
 float3 gaussian_sample(Texture2D<float3> tex, SamplerState samp,

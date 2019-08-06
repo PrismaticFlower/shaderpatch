@@ -47,18 +47,51 @@ void check_sampler_info(const YAML::Node& config)
 
 auto get_texture_info(const DX::ScratchImage& image) -> Texture_info
 {
-   Expects(image.GetMetadata().arraySize == 1 && image.GetMetadata().depth == 1);
-
    const auto meta = image.GetMetadata();
 
    Texture_info info;
 
-   info.type = Texture_type::texture2d;
+   switch (meta.dimension) {
+   case DX::TEX_DIMENSION_TEXTURE1D:
+      if (image.GetMetadata().arraySize > 1) {
+         info.type = Texture_type::texture1darray;
+      }
+      else {
+         info.type = Texture_type::texture1d;
+      }
+
+      break;
+   case DX::TEX_DIMENSION_TEXTURE2D:
+      if (meta.IsCubemap()) {
+         if (image.GetMetadata().arraySize > 6) {
+            info.type = Texture_type::texturecubearray;
+         }
+         else {
+            info.type = Texture_type::texturecube;
+         }
+      }
+      else {
+         if (image.GetMetadata().arraySize > 1) {
+            info.type = Texture_type::texture2darray;
+         }
+         else {
+            info.type = Texture_type::texture2d;
+         }
+      }
+
+      break;
+   case DX::TEX_DIMENSION_TEXTURE3D:
+      if (image.GetMetadata().arraySize > 1) std::terminate();
+
+      info.type = Texture_type::texture3d;
+      break;
+   }
+
    info.width = gsl::narrow_cast<std::uint32_t>(meta.width);
    info.height = gsl::narrow_cast<std::uint32_t>(meta.height);
-   info.depth = 1;
+   info.depth = gsl::narrow_cast<std::uint32_t>(meta.depth);
    info.mip_count = gsl::narrow_cast<std::uint32_t>(meta.mipLevels);
-   info.array_size = 1;
+   info.array_size = gsl::narrow_cast<std::uint32_t>(meta.arraySize);
    info.format = meta.format;
 
    return info;

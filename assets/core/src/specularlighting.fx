@@ -116,15 +116,6 @@ float3 calculate_blinn_specular(float3 normal, float3 view_normal, float3 world_
    return attenuation * (specular_color * light_color * specular);
 }
 
-float3 calculate_reflection(float3 normal, float3 view_normal)
-{
-   float NdotN = dot(normal, normal);
-   float NdotV = dot(normal, view_normal);
-
-   float3 refl = normal * (NdotV * 2.0);
-   return -view_normal * NdotN + refl;
-}
-
 struct Ps_normalmapped_input
 {
    float3 positionWS : POSITIONWS;
@@ -169,7 +160,7 @@ float4 normalmapped_envmap_ps(Ps_normalmapped_input input,
    float3 normalWS = normalize(mul(input.TBN, normalTS));
 
    float3 view_normalWS = normalize(view_positionWS - input.positionWS);
-   float3 reflectionWS = calculate_reflection(normalWS, view_normalWS);
+   float3 reflectionWS = calculate_envmap_reflection(normalWS, view_normalWS);
 
    float3 envmap_color = envmap.Sample(aniso_wrap_sampler, reflectionWS);
 
@@ -212,7 +203,7 @@ float4 blinn_phong_ps(Ps_blinn_phong_input input,
                                                      light_positionsWS[0], light_colors[0], 
                                                      specular_color.rgb);
       
-      float3 reflectionWS = calculate_reflection(normalWS, view_normalWS);
+      float3 reflectionWS = calculate_envmap_reflection(normalWS, view_normalWS);
       
       float3 env_color = envmap.Sample(aniso_wrap_sampler, reflectionWS) * specular_color.rgb;
 

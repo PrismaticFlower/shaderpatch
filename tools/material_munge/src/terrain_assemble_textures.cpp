@@ -42,22 +42,26 @@ bool should_assemble_textures(
    std::filesystem::file_time_type last_input_time;
 
    const auto add_input = [&](const std::string& input) {
-      if (input.front() == '$') return;
+      if (input.front() == '$' || input.empty()) return false;
 
       const auto file = sptex_files_dir / (input + ".sptex"s);
 
-      if (!std::filesystem::exists(file)) return;
+      if (!std::filesystem::exists(file)) return true;
 
       last_input_time =
          safe_max(last_input_time, std::filesystem::last_write_time(file));
+
+      return false;
    };
 
    for (auto& matl : config.materials) {
-      add_input(matl.second.albedo_map);
-      add_input(matl.second.normal_map);
-      add_input(matl.second.metallic_roughness_map);
-      add_input(matl.second.ao_map);
-      add_input(matl.second.height_map);
+      if (add_input(matl.second.albedo_map)) return true;
+      if (add_input(matl.second.normal_map)) return true;
+      if (add_input(matl.second.metallic_roughness_map)) return true;
+      if (add_input(matl.second.ao_map)) return true;
+      if (add_input(matl.second.height_map)) return true;
+      if (add_input(matl.second.gloss_map)) return true;
+      if (add_input(matl.second.diffuse_map)) return true;
    }
 
    return last_output_time < last_input_time;
@@ -172,7 +176,7 @@ auto get_builtin_texture(const std::string& tex_name) -> DirectX::ScratchImage
                {"$null_metallic_roughnessmap", 0xffffffff},
                {"$null_albedomap", 0xffffffff},
                {"$null_diffusemap", 0xffffffff},
-               {"$null_glossmap", 0xffffffff}};
+               {"$null_glossmap", 0x00000000}};
 
    if (const auto it = builtins.find(tex_name); it != builtins.end()) {
       DirectX::ScratchImage image;
@@ -250,7 +254,8 @@ auto resize_textures(std::vector<DirectX::ScratchImage> input, const UINT w,
    for (auto& img : input) {
       if (img.GetMetadata().width != w || img.GetMetadata().height != h) {
          throw_if_failed(DirectX::Resize(*img.GetImage(0, 0, 0), w, h,
-                                         DirectX::TEX_FILTER_DEFAULT,
+                                         DirectX::TEX_FILTER_DEFAULT |
+                                            DirectX::TEX_FILTER_FORCE_NON_WIC,
                                          result.emplace_back()));
       }
       else {
@@ -481,11 +486,11 @@ void terrain_assemble_textures_pbr(const Terrain_materials_config& config,
    }
 }
 
-void terrain_assemble_textures_normal(const Terrain_materials_config& config,
-                                      const std::string_view texture_suffix,
-                                      const std::vector<std::string>& materials,
-                                      const std::filesystem::path& output_munge_files_dir,
-                                      const std::filesystem::path& sptex_files_dir)
+void terrain_assemble_textures_normal_ext(const Terrain_materials_config& config,
+                                          const std::string_view texture_suffix,
+                                          const std::vector<std::string>& materials,
+                                          const std::filesystem::path& output_munge_files_dir,
+                                          const std::filesystem::path& sptex_files_dir)
 {
    const auto diffuse_ao_maps_paths =
       output_munge_files_dir / ((std::string{terrain_diffuse_ao_texture_name} +=
@@ -523,7 +528,9 @@ void terrain_assemble_textures_normal(const Terrain_materials_config& config,
                              pack_textures(diffuse_maps, {0, 1, 2, -1}, ao_maps,
                                            {3, -1, -1, -1},
                                            DXGI_FORMAT_R8G8B8A8_UNORM_SRGB)),
-                          DXGI_FORMAT_BC7_UNORM_SRGB, d3d11.get());
+                          config.srgb_diffuse_maps ? DXGI_FORMAT_BC7_UNORM_SRGB
+                                                   : DXGI_FORMAT_BC7_UNORM,
+                          d3d11.get());
 
       save_texture(diffuse_ao_maps_paths, packed_diffuse_ao_maps);
    }
@@ -579,8 +586,8 @@ void terrain_assemble_textures(const Terrain_materials_config& config,
                                     output_munge_files_dir, sptex_files_dir);
    }
    else if (config.rendertype == Terrain_rendertype::normal_ext) {
-      terrain_assemble_textures_normal(config, texture_suffix, materials,
-                                       output_munge_files_dir, sptex_files_dir);
+      terrain_assemble_textures_normal_ext(config, texture_suffix, materials,
+                                           output_munge_files_dir, sptex_files_dir);
    }
 }
 }

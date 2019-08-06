@@ -5,12 +5,9 @@
 #include "pixel_utilities.hlsl"
 #include "pixel_sampler_states.hlsl"
 
-const static bool terrain_common_use_shadow_map = TERRAIN_COMMON_USE_SHADOW_MAP;
-const static bool terrain_common_use_proj_light = TERRAIN_COMMON_USE_PROJ_LIGHT;
 const static bool terrain_common_use_parallax_offset_mapping = TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING;
 const static bool terrain_common_use_parallax_occlusion_mapping = TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING;
 const static bool terrain_common_low_detail = TERRAIN_COMMON_LOW_DETAIL;
-
 
 struct Packed_terrain_vertex {
    int4 position : POSITION;

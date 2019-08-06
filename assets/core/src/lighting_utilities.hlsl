@@ -13,6 +13,11 @@ struct Lighting
 namespace light
 {
 
+float specular_exp_to_roughness(float exponent) 
+{
+   return sqrt(max(2.0 / (exponent + 2.0), 0.0));
+}
+
 float3 ambient(float3 normalWS)
 {
    float factor = normalWS.y * -0.5 + 0.5;
@@ -219,6 +224,11 @@ namespace pbr
 static const float PI = 3.14159265359;
 static const float min_roughness = 0.0016;
 static const float sun_angular_radius = 0.00918;
+
+float specular_occlusion(float NdotV, float ao, float roughness)
+{
+   return saturate(pow(NdotV + ao, exp2(-16.0 * roughness - 1.0)) - 1.0 + ao);
+}
 
 float attenuation_point_smooth(float distance_sqr, float inv_range_sqr)
 {

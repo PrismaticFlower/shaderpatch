@@ -77,7 +77,8 @@ void add_terrain_model_segm(ucfb::Editor_parent_chunk& modl,
                             const std::string_view material_name,
                             const std::string_view bone_name,
                             const std::array<glm::vec3, 2> model_aabb,
-                            const Terrain_model_segment& segment)
+                            const Terrain_model_segment& segment,
+                            const bool keep_static_lighting)
 {
    auto& segm =
       std::get<1>(modl.emplace_back("segm"_mn, ucfb::Editor_parent_chunk{}).second);
@@ -99,7 +100,11 @@ void add_terrain_model_segm(ucfb::Editor_parent_chunk& modl,
          std::get<0>(segm.emplace_back("MTRL"_mn, ucfb::Editor_data_chunk{}).second)
             .writer();
 
-      mtrl.write(Material_flags::normal);    // material flags
+      const auto flags = keep_static_lighting
+                            ? Material_flags::normal | Material_flags::vertex_lit
+                            : Material_flags::normal;
+
+      mtrl.write(flags);                     // material flags
       mtrl.write<std::uint32_t>(0xffffffff); // diffuse color
       mtrl.write<std::uint32_t>(0xffffffff); // specular color
       mtrl.write<std::uint32_t>(50); // specular exponent (unused ingame)
@@ -166,7 +171,7 @@ void add_terrain_model_segm(ucfb::Editor_parent_chunk& modl,
          std::get<0>(segm.emplace_back("VBUF"_mn, ucfb::Editor_data_chunk{}).second)
             .writer();
 
-      output_vertex_buffer(segment.vertices, vbuf, model_aabb);
+      output_vertex_buffer(segment.vertices, vbuf, model_aabb, keep_static_lighting);
    }
 
    // BNAM
@@ -183,7 +188,8 @@ void add_terrain_model_chunk(ucfb::Editor& editor,
                              const std::string_view material_name, const int index,
                              const std::array<glm::vec3, 2> model_aabb,
                              const std::vector<Terrain_model_segment>& segments,
-                             const Terrain_model_segment* low_detail_segment)
+                             const Terrain_model_segment* low_detail_segment,
+                             const bool keep_static_lighting)
 {
    constexpr std::string_view skel_bone_name = "root";
    const auto model_name = std::string{terrain_model_name} + std::to_string(index);
@@ -285,7 +291,8 @@ void add_terrain_model_chunk(ucfb::Editor& editor,
 
       // segm(s)
       for (const auto& segment : segments) {
-         add_terrain_model_segm(modl, material_name, skel_bone_name, model_aabb, segment);
+         add_terrain_model_segm(modl, material_name, skel_bone_name, model_aabb,
+                                segment, keep_static_lighting);
       }
 
       // SPHR
@@ -352,7 +359,8 @@ void add_terrain_model_chunk(ucfb::Editor& editor,
       // segm
       {
          add_terrain_model_segm(modl, std::string{material_name} += terrain_low_detail_suffix,
-                                skel_bone_name, model_aabb, *low_detail_segment);
+                                skel_bone_name, model_aabb, *low_detail_segment,
+                                keep_static_lighting);
       }
 
       // SPHR
@@ -413,14 +421,16 @@ void add_terrain_model_chunk(ucfb::Editor& editor,
 
 void add_terrain_model_chunks(ucfb::Editor& editor, const std::string_view material_name,
                               const std::vector<Terrain_model_segment>& segments,
-                              const Terrain_model_segment& low_detail_segment)
+                              const Terrain_model_segment& low_detail_segment,
+                              const bool keep_static_lighting)
 {
    const auto model_aabb = calculate_terrain_model_segments_aabb(segments);
    const auto models = sort_terrain_segments_into_models(std::move(segments));
 
    for (auto i = 0; i < models.size(); ++i) {
       add_terrain_model_chunk(editor, material_name, i, model_aabb, models[i],
-                              i == 0 ? &low_detail_segment : nullptr);
+                              i == 0 ? &low_detail_segment : nullptr,
+                              keep_static_lighting);
    }
 
    // entc
@@ -551,6 +561,7 @@ void write_req_path(const std::filesystem::path& main_output_path,
 }
 
 void terrain_modelify(const Terrain_map& terrain, const std::string_view material_suffix,
+                      const bool keep_static_lighting,
                       const std::filesystem::path& munged_input_terrain_path,
                       const std::filesystem::path& output_path)
 {
@@ -582,7 +593,7 @@ void terrain_modelify(const Terrain_map& terrain, const std::string_view materia
    material_name += material_suffix;
 
    add_terrain_model_chunks(editor, material_name, terrain_model_segments,
-                            terrain_low_detail_segment);
+                            terrain_low_detail_segment, keep_static_lighting);
 
    auto file = ucfb::open_file_for_output(output_path);
    ucfb::Writer writer{file};
