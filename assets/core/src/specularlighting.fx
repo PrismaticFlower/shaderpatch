@@ -89,8 +89,7 @@ Vs_blinn_phong_ouput blinn_phong_vs(Vertex_input input)
 }
 
 float3 calculate_blinn_specular(float3 normal, float3 view_normal, float3 world_position,
-                                float4 light_position, float3 light_color, 
-                                float3 specular_color)
+                                float4 light_position, float3 light_color)
 {
    float3 light_direction = light_position.xyz - world_position;
 
@@ -113,7 +112,7 @@ float3 calculate_blinn_specular(float3 normal, float3 view_normal, float3 world_
    const float NdotH = saturate(dot(normal, H));
    const float specular = pow(NdotH, specular_exponent);
 
-   return attenuation * (specular_color * light_color * specular);
+   return attenuation * (light_color * specular);
 }
 
 struct Ps_normalmapped_input
@@ -139,10 +138,10 @@ float4 normalmapped_ps(Ps_normalmapped_input input,
    float3 view_normalWS = normalize(view_positionWS - input.positionWS);
 
    float3 spec = calculate_blinn_specular(normalWS, view_normalWS, input.positionWS,
-                                          light_positionWS, light_colors[0], specular_color.rgb);
+                                          light_positionWS, light_colors[0]);
 
    float gloss = lerp(1.0, normal_map_gloss.a, specular_color.a);
-   float3 color = gloss * spec;
+   float3 color = gloss * specular_color.rgb * spec;
 
    color = apply_fog(color, input.fog);
 
@@ -200,8 +199,7 @@ float4 blinn_phong_ps(Ps_blinn_phong_input input,
    if (light_count >= 1) {
       float3 spec_contrib = calculate_blinn_specular(normalWS, view_normalWS,
                                                      input.positionWS,
-                                                     light_positionsWS[0], light_colors[0], 
-                                                     specular_color.rgb);
+                                                     light_positionsWS[0], light_colors[0]);
       
       float3 reflectionWS = calculate_envmap_reflection(normalWS, view_normalWS);
       
@@ -212,11 +210,10 @@ float4 blinn_phong_ps(Ps_blinn_phong_input input,
    
    [unroll] for (uint i = 1; i < light_count; ++i) {
       color += calculate_blinn_specular(normalWS, view_normalWS, input.positionWS,
-                                        light_positionsWS[i], light_colors[i], 
-                                        specular_color.rgb);
+                                        light_positionsWS[i], light_colors[i]);
    }
 
-   color *= gloss;
+   color *= (specular_color.rgb * gloss);
    color = apply_fog(color, input.fog);
 
    return float4(color, alpha);
