@@ -4,7 +4,7 @@
 
 namespace sp {
 
-constexpr auto terrain_max_objects = 8;
+constexpr auto terrain_max_objects = 6;
 constexpr auto terrain_low_detail_length = 65;
 constexpr std::string_view terrain_low_detail_suffix = "LOWD";
 constexpr std::string_view terrain_material_name =
