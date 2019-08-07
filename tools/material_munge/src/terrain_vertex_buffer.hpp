@@ -20,8 +20,9 @@ struct Terrain_vertex {
    std::array<std::uint8_t, 3> texture_indices;
 };
 
+using Terrain_triangle = std::array<Terrain_vertex, 3>;
 using Terrain_vertex_buffer = std::vector<Terrain_vertex>;
-using Terrain_triangle_list = std::vector<std::array<Terrain_vertex, 3>>;
+using Terrain_triangle_list = std::vector<Terrain_triangle>;
 
 auto create_terrain_triangle_list(const Terrain_map& terrain) -> Terrain_triangle_list;
 

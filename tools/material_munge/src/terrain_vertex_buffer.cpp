@@ -11,6 +11,8 @@
 
 #include <glm/gtc/color_space.hpp>
 
+#pragma optimize("", off)
+
 namespace sp {
 
 namespace {
@@ -28,33 +30,56 @@ constexpr auto packed_vertex_flags =
    Vbuf_flags::texcoords | Vbuf_flags::position_compressed |
    Vbuf_flags::normal_compressed | Vbuf_flags::texcoord_compressed;
 
-auto select_terrain_tri_textures(const Terrain_map& terrain,
-                                 const std::array<int, 3> tri)
-   -> std::array<std::uint8_t, 3>
+auto select_textures(const Terrain_map& terrain, const std::array<glm::ivec2, 3> tri)
+   -> std::pair<std::array<std::uint8_t, 3>, std::array<std::array<float, 2>, 3>>
 {
-   std::array tri_weights{terrain.texture_weights[tri[0]],
-                          terrain.texture_weights[tri[1]],
-                          terrain.texture_weights[tri[2]]};
+   Expects(terrain.length > 1);
 
-   for (auto& weights : tri_weights) {
-      for (std::ptrdiff_t i = 0; i < weights.size() - 1; ++i) {
-         weights[i] *= (1.0f - weights[i + 1]);
+   std::array<std::array<std::array<float, 16>, 5>, 3> texture_weights{};
+
+   for (auto v = 0; v < tri.size(); ++v) {
+      const auto clamp = [max = terrain.length - 1](const auto v) {
+         return std::clamp(v, 0, max);
+      };
+
+      const auto i0 = clamp(tri[v].x) + (clamp(tri[v].y) * terrain.length);
+      const auto i1 = clamp(tri[v].x - 1) + (clamp(tri[v].y) * terrain.length);
+      const auto i2 = clamp(tri[v].x + 1) + (clamp(tri[v].y) * terrain.length);
+      const auto i3 = clamp(tri[v].x) + (clamp(tri[v].y - 1) * terrain.length);
+      const auto i4 = clamp(tri[v].x) + (clamp(tri[v].y + 1) * terrain.length);
+
+      texture_weights[v][0] = terrain.texture_weights[i0];
+      texture_weights[v][1] = terrain.texture_weights[i1];
+      texture_weights[v][2] = terrain.texture_weights[i2];
+      texture_weights[v][3] = terrain.texture_weights[i3];
+      texture_weights[v][4] = terrain.texture_weights[i4];
+   }
+
+   std::array premult_weights{texture_weights};
+
+   for (auto& vertex_weights : texture_weights) {
+      for (auto& weights : vertex_weights) {
+         for (std::ptrdiff_t i = 0; i < weights.size() - 1; ++i) {
+            weights[i] *= (1.0f - weights[i + 1]);
+         }
       }
    }
 
-   std::array<float, 16> total_tri_weights{};
+   std::array<float, 16> summed_weights{};
 
-   for (auto i = 0; i < 16; ++i) {
-      total_tri_weights[i] += tri_weights[0][i];
-      total_tri_weights[i] += tri_weights[1][i];
-      total_tri_weights[i] += tri_weights[2][i];
+   for (auto& vertex_weights : texture_weights) {
+      for (const auto& weights : vertex_weights) {
+         for (std::ptrdiff_t i = 0; i < weights.size(); ++i) {
+            summed_weights[i] += weights[i];
+         }
+      }
    }
 
    std::array<std::uint8_t, 3> indices;
 
    const auto select_index = [&](const std::ptrdiff_t start) {
       for (std::ptrdiff_t i = start; i > 0; --i) {
-         if (total_tri_weights[i] <= 0.0f) continue;
+         if (summed_weights[i] <= 0.0f) continue;
 
          return static_cast<std::uint8_t>(i);
       }
@@ -62,24 +87,16 @@ auto select_terrain_tri_textures(const Terrain_map& terrain,
       return std::uint8_t{0};
    };
 
-   indices[0] = select_index(total_tri_weights.size() - 1);
+   indices[0] = select_index(summed_weights.size() - 1);
    indices[1] = select_index(int{indices[0]} - 1);
    indices[2] = select_index(int{indices[1]} - 1);
 
-   return indices;
-}
-
-auto fetch_texture_weights(const std::array<float, 16>& weights,
-                           const std::array<std::uint8_t, 3> indices) noexcept
-   -> std::array<float, 2>
-{
-   auto premult_weights = weights;
-
-   for (std::ptrdiff_t i = 0; i < weights.size() - 1; ++i) {
-      premult_weights[i] *= (1.0f - premult_weights[i + 1]);
-   }
-
-   return {premult_weights[indices[0]], premult_weights[indices[1]]};
+   return {indices, std::array{std::array{texture_weights[0][0][indices[0]],
+                                          texture_weights[0][0][indices[1]]},
+                               std::array{texture_weights[1][0][indices[0]],
+                                          texture_weights[1][0][indices[1]]},
+                               std::array{texture_weights[2][0][indices[0]],
+                                          texture_weights[2][0][indices[1]]}}};
 }
 
 auto create_terrain_triangles(const Terrain_map& terrain) -> Terrain_triangle_list
@@ -89,10 +106,15 @@ auto create_terrain_triangles(const Terrain_map& terrain) -> Terrain_triangle_li
 
    for (auto y = 0; y < (terrain.length - 1); ++y) {
       for (auto x = 0; x < (terrain.length - 1); ++x) {
-         const auto i0 = x + (y * terrain.length);
-         const auto i1 = x + ((y + 1) * terrain.length);
-         const auto i2 = (x + 1) + (y * terrain.length);
-         const auto i3 = (x + 1) + ((y + 1) * terrain.length);
+         const glm::ivec2 xy0{x, y};
+         const glm::ivec2 xy1{x, y + 1};
+         const glm::ivec2 xy2{x + 1, y};
+         const glm::ivec2 xy3{x + 1, y + 1};
+
+         const auto i0 = xy0.x + (xy0.y * terrain.length);
+         const auto i1 = xy1.x + (xy1.y * terrain.length);
+         const auto i2 = xy2.x + (xy2.y * terrain.length);
+         const auto i3 = xy3.x + (xy3.y * terrain.length);
 
          Terrain_vertex v0;
          Terrain_vertex v1;
@@ -115,27 +137,33 @@ auto create_terrain_triangles(const Terrain_map& terrain) -> Terrain_triangle_li
          v3.diffuse_lighting = terrain.diffuse_lighting[i3];
          v3.base_color = terrain.color[i3];
 
-         auto& tri0 = tris.emplace_back(std::array{v0, v2, v3});
-         auto& tri1 = tris.emplace_back(std::array{v0, v3, v1});
+         {
+            auto& tri0 = tris.emplace_back(std::array{v0, v2, v3});
 
-         tri0[0].texture_indices = tri0[1].texture_indices = tri0[2].texture_indices =
-            select_terrain_tri_textures(terrain, {i0, i2, i3});
-         tri1[0].texture_indices = tri1[1].texture_indices = tri1[2].texture_indices =
-            select_terrain_tri_textures(terrain, {i0, i3, i1});
+            auto [tri0_tex_indices, tri0_tex_weights] =
+               select_textures(terrain, {xy0, xy2, xy3});
 
-         tri0[0].texture_blend = fetch_texture_weights(terrain.texture_weights[i0],
-                                                       tri0[0].texture_indices);
-         tri0[1].texture_blend = fetch_texture_weights(terrain.texture_weights[i2],
-                                                       tri0[0].texture_indices);
-         tri0[2].texture_blend = fetch_texture_weights(terrain.texture_weights[i3],
-                                                       tri0[0].texture_indices);
+            tri0[0].texture_indices = tri0[1].texture_indices =
+               tri0[2].texture_indices = tri0_tex_indices;
 
-         tri1[0].texture_blend = fetch_texture_weights(terrain.texture_weights[i0],
-                                                       tri1[0].texture_indices);
-         tri1[1].texture_blend = fetch_texture_weights(terrain.texture_weights[i3],
-                                                       tri1[0].texture_indices);
-         tri1[2].texture_blend = fetch_texture_weights(terrain.texture_weights[i1],
-                                                       tri1[0].texture_indices);
+            tri0[0].texture_blend = tri0_tex_weights[0];
+            tri0[1].texture_blend = tri0_tex_weights[1];
+            tri0[2].texture_blend = tri0_tex_weights[2];
+         }
+
+         {
+            auto& tri1 = tris.emplace_back(std::array{v0, v3, v1});
+
+            auto [tri1_tex_indices, tri1_tex_weights] =
+               select_textures(terrain, {xy0, xy3, xy1});
+
+            tri1[0].texture_indices = tri1[1].texture_indices =
+               tri1[2].texture_indices = tri1_tex_indices;
+
+            tri1[0].texture_blend = tri1_tex_weights[0];
+            tri1[1].texture_blend = tri1_tex_weights[1];
+            tri1[2].texture_blend = tri1_tex_weights[2];
+         }
       }
    }
 
@@ -176,6 +204,12 @@ auto create_terrain_triangle_list(const Terrain_map& terrain) -> Terrain_triangl
 {
    if (terrain.length < 2) return {};
 
+   auto triangles = create_terrain_triangles(terrain);
+
+   for (const auto& cut : terrain.cuts) {
+      cut.apply(triangles);
+   }
+
    return create_terrain_triangles(terrain);
 }
 
@@ -192,7 +226,7 @@ void output_vertex_buffer(const Terrain_vertex_buffer& vertex_buffer,
    const Vertex_position_compress pos_compress{vert_box};
 
    for (const auto& vertex : vertex_buffer) {
-      writer.write(pack_vertex(vertex, pos_compress, true));
+      writer.write(pack_vertex(vertex, pos_compress, pack_lighting));
    }
 
    writer.write(std::uint64_t{}); // trailing unused texcoords & binormal

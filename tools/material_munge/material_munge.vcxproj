@@ -177,6 +177,7 @@
     <ClCompile Include="src\munge_terrain_materials.cpp" />
     <ClCompile Include="src\optimize_mesh.cpp" />
     <ClCompile Include="src\terrain_assemble_textures.cpp" />
+    <ClCompile Include="src\terrain_cut.cpp" />
     <ClCompile Include="src\terrain_downsample.cpp" />
     <ClCompile Include="src\terrain_map.cpp" />
     <ClCompile Include="src\terrain_modelify.cpp" />
