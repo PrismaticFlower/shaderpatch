@@ -59,7 +59,8 @@ auto select_textures(const Terrain_map& terrain, const std::array<glm::ivec2, 3>
 
    for (auto& vertex_weights : texture_weights) {
       for (auto& weights : vertex_weights) {
-         for (std::ptrdiff_t i = 0; i < weights.size() - 1; ++i) {
+         for (std::ptrdiff_t i = static_cast<std::ptrdiff_t>(weights.size()) - 1;
+              i >= 0; --i) {
             weights[i] *= (1.0f - weights[i + 1]);
          }
       }
@@ -67,7 +68,7 @@ auto select_textures(const Terrain_map& terrain, const std::array<glm::ivec2, 3>
 
    std::array<float, 16> summed_weights{};
 
-   for (auto& vertex_weights : texture_weights) {
+   for (auto& vertex_weights : premult_weights) {
       for (const auto& weights : vertex_weights) {
          for (std::ptrdiff_t i = 0; i < weights.size(); ++i) {
             summed_weights[i] += weights[i];
@@ -91,12 +92,12 @@ auto select_textures(const Terrain_map& terrain, const std::array<glm::ivec2, 3>
    indices[1] = select_index(int{indices[0]} - 1);
    indices[2] = select_index(int{indices[1]} - 1);
 
-   return {indices, std::array{std::array{texture_weights[0][0][indices[0]],
-                                          texture_weights[0][0][indices[1]]},
-                               std::array{texture_weights[1][0][indices[0]],
-                                          texture_weights[1][0][indices[1]]},
-                               std::array{texture_weights[2][0][indices[0]],
-                                          texture_weights[2][0][indices[1]]}}};
+   return {indices, std::array{std::array{premult_weights[0][0][indices[0]],
+                                          premult_weights[0][0][indices[1]]},
+                               std::array{premult_weights[1][0][indices[0]],
+                                          premult_weights[1][0][indices[1]]},
+                               std::array{premult_weights[2][0][indices[0]],
+                                          premult_weights[2][0][indices[1]]}}};
 }
 
 auto create_terrain_triangles(const Terrain_map& terrain) -> Terrain_triangle_list

@@ -6,7 +6,7 @@
 
 namespace sp {
 
-void Terrain_cut::apply(Terrain_triangle_list& tris) const noexcept
+void Terrain_cut::apply(Terrain_triangle_list&) const noexcept
 {
    if (planes.empty()) return;
 
