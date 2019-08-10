@@ -39,6 +39,31 @@ constexpr Magic_number lvl_name_hash(std::string_view str)
    return static_cast<Magic_number>(fnv_1a_hash(str));
 }
 
+auto load_and_transform_req_files(fs::path path)
+   -> std::vector<std::pair<std::string, std::vector<std::string>>>
+{
+   auto req = parse_req_file(path);
+
+   // Process "animbank" and "anim" entries.
+   for (auto it = req.begin(); it != req.cend();) {
+      if (it->first == "animbank"_svci) {
+         it->first = "zaabin"s;
+
+         it = req.emplace(it, "zafbin"s, it->second);
+
+         it += 2;
+      }
+      else if (it->first == "anim"_svci) {
+         it = req.erase(it);
+      }
+      else {
+         ++it;
+      }
+   }
+
+   return req;
+}
+
 auto normalize_path(fs::path path) -> fs::path::string_type
 {
    path = path.lexically_normal().make_preferred();
@@ -134,7 +159,7 @@ void write_file_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
 
    if (fs::exists(req_path) && fs::is_regular_file(req_path)) {
       write_req_to_lvl(req_file_path, writer, added_files, input_dirs,
-                       extern_files, parse_req_file(req_path));
+                       extern_files, load_and_transform_req_files(req_path));
    }
 
    const auto file_data = read_binary_in(filepath);
@@ -205,7 +230,7 @@ void build_lvl_file(const fs::path& req_file_path, const fs::path& output_direct
       std::unordered_set<fs::path::string_type> added_files;
 
       write_req_to_lvl(req_file_path, writer, added_files, input_dirs,
-                       extern_files, parse_req_file(req_file_path));
+                       extern_files, load_and_transform_req_files(req_file_path));
 
       success = true;
    }
