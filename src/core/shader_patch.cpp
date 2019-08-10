@@ -579,23 +579,38 @@ auto Shader_patch::create_game_texture_cube(const UINT width, const UINT height,
 auto Shader_patch::create_patch_texture(const gsl::span<const std::byte> texture_data) noexcept
    -> Patch_texture
 {
-   auto [srv, name] =
-      load_patch_texture(ucfb::Reader_strict<"sptx"_mn>{texture_data}, *_device);
+   try {
+      auto [srv, name] =
+         load_patch_texture(ucfb::Reader_strict<"sptx"_mn>{texture_data}, *_device);
 
-   auto shared_srv = make_shared_com_ptr(srv);
+      auto shared_srv = make_shared_com_ptr(srv);
 
-   _texture_database.add(name, shared_srv);
+      _texture_database.add(name, shared_srv);
 
-   return {std::move(shared_srv)};
+      return {std::move(shared_srv)};
+   }
+   catch (std::exception& e) {
+      log(Log_level::error, "Failed to create unknown texture! reason: "sv, e.what());
+
+      return {nullptr};
+   }
 }
 
 auto Shader_patch::create_patch_material(const gsl::span<const std::byte> material_data) noexcept
    -> std::shared_ptr<Patch_material>
 {
-   return std::make_shared<Patch_material>(read_patch_material(
-                                              ucfb::Reader_strict<"matl"_mn>{material_data}),
-                                           _material_shader_factory,
-                                           _texture_database, *_device);
+   try {
+      auto material = std::make_shared<Patch_material>(
+         read_patch_material(ucfb::Reader_strict<"matl"_mn>{material_data}),
+         _material_shader_factory, _texture_database, *_device);
+
+      log(Log_level::info, "Loaded material "sv, std::quoted(material->name));
+
+      return material;
+   }
+   catch (std::exception& e) {
+      log_and_terminate("Failed to create unknown material! reason: "sv, e.what());
+   }
 }
 
 auto Shader_patch::create_patch_effects_config(const gsl::span<const std::byte> effects_config) noexcept
@@ -621,7 +636,7 @@ auto Shader_patch::create_patch_effects_config(const gsl::span<const std::byte> 
       return {on_destruction};
    }
    catch (std::exception& e) {
-      log_and_terminate("Exception occured while loading FX Config: "sv, e.what());
+      log_and_terminate("Failed to load effects config! reason: "sv, e.what());
    }
 }
 
