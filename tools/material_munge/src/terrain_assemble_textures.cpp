@@ -90,6 +90,7 @@ auto load_sptex(const std::filesystem::path& path) -> DirectX::ScratchImage
    }
 
    DirectX::ScratchImage image;
+   Texture_info texture_info;
 
    load_patch_texture(
       ucfb::Reader_strict<"sptx"_mn>{gsl::make_span(vr_data)},
@@ -101,9 +102,7 @@ auto load_sptex(const std::filesystem::path& path) -> DirectX::ScratchImage
                "Can't use 1D texture as input for terrain texture!"};
          case Texture_type::texture2d:
          case Texture_type::texture2darray:
-            throw_if_failed(
-               image.Initialize2D(info.format, info.width, info.height, 1, 1));
-
+            texture_info = info;
             return;
          case Texture_type::texture3d:
             throw std::runtime_error{
@@ -120,17 +119,17 @@ auto load_sptex(const std::filesystem::path& path) -> DirectX::ScratchImage
       [&](const std::int32_t item, const std::int32_t mip, const Texture_data data) {
          if (item != 0 || mip != 0) return;
 
-         const auto dest_image = *image.GetImage(mip, item, 0);
-         auto src_image = dest_image;
+         DirectX::Image src;
 
-         src_image.rowPitch = data.pitch;
-         src_image.slicePitch = data.slice_pitch;
-         src_image.pixels = const_cast<std::uint8_t*>(
+         src.width = texture_info.width;
+         src.height = texture_info.height;
+         src.format = texture_info.format;
+         src.rowPitch = data.pitch;
+         src.slicePitch = data.slice_pitch;
+         src.pixels = const_cast<std::uint8_t*>(
             reinterpret_cast<const std::uint8_t*>(data.data.data())); // Yikes!
 
-         throw_if_failed(
-            DirectX::CopyRectangle(src_image, {0, 0, src_image.width, src_image.height},
-                                   dest_image, DirectX::TEX_FILTER_DEFAULT, 0, 0));
+         throw_if_failed(image.InitializeFromImage(src));
       });
 
    if (const auto format = image.GetMetadata().format; DirectX::IsCompressed(format)) {
@@ -139,10 +138,7 @@ auto load_sptex(const std::filesystem::path& path) -> DirectX::ScratchImage
 
       throw_if_failed(
          DirectX::Decompress(compressed.GetImages(), compressed.GetImageCount(),
-                             compressed.GetMetadata(),
-                             DirectX::IsSRGB(format) ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB
-                                                     : DXGI_FORMAT_R8G8B8A8_UNORM,
-                             image));
+                             compressed.GetMetadata(), DXGI_FORMAT_UNKNOWN, image));
    }
    else if (DirectX::IsPlanar(format)) {
       DirectX::ScratchImage planar;
@@ -158,8 +154,11 @@ auto load_sptex(const std::filesystem::path& path) -> DirectX::ScratchImage
       DirectX::ScratchImage old;
       std::swap(image, old);
 
-      throw_if_failed(DirectX::ConvertToSinglePlane(old.GetImages(), old.GetImageCount(),
-                                                    old.GetMetadata(), image));
+      throw_if_failed(
+         DirectX::Convert(old.GetImages(), old.GetImageCount(),
+                          old.GetMetadata(), DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+                          DirectX::TEX_FILTER_DEFAULT | DirectX::TEX_FILTER_FORCE_NON_WIC,
+                          1.0f, image));
    }
 
    return image;
@@ -317,14 +316,16 @@ auto pack_textures(const std::vector<DirectX::ScratchImage>& textures,
    packed_texture.Initialize2D(packed_format, textures[0].GetMetadata().width,
                                textures[0].GetMetadata().height, textures.size(), 1);
 
-   for (auto i = 0; i < textures.size(); ++i) {
-      auto src_image = *textures[i].GetImage(0, 0, 0);
+   std::vector<DirectX::Image> images;
+   images.resize(textures.size());
 
-      throw_if_failed(
-         DirectX::CopyRectangle(src_image, {0, 0, src_image.width, src_image.height},
-                                *packed_texture.GetImage(0, i, 0), 0,
-                                DirectX::TEX_FILTER_DEFAULT, 0));
-   }
+   std::transform(textures.cbegin(), textures.cend(), images.begin(),
+                  [](const DirectX::ScratchImage& image) {
+                     return *image.GetImage(0, 0, 0);
+                  });
+
+   throw_if_failed(
+      packed_texture.InitializeArrayFromImages(images.data(), images.size()));
 
    return packed_texture;
 }
