@@ -307,14 +307,14 @@ auto mipmap_image(DX::ScratchImage image) -> DX::ScratchImage
    if (image.GetMetadata().dimension == DX::TEX_DIMENSION_TEXTURE3D) {
       if (FAILED(DX::GenerateMipMaps3D(image.GetImages(), image.GetImageCount(),
                                        image.GetMetadata(),
-                                       DX::TEX_FILTER_BOX | DX::TEX_FILTER_FORCE_NON_WIC,
+                                       DX::TEX_FILTER_DEFAULT | DX::TEX_FILTER_FORCE_NON_WIC,
                                        0, mipped_image))) {
          throw std::runtime_error{"Unable to generate mip maps"s};
       }
    }
    else if (FAILED(DX::GenerateMipMaps(image.GetImages(), image.GetImageCount(),
                                        image.GetMetadata(),
-                                       DX::TEX_FILTER_BOX | DX::TEX_FILTER_FORCE_NON_WIC,
+                                       DX::TEX_FILTER_DEFAULT | DX::TEX_FILTER_FORCE_NON_WIC,
                                        0, mipped_image))) {
       throw std::runtime_error{"Unable to generate mip maps"s};
    }
