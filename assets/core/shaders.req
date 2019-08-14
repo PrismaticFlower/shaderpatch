@@ -30,6 +30,7 @@ ucft
 
       // Patch Shaders
       "adaptive_oit_resolve"
+      "basic_unlit"
       "cmaa2"
       "depth_msaa_resolve"
       "fixedfunc_color_fill"

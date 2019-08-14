@@ -102,6 +102,14 @@ struct Normal_ext_terrain {
 
 static_assert(sizeof(Normal_ext_terrain) == 800);
 
+struct Basic_unlit_cb {
+   bool use_emissive_map = false;
+   float emissive_power = 1.0f;
+   std::array<std::uint32_t, 2> _padding{};
+};
+
+static_assert(sizeof(Basic_unlit_cb) == 16);
+
 template<typename Type>
 auto apply_op(const Type value, [[maybe_unused]] const Material_property_var_op op) noexcept
 {
@@ -283,6 +291,17 @@ auto create_normal_ext_terrain_constant_buffer(const Material_properties_view& p
 
    return cb;
 }
+
+auto create_basic_unlit_buffer(const Material_properties_view& props) -> Basic_unlit_cb
+{
+   Basic_unlit_cb cb{};
+
+   cb.use_emissive_map = props.value<bool>("UseEmissiveMap"sv, cb.use_emissive_map);
+   cb.emissive_power = props.value<float>("EmissivePower"sv, cb.emissive_power);
+
+   return cb;
+}
+
 }
 
 auto create_material_constant_buffer(ID3D11Device5& device,
@@ -308,6 +327,10 @@ auto create_material_constant_buffer(ID3D11Device5& device,
    }
    else if (cb_name == "skybox"sv) {
       return nullptr;
+   }
+   else if (cb_name == "basic_unlit"sv) {
+      return create_immutable_constant_buffer(device, create_basic_unlit_buffer(
+                                                         properties_view));
    }
 
    throw compose_exception<std::runtime_error>("Unknown material constant buffer name "sv,

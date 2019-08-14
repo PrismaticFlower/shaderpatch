@@ -152,6 +152,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="definitions\patch\adaptive_oit_resolve.json" />
+    <None Include="definitions\patch\basic_unlit.json" />
     <None Include="definitions\patch\cmaa2.json" />
     <None Include="definitions\patch\depth_msaa_resolve.json" />
     <None Include="definitions\patch\late_backbuffer_resolve.json" />
@@ -467,6 +468,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\skybox.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\basic_unlit.fx">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

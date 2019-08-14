@@ -375,6 +375,9 @@
     <None Include="src\pbr_terrain.fx">
       <Filter>src</Filter>
     </None>
+    <None Include="definitions\patch\basic_unlit.json">
+      <Filter>definitions\patch</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">
@@ -395,6 +398,9 @@
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\skybox.fx">
+      <Filter>src</Filter>
+    </FxCompile>
+    <FxCompile Include="src\basic_unlit.fx">
       <Filter>src</Filter>
     </FxCompile>
   </ItemGroup>
