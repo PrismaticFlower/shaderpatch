@@ -306,6 +306,9 @@ auto create_material_constant_buffer(ID3D11Device5& device,
       return create_immutable_constant_buffer(device, create_normal_ext_terrain_constant_buffer(
                                                          properties_view));
    }
+   else if (cb_name == "skybox"sv) {
+      return nullptr;
+   }
 
    throw compose_exception<std::runtime_error>("Unknown material constant buffer name "sv,
                                                std::quoted(cb_name), "."sv);

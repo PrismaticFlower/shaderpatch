@@ -1,0 +1,21 @@
+Overridden RenderType: normal
+Failsafe Texture Index: 0
+Constant Buffer Name: skybox
+
+Material Options:
+   Unlit: yes
+
+Constant Buffer Stages:
+   VS: no
+   HS: no
+   DS: no
+   GS: no
+   PS: no
+
+Properties:
+
+Texture Mappings:
+   Skybox:
+      -
+         Stage: PS
+         Slot: 0

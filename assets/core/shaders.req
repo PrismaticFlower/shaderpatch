@@ -31,7 +31,6 @@ ucft
       // Patch Shaders
       "adaptive_oit_resolve"
       "cmaa2"
-      "damage_overlay"
       "depth_msaa_resolve"
       "fixedfunc_color_fill"
       "fixedfunc_damage_overlay"
@@ -47,9 +46,7 @@ ucft
       "postprocess"
       "postprocess_bloom"
       "postprocess_msaa_resolve"
-      "scene_blur_apply"
-      "shadows_blur"
-      "skyfog_ext"
+      "skybox"
       "stretch_texture"
    }
 }

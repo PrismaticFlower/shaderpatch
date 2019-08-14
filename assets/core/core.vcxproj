@@ -160,6 +160,7 @@
     <None Include="definitions\patch\pbr_terrain.json" />
     <None Include="definitions\patch\postprocess_bloom.json" />
     <None Include="definitions\patch\postprocess_msaa_resolve.json" />
+    <None Include="definitions\patch\skybox.json" />
     <None Include="shader_declarations.req">
       <FileType>Document</FileType>
     </None>
@@ -461,6 +462,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\normal_ext_common.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\skybox.fx">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
