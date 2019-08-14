@@ -102,6 +102,13 @@ struct Normal_ext_terrain {
 
 static_assert(sizeof(Normal_ext_terrain) == 800);
 
+struct Skybox_cb {
+   float emissive_power = 1.0f;
+   std::array<std::uint32_t, 3> _padding{};
+};
+
+static_assert(sizeof(Skybox_cb) == 16);
+
 struct Basic_unlit_cb {
    bool use_emissive_map = false;
    float emissive_power = 1.0f;
@@ -292,6 +299,15 @@ auto create_normal_ext_terrain_constant_buffer(const Material_properties_view& p
    return cb;
 }
 
+auto create_skybox_constant_buffer(const Material_properties_view& props) -> Skybox_cb
+{
+   Skybox_cb cb{};
+
+   cb.emissive_power = props.value<float>("EmissivePower"sv, cb.emissive_power);
+
+   return cb;
+}
+
 auto create_basic_unlit_buffer(const Material_properties_view& props) -> Basic_unlit_cb
 {
    Basic_unlit_cb cb{};
@@ -326,7 +342,8 @@ auto create_material_constant_buffer(ID3D11Device5& device,
                                                          properties_view));
    }
    else if (cb_name == "skybox"sv) {
-      return nullptr;
+      return create_immutable_constant_buffer(device, create_skybox_constant_buffer(
+                                                         properties_view));
    }
    else if (cb_name == "basic_unlit"sv) {
       return create_immutable_constant_buffer(device, create_basic_unlit_buffer(

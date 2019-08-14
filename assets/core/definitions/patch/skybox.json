@@ -22,7 +22,11 @@
         "flags_mask": {
           "tangents": false
         }
-      }
+      },
+
+      "defines": [
+        [ "SKYBOX_USE_EMISSIVE_MAP", "0" ]
+      ]
     },
 
     "main_ps": {
@@ -30,12 +34,26 @@
 
       "pixel_state": {
         "lighting": false
-      }
+      },
+
+      "static_flags": [
+        "SKYBOX_USE_EMISSIVE_MAP"
+      ]
     }
   },
 
   "rendertypes": {
-    "skybox": {}
+    "skybox": {
+      "static_flags": {
+        "SKYBOX_USE_EMISSIVE_MAP": false
+      }
+    },
+
+    "skybox.emissive": {
+      "static_flags": {
+        "SKYBOX_USE_EMISSIVE_MAP": true
+      }
+    }
   },
 
   "states": {

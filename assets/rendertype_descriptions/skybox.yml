@@ -10,12 +10,21 @@ Constant Buffer Stages:
    HS: no
    DS: no
    GS: no
-   PS: no
+   PS: yes
 
 Properties:
+   EmissivePower:
+      Type: float
+      Default: 0.0
+      Range: [-2048.0, 2048.0]
+      Op: exp2
 
 Texture Mappings:
    Skybox:
       -
          Stage: PS
          Slot: 0
+   SkyboxEmissive:
+      -
+         Stage: PS
+         Slot: 1
