@@ -3,7 +3,6 @@
 #include "../imgui/imgui_ext.hpp"
 #include "../logger.hpp"
 #include "file_dialogs.hpp"
-#include "imgui_tabs.h"
 #include "tonemappers.hpp"
 #include "volume_resource.hpp"
 
@@ -66,105 +65,98 @@ void Control::show_imgui(HWND game_window) noexcept
    ImGui::SetNextWindowSize({533, 591}, ImGuiCond_FirstUseEver);
    ImGui::Begin("Effects", nullptr);
 
-   ImGui::BeginTabBar("Effects Config", ImGuiTabBarFlags_SizingPolicyEqual |
-                                           ImGuiTabBarFlags_NoSelectionOnAppearing);
+   if (ImGui::BeginTabBar("Effects Config")) {
 
-   static bool first_open = true;
-   if (ImGui::TabItem("Control", nullptr,
-                      std::exchange(first_open, false) ? ImGuiTabItemFlags_SetSelected
-                                                       : ImGuiTabItemFlags_None)) {
-      ImGui::Checkbox("Enable Effects", &_enabled);
+      static bool first_open = true;
+      if (ImGui::BeginTabItem("Control", nullptr,
+                              std::exchange(first_open, false)
+                                 ? ImGuiTabItemFlags_SetSelected
+                                 : ImGuiTabItemFlags_None)) {
+         ImGui::Checkbox("Enable Effects", &_enabled);
 
-      if (ImGui::CollapsingHeader("Effects Config", ImGuiTreeNodeFlags_DefaultOpen)) {
-         ImGui::Checkbox("HDR Rendering", &_config.hdr_rendering);
+         if (ImGui::CollapsingHeader("Effects Config", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::Checkbox("HDR Rendering", &_config.hdr_rendering);
+
+            if (ImGui::IsItemHovered()) {
+               ImGui::SetTooltip(
+                  "HDR rendering works best with custom materials "
+                  "and may give poor results without them.");
+            }
+         }
+
+         ImGui::Checkbox("Profiler Enabled", &profiler.enabled);
+
+         ImGui::Separator();
+
+         if (ImGui::Button("Open Config")) {
+            if (auto path =
+                   win32::open_file_dialog({{L"Effects Config", L"*.spfx"}}, game_window,
+                                           fs::current_path(), L"mod_config.spfx"s);
+                path) {
+               load_params_from_yaml_file(*path);
+            }
+         }
 
          if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("HDR rendering works best with custom materials "
-                              "and may give poor results without them.");
+            ImGui::SetTooltip("Open a previously saved config.");
          }
-      }
 
-      ImGui::Checkbox("Profiler Enabled", &profiler.enabled);
-
-      ImGui::Separator();
-
-      if (ImGui::Button("Open Config")) {
-         if (auto path =
-                win32::open_file_dialog({{L"Effects Config", L"*.spfx"}}, game_window,
-                                        fs::current_path(), L"mod_config.spfx"s);
-             path) {
-            load_params_from_yaml_file(*path);
+         if (_open_failure) {
+            ImGui::SameLine();
+            ImGui::TextColored({1.0f, 0.2f, 0.33f, 1.0f}, "Open Failed!");
          }
-      }
 
-      if (ImGui::IsItemHovered()) {
-         ImGui::SetTooltip("Open a previously saved config.");
-      }
-
-      if (_open_failure) {
          ImGui::SameLine();
-         ImGui::TextColored({1.0f, 0.2f, 0.33f, 1.0f}, "Open Failed!");
-      }
 
-      ImGui::SameLine();
-
-      if (ImGui::Button("Save Config")) {
-         if (auto path =
-                win32::save_file_dialog({{L"Effects Config", L"*.spfx"}}, game_window,
-                                        fs::current_path(), L"mod_config.spfx"s);
-             path) {
-            save_params_to_yaml_file(*path);
+         if (ImGui::Button("Save Config")) {
+            if (auto path =
+                   win32::save_file_dialog({{L"Effects Config", L"*.spfx"}}, game_window,
+                                           fs::current_path(), L"mod_config.spfx"s);
+                path) {
+               save_params_to_yaml_file(*path);
+            }
          }
-      }
 
-      if (ImGui::IsItemHovered()) {
-         ImGui::SetTooltip("Save out a config to be passed to `spfx_munge` or "
-                           "loaded back up from the developer screen.");
-      }
-
-      ImGui::SameLine();
-
-      if (ImGui::Button("Save Munged Config")) {
-         if (auto path = win32::save_file_dialog({{L"Munged Effects Config", L"*.mspfx"}},
-                                                 game_window, fs::current_path(),
-                                                 L"mod_config.mspfx"s);
-             path) {
-            save_params_to_munged_file(*path);
+         if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip(
+               "Save out a config to be passed to `spfx_munge` or "
+               "loaded back up from the developer screen.");
          }
-      }
 
-      if (ImGui::IsItemHovered()) {
-         ImGui::SetTooltip(
-            "Save out a munged config to be loaded from a map script. Keep in "
-            "mind Shader "
-            "Patch can not reload these files from the developer screen.");
-      }
-
-      if (_save_failure) {
          ImGui::SameLine();
-         ImGui::TextColored({1.0f, 0.2f, 0.33f, 1.0f}, "Save Failed!");
+
+         if (ImGui::Button("Save Munged Config")) {
+            if (auto path = win32::save_file_dialog({{L"Munged Effects Config", L"*.mspfx"}},
+                                                    game_window, fs::current_path(),
+                                                    L"mod_config.mspfx"s);
+                path) {
+               save_params_to_munged_file(*path);
+            }
+         }
+
+         if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip(
+               "Save out a munged config to be loaded from a map script. Keep "
+               "in "
+               "mind Shader "
+               "Patch can not reload these files from the developer screen.");
+         }
+
+         if (_save_failure) {
+            ImGui::SameLine();
+            ImGui::TextColored({1.0f, 0.2f, 0.33f, 1.0f}, "Save Failed!");
+         }
+
+         ImGui::EndTabItem();
       }
-   }
 
-   static bool post_processing_visable = false;
+      if (ImGui::BeginTabItem("Post Processing")) {
+         show_post_processing_imgui();
 
-   if (post_processing_visable = ImGui::TabItem("Post Processing");
-       post_processing_visable) {
-      ImGui::BeginChild("##post_processing", {}, false,
-                        ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+         ImGui::EndTabItem();
+      }
 
-      ImGui::EndChild();
-   }
-
-   ImGui::EndTabBar();
-
-   if (post_processing_visable) {
-      ImGui::BeginChild("##post_processing", {}, false,
-                        ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-
-      show_post_processing_imgui();
-
-      ImGui::EndChild();
+      ImGui::EndTabBar();
    }
 
    ImGui::End();
@@ -275,40 +267,53 @@ void Control::load_params_from_yaml_file(const fs::path& load_from) noexcept
 
 void Control::show_post_processing_imgui() noexcept
 {
-   ImGui::BeginTabBar("Post Processing", ImGuiTabBarFlags_SizingPolicyEqual |
-                                            ImGuiTabBarFlags_NoSelectionOnAppearing);
+   if (ImGui::BeginTabBar("Post Processing", ImGuiTabBarFlags_None)) {
+      static bool first_open = true;
+      if (ImGui::BeginTabItem("Color Grading", nullptr,
+                              std::exchange(first_open, false)
+                                 ? ImGuiTabItemFlags_SetSelected
+                                 : ImGuiTabItemFlags_None)) {
+         postprocess.color_grading_params(
+            show_color_grading_imgui(postprocess.color_grading_params()));
 
-   static bool first_open = true;
-   if (ImGui::TabItem("Color Grading", nullptr,
-                      std::exchange(first_open, false) ? ImGuiTabItemFlags_SetSelected
-                                                       : ImGuiTabItemFlags_None)) {
-      postprocess.color_grading_params(
-         show_color_grading_imgui(postprocess.color_grading_params()));
+         ImGui::EndTabItem();
+      }
+
+      if (ImGui::BeginTabItem("Tonemapping")) {
+         postprocess.color_grading_params(
+            show_tonemapping_imgui(postprocess.color_grading_params()));
+
+         ImGui::EndTabItem();
+      }
+
+      if (ImGui::BeginTabItem("Bloom")) {
+         postprocess.bloom_params(show_bloom_imgui(postprocess.bloom_params()));
+
+         ImGui::EndTabItem();
+      }
+
+      if (ImGui::BeginTabItem("Vignette")) {
+         postprocess.vignette_params(
+            show_vignette_imgui(postprocess.vignette_params()));
+
+         ImGui::EndTabItem();
+      }
+
+      if (ImGui::BeginTabItem("Film Grain")) {
+         postprocess.film_grain_params(
+            show_film_grain_imgui(postprocess.film_grain_params()));
+
+         ImGui::EndTabItem();
+      }
+
+      if (ImGui::BeginTabItem("SSAO")) {
+         ssao.params(show_ssao_imgui(ssao.params()));
+
+         ImGui::EndTabItem();
+      }
+
+      ImGui::EndTabBar();
    }
-
-   if (ImGui::TabItem("Tonemapping")) {
-      postprocess.color_grading_params(
-         show_tonemapping_imgui(postprocess.color_grading_params()));
-   }
-
-   if (ImGui::TabItem("Bloom")) {
-      postprocess.bloom_params(show_bloom_imgui(postprocess.bloom_params()));
-   }
-
-   if (ImGui::TabItem("Vignette")) {
-      postprocess.vignette_params(show_vignette_imgui(postprocess.vignette_params()));
-   }
-
-   if (ImGui::TabItem("Film Grain")) {
-      postprocess.film_grain_params(
-         show_film_grain_imgui(postprocess.film_grain_params()));
-   }
-
-   if (ImGui::TabItem("SSAO")) {
-      ssao.params(show_ssao_imgui(ssao.params()));
-   }
-
-   ImGui::EndTabBar();
 }
 
 void Control::config_changed() noexcept

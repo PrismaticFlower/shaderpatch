@@ -858,10 +858,10 @@ HRESULT Device::SetTexture(DWORD stage, IDirect3DBaseTexture9* texture) noexcept
 
          _shader_patch.set_texture(stage, rendertarget);
       },
-      [&](std::shared_ptr<core::Patch_material> material) {
+      [&](const core::Material_handle& material) {
          if (stage != 0) return;
 
-         _shader_patch.set_patch_material(std::move(material));
+         _shader_patch.set_patch_material(material.get());
       });
 
    return S_OK;

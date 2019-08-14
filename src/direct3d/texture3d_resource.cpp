@@ -152,7 +152,8 @@ void Texture3d_resource::create_resource() noexcept
 
    switch (volume_res_header.type) {
    case Volume_resource_type::material:
-      this->resource = _patch.create_patch_material(payload);
+      this->resource.emplace<core::Material_handle>(
+         _patch.create_patch_material(payload));
       break;
    case Volume_resource_type::texture:
       this->resource = _patch.create_patch_texture(payload);

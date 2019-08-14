@@ -181,8 +181,9 @@ void Postprocess::hdr_state(Hdr_state state) noexcept
    _config_changed = true;
 }
 
-void Postprocess::apply(ID3D11DeviceContext1& dc, Rendertarget_allocator& rt_allocator,
-                        Profiler& profiler, const core::Texture_database& textures,
+void Postprocess::apply(ID3D11DeviceContext1& dc,
+                        Rendertarget_allocator& rt_allocator, Profiler& profiler,
+                        const core::Shader_resource_database& textures,
                         const Postprocess_input input,
                         const Postprocess_output output) noexcept
 {
@@ -241,7 +242,7 @@ void Postprocess::apply(ID3D11DeviceContext1& dc, Rendertarget_allocator& rt_all
 
 void Postprocess::apply(ID3D11DeviceContext1& dc,
                         Rendertarget_allocator& rt_allocator, Profiler& profiler,
-                        const core::Texture_database& textures, CMAA2& cmaa2,
+                        const core::Shader_resource_database& textures, CMAA2& cmaa2,
                         const Postprocess_cmaa2_temp_target cmaa2_target,
                         const Postprocess_input input,
                         const Postprocess_output output) noexcept
@@ -360,7 +361,7 @@ void Postprocess::linearize_input(ID3D11DeviceContext1& dc,
 
 void Postprocess::do_bloom_and_color_grading(
    ID3D11DeviceContext1& dc, Rendertarget_allocator& allocator,
-   const core::Texture_database& textures, const Postprocess_input& input,
+   const core::Shader_resource_database& textures, const Postprocess_input& input,
    const Postprocess_output& output, Profiler& profiler,
    ID3D11PixelShader& postprocess_shader, ID3D11RenderTargetView* luma_rtv) noexcept
 {
@@ -437,7 +438,7 @@ void Postprocess::do_bloom_and_color_grading(
    srvs[scene_texture_slot] = &input.srv;
    srvs[bloom_texture_slot] = &rt_a.srv();
    srvs[dirt_texture_slot] =
-      _bloom_params.use_dirt ? textures.get(_bloom_params.dirt_texture_name).get()
+      _bloom_params.use_dirt ? textures.at_if(_bloom_params.dirt_texture_name).get()
                              : nullptr;
    srvs[lut_texture_slot] = _color_grading_lut_baker.srv(dc);
    srvs[blue_noise_texture_slot] = blue_noise_srv(textures);
@@ -454,7 +455,7 @@ void Postprocess::do_bloom_and_color_grading(
 }
 
 void Postprocess::do_color_grading(ID3D11DeviceContext1& dc,
-                                   const core::Texture_database& textures,
+                                   const core::Shader_resource_database& textures,
                                    const Postprocess_input& input,
                                    const Postprocess_output& output, Profiler& profiler,
                                    ID3D11PixelShader& postprocess_shader,
@@ -535,13 +536,13 @@ void Postprocess::bind_bloom_cb(ID3D11DeviceContext1& dc, const UINT index) noex
    dc.PSSetConstantBuffers(bloom_cb_slot, 1, &cb);
 }
 
-auto Postprocess::blue_noise_srv(const core::Texture_database& textures) noexcept
+auto Postprocess::blue_noise_srv(const core::Shader_resource_database& textures) noexcept
    -> ID3D11ShaderResourceView*
 {
    if (_blue_noise_srvs.empty()) {
       for (int i = 0; i < 64; ++i) {
          _blue_noise_srvs.emplace_back(
-            textures.get("_SP_BUILTIN_blue_noise_rgb_"s + std::to_string(i)));
+            textures.at_if("_SP_BUILTIN_blue_noise_rgb_"s + std::to_string(i)));
       }
    }
 

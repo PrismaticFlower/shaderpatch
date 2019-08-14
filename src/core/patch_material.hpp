@@ -10,16 +10,17 @@
 #include <memory>
 #include <vector>
 
-#include <d3d11_1.h>
+#include <d3d11_4.h>
 
 namespace sp::core {
 
 struct Patch_material {
    Patch_material() = default;
 
-   Patch_material(Material_info material_info, Material_shader_factory& shader_factory,
-                  const Texture_database& texture_database,
-                  ID3D11Device1& device) noexcept;
+   Patch_material(Material_config material_config,
+                  Material_shader_factory& shader_factory,
+                  const Shader_resource_database& texture_database,
+                  ID3D11Device5& device);
 
    void bind_constant_buffers(ID3D11DeviceContext1& dc) noexcept;
 
@@ -54,9 +55,10 @@ struct Patch_material {
    bool tessellation;
    D3D11_PRIMITIVE_TOPOLOGY tessellation_primitive_topology;
 
-   std::string zprepass_shader_state;
-
-   std::string name;
+   const std::string name;
+   const std::string rendertype;
+   const std::string cb_name;
+   std::vector<Material_property> properties;
 };
 
 }

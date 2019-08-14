@@ -20,7 +20,6 @@
 #include "oit_provider.hpp"
 #include "patch_effects_config_handle.hpp"
 #include "patch_material.hpp"
-#include "patch_texture.hpp"
 #include "sampler_states.hpp"
 #include "shader_database.hpp"
 #include "shader_loader.hpp"
@@ -43,6 +42,8 @@
 
 namespace sp::core {
 
+class Shader_patch;
+
 enum class Game_rendertarget_id : int {};
 
 enum class Game_depthstencil { nearscene, farscene, reflectionscene, none };
@@ -58,6 +59,12 @@ struct Mapped_texture {
    UINT depth_pitch;
    std::byte* data;
 };
+
+using Material_handle =
+   std::unique_ptr<Patch_material, Small_function<void(Patch_material*) noexcept>>;
+
+using Texture_handle =
+   std::unique_ptr<ID3D11ShaderResourceView, Small_function<void(ID3D11ShaderResourceView*) noexcept>>;
 
 class Shader_patch {
 public:
@@ -111,10 +118,10 @@ public:
       -> Game_texture;
 
    auto create_patch_texture(const gsl::span<const std::byte> texture_data) noexcept
-      -> Patch_texture;
+      -> Texture_handle;
 
    auto create_patch_material(const gsl::span<const std::byte> material_data) noexcept
-      -> std::shared_ptr<Patch_material>;
+      -> Material_handle;
 
    auto create_patch_effects_config(const gsl::span<const std::byte> effects_config) noexcept
       -> Patch_effects_config_handle;
@@ -190,7 +197,7 @@ public:
 
    void set_projtex_cube(const Game_texture& texture) noexcept;
 
-   void set_patch_material(std::shared_ptr<Patch_material> material) noexcept;
+   void set_patch_material(Patch_material* material) noexcept;
 
    void set_constants(const cb::Scene_tag, const UINT offset,
                       const gsl::span<const std::array<float, 4>> constants) noexcept;
@@ -294,7 +301,7 @@ private:
    Rendertype _shader_rendertype = Rendertype::invalid;
 
    std::array<Game_texture, 6> _game_textures;
-   std::shared_ptr<Patch_material> _patch_material;
+   Patch_material* _patch_material = nullptr;
 
    Com_ptr<ID3D11Buffer> _game_index_buffer;
    UINT _game_index_buffer_offset = 0;
@@ -384,13 +391,14 @@ private:
    Late_backbuffer_resolver _late_backbuffer_resolver{*_device, *_shader_database};
    const Depth_msaa_resolver _depth_msaa_resolver{*_device, *_shader_database};
    Sampler_states _sampler_states{*_device};
-   Texture_database _texture_database{
+   Shader_resource_database _shader_resource_database{
       load_texture_lvl(L"data/shaderpatch/textures.lvl", *_device)};
 
    effects::Control _effects{_device, _shader_database->groups};
    effects::Rendertarget_allocator _rendertarget_allocator{_device};
 
    Material_shader_factory _material_shader_factory{_device, _shader_database};
+   std::vector<std::unique_ptr<Patch_material>> _materials;
 
    glm::mat4 _informal_projection_matrix;
 

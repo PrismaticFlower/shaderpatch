@@ -76,5 +76,16 @@ struct convert<glm::uvec3> : public convert_vec<glm::uvec3> {
 template<>
 struct convert<glm::uvec4> : public convert_vec<glm::uvec4> {
 };
+template<>
+struct convert<glm::bvec2> : public convert_vec<glm::bvec2> {
+};
+
+template<>
+struct convert<glm::bvec3> : public convert_vec<glm::bvec3> {
+};
+
+template<>
+struct convert<glm::bvec4> : public convert_vec<glm::bvec4> {
+};
 
 }

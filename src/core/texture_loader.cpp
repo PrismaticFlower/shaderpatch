@@ -7,18 +7,18 @@
 namespace sp::core {
 
 auto load_texture_lvl(const std::filesystem::path lvl_path,
-                      ID3D11Device1& device) noexcept -> Texture_database
+                      ID3D11Device1& device) noexcept -> Shader_resource_database
 {
    try {
       win32::Memeory_mapped_file file{lvl_path};
       ucfb::Reader reader{file.bytes()};
-      Texture_database database;
+      Shader_resource_database database;
 
       while (reader) {
          auto [srv, name] =
             load_patch_texture(reader.read_child_strict<"sptx"_mn>(), device);
 
-         database.add(std::move(name), std::move(srv));
+         database.insert(std::move(srv), std::move(name));
       }
 
       return database;

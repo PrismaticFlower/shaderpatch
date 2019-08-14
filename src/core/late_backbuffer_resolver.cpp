@@ -40,7 +40,7 @@ Late_backbuffer_resolver::Late_backbuffer_resolver(ID3D11Device1& device,
 }
 
 void Late_backbuffer_resolver::resolve(ID3D11DeviceContext1& dc,
-                                       const Texture_database& textures,
+                                       const Shader_resource_database& textures,
                                        const Game_rendertarget& source,
                                        ID3D11RenderTargetView& target) noexcept
 {
@@ -71,10 +71,10 @@ void Late_backbuffer_resolver::resolve(ID3D11DeviceContext1& dc,
    dc.Draw(3, 0);
 }
 
-void Late_backbuffer_resolver::update_blue_noise_srv(const Texture_database& textures)
+void Late_backbuffer_resolver::update_blue_noise_srv(const Shader_resource_database& textures)
 {
-   _blue_noise_srv = textures.get("_SP_BUILTIN_blue_noise_rgb_"s +
-                                  std::to_string(_rand_dist(_xorshift)));
+   _blue_noise_srv = textures.at_if("_SP_BUILTIN_blue_noise_rgb_"s +
+                                    std::to_string(_rand_dist(_xorshift)));
 }
 
 auto Late_backbuffer_resolver::get_pixel_shader(const Game_rendertarget& source) const

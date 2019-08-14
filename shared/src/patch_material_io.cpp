@@ -1,6 +1,8 @@
 
 #include "patch_material_io.hpp"
+#include "compose_exception.hpp"
 #include "game_rendertypes.hpp"
+#include "string_utilities.hpp"
 #include "ucfb_reader.hpp"
 #include "ucfb_writer.hpp"
 #include "volume_resource.hpp"
@@ -15,18 +17,24 @@
 
 #include <gsl/gsl>
 
+using namespace std::literals;
+
 namespace sp {
 
 namespace {
-enum class Material_version : std::uint32_t { v_1, current = v_1 };
+enum class Material_version : std::uint32_t { v_1, v_2, current = v_2 };
 
-inline namespace v_1 {
-auto read_patch_material_impl(ucfb::Reader reader) -> Material_info;
+inline namespace v_2 {
+auto read_patch_material_impl(ucfb::Reader reader) -> Material_config;
+}
+
+namespace v_1 {
+auto read_patch_material_impl(ucfb::Reader reader) -> Material_config;
 }
 }
 
 void write_patch_material(const std::filesystem::path& save_path,
-                          const Material_info& info)
+                          const Material_config& config)
 {
    using namespace std::literals;
    namespace fs = std::filesystem;
@@ -39,29 +47,42 @@ void write_patch_material(const std::filesystem::path& save_path,
 
       writer.emplace_child("VER_"_mn).write(Material_version::current);
 
-      writer.emplace_child("NAME"_mn).write(info.name);
-      writer.emplace_child("RTYP"_mn).write(info.rendertype);
-      writer.emplace_child("ORTP"_mn).write(info.overridden_rendertype);
-      writer.emplace_child("CBST"_mn).write(info.cb_shader_stages);
-      writer.emplace_child("CB__"_mn).write(gsl::make_span(info.constant_buffer));
+      writer.emplace_child("INFO"_mn).write(config.name, config.rendertype,
+                                            config.overridden_rendertype,
+                                            config.cb_shader_stages, config.cb_name,
+                                            config.fail_safe_texture_index,
+                                            config.tessellation,
+                                            config.tessellation_primitive_topology);
 
-      const auto write_textures = [&](const Magic_number mn,
-                                      const std::vector<std::string>& textures) {
+      // write properties
+      {
+         auto prps = writer.emplace_child("PRPS"_mn);
+
+         prps.write(static_cast<std::uint32_t>(config.properties.size()));
+
+         for (const auto& prop : config.properties) {
+            if (prop.value.valueless_by_exception())
+               throw std::runtime_error{"Invalid property value!"};
+
+            prps.write(prop.name);
+            prps.write(static_cast<std::uint32_t>(prop.value.index()));
+            std::visit([&](const auto& v) { prps.write(v); }, prop.value);
+         }
+      }
+
+      const auto write_resources = [&](const Magic_number mn,
+                                       const std::vector<std::string>& textures) {
          auto texs = writer.emplace_child(mn);
 
          texs.write<std::uint32_t>(gsl::narrow_cast<std::uint32_t>(textures.size()));
          for (const auto& texture : textures) texs.write(texture);
       };
 
-      write_textures("VSSR"_mn, info.vs_textures);
-      write_textures("HSSR"_mn, info.hs_textures);
-      write_textures("DSSR"_mn, info.ds_textures);
-      write_textures("GSSR"_mn, info.gs_textures);
-      write_textures("PSSR"_mn, info.ps_textures);
-
-      writer.emplace_child("FSTX"_mn).write(info.fail_safe_texture_index);
-      writer.emplace_child("TESS"_mn).write(info.tessellation,
-                                            info.tessellation_primitive_topology);
+      write_resources("VSSR"_mn, config.vs_resources);
+      write_resources("HSSR"_mn, config.hs_resources);
+      write_resources("DSSR"_mn, config.ds_resources);
+      write_resources("GSSR"_mn, config.gs_resources);
+      write_resources("PSSR"_mn, config.ps_resources);
    }
 
    const auto matl_data = ostream.str();
@@ -73,7 +94,7 @@ void write_patch_material(const std::filesystem::path& save_path,
                         Volume_resource_type::material, matl_span);
 }
 
-auto read_patch_material(ucfb::Reader_strict<"matl"_mn> reader) -> Material_info
+auto read_patch_material(ucfb::Reader_strict<"matl"_mn> reader) -> Material_config
 {
    const auto version =
       reader.read_child_strict<"VER_"_mn>().read<Material_version>();
@@ -83,6 +104,8 @@ auto read_patch_material(ucfb::Reader_strict<"matl"_mn> reader) -> Material_info
    switch (version) {
    case Material_version::current:
       return read_patch_material_impl(reader);
+   case Material_version::v_1:
+      return v_1::read_patch_material_impl(reader);
    default:
       throw std::runtime_error{"material has newer version than supported by "
                                "this version of Shader Patch!"};
@@ -91,8 +114,263 @@ auto read_patch_material(ucfb::Reader_strict<"matl"_mn> reader) -> Material_info
 
 namespace {
 
+namespace v_2 {
+
+auto read_material_prop_var(ucfb::Reader_strict<"PRPS"_mn>& prps,
+                            const std::uint32_t type_index) -> Material_property::Value
+{
+   switch (type_index) {
+   case 0:
+      return prps.read<std::variant_alternative_t<0, Material_property::Value>>();
+   case 1:
+      return prps.read<std::variant_alternative_t<1, Material_property::Value>>();
+   case 2:
+      return prps.read<std::variant_alternative_t<2, Material_property::Value>>();
+   case 3:
+      return prps.read<std::variant_alternative_t<3, Material_property::Value>>();
+   case 4:
+      return prps.read<std::variant_alternative_t<4, Material_property::Value>>();
+   case 5:
+      return prps.read<std::variant_alternative_t<5, Material_property::Value>>();
+   case 6:
+      return prps.read<std::variant_alternative_t<6, Material_property::Value>>();
+   case 7:
+      return prps.read<std::variant_alternative_t<7, Material_property::Value>>();
+   case 8:
+      return prps.read<std::variant_alternative_t<8, Material_property::Value>>();
+   case 9:
+      return prps.read<std::variant_alternative_t<9, Material_property::Value>>();
+   case 10:
+      return prps.read<std::variant_alternative_t<10, Material_property::Value>>();
+   case 11:
+      return prps.read<std::variant_alternative_t<11, Material_property::Value>>();
+   case 12:
+      return prps.read<std::variant_alternative_t<12, Material_property::Value>>();
+   }
+
+   static_assert(std::variant_size_v<Material_property::Value> == 13);
+
+   std::terminate();
+}
+
+auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
+{
+   Material_config config{};
+
+   const auto version =
+      reader.read_child_strict<"VER_"_mn>().read<Material_version>();
+
+   Ensures(version == Material_version::v_2);
+
+   {
+      auto info = reader.read_child_strict<"INFO"_mn>();
+
+      config.name = info.read_string();
+      config.rendertype = info.read_string();
+      config.overridden_rendertype = info.read<Rendertype>();
+      config.cb_shader_stages = info.read<Material_cb_shader_stages>();
+      config.cb_name = info.read_string();
+
+      std::tie(config.fail_safe_texture_index, config.tessellation,
+               config.tessellation_primitive_topology) =
+         info.read_multi<std::uint32_t, bool, D3D11_PRIMITIVE_TOPOLOGY>();
+   }
+
+   {
+      auto prps = reader.read_child_strict<"PRPS"_mn>();
+
+      const auto count = prps.read<std::uint32_t>();
+
+      config.properties.reserve(count);
+
+      for (auto i = 0; i < count; ++i) {
+         const auto name = prps.read_string();
+         const auto type_index = prps.read<std::uint32_t>();
+
+         config.properties.emplace_back(std::string{name},
+                                        read_material_prop_var(prps, type_index));
+      }
+   }
+
+   const auto read_resources = [&](auto texs, std::vector<std::string>& textures) {
+      const auto count = texs.read<std::uint32_t>();
+      textures.reserve(count);
+
+      for (auto i = 0; i < count; ++i)
+         textures.emplace_back(texs.read_string());
+   };
+
+   read_resources(reader.read_child_strict<"VSSR"_mn>(), config.vs_resources);
+   read_resources(reader.read_child_strict<"HSSR"_mn>(), config.hs_resources);
+   read_resources(reader.read_child_strict<"DSSR"_mn>(), config.ds_resources);
+   read_resources(reader.read_child_strict<"GSSR"_mn>(), config.gs_resources);
+   read_resources(reader.read_child_strict<"PSSR"_mn>(), config.ps_resources);
+
+   return config;
+}
+}
+
 namespace v_1 {
-auto read_patch_material_impl(ucfb::Reader reader) -> Material_info
+struct Material_info {
+   std::string name;
+   std::string rendertype;
+   Rendertype overridden_rendertype;
+   Material_cb_shader_stages cb_shader_stages = Material_cb_shader_stages::none;
+   Aligned_vector<std::byte, 16> constant_buffer{};
+   std::vector<std::string> vs_textures{};
+   std::vector<std::string> hs_textures{};
+   std::vector<std::string> ds_textures{};
+   std::vector<std::string> gs_textures{};
+   std::vector<std::string> ps_textures{};
+   std::uint32_t fail_safe_texture_index{};
+   bool tessellation = false;
+   D3D11_PRIMITIVE_TOPOLOGY tessellation_primitive_topology =
+      D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
+};
+
+auto convert_material_info_to_material_config(const Material_info& info) -> Material_config
+{
+   Material_config config;
+
+   config.name = info.name;
+   config.rendertype = info.rendertype;
+   config.overridden_rendertype = info.overridden_rendertype;
+   config.cb_shader_stages = info.cb_shader_stages;
+   config.vs_resources = info.vs_textures;
+   config.hs_resources = info.hs_textures;
+   config.ds_resources = info.ds_textures;
+   config.gs_resources = info.gs_textures;
+   config.ps_resources = info.ps_textures;
+   config.fail_safe_texture_index = info.fail_safe_texture_index;
+   config.tessellation = info.tessellation;
+   config.tessellation_primitive_topology = info.tessellation_primitive_topology;
+
+   if (begins_with(info.rendertype, "pbr"sv)) {
+      config.cb_name = "pbr"s;
+
+      struct PBR_cb {
+         glm::vec3 base_color;
+         float base_metallicness;
+         float base_roughness;
+         float ao_strength;
+         float emissive_power;
+      } pbr_cb;
+
+      static_assert(sizeof(PBR_cb) == 28);
+
+      if (info.constant_buffer.size() < sizeof(PBR_cb)) {
+         throw std::runtime_error{"unexpected constant buffer size"};
+      }
+
+      std::memcpy(&pbr_cb, info.constant_buffer.data(), sizeof(PBR_cb));
+
+      config.properties.emplace_back("BaseColor"s, pbr_cb.base_color,
+                                     glm::vec3{0.0f}, glm::vec3{1.0f},
+                                     Material_property_var_op::none);
+      config.properties.emplace_back("Metallicness"s, pbr_cb.base_metallicness,
+                                     0.0f, 1.0f, Material_property_var_op::none);
+      config.properties.emplace_back("Roughness"s, pbr_cb.base_roughness, 0.0f,
+                                     1.0f, Material_property_var_op::none);
+      config.properties.emplace_back("AOStrength"s, 1.0f / pbr_cb.ao_strength,
+                                     0.0f, 2048.0f, Material_property_var_op::rcp);
+      config.properties.emplace_back("EmissivePower"s,
+                                     std::log2(pbr_cb.emissive_power), 0.0f,
+                                     2048.0f, Material_property_var_op::exp2);
+   }
+   else if (begins_with(info.rendertype, "normal_ext"sv)) {
+      config.cb_name = "normal_ext"s;
+
+      struct Normal_ext_cb {
+         float disp_scale;
+         float disp_offset;
+         float material_tess_detail;
+         float tess_smoothing_amount;
+
+         glm::vec3 base_diffuse_color;
+         float gloss_map_weight;
+
+         glm::vec3 base_specular_color;
+         float specular_exponent;
+
+         bool use_parallax_occlusion_mapping;
+         float height_scale;
+         bool use_detail_textures;
+         float detail_texture_scale;
+
+         bool use_overlay_textures;
+         float overlay_texture_scale;
+         bool use_emissive_texture;
+         float emissive_texture_scale;
+
+         float emissive_power;
+      } normal_ext_cb;
+
+      static_assert(sizeof(Normal_ext_cb) == 84);
+
+      if (info.constant_buffer.size() < sizeof(Normal_ext_cb)) {
+         throw std::runtime_error{"unexpected constant buffer size"};
+      }
+
+      std::memcpy(&normal_ext_cb, info.constant_buffer.data(), sizeof(Normal_ext_cb));
+
+      config.properties.emplace_back("DisplacementScale"s,
+                                     normal_ext_cb.disp_scale, -2048.0f,
+                                     2048.0f, Material_property_var_op::none);
+      config.properties.emplace_back("DisplacementOffset"s,
+                                     normal_ext_cb.disp_offset, -2048.0f,
+                                     2048.0f, Material_property_var_op::none);
+      config.properties.emplace_back("TessellationDetail"s,
+                                     normal_ext_cb.material_tess_detail, 0.0f,
+                                     65536.0f, Material_property_var_op::none);
+      config.properties.emplace_back("TessellationSmoothingAmount"s,
+                                     normal_ext_cb.tess_smoothing_amount, 0.0f,
+                                     1.0f, Material_property_var_op::none);
+      config.properties.emplace_back("DiffuseColor"s, normal_ext_cb.base_diffuse_color,
+                                     glm::vec3{0.0f}, glm::vec3{1.0f},
+                                     Material_property_var_op::none);
+      config.properties.emplace_back("GlossMapWeight"s, normal_ext_cb.gloss_map_weight,
+                                     0.0f, 1.0f, Material_property_var_op::none);
+      config.properties.emplace_back("SpecularColor"s, normal_ext_cb.base_specular_color,
+                                     glm::vec3{0.0f}, glm::vec3{1.0f},
+                                     Material_property_var_op::none);
+      config.properties.emplace_back("SpecularExponent"s,
+                                     normal_ext_cb.specular_exponent, 1.0f,
+                                     2048.0f, Material_property_var_op::none);
+      config.properties.emplace_back("UseParallaxOcclusionMapping"s,
+                                     normal_ext_cb.use_parallax_occlusion_mapping != 0,
+                                     false, true, Material_property_var_op::none);
+      config.properties.emplace_back("HeightScale"s, normal_ext_cb.height_scale,
+                                     0.0f, 2048.0f, Material_property_var_op::none);
+      config.properties.emplace_back("UseDetailMaps"s,
+                                     normal_ext_cb.use_detail_textures != 0,
+                                     false, true, Material_property_var_op::none);
+      config.properties.emplace_back("DetailTextureScale"s,
+                                     normal_ext_cb.detail_texture_scale, 0.0f,
+                                     2048.0f, Material_property_var_op::none);
+      config.properties.emplace_back("UseOverlayMaps"s,
+                                     normal_ext_cb.use_overlay_textures != 0,
+                                     false, true, Material_property_var_op::none);
+      config.properties.emplace_back("OverlayTextureScale"s,
+                                     normal_ext_cb.overlay_texture_scale, 0.0f,
+                                     2048.0f, Material_property_var_op::none);
+      config.properties.emplace_back("UseEmissiveMap"s,
+                                     normal_ext_cb.use_emissive_texture != 0,
+                                     false, true, Material_property_var_op::none);
+      config.properties.emplace_back("EmissiveTextureScale"s,
+                                     normal_ext_cb.emissive_texture_scale, 0.0f,
+                                     2048.0f, Material_property_var_op::none);
+      config.properties.emplace_back("EmissivePower"s,
+                                     std::log2(normal_ext_cb.emissive_power), -2048.0f,
+                                     2048.0f, Material_property_var_op::exp2);
+   }
+   else {
+      throw std::runtime_error{"unexpected rendertype"};
+   }
+
+   return config;
+}
+
+auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
 {
    Material_info info{};
 
@@ -137,9 +415,15 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_info
    std::tie(info.tessellation, info.tessellation_primitive_topology) =
       reader.read_child_strict<"TESS"_mn>().read_multi<bool, D3D11_PRIMITIVE_TOPOLOGY>();
 
-   return info;
+   try {
+      return convert_material_info_to_material_config(info);
+   }
+   catch (std::exception& e) {
+      throw compose_exception<std::runtime_error>(
+         "Failed to read v1.0 material ", std::quoted(info.name),
+         " reason: ", e.what());
+   }
 }
 }
-
 }
 }

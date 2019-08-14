@@ -14,5 +14,5 @@ namespace sp {
 
 auto describe_material(const std::string_view name,
                        const YAML::Node& description, const YAML::Node& material,
-                       Material_options& material_options) -> Material_info;
+                       Material_options& material_options) -> Material_config;
 }

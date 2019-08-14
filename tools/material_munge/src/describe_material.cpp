@@ -1,6 +1,7 @@
 
 #include "describe_material.hpp"
 #include "compose_exception.hpp"
+#include "glm_yaml_adapters.hpp"
 #include "string_utilities.hpp"
 #include "utility.hpp"
 
@@ -9,6 +10,7 @@
 #include <cstdint>
 #include <cstring>
 #include <iomanip>
+#include <limits>
 #include <string>
 #include <string_view>
 
@@ -22,240 +24,124 @@ namespace {
 
 constexpr auto max_textures = 64;
 
-constexpr auto read_constant_offset(std::string_view string)
+void error_check_properties(const YAML::Node& description, const YAML::Node& material)
 {
-   const auto allowed_numeric_part = "0123456789"sv;
-   const auto allowed_index_part = "xyzw"sv;
+   for (const auto& prop : material["Material"s]) {
+      auto desc = description["Properties"s][prop.first.as<std::string>()];
 
-   const auto npos = std::string_view::npos;
-
-   if (string.length() != 3 || string[1] != '.' ||
-       allowed_numeric_part.find(string[0]) == npos ||
-       allowed_index_part.find(string[2]) == npos) {
-      throw compose_exception<std::runtime_error>(
-         "Bad constant offset described for material property "sv);
+      if (!desc) {
+         throw compose_exception<std::runtime_error>("Undescribed material property "sv,
+                                                     std::quoted(
+                                                        prop.first.as<std::string>()),
+                                                     " encountered."sv);
+      }
    }
-
-   gsl::index offset = (string[0] - '0') * 4;
-
-   if (string[2] == 'x') offset += 0;
-   if (string[2] == 'y') offset += 1;
-   if (string[2] == 'z') offset += 2;
-   if (string[2] == 'w') offset += 3;
-
-   return offset;
 }
 
-auto get_vec_size(const std::string_view string) -> std::size_t
+auto read_prop_op(const std::string_view op) -> Material_property_var_op
 {
-   const auto count = split_string_on(string, "vec"sv)[1];
-
-   if (count.empty()) {
-      throw compose_exception<std::runtime_error>(
-         "Invalid material property type encountered in description."sv);
-   }
-
-   std::size_t size{};
-
-   std::from_chars(count.data(), count.data() + count.size(), size);
-
-   return size;
-}
-
-template<typename Value>
-auto set_constant(Aligned_vector<std::byte, 16>& cb,
-                  const std::size_t cb_offset, const Value value)
-{
-   static_assert(std::is_standard_layout_v<Value>);
-   static_assert(sizeof(Value) == 4);
-
-   const auto byte_offset = cb_offset * sizeof(Value);
-   const auto needed_size = byte_offset + sizeof(Value);
-
-   if (cb.size() < needed_size) cb.resize(needed_size);
-
-   std::memcpy(cb.data() + byte_offset, &value, sizeof(Value));
-}
-
-auto apply_prop_op(const float val, std::string_view op) -> float
-{
-   if (op == "sqr"sv) {
-      return val * val;
-   }
-   else if (op == "sqrt"sv) {
-      return std::sqrt(val);
-   }
-   else if (op == "exp"sv) {
-      return std::exp(val);
-   }
-   else if (op == "exp2"sv) {
-      return std::exp2(val);
-   }
-   else if (op == "log"sv) {
-      return std::log(val);
-   }
-   else if (op == "log2"sv) {
-      return std::log2(val);
-   }
-   else if (op == "rcp"sv) {
-      return 1.0f / val;
-   }
+   // clang-format off
+   if (op == "none"sv) return Material_property_var_op::none;
+   if (op == "sqr"sv)  return Material_property_var_op::sqr;
+   if (op == "sqrt"sv) return Material_property_var_op::sqrt;
+   if (op == "exp"sv)  return Material_property_var_op::exp;
+   if (op == "exp2"sv) return Material_property_var_op::exp2;
+   if (op == "log"sv)  return Material_property_var_op::log;
+   if (op == "log2"sv) return Material_property_var_op::log2;
+   if (op == "rcp"sv)  return Material_property_var_op::rcp;
+   // clang-format on
 
    throw std::runtime_error{"Invalid property op!"};
 }
 
-void process_float_prop(const YAML::Node& value, const YAML::Node& desc,
-                        const std::size_t count, Aligned_vector<std::byte, 16>& cb)
+template<typename Type>
+auto read_prop_value_scalar(const YAML::Node& value, const YAML::Node& desc,
+                            const Material_property_var_op prop_op)
+   -> Material_property::Value
 {
-   const std::array<float, 2> range{desc["Range"s][0].as<float>(),
-                                    desc["Range"s][1].as<float>()};
-   const auto cb_offset = read_constant_offset(desc["Constant"s].as<std::string>());
+   constexpr auto min = std::numeric_limits<Type>::min();
+   constexpr auto max = std::numeric_limits<Type>::max();
 
-   for (auto i = 0; i < count; ++i) {
-      const auto clamped_value =
-         std::clamp(value[i].as<float>(), range[0], range[1]);
-
-      const auto final_value =
-         desc["Op"s] ? apply_prop_op(clamped_value, desc["Op"s].as<std::string>())
-                     : clamped_value;
-
-      set_constant(cb, cb_offset + i, final_value);
-   }
+   return {Material_var{value.as<Type>(), desc["Range"s][0].as<Type>(min),
+                        desc["Range"s][1].as<Type>(max), prop_op}};
 }
 
-void process_float_prop(const YAML::Node& value, const YAML::Node& desc,
-                        Aligned_vector<std::byte, 16>& cb)
+template<glm::length_t len, typename Type>
+auto read_prop_value_vec(const YAML::Node& value, const YAML::Node& desc,
+                         const Material_property_var_op prop_op)
+   -> Material_property::Value
 {
-   const std::array<float, 2> range{desc["Range"s][0].as<float>(),
-                                    desc["Range"s][1].as<float>()};
-   const auto cb_offset = read_constant_offset(desc["Constant"s].as<std::string>());
+   using Vec = glm::vec<len, Type>;
 
-   const auto clamped_value = std::clamp(value.as<float>(), range[0], range[1]);
-   const auto final_value =
-      desc["Op"s] ? apply_prop_op(clamped_value, desc["Op"s].as<std::string>())
-                  : clamped_value;
+   constexpr auto min = std::numeric_limits<Type>::min();
+   constexpr auto max = std::numeric_limits<Type>::max();
 
-   set_constant(cb, cb_offset, final_value);
+   return {Material_var{value.as<Vec>(), Vec{desc["Range"s][0].as<Type>(min)},
+                        Vec{desc["Range"s][1].as<Type>(max)}, prop_op}};
 }
 
-void process_bool_prop(const YAML::Node& value, const YAML::Node& desc,
-                       const std::size_t count, Aligned_vector<std::byte, 16>& cb)
+auto read_prop_value(const YAML::Node& value, const YAML::Node& desc)
+   -> Material_property::Value
 {
-   const auto cb_offset = read_constant_offset(desc["Constant"s].as<std::string>());
+   const auto prop_op = read_prop_op(desc["Op"s].as<std::string>("none"s));
 
-   for (auto i = 0; i < count; ++i) {
-      const auto uint_value = static_cast<std::uint32_t>(value[i].as<bool>());
-
-      set_constant(cb, cb_offset + i, uint_value);
-   }
-}
-
-void process_bool_prop(const YAML::Node& value, const YAML::Node& desc,
-                       Aligned_vector<std::byte, 16>& cb)
-{
-   const auto cb_offset = read_constant_offset(desc["Constant"s].as<std::string>());
-   const auto uint_value = static_cast<std::uint32_t>(value.as<bool>());
-
-   set_constant(cb, cb_offset, uint_value);
-}
-
-template<typename Int>
-void process_int_prop(const YAML::Node& value, const YAML::Node& desc,
-                      const std::size_t count, Aligned_vector<std::byte, 16>& cb)
-{
-   static_assert(sizeof(Int) == 4);
-
-   const std::array<Int, 2> range{desc["Range"s][0].as<Int>(),
-                                  desc["Range"s][1].as<Int>()};
-   const auto cb_offset = read_constant_offset(desc["Constant"s].as<std::string>());
-
-   for (auto i = 0; i < count; ++i) {
-      const auto clamped_value = std::clamp(value[i].as<Int>(), range[0], range[1]);
-
-      set_constant(cb, cb_offset + i, clamped_value);
-   }
-}
-template<typename Int>
-void process_int_prop(const YAML::Node& value, const YAML::Node& desc,
-                      Aligned_vector<std::byte, 16>& cb)
-{
-   static_assert(sizeof(Int) == 4);
-
-   const std::array<Int, 2> range{desc["Range"s][0].as<Int>(),
-                                  desc["Range"s][1].as<Int>()};
-   const auto cb_offset = read_constant_offset(desc["Constant"s].as<std::string>());
-
-   const auto clamped_value = std::clamp(value.as<Int>(), range[0], range[1]);
-
-   set_constant(cb, cb_offset, clamped_value);
-}
-
-void process_prop(const YAML::Node& value, const YAML::Node& desc,
-                  Aligned_vector<std::byte, 16>& cb)
-{
    if (const auto type = desc["Type"s].as<std::string>(); type == "float"sv) {
-      process_float_prop(value, desc, cb);
+      return read_prop_value_scalar<float>(value, desc, prop_op);
    }
-   else if (begins_with(type, "vec"sv)) {
-      process_float_prop(value, desc, get_vec_size(type), cb);
+   else if (begins_with(type, "vec2"sv)) {
+      return read_prop_value_vec<2, float>(value, desc, prop_op);
+   }
+   else if (begins_with(type, "vec3"sv)) {
+      return read_prop_value_vec<3, float>(value, desc, prop_op);
+   }
+   else if (begins_with(type, "vec4"sv)) {
+      return read_prop_value_vec<4, float>(value, desc, prop_op);
    }
    else if (type == "bool"sv) {
-      process_bool_prop(value, desc, cb);
-   }
-   else if (begins_with(type, "bvec"sv)) {
-      process_bool_prop(value, desc, get_vec_size(type), cb);
+      return {Material_var{value.as<bool>(), false, true, prop_op}};
    }
    else if (type == "int"sv) {
-      process_int_prop<std::int32_t>(value, desc, cb);
+      return read_prop_value_scalar<std::int32_t>(value, desc, prop_op);
    }
-   else if (begins_with(type, "ivec"sv)) {
-      process_int_prop<std::int32_t>(value, desc, get_vec_size(type), cb);
+   else if (begins_with(type, "ivec2"sv)) {
+      return read_prop_value_vec<2, glm::int32>(value, desc, prop_op);
+   }
+   else if (begins_with(type, "ivec3"sv)) {
+      return read_prop_value_vec<3, glm::int32>(value, desc, prop_op);
+   }
+   else if (begins_with(type, "ivec4"sv)) {
+      return read_prop_value_vec<4, glm::int32>(value, desc, prop_op);
    }
    else if (type == "uint"sv) {
-      process_int_prop<std::uint32_t>(value, desc, cb);
+      return read_prop_value_scalar<std::uint32_t>(value, desc, prop_op);
    }
-   else if (begins_with(type, "uvec"sv)) {
-      process_int_prop<std::uint32_t>(value, desc, get_vec_size(type), cb);
+   else if (begins_with(type, "uvec2"sv)) {
+      return read_prop_value_vec<2, glm::uint>(value, desc, prop_op);
+   }
+   else if (begins_with(type, "uvec3"sv)) {
+      return read_prop_value_vec<3, glm::uint>(value, desc, prop_op);
+   }
+   else if (begins_with(type, "uvec4"sv)) {
+      return read_prop_value_vec<4, glm::uint>(value, desc, prop_op);
+   }
+   else {
+      throw compose_exception<std::runtime_error>("Unknown material property type "sv,
+                                                  std::quoted(type), "."sv);
    }
 }
 
-auto init_cb_with_defaults(const YAML::Node& property_mappings)
-   -> Aligned_vector<std::byte, 16>
+auto read_prop(std::string prop_key, const YAML::Node& desc,
+               const YAML::Node& material_props) -> Material_property
 {
-   Aligned_vector<std::byte, 16> cb;
-   cb.reserve(256);
-
-   for (auto& prop : property_mappings) {
-      try {
-         process_prop(prop.second["Default"s], prop.second, cb);
-      }
-      catch (std::exception& e) {
-         throw compose_exception<std::runtime_error>(
-            "Error occured while processing rendertype property "sv,
-            std::quoted(prop.first.as<std::string>()), ": "sv, e.what());
-      }
-   }
-
-   return cb;
-}
-
-void read_prop(const std::string& prop_key, const YAML::Node& value,
-               const YAML::Node& property_mappings, Aligned_vector<std::byte, 16>& cb)
-{
-   auto desc = property_mappings[prop_key];
-
-   if (!desc) {
-      throw compose_exception<std::runtime_error>("Undescribed material property "sv,
-                                                  std::quoted(prop_key),
-                                                  " encountered."sv);
-   }
-
-   process_prop(value, desc, cb);
+   return {std::move(prop_key),
+           read_prop_value(material_props[prop_key] ? material_props[prop_key]
+                                                    : desc["Default"s],
+                           desc)};
 }
 
 void read_texture_mapping(const std::string& texture_key, const YAML::Node& value,
                           const YAML::Node& texture_mappings,
-                          Material_info& material_info)
+                          Material_config& material_config)
 {
    if (!texture_mappings[texture_key]) {
       throw compose_exception<std::runtime_error>("Undescribed material texture "sv,
@@ -278,15 +164,15 @@ void read_texture_mapping(const std::string& texture_key, const YAML::Node& valu
 
       auto& textures = [&]() -> std::vector<std::string>& {
          if (const auto stage = mapping["Stage"s].as<std::string>(); stage == "VS"sv)
-            return material_info.vs_textures;
+            return material_config.vs_resources;
          else if (stage == "HS"sv)
-            return material_info.hs_textures;
+            return material_config.hs_resources;
          else if (stage == "DS"sv)
-            return material_info.ds_textures;
+            return material_config.ds_resources;
          else if (stage == "GS"sv)
-            return material_info.gs_textures;
+            return material_config.gs_resources;
          else if (stage == "PS"sv)
-            return material_info.ps_textures;
+            return material_config.ps_resources;
 
          throw compose_exception<std::runtime_error>("Invalid material texture description"sv,
                                                      std::quoted(texture_key),
@@ -392,31 +278,32 @@ auto read_desc_material_options(const YAML::Node& node, Material_options& materi
                                                      std::quoted(key), "."sv);
    }
 }
-
 }
 
 auto describe_material(const std::string_view name,
                        const YAML::Node& description, const YAML::Node& material,
-                       Material_options& material_options) -> Material_info
+                       Material_options& material_options) -> Material_config
 {
-   Material_info info{};
+   error_check_properties(description, material);
 
-   info.name = name;
-   info.rendertype = material["RenderType"s].as<std::string>();
-   info.overridden_rendertype = rendertype_from_string(
+   Material_config config{};
+
+   config.name = name;
+   config.rendertype = material["RenderType"s].as<std::string>();
+   config.overridden_rendertype = rendertype_from_string(
       description["Overridden RenderType"s].as<std::string>());
-   info.cb_shader_stages = read_cb_stages(description["Constant Buffer Stages"s]);
-   info.fail_safe_texture_index =
+   config.cb_name = description["Constant Buffer Name"s].as<std::string>();
+   config.cb_shader_stages = read_cb_stages(description["Constant Buffer Stages"s]);
+   config.fail_safe_texture_index =
       description["Failsafe Texture Index"s].as<std::uint32_t>();
-   info.constant_buffer = init_cb_with_defaults(description["property_mappings"s]);
-   info.tessellation = description["Tessellation"s].as<bool>(false);
-   info.tessellation_primitive_topology =
+   config.tessellation = description["Tessellation"s].as<bool>(false);
+   config.tessellation_primitive_topology =
       read_topology(description["Tessellation Primitive Topology"s]);
 
-   for (auto& prop : material["Material"s]) {
+   for (auto& prop : description["Properties"s]) {
       try {
-         read_prop(prop.first.as<std::string>(), prop.second,
-                   description["Property Mappings"s], info.constant_buffer);
+         config.properties.emplace_back(read_prop(prop.first.as<std::string>(),
+                                                  prop.second, material["Material"s]));
       }
       catch (std::exception& e) {
          throw compose_exception<std::runtime_error>(
@@ -428,7 +315,7 @@ auto describe_material(const std::string_view name,
    for (auto& texture : material["Textures"s]) {
       try {
          read_texture_mapping(texture.first.as<std::string>(), texture.second,
-                              description["Texture Mappings"s], info);
+                              description["Texture Mappings"s], config);
       }
       catch (std::exception& e) {
          throw compose_exception<std::runtime_error>(
@@ -440,6 +327,6 @@ auto describe_material(const std::string_view name,
    if (description["Material Options"s])
       read_desc_material_options(description["Material Options"s], material_options);
 
-   return info;
+   return config;
 }
 }

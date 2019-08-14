@@ -3,6 +3,7 @@
 #include "../input_hooker.hpp"
 #include "../logger.hpp"
 #include "../user_config.hpp"
+#include "materials_editor.hpp"
 #include "patch_material_io.hpp"
 #include "patch_texture_io.hpp"
 #include "screenshot.hpp"
@@ -577,39 +578,69 @@ auto Shader_patch::create_game_texture_cube(const UINT width, const UINT height,
 }
 
 auto Shader_patch::create_patch_texture(const gsl::span<const std::byte> texture_data) noexcept
-   -> Patch_texture
+   -> Texture_handle
 {
    try {
       auto [srv, name] =
          load_patch_texture(ucfb::Reader_strict<"sptx"_mn>{texture_data}, *_device);
 
-      auto shared_srv = make_shared_com_ptr(srv);
+      auto* raw_srv = srv.get();
 
-      _texture_database.add(name, shared_srv);
+      log(Log_level::info, "Loaded texture "sv, std::quoted(name));
 
-      return {std::move(shared_srv)};
+      _shader_resource_database.insert(std::move(srv), name);
+
+      const auto texture_deleter = [this](ID3D11ShaderResourceView* srv) noexcept {
+         log(Log_level::info, "Destroying texture "sv,
+             std::quoted(_shader_resource_database.lookup_name(srv)));
+
+         _shader_resource_database.erase(srv);
+      };
+
+      return {raw_srv, texture_deleter};
    }
    catch (std::exception& e) {
       log(Log_level::error, "Failed to create unknown texture! reason: "sv, e.what());
 
-      return {nullptr};
+      return {nullptr, [](auto) noexcept {}};
    }
 }
 
 auto Shader_patch::create_patch_material(const gsl::span<const std::byte> material_data) noexcept
-   -> std::shared_ptr<Patch_material>
+   -> Material_handle
 {
    try {
-      auto material = std::make_shared<Patch_material>(
-         read_patch_material(ucfb::Reader_strict<"matl"_mn>{material_data}),
-         _material_shader_factory, _texture_database, *_device);
+      auto material =
+         _materials
+            .emplace_back(std::make_unique<Patch_material>(
+               read_patch_material(ucfb::Reader_strict<"matl"_mn>{material_data}),
+               _material_shader_factory, _shader_resource_database, *_device))
+            .get();
 
       log(Log_level::info, "Loaded material "sv, std::quoted(material->name));
 
-      return material;
+      const auto material_deleter = [&](Patch_material* material) noexcept {
+         if (_patch_material == material) set_patch_material(nullptr);
+
+         for (auto it = _materials.begin(); it != _materials.end(); ++it) {
+            if (it->get() != material) continue;
+
+            log(Log_level::info, "Destroying material "sv, std::quoted(material->name));
+
+            _materials.erase(it);
+
+            return;
+         }
+
+         log_and_terminate("Attempt to destroy nonexistant material!");
+      };
+
+      return {material, material_deleter};
    }
    catch (std::exception& e) {
-      log_and_terminate("Failed to create unknown material! reason: "sv, e.what());
+      log(Log_level::error, "Failed to create unknown material! reason: "sv, e.what());
+
+      return {nullptr, [](auto) noexcept {}};
    }
 }
 
@@ -951,10 +982,9 @@ void Shader_patch::set_projtex_cube(const Game_texture& texture) noexcept
    _ps_textures_dirty = true;
 }
 
-void Shader_patch::set_patch_material(std::shared_ptr<Patch_material> material) noexcept
+void Shader_patch::set_patch_material(Patch_material* material) noexcept
 {
-   _patch_material = std::move(material);
-
+   _patch_material = material;
    _shader_dirty = true;
 
    if (_patch_material) {
@@ -1187,7 +1217,7 @@ void Shader_patch::game_rendertype_changed() noexcept
    else if (_shader_rendertype == Rendertype::water) {
       resolve_refraction_texture();
 
-      auto water_srv = _texture_database.get("$water");
+      auto water_srv = _shader_resource_database.at_if("$water");
 
       _game_textures[4] = {water_srv, water_srv};
       _game_textures[5] = {_refraction_rt.srv, _refraction_rt.srv};
@@ -1300,14 +1330,14 @@ void Shader_patch::game_rendertype_changed() noexcept
                _cmaa2_scratch_texture.height};
 
             _effects.postprocess.apply(*_device_context, _rendertarget_allocator,
-                                       _effects.profiler, _texture_database,
+                                       _effects.profiler, _shader_resource_database,
                                        _effects.cmaa2, cmaa2_target, postprocess_input,
                                        _swapchain.postprocess_output());
          }
          else {
             _effects.postprocess.apply(*_device_context, _rendertarget_allocator,
-                                       _effects.profiler, _texture_database,
-                                       postprocess_input,
+                                       _effects.profiler,
+                                       _shader_resource_database, postprocess_input,
                                        _swapchain.postprocess_output());
          }
 
@@ -1527,6 +1557,8 @@ void Shader_patch::update_imgui() noexcept
    if (_imgui_enabled) {
       user_config.show_imgui();
       _effects.show_imgui(_window);
+
+      show_materials_editor(*_device, _shader_resource_database, _materials);
    }
 
    if (_imgui_enabled || _effects.profiler.enabled) {
@@ -1725,7 +1757,7 @@ void Shader_patch::patch_backbuffer_resolve() noexcept
       }
    }
    else if (user_config.graphics.antialiasing_method == Antialiasing_method::cmaa2) {
-      _late_backbuffer_resolver.resolve(*_device_context, _texture_database,
+      _late_backbuffer_resolver.resolve(*_device_context, _shader_resource_database,
                                         _game_rendertargets[0],
                                         *_cmaa2_scratch_texture.rtv);
 
@@ -1736,7 +1768,7 @@ void Shader_patch::patch_backbuffer_resolve() noexcept
                                     _cmaa2_scratch_texture.texture.get());
    }
    else {
-      _late_backbuffer_resolver.resolve(*_device_context, _texture_database,
+      _late_backbuffer_resolver.resolve(*_device_context, _shader_resource_database,
                                         _game_rendertargets[0], *_swapchain.rtv());
    }
 

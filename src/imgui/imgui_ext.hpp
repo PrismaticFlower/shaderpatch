@@ -61,7 +61,7 @@ inline bool DragFloatFormattedN(const char* label, float* v, int components,
    bool value_changed = false;
    BeginGroup();
    PushID(label);
-   PushMultiItemsWidths(components);
+   PushMultiItemsWidths(components, CalcItemWidth());
 
    for (int i = 0; i < components; i++) {
       PushID(i);

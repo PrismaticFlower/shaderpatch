@@ -7,134 +7,103 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <limits>
 
 using namespace std::literals;
 
 namespace sp {
 
-struct Terrain_pbr_material_constants {
-   glm::vec3 base_color;
-   float base_metallicness;
-   float base_roughness;
-   glm::vec3 _padding{};
-
-   struct Texture_transform {
-      glm::vec3 row0;
-      float _padding0{};
-      glm::vec3 row1;
-      float _padding1{};
-   };
-
-   std::array<Texture_transform, 16> texture_transforms;
-
-   std::array<glm::vec4, 16> texture_height_scales;
-};
-
-static_assert(sizeof(Terrain_pbr_material_constants) == 800);
-
-struct Terrain_normal_ext_material_constants {
-   glm::vec3 diffuse_color;
-   float _padding0{};
-   glm::vec3 specular_color;
-   glm::uint32 use_envmap;
-
-   struct Texture_transform {
-      glm::vec3 row0;
-      float _padding0{};
-      glm::vec3 row1;
-      float _padding1{};
-   };
-
-   std::array<Texture_transform, 16> texture_transforms;
-
-   struct Texture_vars {
-      float height_scale;
-      float specular_exponent;
-      glm::vec2 _padding;
-   };
-
-   std::array<Texture_vars, 16> texture_vars;
-};
-
-static_assert(sizeof(Terrain_normal_ext_material_constants) == 800);
-
 namespace {
 
-auto create_pbr_constant_buffer(const Terrain_materials_config& config,
-                                const std::array<Terrain_texture_transform, 16>& texture_transforms,
-                                const std::vector<std::string>& textures_order)
-   -> Aligned_vector<std::byte, 16>
+auto add_texture_transform_properties(std::vector<Material_property>& properties,
+                                      const std::array<Terrain_texture_transform, 16>& texture_transforms)
 {
-   Aligned_vector<std::byte, 16> cb_data;
-   cb_data.resize(sizeof(Terrain_pbr_material_constants));
-
-   auto* const cb = new (cb_data.data()) Terrain_pbr_material_constants{};
-
-   cb->base_color = config.base_color;
-   cb->base_metallicness = config.base_metallicness;
-   cb->base_roughness = config.base_roughness;
-
    for (auto i = 0; i < texture_transforms.size(); ++i) {
       const auto transform = texture_transforms[i].get_transform();
-      cb->texture_transforms[i].row0 = transform[0];
-      cb->texture_transforms[i].row1 = transform[1];
+
+      properties.emplace_back("TextureTransformsX"s + std::to_string(i), transform[0],
+                              glm::vec3{std::numeric_limits<float>::min()},
+                              glm::vec3{std::numeric_limits<float>::max()},
+                              Material_property_var_op::none);
+      properties.emplace_back("TextureTransformsY"s + std::to_string(i), transform[1],
+                              glm::vec3{std::numeric_limits<float>::min()},
+                              glm::vec3{std::numeric_limits<float>::max()},
+                              Material_property_var_op::none);
    }
+}
+
+auto create_pbr_properties(const Terrain_materials_config& config,
+                           const std::array<Terrain_texture_transform, 16>& texture_transforms,
+                           const std::vector<std::string>& textures_order)
+   -> std::vector<Material_property>
+{
+   std::vector<Material_property> properties;
+   properties.reserve(96);
+
+   properties.emplace_back("BaseColor"s, config.base_color, glm::vec3{0.0f},
+                           glm::vec3{1.0f}, Material_property_var_op::none);
+   properties.emplace_back("BaseMetallicness"s, config.base_metallicness, 0.0f,
+                           1.0f, Material_property_var_op::none);
+   properties.emplace_back("BaseRoughness"s, config.base_roughness, 0.0f, 1.0f,
+                           Material_property_var_op::none);
+
+   add_texture_transform_properties(properties, texture_transforms);
 
    for (auto i = 0; i < safe_min(textures_order.size(), std::size_t{16}); ++i) {
       auto it = config.materials.find(textures_order[i]);
 
       if (it == config.materials.cend()) continue;
 
-      cb->texture_height_scales[i].x = it->second.height_scale;
+      properties.emplace_back("HeightScale"s + std::to_string(i), it->second.height_scale,
+                              0.0f, 2048.0f, Material_property_var_op::none);
    }
 
-   return cb_data;
+   return properties;
 }
 
-auto create_normal_ext_constant_buffer(
-   const Terrain_materials_config& config,
-   const std::array<Terrain_texture_transform, 16>& texture_transforms,
-   const std::vector<std::string>& textures_order) -> Aligned_vector<std::byte, 16>
+auto create_normal_ext_properties(const Terrain_materials_config& config,
+                                  const std::array<Terrain_texture_transform, 16>& texture_transforms,
+                                  const std::vector<std::string>& textures_order)
+   -> std::vector<Material_property>
 {
-   Aligned_vector<std::byte, 16> cb_data;
-   cb_data.resize(sizeof(Terrain_normal_ext_material_constants));
+   std::vector<Material_property> properties;
+   properties.reserve(96);
 
-   auto* const cb = new (cb_data.data()) Terrain_normal_ext_material_constants{};
+   properties.emplace_back("DiffuseColor"s, config.diffuse_color, glm::vec3{0.0f},
+                           glm::vec3{1.0f}, Material_property_var_op::none);
+   properties.emplace_back("SpecularColor"s, config.specular_color, glm::vec3{0.0f},
+                           glm::vec3{1.0f}, Material_property_var_op::none);
+   properties.emplace_back("UseEnvmap"s, config.use_envmap, false, true,
+                           Material_property_var_op::none);
 
-   cb->diffuse_color = config.diffuse_color;
-   cb->specular_color = config.specular_color;
-
-   cb->use_envmap = config.use_envmap;
-
-   for (auto i = 0; i < texture_transforms.size(); ++i) {
-      const auto transform = texture_transforms[i].get_transform();
-      cb->texture_transforms[i].row0 = transform[0];
-      cb->texture_transforms[i].row1 = transform[1];
-   }
+   add_texture_transform_properties(properties, texture_transforms);
 
    for (auto i = 0; i < safe_min(textures_order.size(), std::size_t{16}); ++i) {
       auto it = config.materials.find(textures_order[i]);
 
       if (it == config.materials.cend()) continue;
 
-      cb->texture_vars[i].height_scale = it->second.height_scale;
-      cb->texture_vars[i].specular_exponent = it->second.specular_exponent;
+      properties.emplace_back("HeightScale"s + std::to_string(i), it->second.height_scale,
+                              0.0f, 2048.0f, Material_property_var_op::none);
+
+      properties.emplace_back("SpecularExponent"s + std::to_string(i),
+                              it->second.specular_exponent, 1.0f, 2048.0f,
+                              Material_property_var_op::none);
    }
 
-   return cb_data;
+   return properties;
 }
 
-auto create_constant_buffer(const Terrain_materials_config& config,
-                            const std::array<Terrain_texture_transform, 16>& texture_transforms,
-                            const std::vector<std::string>& textures_order)
-   -> Aligned_vector<std::byte, 16>
+auto create_properties(const Terrain_materials_config& config,
+                       const std::array<Terrain_texture_transform, 16>& texture_transforms,
+                       const std::vector<std::string>& textures_order)
+   -> std::vector<Material_property>
 {
    if (config.rendertype == Terrain_rendertype::pbr) {
-      return create_pbr_constant_buffer(config, texture_transforms, textures_order);
+      return create_pbr_properties(config, texture_transforms, textures_order);
    }
    else {
-      return create_normal_ext_constant_buffer(config, texture_transforms,
-                                               textures_order);
+      return create_normal_ext_properties(config, texture_transforms, textures_order);
    }
 }
 
@@ -152,6 +121,12 @@ auto select_rendertype(const Terrain_materials_config& config) noexcept -> std::
    }
 
    return rt;
+}
+
+auto select_cb_name(const Terrain_materials_config& config) noexcept -> std::string
+{
+   return config.rendertype == Terrain_rendertype::pbr ? "pbr_terrain"s
+                                                       : "normal_ext_terrain"s;
 }
 
 auto select_rendertype_low_detail(const Terrain_materials_config& config) noexcept
@@ -189,30 +164,30 @@ void terrain_save_material(const Terrain_materials_config& config,
                            const std::string_view suffix,
                            const std::filesystem::path& output_munge_files_dir)
 {
-   Material_info info;
+   Material_config mtrl;
 
-   info.name = terrain_material_name;
-   info.name += suffix;
-   info.rendertype = select_rendertype(config);
-   info.overridden_rendertype = Rendertype::normal;
-   info.cb_shader_stages =
+   mtrl.name = terrain_material_name;
+   mtrl.name += suffix;
+   mtrl.rendertype = select_rendertype(config);
+   mtrl.overridden_rendertype = Rendertype::normal;
+   mtrl.cb_name = select_cb_name(config);
+   mtrl.cb_shader_stages =
       Material_cb_shader_stages::vs | Material_cb_shader_stages::ps;
-   info.constant_buffer =
-      create_constant_buffer(config, texture_transforms, textures_order);
-   info.ps_textures = select_textures(config, suffix);
-   info.fail_safe_texture_index = 1;
+   mtrl.properties = create_properties(config, texture_transforms, textures_order);
+   mtrl.ps_resources = select_textures(config, suffix);
+   mtrl.fail_safe_texture_index = 1;
 
-   write_patch_material(output_munge_files_dir / info.name += ".material"sv, info);
-   emit_req_file(output_munge_files_dir / info.name += ".material.req"sv,
-                 {{"sptex"s, info.ps_textures}});
+   write_patch_material(output_munge_files_dir / mtrl.name += ".material"sv, mtrl);
+   emit_req_file(output_munge_files_dir / mtrl.name += ".material.req"sv,
+                 {{"sptex"s, mtrl.ps_resources}});
 
    // Save low detail material
 
-   info.name += terrain_low_detail_suffix;
-   info.rendertype = select_rendertype_low_detail(config);
+   mtrl.name += terrain_low_detail_suffix;
+   mtrl.rendertype = select_rendertype_low_detail(config);
 
-   write_patch_material(output_munge_files_dir / info.name += ".material"sv, info);
-   emit_req_file(output_munge_files_dir / info.name += ".material.req"sv,
-                 {{"sptex"s, info.ps_textures}});
+   write_patch_material(output_munge_files_dir / mtrl.name += ".material"sv, mtrl);
+   emit_req_file(output_munge_files_dir / mtrl.name += ".material.req"sv,
+                 {{"sptex"s, mtrl.ps_resources}});
 }
 }

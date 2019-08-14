@@ -1,24 +1,31 @@
 
 #include "patch_material.hpp"
-#include "d3d11_helpers.hpp"
+#include "material_constant_buffers.hpp"
+
+#include <iomanip>
 
 namespace sp::core {
 
 namespace {
 
-auto init_textures(const std::vector<std::string>& textures,
-                   const Texture_database& texture_database) noexcept
+auto init_resources(const std::vector<std::string>& resource_names,
+                    const Shader_resource_database& resource_database) noexcept
    -> std::vector<Com_ptr<ID3D11ShaderResourceView>>
 {
    std::vector<Com_ptr<ID3D11ShaderResourceView>> resources;
 
-   for (const auto& texture : textures) {
-      if (texture.empty()) {
+   for (const auto& name : resource_names) {
+      if (name.empty()) {
          resources.emplace_back(nullptr);
          continue;
       }
 
-      resources.emplace_back(texture_database.get(texture));
+      resources.emplace_back(resource_database.at_if(name));
+
+      if (!resources.back()) {
+         log(Log_level::warning, "Shader resource "sv, std::quoted(name),
+             " does not exist."sv);
+      }
    }
 
    return resources;
@@ -38,26 +45,29 @@ auto init_fail_safe_texture(const std::vector<Com_ptr<ID3D11ShaderResourceView>>
 
 }
 
-Patch_material::Patch_material(Material_info material_info,
+Patch_material::Patch_material(Material_config material_config,
                                Material_shader_factory& shader_factory,
-                               const Texture_database& texture_database,
-                               ID3D11Device1& device) noexcept
-   : overridden_rendertype{material_info.overridden_rendertype},
-     shader{shader_factory.create(material_info.rendertype)},
-     cb_shader_stages{material_info.cb_shader_stages},
-     constant_buffer{
-        create_immutable_constant_buffer(device, material_info.constant_buffer)},
-     vs_shader_resources{init_textures(material_info.vs_textures, texture_database)},
-     hs_shader_resources{init_textures(material_info.hs_textures, texture_database)},
-     ds_shader_resources{init_textures(material_info.ds_textures, texture_database)},
-     gs_shader_resources{init_textures(material_info.gs_textures, texture_database)},
-     ps_shader_resources{init_textures(material_info.ps_textures, texture_database)},
+                               const Shader_resource_database& resource_database,
+                               ID3D11Device5& device)
+   : overridden_rendertype{material_config.overridden_rendertype},
+     shader{shader_factory.create(material_config.rendertype)},
+     cb_shader_stages{material_config.cb_shader_stages},
+     constant_buffer{create_material_constant_buffer(device, material_config.cb_name,
+                                                     material_config.properties)},
+     vs_shader_resources{init_resources(material_config.vs_resources, resource_database)},
+     hs_shader_resources{init_resources(material_config.hs_resources, resource_database)},
+     ds_shader_resources{init_resources(material_config.ds_resources, resource_database)},
+     gs_shader_resources{init_resources(material_config.gs_resources, resource_database)},
+     ps_shader_resources{init_resources(material_config.ps_resources, resource_database)},
      fail_safe_game_texture{
         init_fail_safe_texture(ps_shader_resources,
-                               material_info.fail_safe_texture_index)},
-     tessellation{material_info.tessellation},
-     tessellation_primitive_topology{material_info.tessellation_primitive_topology},
-     name{std::move(material_info.name)}
+                               material_config.fail_safe_texture_index)},
+     tessellation{material_config.tessellation},
+     tessellation_primitive_topology{material_config.tessellation_primitive_topology},
+     name{std::move(material_config.name)},
+     rendertype{material_config.rendertype},
+     cb_name{material_config.cb_name},
+     properties{material_config.properties}
 {
 }
 

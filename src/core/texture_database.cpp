@@ -1,78 +1,164 @@
 #include "texture_database.hpp"
+#include "../imgui/imgui_ext.hpp"
 #include "../logger.hpp"
+#include "string_utilities.hpp"
+
+#include <sstream>
+
+#include <imgui.h>
 
 namespace sp::core {
 
-auto Texture_database::get(const std::string& name) const noexcept
+namespace {
+
+auto unknown_resource_name(ID3D11ShaderResourceView& srv) noexcept -> std::string
+{
+   D3D11_SHADER_RESOURCE_VIEW_DESC desc{};
+   srv.GetDesc(&desc);
+
+   std::ostringstream stream;
+
+   switch (desc.ViewDimension) {
+   case D3D11_SRV_DIMENSION_UNKNOWN:
+      stream << "Unknown "sv;
+      break;
+   case D3D11_SRV_DIMENSION_BUFFER:
+      stream << "Buffer "sv;
+      break;
+   case D3D11_SRV_DIMENSION_TEXTURE1D:
+      stream << "Texture1D "sv;
+      break;
+   case D3D11_SRV_DIMENSION_TEXTURE1DARRAY:
+      stream << "Texture1DArray "sv;
+      break;
+   case D3D11_SRV_DIMENSION_TEXTURE2D:
+      stream << "Texture2D "sv;
+      break;
+   case D3D11_SRV_DIMENSION_TEXTURE2DARRAY:
+      stream << "Texture2DArray "sv;
+      break;
+   case D3D11_SRV_DIMENSION_TEXTURE2DMS:
+      stream << "Texture2DMS "sv;
+      break;
+   case D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY:
+      stream << "Texture2DMSArray "sv;
+      break;
+   case D3D11_SRV_DIMENSION_TEXTURE3D:
+      stream << "Texture3D "sv;
+      break;
+   case D3D11_SRV_DIMENSION_TEXTURECUBE:
+      stream << "TextureCube "sv;
+      break;
+   case D3D11_SRV_DIMENSION_TEXTURECUBEARRAY:
+      stream << "TextureCubeArray "sv;
+      break;
+   case D3D11_SRV_DIMENSION_BUFFEREX:
+      stream << "BufferEx "sv;
+      break;
+   }
+
+   stream << &srv;
+
+   return stream.str();
+}
+}
+
+auto Shader_resource_database::at_if(const std::string_view name) const noexcept
    -> Com_ptr<ID3D11ShaderResourceView>
 {
-   if (auto it = lookup(name); it != _textures.cend()) {
-      if (std::holds_alternative<std::weak_ptr<ID3D11ShaderResourceView>>(it->second)) {
-         auto ptr =
-            std::get<std::weak_ptr<ID3D11ShaderResourceView>>(it->second).lock();
+   if (auto srv = lookup(name); srv) {
+      return copy_raw_com_ptr(srv);
+   }
 
-         if (ptr) return Com_ptr<ID3D11ShaderResourceView>{ptr};
+   return nullptr;
+}
+
+auto Shader_resource_database::lookup_name(ID3D11ShaderResourceView* srv) -> std::string
+{
+   auto it = std::find_if(_resources.cbegin(), _resources.cend(),
+                          [srv](const auto& res) { return res.first == srv; });
+
+   if (it == _resources.cend()) {
+      log_and_terminate("Attempt to lookup shader resource name not present in database!"sv);
+   }
+
+   return it->second;
+}
+
+void Shader_resource_database::insert(Com_ptr<ID3D11ShaderResourceView> srv,
+                                      const std::string_view name) noexcept
+{
+   std::string name_str{name.empty() ? unknown_resource_name(*srv) : name};
+
+   _resources.emplace_back(std::move(srv), std::move(name_str));
+}
+
+void Shader_resource_database::erase(ID3D11ShaderResourceView* srv) noexcept
+{
+   auto it = std::find_if(_resources.cbegin(), _resources.cend(),
+                          [srv](const auto& res) { return res.first == srv; });
+
+   if (it == _resources.cend()) {
+      log_and_terminate("Attempt to erase shader resource not present in database!"sv);
+   }
+
+   _resources.erase(it);
+}
+
+auto Shader_resource_database::imgui_resource_picker() noexcept
+   -> ID3D11ShaderResourceView*
+{
+   ID3D11ShaderResourceView* result = nullptr;
+
+   ImGui::InputText("Filter", _imgui_filter);
+
+   ImGui::BeginChild("Resource List", {400.f, 64.0f * 10.0f});
+
+   for (const auto& res : _resources) {
+      if (!_imgui_filter.empty() && !contains(res.second, _imgui_filter))
+         continue;
+
+      auto* srv = res.first.get();
+
+      D3D11_SHADER_RESOURCE_VIEW_DESC desc{};
+      srv->GetDesc(&desc);
+
+      if (desc.ViewDimension == D3D11_SRV_DIMENSION_TEXTURE2D ||
+          desc.ViewDimension == D3D11_SRV_DIMENSION_TEXTURE2DARRAY) {
+         if (ImGui::ImageButton(srv, {64, 64})) {
+            result = srv;
+            break;
+         }
+
+         ImGui::SameLine();
+         ImGui::Text(res.second.c_str());
       }
       else {
-         return std::get<Com_ptr<ID3D11ShaderResourceView>>(it->second);
+         if (ImGui::Button(res.second.c_str())) {
+            result = srv;
+            break;
+         }
       }
    }
 
-   log(Log_level::warning, "Texture "sv, std::quoted(name), " does not exist."sv);
+   ImGui::EndChild();
 
-   return _default_texture;
+   return result;
 }
 
-void Texture_database::add(const std::string& name,
-                           std::weak_ptr<ID3D11ShaderResourceView> texture_srv) noexcept
-{
-   log(Log_level::info, "Loaded texture "sv, std::quoted(name));
-
-   _textures[name] = std::move(texture_srv);
-}
-
-void Texture_database::add(const std::string& name,
-                           Com_ptr<ID3D11ShaderResourceView> texture_srv) noexcept
-{
-   log(Log_level::info, "Loaded texture "sv, std::quoted(name));
-
-   _textures[name] = std::move(texture_srv);
-}
-
-void Texture_database::clean_lost_textures() noexcept
-{
-   for (auto it = std::begin(_textures); it != std::cend(_textures);) {
-      auto* const weak_srv =
-         std::get_if<std::weak_ptr<ID3D11ShaderResourceView>>(&it->second);
-
-      if (!weak_srv) continue;
-
-      if (weak_srv->expired()) {
-         log(Log_level::info, "Lost texture "sv, std::quoted(it->first));
-
-         it = _textures.erase(it);
-      }
-      else {
-         ++it;
-      }
-   }
-}
-
-void Texture_database::set_default_texture(Com_ptr<ID3D11ShaderResourceView> texture_srv) noexcept
-{
-   _default_texture = std::move(texture_srv);
-}
-
-auto Texture_database::lookup(const std::string& name) const noexcept
-   -> std::unordered_map<std::string, Refernce_types>::const_iterator
+auto Shader_resource_database::lookup(const std::string_view name) const
+   noexcept -> ID3D11ShaderResourceView*
 {
    if (name.front() == '$') return builtin_lookup(name);
 
-   return _textures.find(name);
+   auto it = std::find_if(_resources.cbegin(), _resources.cend(),
+                          [name](const auto& res) { return res.second == name; });
+
+   return (it != _resources.cend()) ? it->first.get() : nullptr;
 }
 
-auto Texture_database::builtin_lookup(const std::string& name) const noexcept
-   -> std::unordered_map<std::string, Refernce_types>::const_iterator
+auto Shader_resource_database::builtin_lookup(const std::string_view name) const
+   noexcept -> ID3D11ShaderResourceView*
 {
    Expects(!name.empty());
 
@@ -81,7 +167,6 @@ auto Texture_database::builtin_lookup(const std::string& name) const noexcept
    auto builtin_name = "_SP_BUILTIN_"s;
    builtin_name.append(name.cbegin() + 1, name.cend());
 
-   return _textures.find(builtin_name);
+   return lookup(builtin_name);
 }
-
 }

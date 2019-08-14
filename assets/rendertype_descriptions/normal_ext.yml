@@ -1,5 +1,6 @@
 Overridden RenderType: normal
 Failsafe Texture Index: 0
+Constant Buffer Name: normal_ext
 
 Material Options:
    Unlit: no
@@ -11,80 +12,67 @@ Constant Buffer Stages:
    GS: no
    PS: yes
 
-Property Mappings:
+Properties:
    DiffuseColor:
       Type: vec3
       Default: [1.0, 1.0, 1.0]
       Range: [0.0, 1.0]
-      Constant: 1.x
      
    GlossMapWeight:
       Type: float
       Default: 1.0
       Range: [0.0, 1.0]
-      Constant: 1.w
       
    SpecularColor:
       Type: vec3
       Default: [1.0, 1.0, 1.0]
       Range: [0.0, 1.0]
-      Constant: 2.x
 
    SpecularExponent:
       Type: float
       Default: 64.0
       Range: [1.0, 2048.0]
-      Constant: 2.w
 
    UseParallaxOcclusionMapping:
       Type: bool
       Default: false
-      Constant: 3.x
       
    HeightScale:
       Type: float
       Default: 0.05
       Range: [0.0, 2048.0]
-      Constant: 3.y
 
    UseDetailMaps:
       Type: bool
       Default: false
-      Constant: 3.z
       
    DetailTextureScale:
       Type: float
       Default: 1.0
       Range: [0.0, 2048.0]
-      Constant: 3.w
       
    UseOverlayMaps:
       Type: bool
       Default: false
-      Constant: 4.x
 
    OverlayTextureScale:
       Type: float
       Default: 1.0
       Range: [0.0, 2048.0]
-      Constant: 4.y
  
    UseEmissiveMap:
       Type: bool
       Default: false
-      Constant: 4.z
 
    EmissiveTextureScale:
       Type: float
       Default: 1.0
       Range: [0.0, 2048.0]
-      Constant: 4.w
 
    EmissivePower:
       Type: float
       Default: 0.0
       Range: [-2048.0, 2048.0]
-      Constant: 5.x
       Op: exp2
 
 Texture Mappings:

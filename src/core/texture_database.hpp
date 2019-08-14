@@ -4,8 +4,7 @@
 
 #include <memory>
 #include <string>
-#include <unordered_map>
-#include <variant>
+#include <vector>
 
 #include <gsl/gsl>
 
@@ -13,32 +12,33 @@
 
 namespace sp::core {
 
-class Texture_database {
+class Shader_resource_database {
 public:
-   auto get(const std::string& name) const noexcept
+   auto at_if(const std::string_view name) const noexcept
       -> Com_ptr<ID3D11ShaderResourceView>;
 
-   void add(const std::string& name,
-            std::weak_ptr<ID3D11ShaderResourceView> texture_srv) noexcept;
+   auto lookup_name(ID3D11ShaderResourceView* srv) -> std::string;
 
-   void add(const std::string& name,
-            Com_ptr<ID3D11ShaderResourceView> texture_srv) noexcept;
+   void insert(Com_ptr<ID3D11ShaderResourceView> texture_srv,
+               const std::string_view name) noexcept;
 
-   void clean_lost_textures() noexcept;
+   void erase(ID3D11ShaderResourceView* srv) noexcept;
 
-   void set_default_texture(Com_ptr<ID3D11ShaderResourceView> texture_srv) noexcept;
+   auto imgui_resource_picker() noexcept -> ID3D11ShaderResourceView*;
 
 private:
-   using Refernce_types =
-      std::variant<std::weak_ptr<ID3D11ShaderResourceView>, Com_ptr<ID3D11ShaderResourceView>>;
+   auto lookup(const std::string_view name) const noexcept
+      -> ID3D11ShaderResourceView*;
 
-   auto lookup(const std::string& name) const noexcept
-      -> std::unordered_map<std::string, Refernce_types>::const_iterator;
+   auto builtin_lookup(const std::string_view name) const noexcept
+      -> ID3D11ShaderResourceView*;
 
-   auto builtin_lookup(const std::string& name) const noexcept
-      -> std::unordered_map<std::string, Refernce_types>::const_iterator;
+   std::vector<std::pair<Com_ptr<ID3D11ShaderResourceView>, std::string>> _resources = [] {
+      std::vector<std::pair<Com_ptr<ID3D11ShaderResourceView>, std::string>> res;
+      res.reserve(1024);
 
-   std::unordered_map<std::string, Refernce_types> _textures;
-   Com_ptr<ID3D11ShaderResourceView> _default_texture;
+      return res;
+   }();
+   std::string _imgui_filter;
 };
 }

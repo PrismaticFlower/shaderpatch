@@ -84,11 +84,11 @@ public:
    }
 
    void apply(ID3D11DeviceContext1& dc, Rendertarget_allocator& rt_allocator,
-              Profiler& profiler, const core::Texture_database& textures,
+              Profiler& profiler, const core::Shader_resource_database& textures,
               const Postprocess_input input, const Postprocess_output output) noexcept;
 
    void apply(ID3D11DeviceContext1& dc, Rendertarget_allocator& rt_allocator,
-              Profiler& profiler, const core::Texture_database& textures,
+              Profiler& profiler, const core::Shader_resource_database& textures,
               CMAA2& cmaa2, const Postprocess_cmaa2_temp_target cmaa2_target,
               const Postprocess_input input, const Postprocess_output output) noexcept;
 
@@ -105,13 +105,14 @@ private:
 
    void do_bloom_and_color_grading(ID3D11DeviceContext1& dc,
                                    Rendertarget_allocator& allocator,
-                                   const core::Texture_database& textures,
+                                   const core::Shader_resource_database& textures,
                                    const Postprocess_input& input,
                                    const Postprocess_output& output, Profiler& profiler,
                                    ID3D11PixelShader& postprocess_shader,
                                    ID3D11RenderTargetView* luma_rtv = nullptr) noexcept;
 
-   void do_color_grading(ID3D11DeviceContext1& dc, const core::Texture_database& textures,
+   void do_color_grading(ID3D11DeviceContext1& dc,
+                         const core::Shader_resource_database& textures,
                          const Postprocess_input& input,
                          const Postprocess_output& output, Profiler& profiler,
                          ID3D11PixelShader& postprocess_shader,
@@ -125,7 +126,7 @@ private:
 
    void bind_bloom_cb(ID3D11DeviceContext1& dc, const UINT index) noexcept;
 
-   auto blue_noise_srv(const core::Texture_database& textures) noexcept
+   auto blue_noise_srv(const core::Shader_resource_database& textures) noexcept
       -> ID3D11ShaderResourceView*;
 
    void update_randomness() noexcept;

@@ -132,11 +132,11 @@ auto munge_material(const fs::path& material_path, const fs::path& output_file_p
          }
       };
 
-   require_textures(material.vs_textures);
-   require_textures(material.hs_textures);
-   require_textures(material.ds_textures);
-   require_textures(material.gs_textures);
-   require_textures(material.ps_textures);
+   require_textures(material.vs_resources);
+   require_textures(material.hs_resources);
+   require_textures(material.ds_resources);
+   require_textures(material.gs_resources);
+   require_textures(material.ps_resources);
 
    write_patch_material(output_file_path, material);
 
