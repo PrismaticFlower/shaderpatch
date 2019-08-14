@@ -66,14 +66,20 @@ struct Normal_ext_cb {
    std::uint32_t use_overlay_textures = false;
    float overlay_texture_scale = 1.0f;
 
+   std::uint32_t use_ao_texture = false;
+
    std::uint32_t use_emissive_texture = false;
    float emissive_texture_scale = 1.0f;
    float emissive_power;
 
-   std::array<std::uint32_t, 3> padding{};
+   std::uint32_t use_env_map = false;
+   float env_map_vis = 1.0f;
+
+   float dynamic_normal_sign = 1.0f;
+   std::array<std::uint32_t, 3> padding;
 };
 
-static_assert(sizeof(Normal_ext_cb) == 96);
+static_assert(sizeof(Normal_ext_cb) == 112);
 
 struct Normal_ext_texture_vars {
    float height_scale = 0.05f;
@@ -114,6 +120,8 @@ auto apply_op(const Type value, [[maybe_unused]] const Material_property_var_op 
          return glm::log(value);
       case Material_property_var_op::log2:
          return glm::log2(value);
+      case Material_property_var_op::sign:
+         return glm::sign(value);
       case Material_property_var_op::rcp:
          return 1.0f / value;
       }
@@ -241,11 +249,16 @@ auto create_normal_ext_constant_buffer(const Material_properties_view& props) ->
       props.value<bool>("UseOverlayMaps"sv, cb.use_overlay_textures);
    cb.overlay_texture_scale =
       props.value<float>("OverlayTextureScale"sv, cb.overlay_texture_scale);
+   cb.use_ao_texture = props.value<bool>("UseAOMap"sv, cb.use_ao_texture);
    cb.use_emissive_texture =
       props.value<bool>("UseEmissiveMap"sv, cb.use_emissive_texture);
    cb.emissive_texture_scale =
       props.value<float>("EmissiveTextureScale"sv, cb.emissive_texture_scale);
    cb.emissive_power = props.value<float>("EmissivePower"sv, cb.emissive_power);
+   cb.use_env_map = props.value<bool>("UseEnvMap"sv, cb.use_env_map);
+   cb.env_map_vis = props.value<float>("EnvMapVisibility"sv, cb.env_map_vis);
+   cb.dynamic_normal_sign =
+      props.value<float>("DynamicNormalSign"sv, cb.dynamic_normal_sign);
 
    return cb;
 }

@@ -18,6 +18,8 @@ Texture2D<float2> detail_normal_map : register(ps, t10);
 Texture2D<float3> emissive_map : register(ps, t11);
 Texture2D<float4> overlay_diffuse_map : register(ps, t12);
 Texture2D<float4> overlay_normal_map : register(ps, t13);
+Texture2D<float> ao_map : register(ps, t14);
+TextureCube<float3> env_map : register(ps, t15);
 
 Texture2D<float>  displacement_map : register(ds, t0);
 
@@ -46,9 +48,13 @@ cbuffer MaterialConstants : register(MATERIAL_CB_INDEX)
    float  detail_texture_scale;
    bool   use_overlay_textures;
    float  overlay_texture_scale;
+   bool   use_ao_texture;
    bool   use_emissive_texture;
    float  emissive_texture_scale;
    float  emissive_power;
+   bool   use_env_map;
+   float  env_map_vis;
+   float  dynamic_normal_sign;
 };
 
 // Shader Feature Controls
@@ -163,7 +169,7 @@ struct Ps_input
    float3 _get_normalWS()
    {
 #     if NORMAL_EXT_USE_DYNAMIC_TANGENTS
-         const float3 aligned_normalWS = normalize(front_face ? -normalWS : normalWS);
+         const float3 aligned_normalWS = normalize((front_face ? -normalWS : normalWS) * dynamic_normal_sign);
 #     else
          const float3 aligned_normalWS = front_face ? -normalWS : normalWS;
 #     endif
@@ -177,7 +183,7 @@ float4 main_ps(Ps_input input) : SV_Target0
 {
    const float3x3 tangent_to_world = input.tangent_to_world();
 
-   const float3 view_normalWS = normalize(view_positionWS - input.positionWS);
+   const float3 viewWS = normalize(view_positionWS - input.positionWS);
 
    // Apply POM to texcoords if using, else just use interpolated texcoords.
    float2 texcoords;
@@ -262,16 +268,19 @@ float4 main_ps(Ps_input input) : SV_Target0
    const float shadow = normal_ext_use_shadow_map
                            ? shadow_map[(int2)input.positionSS.xy].a
                            : 1.0;
+   const float ao = use_ao_texture
+                       ? ao_map.Sample(aniso_wrap_sampler, texcoords)
+                       : 1.0;
 
    // Calculate Lighting
    if (use_specular) {
-      color = do_lighting(normalWS, input.positionWS, view_normalWS, diffuse_color,
+      color = do_lighting(normalWS, input.positionWS, viewWS, diffuse_color,
                           input.static_lighting, base_specular_color * gloss, specular_exponent,
-                          shadow, 1.0, projected_light_texture);
+                          shadow, ao, projected_light_texture);
    }
    else {
       color = do_lighting_diffuse(normalWS, input.positionWS, diffuse_color, 
-                                  input.static_lighting, shadow, 1.0,
+                                  input.static_lighting, shadow, ao,
                                   projected_light_texture);
    }
 
@@ -280,6 +289,18 @@ float4 main_ps(Ps_input input) : SV_Target0
       const float2 emissive_texcoords = input.texcoords * emissive_texture_scale;
 
       color += emissive_map.Sample(aniso_wrap_sampler, emissive_texcoords) * (emissive_power * lighting_scale);
+   }
+
+   // Apply env map, if using.
+   if (use_specular && use_env_map) {
+      const float3 env_coords = calculate_envmap_reflection(normalWS, viewWS);
+      const float3 env = env_map.Sample(aniso_wrap_sampler, env_coords);
+      const float roughness = light::specular_exp_to_roughness(specular_exponent);
+      const float so =
+         light::pbr::specular_occlusion(saturate(dot(normalWS, viewWS)),
+                                        ao, roughness);
+
+      color += (so * env_map_vis * env * base_specular_color);
    }
 
    // Apply fog.

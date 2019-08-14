@@ -75,6 +75,10 @@ Properties:
       Default: 1.0
       Range: [0.0, 2048.0]
  
+   UseAOMap:
+      Type: bool
+      Default: false
+      
    UseEmissiveMap:
       Type: bool
       Default: false
@@ -89,6 +93,21 @@ Properties:
       Default: 0.0
       Range: [-2048.0, 2048.0]
       Op: exp2
+
+   UseEnvMap:
+      Type: bool
+      Default: false
+
+   EnvMapVisibility:
+      Type: float
+      Default: 1.0
+      Range: [0.0001, 1.0]
+      
+   DynamicNormalSign:
+      Type: float
+      Default: 1.0
+      Range: [-1.0, 1.0]
+      Op: sign
 
 Texture Mappings:
    DiffuseMap:
@@ -119,6 +138,14 @@ Texture Mappings:
       -
          Stage: PS
          Slot: 7
+   AOMap:
+      -
+         Stage: PS
+         Slot: 8
+   EnvMap:
+      -
+         Stage: PS
+         Slot: 9
    DisplacementMap:
       -
          Stage: DS

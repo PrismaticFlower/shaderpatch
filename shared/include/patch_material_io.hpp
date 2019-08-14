@@ -41,7 +41,8 @@ enum class Material_property_var_op : std::uint32_t {
    exp2,
    log,
    log2,
-   rcp
+   rcp,
+   sign
 };
 
 template<typename Type>
