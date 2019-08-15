@@ -39,7 +39,7 @@ bool should_assemble_textures(
          safe_min(last_output_time, std::filesystem::last_write_time(file));
    }
 
-   std::filesystem::file_time_type last_input_time;
+   std::filesystem::file_time_type last_input_time{};
 
    const auto add_input = [&](const std::string& input) {
       if (input.front() == '$' || input.empty()) return false;
@@ -312,20 +312,21 @@ auto pack_textures(const std::vector<DirectX::ScratchImage>& left_textures,
 auto pack_textures(const std::vector<DirectX::ScratchImage>& textures,
                    const DXGI_FORMAT packed_format) -> DirectX::ScratchImage
 {
+   Expects(!textures.empty());
+
    DirectX::ScratchImage packed_texture;
-   packed_texture.Initialize2D(packed_format, textures[0].GetMetadata().width,
-                               textures[0].GetMetadata().height, textures.size(), 1);
+   packed_texture.Initialize2D(packed_format, textures.front().GetMetadata().width,
+                               textures.front().GetMetadata().height,
+                               textures.size(), 1);
 
-   std::vector<DirectX::Image> images;
-   images.resize(textures.size());
+   for (auto i = 0; i < textures.size(); ++i) {
+      Image_span src{*textures[i].GetImage(0, 0, 0)};
+      Image_span dest{*packed_texture.GetImage(0, i, 0)};
 
-   std::transform(textures.cbegin(), textures.cend(), images.begin(),
-                  [](const DirectX::ScratchImage& image) {
-                     return *image.GetImage(0, 0, 0);
-                  });
-
-   throw_if_failed(
-      packed_texture.InitializeArrayFromImages(images.data(), images.size()));
+      for_each(std::execution::par_unseq, src, [&](const glm::ivec2 index) {
+         dest.store(index, src.load(index));
+      });
+   }
 
    return packed_texture;
 }
@@ -582,6 +583,8 @@ void terrain_assemble_textures(const Terrain_materials_config& config,
                                const std::filesystem::path& output_munge_files_dir,
                                const std::filesystem::path& sptex_files_dir)
 {
+   if (materials.empty()) return;
+
    if (config.rendertype == Terrain_rendertype::pbr) {
       terrain_assemble_textures_pbr(config, texture_suffix, materials,
                                     output_munge_files_dir, sptex_files_dir);
