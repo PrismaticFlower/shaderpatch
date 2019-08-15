@@ -249,20 +249,17 @@ auto convert_material_info_to_material_config(const Material_info& info) -> Mate
       config.cb_name = "pbr"s;
 
       struct PBR_cb {
-         glm::vec3 base_color;
-         float base_metallicness;
-         float base_roughness;
-         float ao_strength;
-         float emissive_power;
-      } pbr_cb;
+         glm::vec3 base_color = {1.0f, 1.0f, 1.0f};
+         float base_metallicness = 1.0f;
+         float base_roughness = 1.0f;
+         float ao_strength = 1.0f;
+         float emissive_power = 1.0f;
+      };
 
-      static_assert(sizeof(PBR_cb) == 28);
+      PBR_cb pbr_cb{};
 
-      if (info.constant_buffer.size() < sizeof(PBR_cb)) {
-         throw std::runtime_error{"unexpected constant buffer size"};
-      }
-
-      std::memcpy(&pbr_cb, info.constant_buffer.data(), sizeof(PBR_cb));
+      std::memcpy(&pbr_cb, info.constant_buffer.data(),
+                  safe_min(sizeof(PBR_cb), info.constant_buffer.size()));
 
       config.properties.emplace_back("BaseColor"s, pbr_cb.base_color,
                                      glm::vec3{0.0f}, glm::vec3{1.0f},
@@ -281,37 +278,34 @@ auto convert_material_info_to_material_config(const Material_info& info) -> Mate
       config.cb_name = "normal_ext"s;
 
       struct Normal_ext_cb {
-         float disp_scale;
-         float disp_offset;
-         float material_tess_detail;
-         float tess_smoothing_amount;
+         float disp_scale = 1.0f;
+         float disp_offset = 0.5f;
+         float material_tess_detail = 32.0f;
+         float tess_smoothing_amount = 16.0f;
 
-         glm::vec3 base_diffuse_color;
-         float gloss_map_weight;
+         glm::vec3 base_diffuse_color = {1.0f, 1.0f, 1.0f};
+         float gloss_map_weight = 1.0f;
 
-         glm::vec3 base_specular_color;
-         float specular_exponent;
+         glm::vec3 base_specular_color = {1.0f, 1.0f, 1.0f};
+         float specular_exponent = 64.0f;
 
-         bool use_parallax_occlusion_mapping;
-         float height_scale;
-         bool use_detail_textures;
-         float detail_texture_scale;
+         std::uint32_t use_parallax_occlusion_mapping = false;
+         float height_scale = 0.1f;
+         std::uint32_t use_detail_textures = false;
+         float detail_texture_scale = 1.0f;
 
-         bool use_overlay_textures;
-         float overlay_texture_scale;
-         bool use_emissive_texture;
-         float emissive_texture_scale;
+         std::uint32_t use_overlay_textures = false;
+         float overlay_texture_scale = 1.0f;
+         std::uint32_t use_emissive_texture = false;
+         float emissive_texture_scale = 1.0f;
 
-         float emissive_power;
-      } normal_ext_cb;
+         float emissive_power = 1.0f;
+      };
 
-      static_assert(sizeof(Normal_ext_cb) == 84);
+      Normal_ext_cb normal_ext_cb{};
 
-      if (info.constant_buffer.size() < sizeof(Normal_ext_cb)) {
-         throw std::runtime_error{"unexpected constant buffer size"};
-      }
-
-      std::memcpy(&normal_ext_cb, info.constant_buffer.data(), sizeof(Normal_ext_cb));
+      std::memcpy(&normal_ext_cb, info.constant_buffer.data(),
+                  safe_min(sizeof(Normal_ext_cb), info.constant_buffer.size()));
 
       config.properties.emplace_back("DisplacementScale"s,
                                      normal_ext_cb.disp_scale, -2048.0f,
