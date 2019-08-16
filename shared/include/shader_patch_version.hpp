@@ -23,7 +23,7 @@ struct Shader_patch_version {
 
 inline const Shader_patch_version current_shader_patch_version{1, 1, 0,
                                                                Shader_patch_prerelease_stage::preview,
-                                                               6};
+                                                               8};
 
 extern const std::string current_shader_patch_version_string;
 
