@@ -110,7 +110,7 @@ struct Skybox_cb {
 static_assert(sizeof(Skybox_cb) == 16);
 
 struct Basic_unlit_cb {
-   bool use_emissive_map = false;
+   std::uint32_t use_emissive_map = false;
    float emissive_power = 1.0f;
    std::array<std::uint32_t, 2> _padding{};
 };
