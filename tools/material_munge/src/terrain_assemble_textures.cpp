@@ -333,6 +333,10 @@ auto pack_textures(const std::vector<DirectX::ScratchImage>& textures,
 
 auto generate_mipmaps(DirectX::ScratchImage image) -> DirectX::ScratchImage
 {
+   if (image.GetMetadata().width == 1 && image.GetMetadata().height == 1) {
+      return image;
+   }
+
    DirectX::ScratchImage result;
 
    throw_if_failed(DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(),
