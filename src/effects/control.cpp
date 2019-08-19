@@ -66,12 +66,7 @@ void Control::show_imgui(HWND game_window) noexcept
    ImGui::Begin("Effects", nullptr);
 
    if (ImGui::BeginTabBar("Effects Config")) {
-
-      static bool first_open = true;
-      if (ImGui::BeginTabItem("Control", nullptr,
-                              std::exchange(first_open, false)
-                                 ? ImGuiTabItemFlags_SetSelected
-                                 : ImGuiTabItemFlags_None)) {
+      if (ImGui::BeginTabItem("Control")) {
          ImGui::Checkbox("Enable Effects", &_enabled);
 
          if (ImGui::CollapsingHeader("Effects Config", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -267,11 +262,7 @@ void Control::load_params_from_yaml_file(const fs::path& load_from) noexcept
 void Control::show_post_processing_imgui() noexcept
 {
    if (ImGui::BeginTabBar("Post Processing", ImGuiTabBarFlags_None)) {
-      static bool first_open = true;
-      if (ImGui::BeginTabItem("Color Grading", nullptr,
-                              std::exchange(first_open, false)
-                                 ? ImGuiTabItemFlags_SetSelected
-                                 : ImGuiTabItemFlags_None)) {
+      if (ImGui::BeginTabItem("Color Grading")) {
          postprocess.color_grading_params(
             show_color_grading_imgui(postprocess.color_grading_params()));
 
