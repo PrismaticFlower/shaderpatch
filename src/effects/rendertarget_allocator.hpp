@@ -16,9 +16,9 @@ public:
    Rendertarget_allocator(Com_ptr<ID3D11Device1> device) : _device{device} {}
 
    struct Rendertarget {
-      UINT width;
-      UINT height;
-      DXGI_FORMAT format;
+      UINT width = 0;
+      UINT height = 0;
+      DXGI_FORMAT format = DXGI_FORMAT_UNKNOWN;
 
       Com_ptr<ID3D11ShaderResourceView> srv;
       Com_ptr<ID3D11RenderTargetView> rtv;
@@ -90,11 +90,12 @@ private:
    auto find(const DXGI_FORMAT format, const UINT width, const UINT height)
       -> std::vector<Rendertarget>::const_iterator
    {
-      return std::find_if(_rendertargets.cbegin(), _rendertargets.cend(),
-                          [&](const Rendertarget& target) noexcept {
-                             return std::tie(width, height, format) ==
-                                    std::tie(target.width, target.height, target.format);
-                          });
+      return std::find_if(
+         _rendertargets.cbegin(),
+         _rendertargets.cend(), [&](const Rendertarget& target) noexcept {
+            return std::tie(width, height, format) ==
+                   std::tie(target.width, target.height, target.format);
+         });
    }
 
    auto create(const DXGI_FORMAT format, const UINT width, const UINT height) noexcept

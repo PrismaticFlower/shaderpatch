@@ -51,10 +51,11 @@ Declaration_munge::Declaration_munge(const fs::path& declaration_path,
       _states.emplace_back(munge_state(state_def, srgb_state));
    }
 
-   save(output_path, declaration_path.filename().u8string());
+   save(output_path, declaration_path.filename().string());
 }
 
-void Declaration_munge::save(const fs::path& output_path, const std::string& input_filename)
+void Declaration_munge::save(const fs::path& output_path,
+                             const std::string_view input_filename)
 {
    auto file = ucfb::open_file_for_output(output_path.string());
 

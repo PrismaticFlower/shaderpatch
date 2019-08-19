@@ -426,7 +426,7 @@ public:
 
 private:
    Vertex_shader_entrypoint _entrypoint;
-   std::uint16_t _static_flags;
+   std::uint16_t _static_flags = 0;
 };
 
 class Shader_state_stage_pixel {
@@ -479,7 +479,7 @@ public:
 
 private:
    Pixel_shader_entrypoint _entrypoint;
-   std::uint16_t _static_flags;
+   std::uint16_t _static_flags = 0;
 };
 
 struct Shader_state {

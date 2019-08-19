@@ -55,7 +55,7 @@ public:
    template<typename... Visitors>
    void visit(Visitors&&... visitors) const noexcept
    {
-      visit_impl(std::forward<Visitors>(visitors)..., [](auto&&) {});
+      visit_impl(std::forward<Visitors>(visitors)...);
    }
 
 protected:
@@ -65,11 +65,43 @@ private:
    template<typename... Visitors>
    void visit_impl(Visitors&&... visitors) const noexcept
    {
-      struct Visitor_set : Visitors... {
-         using Visitors::operator()...;
-      };
+      // Nice simple version.
+      // struct Visitor_set : Visitors... {
+      //    using Visitors::operator()...;
+      // };
+      //
+      // std::visit(Visitor_set{std::forward<Visitors>(visitors)..., [](auto&&) {}}, resource);
 
-      std::visit(Visitor_set{std::forward<Visitors>(visitors)...}, resource);
+      // Recursive version to work around VS 16.2 compiler bugs.
+      visit_select_impl<0>(std::forward<Visitors>(visitors)...);
+   }
+
+   template<const std::size_t index, typename... Funcs>
+   void visit_select_impl(Funcs&&... funcs) const noexcept
+   {
+      if (resource.index() == index) {
+         visit_call_impl(std::get<index>(resource), std::forward<Funcs>(funcs)...);
+      }
+      else if constexpr ((index + 1) < std::variant_size_v<Resource_variant>) {
+         visit_select_impl<index + 1>(std::forward<Funcs>(funcs)...);
+      }
+   }
+
+   template<typename Type, typename Func, typename... Rest_funcs>
+   void visit_call_impl([[maybe_unused]] Type&& type, [[maybe_unused]] Func&& func,
+                        [[maybe_unused]] Rest_funcs&&... rest_funcs) const noexcept
+   {
+      if constexpr (std::is_invocable_v<Func, Type>) {
+         std::invoke(std::forward<Func>(func), std::forward<Type>(type));
+
+         // Apparently [[maybe_unused]] doesn't work so well on paramter packs in VS 16.2
+         // so we have to use a lambda to silence the warning instead.
+         [](auto&&...) {}(std::forward<Rest_funcs>(rest_funcs)...);
+      }
+      else if constexpr (sizeof...(Rest_funcs) > 0) {
+         visit_call_impl(std::forward<Type>(type),
+                         std::forward<Rest_funcs>(rest_funcs)...);
+      }
    }
 };
 

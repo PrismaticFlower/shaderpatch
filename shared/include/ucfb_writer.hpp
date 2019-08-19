@@ -65,7 +65,7 @@ public:
    {
       const auto cur_pos = _out.tellp();
 
-      const auto chunk_size = static_cast<std::uint32_t>(_size);
+      const auto chunk_size = static_cast<std::int32_t>(_size);
 
       _out.seekp(_size_pos);
       _out.write(reinterpret_cast<const char*>(&chunk_size), sizeof(chunk_size));
@@ -81,18 +81,16 @@ public:
    Writer& operator=(Writer&&) = delete;
 
    auto emplace_child(const Magic_number mn)
-      -> Writer_child<Small_function<void(std::int64_t) noexcept>, Writer>
    {
-      const auto last_act = [this](auto child_size) noexcept
-      {
-         _size += child_size;
+      const auto last_act = [this](auto child_size) {
+         increase_size(child_size);
       };
 
       align_file();
 
-      _size += 8;
+      increase_size(8);
 
-      return {last_act, _out, mn};
+      return Writer_child<decltype(last_act), Writer>{last_act, _out, mn};
    }
 
    template<typename Type>
@@ -104,7 +102,8 @@ public:
                     "Type must be trivially destructible!");
 
       _out.write(reinterpret_cast<const char*>(&value), sizeof(Type));
-      _size += sizeof(Type);
+
+      increase_size(sizeof(Type));
 
       if (alignment == Alignment::aligned) align_file();
    }
@@ -113,7 +112,7 @@ public:
    void write(const gsl::span<Type> span, Alignment alignment = Alignment::aligned)
    {
       _out.write(reinterpret_cast<const char*>(span.data()), span.size_bytes());
-      _size += span.size_bytes();
+      increase_size(span.size_bytes());
 
       if (alignment == Alignment::aligned) align_file();
    }
@@ -123,7 +122,7 @@ public:
       _out.write(string.data(), string.size());
       _out.put('\0');
 
-      _size += string.length() + 1;
+      increase_size(string.length() + 1ll);
 
       if (alignment == Alignment::aligned) align_file();
    }
@@ -149,9 +148,9 @@ public:
 
    auto pad(const std::uint32_t amount, Alignment alignment = Alignment::aligned)
    {
-      for (auto i = 0; i < amount; ++i) _out.put('\0');
+      for (auto i = 0u; i < amount; ++i) _out.put('\0');
 
-      _size += amount;
+      increase_size(amount);
 
       if (alignment == Alignment::aligned) align_file();
    }
@@ -172,15 +171,26 @@ private:
 
    constexpr static std::uint32_t size_place_hold = 0;
 
-   void align_file() noexcept
+   void align_file()
    {
       const auto remainder = _size % 4;
 
       if (remainder != 0) {
          _out.write("\0\0\0\0", (4 - remainder));
 
-         _size += (4 - remainder);
+         increase_size(4 - remainder);
       }
+   }
+
+   void increase_size(const std::int64_t len)
+   {
+      _size += len;
+
+      if (_size > std::numeric_limits<std::int32_t>::max()) {
+         throw std::runtime_error{"ucfb file too large!"};
+      }
+
+      Ensures(_size <= std::numeric_limits<std::int32_t>::max());
    }
 
    std::ostream& _out;

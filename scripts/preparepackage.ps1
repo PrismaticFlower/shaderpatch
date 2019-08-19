@@ -22,8 +22,8 @@ $installationPath = vswhere.exe -prerelease -latest -property installationPath
 copy "${installationPath}\VC\Redist\MSVC\14.*\VCRedist_x86.exe" ".\packages\shaderpatch\data\shaderpatch\bin\VCRedist_x86.exe"
 
 # Build
-msbuild /t:Build /p:Configuration=Release /p:Platform=x86 /m shader_patch.sln
-msbuild /t:Build /p:Configuration=Release /p:Platform=x64 /m shader_patch.sln
+msbuild /t:Build /p:Configuration=Release /p:Platform=x86
+msbuild /t:Build /p:Configuration=Release /p:Platform=x64
 
 copy .\bin\Release\*.dll .\packages\shaderpatch\
 copy ".\bin\Release\shader patch installer.exe" ".\packages\shaderpatch\Shader Patch Installer.exe"

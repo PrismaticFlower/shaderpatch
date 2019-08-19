@@ -44,13 +44,14 @@ private:
       std::vector<Pass> passes;
    };
 
-   void save(const std::filesystem::path& output_path, const std::string& input_filename);
+   void save(const std::filesystem::path& output_path,
+             const std::string_view input_filename);
 
    State munge_state(const nlohmann::json& state_def, std::array<bool, 4> srgb_state);
 
    Pass munge_pass(const nlohmann::json& pass_def, std::array<bool, 4> srgb_state);
 
-   Rendertype _rendertype;
+   Rendertype _rendertype{};
    std::string _rendertype_name;
 
    std::vector<Shader_metadata> _shaders;

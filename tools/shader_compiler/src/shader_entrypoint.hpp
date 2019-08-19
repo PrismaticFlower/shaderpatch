@@ -31,7 +31,7 @@ struct Vertex_state {
 
    std::string input_layout;
    Generic_input generic_input;
-   Vertex_shader_flags flags_mask;
+   Vertex_shader_flags flags_mask = Vertex_shader_flags::none;
 };
 
 struct Pixel_state {

@@ -19,14 +19,14 @@
 namespace sp {
 
 struct Shader_metadata {
-   Rendertype rendertype;
+   Rendertype rendertype{};
    std::string rendertype_name;
    std::string shader_name;
 
-   Vertex_shader_flags vertex_shader_flags;
-   Pixel_shader_flags pixel_shader_flags;
+   Vertex_shader_flags vertex_shader_flags = Vertex_shader_flags::none;
+   Pixel_shader_flags pixel_shader_flags = Pixel_shader_flags::none;
 
-   std::array<bool, 4> srgb_state;
+   std::array<bool, 4> srgb_state = {false, false, false, false};
 };
 
 inline auto serialize_shader_metadata(const Shader_metadata& metadata) noexcept

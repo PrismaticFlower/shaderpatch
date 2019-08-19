@@ -10,8 +10,8 @@ namespace sp::core {
 
 struct Shader_input_element {
    std::string semantic_name;
-   UINT semantic_index;
-   Shader_input_type input_type;
+   UINT semantic_index{};
+   Shader_input_type input_type{};
 };
 
 }

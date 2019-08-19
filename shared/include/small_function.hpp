@@ -103,7 +103,8 @@ private:
 
       _destroy = [](void* invocable_storage) noexcept
       {
-         auto& invocable = *static_cast<Invocable_type*>(invocable_storage);
+         [[maybe_unused]] auto& invocable =
+            *static_cast<Invocable_type*>(invocable_storage);
 
          if constexpr (!std::is_trivially_destructible_v<Invocable_type>) {
             invocable.~Invocable_type();
@@ -124,7 +125,7 @@ private:
 
    Invoke_fn _invoke = nullptr;
    Destory_fn _destroy = nullptr;
-   std::aligned_storage_t<24, 4> _invocable_storage;
+   std::aligned_storage_t<24, 4> _invocable_storage{};
 };
 
 }

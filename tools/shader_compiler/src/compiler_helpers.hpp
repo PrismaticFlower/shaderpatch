@@ -67,8 +67,12 @@ inline auto date_test_shader_file(const std::filesystem::path& file_path) noexce
          std::string file_name{zfile_name};
 
          if (_opened_files.count(file_name)) {
+            if (_opened_files[file_name].size() > std::numeric_limits<UINT>::max()) {
+               return E_BOUNDS;
+            }
+
             *out_data = _opened_files[file_name].data();
-            *out_size = _opened_files[file_name].size();
+            *out_size = gsl::narrow_cast<UINT>(_opened_files[file_name].size());
 
             return S_OK;
          }
@@ -86,8 +90,12 @@ inline auto date_test_shader_file(const std::filesystem::path& file_path) noexce
 
          _opened_files[file_name] = load_string_file(file_path);
 
+         if (_opened_files[file_name].size() > std::numeric_limits<UINT>::max()) {
+            return E_BOUNDS;
+         }
+
          *out_data = _opened_files[file_name].data();
-         *out_size = _opened_files[file_name].size();
+         *out_size = gsl::narrow_cast<UINT>(_opened_files[file_name].size());
 
          return S_OK;
       }

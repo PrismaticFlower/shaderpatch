@@ -116,7 +116,7 @@ auto munge_material(const fs::path& material_path, const fs::path& output_file_p
    }
 
    const auto material =
-      describe_material(material_path.stem().u8string(),
+      describe_material(material_path.stem().string(),
                         descriptions.at(desc_name), root_node, options);
 
    std::vector<std::pair<std::string, std::vector<std::string>>> required_files;
@@ -157,55 +157,55 @@ void fixup_munged_models(
    std::unordered_set<Ci_string> affected_models;
    std::mutex affected_models_mutex;
 
-   std::for_each(std::execution::par, changed_materials.cbegin(),
-                 changed_materials.cend(), [&](const Ci_string& name) noexcept {
-                    auto tex_refs_it = texture_references.find(name);
+   std::for_each(
+      std::execution::par, changed_materials.cbegin(),
+      changed_materials.cend(), [&](const Ci_string& name) noexcept {
+         auto tex_refs_it = texture_references.find(name);
 
-                    if (tex_refs_it == texture_references.cend()) return;
+         if (tex_refs_it == texture_references.cend()) return;
 
-                    std::for_each(
-                       std::execution::par, tex_refs_it->second.cbegin(),
-                       tex_refs_it->second.cend(), [&](const fs::path& file_ref) noexcept {
-                          // Test if this model has already been processed.
-                          {
-                             std::lock_guard lock{affected_models_mutex};
+         std::for_each(
+            std::execution::par, tex_refs_it->second.cbegin(),
+            tex_refs_it->second.cend(), [&](const fs::path& file_ref) noexcept {
+               // Test if this model has already been processed.
+               {
+                  std::lock_guard lock{affected_models_mutex};
 
-                             if (auto [it, absent] = affected_models.emplace(
-                                    make_ci_string(file_ref.filename().string()));
-                                 !absent)
-                                return;
-                          }
+                  if (auto [it, absent] = affected_models.emplace(
+                         make_ci_string(file_ref.filename().string()));
+                      !absent)
+                     return;
+               }
 
-                          auto output_file_path = output_dir / file_ref.filename();
+               auto output_file_path = output_dir / file_ref.filename();
 
-                          fs::copy_file(file_ref, output_file_path,
-                                        fs::copy_options::overwrite_existing);
+               fs::copy_file(file_ref, output_file_path,
+                             fs::copy_options::overwrite_existing);
 
-                          const auto extension = file_ref.extension() += ".req"sv;
+               const auto extension = file_ref.extension() += ".req"sv;
 
-                          auto req_file_path = file_ref;
-                          req_file_path.replace_extension(extension);
+               auto req_file_path = file_ref;
+               req_file_path.replace_extension(extension);
 
-                          if (fs::exists(req_file_path)) {
-                             auto output_req_file_path = output_file_path;
-                             output_req_file_path.replace_extension(extension);
+               if (fs::exists(req_file_path)) {
+                  auto output_req_file_path = output_file_path;
+                  output_req_file_path.replace_extension(extension);
 
-                             fs::copy_file(req_file_path, output_req_file_path,
-                                           fs::copy_options::overwrite_existing);
-                          }
+                  fs::copy_file(req_file_path, output_req_file_path,
+                                fs::copy_options::overwrite_existing);
+               }
 
-                          synced_print("Editing "sv,
-                                       output_file_path.filename().string(),
-                                       " for Shader Patch..."sv);
+               synced_print("Editing "sv, output_file_path.filename().string(),
+                            " for Shader Patch..."sv);
 
-                          try {
-                             patch_model(output_file_path, material_index);
-                          }
-                          catch (std::exception& e) {
-                             synced_error_print(e.what());
-                          }
-                       });
-                 });
+               try {
+                  patch_model(output_file_path, material_index);
+               }
+               catch (std::exception& e) {
+                  synced_error_print(e.what());
+               }
+            });
+      });
 }
 }
 

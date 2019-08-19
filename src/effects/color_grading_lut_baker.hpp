@@ -40,23 +40,23 @@ private:
    void uploade_lut(ID3D11DeviceContext1& dc, const Lut_data& lut_data) noexcept;
 
    struct Eval_params {
-      float contrast;
-      float saturation;
+      float contrast = 1.0f;
+      float saturation = 1.0f;
 
-      glm::vec3 color_filter;
-      glm::vec3 hsv_adjust;
+      glm::vec3 color_filter = {1.0f, 1.0f, 1.0f};
+      glm::vec3 hsv_adjust = {0.0f, 0.0f, 0.0f};
 
-      glm::vec3 channel_mix_red;
-      glm::vec3 channel_mix_green;
-      glm::vec3 channel_mix_blue;
+      glm::vec3 channel_mix_red = {1.0f, 0.0f, 0.0f};
+      glm::vec3 channel_mix_green = {0.0f, 1.0f, 0.0f};
+      glm::vec3 channel_mix_blue = {0.0f, 0.0f, 1.0f};
 
-      glm::vec3 lift_adjust;
-      glm::vec3 inv_gamma_adjust;
-      glm::vec3 gain_adjust;
+      glm::vec3 lift_adjust = {0.0f, 0.0f, 0.0f};
+      glm::vec3 inv_gamma_adjust = {0.0f, 0.0f, 0.0f};
+      glm::vec3 gain_adjust = {0.0f, 0.0f, 0.0f};
 
-      Tonemapper tonemapper;
-      filmic::Curve filmic_curve;
-      float heji_whitepoint;
+      Tonemapper tonemapper = Tonemapper::reinhard;
+      filmic::Curve filmic_curve{};
+      float heji_whitepoint = 1.0f;
    };
 
    static_assert(std::is_trivially_destructible_v<Eval_params>);

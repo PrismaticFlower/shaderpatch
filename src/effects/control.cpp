@@ -223,11 +223,10 @@ void Control::save_params_to_munged_file(const fs::path& save_to) noexcept
    auto config = output_params_to_yaml_string();
 
    try {
-      save_volume_resource(save_to.u8string(), save_to.stem().u8string(),
+      save_volume_resource(save_to, save_to.stem().string(),
                            Volume_resource_type::fx_config,
                            gsl::span{reinterpret_cast<std::byte*>(config.data()),
                                      gsl::narrow_cast<gsl::index>(config.size())});
-
       _save_failure = false;
    }
    catch (std::exception& e) {
@@ -325,7 +324,7 @@ namespace {
 
 Bloom_params show_bloom_imgui(Bloom_params params) noexcept
 {
-   const auto max_float = std::numeric_limits<float>::max();
+   constexpr auto max_float = std::numeric_limits<float>::max();
 
    if (ImGui::CollapsingHeader("Basic Controls", ImGuiTreeNodeFlags_DefaultOpen)) {
       ImGui::Checkbox("Enabled", &params.enabled);
