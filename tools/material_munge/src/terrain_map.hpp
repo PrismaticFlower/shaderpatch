@@ -21,7 +21,7 @@ struct Terrain_map {
    Terrain_map(Terrain_map&&) = default;
    Terrain_map& operator=(Terrain_map&&) = default;
 
-   Terrain_map(const Terrain_map&) = delete;
+   explicit Terrain_map(const Terrain_map&);
    Terrain_map& operator=(const Terrain_map&) = delete;
 
    ~Terrain_map() = default;

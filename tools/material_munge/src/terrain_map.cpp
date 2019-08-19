@@ -363,6 +363,24 @@ Terrain_map::Terrain_map(const std::uint16_t length)
 {
 }
 
+Terrain_map::Terrain_map(const Terrain_map& other)
+   : length{other.length},
+     texture_names{other.texture_names},
+     detail_texture{other.detail_texture},
+     cuts{other.cuts},
+     position{std::make_unique<glm::vec3[]>(length * length)},
+     color{std::make_unique<glm::vec3[]>(length * length)},
+     diffuse_lighting{std::make_unique<glm::vec3[]>(length * length)},
+     texture_weights{std::make_unique<std::array<float, 16>[]>(length * length)}
+{
+   std::copy_n(other.position.get(), length * length, this->position.get());
+   std::copy_n(other.color.get(), length * length, this->color.get());
+   std::copy_n(other.diffuse_lighting.get(), length * length,
+               this->diffuse_lighting.get());
+   std::copy_n(other.texture_weights.get(), length * length,
+               this->texture_weights.get());
+}
+
 auto load_terrain_map(const std::filesystem::path& path) -> Terrain_map
 {
    std::ifstream file{path, std::ios::binary};

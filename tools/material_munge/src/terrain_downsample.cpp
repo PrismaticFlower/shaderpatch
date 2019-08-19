@@ -132,7 +132,9 @@ void downsample_texture_weights(const Terrain_map& input,
 auto terrain_downsample(const Terrain_map& input, const std::uint16_t new_length)
    -> Terrain_map
 {
-   Expects(new_length > 1 && new_length < input.length);
+   Expects(new_length > 1);
+
+   if (new_length >= input.length) return Terrain_map{input};
 
    Terrain_map output{new_length};
 
