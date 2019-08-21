@@ -5,27 +5,15 @@
 
 #include <exception>
 
-#include <Windows.h>
-
 namespace sp::d3d9 {
 
 Upload_scratch_buffer upload_scratch_buffer;
 
 Upload_scratch_buffer::Upload_scratch_buffer(const std::size_t max_persist_size,
                                              const std::size_t starting_size) noexcept
-   : _max_persist_size{max_persist_size}, _page_size{[] {
-        SYSTEM_INFO info;
-        GetSystemInfo(&info);
-
-        return info.dwPageSize;
-     }()}
+   : _max_persist_size{max_persist_size}
 {
    resize(starting_size);
-}
-
-Upload_scratch_buffer::~Upload_scratch_buffer()
-{
-   if (_data) VirtualFree(_data, _size, MEM_RELEASE);
 }
 
 std::byte* Upload_scratch_buffer::lock(const std::size_t required_size) noexcept
@@ -35,7 +23,7 @@ std::byte* Upload_scratch_buffer::lock(const std::size_t required_size) noexcept
 
    ensure_min_size(required_size);
 
-   return _data;
+   return reinterpret_cast<std::byte*>(_memory.get());
 }
 
 void Upload_scratch_buffer::unlock() noexcept
@@ -65,26 +53,19 @@ void Upload_scratch_buffer::resize(const std::size_t new_size) noexcept
    if (_size == new_size) return;
 
    if (new_size == 0) {
-      _data = nullptr;
       _size = 0;
+      _memory = nullptr;
 
       return;
    }
 
-   if (_data) VirtualFree(_data, _size, MEM_RELEASE);
+   const auto block_count = next_multiple_of<sizeof(Block)>(new_size) / sizeof(Block);
 
-   _accessible_size = next_multiple_of(_page_size, new_size);
-   _size = _accessible_size + _page_size;
-   _data = static_cast<std::byte*>(
-      VirtualAlloc(nullptr, _size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE));
-
-   if (!_data)
-      log_and_terminate("Failed to allocate memory for upload scratch buffer!"sv);
-
-   if (!VirtualFree(_data + _accessible_size, _page_size, MEM_DECOMMIT))
-      log_and_terminate("Failed to install protection page for upload scratch buffer!"sv);
-
+   _memory = std::unique_ptr<Block[]>{new (std::nothrow) Block[block_count]};
    _size = new_size;
+
+   if (!_memory)
+      log_and_terminate("Failed to allocate memory for upload scratch buffer!"sv);
 }
 
 }
