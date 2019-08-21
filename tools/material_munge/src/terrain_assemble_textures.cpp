@@ -351,6 +351,10 @@ auto generate_mipmaps(DirectX::ScratchImage image) -> DirectX::ScratchImage
 auto compress_texture(DirectX::ScratchImage image, const DXGI_FORMAT format,
                       ID3D11Device* d3d11) -> DirectX::ScratchImage
 {
+   if (image.GetMetadata().width < 4 && image.GetMetadata().height < 4) {
+      return image;
+   }
+
    const auto compress_flags =
       DirectX::TEX_COMPRESS_PARALLEL | DirectX::TEX_COMPRESS_UNIFORM;
 
