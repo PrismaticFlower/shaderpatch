@@ -184,16 +184,91 @@ void add_terrain_model_segm(ucfb::Editor_parent_chunk& modl,
    }
 }
 
+void add_terrain_model_modl(ucfb::Editor& editor, const std::string_view model_name,
+                            const std::string_view skel_bone_name,
+                            const std::string_view material_name,
+                            const std::array<glm::vec3, 2> model_aabb,
+                            const gsl::span<const Terrain_model_segment> segments,
+                            const bool keep_static_lighting)
+{
+   auto& modl =
+      std::get<1>(editor.emplace_back("modl"_mn, ucfb::Editor_parent_chunk{}).second);
+
+   // NAME
+   {
+      auto name =
+         std::get<0>(modl.emplace_back("NAME"_mn, ucfb::Editor_data_chunk{}).second)
+            .writer();
+
+      name.write_unaligned(model_name);
+   }
+
+   // VRTX
+   {
+      auto vrtx =
+         std::get<0>(modl.emplace_back("VRTX"_mn, ucfb::Editor_data_chunk{}).second)
+            .writer();
+
+      vrtx.write<std::uint32_t>(0); // unknown
+   }
+
+   // NODE
+   {
+      auto node =
+         std::get<0>(modl.emplace_back("NODE"_mn, ucfb::Editor_data_chunk{}).second)
+            .writer();
+
+      node.write_unaligned(skel_bone_name);
+   }
+
+   // INFO
+   {
+      auto info =
+         std::get<0>(modl.emplace_back("INFO"_mn, ucfb::Editor_data_chunk{}).second)
+            .writer();
+
+      static_assert(sizeof(model_aabb) == 24);
+
+      info.write<std::uint32_t>(0);                            // unknown
+      info.write<std::uint32_t>(0);                            // unknown
+      info.write(static_cast<std::uint32_t>(segments.size())); // segment count
+      info.write<std::uint32_t>(0);                            // unknown
+      info.write(model_aabb);
+      info.write(model_aabb);
+      info.write<std::uint32_t>(1); // unknown
+      info.write<std::uint32_t>(0); // total vertex count, used for LOD and GPU budgeting
+   }
+
+   // segm(s)
+   for (const auto& segment : segments) {
+      add_terrain_model_segm(modl, material_name, skel_bone_name, model_aabb,
+                             segment, keep_static_lighting);
+   }
+
+   // SPHR
+   {
+      auto sphr =
+         std::get<0>(modl.emplace_back("SPHR"_mn, ucfb::Editor_data_chunk{}).second)
+            .writer();
+
+      sphr.write(glm::vec3{});
+      sphr.write(glm::max(glm::length(model_aabb[0]), glm::length(model_aabb[1])));
+   }
+}
+
 void add_terrain_model_chunk(ucfb::Editor& editor,
                              const std::string_view material_name, const int index,
                              const std::array<glm::vec3, 2> model_aabb,
                              const std::vector<Terrain_model_segment>& segments,
-                             const Terrain_model_segment* low_detail_segment,
+                             const std::optional<Terrain_model_segment>& low_detail_segment,
+                             const bool high_res_far_terrain,
                              const bool keep_static_lighting)
 {
    constexpr std::string_view skel_bone_name = "root";
    const auto model_name = std::string{terrain_model_name} + std::to_string(index);
    const auto model_name_lowd = model_name + std::string{terrain_low_detail_suffix};
+   const auto material_name_lowd = std::string{material_name} +=
+      terrain_low_detail_suffix;
 
    // skel
    {
@@ -241,137 +316,19 @@ void add_terrain_model_chunk(ucfb::Editor& editor,
 
    // modl
    {
-      auto& modl = std::get<1>(
-         editor.emplace_back("modl"_mn, ucfb::Editor_parent_chunk{}).second);
-
-      // NAME
-      {
-         auto name =
-            std::get<0>(modl.emplace_back("NAME"_mn, ucfb::Editor_data_chunk{}).second)
-               .writer();
-
-         name.write_unaligned(model_name);
-      }
-
-      // VRTX
-      {
-         auto vrtx =
-            std::get<0>(modl.emplace_back("VRTX"_mn, ucfb::Editor_data_chunk{}).second)
-               .writer();
-
-         vrtx.write<std::uint32_t>(0); // unknown
-      }
-
-      // NODE
-      {
-         auto node =
-            std::get<0>(modl.emplace_back("NODE"_mn, ucfb::Editor_data_chunk{}).second)
-               .writer();
-
-         node.write_unaligned(skel_bone_name);
-      }
-
-      // INFO
-      {
-         auto info =
-            std::get<0>(modl.emplace_back("INFO"_mn, ucfb::Editor_data_chunk{}).second)
-               .writer();
-
-         static_assert(sizeof(model_aabb) == 24);
-
-         info.write<std::uint32_t>(0);                            // unknown
-         info.write<std::uint32_t>(0);                            // unknown
-         info.write(static_cast<std::uint32_t>(segments.size())); // segment count
-         info.write<std::uint32_t>(0);                            // unknown
-         info.write(model_aabb);
-         info.write(model_aabb);
-         info.write<std::uint32_t>(1); // unknown
-         info.write<std::uint32_t>(0); // total vertex count, used for LOD and GPU budgeting
-      }
-
-      // segm(s)
-      for (const auto& segment : segments) {
-         add_terrain_model_segm(modl, material_name, skel_bone_name, model_aabb,
-                                segment, keep_static_lighting);
-      }
-
-      // SPHR
-      {
-         auto sphr =
-            std::get<0>(modl.emplace_back("SPHR"_mn, ucfb::Editor_data_chunk{}).second)
-               .writer();
-
-         sphr.write(glm::vec3{});
-         sphr.write(glm::max(glm::length(model_aabb[0]), glm::length(model_aabb[1])));
-      }
+      add_terrain_model_modl(editor, model_name, skel_bone_name, material_name,
+                             model_aabb, segments, keep_static_lighting);
    }
 
    // modl - LOWD
    if (low_detail_segment) {
-      auto& modl = std::get<1>(
-         editor.emplace_back("modl"_mn, ucfb::Editor_parent_chunk{}).second);
-
-      // NAME
-      {
-         auto name =
-            std::get<0>(modl.emplace_back("NAME"_mn, ucfb::Editor_data_chunk{}).second)
-               .writer();
-
-         name.write_unaligned(model_name_lowd);
-      }
-
-      // VRTX
-      {
-         auto vrtx =
-            std::get<0>(modl.emplace_back("VRTX"_mn, ucfb::Editor_data_chunk{}).second)
-               .writer();
-
-         vrtx.write<std::uint32_t>(0); // unknown
-      }
-
-      // NODE
-      {
-         auto node =
-            std::get<0>(modl.emplace_back("NODE"_mn, ucfb::Editor_data_chunk{}).second)
-               .writer();
-
-         node.write_unaligned(skel_bone_name);
-      }
-
-      // INFO
-      {
-         auto info =
-            std::get<0>(modl.emplace_back("INFO"_mn, ucfb::Editor_data_chunk{}).second)
-               .writer();
-
-         static_assert(sizeof(model_aabb) == 24);
-
-         info.write<std::uint32_t>(0); // unknown
-         info.write<std::uint32_t>(0); // unknown
-         info.write(1);                // segment count
-         info.write<std::uint32_t>(0); // unknown
-         info.write(model_aabb);
-         info.write(model_aabb);
-         info.write<std::uint32_t>(1); // unknown
-         info.write<std::uint32_t>(0); // total vertex count, used for LOD and GPU budgeting
-      }
-
-      // segm
-      {
-         add_terrain_model_segm(modl, std::string{material_name} += terrain_low_detail_suffix,
-                                skel_bone_name, model_aabb, *low_detail_segment,
-                                keep_static_lighting);
-      }
-
-      // SPHR
-      {
-         auto sphr =
-            std::get<0>(modl.emplace_back("SPHR"_mn, ucfb::Editor_data_chunk{}).second)
-               .writer();
-
-         sphr.write(glm::vec3{});
-         sphr.write(glm::max(glm::length(model_aabb[0]), glm::length(model_aabb[1])));
-      }
+      add_terrain_model_modl(editor, model_name_lowd, skel_bone_name, material_name_lowd,
+                             model_aabb, gsl::span(&(*low_detail_segment), 1),
+                             keep_static_lighting);
+   }
+   else if (high_res_far_terrain) {
+      add_terrain_model_modl(editor, model_name_lowd, skel_bone_name, material_name_lowd,
+                             model_aabb, segments, keep_static_lighting);
    }
 
    // gmod
@@ -408,7 +365,7 @@ void add_terrain_model_chunk(ucfb::Editor& editor,
       }
 
       // LOWD
-      if (low_detail_segment) {
+      if (low_detail_segment || high_res_far_terrain) {
          auto lowd =
             std::get<0>(gmod.emplace_back("LOWD"_mn, ucfb::Editor_data_chunk{}).second)
                .writer();
@@ -421,7 +378,8 @@ void add_terrain_model_chunk(ucfb::Editor& editor,
 
 void add_terrain_model_chunks(ucfb::Editor& editor, const std::string_view material_name,
                               const std::vector<Terrain_model_segment>& segments,
-                              const Terrain_model_segment& low_detail_segment,
+                              const std::optional<Terrain_model_segment>& low_detail_segment,
+                              const bool high_res_far_terrain,
                               const bool keep_static_lighting)
 {
    const auto model_aabb = calculate_terrain_model_segments_aabb(segments);
@@ -429,8 +387,8 @@ void add_terrain_model_chunks(ucfb::Editor& editor, const std::string_view mater
 
    for (auto i = 0; i < models.size(); ++i) {
       add_terrain_model_chunk(editor, material_name, i, model_aabb, models[i],
-                              i == 0 ? &low_detail_segment : nullptr,
-                              keep_static_lighting);
+                              i == 0 ? low_detail_segment : std::nullopt,
+                              high_res_far_terrain, keep_static_lighting);
    }
 
    // entc
@@ -561,7 +519,7 @@ void write_req_path(const std::filesystem::path& main_output_path,
 }
 
 void terrain_modelify(const Terrain_map& terrain, const std::string_view material_suffix,
-                      const bool keep_static_lighting,
+                      const bool high_res_far_terrain, const bool keep_static_lighting,
                       const std::filesystem::path& munged_input_terrain_path,
                       const std::filesystem::path& output_path)
 {
@@ -572,7 +530,8 @@ void terrain_modelify(const Terrain_map& terrain, const std::string_view materia
    ucfb::Editor editor = [&] {
       win32::Memeory_mapped_file file{munged_input_terrain_path,
                                       win32::Memeory_mapped_file::Mode::read};
-      const auto is_parent = [](const Magic_number mn) noexcept {
+      const auto is_parent = [](const Magic_number mn) noexcept
+      {
          return mn == "tern"_mn;
       };
 
@@ -587,13 +546,16 @@ void terrain_modelify(const Terrain_map& terrain, const std::string_view materia
    const auto terrain_triangle_list = create_terrain_triangle_list(terrain);
    const auto terrain_model_segments = optimize_terrain_model_segments(
       create_terrain_model_segments(terrain_triangle_list));
-   const auto terrain_low_detail_segment = create_low_detail_terrain(terrain);
+   const auto terrain_low_detail_segment =
+      !high_res_far_terrain ? std::optional{create_low_detail_terrain(terrain)}
+                            : std::nullopt;
 
    std::string material_name{terrain_material_name};
    material_name += material_suffix;
 
    add_terrain_model_chunks(editor, material_name, terrain_model_segments,
-                            terrain_low_detail_segment, keep_static_lighting);
+                            terrain_low_detail_segment, high_res_far_terrain,
+                            keep_static_lighting);
 
    auto file = ucfb::open_file_for_output(output_path);
    ucfb::Writer writer{file};

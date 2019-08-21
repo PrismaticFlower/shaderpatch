@@ -18,6 +18,8 @@ enum class Terrain_blending { height, basic };
 
 enum class Terrain_rendertype { normal_ext, pbr };
 
+enum class Terrain_far { downsampled, fullres };
+
 struct Terrain_material {
    std::string albedo_map;
    std::string normal_map;
@@ -40,6 +42,7 @@ struct Terrain_materials_config {
    Terrain_bumpmapping bumpmapping = Terrain_bumpmapping::parallax_offset_mapping;
    Terrain_blending blending = Terrain_blending::height;
    Terrain_rendertype rendertype = Terrain_rendertype::normal_ext;
+   Terrain_far far_terrain = Terrain_far::downsampled;
 
    glm::vec3 base_color;
    float base_metallicness;
@@ -120,6 +123,17 @@ struct convert<sp::Terrain_materials_config> {
       }
       else if (blending == "Basic"sv) {
          config.blending = sp::Terrain_blending::basic;
+      }
+      else {
+         throw std::runtime_error{"Invalid BlendingMode"s};
+      }
+
+      if (const auto lowres = global["FarTerrain"s].as<std::string>("Downsampled"s);
+          lowres == "Downsampled"sv) {
+         config.far_terrain = sp::Terrain_far::downsampled;
+      }
+      else if (lowres == "Fullres"sv) {
+         config.far_terrain = sp::Terrain_far::fullres;
       }
       else {
          throw std::runtime_error{"Invalid BlendingMode"s};

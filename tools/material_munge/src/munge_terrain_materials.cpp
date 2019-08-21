@@ -97,7 +97,9 @@ void munge_terrain_materials(const std::unordered_map<Ci_string, std::filesystem
                 output_munge_files_dir / munged_terrain_file_name;
              should_modelify_terrain(config_last_write_time, munged_terrain_input_file_path,
                                      terrain_output_file_path)) {
-            terrain_modelify(terrain_map, terrain_suffix, config.use_ze_static_lighting,
+            terrain_modelify(terrain_map, terrain_suffix,
+                             config.far_terrain == Terrain_far::fullres,
+                             config.use_ze_static_lighting,
                              munged_terrain_input_file_path, terrain_output_file_path);
             terrain_save_normal_map(terrain_map, terrain_suffix, output_munge_files_dir);
          }
