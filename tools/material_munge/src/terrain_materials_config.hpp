@@ -136,7 +136,7 @@ struct convert<sp::Terrain_materials_config> {
          config.far_terrain = sp::Terrain_far::fullres;
       }
       else {
-         throw std::runtime_error{"Invalid BlendingMode"s};
+         throw std::runtime_error{"Invalid FarTerrain"s};
       }
 
       config.base_color =
