@@ -11,8 +11,6 @@
 
 #include <glm/gtc/color_space.hpp>
 
-#pragma optimize("", off)
-
 namespace sp {
 
 namespace {
@@ -35,62 +33,92 @@ auto select_textures(const Terrain_map& terrain, const std::array<glm::ivec2, 3>
 {
    Expects(terrain.length > 1);
 
-   std::array<std::array<std::array<float, 16>, 5>, 3> texture_weights{};
+   using Weights = std::array<std::array<std::array<float, 16>, 5>, 3>;
 
-   for (auto v = 0; v < tri.size(); ++v) {
-      const auto clamp = [max = terrain.length - 1](const auto v) {
-         return std::clamp(v, 0, max);
-      };
+   const Weights texture_weights = [&] {
+      Weights texture_weights{};
 
-      const auto i0 = clamp(tri[v].x) + (clamp(tri[v].y) * terrain.length);
-      const auto i1 = clamp(tri[v].x - 1) + (clamp(tri[v].y) * terrain.length);
-      const auto i2 = clamp(tri[v].x + 1) + (clamp(tri[v].y) * terrain.length);
-      const auto i3 = clamp(tri[v].x) + (clamp(tri[v].y - 1) * terrain.length);
-      const auto i4 = clamp(tri[v].x) + (clamp(tri[v].y + 1) * terrain.length);
+      for (auto v = 0; v < tri.size(); ++v) {
+         const auto clamp = [max = terrain.length - 1](const auto v) {
+            return std::clamp(v, 0, max);
+         };
 
-      texture_weights[v][0] = terrain.texture_weights[i0];
-      texture_weights[v][1] = terrain.texture_weights[i1];
-      texture_weights[v][2] = terrain.texture_weights[i2];
-      texture_weights[v][3] = terrain.texture_weights[i3];
-      texture_weights[v][4] = terrain.texture_weights[i4];
-   }
+         const auto i0 = clamp(tri[v].x) + (clamp(tri[v].y) * terrain.length);
+         const auto i1 = clamp(tri[v].x - 1) + (clamp(tri[v].y) * terrain.length);
+         const auto i2 = clamp(tri[v].x + 1) + (clamp(tri[v].y) * terrain.length);
+         const auto i3 = clamp(tri[v].x) + (clamp(tri[v].y - 1) * terrain.length);
+         const auto i4 = clamp(tri[v].x) + (clamp(tri[v].y + 1) * terrain.length);
 
-   std::array premult_weights{texture_weights};
+         texture_weights[v][0] = terrain.texture_weights[i0];
+         texture_weights[v][1] = terrain.texture_weights[i1];
+         texture_weights[v][2] = terrain.texture_weights[i2];
+         texture_weights[v][3] = terrain.texture_weights[i3];
+         texture_weights[v][4] = terrain.texture_weights[i4];
+      }
 
-   for (auto& vertex_weights : texture_weights) {
-      for (auto& weights : vertex_weights) {
-         for (std::ptrdiff_t i = static_cast<std::ptrdiff_t>(weights.size()) - 1;
-              i >= 0; --i) {
-            weights[i] *= (1.0f - weights[i + 1]);
+      return texture_weights;
+   }();
+
+   const Weights premult_weights = [&] {
+      Weights premult_weights = texture_weights;
+
+      for (auto& vertex_weights : premult_weights) {
+         for (auto& weights : vertex_weights) {
+            for (std::ptrdiff_t i = static_cast<std::ptrdiff_t>(weights.size()) - 2;
+                 i >= 0; --i) {
+               weights[i] *= (1.0f - weights[i + 1]);
+            }
+
+            const auto sum = std::accumulate(weights.cbegin(), weights.cend(), 0.0f);
+
+            if (sum > 0.0f) {
+               for (auto& weight : weights) {
+                  weight /= sum;
+               }
+            }
          }
       }
-   }
 
-   std::array<float, 16> summed_weights{};
+      return premult_weights;
+   }();
 
-   for (auto& vertex_weights : premult_weights) {
-      for (const auto& weights : vertex_weights) {
-         for (std::ptrdiff_t i = 0; i < weights.size(); ++i) {
-            summed_weights[i] += weights[i];
+   const std::array<float, 16> summed_weights = [&] {
+      std::array<float, 16> summed_weights{};
+
+      for (auto& vertex_weights : premult_weights) {
+         for (const auto& weights : vertex_weights) {
+            for (std::ptrdiff_t i = 0; i < weights.size(); ++i) {
+               summed_weights[i] += weights[i];
+            }
          }
       }
-   }
 
-   std::array<std::uint8_t, 3> indices;
+      return summed_weights;
+   }();
 
-   const auto select_index = [&](const std::ptrdiff_t start) {
-      for (std::ptrdiff_t i = start; i > 0; --i) {
-         if (summed_weights[i] <= 0.0f) continue;
+   const std::array<std::uint_fast8_t, 16> sorted_indices = [&] {
+      std::array<std::uint_fast8_t, 16> sorted_indices{};
 
-         return static_cast<std::uint8_t>(i);
+      std::iota(sorted_indices.begin(), sorted_indices.end(), std::uint_fast8_t{0});
+      std::sort(sorted_indices.begin(), sorted_indices.end(),
+                [&](const std::uint_fast8_t& l, const std::uint_fast8_t& r) {
+                   return summed_weights[l] > summed_weights[r];
+                });
+
+      return sorted_indices;
+   }();
+
+   const std::array<std::uint8_t, 3> indices = [&] {
+      std::array<std::uint8_t, 3> indices{static_cast<std::uint8_t>(sorted_indices[0]),
+                                          static_cast<std::uint8_t>(sorted_indices[1]),
+                                          static_cast<std::uint8_t>(sorted_indices[2])};
+
+      for (auto& i : indices) {
+         if (summed_weights[i] <= 0.0f) i = 0xf;
       }
 
-      return std::uint8_t{0};
-   };
-
-   indices[0] = select_index(summed_weights.size() - 1);
-   indices[1] = select_index(int{indices[0]} - 1);
-   indices[2] = select_index(int{indices[1]} - 1);
+      return indices;
+   }();
 
    return {indices, std::array{std::array{premult_weights[0][0][indices[0]],
                                           premult_weights[0][0][indices[1]]},
