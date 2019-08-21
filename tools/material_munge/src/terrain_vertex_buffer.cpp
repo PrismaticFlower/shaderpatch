@@ -108,24 +108,31 @@ auto select_textures(const Terrain_map& terrain, const std::array<glm::ivec2, 3>
       return sorted_indices;
    }();
 
-   const std::array<std::uint8_t, 3> indices = [&] {
-      std::array<std::uint8_t, 3> indices{static_cast<std::uint8_t>(sorted_indices[0]),
-                                          static_cast<std::uint8_t>(sorted_indices[1]),
-                                          static_cast<std::uint8_t>(sorted_indices[2])};
+   std::array indices = {static_cast<std::uint8_t>(sorted_indices[0]),
+                         static_cast<std::uint8_t>(sorted_indices[1]),
+                         static_cast<std::uint8_t>(sorted_indices[2])};
 
-      for (auto& i : indices) {
-         if (summed_weights[i] <= 0.0f) i = 0xf;
-      }
+   std::array tri_weights = {std::array{premult_weights[0][0][indices[0]],
+                                        premult_weights[0][0][indices[1]],
+                                        premult_weights[0][0][indices[2]]},
+                             std::array{premult_weights[1][0][indices[0]],
+                                        premult_weights[1][0][indices[1]],
+                                        premult_weights[1][0][indices[2]]},
+                             std::array{premult_weights[2][0][indices[0]],
+                                        premult_weights[2][0][indices[1]],
+                                        premult_weights[2][0][indices[2]]}};
 
-      return indices;
-   }();
+   for (auto i = 1; i < (indices.size() - 1); ++i) {
+      if (summed_weights[i] > 0.0f) continue;
 
-   return {indices, std::array{std::array{premult_weights[0][0][indices[0]],
-                                          premult_weights[0][0][indices[1]]},
-                               std::array{premult_weights[1][0][indices[0]],
-                                          premult_weights[1][0][indices[1]]},
-                               std::array{premult_weights[2][0][indices[0]],
-                                          premult_weights[2][0][indices[1]]}}};
+      for (auto& weights : tri_weights) weights[i] = 0.0f;
+
+      indices[i] = indices[i - 1];
+   }
+
+   return {indices, std::array{std::array{tri_weights[0][0], tri_weights[0][1]},
+                               std::array{tri_weights[1][0], tri_weights[1][1]},
+                               std::array{tri_weights[2][0], tri_weights[2][1]}}};
 }
 
 auto create_terrain_triangles(const Terrain_map& terrain) -> Terrain_triangle_list
