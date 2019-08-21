@@ -1,12 +1,15 @@
 #ifndef TERRAIN_COMMON_INCLUDED
 #define TERRAIN_COMMON_INCLUDED
 
-#include "vertex_utilities.hlsl"
-#include "pixel_utilities.hlsl"
 #include "pixel_sampler_states.hlsl"
+#include "pixel_utilities.hlsl"
+#include "vertex_utilities.hlsl"
 
-const static bool terrain_common_use_parallax_offset_mapping = TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING;
-const static bool terrain_common_use_parallax_occlusion_mapping = TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING;
+const static bool terrain_common_use_parallax_offset_mapping =
+   TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING;
+const static bool terrain_common_use_parallax_occlusion_mapping =
+   TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING;
+const static bool terrain_common_basic_blending = TERRAIN_COMMON_BASIC_BLENDING;
 const static bool terrain_common_low_detail = TERRAIN_COMMON_LOW_DETAIL;
 
 struct Packed_terrain_vertex {
@@ -40,7 +43,8 @@ Terrain_vertex unpack_vertex(Packed_terrain_vertex packed, const bool srgb_color
 
    if (srgb_colors) unpacked.color = srgb_to_linear(unpacked.color);
 
-   unpacked.terrain_coords = max((float2)packed.position.xz / 32767.0f, -1.0) * float2(1.0, -1.0) * 0.5 + 0.5;
+   unpacked.terrain_coords =
+      max((float2)packed.position.xz / 32767.0f, -1.0) * float2(1.0, -1.0) * 0.5 + 0.5;
 
    return unpacked;
 }
@@ -53,9 +57,12 @@ float3x3 terrain_tangent_to_world(const float3 normalWS)
    return float3x3(tangentWS, bitangentWS, normalWS);
 }
 
-float3x3 terrain_sample_normal_map(Texture2D<float3> terrain_normal_map, const float2 terrain_coords)
+float3x3 terrain_sample_normal_map(Texture2D<float3> terrain_normal_map,
+                                   const float2 terrain_coords)
 {
-   float3 normalWS = terrain_normal_map.Sample(aniso_wrap_sampler, terrain_coords) * (1024.0 / 511.0) - (512.0 / 511.0);
+   float3 normalWS = terrain_normal_map.Sample(aniso_wrap_sampler, terrain_coords) *
+                        (1024.0 / 511.0) -
+                     (512.0 / 511.0);
    normalWS = normalize(normalWS);
 
    return terrain_tangent_to_world(normalWS);
@@ -81,8 +88,9 @@ class Terrain_parallax_texture : Parallax_input_texture {
    Texture2DArray<float1> height_maps;
 };
 
-void terrain_sample_heightmaps(Texture2DArray<float1> height_maps, const float3 height_scales, 
-                               const float3 unorm_viewTS, const float3 vertex_texture_blend,
+void terrain_sample_heightmaps(Texture2DArray<float1> height_maps,
+                               const float3 height_scales, const float3 unorm_viewTS,
+                               const float3 vertex_texture_blend,
                                inout float3 texcoords[3], out float3 heights)
 {
    Terrain_parallax_texture parallax_height_map;
@@ -92,8 +100,10 @@ void terrain_sample_heightmaps(Texture2DArray<float1> height_maps, const float3 
 
    if (terrain_common_low_detail) return;
 
-   [unroll] for (int i = 0; i < 3; ++i) {
-      [branch] if (vertex_texture_blend[i] > 0.0) {
+   [unroll] for (int i = 0; i < 3; ++i)
+   {
+      [branch] if (vertex_texture_blend[i] > 0.0)
+      {
          parallax_height_map.index = texcoords[i].z;
 
          if (terrain_common_use_parallax_offset_mapping) {
@@ -107,13 +117,17 @@ void terrain_sample_heightmaps(Texture2DArray<float1> height_maps, const float3 
                                       texcoords[i].xy, unorm_viewTS);
          }
 
-         heights[i] = height_maps.Sample(aniso_wrap_sampler, texcoords[i]);
+         if (!terrain_common_basic_blending) {
+            heights[i] = height_maps.Sample(aniso_wrap_sampler, texcoords[i]);
+         }
       }
    }
 }
 
 float3 terrain_blend_weights(const float3 heights, const float3 vertex_texture_blend)
 {
+   if (terrain_common_basic_blending) return vertex_texture_blend;
+
    const float offset = 0.2;
 
    const float3 h = heights + vertex_texture_blend;

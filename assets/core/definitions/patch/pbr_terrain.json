@@ -53,6 +53,7 @@
       "defines": [
         [ "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING", "0" ],
         [ "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING", "0" ],
+        [ "TERRAIN_COMMON_BASIC_BLENDING", "0" ],
         [ "TERRAIN_COMMON_LOW_DETAIL", "0" ],
         [ "PBR_TERRAIN_USE_SHADOW_MAP", "0" ]
       ]
@@ -68,6 +69,7 @@
       "static_flags": [
         "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING",
         "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING",
+        "TERRAIN_COMMON_BASIC_BLENDING",
         "TERRAIN_COMMON_LOW_DETAIL",
         "PBR_TERRAIN_USE_SHADOW_MAP"
       ],
@@ -83,7 +85,8 @@
 
         "TERRAIN_COMMON_LOW_DETAIL": {
           "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": "clear",
-          "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": "clear"
+          "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": "clear",
+          "TERRAIN_COMMON_BASIC_BLENDING": "set"
         }
       }
     }
@@ -94,6 +97,7 @@
       "static_flags": {
         "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": false,
         "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": false,
+        "TERRAIN_COMMON_BASIC_BLENDING": false,
         "TERRAIN_COMMON_LOW_DETAIL": false,
         "PBR_TERRAIN_USE_SHADOW_MAP": false
       }
@@ -103,6 +107,7 @@
       "static_flags": {
         "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": true,
         "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": false,
+        "TERRAIN_COMMON_BASIC_BLENDING": false,
         "TERRAIN_COMMON_LOW_DETAIL": false,
         "PBR_TERRAIN_USE_SHADOW_MAP": false
       }
@@ -112,6 +117,37 @@
       "static_flags": {
         "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": false,
         "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": true,
+        "TERRAIN_COMMON_BASIC_BLENDING": false,
+        "TERRAIN_COMMON_LOW_DETAIL": false,
+        "PBR_TERRAIN_USE_SHADOW_MAP": false
+      }
+    },
+
+    "pbr_terrain.basic blending": {
+      "static_flags": {
+        "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": false,
+        "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": false,
+        "TERRAIN_COMMON_BASIC_BLENDING": true,
+        "TERRAIN_COMMON_LOW_DETAIL": false,
+        "PBR_TERRAIN_USE_SHADOW_MAP": false
+      }
+    },
+
+    "pbr_terrain.basic blending.parallax offset mapping": {
+      "static_flags": {
+        "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": true,
+        "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": false,
+        "TERRAIN_COMMON_BASIC_BLENDING": true,
+        "TERRAIN_COMMON_LOW_DETAIL": false,
+        "PBR_TERRAIN_USE_SHADOW_MAP": false
+      }
+    },
+
+    "pbr_terrain.basic blending.parallax occlusion mapping": {
+      "static_flags": {
+        "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": false,
+        "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": true,
+        "TERRAIN_COMMON_BASIC_BLENDING": true,
         "TERRAIN_COMMON_LOW_DETAIL": false,
         "PBR_TERRAIN_USE_SHADOW_MAP": false
       }
@@ -121,6 +157,7 @@
       "static_flags": {
         "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": false,
         "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": false,
+        "TERRAIN_COMMON_BASIC_BLENDING": true,
         "TERRAIN_COMMON_LOW_DETAIL": true,
         "PBR_TERRAIN_USE_SHADOW_MAP": false
       }

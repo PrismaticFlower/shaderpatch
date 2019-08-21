@@ -14,6 +14,8 @@ enum class Terrain_bumpmapping {
    parallax_occlusion_mapping
 };
 
+enum class Terrain_blending { height, basic };
+
 enum class Terrain_rendertype { normal_ext, pbr };
 
 struct Terrain_material {
@@ -36,6 +38,7 @@ struct Terrain_materials_config {
    bool srgb_diffuse_maps = false;
 
    Terrain_bumpmapping bumpmapping = Terrain_bumpmapping::parallax_offset_mapping;
+   Terrain_blending blending = Terrain_blending::height;
    Terrain_rendertype rendertype = Terrain_rendertype::normal_ext;
 
    glm::vec3 base_color;
@@ -85,10 +88,9 @@ struct convert<sp::Terrain_materials_config> {
       config.use_ze_static_lighting = global["UseZEStaticLighting"s].as<bool>(false);
       config.srgb_diffuse_maps = global["sRGBDiffuseMaps"s].as<bool>(true);
 
-      const auto bumpmapping =
-         global["BumpMappingType"s].as<std::string>("Parallax Offset Mapping"s);
-
-      if (bumpmapping == "Normal Mapping"sv) {
+      if (const auto bumpmapping =
+             global["BumpMappingType"s].as<std::string>("Parallax Offset Mapping"s);
+          bumpmapping == "Normal Mapping"sv) {
          config.bumpmapping = sp::Terrain_bumpmapping::normal_mapping;
       }
       else if (bumpmapping == "Parallax Offset Mapping"sv) {
@@ -101,9 +103,8 @@ struct convert<sp::Terrain_materials_config> {
          throw std::runtime_error{"Invalid BumpMappingType"s};
       }
 
-      const auto rendertype = global["Rendertype"s].as<std::string>("normal_ext"s);
-
-      if (rendertype == "normal_ext"sv) {
+      if (const auto rendertype = global["Rendertype"s].as<std::string>("normal_ext"s);
+          rendertype == "normal_ext"sv) {
          config.rendertype = sp::Terrain_rendertype::normal_ext;
       }
       else if (rendertype == "pbr"sv) {
@@ -111,6 +112,17 @@ struct convert<sp::Terrain_materials_config> {
       }
       else {
          throw std::runtime_error{"Invalid Rendertype"s};
+      }
+
+      if (const auto blending = global["BlendingMode"s].as<std::string>("Height"s);
+          blending == "Height"sv) {
+         config.blending = sp::Terrain_blending::height;
+      }
+      else if (blending == "Basic"sv) {
+         config.blending = sp::Terrain_blending::basic;
+      }
+      else {
+         throw std::runtime_error{"Invalid BlendingMode"s};
       }
 
       config.base_color =

@@ -113,6 +113,10 @@ auto select_rendertype(const Terrain_materials_config& config) noexcept -> std::
                        ? "pbr_terrain"s
                        : "normal_ext_terrain"s;
 
+   if (config.blending == Terrain_blending::basic) {
+      rt += ".basic blending"s;
+   }
+
    if (config.bumpmapping == Terrain_bumpmapping::parallax_offset_mapping) {
       rt += ".parallax offset mapping"s;
    }
