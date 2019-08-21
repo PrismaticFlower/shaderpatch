@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <cstddef>
+#include <memory>
 
 #include <gsl/gsl>
 
@@ -12,7 +13,7 @@ public:
    Upload_scratch_buffer(const std::size_t max_persist_size = 16777216u,
                          const std::size_t starting_size = 16777216u) noexcept;
 
-   ~Upload_scratch_buffer();
+   ~Upload_scratch_buffer() = default;
 
    Upload_scratch_buffer(const Upload_scratch_buffer&) = delete;
    Upload_scratch_buffer& operator=(const Upload_scratch_buffer&) = delete;
@@ -31,13 +32,13 @@ private:
 
    void resize(const std::size_t new_size) noexcept;
 
+   using Block = std::aligned_storage_t<65536, 16>;
+
    std::atomic_bool _locked = false;
-   gsl::owner<std::byte*> _data = nullptr;
-   std::size_t _accessible_size{};
-   std::size_t _size{};
+   std::unique_ptr<Block[]> _memory = nullptr;
+   std::size_t _size = 0;
 
    const std::size_t _max_persist_size;
-   const std::size_t _page_size;
 };
 
 extern Upload_scratch_buffer upload_scratch_buffer;
