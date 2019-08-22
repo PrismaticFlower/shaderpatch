@@ -22,11 +22,11 @@ auto add_texture_transform_properties(std::vector<Material_property>& properties
       const auto transform = texture_transforms[i].get_transform();
 
       properties.emplace_back("TextureTransformsX"s + std::to_string(i), transform[0],
-                              glm::vec3{std::numeric_limits<float>::min()},
+                              glm::vec3{std::numeric_limits<float>::lowest()},
                               glm::vec3{std::numeric_limits<float>::max()},
                               Material_property_var_op::none);
       properties.emplace_back("TextureTransformsY"s + std::to_string(i), transform[1],
-                              glm::vec3{std::numeric_limits<float>::min()},
+                              glm::vec3{std::numeric_limits<float>::lowest()},
                               glm::vec3{std::numeric_limits<float>::max()},
                               Material_property_var_op::none);
    }
