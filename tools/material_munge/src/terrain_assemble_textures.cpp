@@ -170,7 +170,7 @@ auto get_builtin_texture(const std::string& tex_name) -> DirectX::ScratchImage
       builtins{{"$null_normalmap"s, 0xffff7f7f},
                {"$null_ao"s, 0xffffffff},
                {"$null_detailmap", 0xff7f7f7f},
-               {"$null_heightmap", 0xff7f7f7f},
+               {"$null_heightmap", 0xffffffff},
                {"$null_aomap"s, 0xffffffff},
                {"$null_metallic_roughnessmap", 0xffffffff},
                {"$null_albedomap", 0xffffffff},
