@@ -136,8 +136,6 @@ void install_get_message_hook(const DWORD thread_id) noexcept
 
 void install_dinput_hooks() noexcept
 {
-   Expects(g_window);
-
    static bool installed = false;
 
    if (std::exchange(installed, true)) return;
@@ -152,10 +150,7 @@ void install_dinput_hooks() noexcept
                              IID_IDirectInput8A, dinput.void_clear_and_assign(),
                              nullptr);
 
-   using Set_coop_level_fn = HRESULT __stdcall(IDirectInputDevice8A&, HWND, DWORD);
-
-   using Poll_fn = HRESULT __stdcall(IDirectInputDevice8A&);
-
+   using Acquire_fn = HRESULT __stdcall(IDirectInputDevice8A&);
    using Get_device_state_fn = HRESULT __stdcall(IDirectInputDevice8A&, DWORD, LPVOID);
 
    const std::uintptr_t* keyboard_vtable;
@@ -168,27 +163,16 @@ void install_dinput_hooks() noexcept
 
       keyboard_vtable = get_vtable_pointer(*device);
 
-      static Set_coop_level_fn* true_set_coop_level = nullptr;
+      static Acquire_fn* true_acquire = nullptr;
 
-      true_set_coop_level = hook_vtable<Set_coop_level_fn>(
-         *device, 13, [](IDirectInputDevice8A& self, HWND window, DWORD) {
-            return true_set_coop_level(self, window,
-                                       DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
+      true_acquire =
+         hook_vtable<Acquire_fn>(*device, 7, [](IDirectInputDevice8A& self) {
+            if (g_input_mode == Input_mode::normal) {
+               return true_acquire(self);
+            }
+
+            return S_OK;
          });
-
-      static Poll_fn* true_poll = nullptr;
-
-      true_poll = hook_vtable<Poll_fn>(*device, 25, [](IDirectInputDevice8A& self) {
-         static int coop_overrides_left = 2;
-
-         if (coop_overrides_left != 0) {
-            --coop_overrides_left;
-            self.Unacquire();
-            true_set_coop_level(self, g_window, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
-         }
-
-         return true_poll(self);
-      });
 
       static Get_device_state_fn* true_get_device_state = nullptr;
 
@@ -205,6 +189,8 @@ void install_dinput_hooks() noexcept
 
             std::memset(data, 0, data_size);
 
+            self.Unacquire();
+
             return DI_OK;
          });
    }
@@ -217,26 +203,16 @@ void install_dinput_hooks() noexcept
 
       if (keyboard_vtable == get_vtable_pointer(*device)) return;
 
-      static Set_coop_level_fn* true_set_coop_level = nullptr;
+      static Acquire_fn* true_acquire = nullptr;
 
-      true_set_coop_level = hook_vtable<Set_coop_level_fn>(
-         *device, 13, [](IDirectInputDevice8A& self, HWND window, DWORD) {
-            return true_set_coop_level(self, window,
-                                       DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
+      true_acquire =
+         hook_vtable<Acquire_fn>(*device, 7, [](IDirectInputDevice8A& self) {
+            if (g_input_mode == Input_mode::normal) {
+               return true_acquire(self);
+            }
+
+            return S_OK;
          });
-
-      static Poll_fn* true_poll = nullptr;
-
-      true_poll = hook_vtable<Poll_fn>(*device, 25, [](IDirectInputDevice8A& self) {
-         static bool coop_level_overridden = false;
-
-         if (!std::exchange(coop_level_overridden, true)) {
-            self.Unacquire();
-            true_set_coop_level(self, g_window, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
-         }
-
-         return true_poll(self);
-      });
 
       static Get_device_state_fn* true_get_device_state = nullptr;
 
@@ -247,6 +223,8 @@ void install_dinput_hooks() noexcept
             }
 
             std::memset(data, 0, data_size);
+
+            self.Unacquire();
 
             return DI_OK;
          });
