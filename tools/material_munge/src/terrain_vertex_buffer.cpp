@@ -122,14 +122,6 @@ auto select_textures(const Terrain_map& terrain, const std::array<glm::ivec2, 3>
                                         premult_weights[2][0][indices[1]],
                                         premult_weights[2][0][indices[2]]}};
 
-   for (auto i = 1; i < (indices.size() - 1); ++i) {
-      if (summed_weights[i] > 0.0f) continue;
-
-      for (auto& weights : tri_weights) weights[i] = 0.0f;
-
-      indices[i] = indices[i - 1];
-   }
-
    return {indices, std::array{std::array{tri_weights[0][0], tri_weights[0][1]},
                                std::array{tri_weights[1][0], tri_weights[1][1]},
                                std::array{tri_weights[2][0], tri_weights[2][1]}}};
