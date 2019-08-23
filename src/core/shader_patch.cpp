@@ -590,7 +590,8 @@ auto Shader_patch::create_patch_texture(const gsl::span<const std::byte> texture
 
       _shader_resource_database.insert(std::move(srv), name);
 
-      const auto texture_deleter = [this](ID3D11ShaderResourceView* srv) noexcept {
+      const auto texture_deleter = [this](ID3D11ShaderResourceView * srv) noexcept
+      {
          log(Log_level::info, "Destroying texture "sv,
              std::quoted(_shader_resource_database.lookup_name(srv)));
 
@@ -619,7 +620,8 @@ auto Shader_patch::create_patch_material(const gsl::span<const std::byte> materi
 
       log(Log_level::info, "Loaded material "sv, std::quoted(material->name));
 
-      const auto material_deleter = [&](Patch_material* material) noexcept {
+      const auto material_deleter = [&](Patch_material * material) noexcept
+      {
          if (_patch_material == material) set_patch_material(nullptr);
 
          for (auto it = _materials.begin(); it != _materials.end(); ++it) {
@@ -658,7 +660,8 @@ auto Shader_patch::create_patch_effects_config(const gsl::span<const std::byte> 
 
       const auto fx_id = _current_effects_id += 1;
 
-      const auto on_destruction = [fx_id, this]() noexcept {
+      const auto on_destruction = [ fx_id, this ]() noexcept
+      {
          if (fx_id != _current_effects_id) return;
 
          _effects.enabled(false);
@@ -837,21 +840,6 @@ void Shader_patch::clear_depthstencil(const float depth, const UINT8 stencil,
                             (clear_stencil ? D3D11_CLEAR_STENCIL : 0);
 
    _device_context->ClearDepthStencilView(dsv, clear_flags, depth, stencil);
-}
-
-void Shader_patch::reset_depthstencil(const Game_depthstencil depthstencil) noexcept
-{
-   constexpr auto flags = D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL;
-
-   if (depthstencil == Game_depthstencil::nearscene)
-      _device_context->ClearDepthStencilView(_nearscene_depthstencil.dsv.get(),
-                                             flags, 0.0f, 0x00);
-   else if (depthstencil == Game_depthstencil::farscene)
-      _device_context->ClearDepthStencilView(_farscene_depthstencil.dsv.get(),
-                                             flags, 0.0f, 0x00);
-   else if (depthstencil == Game_depthstencil::reflectionscene)
-      _device_context->ClearDepthStencilView(_reflectionscene_depthstencil.dsv.get(),
-                                             flags, 0.0f, 0x00);
 }
 
 void Shader_patch::set_index_buffer(ID3D11Buffer& buffer, const UINT offset) noexcept
@@ -1190,7 +1178,8 @@ void Shader_patch::game_rendertype_changed() noexcept
    }
    if (_shader_rendertype == Rendertype::shadowquad) {
       _on_stretch_rendertarget = [this](Game_rendertarget&, const RECT,
-                                        Game_rendertarget& dest, const RECT) noexcept {
+                                        Game_rendertarget& dest, const RECT) noexcept
+      {
          _on_stretch_rendertarget = nullptr;
          _om_targets_dirty = true;
 
@@ -1258,7 +1247,8 @@ void Shader_patch::game_rendertype_changed() noexcept
       }
    }
    else if (_shader_rendertype == Rendertype::skyfog && _oit_provider.enabled()) {
-      _on_rendertype_changed = [&]() noexcept {
+      _on_rendertype_changed = [&]() noexcept
+      {
          _oit_provider.prepare_resources(*_device_context,
                                          *_game_rendertargets[0].texture,
                                          *_game_rendertargets[0].rtv);
@@ -1267,8 +1257,8 @@ void Shader_patch::game_rendertype_changed() noexcept
          _oit_active = true;
 
          _on_stretch_rendertarget = [&](Game_rendertarget&, const RECT,
-                                        Game_rendertarget&,
-                                        const RECT dest_rect) noexcept {
+                                        Game_rendertarget&, const RECT dest_rect) noexcept
+         {
             if (dest_rect.left == 0 && dest_rect.top == 0 &&
                 dest_rect.bottom == 256 && dest_rect.right == 256)
                return;
@@ -1346,7 +1336,8 @@ void Shader_patch::game_rendertype_changed() noexcept
 
          restore_all_game_state();
 
-         _on_rendertype_changed = [this]() noexcept {
+         _on_rendertype_changed = [this]() noexcept
+         {
             _discard_draw_calls = false;
             _on_rendertype_changed = nullptr;
          };

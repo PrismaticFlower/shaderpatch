@@ -246,8 +246,6 @@ HRESULT Device::Present(const RECT*, const RECT*, HWND, const RGNDATA*) noexcept
    Debug_trace::func(__FUNCSIG__);
 
    _shader_patch.present();
-   _shader_patch.reset_depthstencil(core::Game_depthstencil::farscene);
-   _shader_patch.reset_depthstencil(core::Game_depthstencil::reflectionscene);
 
    Debug_trace::reset();
 

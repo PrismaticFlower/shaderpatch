@@ -162,8 +162,6 @@ public:
    void clear_depthstencil(const float z, const UINT8 stencil,
                            const bool clear_depth, const bool clear_stencil) noexcept;
 
-   void reset_depthstencil(const Game_depthstencil depthstencil) noexcept;
-
    void set_index_buffer(ID3D11Buffer& buffer, const UINT offset) noexcept;
 
    void set_vertex_buffer(ID3D11Buffer& buffer, const UINT offset,
