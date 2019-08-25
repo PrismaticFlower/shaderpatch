@@ -51,8 +51,8 @@ Terrain_vertex unpack_vertex(Packed_terrain_vertex packed, const bool srgb_color
 
 float3x3 terrain_tangent_to_world(const float3 normalWS)
 {
-   const float3 tangentWS = normalize(-normalWS.x * normalWS + float3(1, 0, 0));
-   const float3 bitangentWS = normalize(-normalWS.z * normalWS + float3(0, 0, 1));
+   const float3 tangentWS = normalize(cross(normalWS, float3(0.0, 0.0, 1.0)));
+   const float3 bitangentWS = normalize(cross(normalWS, float3(-1.0, 0.0, 0.0)));
 
    return float3x3(tangentWS, bitangentWS, normalWS);
 }
@@ -61,7 +61,7 @@ float3x3 terrain_sample_normal_map(Texture2D<float3> terrain_normal_map,
                                    const float2 terrain_coords)
 {
    float3 normalWS = terrain_normal_map.Sample(aniso_wrap_sampler, terrain_coords) *
-                        (1024.0 / 511.0) -
+                        (1023.0 / 511.0) -
                      (512.0 / 511.0);
    normalWS = normalize(normalWS);
 
