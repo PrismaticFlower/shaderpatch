@@ -1,22 +1,22 @@
 
 #include "constants_list.hlsl"
 #include "generic_vertex_input.hlsl"
-#include "vertex_transformer.hlsl"
 #include "lighting_utilities.hlsl"
 #include "pixel_sampler_states.hlsl"
 #include "pixel_utilities.hlsl"
+#include "vertex_transformer.hlsl"
 
 const static float4 specular_color = ps_custom_constants[0];
 static const float specular_exponent = 64.0;
 const static uint light_count = SPECULAR_LIGHT_COUNT;
-const static float3 light_colors[3] = 
-   {ps_custom_constants[2].xyz, ps_custom_constants[3].xyz, ps_custom_constants[4].xyz};
+const static float3 light_colors[3] = {ps_custom_constants[2].xyz,
+                                       ps_custom_constants[3].xyz,
+                                       ps_custom_constants[4].xyz};
 
 const static float4 x_texcoords_transform = custom_constants[0];
 const static float4 y_texcoords_transform = custom_constants[1];
 
-struct Vs_normalmapped_ouput
-{
+struct Vs_normalmapped_ouput {
    float3 positionWS : POSITIONWS;
    float2 texcoords : TEXCOORD1;
    float3x3 TBN : TBN;
@@ -38,9 +38,9 @@ Vs_normalmapped_ouput normalmapped_vs(Vertex_input input)
    output.positionWS = positionWS;
    output.positionPS = positionPS;
 
-   output.texcoords = transformer.texcoords(x_texcoords_transform,
-                                            y_texcoords_transform);
-   
+   output.texcoords =
+      transformer.texcoords(x_texcoords_transform, y_texcoords_transform);
+
    const float3 normalWS = transformer.normalWS();
    const float3 tangentWS = transformer.tangentWS();
    const float3 bitangentWS = transformer.bitangentWS();
@@ -55,8 +55,7 @@ Vs_normalmapped_ouput normalmapped_vs(Vertex_input input)
    return output;
 }
 
-struct Vs_blinn_phong_ouput
-{
+struct Vs_blinn_phong_ouput {
    float3 positionWS : POSITIONWS;
    float3 normalWS : NORMALWS;
    float2 texcoords : TEXCOORD;
@@ -79,8 +78,8 @@ Vs_blinn_phong_ouput blinn_phong_vs(Vertex_input input)
    output.positionPS = positionPS;
    output.normalWS = transformer.normalWS();
 
-   output.texcoords = transformer.texcoords(x_texcoords_transform,
-                                            y_texcoords_transform);
+   output.texcoords =
+      transformer.texcoords(x_texcoords_transform, y_texcoords_transform);
 
    float near_fade;
    calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
@@ -88,35 +87,28 @@ Vs_blinn_phong_ouput blinn_phong_vs(Vertex_input input)
    return output;
 }
 
-float3 calculate_blinn_specular(float3 normal, float3 view_normal, float3 world_position,
+float3 calculate_blinn_specular(float3 N, float3 V, float3 position,
                                 float4 light_position, float3 light_color)
 {
-   float3 light_direction = light_position.xyz - world_position;
+   float3 L = normalize(light_position.xyz - position);
 
-   float distance = length(light_direction);
-
+   const float dst = distance(light_position.xyz, position);
    const float inv_range_sq = light_position.w;
-
-   float attenuation = 1.0 - (distance * distance) * inv_range_sq;
-   attenuation = saturate(attenuation);
-   attenuation *= attenuation;
+   float attenuation = saturate(1.0 - ((dst * dst) * inv_range_sq));
 
    if (light_position.w == 0) {
-      light_direction = light_position.xyz;
+      L = light_position.xyz;
       attenuation = 1.0;
    }
-   
-   light_direction = normalize(light_direction);
 
-   const float3 H = normalize(light_direction + view_normal);
-   const float NdotH = saturate(dot(normal, H));
+   const float3 H = normalize(L + V);
+   const float NdotH = saturate(dot(N, H));
    const float specular = pow(NdotH, specular_exponent);
 
-   return attenuation * (light_color * specular);
+   return attenuation * light_color * specular;
 }
 
-struct Ps_normalmapped_input
-{
+struct Ps_normalmapped_input {
    float3 positionWS : POSITIONWS;
    float2 texcoords : TEXCOORD1;
    float3x3 TBN : TBN;
@@ -124,8 +116,9 @@ struct Ps_normalmapped_input
    float fog : FOG;
 };
 
-float4 normalmapped_ps(Ps_normalmapped_input input,
-                       uniform Texture2D<float4> normal_map : register(t0)) : SV_Target0
+float4 normalmapped_ps(Ps_normalmapped_input input, uniform Texture2D<float4> normal_map
+                       : register(t0))
+   : SV_Target0
 {
    const float4 light_positionWS = custom_constants[2];
 
@@ -148,9 +141,10 @@ float4 normalmapped_ps(Ps_normalmapped_input input,
    return float4(color, normal_map_gloss.a);
 }
 
-float4 normalmapped_envmap_ps(Ps_normalmapped_input input,
-                              uniform Texture2D<float4> normal_map : register(t0),
-                              uniform TextureCube<float3> envmap : register(t3)) : SV_Target0
+float4 normalmapped_envmap_ps(Ps_normalmapped_input input, uniform Texture2D<float4> normal_map
+                              : register(t0), uniform TextureCube<float3> envmap
+                              : register(t3))
+   : SV_Target0
 {
    float4 normal_map_gloss = normal_map.Sample(aniso_wrap_sampler, input.texcoords);
 
@@ -171,8 +165,7 @@ float4 normalmapped_envmap_ps(Ps_normalmapped_input input,
    return float4(color, normal_map_gloss.a);
 }
 
-struct Ps_blinn_phong_input
-{
+struct Ps_blinn_phong_input {
    float3 positionWS : POSITIONWS;
    float3 normalWS : NORMALWS;
    float2 texcoords : TEXCOORD;
@@ -180,13 +173,14 @@ struct Ps_blinn_phong_input
    float fog : FOG;
 };
 
-float4 blinn_phong_ps(Ps_blinn_phong_input input,
-                      uniform Texture2D<float4> diffuse_map : register(t0),
-                      uniform TextureCube<float3> envmap : register(t1)) : SV_Target0
+float4 blinn_phong_ps(Ps_blinn_phong_input input, uniform Texture2D<float4> diffuse_map
+                      : register(t0), uniform TextureCube<float3> envmap
+                      : register(t1))
+   : SV_Target0
 {
    const float envmap_state = custom_constants[2].x;
-   const float4 light_positionsWS[3] = 
-      {custom_constants[3], custom_constants[4], custom_constants[5]};
+   const float4 light_positionsWS[3] = {custom_constants[3], custom_constants[4],
+                                        custom_constants[5]};
 
    float alpha = diffuse_map.Sample(aniso_wrap_sampler, input.texcoords).a;
    float gloss = lerp(1.0, alpha, specular_color.a);
@@ -197,18 +191,20 @@ float4 blinn_phong_ps(Ps_blinn_phong_input input,
    float3 color = float3(0.0, 0.0, 0.0);
 
    if (light_count >= 1) {
-      float3 spec_contrib = calculate_blinn_specular(normalWS, view_normalWS,
-                                                     input.positionWS,
-                                                     light_positionsWS[0], light_colors[0]);
-      
+      float3 spec_contrib =
+         calculate_blinn_specular(normalWS, view_normalWS, input.positionWS,
+                                  light_positionsWS[0], light_colors[0]);
+
       float3 reflectionWS = calculate_envmap_reflection(normalWS, view_normalWS);
-      
-      float3 env_color = envmap.Sample(aniso_wrap_sampler, reflectionWS) * specular_color.rgb;
+
+      float3 env_color =
+         envmap.Sample(aniso_wrap_sampler, reflectionWS) * specular_color.rgb;
 
       color += lerp(spec_contrib, env_color, envmap_state);
    }
-   
-   [unroll] for (uint i = 1; i < light_count; ++i) {
+
+   [unroll] for (uint i = 1; i < light_count; ++i)
+   {
       color += calculate_blinn_specular(normalWS, view_normalWS, input.positionWS,
                                         light_positionsWS[i], light_colors[i]);
    }
@@ -223,4 +219,3 @@ float4 debug_vertexlit_ps() : SV_Target0
 {
    return float4(1.0, 1.0, 0.0, 1.0);
 }
-
