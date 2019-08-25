@@ -81,7 +81,7 @@
 
       "passes": [
         {
-          "name": "perpixel 3 lights",
+          "name": "perpixel 2 lights",
 
           "skinned": true,
           "lighting": false,
@@ -107,7 +107,7 @@
 
       "passes": [
         {
-          "name": "perpixel 3 lights",
+          "name": "perpixel 1 lights",
 
           "skinned": true,
           "lighting": false,
