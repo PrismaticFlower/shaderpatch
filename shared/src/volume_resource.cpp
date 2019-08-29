@@ -53,8 +53,11 @@ void save_volume_resource(const std::filesystem::path& output_path,
 
    std::string prefix;
 
+   // clang-format off
    if (type == Volume_resource_type::texture) prefix = "_SP_TEXTURE_"s;
    if (type == Volume_resource_type::fx_config) prefix = "_SP_FXCFG_"s;
+   if (type == Volume_resource_type::colorgrading_regions) prefix = "_SP_CLRRGNS_"s;
+   // clang-format on
 
    writer.emplace_child("NAME"_mn).write(prefix += name);
 

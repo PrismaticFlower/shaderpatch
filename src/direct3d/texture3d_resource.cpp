@@ -161,6 +161,11 @@ void Texture3d_resource::create_resource() noexcept
    case Volume_resource_type::fx_config:
       this->resource = _patch.create_patch_effects_config(payload);
       break;
+   case Volume_resource_type::colorgrading_regions:
+      _patch.load_colorgrading_regions(payload);
+      break;
+   default:
+      log_and_terminate("Unexpected volume resource type!");
    }
 }
 

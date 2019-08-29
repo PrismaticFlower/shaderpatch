@@ -176,6 +176,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="include\algorithm.hpp" />
+    <ClInclude Include="include\color_grading_regions_io.hpp" />
     <ClInclude Include="include\compose_exception.hpp" />
     <ClInclude Include="include\com_ptr.hpp" />
     <ClInclude Include="include\config_file.hpp" />
@@ -211,6 +212,7 @@
     <ClInclude Include="include\volume_resource.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\color_grading_regions_io.cpp" />
     <ClCompile Include="src\config_file.cpp" />
     <ClCompile Include="src\file_dialogs.cpp" />
     <ClCompile Include="src\file_helpers.cpp" />

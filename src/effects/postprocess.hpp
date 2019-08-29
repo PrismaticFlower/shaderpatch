@@ -7,6 +7,8 @@
 #include "../user_config.hpp"
 #include "cmaa2.hpp"
 #include "color_grading_lut_baker.hpp"
+#include "color_grading_regions_blender.hpp"
+#include "color_grading_regions_io.hpp"
 #include "com_ptr.hpp"
 #include "helpers.hpp"
 #include "postprocess_params.hpp"
@@ -71,9 +73,9 @@ public:
 
    void color_grading_params(const Color_grading_params& params) noexcept;
 
-   auto color_grading_params() const noexcept -> const Color_grading_params&
+   auto color_grading_params() const noexcept -> Color_grading_params
    {
-      return _color_grading_params;
+      return _color_grading_regions_blender.global_params();
    }
 
    void film_grain_params(const Film_grain_params& params) noexcept;
@@ -83,13 +85,17 @@ public:
       return _film_grain_params;
    }
 
-   void apply(ID3D11DeviceContext1& dc, Rendertarget_allocator& rt_allocator,
-              Profiler& profiler, const core::Shader_resource_database& textures,
-              const Postprocess_input input, const Postprocess_output output) noexcept;
+   void color_grading_regions(const Color_grading_regions& colorgrading_regions) noexcept;
 
    void apply(ID3D11DeviceContext1& dc, Rendertarget_allocator& rt_allocator,
               Profiler& profiler, const core::Shader_resource_database& textures,
-              CMAA2& cmaa2, const Postprocess_cmaa2_temp_target cmaa2_target,
+              const glm::vec3 camera_position, const Postprocess_input input,
+              const Postprocess_output output) noexcept;
+
+   void apply(ID3D11DeviceContext1& dc, Rendertarget_allocator& rt_allocator,
+              Profiler& profiler, const core::Shader_resource_database& textures,
+              const glm::vec3 camera_position, CMAA2& cmaa2,
+              const Postprocess_cmaa2_temp_target cmaa2_target,
               const Postprocess_input input, const Postprocess_output output) noexcept;
 
    void hdr_state(Hdr_state state) noexcept;
@@ -128,6 +134,9 @@ private:
 
    auto blue_noise_srv(const core::Shader_resource_database& textures) noexcept
       -> ID3D11ShaderResourceView*;
+
+   void update_colorgrading(ID3D11DeviceContext1& dc,
+                            const glm::vec3 camera_position) noexcept;
 
    void update_randomness() noexcept;
 
@@ -200,6 +209,7 @@ private:
 
       return state;
    }();
+
    const Com_ptr<ID3D11Buffer> _msaa_resolve_constant_buffer =
       core::create_dynamic_constant_buffer(*_device, sizeof(Resolve_constants));
    const Com_ptr<ID3D11Buffer> _global_constant_buffer =
@@ -231,9 +241,11 @@ private:
    Com_ptr<ID3D11PixelShader> _postprocess_cmaa2_pre_ps;
    Com_ptr<ID3D11PixelShader> _postprocess_cmaa2_post_ps;
 
+   Color_grading_lut_baker _color_grading_lut_baker{_device};
+   Color_grading_regions_blender _color_grading_regions_blender;
+
    Bloom_params _bloom_params{};
    Vignette_params _vignette_params{};
-   Color_grading_params _color_grading_params{};
    Film_grain_params _film_grain_params{};
 
    Hdr_state _hdr_state = Hdr_state::hdr;
@@ -249,7 +261,6 @@ private:
    std::uniform_int<int> _random_int_dist{0, 63};
 
    std::vector<Com_ptr<ID3D11ShaderResourceView>> _blue_noise_srvs;
-   Color_grading_lut_baker _color_grading_lut_baker{_device};
 
    constexpr static auto global_cb_slot = 0;
    constexpr static auto bloom_cb_slot = 1;

@@ -184,6 +184,7 @@
     </ClCompile>
     <ClCompile Include="src\effects\cmaa2.cpp" />
     <ClCompile Include="src\effects\color_grading_lut_baker.cpp" />
+    <ClCompile Include="src\effects\color_grading_regions_blender.cpp" />
     <ClCompile Include="src\effects\control.cpp" />
     <ClCompile Include="src\effects\postprocess.cpp" />
     <ClCompile Include="src\effects\profiler.cpp" />
@@ -252,6 +253,8 @@
     <ClInclude Include="src\direct3d\texture3d_resource.hpp" />
     <ClInclude Include="src\effects\assao\ASSAO.h" />
     <ClInclude Include="src\effects\cmaa2.hpp" />
+    <ClInclude Include="src\effects\color_grading_eval_params.hpp" />
+    <ClInclude Include="src\effects\color_grading_regions_blender.hpp" />
     <ClInclude Include="src\effects\color_helpers.hpp" />
     <ClInclude Include="src\effects\filmic_tonemapper.hpp" />
     <ClInclude Include="src\effects\postprocess_params.hpp" />

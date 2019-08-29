@@ -136,6 +136,8 @@ public:
                          const bool index_buffer, const bool dynamic) noexcept
       -> Com_ptr<ID3D11Buffer>;
 
+   void load_colorgrading_regions(const gsl::span<const std::byte> regions_data) noexcept;
+
    void update_ia_buffer(ID3D11Buffer& buffer, const UINT offset,
                          const UINT size, const std::byte* data) noexcept;
 

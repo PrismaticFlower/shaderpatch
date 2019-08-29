@@ -129,6 +129,7 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
    _device_context->ClearState();
    _game_rendertargets.clear();
    _effects.cmaa2.clear_resources();
+   _effects.postprocess.color_grading_regions({});
    _oit_provider.clear_resources();
 
    _swapchain.resize(width, height);
@@ -741,6 +742,18 @@ auto Shader_patch::create_ia_buffer(const UINT size, const bool vertex_buffer,
    return buffer;
 }
 
+void Shader_patch::load_colorgrading_regions(const gsl::span<const std::byte> regions_data) noexcept
+{
+   try {
+      _effects.postprocess.color_grading_regions(sp::load_colorgrading_regions(
+         ucfb::Reader_strict<"clrg"_mn>{regions_data}));
+   }
+   catch (std::exception& e) {
+      log(Log_level::error, "Failed to load colorgrading regions! reason: "sv,
+          e.what());
+   }
+}
+
 void Shader_patch::update_ia_buffer(ID3D11Buffer& buffer, const UINT offset,
                                     const UINT size, const std::byte* data) noexcept
 {
@@ -1321,13 +1334,14 @@ void Shader_patch::game_rendertype_changed() noexcept
 
             _effects.postprocess.apply(*_device_context, _rendertarget_allocator,
                                        _effects.profiler, _shader_resource_database,
-                                       _effects.cmaa2, cmaa2_target, postprocess_input,
+                                       _cb_scene.vs_view_positionWS, _effects.cmaa2,
+                                       cmaa2_target, postprocess_input,
                                        _swapchain.postprocess_output());
          }
          else {
             _effects.postprocess.apply(*_device_context, _rendertarget_allocator,
-                                       _effects.profiler,
-                                       _shader_resource_database, postprocess_input,
+                                       _effects.profiler, _shader_resource_database,
+                                       _cb_scene.vs_view_positionWS, postprocess_input,
                                        _swapchain.postprocess_output());
          }
 
@@ -1546,6 +1560,7 @@ void Shader_patch::update_imgui() noexcept
    _om_targets_dirty = true;
 
    if (_imgui_enabled) {
+      ImGui::ShowDemoWindow();
       user_config.show_imgui();
       _effects.show_imgui(_window);
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <algorithm>
+#include <filesystem>
 #include <initializer_list>
 #include <iostream>
 #include <string>
@@ -321,6 +323,25 @@ auto to_ostream(std::ostream& stream, const Node& node) -> std::ostream&;
 auto operator>>(std::istream& stream, Node& node) -> std::istream&;
 
 auto operator<<(std::ostream& stream, const Node& node) -> std::ostream&;
-;
+
+auto load_file(const std::filesystem::path& path) -> cfg::Node;
+
+void save_file(const cfg::Node& node, const std::filesystem::path& path);
+
+template<typename Key_type>
+inline auto find(const Node& node, const Key_type& key) -> Node::const_iterator
+{
+   return std::find_if(node.cbegin(), node.cend(), [&key](const auto& key_node) {
+      return key_node.first == key;
+   });
+}
+
+template<typename Key_type>
+inline auto find(Node& node, const Key_type& key) -> Node::iterator
+{
+   return std::find_if(node.begin(), node.end(), [&key](const auto& key_node) {
+      return key_node.first == key;
+   });
+}
 
 }

@@ -183,6 +183,9 @@
     <ClCompile Include="src\core\materials_editor.cpp">
       <Filter>src\core</Filter>
     </ClCompile>
+    <ClCompile Include="src\effects\color_grading_regions_blender.cpp">
+      <Filter>src\effects</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -415,6 +418,12 @@
     </ClInclude>
     <ClInclude Include="src\core\materials_editor.hpp">
       <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\effects\color_grading_eval_params.hpp">
+      <Filter>src\effects</Filter>
+    </ClInclude>
+    <ClInclude Include="src\effects\color_grading_regions_blender.hpp">
+      <Filter>src\effects</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

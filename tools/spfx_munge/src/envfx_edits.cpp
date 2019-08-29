@@ -16,26 +16,6 @@ using namespace std::literals;
 
 namespace {
 
-auto load_fx_cfg(const fs::path& fx_path) -> cfg::Node
-{
-   std::ifstream file{fx_path};
-
-   try {
-      return cfg::from_istream(file);
-   }
-   catch (std::exception& e) {
-      throw compose_exception<std::runtime_error>(
-         "Error occured while parsing ", fx_path, ". Message: ", e.what());
-   }
-}
-
-auto save_fx_cfg(const cfg::Node& fx_node, const fs::path& path)
-{
-   std::ofstream file{path};
-
-   file << fx_node;
-}
-
 void apply_hdr_edits(cfg::Node& fx_node)
 {
    for (auto it = fx_node.begin(); it != fx_node.end(); ++it) {
@@ -69,14 +49,14 @@ void edit_envfx(const fs::path& fx_path, const fs::path& output_dir)
 {
    synced_print("Editing "sv, fx_path.filename().string(), " for Shader Patch..."sv);
 
-   auto fx_cfg = load_fx_cfg(fx_path);
+   auto fx_cfg = cfg::load_file(fx_path);
 
    apply_hdr_edits(fx_cfg);
 
    auto output_path =
       output_dir / fx_path.filename().replace_extension(".tmpfx");
 
-   save_fx_cfg(fx_cfg, output_path);
+   cfg::save_file(fx_cfg, output_path);
 }
 
 }

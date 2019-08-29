@@ -17,7 +17,8 @@ namespace sp {
 enum class Volume_resource_type : std::uint32_t {
    material,
    texture,
-   fx_config
+   fx_config,
+   colorgrading_regions
 };
 
 extern const std::int32_t volume_resource_format;

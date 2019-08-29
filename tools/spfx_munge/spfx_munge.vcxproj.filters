@@ -15,12 +15,18 @@
     <ClCompile Include="src\envfx_edits.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\munge_colorgrading_regions.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\munge_spfx.hpp">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\envfx_edits.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\munge_colorgrading_regions.hpp">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

@@ -149,12 +149,7 @@ void Postprocess::vignette_params(const Vignette_params& params) noexcept
 
 void Postprocess::color_grading_params(const Color_grading_params& params) noexcept
 {
-   _color_grading_params = params;
-
-   _global_constants.exposure =
-      glm::exp2(_color_grading_params.exposure) * _color_grading_params.brightness;
-
-   _color_grading_lut_baker.update_params(params);
+   _color_grading_regions_blender.global_params(params);
 
    _config_changed = true;
 }
@@ -174,6 +169,13 @@ void Postprocess::film_grain_params(const Film_grain_params& params) noexcept
    _config_changed = true;
 }
 
+void Postprocess::color_grading_regions(const Color_grading_regions& colorgrading_regions) noexcept
+{
+   _color_grading_regions_blender.regions(colorgrading_regions);
+
+   _config_changed = true;
+}
+
 void Postprocess::hdr_state(Hdr_state state) noexcept
 {
    _hdr_state = state;
@@ -184,7 +186,7 @@ void Postprocess::hdr_state(Hdr_state state) noexcept
 void Postprocess::apply(ID3D11DeviceContext1& dc,
                         Rendertarget_allocator& rt_allocator, Profiler& profiler,
                         const core::Shader_resource_database& textures,
-                        const Postprocess_input input,
+                        const glm::vec3 camera_position, const Postprocess_input input,
                         const Postprocess_output output) noexcept
 {
    dc.ClearState();
@@ -194,6 +196,7 @@ void Postprocess::apply(ID3D11DeviceContext1& dc,
    auto* const sampler = _linear_clamp_sampler.get();
    dc.PSSetSamplers(0, 1, &sampler);
 
+   update_colorgrading(dc, camera_position);
    update_shaders();
    update_and_bind_cb(dc, input.width, input.height);
 
@@ -242,7 +245,8 @@ void Postprocess::apply(ID3D11DeviceContext1& dc,
 
 void Postprocess::apply(ID3D11DeviceContext1& dc,
                         Rendertarget_allocator& rt_allocator, Profiler& profiler,
-                        const core::Shader_resource_database& textures, CMAA2& cmaa2,
+                        const core::Shader_resource_database& textures,
+                        const glm::vec3 camera_position, CMAA2& cmaa2,
                         const Postprocess_cmaa2_temp_target cmaa2_target,
                         const Postprocess_input input,
                         const Postprocess_output output) noexcept
@@ -254,6 +258,7 @@ void Postprocess::apply(ID3D11DeviceContext1& dc,
    auto* const sampler = _linear_clamp_sampler.get();
    dc.PSSetSamplers(0, 1, &sampler);
 
+   update_colorgrading(dc, camera_position);
    update_shaders();
    update_and_bind_cb(dc, input.width, input.height);
 
@@ -440,7 +445,7 @@ void Postprocess::do_bloom_and_color_grading(
    srvs[dirt_texture_slot] =
       _bloom_params.use_dirt ? textures.at_if(_bloom_params.dirt_texture_name).get()
                              : nullptr;
-   srvs[lut_texture_slot] = _color_grading_lut_baker.srv(dc);
+   srvs[lut_texture_slot] = _color_grading_lut_baker.srv();
    srvs[blue_noise_texture_slot] = blue_noise_srv(textures);
 
    dc.PSSetShader(&postprocess_shader, nullptr, 0);
@@ -469,7 +474,7 @@ void Postprocess::do_color_grading(ID3D11DeviceContext1& dc,
    set_viewport(dc, output.width, output.height);
 
    srvs[scene_texture_slot] = &input.srv;
-   srvs[lut_texture_slot] = _color_grading_lut_baker.srv(dc);
+   srvs[lut_texture_slot] = _color_grading_lut_baker.srv();
    srvs[blue_noise_texture_slot] = blue_noise_srv(textures);
 
    dc.PSSetShader(&postprocess_shader, nullptr, 0);
@@ -547,6 +552,16 @@ auto Postprocess::blue_noise_srv(const core::Shader_resource_database& textures)
    }
 
    return _blue_noise_srvs[_random_int_dist(_random_engine)].get();
+}
+
+void Postprocess::update_colorgrading(ID3D11DeviceContext1& dc,
+                                      const glm::vec3 camera_position) noexcept
+{
+   const auto params = _color_grading_regions_blender.blend(camera_position);
+
+   _global_constants.exposure = glm::exp2(params.exposure) * params.brightness;
+
+   _color_grading_lut_baker.bake_color_grading_lut(dc, Color_grading_eval_params{params});
 }
 
 void Postprocess::update_randomness() noexcept

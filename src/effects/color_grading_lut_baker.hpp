@@ -1,10 +1,13 @@
 #pragma once
 
+#include "color_grading_eval_params.hpp"
+#include "color_grading_regions_io.hpp"
 #include "com_ptr.hpp"
 #include "filmic_tonemapper.hpp"
 #include "postprocess_params.hpp"
 
 #include <array>
+#include <compare>
 #include <optional>
 #include <typeinfo>
 
@@ -22,47 +25,25 @@ public:
    {
    }
 
-   void update_params(const Color_grading_params& params) noexcept;
+   void bake_color_grading_lut(ID3D11DeviceContext1& dc,
+                               const Color_grading_eval_params params) noexcept;
 
-   auto srv(ID3D11DeviceContext1& dc) noexcept -> ID3D11ShaderResourceView*;
+   auto srv() noexcept -> ID3D11ShaderResourceView*;
 
 private:
    using Lut_data =
       std::array<std::array<std::array<glm::uint32, Color_grading_lut_baker::lut_dimension>, Color_grading_lut_baker::lut_dimension>,
                  Color_grading_lut_baker::lut_dimension>;
 
-   void bake_color_grading_lut(ID3D11DeviceContext1& dc) noexcept;
+   glm::vec3 apply_color_grading(glm::vec3 color,
+                                 const Color_grading_eval_params& params) noexcept;
 
-   glm::vec3 apply_color_grading(glm::vec3 color) noexcept;
-
-   glm::vec3 apply_tonemapping(glm::vec3 color) noexcept;
+   glm::vec3 apply_tonemapping(glm::vec3 color,
+                               const Color_grading_eval_params& params) noexcept;
 
    void uploade_lut(ID3D11DeviceContext1& dc, const Lut_data& lut_data) noexcept;
 
-   struct Eval_params {
-      float contrast = 1.0f;
-      float saturation = 1.0f;
-
-      glm::vec3 color_filter = {1.0f, 1.0f, 1.0f};
-      glm::vec3 hsv_adjust = {0.0f, 0.0f, 0.0f};
-
-      glm::vec3 channel_mix_red = {1.0f, 0.0f, 0.0f};
-      glm::vec3 channel_mix_green = {0.0f, 1.0f, 0.0f};
-      glm::vec3 channel_mix_blue = {0.0f, 0.0f, 1.0f};
-
-      glm::vec3 lift_adjust = {0.0f, 0.0f, 0.0f};
-      glm::vec3 inv_gamma_adjust = {0.0f, 0.0f, 0.0f};
-      glm::vec3 gain_adjust = {0.0f, 0.0f, 0.0f};
-
-      Tonemapper tonemapper = Tonemapper::reinhard;
-      filmic::Curve filmic_curve{};
-      float heji_whitepoint = 1.0f;
-   };
-
-   static_assert(std::is_trivially_destructible_v<Eval_params>);
-
    const Com_ptr<ID3D11Device1> _device;
-   Eval_params _eval_params;
    Hdr_state _hdr_state = Hdr_state::stock;
 
    const Com_ptr<ID3D11Texture3D> _texture = [this] {
@@ -89,8 +70,6 @@ private:
 
       return srv;
    }();
-
-   bool _rebake = true;
 };
 
 }

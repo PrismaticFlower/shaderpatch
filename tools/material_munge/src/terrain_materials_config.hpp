@@ -44,12 +44,12 @@ struct Terrain_materials_config {
    Terrain_rendertype rendertype = Terrain_rendertype::normal_ext;
    Terrain_far far_terrain = Terrain_far::downsampled;
 
-   glm::vec3 base_color;
-   float base_metallicness;
-   float base_roughness;
+   glm::vec3 base_color = {1.0f, 1.0f, 1.0f};
+   float base_metallicness = 1.0f;
+   float base_roughness = 1.0f;
 
-   glm::vec3 diffuse_color;
-   glm::vec3 specular_color;
+   glm::vec3 diffuse_color = {1.0f, 1.0f, 1.0f};
+   glm::vec3 specular_color = {1.0f, 1.0f, 1.0f};
 
    std::map<std::string, Terrain_material, std::less<>> materials;
 };

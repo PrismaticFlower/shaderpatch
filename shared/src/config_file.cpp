@@ -3,6 +3,7 @@
 #include "compose_exception.hpp"
 #include "string_utilities.hpp"
 
+#include <fstream>
 #include <iomanip>
 
 namespace sp::cfg {
@@ -90,6 +91,26 @@ auto operator>>(std::istream& stream, Node& node) -> std::istream&
 auto operator<<(std::ostream& stream, const Node& node) -> std::ostream&
 {
    return to_ostream(stream, node);
+}
+
+auto load_file(const std::filesystem::path& path) -> cfg::Node
+{
+   std::ifstream file{path};
+
+   try {
+      return cfg::from_istream(file);
+   }
+   catch (std::exception& e) {
+      throw compose_exception<std::runtime_error>(
+         "Error occured while parsing ", path, ". Message: ", e.what());
+   }
+}
+
+void save_file(const cfg::Node& node, const std::filesystem::path& path)
+{
+   std::ofstream file{path};
+
+   file << node;
 }
 
 namespace {
