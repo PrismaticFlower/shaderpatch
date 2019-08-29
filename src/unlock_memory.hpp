@@ -14,8 +14,10 @@ namespace sp {
 
    VirtualProtect(address, size, PAGE_EXECUTE_READWRITE, &old_protect);
 
-   return gsl::finally(
-      [=] { VirtualProtect(address, size, old_protect, nullptr); });
+   return gsl::finally([=] {
+      DWORD old_new_protect{};
+      VirtualProtect(address, size, old_protect, &old_new_protect);
+   });
 }
 
 }
