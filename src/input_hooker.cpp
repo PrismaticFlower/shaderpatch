@@ -9,7 +9,9 @@
 #include <dinput.h>
 
 #include <array>
+#include <atomic>
 
+#include <detours.h>
 #include <imgui.h>
 
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg,
@@ -19,262 +21,561 @@ namespace sp {
 
 namespace {
 
-HWND g_window = nullptr;
-HHOOK g_get_message_hook = nullptr;
-HHOOK g_wnd_proc_hook = nullptr;
-Input_mode g_input_mode = Input_mode::normal;
+HWND game_window = nullptr;
+Input_mode input_mode = Input_mode::normal;
 
-WPARAM g_hotkey = 0;
-Small_function<void() noexcept> g_hotkey_func;
-Small_function<void() noexcept> g_screenshot_func;
+WNDPROC game_window_proc = nullptr;
 
-LRESULT CALLBACK get_message_hook(int code, WPARAM w_param, LPARAM l_param)
+WPARAM input_hotkey = 0;
+Small_function<void() noexcept> input_hotkey_func;
+Small_function<void() noexcept> screenshot_func;
+
+LRESULT call_game_window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) noexcept
 {
-   MSG& msg = *reinterpret_cast<MSG*>(l_param);
-
-   // hotkey handling
-   switch (msg.message) {
-   case WM_KEYUP:
-   case WM_SYSKEYUP:
-      if (msg.wParam == g_hotkey && g_hotkey_func) {
-         g_hotkey_func();
-      }
-   }
-
-   if (msg.message == WM_KEYUP && msg.wParam == VK_SNAPSHOT &&
-       w_param != PM_NOREMOVE && g_screenshot_func) {
-      g_screenshot_func();
-   }
-
-   if (code < 0 || w_param == PM_NOREMOVE || msg.hwnd != g_window ||
-       g_input_mode == Input_mode::normal) {
-      return CallNextHookEx(g_get_message_hook, code, w_param, l_param);
-   }
-
-   TranslateMessage(&msg);
-
-   // input redirection handling
-   switch (msg.message) {
-   case WM_LBUTTONDOWN:
-   case WM_LBUTTONDBLCLK:
-   case WM_RBUTTONDOWN:
-   case WM_RBUTTONDBLCLK:
-   case WM_MBUTTONDOWN:
-   case WM_MBUTTONDBLCLK:
-   case WM_LBUTTONUP:
-   case WM_RBUTTONUP:
-   case WM_MBUTTONUP:
-   case WM_MOUSEWHEEL:
-   case WM_MOUSEHWHEEL:
-   case WM_MOUSEMOVE:
-   case WM_KEYDOWN:
-   case WM_SYSKEYDOWN:
-   case WM_KEYUP:
-   case WM_SYSKEYUP:
-   case WM_CHAR:
-      ImGui_ImplWin32_WndProcHandler(g_window, msg.message, msg.wParam, msg.lParam);
-      msg.message = WM_NULL;
-   }
-
-   return CallNextHookEx(g_get_message_hook, code, w_param, l_param);
+   return CallWindowProcA(game_window_proc, hwnd, msg, wparam, lparam);
 }
 
-LRESULT CALLBACK wnd_proc_hook(int code, WPARAM w_param, LPARAM l_param)
+LRESULT CALLBACK patch_window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) noexcept
 {
-   auto& msg = *reinterpret_cast<CWPRETSTRUCT*>(l_param);
-
-   if (msg.hwnd != g_window) {
-      return CallNextHookEx(g_wnd_proc_hook, code, w_param, l_param);
+   if (hwnd != game_window) {
+      call_game_window_proc(hwnd, msg, wparam, lparam);
    }
 
-   if (g_input_mode != Input_mode::normal && msg.message == WM_SETCURSOR) {
-      ImGui_ImplWin32_WndProcHandler(msg.hwnd, msg.message, msg.wParam, msg.lParam);
-   }
-
-   if (msg.message == WM_ACTIVATEAPP) {
-      if (msg.wParam) {
-         ShowWindow(msg.hwnd, SW_NORMAL);
-         win32::clip_cursor_to_window(msg.hwnd);
+   switch (msg) {
+   case WM_KEYUP:
+   case WM_SYSKEYUP:
+      if (wparam == input_hotkey && input_hotkey_func) {
+         input_hotkey_func();
+      }
+      else if (wparam == VK_SNAPSHOT && screenshot_func) {
+         screenshot_func();
+      }
+      break;
+   case WM_ACTIVATEAPP:
+      if (wparam) {
+         ShowWindow(hwnd, SW_NORMAL);
+         win32::clip_cursor_to_window(hwnd);
       }
       else {
          ClipCursor(nullptr);
       }
+      break;
    }
 
-   return CallNextHookEx(g_wnd_proc_hook, code, w_param, l_param);
-}
+   if (input_mode == Input_mode::imgui) {
+      const auto result = ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam);
 
-decltype(&DirectInput8Create) get_directinput8_create() noexcept
-{
-   static decltype(&DirectInput8Create) proc = nullptr;
-
-   if (proc) return proc;
-
-   const static auto handle = LoadLibraryW(L"dinput8.dll");
-
-   if (!handle) std::terminate();
-
-   proc = reinterpret_cast<decltype(&DirectInput8Create)>(
-      GetProcAddress(handle, "DirectInput8Create"));
-
-   if (!proc) std::terminate();
-
-   return proc;
-}
-
-void install_get_message_hook(const DWORD thread_id) noexcept
-{
-   if (g_get_message_hook != nullptr) return;
-
-   g_get_message_hook =
-      SetWindowsHookExW(WH_GETMESSAGE, &get_message_hook, nullptr, thread_id);
-
-   if (!g_get_message_hook) {
-      log_and_terminate("Failed to install WH_GETMESSAGE hook.");
+      if (result) return result;
    }
+
+   return call_game_window_proc(hwnd, msg, wparam, lparam);
+}
+
+// DirectInput 8 Hooks
+
+struct IDirectInputDevice8AHook final : public IDirectInputDevice8A {
+   HRESULT __stdcall QueryInterface(const IID& riid, LPVOID* ppvObj) noexcept override
+   {
+      if (!ppvObj) return E_POINTER;
+
+      if (riid == IID_IDirectInputDevice8A) {
+         AddRef();
+
+         *ppvObj = this;
+      }
+      else if (riid == IID_IUnknown) {
+         AddRef();
+
+         *ppvObj = static_cast<IUnknown*>(this);
+      }
+      else {
+         return E_NOINTERFACE;
+      }
+
+      return S_OK;
+   }
+
+   ULONG __stdcall AddRef() noexcept override
+   {
+      return _ref_count += 1;
+   }
+
+   ULONG __stdcall Release() noexcept override
+   {
+      const auto ref_count = _ref_count -= 1;
+
+      if (ref_count == 0) delete this;
+
+      return ref_count;
+   }
+
+   HRESULT __stdcall GetCapabilities(LPDIDEVCAPS pCaps) noexcept override
+   {
+      return _actual->GetCapabilities(pCaps);
+   }
+
+   HRESULT
+   __stdcall EnumObjects(LPDIENUMDEVICEOBJECTSCALLBACKA lpCallback,
+                         LPVOID pvRef, DWORD dwFlags) noexcept override
+   {
+      return _actual->EnumObjects(lpCallback, pvRef, dwFlags);
+   }
+
+   HRESULT
+   __stdcall GetProperty(const GUID& rguid, LPDIPROPHEADER pPropHdr) noexcept override
+   {
+      return _actual->GetProperty(rguid, pPropHdr);
+   }
+
+   HRESULT
+   __stdcall SetProperty(const GUID& rguid, LPCDIPROPHEADER pPropHdr) noexcept override
+   {
+      return _actual->SetProperty(rguid, pPropHdr);
+   }
+
+   HRESULT __stdcall Acquire() noexcept override
+   {
+      if (_acquired) return S_FALSE;
+
+      _acquired = true;
+
+      return _actual->Acquire();
+   }
+
+   HRESULT __stdcall Unacquire() noexcept override
+   {
+      if (!_acquired) return S_FALSE;
+
+      _acquired = false;
+
+      return _actual->Unacquire();
+   }
+
+   HRESULT __stdcall GetDeviceState(DWORD cbData, LPVOID lpvData) noexcept override
+   {
+      if (!_acquired) {
+         std::memset(lpvData, 0, cbData);
+
+         return DI_OK;
+      }
+
+      if (const auto result = _actual->GetDeviceState(cbData, lpvData); FAILED(result)) {
+         if (result == DIERR_NOTACQUIRED) {
+            _acquired = false;
+         }
+         return result;
+      }
+      else {
+         if (_keyboard && cbData >= sizeof(std::array<std::byte, 256>)) {
+            static_cast<std::byte*>(lpvData)[DIK_SYSRQ] = std::byte{0x0};
+         }
+
+         return result;
+      }
+   }
+
+   HRESULT
+   __stdcall GetDeviceData(DWORD cbObjectData, LPDIDEVICEOBJECTDATA rgdod,
+                           LPDWORD pdwInOut, DWORD dwFlags) noexcept override
+   {
+      return _actual->GetDeviceData(cbObjectData, rgdod, pdwInOut, dwFlags);
+   }
+
+   HRESULT __stdcall SetDataFormat(LPCDIDATAFORMAT lpdf) noexcept override
+   {
+      return _actual->SetDataFormat(lpdf);
+   }
+
+   HRESULT __stdcall SetEventNotification(HANDLE hEvent) noexcept override
+   {
+      return _actual->SetEventNotification(hEvent);
+   }
+
+   HRESULT __stdcall SetCooperativeLevel(HWND hwnd, DWORD dwFlags) noexcept override
+   {
+      dwFlags &= ~(DISCL_EXCLUSIVE);
+      dwFlags |= DISCL_NONEXCLUSIVE;
+
+      return _actual->SetCooperativeLevel(hwnd, dwFlags);
+   }
+
+   HRESULT
+   __stdcall GetObjectInfo(LPDIDEVICEOBJECTINSTANCE pdidoi, DWORD dwObj,
+                           DWORD dwHow) noexcept override
+   {
+      return _actual->GetObjectInfo(pdidoi, dwObj, dwHow);
+   }
+
+   HRESULT
+   __stdcall GetDeviceInfo(LPDIDEVICEINSTANCE pdidi) noexcept override
+   {
+      return _actual->GetDeviceInfo(pdidi);
+   }
+
+   HRESULT __stdcall RunControlPanel(HWND hwnd, DWORD dwFlags) noexcept override
+   {
+      return _actual->RunControlPanel(hwnd, dwFlags);
+   }
+
+   HRESULT
+   __stdcall Initialize(HINSTANCE hinst, DWORD dwVersion, const GUID& rguid) noexcept override
+   {
+      return _actual->Initialize(hinst, dwVersion, rguid);
+   }
+
+   HRESULT
+   __stdcall CreateEffect(const GUID& rguid, LPCDIEFFECT lpeff,
+                          LPDIRECTINPUTEFFECT* ppdeff, LPUNKNOWN punkOuter) noexcept override
+   {
+      return _actual->CreateEffect(rguid, lpeff, ppdeff, punkOuter);
+   }
+
+   HRESULT
+   __stdcall EnumEffects(LPDIENUMEFFECTSCALLBACKA lpCallback, LPVOID pvRef,
+                         DWORD dwEffType) noexcept override
+   {
+      return _actual->EnumEffects(lpCallback, pvRef, dwEffType);
+   }
+
+   HRESULT
+   __stdcall GetEffectInfo(LPDIEFFECTINFOA pdei, const GUID& rguid) noexcept override
+   {
+      return _actual->GetEffectInfo(pdei, rguid);
+   }
+
+   HRESULT __stdcall GetForceFeedbackState(LPDWORD pdwOut) noexcept override
+   {
+      return _actual->GetForceFeedbackState(pdwOut);
+   }
+
+   HRESULT __stdcall SendForceFeedbackCommand(DWORD dwFlags) noexcept override
+   {
+      return _actual->SendForceFeedbackCommand(dwFlags);
+   }
+
+   HRESULT
+   __stdcall EnumCreatedEffectObjects(LPDIENUMCREATEDEFFECTOBJECTSCALLBACK lpCallback,
+                                      LPVOID pvRef, DWORD fl) noexcept override
+   {
+      return _actual->EnumCreatedEffectObjects(lpCallback, pvRef, fl);
+   }
+
+   HRESULT __stdcall Escape(LPDIEFFESCAPE pesc) noexcept override
+   {
+      return _actual->Escape(pesc);
+   }
+
+   HRESULT __stdcall Poll() noexcept override
+   {
+      if (input_mode == Input_mode::imgui) {
+         if (_acquired) Unacquire();
+
+         return DI_OK;
+      }
+
+      if (!_acquired) return DIERR_NOTACQUIRED;
+
+      if (const auto result = _actual->Poll(); FAILED(result)) {
+         if (result == DIERR_NOTACQUIRED) {
+            _acquired = false;
+         }
+
+         return result;
+      }
+      else {
+         return result;
+      }
+   }
+
+   HRESULT
+   __stdcall SendDeviceData(DWORD cbObjectData, LPCDIDEVICEOBJECTDATA rgdod,
+                            LPDWORD pdwInOut, DWORD fl) noexcept override
+   {
+      return _actual->SendDeviceData(cbObjectData, rgdod, pdwInOut, fl);
+   }
+
+   HRESULT
+   __stdcall EnumEffectsInFile(LPCSTR lpszFileName, LPDIENUMEFFECTSINFILECALLBACK pec,
+                               LPVOID pvRef, DWORD dwFlags) noexcept override
+   {
+      return _actual->EnumEffectsInFile(lpszFileName, pec, pvRef, dwFlags);
+   }
+
+   HRESULT __stdcall WriteEffectToFile(LPCSTR lpszFileName, DWORD dwEntries,
+                                       LPDIFILEEFFECT rgDiFileEft,
+                                       DWORD dwFlags) noexcept override
+   {
+      return _actual->WriteEffectToFile(lpszFileName, dwEntries, rgDiFileEft, dwFlags);
+   }
+
+   HRESULT
+   __stdcall BuildActionMap(LPDIACTIONFORMAT lpdiaf, LPCSTR lpszUserName,
+                            DWORD dwFlags) noexcept override
+   {
+      return _actual->BuildActionMap(lpdiaf, lpszUserName, dwFlags);
+   }
+
+   HRESULT
+   __stdcall SetActionMap(LPDIACTIONFORMATA lpdiActionFormat,
+                          LPCSTR lptszUserName, DWORD dwFlags) noexcept override
+   {
+      return _actual->SetActionMap(lpdiActionFormat, lptszUserName, dwFlags);
+   }
+
+   HRESULT
+   __stdcall GetImageInfo(LPDIDEVICEIMAGEINFOHEADER lpdiDevImageInfoHeader) noexcept override
+   {
+      return _actual->GetImageInfo(lpdiDevImageInfoHeader);
+   }
+
+   static auto create(Com_ptr<IDirectInputDevice8A> actual)
+      -> Com_ptr<IDirectInputDevice8AHook>
+   {
+      return Com_ptr{new IDirectInputDevice8AHook{std::move(actual)}};
+   }
+
+   IDirectInputDevice8AHook(const IDirectInputDevice8AHook&) = delete;
+   IDirectInputDevice8AHook& operator=(const IDirectInputDevice8AHook&) = delete;
+   IDirectInputDevice8AHook(IDirectInputDevice8AHook&&) = delete;
+   IDirectInputDevice8AHook& operator=(IDirectInputDevice8AHook&&) = delete;
+
+private:
+   IDirectInputDevice8AHook(Com_ptr<IDirectInputDevice8A> actual)
+      : _actual{std::move(actual)}
+   {
+   }
+
+   ~IDirectInputDevice8AHook() = default;
+
+   std::atomic<UINT> _ref_count;
+   const Com_ptr<IDirectInputDevice8A> _actual;
+   const bool _keyboard = [this] {
+      DIDEVICEINSTANCEA dev{.dwSize = sizeof(DIDEVICEINSTANCEA)};
+
+      _actual->GetDeviceInfo(&dev);
+
+      return GET_DIDEVICE_TYPE(dev.dwDevType) == DI8DEVTYPE_KEYBOARD;
+   }();
+
+   bool _acquired = false;
+};
+
+struct IDirectInput8AHook final : public IDirectInput8A {
+   HRESULT __stdcall QueryInterface(const IID& riid, LPVOID* ppvObj) noexcept override
+   {
+      if (!ppvObj) return E_POINTER;
+
+      if (riid == IID_IDirectInput8A) {
+         AddRef();
+
+         *ppvObj = this;
+      }
+      else if (riid == IID_IUnknown) {
+         AddRef();
+
+         *ppvObj = static_cast<IUnknown*>(this);
+      }
+      else {
+         return E_NOINTERFACE;
+      }
+
+      return S_OK;
+   }
+
+   ULONG __stdcall AddRef() noexcept override
+   {
+      return _ref_count += 1;
+   }
+
+   ULONG __stdcall Release() noexcept override
+   {
+      const auto ref_count = _ref_count -= 1;
+
+      if (ref_count == 0) delete this;
+
+      return ref_count;
+   }
+
+   HRESULT
+   __stdcall CreateDevice(const GUID& rguid, LPDIRECTINPUTDEVICE8A* lplpDirectInputDevice,
+                          LPUNKNOWN pUnkOuter) noexcept override
+   {
+      if (!lplpDirectInputDevice) return DIERR_INVALIDPARAM;
+
+      if (rguid == GUID_SysKeyboard || rguid == GUID_SysMouse && !pUnkOuter) {
+         Com_ptr<IDirectInputDevice8A> actual;
+
+         if (const auto result =
+                _actual->CreateDevice(rguid, actual.clear_and_assign(), nullptr);
+             FAILED(result)) {
+            return result;
+         }
+
+         *lplpDirectInputDevice =
+            IDirectInputDevice8AHook::create(std::move(actual)).release();
+
+         return DI_OK;
+      }
+
+      return _actual->CreateDevice(rguid, lplpDirectInputDevice, pUnkOuter);
+   }
+
+   HRESULT
+   __stdcall EnumDevices(DWORD dwDevType, LPDIENUMDEVICESCALLBACKA lpCallback,
+                         LPVOID pvRef, DWORD dwFlags) noexcept override
+   {
+      return _actual->EnumDevices(dwDevType, lpCallback, pvRef, dwFlags);
+   }
+
+   HRESULT
+   __stdcall GetDeviceStatus(const GUID& rguidInstance) noexcept override
+   {
+      return _actual->GetDeviceStatus(rguidInstance);
+   }
+
+   HRESULT
+   __stdcall RunControlPanel(HWND hwnd, DWORD dwFlags) noexcept override
+   {
+      return _actual->RunControlPanel(hwnd, dwFlags);
+   }
+
+   HRESULT
+   __stdcall Initialize(HINSTANCE hinst, DWORD dwVersion) noexcept override
+   {
+      return _actual->Initialize(hinst, dwVersion);
+   }
+
+   HRESULT
+   __stdcall FindDevice(const GUID& rguidClass, LPCSTR pszName,
+                        LPGUID pguidInstance) noexcept override
+   {
+      return _actual->FindDevice(rguidClass, pszName, pguidInstance);
+   }
+
+   HRESULT
+   __stdcall EnumDevicesBySemantics(LPCSTR pszUserName, LPDIACTIONFORMAT lpdiActionFormat,
+                                    LPDIENUMDEVICESBYSEMANTICSCBA lpCallback,
+                                    LPVOID pvRef, DWORD dwFlags) noexcept override
+   {
+      return _actual->EnumDevicesBySemantics(pszUserName, lpdiActionFormat,
+                                             lpCallback, pvRef, dwFlags);
+   }
+
+   HRESULT
+   __stdcall ConfigureDevices(LPDICONFIGUREDEVICESCALLBACK lpdiCallback,
+                              LPDICONFIGUREDEVICESPARAMS lpdiCDParams,
+                              DWORD dwFlags, LPVOID pvRefData) noexcept override
+   {
+      return _actual->ConfigureDevices(lpdiCallback, lpdiCDParams, dwFlags, pvRefData);
+   }
+
+   static auto create(Com_ptr<IDirectInput8A> actual) -> Com_ptr<IDirectInput8AHook>
+   {
+      return Com_ptr{new IDirectInput8AHook{std::move(actual)}};
+   }
+
+   IDirectInput8AHook(const IDirectInput8AHook&) = delete;
+   IDirectInput8AHook& operator=(const IDirectInput8AHook&) = delete;
+   IDirectInput8AHook(IDirectInput8AHook&&) = delete;
+   IDirectInput8AHook& operator=(IDirectInput8AHook&&) = delete;
+
+private:
+   IDirectInput8AHook(Com_ptr<IDirectInput8A> actual)
+      : _actual{std::move(actual)}
+   {
+   }
+
+   ~IDirectInput8AHook() = default;
+
+   std::atomic<UINT> _ref_count;
+   const Com_ptr<IDirectInput8A> _actual;
+};
+
+decltype(&DirectInput8Create) true_DirectInput8Create = &DirectInput8Create;
+
+HRESULT WINAPI DirectInput8Create_hook(HINSTANCE hinst, DWORD dwVersion,
+                                       const IID& riidltf, LPVOID* ppvOut,
+                                       LPUNKNOWN punkOuter)
+{
+   if (!ppvOut) return DIERR_INVALIDPARAM;
+
+   if (riidltf == IID_IDirectInput8A && !punkOuter) {
+      Com_ptr<IDirectInput8A> actual;
+
+      if (const auto result =
+             true_DirectInput8Create(hinst, dwVersion, IID_IDirectInput8A,
+                                     actual.void_clear_and_assign(), nullptr);
+          FAILED(result)) {
+         return result;
+      }
+
+      *ppvOut = IDirectInput8AHook::create(std::move(actual)).release();
+
+      return S_OK;
+   }
+
+   return true_DirectInput8Create(hinst, dwVersion, riidltf, ppvOut, punkOuter);
+}
+
 }
 
 void install_dinput_hooks() noexcept
 {
-   static bool installed = false;
+   bool failure = true;
 
-   if (std::exchange(installed, true)) return;
-
-   static_assert(DIRECTINPUT_VERSION == 0x0800,
-                 "Unexpected DirectInput version. Device vtables hooked may be "
-                 "different than the devices used by the game.");
-
-   Com_ptr<IDirectInput8A> dinput;
-
-   get_directinput8_create()(GetModuleHandleW(nullptr), DIRECTINPUT_VERSION,
-                             IID_IDirectInput8A, dinput.void_clear_and_assign(),
-                             nullptr);
-
-   using Acquire_fn = HRESULT __stdcall(IDirectInputDevice8A&);
-   using Get_device_state_fn = HRESULT __stdcall(IDirectInputDevice8A&, DWORD, LPVOID);
-
-   const std::uintptr_t* keyboard_vtable;
-
-   // Hook System Keyboard Device
-   {
-      Com_ptr<IDirectInputDevice8A> device;
-
-      dinput->CreateDevice(GUID_SysKeyboard, device.clear_and_assign(), nullptr);
-
-      keyboard_vtable = get_vtable_pointer(*device);
-
-      static Acquire_fn* true_acquire = nullptr;
-
-      true_acquire =
-         hook_vtable<Acquire_fn>(*device, 7, [](IDirectInputDevice8A& self) {
-            if (g_input_mode == Input_mode::normal) {
-               return true_acquire(self);
-            }
-
-            return S_OK;
-         });
-
-      static Get_device_state_fn* true_get_device_state = nullptr;
-
-      true_get_device_state = hook_vtable<Get_device_state_fn>(
-         *device, 9, [](IDirectInputDevice8A& self, DWORD data_size, LPVOID data) {
-            if (g_input_mode == Input_mode::normal) {
-               const auto result = true_get_device_state(self, data_size, data);
-
-               if (data_size == 256)
-                  std::memset(reinterpret_cast<std::uint8_t*>(data) + DIK_SYSRQ, 0, 1);
-
-               return result;
-            }
-
-            std::memset(data, 0, data_size);
-
-            self.Unacquire();
-
-            return DI_OK;
-         });
+   if (DetourTransactionBegin() == NO_ERROR) {
+      if (DetourAttach(&reinterpret_cast<PVOID&>(true_DirectInput8Create),
+                       DirectInput8Create_hook) == NO_ERROR) {
+         if (DetourTransactionCommit() == NO_ERROR) {
+            failure = false;
+         }
+      }
    }
 
-   // Hook System Mouse Device
-   {
-      Com_ptr<IDirectInputDevice8A> device;
-
-      dinput->CreateDevice(GUID_SysMouse, device.clear_and_assign(), nullptr);
-
-      if (keyboard_vtable == get_vtable_pointer(*device)) return;
-
-      static Acquire_fn* true_acquire = nullptr;
-
-      true_acquire =
-         hook_vtable<Acquire_fn>(*device, 7, [](IDirectInputDevice8A& self) {
-            if (g_input_mode == Input_mode::normal) {
-               return true_acquire(self);
-            }
-
-            return S_OK;
-         });
-
-      static Get_device_state_fn* true_get_device_state = nullptr;
-
-      true_get_device_state = hook_vtable<Get_device_state_fn>(
-         *device, 9, [](IDirectInputDevice8A& self, DWORD data_size, LPVOID data) {
-            if (g_input_mode == Input_mode::normal) {
-               return true_get_device_state(self, data_size, data);
-            }
-
-            std::memset(data, 0, data_size);
-
-            self.Unacquire();
-
-            return DI_OK;
-         });
+   if (failure) {
+      log(Log_level::error,
+          "Failed to install DirectInput 8 hooks. Developer Screen may not function and pressing 'Print Screen' may crash the game."sv);
    }
 }
 
-void install_winndow_hook(const DWORD thread_id) noexcept
-{
-   Expects(g_window);
-   Expects(!g_wnd_proc_hook);
-
-   g_wnd_proc_hook =
-      SetWindowsHookExW(WH_CALLWNDPROCRET, &wnd_proc_hook, nullptr, thread_id);
-}
-}
-
-void initialize_input_hooks(const DWORD thread_id, const HWND window) noexcept
+void install_window_hooks(const HWND window) noexcept
 {
    Expects(window);
 
-   static bool hooked = false;
-
-   if (std::exchange(hooked, true)) {
-      log_and_terminate("Attempt to install input hooks twice.");
+   if (game_window) {
+      log_and_terminate("Attempt to install window hooks twice.");
    }
 
-   g_window = window;
+   game_window = window;
+   game_window_proc = reinterpret_cast<WNDPROC>(
+      SetWindowLongPtrA(window, GWLP_WNDPROC,
+                        reinterpret_cast<LONG_PTR>(&patch_window_proc)));
 
-   install_get_message_hook(thread_id);
-   install_dinput_hooks();
-   install_winndow_hook(thread_id);
+   if (!game_window_proc) {
+      log(Log_level::error,
+          "Failed to get install patch window procedure. Developer Screen will not function."sv);
+
+      return;
+   }
 }
 
 void set_input_mode(const Input_mode mode) noexcept
 {
-   g_input_mode = mode;
+   input_mode = mode;
 }
 
 void set_input_hotkey(const WPARAM hotkey) noexcept
 {
-   g_hotkey = hotkey;
+   input_hotkey = hotkey;
 }
 
 void set_input_hotkey_func(Small_function<void() noexcept> function) noexcept
 {
-   g_hotkey_func = std::move(function);
+   input_hotkey_func = std::move(function);
 }
 
 void set_input_screenshot_func(Small_function<void() noexcept> function) noexcept
 {
-   g_screenshot_func = std::move(function);
+   screenshot_func = std::move(function);
 }
 }

@@ -14,7 +14,9 @@ enum class Input_mode {
    imgui
 };
 
-void initialize_input_hooks(const DWORD thread_id, const HWND window) noexcept;
+void install_dinput_hooks() noexcept;
+
+void install_window_hooks(const HWND window) noexcept;
 
 void set_input_mode(const Input_mode mode) noexcept;
 

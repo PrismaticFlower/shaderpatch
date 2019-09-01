@@ -106,7 +106,7 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
    _cb_draw_ps.limit_normal_shader_bright_lights = true;
    _cb_draw_ps.cube_projtex = false;
 
-   initialize_input_hooks(GetCurrentThreadId(), window);
+   install_window_hooks(window);
    set_input_hotkey(user_config.developer.toggle_key);
    set_input_hotkey_func([this]() noexcept {
       if (!std::exchange(_imgui_enabled, !_imgui_enabled))
@@ -117,6 +117,7 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
    set_input_screenshot_func([this]() noexcept { _screenshot_requested = true; });
 
    ImGui::CreateContext();
+   ImGui::GetIO().MouseDrawCursor = true;
    ImGui_ImplWin32_Init(window);
    ImGui_ImplDX11_Init(_device.get(), _device_context.get());
    ImGui_ImplDX11_NewFrame();
