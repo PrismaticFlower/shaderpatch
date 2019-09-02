@@ -3,9 +3,13 @@
 #include "color_grading_eval_params.hpp"
 #include "color_grading_regions_io.hpp"
 #include "postprocess_params.hpp"
+#include "small_function.hpp"
 
+#include <filesystem>
 #include <memory>
 #include <variant>
+
+#include <Windows.h>
 
 namespace sp::effects {
 
@@ -19,15 +23,16 @@ public:
 
    auto blend(const glm::vec3 camera_position) noexcept -> Color_grading_params;
 
-   void show_imgui() noexcept;
+   void show_imgui(const HWND game_window,
+                   Small_function<Color_grading_params(Color_grading_params) noexcept>
+                      show_cg_params_imgui) noexcept;
 
 private:
    void init_region_params(const Color_grading_regions& regions) noexcept;
 
    void init_regions(const Color_grading_regions& regions) noexcept;
 
-   auto get_region_params(const std::string_view config_name) noexcept
-      -> Color_grading_params&;
+   auto get_region_params(const std::string_view config_name) noexcept -> std::size_t;
 
    struct Region {
       struct Box {
@@ -84,10 +89,10 @@ private:
       };
 
       std::variant<Box, Sphere, Cylinder> primitive;
-      const Color_grading_params& params;
+      const std::size_t params_index;
 
       Region(const Color_grading_region_desc& desc,
-             const Color_grading_params& params) noexcept;
+             const std::size_t params_index) noexcept;
 
       auto weight(const glm::vec3 camera_position) const noexcept -> float
       {
@@ -113,6 +118,29 @@ private:
 
    std::vector<std::string> _region_names;
    std::vector<std::string> _region_params_names;
+
+   struct Config_bool {
+      bool b = false;
+
+      operator bool() const noexcept
+      {
+         return b;
+      }
+
+      operator bool*() noexcept
+      {
+         return &b;
+      }
+
+      operator const bool*() const noexcept
+      {
+         return &b;
+      }
+   };
+
+   static_assert(sizeof(Config_bool) == sizeof(bool));
+
+   std::vector<Config_bool> _imgui_editor_state;
 };
 
 }

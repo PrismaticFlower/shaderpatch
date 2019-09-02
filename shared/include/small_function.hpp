@@ -61,11 +61,12 @@ public:
    }
 
    Small_function(const Small_function&) noexcept = delete;
+
    Small_function& operator=(const Small_function&) noexcept = delete;
 
    auto operator()(Args... args) const noexcept -> Return
    {
-      _invoke(&_invocable_storage, std::forward<Args>(args)...);
+      return _invoke(&_invocable_storage, std::forward<Args>(args)...);
    }
 
    explicit operator bool() const noexcept

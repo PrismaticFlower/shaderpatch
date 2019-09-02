@@ -65,6 +65,8 @@ private:
 
    void load_params_from_yaml_file(const std::filesystem::path& load_from) noexcept;
 
+   void imgui_save_widget(const HWND game_window) noexcept;
+
    void show_post_processing_imgui() noexcept;
 
    void config_changed() noexcept;

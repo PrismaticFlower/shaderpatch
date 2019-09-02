@@ -1,8 +1,10 @@
 
 #include "color_grading_regions_blender.hpp"
 #include "../logger.hpp"
+#include "file_dialogs.hpp"
 
 #include <array>
+#include <fstream>
 #include <iomanip>
 
 #include <gsl/gsl>
@@ -81,6 +83,38 @@ void add_params(Color_grading_params& dest, const Color_grading_params& src,
    dest.channel_mix_green += (src.channel_mix_green * src_weight);
    dest.channel_mix_blue += (src.channel_mix_blue * src_weight);
 }
+
+void save_configs(const std::filesystem::path& path,
+                  const std::vector<Color_grading_params>& params,
+                  const std::vector<std::string>& names) noexcept
+{
+   Expects(params.size() == names.size());
+
+   if (!std::filesystem::is_directory(path)) {
+      log(Log_level::error,
+          "Attempt to save color grading region configs to nonexistant directory!"sv);
+
+      return;
+   }
+
+   for (auto i = 0; i < params.size(); ++i) {
+      const auto config_path = path / names[i] += L".clrfx"sv;
+
+      YAML::Node yaml;
+
+      yaml["ColorGrading"s] = params[i];
+
+      std::ofstream file{config_path};
+      YAML::Emitter out{file};
+
+      out.SetBoolFormat(YAML::YesNoBool);
+      out.SetSeqFormat(YAML::Flow);
+      out.SetLocalIndent(3);
+
+      out << yaml;
+   }
+}
+
 }
 
 void Color_grading_regions_blender::global_params(const Color_grading_params& params) noexcept
@@ -99,6 +133,7 @@ void Color_grading_regions_blender::regions(const Color_grading_regions& regions
    _region_params.clear();
    _region_names.clear();
    _region_params_names.clear();
+   _imgui_editor_state.clear();
 
    init_region_params(regions);
    init_regions(regions);
@@ -118,7 +153,7 @@ auto Color_grading_regions_blender::blend(const glm::vec3 camera_position) noexc
 
       global_weight -= weight;
 
-      contributions.push_back({weight, region.params});
+      contributions.push_back({weight, _region_params[region.params_index]});
    }
 
    if (global_weight > 0.0f) {
@@ -126,7 +161,11 @@ auto Color_grading_regions_blender::blend(const glm::vec3 camera_position) noexc
    }
 
    if (contributions.size() == 1) {
-      return contributions.front().params;
+      auto params = contributions.front().params;
+
+      params.tonemapper = _global_params.tonemapper;
+
+      return params;
    }
 
    const float total_weight =
@@ -148,7 +187,90 @@ auto Color_grading_regions_blender::blend(const glm::vec3 camera_position) noexc
    return blended_params;
 }
 
-void Color_grading_regions_blender::show_imgui() noexcept {}
+void Color_grading_regions_blender::show_imgui(
+   const HWND game_window,
+   Small_function<Color_grading_params(Color_grading_params) noexcept> show_cg_params_imgui) noexcept
+{
+   Expects(_region_params.size() == _region_params_names.size());
+
+   _imgui_editor_state.resize(_region_params.size());
+
+   if (ImGui::BeginTabBar("Color Grading Regions", ImGuiTabBarFlags_AutoSelectNewTabs)) {
+      if (ImGui::BeginTabItem("Configs")) {
+         if (ImGui::Button("Save Configs")) {
+            if (auto path = win32::folder_dialog(game_window); path) {
+               save_configs(*path, _region_params, _region_params_names);
+            }
+         }
+
+         if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Save out configs the for 'spfx_munge'.");
+         }
+
+         ImGui::Separator();
+
+         ImGui::Text("Select a config to open an editor for it.");
+
+         ImGui::Separator();
+
+         for (auto i = 0; i < _region_params_names.size(); ++i) {
+            ImGui::Selectable(_region_params_names[i].data(), _imgui_editor_state[i]);
+         }
+
+         ImGui::EndTabItem();
+      }
+
+      for (auto i = 0; i < _region_params_names.size(); ++i) {
+         if (!_imgui_editor_state[i]) continue;
+
+         if (ImGui::BeginTabItem(_region_params_names[i].data(),
+                                 _imgui_editor_state[i])) {
+            if (ImGui::BeginTabBar("Config Params", ImGuiTabBarFlags_None)) {
+               if (ImGui::BeginTabItem("Color Grading")) {
+                  _region_params[i] = show_cg_params_imgui(_region_params[i]);
+
+                  ImGui::EndTabItem();
+               }
+
+               if ((_global_params.tonemapper == Tonemapper::filmic ||
+                    _global_params.tonemapper == Tonemapper::filmic_heji2015) &&
+                   ImGui::BeginTabItem("Tonemapping")) {
+                  if (_global_params.tonemapper == Tonemapper::filmic) {
+                     ImGui::DragFloat("Toe Strength",
+                                      &_region_params[i].filmic_toe_strength,
+                                      0.01f, 0.0f, 1.0f);
+                     ImGui::DragFloat("Toe Length", &_region_params[i].filmic_toe_length,
+                                      0.01f, 0.0f, 1.0f);
+                     ImGui::DragFloat("Shoulder Strength",
+                                      &_region_params[i].filmic_shoulder_strength,
+                                      0.01f, 0.0f, 100.0f);
+                     ImGui::DragFloat("Shoulder Length",
+                                      &_region_params[i].filmic_shoulder_length,
+                                      0.01f, 0.0f, 1.0f);
+                     ImGui::DragFloat("Shoulder Angle",
+                                      &_region_params[i].filmic_shoulder_angle,
+                                      0.01f, 0.0f, 1.0f);
+                  }
+
+                  if (_global_params.tonemapper == Tonemapper::filmic_heji2015) {
+                     ImGui::DragFloat("Whitepoint",
+                                      &_region_params[i].filmic_heji_whitepoint,
+                                      0.01f);
+                  }
+
+                  ImGui::EndTabItem();
+               }
+
+               ImGui::EndTabBar();
+            }
+
+            ImGui::EndTabItem();
+         }
+      }
+
+      ImGui::EndTabBar();
+   }
+}
 
 void Color_grading_regions_blender::init_region_params(const Color_grading_regions& regions) noexcept
 {
@@ -179,27 +301,28 @@ void Color_grading_regions_blender::init_regions(const Color_grading_regions& re
 }
 
 auto Color_grading_regions_blender::get_region_params(const std::string_view config_name) noexcept
-   -> Color_grading_params&
+   -> std::size_t
 {
    Expects(_region_params.size() == _region_params_names.size());
 
-   for (auto i = 0; i < _region_params_names.size(); ++i) {
+   for (std::size_t i = 0; i < _region_params_names.size(); ++i) {
       if (_region_params_names[i] != config_name) continue;
 
-      return _region_params[i];
+      return i;
    }
 
    log(Log_level::info, "Color Grading config "sv, std::quoted(config_name),
        " does not exist. Using default config.");
 
    _region_params_names.emplace_back(config_name);
+   _region_params.emplace_back(Color_grading_params{});
 
-   return _region_params.emplace_back(Color_grading_params{});
+   return _region_params.size() - 1;
 }
 
 Color_grading_regions_blender::Region::Region(const Color_grading_region_desc& desc,
-                                              const Color_grading_params& params) noexcept
-   : params{params}
+                                              const std::size_t params_index) noexcept
+   : params_index{params_index}
 {
    const auto inv_fade_length =
       desc.fade_length <= 0.0f ? 1e6f : (1.0f / desc.fade_length);

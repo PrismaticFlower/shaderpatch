@@ -83,64 +83,7 @@ void Control::show_imgui(HWND game_window) noexcept
 
          ImGui::Separator();
 
-         if (ImGui::Button("Open Config")) {
-            if (auto path =
-                   win32::open_file_dialog({{L"Effects Config", L"*.spfx"}}, game_window,
-                                           fs::current_path(), L"mod_config.spfx"s);
-                path) {
-               load_params_from_yaml_file(*path);
-            }
-         }
-
-         if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("Open a previously saved config.");
-         }
-
-         if (_open_failure) {
-            ImGui::SameLine();
-            ImGui::TextColored({1.0f, 0.2f, 0.33f, 1.0f}, "Open Failed!");
-         }
-
-         ImGui::SameLine();
-
-         if (ImGui::Button("Save Config")) {
-            if (auto path =
-                   win32::save_file_dialog({{L"Effects Config", L"*.spfx"}}, game_window,
-                                           fs::current_path(), L"mod_config.spfx"s);
-                path) {
-               save_params_to_yaml_file(*path);
-            }
-         }
-
-         if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip(
-               "Save out a config to be passed to `spfx_munge` or "
-               "loaded back up from the developer screen.");
-         }
-
-         ImGui::SameLine();
-
-         if (ImGui::Button("Save Munged Config")) {
-            if (auto path = win32::save_file_dialog({{L"Munged Effects Config", L"*.mspfx"}},
-                                                    game_window, fs::current_path(),
-                                                    L"mod_config.mspfx"s);
-                path) {
-               save_params_to_munged_file(*path);
-            }
-         }
-
-         if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip(
-               "Save out a munged config to be loaded from a map script. Keep "
-               "in "
-               "mind Shader "
-               "Patch can not reload these files from the developer screen.");
-         }
-
-         if (_save_failure) {
-            ImGui::SameLine();
-            ImGui::TextColored({1.0f, 0.2f, 0.33f, 1.0f}, "Save Failed!");
-         }
+         imgui_save_widget(game_window);
 
          ImGui::EndTabItem();
       }
@@ -148,11 +91,24 @@ void Control::show_imgui(HWND game_window) noexcept
       if (ImGui::BeginTabItem("Post Processing")) {
          show_post_processing_imgui();
 
+         ImGui::Separator();
+
+         imgui_save_widget(game_window);
+
+         ImGui::EndTabItem();
+      }
+
+      if (ImGui::BeginTabItem("Color Grading Regions")) {
+         postprocess.show_color_grading_regions_imgui(game_window,
+                                                      &show_color_grading_imgui);
+
          ImGui::EndTabItem();
       }
 
       ImGui::EndTabBar();
    }
+
+   ImGui::Separator();
 
    ImGui::End();
 
@@ -257,6 +213,67 @@ void Control::load_params_from_yaml_file(const fs::path& load_from) noexcept
    }
 
    _open_failure = false;
+}
+
+void Control::imgui_save_widget(const HWND game_window) noexcept
+{
+   if (ImGui::Button("Open Config")) {
+      if (auto path = win32::open_file_dialog({{L"Effects Config", L"*.spfx"}},
+                                              game_window, fs::current_path(),
+                                              L"mod_config.spfx"s);
+          path) {
+         load_params_from_yaml_file(*path);
+      }
+   }
+
+   if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip("Open a previously saved config.");
+   }
+
+   if (_open_failure) {
+      ImGui::SameLine();
+      ImGui::TextColored({1.0f, 0.2f, 0.33f, 1.0f}, "Open Failed!");
+   }
+
+   ImGui::SameLine();
+
+   if (ImGui::Button("Save Config")) {
+      if (auto path = win32::save_file_dialog({{L"Effects Config", L"*.spfx"}},
+                                              game_window, fs::current_path(),
+                                              L"mod_config.spfx"s);
+          path) {
+         save_params_to_yaml_file(*path);
+      }
+   }
+
+   if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip("Save out a config to be passed to `spfx_munge` or "
+                        "loaded back up from the developer screen.");
+   }
+
+   ImGui::SameLine();
+
+   if (ImGui::Button("Save Munged Config")) {
+      if (auto path =
+             win32::save_file_dialog({{L"Munged Effects Config", L"*.mspfx"}}, game_window,
+                                     fs::current_path(), L"mod_config.mspfx"s);
+          path) {
+         save_params_to_munged_file(*path);
+      }
+   }
+
+   if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip(
+         "Save out a munged config to be loaded from a map script. Keep "
+         "in "
+         "mind Shader "
+         "Patch can not reload these files from the developer screen.");
+   }
+
+   if (_save_failure) {
+      ImGui::SameLine();
+      ImGui::TextColored({1.0f, 0.2f, 0.33f, 1.0f}, "Save Failed!");
+   }
 }
 
 void Control::show_post_processing_imgui() noexcept

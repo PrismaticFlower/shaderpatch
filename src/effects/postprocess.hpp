@@ -87,6 +87,14 @@ public:
 
    void color_grading_regions(const Color_grading_regions& colorgrading_regions) noexcept;
 
+   void show_color_grading_regions_imgui(
+      const HWND game_window,
+      Small_function<Color_grading_params(Color_grading_params) noexcept> show_cg_params_imgui) noexcept
+   {
+      _color_grading_regions_blender.show_imgui(game_window,
+                                                std::move(show_cg_params_imgui));
+   }
+
    void apply(ID3D11DeviceContext1& dc, Rendertarget_allocator& rt_allocator,
               Profiler& profiler, const core::Shader_resource_database& textures,
               const glm::vec3 camera_position, const Postprocess_input input,
