@@ -7,6 +7,7 @@
 
 #include <filesystem>
 #include <memory>
+#include <utility>
 #include <variant>
 
 #include <Windows.h>
@@ -15,17 +16,23 @@ namespace sp::effects {
 
 class Color_grading_regions_blender {
 public:
-   void global_params(const Color_grading_params& params) noexcept;
+   void global_cg_params(const Color_grading_params& params) noexcept;
 
-   auto global_params() const noexcept -> Color_grading_params;
+   auto global_cg_params() const noexcept -> Color_grading_params;
+
+   void global_bloom_params(const Bloom_params& params) noexcept;
+
+   auto global_bloom_params() const noexcept -> Bloom_params;
 
    void regions(const Color_grading_regions& regions) noexcept;
 
-   auto blend(const glm::vec3 camera_position) noexcept -> Color_grading_params;
+   auto blend(const glm::vec3 camera_position) noexcept
+      -> std::pair<Color_grading_params, Bloom_params>;
 
-   void show_imgui(const HWND game_window,
-                   Small_function<Color_grading_params(Color_grading_params) noexcept>
-                      show_cg_params_imgui) noexcept;
+   void show_imgui(
+      const HWND game_window,
+      Small_function<Color_grading_params(Color_grading_params) noexcept> show_cg_params_imgui,
+      Small_function<Bloom_params(Bloom_params) noexcept> show_bloom_params_imgui) noexcept;
 
 private:
    void init_region_params(const Color_grading_regions& regions) noexcept;
@@ -106,15 +113,18 @@ private:
 
    struct Contribution {
       float weight = 0.0f;
-      const Color_grading_params& params;
+      const Color_grading_params& cg_params;
+      const Bloom_params& bloom_params;
    };
 
    std::vector<Contribution> contributions;
 
-   Color_grading_params _global_params{};
+   Color_grading_params _global_cg_params{};
+   Bloom_params _global_bloom_params{};
 
    std::vector<Region> _regions;
-   std::vector<Color_grading_params> _region_params;
+   std::vector<Color_grading_params> _region_cg_params;
+   std::vector<std::optional<Bloom_params>> _region_bloom_params;
 
    std::vector<std::string> _region_names;
    std::vector<std::string> _region_params_names;

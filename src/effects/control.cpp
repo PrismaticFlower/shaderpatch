@@ -100,7 +100,8 @@ void Control::show_imgui(HWND game_window) noexcept
 
       if (ImGui::BeginTabItem("Color Grading Regions")) {
          postprocess.show_color_grading_regions_imgui(game_window,
-                                                      &show_color_grading_imgui);
+                                                      &show_color_grading_imgui,
+                                                      &show_bloom_imgui);
 
          ImGui::EndTabItem();
       }

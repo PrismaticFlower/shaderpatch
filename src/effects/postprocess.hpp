@@ -59,9 +59,9 @@ public:
 
    void bloom_params(const Bloom_params& params) noexcept;
 
-   auto bloom_params() const noexcept -> const Bloom_params&
+   auto bloom_params() const noexcept -> Bloom_params
    {
-      return _bloom_params;
+      return _color_grading_regions_blender.global_bloom_params();
    }
 
    void vignette_params(const Vignette_params& params) noexcept;
@@ -75,7 +75,7 @@ public:
 
    auto color_grading_params() const noexcept -> Color_grading_params
    {
-      return _color_grading_regions_blender.global_params();
+      return _color_grading_regions_blender.global_cg_params();
    }
 
    void film_grain_params(const Film_grain_params& params) noexcept;
@@ -89,10 +89,12 @@ public:
 
    void show_color_grading_regions_imgui(
       const HWND game_window,
-      Small_function<Color_grading_params(Color_grading_params) noexcept> show_cg_params_imgui) noexcept
+      Small_function<Color_grading_params(Color_grading_params) noexcept> show_cg_params_imgui,
+      Small_function<Bloom_params(Bloom_params) noexcept> show_bloom_params_imgui) noexcept
    {
       _color_grading_regions_blender.show_imgui(game_window,
-                                                std::move(show_cg_params_imgui));
+                                                std::move(show_cg_params_imgui),
+                                                std::move(show_bloom_params_imgui));
    }
 
    void apply(ID3D11DeviceContext1& dc, Rendertarget_allocator& rt_allocator,
@@ -143,8 +145,8 @@ private:
    auto blue_noise_srv(const core::Shader_resource_database& textures) noexcept
       -> ID3D11ShaderResourceView*;
 
-   void update_colorgrading(ID3D11DeviceContext1& dc,
-                            const glm::vec3 camera_position) noexcept;
+   void update_colorgrading_bloom(ID3D11DeviceContext1& dc,
+                                  const glm::vec3 camera_position) noexcept;
 
    void update_randomness() noexcept;
 
@@ -252,7 +254,6 @@ private:
    Color_grading_lut_baker _color_grading_lut_baker{_device};
    Color_grading_regions_blender _color_grading_regions_blender;
 
-   Bloom_params _bloom_params{};
    Vignette_params _vignette_params{};
    Film_grain_params _film_grain_params{};
 
@@ -260,6 +261,7 @@ private:
 
    bool _config_changed = true;
    bool _bloom_enabled = true;
+   bool _bloom_use_dirt = false;
    bool _vignette_enabled = true;
    bool _film_grain_enabled = true;
    bool _colored_film_grain_enabled = true;
@@ -269,6 +271,8 @@ private:
    std::uniform_int<int> _random_int_dist{0, 63};
 
    std::vector<Com_ptr<ID3D11ShaderResourceView>> _blue_noise_srvs;
+
+   std::string _bloom_dirt_texture_name;
 
    constexpr static auto global_cb_slot = 0;
    constexpr static auto bloom_cb_slot = 1;

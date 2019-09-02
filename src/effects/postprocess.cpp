@@ -110,27 +110,11 @@ Postprocess::Postprocess(Com_ptr<ID3D11Device1> device,
 
 void Postprocess::bloom_params(const Bloom_params& params) noexcept
 {
-   _bloom_params = params;
+   _color_grading_regions_blender.global_bloom_params(params);
 
-   _global_constants.bloom_threshold = params.threshold;
-   _global_constants.bloom_global_scale = params.tint * params.intensity;
-   _global_constants.bloom_dirt_scale = params.dirt_scale * params.dirt_tint;
-
-   _bloom_constants[0].bloom_local_scale = glm::vec3{1.0f, 1.0f, 1.0f};
-   _bloom_constants[1].bloom_local_scale = params.inner_tint * params.inner_scale;
-   _bloom_constants[2].bloom_local_scale =
-      params.inner_mid_scale * params.inner_mid_tint;
-   _bloom_constants[3].bloom_local_scale = params.mid_scale * params.mid_tint;
-   _bloom_constants[4].bloom_local_scale =
-      params.outer_mid_scale * params.outer_mid_tint;
-   _bloom_constants[5].bloom_local_scale = params.outer_scale * params.outer_tint;
-
-   _bloom_constants[2].bloom_local_scale /= _bloom_constants[1].bloom_local_scale;
-   _bloom_constants[3].bloom_local_scale /= _bloom_constants[2].bloom_local_scale;
-   _bloom_constants[4].bloom_local_scale /= _bloom_constants[3].bloom_local_scale;
-   _bloom_constants[5].bloom_local_scale /= _bloom_constants[4].bloom_local_scale;
-
-   _bloom_enabled = user_config.effects.bloom && _bloom_params.enabled;
+   _bloom_enabled = user_config.effects.bloom && params.enabled;
+   _bloom_use_dirt = params.use_dirt;
+   _bloom_dirt_texture_name = params.dirt_texture_name;
 
    _config_changed = true;
 }
@@ -149,7 +133,7 @@ void Postprocess::vignette_params(const Vignette_params& params) noexcept
 
 void Postprocess::color_grading_params(const Color_grading_params& params) noexcept
 {
-   _color_grading_regions_blender.global_params(params);
+   _color_grading_regions_blender.global_cg_params(params);
 
    _config_changed = true;
 }
@@ -196,7 +180,7 @@ void Postprocess::apply(ID3D11DeviceContext1& dc,
    auto* const sampler = _linear_clamp_sampler.get();
    dc.PSSetSamplers(0, 1, &sampler);
 
-   update_colorgrading(dc, camera_position);
+   update_colorgrading_bloom(dc, camera_position);
    update_shaders();
    update_and_bind_cb(dc, input.width, input.height);
 
@@ -258,7 +242,7 @@ void Postprocess::apply(ID3D11DeviceContext1& dc,
    auto* const sampler = _linear_clamp_sampler.get();
    dc.PSSetSamplers(0, 1, &sampler);
 
-   update_colorgrading(dc, camera_position);
+   update_colorgrading_bloom(dc, camera_position);
    update_shaders();
    update_and_bind_cb(dc, input.width, input.height);
 
@@ -443,8 +427,7 @@ void Postprocess::do_bloom_and_color_grading(
    srvs[scene_texture_slot] = &input.srv;
    srvs[bloom_texture_slot] = &rt_a.srv();
    srvs[dirt_texture_slot] =
-      _bloom_params.use_dirt ? textures.at_if(_bloom_params.dirt_texture_name).get()
-                             : nullptr;
+      _bloom_use_dirt ? textures.at_if(_bloom_dirt_texture_name).get() : nullptr;
    srvs[lut_texture_slot] = _color_grading_lut_baker.srv();
    srvs[blue_noise_texture_slot] = blue_noise_srv(textures);
 
@@ -554,14 +537,35 @@ auto Postprocess::blue_noise_srv(const core::Shader_resource_database& textures)
    return _blue_noise_srvs[_random_int_dist(_random_engine)].get();
 }
 
-void Postprocess::update_colorgrading(ID3D11DeviceContext1& dc,
-                                      const glm::vec3 camera_position) noexcept
+void Postprocess::update_colorgrading_bloom(ID3D11DeviceContext1& dc,
+                                            const glm::vec3 camera_position) noexcept
 {
-   const auto params = _color_grading_regions_blender.blend(camera_position);
+   const auto [cg_params, bloom_params] =
+      _color_grading_regions_blender.blend(camera_position);
 
-   _global_constants.exposure = glm::exp2(params.exposure) * params.brightness;
+   _global_constants.exposure = glm::exp2(cg_params.exposure) * cg_params.brightness;
+   _global_constants.bloom_threshold = bloom_params.threshold;
+   _global_constants.bloom_global_scale = bloom_params.tint * bloom_params.intensity;
+   _global_constants.bloom_dirt_scale = bloom_params.dirt_scale * bloom_params.dirt_tint;
 
-   _color_grading_lut_baker.bake_color_grading_lut(dc, Color_grading_eval_params{params});
+   _bloom_constants[0].bloom_local_scale = glm::vec3{1.0f, 1.0f, 1.0f};
+   _bloom_constants[1].bloom_local_scale =
+      bloom_params.inner_tint * bloom_params.inner_scale;
+   _bloom_constants[2].bloom_local_scale =
+      bloom_params.inner_mid_scale * bloom_params.inner_mid_tint;
+   _bloom_constants[3].bloom_local_scale =
+      bloom_params.mid_scale * bloom_params.mid_tint;
+   _bloom_constants[4].bloom_local_scale =
+      bloom_params.outer_mid_scale * bloom_params.outer_mid_tint;
+   _bloom_constants[5].bloom_local_scale =
+      bloom_params.outer_scale * bloom_params.outer_tint;
+
+   _bloom_constants[2].bloom_local_scale /= _bloom_constants[1].bloom_local_scale;
+   _bloom_constants[3].bloom_local_scale /= _bloom_constants[2].bloom_local_scale;
+   _bloom_constants[4].bloom_local_scale /= _bloom_constants[3].bloom_local_scale;
+   _bloom_constants[5].bloom_local_scale /= _bloom_constants[4].bloom_local_scale;
+
+   _color_grading_lut_baker.bake_color_grading_lut(dc, Color_grading_eval_params{cg_params});
 }
 
 void Postprocess::update_randomness() noexcept
@@ -584,7 +588,7 @@ void Postprocess::update_shaders() noexcept
    if (_bloom_enabled) {
       postprocess_flags |= Postprocess_flags::bloom_active;
 
-      if (_bloom_params.use_dirt)
+      if (_bloom_use_dirt)
          postprocess_flags |= Postprocess_flags::bloom_use_dirt;
    }
 
