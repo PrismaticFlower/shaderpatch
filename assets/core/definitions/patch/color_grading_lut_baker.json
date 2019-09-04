@@ -1,0 +1,60 @@
+{
+   "group_name": "color grading lut baker",
+   "source_name": "color_grading_lut_baker.hlsl",
+
+   "entrypoints": {
+      "main": {
+         "stage": "compute",
+         "function_name": "main",
+
+         "defines": [
+            [ "CG_LUT_LENGTH", "32" ],
+            [ "CG_TONEMAPPER", "0" ]
+         ]
+      },
+
+      "main filmic": {
+         "stage": "compute",
+         "function_name": "main",
+
+         "defines": [
+            [ "CG_LUT_LENGTH", "32" ],
+            [ "CG_TONEMAPPER", "1" ]
+         ]
+      },
+
+      "main aces": {
+         "stage": "compute",
+         "function_name": "main",
+
+         "defines": [
+            [ "CG_LUT_LENGTH", "32" ],
+            [ "CG_TONEMAPPER", "2" ]
+         ]
+      },
+
+      "main heji2015": {
+         "stage": "compute",
+         "function_name": "main",
+
+         "defines": [
+            [ "CG_LUT_LENGTH", "32" ],
+            [ "CG_TONEMAPPER", "3" ]
+         ]
+      },
+
+      "main reinhard": {
+         "stage": "compute",
+         "function_name": "main",
+
+         "defines": [
+            [ "CG_LUT_LENGTH", "32" ],
+            [ "CG_TONEMAPPER", "4" ]
+         ]
+      }
+   },
+
+   "rendertypes": {},
+
+   "states": {}
+}

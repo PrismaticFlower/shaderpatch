@@ -156,6 +156,7 @@
     <None Include="definitions\patch\adaptive_oit_resolve.json" />
     <None Include="definitions\patch\basic_unlit.json" />
     <None Include="definitions\patch\cmaa2.json" />
+    <None Include="definitions\patch\color_grading_lut_baker.json" />
     <None Include="definitions\patch\depth_msaa_resolve.json" />
     <None Include="definitions\patch\late_backbuffer_resolve.json" />
     <None Include="definitions\patch\normal_ext-tessellated.json" />
@@ -243,6 +244,7 @@
     <None Include="definitions\stencilshadow.json" />
     <None Include="definitions\water.json" />
     <None Include="definitions\zprepass.json" />
+    <None Include="src\color_grading.hlsl" />
     <None Include="textures.req" />
   </ItemGroup>
   <ItemGroup>
@@ -475,6 +477,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\basic_unlit.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\color_grading_lut_baker.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\tonemappers.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

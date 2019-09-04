@@ -7,6 +7,8 @@
 #include <fstream>
 #include <iomanip>
 
+#include <imgui.h>
+
 #include <gsl/gsl>
 
 using namespace std::literals;

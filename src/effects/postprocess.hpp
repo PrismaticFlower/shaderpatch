@@ -251,7 +251,7 @@ private:
    Com_ptr<ID3D11PixelShader> _postprocess_cmaa2_pre_ps;
    Com_ptr<ID3D11PixelShader> _postprocess_cmaa2_post_ps;
 
-   Color_grading_lut_baker _color_grading_lut_baker{_device};
+   Color_grading_lut_baker _color_grading_lut_baker;
    Color_grading_regions_blender _color_grading_regions_blender;
 
    Vignette_params _vignette_params{};

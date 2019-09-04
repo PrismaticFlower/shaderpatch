@@ -388,6 +388,12 @@
     <None Include="src\normal_ext_terrain.fx">
       <Filter>src</Filter>
     </None>
+    <None Include="src\color_grading.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="definitions\patch\color_grading_lut_baker.json">
+      <Filter>definitions\patch</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">
@@ -405,5 +411,13 @@
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="build_lvls.ps1" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="src\color_grading_lut_baker.hlsl">
+      <Filter>src</Filter>
+    </FxCompile>
+    <FxCompile Include="src\tonemappers.hlsl">
+      <Filter>src</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

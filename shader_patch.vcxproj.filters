@@ -419,9 +419,6 @@
     <ClInclude Include="src\core\materials_editor.hpp">
       <Filter>src\core</Filter>
     </ClInclude>
-    <ClInclude Include="src\effects\color_grading_eval_params.hpp">
-      <Filter>src\effects</Filter>
-    </ClInclude>
     <ClInclude Include="src\effects\color_grading_regions_blender.hpp">
       <Filter>src\effects</Filter>
     </ClInclude>

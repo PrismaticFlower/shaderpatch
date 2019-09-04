@@ -1,6 +1,5 @@
 #pragma once
 
-#include "color_grading_eval_params.hpp"
 #include "color_grading_regions_io.hpp"
 #include "postprocess_params.hpp"
 #include "small_function.hpp"

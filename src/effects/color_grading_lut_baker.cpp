@@ -1,17 +1,28 @@
 
 #include "color_grading_lut_baker.hpp"
 #include "../logger.hpp"
-#include "color_helpers.hpp"
-#include "tonemappers.hpp"
 #include "utility.hpp"
 
-#include <cstring>
-#include <execution>
-#include <vector>
-
-#include <glm/gtc/packing.hpp>
+using namespace std::literals;
 
 namespace sp::effects {
+
+Color_grading_lut_baker::Color_grading_lut_baker(
+   Com_ptr<ID3D11Device1> device, const core::Shader_group_collection& shader_groups) noexcept
+   : _device{std::move(device)},
+     _cs_main_filmic{
+        shader_groups.at("color grading lut baker"s).compute.at("main filmic"s).copy()},
+     _cs_main_aces{
+        shader_groups.at("color grading lut baker"s).compute.at("main aces"s).copy()},
+     _cs_main_heji2015{shader_groups.at("color grading lut baker"s)
+                          .compute.at("main heji2015"s)
+                          .copy()},
+     _cs_main_reinhard{shader_groups.at("color grading lut baker"s)
+                          .compute.at("main reinhard"s)
+                          .copy()},
+     _cs_main{shader_groups.at("color grading lut baker"s).compute.at("main"s).copy()}
+{
+}
 
 auto Color_grading_lut_baker::srv() noexcept -> ID3D11ShaderResourceView*
 {
@@ -19,71 +30,108 @@ auto Color_grading_lut_baker::srv() noexcept -> ID3D11ShaderResourceView*
 }
 
 void Color_grading_lut_baker::bake_color_grading_lut(ID3D11DeviceContext1& dc,
-                                                     const Color_grading_eval_params params) noexcept
+                                                     const Color_grading_params& params) noexcept
 {
-   static Lut_data data{};
+   update_cb(dc, params);
 
-   std::for_each_n(std::execution::par_unseq, Index_iterator{}, lut_dimension, [&](int z) {
-      for (int y = 0; y < lut_dimension; ++y) {
-         for (int x = 0; x < lut_dimension; ++x) {
-            glm::vec3 col{static_cast<float>(x), static_cast<float>(y),
-                          static_cast<float>(z)};
-            col /= static_cast<float>(lut_dimension) - 1.0f;
+   dc.CSSetShader(pick_shader(params.tonemapper), nullptr, 0);
 
-            col = logc_to_linear(col);
-            col = apply_color_grading(col, params);
+   auto* const uav = _uav.get();
+   dc.CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
 
-            data[z][y][x] = glm::packUnorm4x8({col, 1.0f});
-         }
-      }
-   });
+   auto* const cb = _cb.get();
+   dc.CSSetConstantBuffers(0, 1, &cb);
 
-   uploade_lut(dc, data);
+   const auto dispatch_dim = safe_max(lut_dimension / group_size, 1u);
+   dc.Dispatch(dispatch_dim, dispatch_dim, dispatch_dim);
+
+   ID3D11UnorderedAccessView* const null_uav = nullptr;
+   dc.CSSetUnorderedAccessViews(0, 1, &null_uav, nullptr);
 }
 
-glm::vec3 Color_grading_lut_baker::apply_color_grading(
-   glm::vec3 color, const Color_grading_eval_params& params) noexcept
+void Color_grading_lut_baker::update_cb(ID3D11DeviceContext1& dc,
+                                        const Color_grading_params& params) noexcept
 {
-   color *= params.color_filter;
-   color = apply_basic_saturation(color, params.saturation);
-   color = apply_hsv_adjust(color, params.hsv_adjust);
-   color = apply_channel_mixing(color, params.channel_mix_red,
-                                params.channel_mix_green, params.channel_mix_blue);
-   color = apply_log_contrast(color, params.contrast);
-   color = apply_lift_gamma_gain(color, params.lift_adjust,
-                                 params.inv_gamma_adjust, params.gain_adjust);
-   color = apply_tonemapping(color, params);
+   const Color_grading_lut_cb cb{params};
 
-   color = linear_srgb_to_gamma_srgb(color);
-
-   return color;
+   core::update_dynamic_buffer(dc, *_cb, cb);
 }
 
-glm::vec3 Color_grading_lut_baker::apply_tonemapping(
-   glm::vec3 color, const Color_grading_eval_params& params) noexcept
+auto Color_grading_lut_baker::pick_shader(const Tonemapper tonemapper) noexcept
+   -> ID3D11ComputeShader*
 {
-   if (params.tonemapper == Tonemapper::filmic) {
-      color = filmic::eval(color, params.filmic_curve);
-   }
-   else if (params.tonemapper == Tonemapper::aces_fitted) {
-      color = eval_aces_srgb_fitted(color);
-   }
-   else if (params.tonemapper == Tonemapper::filmic_heji2015) {
-      color = eval_filmic_hejl2015(color, params.heji_whitepoint);
-   }
-   else if (params.tonemapper == Tonemapper::reinhard) {
-      color = eval_reinhard(color);
+   switch (tonemapper) {
+   case Tonemapper::filmic:
+      return _cs_main_filmic.get();
+   case Tonemapper::aces_fitted:
+      return _cs_main_aces.get();
+   case Tonemapper::filmic_heji2015:
+      return _cs_main_heji2015.get();
+   case Tonemapper::reinhard:
+      return _cs_main_reinhard.get();
+   case Tonemapper::none:
+      return _cs_main.get();
    }
 
-   return color;
+   std::terminate();
 }
 
-void Color_grading_lut_baker::uploade_lut(ID3D11DeviceContext1& dc,
-                                          const Lut_data& lut_data) noexcept
+Color_grading_lut_baker::Color_grading_lut_cb::Color_grading_lut_cb(
+   const Color_grading_params& params) noexcept
+   : filmic_curve{filmic::color_grading_params_to_curve(params)}
 {
-   dc.UpdateSubresource(_texture.get(), 0, nullptr, &lut_data,
-                        sizeof(Lut_data::value_type::value_type),
-                        sizeof(Lut_data::value_type));
+
+   saturation = params.saturation;
+   contrast = params.contrast;
+
+   color_filter = params.color_filter;
+
+   hsv_adjust.x = params.hsv_hue_adjustment;
+   hsv_adjust.y = params.hsv_saturation_adjustment;
+   hsv_adjust.z = params.hsv_value_adjustment;
+
+   channel_mix_red = params.channel_mix_red;
+   channel_mix_green = params.channel_mix_green;
+   channel_mix_blue = params.channel_mix_blue;
+
+   auto lift = params.shadow_color;
+   lift -= (lift.x + lift.y + lift.z) / 3.0f;
+
+   auto gamma = params.midtone_color;
+   gamma -= (gamma.x + gamma.y + gamma.z) / 3.0f;
+
+   auto gain = params.highlight_color;
+   gain -= (gain.x + gain.y + gain.z) / 3.0f;
+
+   lift_adjust = 0.0f + (lift + params.shadow_offset);
+   gain_adjust = 1.0f + (gain + params.highlight_offset);
+
+   const auto mid_grey = 0.5f + (gamma + params.midtone_offset);
+
+   inv_gamma_adjust = 1.0f / (glm::log(0.5f - lift_adjust) /
+                              (gain_adjust - lift_adjust) / glm::log(mid_grey));
+
+   heji_whitepoint = params.filmic_heji_whitepoint;
+}
+
+Color_grading_lut_baker::Color_grading_lut_cb::Filmic_curve::Filmic_curve(
+   const filmic::Curve& curve) noexcept
+{
+   w = curve.w;
+   inv_w = curve.inv_w;
+   x0 = curve.x0;
+   y0 = curve.y0;
+   x1 = curve.x1;
+   y1 = curve.y1;
+
+   for (auto i = 0; i < segments.size(); ++i) {
+      segments[i].offset_x = curve.segments[i].offset_x;
+      segments[i].offset_y = curve.segments[i].offset_y;
+      segments[i].scale_x = curve.segments[i].scale_x;
+      segments[i].scale_y = curve.segments[i].scale_y;
+      segments[i].ln_a = curve.segments[i].ln_a;
+      segments[i].b = curve.segments[i].b;
+   }
 }
 
 }

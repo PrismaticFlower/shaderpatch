@@ -100,7 +100,8 @@ Postprocess::Postprocess(Com_ptr<ID3D11Device1> device,
      _bloom_upsample_ps{
         shader_groups.at("postprocess_bloom"s).pixel.at("upsample_ps"s).copy()},
      _bloom_threshold_ps{
-        shader_groups.at("postprocess_bloom"s).pixel.at("threshold_ps"s).copy()}
+        shader_groups.at("postprocess_bloom"s).pixel.at("threshold_ps"s).copy()},
+     _color_grading_lut_baker{_device, shader_groups}
 {
    bloom_params(Bloom_params{});
    vignette_params(Vignette_params{});
@@ -565,7 +566,7 @@ void Postprocess::update_colorgrading_bloom(ID3D11DeviceContext1& dc,
    _bloom_constants[4].bloom_local_scale /= _bloom_constants[3].bloom_local_scale;
    _bloom_constants[5].bloom_local_scale /= _bloom_constants[4].bloom_local_scale;
 
-   _color_grading_lut_baker.bake_color_grading_lut(dc, Color_grading_eval_params{cg_params});
+   _color_grading_lut_baker.bake_color_grading_lut(dc, cg_params);
 }
 
 void Postprocess::update_randomness() noexcept
