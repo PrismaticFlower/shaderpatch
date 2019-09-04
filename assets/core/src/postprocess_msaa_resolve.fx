@@ -1,6 +1,8 @@
 
 #include "color_utilities.hlsl"
 
+// clang-format off
+
 cbuffer ResolveConstants : register(b0)
 {
    int2 input_range;
@@ -61,7 +63,10 @@ float4 main_hdr_ps(float2 texcoords : TEXCOORD, float4 positionSS : SV_Position)
    float3 color = 0.0;
    float total_weight = 0.0;
 
-   for (int y = -resolve_radius; y <= resolve_radius; ++y) {
+   [unroll]
+   for (int y = -resolve_radius; y <= resolve_radius; ++y)
+   {
+      [unroll]
       for (int x = -resolve_radius; x <= resolve_radius; ++x) {
          const float2 pixel_offset = float2(x, y);
          const uint2 pixel_pos = clamp(pos + int2(x, y), 0, input_range);
@@ -78,7 +83,7 @@ float4 main_hdr_ps(float2 texcoords : TEXCOORD, float4 positionSS : SV_Position)
 
             const float luminance = dot(sample, float3(0.2126, 0.7152, 0.0722)) * exposure;
             
-            weight *= luminance / (1.0 + luminance);
+            weight *= (1.0 / (1.0 + luminance));
 
             color += sample * weight;
             total_weight += weight;
@@ -97,7 +102,9 @@ float4 main_stock_hdr_ps(float2 texcoords : TEXCOORD, float4 positionSS : SV_Pos
    float3 color = 0.0;
    float total_weight = 0.0;
 
+   [unroll]
    for (int y = -resolve_radius; y <= resolve_radius; ++y) {
+   [unroll]
       for (int x = -resolve_radius; x <= resolve_radius; ++x) {
          const float2 pixel_offset = float2(x, y);
          const uint2 pixel_pos = clamp(pos + int2(x, y), 0, input_range);
