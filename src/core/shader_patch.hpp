@@ -290,7 +290,6 @@ private:
    Depthstencil _nearscene_depthstencil;
    Depthstencil _farscene_depthstencil;
    Depthstencil _reflectionscene_depthstencil;
-   Depthstencil _interface_depthstencil;
    Game_depthstencil _current_depthstencil_id = Game_depthstencil::nearscene;
 
    Game_input_layout _game_input_layout{};

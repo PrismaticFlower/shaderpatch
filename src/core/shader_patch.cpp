@@ -181,9 +181,10 @@ void Shader_patch::present() noexcept
 
    if (_patch_backbuffer) _game_rendertargets[0] = _patch_backbuffer;
 
-   if (_interface_depthstencil)
-      _device_context->ClearDepthStencilView(_interface_depthstencil.dsv.get(),
-                                             D3D11_CLEAR_DEPTH, 1.0f, 0x0);
+   if (_shadow_msaa_rt) {
+      _device_context->ClearRenderTargetView(_shadow_msaa_rt.rtv.get(),
+                                             std::array{1.0f, 1.0f, 1.0f, 1.0f}.data());
+   }
 }
 
 auto Shader_patch::get_back_buffer() noexcept -> Game_rendertarget_id
@@ -1119,7 +1120,7 @@ auto Shader_patch::get_query_data(ID3D11Query& query, const bool flush,
 auto Shader_patch::current_depthstencil() const noexcept -> ID3D11DepthStencilView*
 {
    if (_current_depthstencil_id == Game_depthstencil::nearscene)
-      return _use_interface_depthstencil ? _interface_depthstencil.dsv.get()
+      return _use_interface_depthstencil ? _farscene_depthstencil.dsv.get()
                                          : _nearscene_depthstencil.dsv.get();
    else if (_current_depthstencil_id == Game_depthstencil::farscene)
       return _farscene_depthstencil.dsv.get();
@@ -1184,13 +1185,9 @@ void Shader_patch::game_rendertype_changed() noexcept
       auto* const rtv = multisampled ? _shadow_msaa_rt.rtv.get() : final_rtv;
       auto* const dsv = current_depthstencil();
 
-      if (multisampled)
-         _device_context
-            ->ClearRenderTargetView(rtv, std::array{1.0f, 1.0f, 1.0f, 1.0f}.data());
-
       _device_context->OMSetRenderTargets(1, &rtv, dsv);
    }
-   if (_shader_rendertype == Rendertype::shadowquad) {
+   else if (_shader_rendertype == Rendertype::shadowquad) {
       _on_stretch_rendertarget = [this](Game_rendertarget&, const RECT,
                                         Game_rendertarget& dest, const RECT) noexcept
       {
@@ -1304,9 +1301,9 @@ void Shader_patch::game_rendertype_changed() noexcept
          auto* const depth_srv = [&] {
             if (_rt_sample_count != 1) {
                _depth_msaa_resolver.resolve(*_device_context, _nearscene_depthstencil,
-                                            _interface_depthstencil);
+                                            _farscene_depthstencil);
 
-               return _interface_depthstencil.srv.get();
+               return _farscene_depthstencil.srv.get();
             }
 
             return _nearscene_depthstencil.srv.get();
@@ -1320,6 +1317,9 @@ void Shader_patch::game_rendertype_changed() noexcept
       else if (_shader_rendertype == Rendertype::hdr) {
          _use_interface_depthstencil = true;
          _game_rendertargets[0] = _swapchain.game_rendertarget();
+
+         _device_context->ClearDepthStencilView(_farscene_depthstencil.dsv.get(),
+                                                D3D11_CLEAR_DEPTH, 1.0f, 0x0);
 
          const effects::Postprocess_input postprocess_input{*_patch_backbuffer.srv,
                                                             _patch_backbuffer.format,
@@ -1585,14 +1585,6 @@ void Shader_patch::update_effects() noexcept
 {
    if (std::exchange(_effects_active, _effects.enabled()) != _effects.enabled()) {
       _use_interface_depthstencil = false;
-
-      if (_effects.enabled()) {
-         _interface_depthstencil = {*_device, _swapchain.width(),
-                                    _swapchain.height(), 1};
-      }
-      else {
-         _interface_depthstencil = {};
-      }
    }
 
    update_rendertargets();
