@@ -27,7 +27,7 @@ enum class GPU_selection_method {
    use_cpu
 };
 
-enum class Antialiasing_method { none, cmaa2, msaax2, msaax4, msaax8 };
+enum class Antialiasing_method { none, cmaa2, msaax4, msaax8 };
 
 enum class Anisotropic_filtering { off, x2, x4, x8, x16 };
 
@@ -119,8 +119,6 @@ inline auto to_string(const Antialiasing_method quality) noexcept -> std::string
       return "none"s;
    case Antialiasing_method::cmaa2:
       return "CMAA2"s;
-   case Antialiasing_method::msaax2:
-      return "MSAAx2"s;
    case Antialiasing_method::msaax4:
       return "MSAAx4"s;
    case Antialiasing_method::msaax8:
@@ -138,8 +136,6 @@ inline auto to_sample_count(const Antialiasing_method quality) noexcept -> std::
    case Antialiasing_method::none:
    case Antialiasing_method::cmaa2:
       return 1;
-   case Antialiasing_method::msaax2:
-      return 2;
    case Antialiasing_method::msaax4:
       return 4;
    case Antialiasing_method::msaax8:
@@ -156,9 +152,6 @@ inline auto aa_method_from_string(const std::string_view string) noexcept -> Ant
    }
    else if (string == to_string(Antialiasing_method::cmaa2)) {
       return Antialiasing_method::cmaa2;
-   }
-   else if (string == to_string(Antialiasing_method::msaax2)) {
-      return Antialiasing_method::msaax2;
    }
    else if (string == to_string(Antialiasing_method::msaax4)) {
       return Antialiasing_method::msaax4;

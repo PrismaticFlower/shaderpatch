@@ -22,7 +22,7 @@ Graphics:
    # How to select the GPU to use. Can be "Highest Performance", "Lowest Power Usage", "Highest Feature Level", "Most Memory" or "Use CPU".
    GPU Selection Method: Highest Performance
 
-   # Anti-Aliasing method to use, can be "none", "CMAA2", "MSAAx2", "MSAAx4" or "MSAAx8".
+   # Anti-Aliasing method to use, can be "none", "CMAA2", "MSAAx4" or "MSAAx8".
    Anti-Aliasing Method: CMAA2
 
    # Anisotropic Filtering level for textures, can be "off", "x2", "x4", "x8" or "x16".
