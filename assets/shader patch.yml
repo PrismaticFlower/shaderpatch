@@ -38,11 +38,11 @@ Graphics:
    # Requires a GPU with support for Rasterizer Ordered Views and typed Unordered Access View loads. Known to be buggy on NVIDIA GPUs.
    Enable Order-Independent Transparency: no
 
-   # Enables the use of an alternative post processing path for the some of the game's post processing effects. The benefit to this 
+   # Enables the use of an alternative post processing path for some of the game's post processing effects. The benefit to this 
    # is the alternative path is designed to be independent of the game's resolution and is unaffected by bugs the vanilla path suffers
    # from relating to high resolutions.
    # 
-   # In some rare cases the alternative path may produce results that do not exactly match the intended look of a map.
+   # In some cases the alternative path may produce results that do not exactly match the intended look of a map.
    Enable Alternative Post Processing: yes
 
    # Whether to let custom materials use tessellation shaders or not. On older GPUs this
