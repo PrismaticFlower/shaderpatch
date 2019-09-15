@@ -135,34 +135,23 @@ struct IDirectInputDevice8AHook final : public IDirectInputDevice8A {
 
    HRESULT __stdcall Acquire() noexcept override
    {
-      if (_acquired) return S_FALSE;
-
-      _acquired = true;
-
       return _actual->Acquire();
    }
 
    HRESULT __stdcall Unacquire() noexcept override
    {
-      if (!_acquired) return S_FALSE;
-
-      _acquired = false;
-
       return _actual->Unacquire();
    }
 
    HRESULT __stdcall GetDeviceState(DWORD cbData, LPVOID lpvData) noexcept override
    {
-      if (!_acquired) {
+      if (input_mode == Input_mode::imgui) {
          std::memset(lpvData, 0, cbData);
 
          return DI_OK;
       }
 
       if (const auto result = _actual->GetDeviceState(cbData, lpvData); FAILED(result)) {
-         if (result == DIERR_NOTACQUIRED) {
-            _acquired = false;
-         }
          return result;
       }
       else {
@@ -267,24 +256,7 @@ struct IDirectInputDevice8AHook final : public IDirectInputDevice8A {
 
    HRESULT __stdcall Poll() noexcept override
    {
-      if (input_mode == Input_mode::imgui) {
-         if (_acquired) Unacquire();
-
-         return DI_OK;
-      }
-
-      if (!_acquired) return DIERR_NOTACQUIRED;
-
-      if (const auto result = _actual->Poll(); FAILED(result)) {
-         if (result == DIERR_NOTACQUIRED) {
-            _acquired = false;
-         }
-
-         return result;
-      }
-      else {
-         return result;
-      }
+      return _actual->Poll();
    }
 
    HRESULT
@@ -356,8 +328,6 @@ private:
 
       return GET_DIDEVICE_TYPE(dev.dwDevType) == DI8DEVTYPE_KEYBOARD;
    }();
-
-   bool _acquired = false;
 };
 
 struct IDirectInput8AHook final : public IDirectInput8A {

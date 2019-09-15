@@ -119,6 +119,7 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
 
    ImGui::CreateContext();
    ImGui::GetIO().MouseDrawCursor = true;
+   ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
    ImGui_ImplWin32_Init(window);
    ImGui_ImplDX11_Init(_device.get(), _device_context.get());
    ImGui_ImplDX11_NewFrame();
