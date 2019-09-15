@@ -104,7 +104,7 @@ struct SSAO_params {
 
    float radius = 1.2f;
    float shadow_multiplier = 1.0f;
-   float shadow_power = 1.5f;
+   float shadow_power = 1.2f;
    float detail_shadow_strength = 0.5f;
    int blur_pass_count = 2;
    float sharpness = 0.98f;
