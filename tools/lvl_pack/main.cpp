@@ -47,11 +47,14 @@ auto load_and_transform_req_files(fs::path path)
    // Process "animbank" and "anim" entries.
    for (auto it = req.begin(); it != req.cend();) {
       if (it->first == "animbank"_svci) {
-         it->first = "zaabin"s;
+         const std::vector<std::string> animbanks{it->second};
 
-         it = req.emplace(it, "zafbin"s, it->second);
+         for (auto& anim : animbanks) {
+            it = ++req.emplace(it, "zafbin"s, std::vector{anim});
+            it = ++req.emplace(it, "zaabin"s, std::vector{anim});
+         }
 
-         it += 2;
+         it = req.erase(it);
       }
       else if (it->first == "anim"_svci) {
          it = req.erase(it);
