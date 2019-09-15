@@ -46,6 +46,9 @@ void User_config::show_imgui() noexcept
 
       ImGui::Checkbox("Enable Order-Independent Transparency", &graphics.enable_oit);
 
+      ImGui::Checkbox("Enable Alternative Post Processing",
+                      &graphics.enable_alternative_postprocessing);
+
       ImGui::Checkbox("Enable 16-Bit Color Channel Rendering",
                       &graphics.enable_16bit_color_rendering);
 
@@ -109,6 +112,9 @@ void User_config::parse_file(const std::string& path)
 
    graphics.enable_oit =
       config["Graphics"s]["Enable Order-Independent Transparency"s].as<bool>();
+
+   graphics.enable_alternative_postprocessing =
+      config["Graphics"s]["Enable Alternative Post Processing"s].as<bool>();
 
    graphics.enable_16bit_color_rendering =
       config["Graphics"s]["Enable 16-Bit Color Channel Rendering"s].as<bool>();

@@ -29,7 +29,7 @@ Graphics:
    Anisotropic Filtering: x16
    
    # Controls whether R1G16B16A16 rendertargets will be used or not. Due to the way SWBFII is drawn using them can cut down significantly
-   # on banding. Additionally when they are enabled dithering will be applied when they are copied into R88B8A8 textures for display to further reduce banding.
+   # on banding. Additionally when they are enabled dithering will be applied when they are copied into R8G8B8A8 textures for display to further reduce banding.
    #
    # If Effects are enabled and HDR rendering is enabled by a map then this setting has no effect.
    Enable 16-Bit Color Channel Rendering: yes
@@ -37,6 +37,13 @@ Graphics:
    # Enables the use of an Order-Independent Transparency approximation. It should go without saying that this increases the cost of rendering.
    # Requires a GPU with support for Rasterizer Ordered Views and typed Unordered Access View loads. Known to be buggy on NVIDIA GPUs.
    Enable Order-Independent Transparency: no
+
+   # Enables the use of an alternative post processing path for the some of the game's post processing effects. The benefit to this 
+   # is the alternative path is designed to be independent of the game's resolution and is unaffected by bugs the vanilla path suffers
+   # from relating to high resolutions.
+   # 
+   # In some rare cases the alternative path may produce results that do not exactly match the intended look of a map.
+   Enable Alternative Post Processing: yes
 
    # Whether to let custom materials use tessellation shaders or not. On older GPUs this
    # may cause a performance hit.

@@ -155,15 +155,19 @@
   <ItemGroup>
     <None Include="definitions\patch\adaptive_oit_resolve.json" />
     <None Include="definitions\patch\basic_unlit.json" />
+    <None Include="definitions\patch\bloom_alt.json" />
     <None Include="definitions\patch\cmaa2.json" />
     <None Include="definitions\patch\color_grading_lut_baker.json" />
     <None Include="definitions\patch\depth_msaa_resolve.json" />
+    <None Include="definitions\patch\gaussian_blur.json" />
     <None Include="definitions\patch\late_backbuffer_resolve.json" />
     <None Include="definitions\patch\normal_ext-tessellated.json" />
     <None Include="definitions\patch\normal_ext_terrain.json" />
     <None Include="definitions\patch\pbr_terrain.json" />
     <None Include="definitions\patch\postprocess_bloom.json" />
     <None Include="definitions\patch\postprocess_msaa_resolve.json" />
+    <None Include="definitions\patch\scene_blur.json" />
+    <None Include="definitions\patch\scope_blur.json" />
     <None Include="definitions\patch\skybox.json" />
     <None Include="shader_declarations.req">
       <FileType>Document</FileType>
@@ -245,6 +249,8 @@
     <None Include="definitions\water.json" />
     <None Include="definitions\zprepass.json" />
     <None Include="src\color_grading.hlsl" />
+    <None Include="src\scene_blur.fx" />
+    <None Include="src\scope_blur_common.hlsl" />
     <None Include="textures.req" />
   </ItemGroup>
   <ItemGroup>
@@ -377,11 +383,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\scene_blur_apply.fx">
-      <FileType>Document</FileType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="src\normalmapadder.fx">
       <FileType>Document</FileType>
     </None>
@@ -487,6 +488,21 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\tonemappers.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\scope_blur.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\gaussian_blur.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\bloom_alt.fx">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

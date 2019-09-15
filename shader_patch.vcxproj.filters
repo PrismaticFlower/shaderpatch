@@ -19,6 +19,9 @@
     <Filter Include="src\effects\assao">
       <UniqueIdentifier>{7a772774-5ad0-490b-9594-aa633ef4ae12}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\core\postprocessing">
+      <UniqueIdentifier>{ff8b3a06-0d9a-4998-bf6f-08ec760c426d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -185,6 +188,18 @@
     </ClCompile>
     <ClCompile Include="src\effects\color_grading_regions_blender.cpp">
       <Filter>src\effects</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\postprocessing\scope_blur.cpp">
+      <Filter>src\core\postprocessing</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\postprocessing\scene_blur.cpp">
+      <Filter>src\core\postprocessing</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\postprocessing\bloom.cpp">
+      <Filter>src\core\postprocessing</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\game_alt_postprocessing.cpp">
+      <Filter>src\core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -421,6 +436,18 @@
     </ClInclude>
     <ClInclude Include="src\effects\color_grading_regions_blender.hpp">
       <Filter>src\effects</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\postprocessing\scene_blur.hpp">
+      <Filter>src\core\postprocessing</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\postprocessing\scope_blur.hpp">
+      <Filter>src\core\postprocessing</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\postprocessing\bloom.hpp">
+      <Filter>src\core\postprocessing</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\game_alt_postprocessing.hpp">
+      <Filter>src\core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

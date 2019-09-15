@@ -250,9 +250,6 @@
     <None Include="declarations\zprepass.json">
       <Filter>declarations</Filter>
     </None>
-    <None Include="src\scene_blur_apply.fx">
-      <Filter>src</Filter>
-    </None>
     <None Include="declarations\normalmapadder.json">
       <Filter>declarations</Filter>
     </None>
@@ -394,6 +391,31 @@
     <None Include="definitions\patch\color_grading_lut_baker.json">
       <Filter>definitions\patch</Filter>
     </None>
+    <None Include="src\scene_blur.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="definitions\patch\scene_blur.json">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="definitions\patch\scope_blur.json">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="src\tonemappers.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\color_grading_lut_baker.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\scope_blur.fx" />
+    <None Include="definitions\patch\gaussian_blur.json">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="src\scope_blur_common.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="definitions\patch\bloom_alt.json">
+      <Filter>definitions\patch</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">
@@ -413,10 +435,10 @@
     <CustomBuild Include="build_lvls.ps1" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="src\color_grading_lut_baker.hlsl">
+    <FxCompile Include="src\gaussian_blur.fx">
       <Filter>src</Filter>
     </FxCompile>
-    <FxCompile Include="src\tonemappers.hlsl">
+    <FxCompile Include="src\bloom_alt.fx">
       <Filter>src</Filter>
     </FxCompile>
   </ItemGroup>

@@ -1,0 +1,46 @@
+{
+   "group_name": "bloom alt",
+   "source_name": "bloom_alt.fx",
+
+   "entrypoints": {
+      "threshold_ps": {
+         "stage": "pixel",
+
+         "pixel_state": {
+            "lighting": false
+         },
+
+         "static_flags": [
+            "BLOOM_ALT_SCOPE_BLUR"
+         ]
+      },
+
+      "overlay_ps": {
+         "stage": "pixel",
+
+         "pixel_state": {
+            "lighting": false
+         },
+
+         "defines": [
+            [ "BLOOM_ALT_SCOPE_BLUR", "0" ]
+         ]
+      },
+
+      "brighten_ps": {
+         "stage": "pixel",
+
+         "pixel_state": {
+            "lighting": false
+         },
+
+         "defines": [
+            [ "BLOOM_ALT_SCOPE_BLUR", "0" ]
+         ]
+      }
+   },
+
+   "rendertypes": {},
+
+   "states": {}
+}

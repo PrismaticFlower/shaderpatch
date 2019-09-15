@@ -8,6 +8,7 @@
 #include "d3d11_helpers.hpp"
 #include "depth_msaa_resolver.hpp"
 #include "depthstencil.hpp"
+#include "game_alt_postprocessing.hpp"
 #include "game_input_layout.hpp"
 #include "game_rendertarget.hpp"
 #include "game_shader.hpp"
@@ -297,6 +298,7 @@ private:
    D3D11_PRIMITIVE_TOPOLOGY _patch_material_topology =
       D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
    std::shared_ptr<Game_shader> _game_shader{};
+   Rendertype _previous_shader_rendertype = Rendertype::invalid;
    Rendertype _shader_rendertype = Rendertype::invalid;
 
    std::array<Game_texture, 6> _game_textures;
@@ -392,6 +394,7 @@ private:
    Sampler_states _sampler_states{*_device};
    Shader_resource_database _shader_resource_database{
       load_texture_lvl(L"data/shaderpatch/textures.lvl", *_device)};
+   Game_alt_postprocessing _game_postprocessing{*_device, *_shader_database};
 
    effects::Control _effects{_device, _shader_database->groups};
    effects::Rendertarget_allocator _rendertarget_allocator{_device};

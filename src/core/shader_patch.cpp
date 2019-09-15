@@ -13,6 +13,7 @@
 #include "../imgui/imgui_impl_win32.h"
 
 #include <chrono>
+#include <cmath>
 
 #include <comdef.h>
 
@@ -153,6 +154,8 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
    _game_blend_state = nullptr;
    _game_rs_state = nullptr;
    _game_depthstencil_state = nullptr;
+   _previous_shader_rendertype = Rendertype::invalid;
+   _shader_rendertype = Rendertype::invalid;
    _aa_method = Antialiasing_method::none;
 
    update_rendertargets();
@@ -162,6 +165,7 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
 void Shader_patch::present() noexcept
 {
    _effects.profiler.end_frame(*_device_context);
+   _game_postprocessing.end_frame();
 
    if (_game_rendertargets[0].type != Game_rt_type::presentation)
       patch_backbuffer_resolve();
@@ -886,6 +890,7 @@ void Shader_patch::set_game_shader(std::shared_ptr<Game_shader> shader) noexcept
 
    const auto rendertype = _game_shader->rendertype;
 
+   _previous_shader_rendertype = _shader_rendertype;
    _shader_rendertype_changed =
       std::exchange(_shader_rendertype, rendertype) != rendertype;
 }
@@ -1046,6 +1051,8 @@ void Shader_patch::set_constants(const cb::Fixedfunction_tag,
    constants.inv_resolution = {1.0f / rt.width, 1.0f / rt.height};
 
    update_dynamic_buffer(*_device_context, *_cb_fixedfunction_buffer, constants);
+
+   _game_postprocessing.blur_factor(texture_factor.a);
 }
 
 void Shader_patch::set_constants(const cb::Skin_tag, const UINT offset,
@@ -1243,7 +1250,7 @@ void Shader_patch::game_rendertype_changed() noexcept
       }
    }
    else if (_shader_rendertype == Rendertype::hdr && !_effects_active &&
-            _game_shader->shader_name == "glow threshold"sv) {
+            !user_config.graphics.enable_alternative_postprocessing) {
       if (_game_rendertargets[0].sample_count > 1) {
          Com_ptr<ID3D11Resource> dest;
          _game_textures[0].srv->GetResource(dest.clear_and_assign());
@@ -1293,6 +1300,67 @@ void Shader_patch::game_rendertype_changed() noexcept
       case Rendertype::fixedfunc_scene_blur:
       case Rendertype::fixedfunc_zoom_blur:
          resolve_oit();
+      }
+   }
+
+   if (user_config.graphics.enable_alternative_postprocessing) {
+      if (_shader_rendertype == Rendertype::filtercopy) {
+         _discard_draw_calls = true;
+         _on_rendertype_changed = [&]() noexcept
+         {
+            _discard_draw_calls = false;
+            _on_rendertype_changed = nullptr;
+         };
+      }
+      else if (_shader_rendertype == Rendertype::fixedfunc_scene_blur) {
+         _discard_draw_calls = true;
+
+         _game_postprocessing.apply_scene_blur(*_device_context,
+                                               _game_rendertargets[0],
+                                               _rendertarget_allocator);
+         restore_all_game_state();
+
+         _on_rendertype_changed = [&]() noexcept
+         {
+            _discard_draw_calls = false;
+            _on_rendertype_changed = nullptr;
+         };
+      }
+      else if (_shader_rendertype == Rendertype::fixedfunc_zoom_blur &&
+               _previous_shader_rendertype == Rendertype::filtercopy) {
+         _discard_draw_calls = true;
+
+         _game_postprocessing.apply_scope_blur(*_device_context,
+                                               _game_rendertargets[0],
+                                               _rendertarget_allocator);
+         restore_all_game_state();
+
+         _on_rendertype_changed = [&]() noexcept
+         {
+            _discard_draw_calls = false;
+            _on_rendertype_changed = nullptr;
+         };
+      }
+      else if (_shader_rendertype == Rendertype::hdr && !_effects_active) {
+         _discard_draw_calls = true;
+
+         const float weight_pow = 2.8f;
+         const float intensity =
+            std::pow(_cb_draw_ps.ps_custom_constants[1].w * 4.0f, 2.8f) *
+            _cb_draw_ps.ps_custom_constants[1].x;
+
+         _game_postprocessing.bloom_threshold(_cb_draw_ps.ps_custom_constants[0].w);
+         _game_postprocessing.bloom_intensity(intensity);
+         _game_postprocessing.apply_bloom(*_device_context, _game_rendertargets[0],
+                                          _rendertarget_allocator);
+
+         restore_all_game_state();
+
+         _on_rendertype_changed = [&]() noexcept
+         {
+            _discard_draw_calls = false;
+            _on_rendertype_changed = nullptr;
+         };
       }
    }
 

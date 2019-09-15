@@ -1,0 +1,26 @@
+{
+   "group_name": "scope blur",
+   "source_name": "scope_blur.fx",
+
+   "entrypoints": {
+      "blur_ps": {
+         "stage": "pixel",
+
+         "pixel_state": {
+            "lighting": false
+         }
+      },
+
+      "overlay_ps": {
+         "stage": "pixel",
+
+         "pixel_state": {
+            "lighting": false
+         }
+      }
+   },
+
+   "rendertypes": {},
+
+   "states": {}
+}
