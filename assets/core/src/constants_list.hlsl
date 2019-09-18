@@ -19,6 +19,7 @@ cbuffer SceneConstants : register(b0)
    bool vertex_color_srgb;
    float time;
    float tessellation_resolution_factor;
+   bool particle_texture_scale;
 }
 
 cbuffer DrawConstants : register(b1)

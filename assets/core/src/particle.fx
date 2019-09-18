@@ -1,10 +1,12 @@
 
 #include "adaptive_oit.hlsl"
 #include "generic_vertex_input.hlsl"
-#include "vertex_utilities.hlsl"
-#include "vertex_transformer.hlsl"
 #include "pixel_sampler_states.hlsl"
 #include "pixel_utilities.hlsl"
+#include "vertex_transformer.hlsl"
+#include "vertex_utilities.hlsl"
+
+// clang-format off
 
 const static float2 fade_factor = custom_constants[0].xy;
 const static float4 texcoords_transform = custom_constants[1];
@@ -33,11 +35,16 @@ Vs_normal_output normal_vs(Vertex_input input)
 
    output.texcoords = input.texcoords() * texcoords_transform.xy + texcoords_transform.zw;
 
+   if (particle_texture_scale) {
+      output.texcoords = 
+         (input.texcoords() * 32767.0 * (1.0 / 2048.0)) * texcoords_transform.xy + texcoords_transform.zw;
+   }
+
    float near_fade;
    calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
    near_fade = saturate(near_fade);
    near_fade *= near_fade;
-
+   
    const float fade_scale = saturate(positionPS.w * fade_factor.x + fade_factor.y);
 
    output.color.rgb = get_material_color(input.color()).rgb * lighting_scale;

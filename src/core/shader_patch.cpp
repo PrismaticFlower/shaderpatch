@@ -682,10 +682,12 @@ auto Shader_patch::create_patch_effects_config(const gsl::span<const std::byte> 
    }
 }
 
-auto Shader_patch::create_game_input_layout(const gsl::span<const Input_layout_element> layout,
-                                            const bool compressed) noexcept -> Game_input_layout
+auto Shader_patch::create_game_input_layout(
+   const gsl::span<const Input_layout_element> layout, const bool compressed,
+   const bool particle_texture_scale) noexcept -> Game_input_layout
 {
-   return {_input_layout_descriptions.try_add(layout), compressed};
+   return {_input_layout_descriptions.try_add(layout), compressed,
+           particle_texture_scale};
 }
 
 auto Shader_patch::create_game_shader(const Shader_metadata metadata) noexcept
@@ -882,6 +884,12 @@ void Shader_patch::set_input_layout(const Game_input_layout& input_layout) noexc
 {
    _game_input_layout = input_layout;
    _shader_dirty = true;
+
+   if (std::uint32_t{input_layout.particle_texture_scale} !=
+       _cb_scene.particle_texture_scale) {
+      _cb_scene.particle_texture_scale = input_layout.particle_texture_scale;
+      _cb_scene_dirty = true;
+   }
 }
 
 void Shader_patch::set_game_shader(std::shared_ptr<Game_shader> shader) noexcept

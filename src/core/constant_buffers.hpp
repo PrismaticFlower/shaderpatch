@@ -38,7 +38,8 @@ struct alignas(16) Scene {
    std::uint32_t vertex_color_srgb;
    float time;
    float tessellation_resolution_factor;
-   std::array<std::uint32_t, 3> _buffer_padding1;
+   std::uint32_t particle_texture_scale;
+   std::array<std::uint32_t, 2> _buffer_padding1;
 };
 
 static_assert(sizeof(Scene) == 192);

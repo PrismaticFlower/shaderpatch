@@ -7,6 +7,7 @@ namespace sp::core {
 struct Game_input_layout {
    std::uint16_t layout_index;
    bool compressed;
+   bool particle_texture_scale;
 };
 
 }

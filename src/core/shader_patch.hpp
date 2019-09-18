@@ -128,7 +128,9 @@ public:
       -> Patch_effects_config_handle;
 
    auto create_game_input_layout(const gsl::span<const Input_layout_element> layout,
-                                 const bool compressed) noexcept -> Game_input_layout;
+                                 const bool compressed,
+                                 const bool particle_texture_scale) noexcept
+      -> Game_input_layout;
 
    auto create_game_shader(const Shader_metadata metadata) noexcept
       -> std::shared_ptr<Game_shader>;

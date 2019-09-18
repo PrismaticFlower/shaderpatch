@@ -161,6 +161,8 @@ auto create_input_layout(core::Shader_patch& shader_patch,
 {
    d3d9_elements = apply_patchups(d3d9_elements);
    const bool compressed = is_compressed_input(d3d9_elements);
+   const bool particle_texture_scale =
+      d3d9_elements == gsl::make_span(particle_decl_patch.second);
 
    std::vector<D3DVERTEXELEMENT9> patched_d3d9_elements{d3d9_elements.cbegin(),
                                                         d3d9_elements.cend()};
@@ -170,7 +172,8 @@ auto create_input_layout(core::Shader_patch& shader_patch,
 
    const auto elements = translate_vertex_elements(patched_d3d9_elements);
 
-   return shader_patch.create_game_input_layout(elements, compressed);
+   return shader_patch.create_game_input_layout(elements, compressed,
+                                                particle_texture_scale);
 }
 
 }
