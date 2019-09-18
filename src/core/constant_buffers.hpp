@@ -34,13 +34,14 @@ struct alignas(16) Scene {
    float vs_lighting_scale;
    float _buffer_padding2;
    std::array<glm::vec4, 3> shadow_map_transform;
+   glm::vec2 pixel_offset;
    std::uint32_t vertex_color_srgb;
    float time;
    float tessellation_resolution_factor;
-   float _buffer_padding1;
+   std::array<std::uint32_t, 3> _buffer_padding1;
 };
 
-static_assert(sizeof(Scene) == 176);
+static_assert(sizeof(Scene) == 192);
 
 struct alignas(16) Draw {
    glm::vec4 normaltex_decompress;

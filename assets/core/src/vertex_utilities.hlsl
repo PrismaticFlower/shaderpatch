@@ -1,8 +1,10 @@
 #ifndef VERTEX_UTILS_INCLUDED
 #define VERTEX_UTILS_INCLUDED
 
-#include "constants_list.hlsl"
 #include "color_utilities.hlsl"
+#include "constants_list.hlsl"
+
+// clang-format off
 
 #pragma warning(disable : 3571)
 
@@ -72,13 +74,9 @@ float3 get_static_diffuse_color(float4 color)
 #endif
 }
 
-float4 transform_shadowmap_coords(float3 world_position)
+float2 transform_shadowmap_coords(float4 positionPS)
 {
-   float4 coords = 0.0;
-   
-   coords.xyw = mul(float4(world_position, 1.0), shadow_map_transform).xyz;
-
-   return coords;
+   return (positionPS.xy / positionPS.w) * float2(0.5, -0.5) + 0.5;
 }
 
 void generate_terrain_tangents(float3 normal, out float3 tangent, 

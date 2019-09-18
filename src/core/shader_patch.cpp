@@ -1516,6 +1516,8 @@ void Shader_patch::update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primit
          _device_context->RSSetViewports(1, &viewport);
 
          _cb_scene_dirty = true;
+         _cb_scene.pixel_offset =
+            glm::vec2{1.f, -1.f} / glm::vec2{viewport.Width, viewport.Height};
          _cb_scene.tessellation_resolution_factor =
             std::sqrt((viewport.Width * viewport.Height) / (1920.0f * 1080.0f));
       }

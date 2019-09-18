@@ -8,13 +8,14 @@ cbuffer SceneConstants : register(b0)
    float _bufferPadding0;
    float depth_fog_scale;
    float depth_fog_offset;
-   float height_fog_scale; 
+   float height_fog_scale;
    float height_fog_offset;
    float near_fade_scale;
    float near_fade_offset;
    float vs_lighting_scale;
    float _bufferPadding1;
    float4x3 shadow_map_transform;
+   float2 vs_pixel_offset;
    bool vertex_color_srgb;
    float time;
    float tessellation_resolution_factor;
@@ -25,7 +26,7 @@ cbuffer DrawConstants : register(b1)
    float4 normaltex_decompress;
    float4 position_decompress_min;
    float4 position_decompress_max;
-   float4 color_state; // whether vertex colors are lighting or material colors (0, 1, 1, 0) or (0, 1, 1, 0) 
+   float4 color_state; // whether vertex colors are lighting or material colors (0, 1, 1, 0) or (0, 1, 1, 0)
    float4x3 world_matrix;
    float4 light_ambient_color_top;
    float4 light_ambient_color_bottom;
@@ -35,10 +36,10 @@ cbuffer DrawConstants : register(b1)
    float4 light_directional_1_dir;
    float4 light_point_0_color;
    float3 light_point_0_pos;
-   float  light_point_0_inv_range_sqr;
+   float light_point_0_inv_range_sqr;
    float4 light_point_1_color;
    float3 light_point_1_pos;
-   float  light_point_1_inv_range_sqr;
+   float light_point_1_inv_range_sqr;
    float4 overlapping_lights[4];
    float4 light_proj_color;
    float4 light_proj_selector;
@@ -82,10 +83,10 @@ static const float lighting_scale = vs_lighting_scale;
 
 static const float4 light_point_2_color = overlapping_lights[0];
 static const float3 light_point_2_pos = overlapping_lights[1].xyz;
-static const float  light_point_2_inv_range_sqr = overlapping_lights[1].w;
+static const float light_point_2_inv_range_sqr = overlapping_lights[1].w;
 static const float4 light_point_3_color = overlapping_lights[2];
 static const float3 light_point_3_pos = overlapping_lights[3].xyz;
-static const float  light_point_3_inv_range_sqr = overlapping_lights[3].w;
+static const float light_point_3_inv_range_sqr = overlapping_lights[3].w;
 
 static const float4 light_spot_color = overlapping_lights[0];
 static const float3 light_spot_pos = overlapping_lights[1].xyz;
@@ -93,10 +94,9 @@ static const float light_spot_inv_range_sqr = overlapping_lights[1].w;
 static const float4 light_spot_dir = overlapping_lights[2];
 
 // spot light params
-// (x = half outer cone angle, y = half inner cone angle, 
+// (x = half outer cone angle, y = half inner cone angle,
 //  z = 1 / (cos(y) - cos(x)), w = falloff)
 static const float4 light_spot_params = overlapping_lights[3];
-
 
 #ifdef __PS_LIGHT_ACTIVE_DIRECTIONAL__
 const static bool ps_light_active_directional = true;
@@ -124,7 +124,6 @@ const static bool ps_light_active_spot_light = true;
 const static bool ps_light_active_spot_light = false;
 #endif
 
-
 #ifdef __VERTEX_SHADER__
 #define MATERIAL_CB_INDEX b3
 #elif defined(__PIXEL_SHADER__)
@@ -132,6 +131,5 @@ const static bool ps_light_active_spot_light = false;
 #else
 #define MATERIAL_CB_INDEX b1
 #endif
-
 
 #endif

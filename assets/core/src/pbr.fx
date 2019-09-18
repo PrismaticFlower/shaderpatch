@@ -1,11 +1,13 @@
-#include "adaptive_oit.hlsl" 
+#include "adaptive_oit.hlsl"
 #include "constants_list.hlsl"
 #include "generic_vertex_input.hlsl"
-#include "vertex_utilities.hlsl"
-#include "vertex_transformer.hlsl"
 #include "lighting_utilities.hlsl"
-#include "pixel_utilities.hlsl"
 #include "pixel_sampler_states.hlsl"
+#include "pixel_utilities.hlsl"
+#include "vertex_transformer.hlsl"
+#include "vertex_utilities.hlsl"
+
+// clang-format off
 
 #pragma warning(disable : 3571)
 
@@ -44,7 +46,7 @@ struct Vs_output
    float3 normalWS : NORMALWS;
    float3 tangentWS : TANGENTWS;
    float2 texcoords : TEXCOORD0;
-   float4 shadow_texcoords : TEXCOORD1;
+   noperspective float2 shadow_texcoords : TEXCOORD1;
 
    float fade : FADE;
    float fog : FOG;
@@ -69,7 +71,7 @@ Vs_output main_vs(Vertex_input input)
    output.bitangent_sign = input.patch_bitangent_sign();
 
    output.texcoords = transformer.texcoords(x_texcoords_transform, y_texcoords_transform);
-   output.shadow_texcoords = transform_shadowmap_coords(positionWS);
+   output.shadow_texcoords = transform_shadowmap_coords(positionPS);
 
    float near_fade;
    calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
@@ -84,7 +86,7 @@ struct Ps_input
    float3 normalWS : NORMALWS;
    float3 tangentWS : TANGENTWS;
    float2 texcoords : TEXCOORD0;
-   float4 shadow_texcoords : TEXCOORD1;
+   noperspective float2 shadow_texcoords : TEXCOORD1;
 
    float fade : FADE;
    float fog : FOG;
@@ -121,9 +123,8 @@ float4 main_ps(Ps_input input) : SV_Target0
    const float3 normalTS = sample_normal_map(normal_map, aniso_wrap_sampler, input.texcoords);
    normalWS = normalize(mul(normalTS, tangent_to_world));
 
-   const float2 shadow_texcoords = input.shadow_texcoords.xy / input.shadow_texcoords.w;
    const float shadow = 
-      use_shadow_map ? shadow_map.SampleLevel(linear_clamp_sampler, shadow_texcoords, 0).a : 1.0;
+      use_shadow_map ? shadow_map.SampleLevel(linear_clamp_sampler, input.shadow_texcoords, 0).a : 1.0;
    const float ao = ao_map.Sample(aniso_wrap_sampler, input.texcoords) * ao_strength;
 
    float3 color = light::pbr::calculate(normalWS, normalize(view_positionWS - input.positionWS), input.positionWS,

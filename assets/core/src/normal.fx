@@ -1,12 +1,14 @@
 
-#include "adaptive_oit.hlsl" 
+#include "adaptive_oit.hlsl"
 #include "constants_list.hlsl"
 #include "generic_vertex_input.hlsl"
-#include "vertex_utilities.hlsl"
-#include "vertex_transformer.hlsl"
 #include "lighting_utilities.hlsl"
-#include "pixel_utilities.hlsl"
 #include "pixel_sampler_states.hlsl"
+#include "pixel_utilities.hlsl"
+#include "vertex_transformer.hlsl"
+#include "vertex_utilities.hlsl"
+
+// clang-format off
 
 Texture2D<float4> diffuse_map : register(t0);
 Texture2D<float3> detail_map : register(t1);
@@ -64,7 +66,7 @@ struct Vs_output
    float2 diffuse_texcoords : TEXCOORD0;
    float2 detail_texcoords : TEXCOORD1;
    float4 projection_texcoords : TEXCOORD2;
-   float4 shadow_texcoords : TEXCOORD3;
+   noperspective float2 shadow_texcoords : TEXCOORD3;
 
    float3 positionWS : POSITIONWS;
    float3 normalWS : NORMALWS;
@@ -97,7 +99,7 @@ Vs_output main_vs(Vertex_input input)
                                                    texture_transforms[3]);
 
    output.projection_texcoords = mul(float4(positionWS, 1.0), light_proj_matrix);
-   output.shadow_texcoords = transform_shadowmap_coords(positionWS);
+   output.shadow_texcoords = transform_shadowmap_coords(positionPS);
 
    float near_fade;
    calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
@@ -159,7 +161,7 @@ struct Ps_input
    float2 diffuse_texcoords : TEXCOORD0;
    float2 detail_texcoords : TEXCOORD1;
    float4 projection_texcoords : TEXCOORD2;
-   float4 shadow_texcoords : TEXCOORD3;
+   noperspective float2 shadow_texcoords : TEXCOORD3;
 
    float3 positionWS : POSITIONWS;
    float3 normalWS : NORMALWS;
@@ -198,10 +200,8 @@ float4 main_ps(Ps_input input) : SV_Target0
    color *= diffuse_color; 
 
    if (use_shadow_map) {
-      const float2 shadow_texcoords = input.shadow_texcoords.xy / input.shadow_texcoords.w;
-
       const float shadow_map_value =
-         use_shadow_map ? shadow_map.SampleLevel(linear_clamp_sampler, shadow_texcoords, 0).a
+         use_shadow_map ? shadow_map.SampleLevel(linear_clamp_sampler, input.shadow_texcoords, 0).a
                         : 1.0;
 
       float shadow = 1.0 - (lighting.intensity * (1.0 - shadow_map_value));

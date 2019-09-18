@@ -2,6 +2,8 @@
 #include "constants_list.hlsl"
 #include "pixel_sampler_states.hlsl"
 
+// clang-format off
+
 const static float4 interface_scale_offset = custom_constants[0];
 const static float4 interface_color = ps_custom_constants[0];
 
@@ -14,6 +16,7 @@ float4 transform_interface_position(float3 position)
       mul(float4(mul(float4(position, 1.0), world_matrix), 1.0), projection_matrix);
 
    positionPS.xy = positionPS.xy * interface_scale_offset.xy + interface_scale_offset.zw;
+   positionPS.xy += vs_pixel_offset * positionPS.w;
 
    return positionPS;
 }

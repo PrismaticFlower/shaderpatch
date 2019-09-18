@@ -1,8 +1,10 @@
 
-#include "vertex_utilities.hlsl"
 #include "lighting_utilities.hlsl"
-#include "pixel_utilities.hlsl"
 #include "pixel_sampler_states.hlsl"
+#include "pixel_utilities.hlsl"
+#include "vertex_utilities.hlsl"
+
+// clang-format off
 
 // Disbale forced loop unroll warning.
 #pragma warning(disable : 3550)
@@ -71,7 +73,7 @@ struct Vs_detail_output
 
    float2 detail_texcoords[2] : TEXCOORD0;
    float4 projection_texcoords : TEXCOORD2;
-   float4 shadow_map_texcoords : TEXCOORD3;
+   noperspective float2 shadow_map_texcoords : TEXCOORD3;
 
    float3 static_lighting : STATICLIGHT;
    float fog : FOG;
@@ -99,7 +101,7 @@ Vs_detail_output detailing_vs(Vs_input input)
    }
 
    output.projection_texcoords = mul(float4(positionWS, 1.0), light_proj_matrix);
-   output.shadow_map_texcoords = transform_shadowmap_coords(positionWS);
+   output.shadow_map_texcoords = (positionPS.xy / positionPS.w) * float2(0.5, -0.5) + 0.5;
    output.static_lighting = get_static_diffuse_color(input.color);
 
    float near_fade;
@@ -158,7 +160,7 @@ struct Ps_detail_input
 
    float2 detail_texcoords[2] : TEXCOORD0;
    float4 projection_texcoords : TEXCOORD2;
-   float4 shadow_map_texcoords : TEXCOORD3;
+   noperspective float2 shadow_map_texcoords : TEXCOORD3;
 
    float3 static_lighting : STATICLIGHT;
    float fog : FOG;
@@ -184,9 +186,8 @@ float4 detailing_ps(Ps_detail_input input,
 
    float3 color = lighting.color;
 
-   const float2 shadow_texcoords = input.shadow_map_texcoords.xy / input.shadow_map_texcoords.w;
    const float shadow_map_value = shadow_map.SampleLevel(linear_clamp_sampler,
-                                                         shadow_texcoords, 0.0).a;
+                                                         input.shadow_map_texcoords, 0.0).a;
    
    const float shadow = 1.0 - (lighting.intensity * (1.0 - shadow_map_value));
    
