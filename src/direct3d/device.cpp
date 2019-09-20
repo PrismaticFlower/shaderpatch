@@ -205,9 +205,6 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
    }
 
    win32::clip_cursor_to_window(_window);
-   SetFocus(_window);
-   SetCapture(_window);
-   ShowWindow(_window, SW_NORMAL);
 
    params->BackBufferWidth = _width;
    params->BackBufferHeight = _height;
