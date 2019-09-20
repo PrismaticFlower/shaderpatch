@@ -277,8 +277,8 @@ void ImGui_ImplWin32_NewFrame()
 // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
 // PS: In this Win32 handler, we use the capture API (GetCapture/SetCapture/ReleaseCapture) to be able to read mouse coordinates when dragging mouse outside of our window bounds.
 // PS: We treat DBLCLK messages as regular mouse down messages, so this code will work on windows classes that have the CS_DBLCLKS flag set. Our own example app code doesn't set this flag.
-IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg,
-                                                      WPARAM wParam, LPARAM lParam)
+IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam,
+                                                      [[maybe_unused]] LPARAM lParam)
 {
    if (ImGui::GetCurrentContext() == NULL) return 0;
 
@@ -349,10 +349,6 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg,
    case WM_CHAR:
       // You can also use ToAscii()+GetKeyboardState() to retrieve characters.
       io.AddInputCharacter((unsigned int)wParam);
-      return 0;
-   case WM_SETCURSOR:
-      if (LOWORD(lParam) == HTCLIENT && ImGui_ImplWin32_UpdateMouseCursor())
-         return 1;
       return 0;
    case WM_DEVICECHANGE:
       if ((UINT)wParam == DBT_DEVNODES_CHANGED) g_WantUpdateHasGamepad = true;

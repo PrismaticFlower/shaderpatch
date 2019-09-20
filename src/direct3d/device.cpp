@@ -169,22 +169,6 @@ HRESULT Device::GetDisplayMode(UINT swap_chain, D3DDISPLAYMODE* mode) noexcept
    return S_OK;
 }
 
-void Device::SetCursorPosition(int x, int y, DWORD) noexcept
-{
-   Debug_trace::func(__FUNCSIG__);
-
-   SetCursorPos(x, y);
-}
-
-BOOL Device::ShowCursor(BOOL) noexcept
-{
-   Debug_trace::func(__FUNCSIG__);
-
-   SetCursor(LoadCursorA(nullptr, IDC_ARROW));
-
-   return TRUE;
-}
-
 HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
 {
    Debug_trace::func(__FUNCSIG__);
@@ -222,6 +206,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
 
    win32::clip_cursor_to_window(_window);
    SetFocus(_window);
+   SetCapture(_window);
    ShowWindow(_window, SW_NORMAL);
 
    params->BackBufferWidth = _width;

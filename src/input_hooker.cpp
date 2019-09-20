@@ -60,6 +60,9 @@ LRESULT CALLBACK patch_window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
          ClipCursor(nullptr);
       }
       break;
+   case WM_SETCURSOR:
+      SetCursor(nullptr);
+      return TRUE;
    }
 
    if (input_mode == Input_mode::imgui) {
@@ -180,12 +183,9 @@ struct IDirectInputDevice8AHook final : public IDirectInputDevice8A {
       return _actual->SetEventNotification(hEvent);
    }
 
-   HRESULT __stdcall SetCooperativeLevel(HWND hwnd, DWORD dwFlags) noexcept override
+   HRESULT __stdcall SetCooperativeLevel(HWND hwnd, [[maybe_unused]] DWORD dwFlags) noexcept override
    {
-      dwFlags &= ~(DISCL_EXCLUSIVE);
-      dwFlags |= DISCL_NONEXCLUSIVE;
-
-      return _actual->SetCooperativeLevel(hwnd, dwFlags);
+      return _actual->SetCooperativeLevel(hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
    }
 
    HRESULT
