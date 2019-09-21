@@ -138,6 +138,7 @@
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\bf2_log_monitor.cpp" />
     <ClCompile Include="src\core\d3d11_helpers.cpp" />
     <ClCompile Include="src\core\depth_msaa_resolver.cpp" />
     <ClCompile Include="src\core\game_alt_postprocessing.cpp" />
@@ -197,11 +198,13 @@
     <ClCompile Include="src\imgui\imgui_impl_dx11.cpp" />
     <ClCompile Include="src\imgui\imgui_impl_dx11_shaders.hpp" />
     <ClCompile Include="src\imgui\imgui_impl_win32.cpp" />
+    <ClCompile Include="src\imgui\imgui_stdlib.cpp" />
     <ClCompile Include="src\input_hooker.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\user_config.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\bf2_log_monitor.hpp" />
     <ClInclude Include="src\core\constant_buffers.hpp" />
     <ClInclude Include="src\core\depthstencil.hpp" />
     <ClInclude Include="src\core\depth_msaa_resolver.hpp" />
@@ -278,6 +281,7 @@
     <ClInclude Include="src\imgui\imgui_ext.hpp" />
     <ClInclude Include="src\imgui\imgui_impl_dx11.h" />
     <ClInclude Include="src\imgui\imgui_impl_win32.h" />
+    <ClInclude Include="src\imgui\imgui_stdlib.h" />
     <ClInclude Include="src\input_hooker.hpp" />
     <ClInclude Include="src\logger.hpp" />
     <ClInclude Include="src\shader_constants.hpp" />

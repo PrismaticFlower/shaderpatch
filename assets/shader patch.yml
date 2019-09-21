@@ -100,6 +100,10 @@ Developer:
    # 'F12': 0x7B
    Screen Toggle: 0xDC
    
+   # Enables the monitoring, filtering and display of "BFront2.log" ingame. Can not be changed ingame. 
+   # Only useful to modders.
+   Monitor BFront2.log: no
+   
    # Controls whether or not Shader Patch will allow the game to use GPU event queries.
    Allow Event Queries: no
    

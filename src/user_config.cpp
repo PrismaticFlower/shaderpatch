@@ -145,6 +145,9 @@ void User_config::parse_file(const std::string& path)
 
    developer.toggle_key = config["Developer"s]["Screen Toggle"s].as<int>();
 
+   developer.monitor_bfront2_log =
+      config["Developer"s]["Monitor BFront2.log"s].as<bool>();
+
    developer.allow_event_queries =
       config["Developer"s]["Allow Event Queries"s].as<bool>();
 

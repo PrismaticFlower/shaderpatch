@@ -1,5 +1,6 @@
 
 #include "shader_patch.hpp"
+#include "../bf2_log_monitor.hpp"
 #include "../input_hooker.hpp"
 #include "../logger.hpp"
 #include "../user_config.hpp"
@@ -97,7 +98,10 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
                              to_sample_count(user_config.graphics.antialiasing_method)},
      _farscene_depthstencil{*_device, width, height, 1},
      _reflectionscene_depthstencil{*_device, 512, 256, 1},
-     _refraction_rt{*_device, Swapchain::format, width / 2, height / 2}
+     _refraction_rt{*_device, Swapchain::format, width / 2, height / 2},
+     _bf2_log_monitor{user_config.developer.monitor_bfront2_log
+                         ? std::make_unique<BF2_log_monitor>()
+                         : nullptr}
 {
    bind_static_resources();
    update_rendertargets();
@@ -126,6 +130,8 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
    ImGui_ImplWin32_NewFrame();
    ImGui::NewFrame();
 }
+
+Shader_patch::~Shader_patch() = default;
 
 void Shader_patch::reset(const UINT width, const UINT height) noexcept
 {
@@ -1645,11 +1651,25 @@ void Shader_patch::update_imgui() noexcept
       _effects.show_imgui(_window);
 
       show_materials_editor(*_device, _shader_resource_database, _materials);
+
+      if (_bf2_log_monitor) _bf2_log_monitor->show_imgui(true);
    }
 
-   if (_imgui_enabled || _effects.profiler.enabled) {
+   if (_imgui_enabled) {
       ImGui::Render();
       ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+   }
+   else if (_effects.profiler.enabled ||
+            (_bf2_log_monitor && _bf2_log_monitor->overlay())) {
+      if (_bf2_log_monitor) _bf2_log_monitor->show_imgui(false);
+
+      auto& io = ImGui::GetIO();
+      io.MouseDrawCursor = !io.MouseDrawCursor;
+
+      ImGui::Render();
+      ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+      io.MouseDrawCursor = !io.MouseDrawCursor;
    }
    else {
       ImGui::EndFrame();

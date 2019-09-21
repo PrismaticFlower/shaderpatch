@@ -41,9 +41,10 @@
 
 #pragma warning(disable : 4324)
 
-namespace sp::core {
+namespace sp {
+class BF2_log_monitor;
 
-class Shader_patch;
+namespace core {
 
 enum class Game_rendertarget_id : int {};
 
@@ -71,6 +72,8 @@ class Shader_patch {
 public:
    Shader_patch(IDXGIAdapter4& adapter, const HWND window, const UINT width,
                 const UINT height) noexcept;
+
+   ~Shader_patch();
 
    Shader_patch(const Shader_patch&) = delete;
    Shader_patch& operator=(const Shader_patch&) = delete;
@@ -414,7 +417,10 @@ private:
 
    UINT _rt_sample_count = 1;
    Antialiasing_method _aa_method = Antialiasing_method::none;
+
+   std::unique_ptr<BF2_log_monitor> _bf2_log_monitor;
 };
+}
 }
 
 #pragma warning(default : 4324)

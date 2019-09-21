@@ -201,6 +201,12 @@
     <ClCompile Include="src\core\game_alt_postprocessing.cpp">
       <Filter>src\core</Filter>
     </ClCompile>
+    <ClCompile Include="src\bf2_log_monitor.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui\imgui_stdlib.cpp">
+      <Filter>src\imgui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -448,6 +454,12 @@
     </ClInclude>
     <ClInclude Include="src\core\game_alt_postprocessing.hpp">
       <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\bf2_log_monitor.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\imgui\imgui_stdlib.h">
+      <Filter>src\imgui</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
