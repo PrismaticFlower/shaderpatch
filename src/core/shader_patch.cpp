@@ -191,11 +191,6 @@ void Shader_patch::present() noexcept
    update_samplers();
 
    if (_patch_backbuffer) _game_rendertargets[0] = _patch_backbuffer;
-
-   if (_shadow_msaa_rt) {
-      _device_context->ClearRenderTargetView(_shadow_msaa_rt.rtv.get(),
-                                             std::array{1.0f, 1.0f, 1.0f, 1.0f}.data());
-   }
 }
 
 auto Shader_patch::get_back_buffer() noexcept -> Game_rendertarget_id
@@ -1194,22 +1189,33 @@ void Shader_patch::game_rendertype_changed() noexcept
    if (_on_rendertype_changed) _on_rendertype_changed();
 
    if (_shader_rendertype == Rendertype::stencilshadow) {
-      const bool multisampled = _rt_sample_count > 1;
-      auto* const final_rtv = [&]() -> ID3D11RenderTargetView* {
-         auto it = std::find_if(_game_rendertargets.cbegin(),
-                                _game_rendertargets.cend(),
-                                [&](const Game_rendertarget& rt) {
-                                   return (rt.type == Game_rt_type::shadow);
-                                });
-
-         return it != _game_rendertargets.cend() ? it->rtv.get() : nullptr;
-      }();
-      auto* const rtv = multisampled ? _shadow_msaa_rt.rtv.get() : final_rtv;
-      auto* const dsv = current_depthstencil();
-
-      _device_context->OMSetRenderTargets(1, &rtv, dsv);
+      _on_rendertype_changed = [this]() noexcept
+      {
+         _discard_draw_calls = true;
+         _on_rendertype_changed = nullptr;
+      };
    }
    else if (_shader_rendertype == Rendertype::shadowquad) {
+      _discard_draw_calls = false;
+
+      const bool multisampled = _rt_sample_count > 1;
+      auto* const shadow_rtv = [&]() -> ID3D11RenderTargetView* {
+         auto it =
+            std::find_if(_game_rendertargets.begin(), _game_rendertargets.end(),
+                         [&](const Game_rendertarget& rt) {
+                            return (rt.type == Game_rt_type::shadow);
+                         });
+
+         return it != _game_rendertargets.end() ? it->rtv.get() : nullptr;
+      }();
+      auto* const rtv = multisampled ? _shadow_msaa_rt.rtv.get() : shadow_rtv;
+
+      if (rtv) {
+         _device_context
+            ->ClearRenderTargetView(rtv, std::array{1.0f, 1.0f, 1.0f, 1.0f}.data());
+         _device_context->OMSetRenderTargets(1, &rtv, current_depthstencil());
+      }
+
       _on_stretch_rendertarget = [this](Game_rendertarget&, const RECT,
                                         Game_rendertarget& dest, const RECT) noexcept
       {
