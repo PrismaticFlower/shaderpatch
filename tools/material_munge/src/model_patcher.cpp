@@ -289,13 +289,15 @@ void edit_modl_chunks(ucfb::Editor_parent_chunk& root,
 }
 
 void patch_model(const std::filesystem::path& model_path,
+                 const std::filesystem::path& output_model_path,
                  const std::unordered_map<Ci_string, Material_options>& material_index)
 {
    try {
       ucfb::Editor editor = [&] {
          win32::Memeory_mapped_file file{model_path,
                                          win32::Memeory_mapped_file::Mode::read};
-         const auto is_parent = [](const Magic_number mn) noexcept {
+         const auto is_parent = [](const Magic_number mn) noexcept
+         {
             if (mn == "modl"_mn || mn == "shdw"_mn || mn == "segm"_mn)
                return true;
 
@@ -312,7 +314,7 @@ void patch_model(const std::filesystem::path& model_path,
       edit_modl_chunks(editor, material_index);
 
       // Output new file.
-      std::ofstream output{model_path, std::ios::binary};
+      std::ofstream output{output_model_path, std::ios::binary};
       ucfb::Writer writer{output};
       editor.assemble(writer);
    }

@@ -16,6 +16,7 @@
 #include <fstream>
 #include <mutex>
 #include <optional>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -148,65 +149,66 @@ auto munge_material(const fs::path& material_path, const fs::path& output_file_p
    return options;
 }
 
+bool output_model_out_of_date(const fs::path& model, const fs::path& output_dir)
+{
+   const auto output_model_path = output_dir / model.filename();
+
+   if (!fs::exists(output_model_path) || !fs::is_regular_file(output_model_path)) {
+      return false;
+   }
+
+   return fs::last_write_time(output_model_path) < fs::last_write_time(model);
+}
+
 void fixup_munged_models(
    const fs::path& output_dir,
    const std::unordered_map<Ci_string, std::vector<fs::path>>& texture_references,
    const std::unordered_map<Ci_string, Material_options>& material_index,
-   const std::vector<Ci_string>& changed_materials)
+   const std::unordered_set<Ci_string>& changed_materials)
 {
-   std::unordered_set<Ci_string> affected_models;
-   std::mutex affected_models_mutex;
+   std::set<fs::path> affected_models;
 
    std::for_each(
-      std::execution::par, changed_materials.cbegin(),
-      changed_materials.cend(), [&](const Ci_string& name) noexcept {
-         auto tex_refs_it = texture_references.find(name);
+      texture_references.cbegin(),
+      texture_references.cend(), [&](const std::pair<Ci_string, std::vector<fs::path>>& tex_ref) noexcept {
+         for (const auto& model : tex_ref.second) {
+            if (changed_materials.contains(tex_ref.first) ||
+                (material_index.contains(tex_ref.first) &&
+                 output_model_out_of_date(model, output_dir))) {
+               affected_models.insert(model);
+            }
+         }
+      });
 
-         if (tex_refs_it == texture_references.cend()) return;
+   std::for_each(
+      std::execution::par, affected_models.cbegin(),
+      affected_models.cend(), [&](const fs::path& input_path) noexcept {
+         const auto output_file_path = output_dir / input_path.filename();
+         const auto extension = input_path.extension() += ".req"sv;
 
-         std::for_each(
-            std::execution::par, tex_refs_it->second.cbegin(),
-            tex_refs_it->second.cend(), [&](const fs::path& file_ref) noexcept {
-               // Test if this model has already been processed.
-               {
-                  std::lock_guard lock{affected_models_mutex};
+         auto req_file_path = input_path;
+         req_file_path.replace_extension(extension);
 
-                  if (auto [it, absent] = affected_models.emplace(
-                         make_ci_string(file_ref.filename().string()));
-                      !absent)
-                     return;
-               }
+         if (fs::exists(req_file_path)) {
+            auto output_req_file_path = output_file_path;
+            output_req_file_path.replace_extension(extension);
 
-               auto output_file_path = output_dir / file_ref.filename();
+            fs::copy_file(req_file_path, output_req_file_path,
+                          fs::copy_options::overwrite_existing);
+         }
 
-               fs::copy_file(file_ref, output_file_path,
-                             fs::copy_options::overwrite_existing);
+         synced_print("Editing "sv, output_file_path.filename().string(),
+                      " for Shader Patch..."sv);
 
-               const auto extension = file_ref.extension() += ".req"sv;
-
-               auto req_file_path = file_ref;
-               req_file_path.replace_extension(extension);
-
-               if (fs::exists(req_file_path)) {
-                  auto output_req_file_path = output_file_path;
-                  output_req_file_path.replace_extension(extension);
-
-                  fs::copy_file(req_file_path, output_req_file_path,
-                                fs::copy_options::overwrite_existing);
-               }
-
-               synced_print("Editing "sv, output_file_path.filename().string(),
-                            " for Shader Patch..."sv);
-
-               try {
-                  patch_model(output_file_path, material_index);
-               }
-               catch (std::exception& e) {
-                  synced_error_print(e.what());
-               }
-            });
+         try {
+            patch_model(input_path, output_file_path, material_index);
+         }
+         catch (std::exception& e) {
+            synced_error_print(e.what());
+         }
       });
 }
+
 }
 
 void munge_materials(const fs::path& output_dir,
@@ -214,7 +216,7 @@ void munge_materials(const fs::path& output_dir,
                      const std::unordered_map<Ci_string, fs::path>& files,
                      const std::unordered_map<Ci_string, YAML::Node>& descriptions)
 {
-   std::vector<Ci_string> changed_materials;
+   std::unordered_set<Ci_string> changed_materials;
 
    auto [partial_munge, index] = load_materials_index(output_dir);
 
@@ -236,7 +238,7 @@ void munge_materials(const fs::path& output_dir,
             munge_material(file.second, output_file_path, descriptions);
 
          index[make_ci_string(file.second.stem().string())] = options;
-         changed_materials.emplace_back(make_ci_string(file.second.stem().string()));
+         changed_materials.emplace(make_ci_string(file.second.stem().string()));
       }
       catch (std::exception& e) {
          synced_error_print("Error munging "sv, file.first, ": "sv, e.what());
