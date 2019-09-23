@@ -1,10 +1,12 @@
-#include "adaptive_oit.hlsl" 
+#include "adaptive_oit.hlsl"
 #include "constants_list.hlsl"
 #include "generic_vertex_input.hlsl"
-#include "vertex_utilities.hlsl"
-#include "vertex_transformer.hlsl"
 #include "pixel_sampler_states.hlsl"
 #include "pixel_utilities.hlsl"
+#include "vertex_transformer.hlsl"
+#include "vertex_utilities.hlsl"
+
+// clang-format off
 
 // Textures
 Texture2D<float4> color_map : register(ps, t6);
@@ -32,6 +34,7 @@ struct Vs_output
    
    float fade : FADE;
    float fog : FOG;
+   float4 color : COLOR;
 
    float4 positionPS : SV_Position;
 };
@@ -46,7 +49,8 @@ Vs_output main_vs(Vertex_input input)
    const float4 positionPS = transformer.positionPS();
 
    output.positionPS = positionPS;
-   output.texcoords = transformer.texcoords(x_texcoords_transform, y_texcoords_transform);   
+   output.texcoords = transformer.texcoords(x_texcoords_transform, y_texcoords_transform);
+   output.color = get_material_color(input.color());
 
    float near_fade;
    calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
@@ -61,6 +65,8 @@ float4 main_ps(Vs_output input) : SV_Target0
    const float2 texcoords = input.texcoords;
 
    float4 color = color_map.Sample(aniso_wrap_sampler, texcoords);
+
+   color *= input.color;
 
    // Hardedged Alpha Test
    if (use_hardedged_test && color.a < 0.5) discard;
