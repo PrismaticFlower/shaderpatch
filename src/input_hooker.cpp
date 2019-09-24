@@ -4,6 +4,7 @@
 #include "com_ptr.hpp"
 #include "hook_vtable.hpp"
 #include "logger.hpp"
+#include "utility.hpp"
 #include "window_helpers.hpp"
 
 #include <dinput.h>
@@ -149,6 +150,25 @@ struct IDirectInputDevice8AHook final : public IDirectInputDevice8A {
    HRESULT __stdcall GetDeviceState(DWORD cbData, LPVOID lpvData) noexcept override
    {
       if (input_mode == Input_mode::imgui) {
+         if (_devtype == DI8DEVTYPE_MOUSE && cbData == sizeof(DIMOUSESTATE2)) {
+            DIMOUSESTATE2 state{};
+
+            _actual->GetDeviceState(sizeof(state), &state);
+
+            auto& io = ImGui::GetIO();
+
+            std::transform(std::begin(state.rgbButtons),
+                           std::begin(state.rgbButtons) +
+                              safe_min(std::distance(std::begin(io.MouseDown),
+                                                     std::end(io.MouseDown)),
+                                       std::distance(std::begin(state.rgbButtons),
+                                                     std::end(state.rgbButtons))),
+                           std::begin(io.MouseDown),
+                           [](const auto v) { return v != 0; });
+
+            io.MouseWheel += static_cast<float>(state.lZ);
+         }
+
          std::memset(lpvData, 0, cbData);
 
          return DI_OK;
@@ -158,7 +178,8 @@ struct IDirectInputDevice8AHook final : public IDirectInputDevice8A {
          return result;
       }
       else {
-         if (_keyboard && cbData >= sizeof(std::array<std::byte, 256>)) {
+         if (_devtype == DI8DEVTYPE_KEYBOARD &&
+             cbData >= sizeof(std::array<std::byte, 256>)) {
             static_cast<std::byte*>(lpvData)[DIK_SYSRQ] = std::byte{0x0};
          }
 
@@ -183,9 +204,14 @@ struct IDirectInputDevice8AHook final : public IDirectInputDevice8A {
       return _actual->SetEventNotification(hEvent);
    }
 
-   HRESULT __stdcall SetCooperativeLevel(HWND hwnd, [[maybe_unused]] DWORD dwFlags) noexcept override
+   HRESULT __stdcall SetCooperativeLevel(HWND hwnd, DWORD dwFlags) noexcept override
    {
-      return _actual->SetCooperativeLevel(hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
+      if (_devtype == DI8DEVTYPE_MOUSE) {
+         return _actual->SetCooperativeLevel(hwnd, dwFlags);
+      }
+      else {
+         return _actual->SetCooperativeLevel(hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
+      }
    }
 
    HRESULT
@@ -321,12 +347,12 @@ private:
 
    std::atomic<UINT> _ref_count;
    const Com_ptr<IDirectInputDevice8A> _actual;
-   const bool _keyboard = [this] {
+   const DWORD _devtype = [this] {
       DIDEVICEINSTANCEA dev{.dwSize = sizeof(DIDEVICEINSTANCEA)};
 
       _actual->GetDeviceInfo(&dev);
 
-      return GET_DIDEVICE_TYPE(dev.dwDevType) == DI8DEVTYPE_KEYBOARD;
+      return GET_DIDEVICE_TYPE(dev.dwDevType);
    }();
 };
 
