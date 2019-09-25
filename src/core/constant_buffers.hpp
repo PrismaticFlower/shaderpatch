@@ -8,6 +8,12 @@
 
 namespace sp::core::cb {
 
+// Evil macro. Takes the type of the constant buffer and the first non-game
+// constant in the type and returns the number of game constants in the buffer.
+#define CB_MAX_GAME_CONSTANTS(Type, first_patch_constant)                      \
+   (sizeof(Type) - (sizeof(Type) - offsetof(Type, first_patch_constant))) /    \
+      sizeof(glm::vec4);
+
 struct Scene_tag {
 };
 struct Draw_tag {
@@ -42,7 +48,10 @@ struct alignas(16) Scene {
    std::array<std::uint32_t, 2> _buffer_padding1;
 };
 
+constexpr auto scene_game_count = CB_MAX_GAME_CONSTANTS(Scene, pixel_offset);
+
 static_assert(sizeof(Scene) == 192);
+static_assert(scene_game_count == 10);
 
 struct alignas(16) Draw {
    glm::vec4 normaltex_decompress;
@@ -68,7 +77,10 @@ struct alignas(16) Draw {
    glm::vec4 custom_constants[9];
 };
 
+constexpr auto draw_game_count = sizeof(Draw) / 16;
+
 static_assert(sizeof(Draw) == 592);
+static_assert(draw_game_count == 37);
 
 struct alignas(16) Fixedfunction {
    glm::vec4 texture_factor;
@@ -82,7 +94,10 @@ struct alignas(16) Skin {
    std::array<std::array<glm::vec4, 3>, 15> bone_matrices;
 };
 
+constexpr auto skin_game_count = sizeof(Skin) / 16;
+
 static_assert(sizeof(Skin) == 720);
+static_assert(skin_game_count == 45);
 
 struct alignas(16) Draw_ps {
    std::array<glm::vec4, 5> ps_custom_constants;
@@ -97,5 +112,11 @@ struct alignas(16) Draw_ps {
    std::int32_t limit_normal_shader_bright_lights;
 };
 
+constexpr auto draw_ps_game_count = CB_MAX_GAME_CONSTANTS(Draw_ps, ps_view_positionWS);
+
 static_assert(sizeof(Draw_ps) == 144);
+static_assert(draw_ps_game_count == 5);
+
+#undef CB_MAX_GAME_CONSTANTS
+
 }

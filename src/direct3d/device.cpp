@@ -1062,22 +1062,28 @@ HRESULT Device::SetVertexShaderConstantF(UINT start_register, const float* const
 {
    Debug_trace::func(__FUNCSIG__);
 
-   if (start_register == 0) return S_OK;
+   if (start_register < 2) return S_OK;
 
    if (const auto constants =
           gsl::make_span(reinterpret_cast<const std::array<float, 4>*>(constant_data),
                          vector4f_count);
        start_register < 12) {
-      assert(vector4f_count + (start_register - 2) <= 10);
-      _shader_patch.set_constants(core::cb::scene, start_register - 2, constants);
+      const auto start = start_register - 2u;
+      const auto count = safe_min(vector4f_count, core::cb::scene_game_count - start);
+
+      _shader_patch.set_constants(core::cb::scene, start, constants.subspan(0, count));
    }
    else if (start_register < 51) {
-      assert(vector4f_count + (start_register - 12) <= 37);
-      _shader_patch.set_constants(core::cb::draw, start_register - 12, constants);
+      const auto start = start_register - 12u;
+      const auto count = safe_min(vector4f_count, core::cb::draw_game_count - start);
+
+      _shader_patch.set_constants(core::cb::draw, start, constants.subspan(0, count));
    }
    else {
-      assert(vector4f_count + (start_register - 51) <= 45);
-      _shader_patch.set_constants(core::cb::skin, start_register - 51, constants);
+      const auto start = start_register - 51u;
+      const auto count = safe_min(vector4f_count, core::cb::skin_game_count - start);
+
+      _shader_patch.set_constants(core::cb::skin, start, constants.subspan(0, count));
    }
 
    return S_OK;
@@ -1139,11 +1145,10 @@ HRESULT Device::SetPixelShaderConstantF(UINT start_register, const float* consta
 {
    Debug_trace::func(__FUNCSIG__);
 
-   assert(vector4f_count + start_register <= 5);
-
+   const auto count =
+      safe_min(vector4f_count, core::cb::draw_ps_game_count - start_register);
    const auto constants =
-      gsl::make_span(reinterpret_cast<const std::array<float, 4>*>(constant_data),
-                     vector4f_count);
+      gsl::make_span(reinterpret_cast<const std::array<float, 4>*>(constant_data), count);
 
    _shader_patch.set_constants(core::cb::draw_ps, start_register, constants);
 
