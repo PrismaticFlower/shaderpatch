@@ -194,12 +194,14 @@ void Color_grading_regions_blender::regions(const Color_grading_regions& regions
 
    init_region_params(regions);
    init_regions(regions);
+
+   _contributions.reserve(_regions.size() + 1);
 }
 
 auto Color_grading_regions_blender::blend(const glm::vec3 camera_position) noexcept
    -> std::pair<Color_grading_params, Bloom_params>
 {
-   contributions.clear();
+   _contributions.clear();
 
    float global_weight = 1.0f;
 
@@ -210,19 +212,19 @@ auto Color_grading_regions_blender::blend(const glm::vec3 camera_position) noexc
 
       global_weight -= weight;
 
-      contributions.push_back({weight, _region_cg_params[region.params_index],
-                               _region_bloom_params[region.params_index]
-                                  ? *_region_bloom_params[region.params_index]
-                                  : _global_bloom_params});
+      _contributions.push_back({weight, _region_cg_params[region.params_index],
+                                _region_bloom_params[region.params_index]
+                                   ? *_region_bloom_params[region.params_index]
+                                   : _global_bloom_params});
    }
 
    if (global_weight > 0.0f) {
-      contributions.push_back({global_weight, _global_cg_params, _global_bloom_params});
+      _contributions.push_back({global_weight, _global_cg_params, _global_bloom_params});
    }
 
-   if (contributions.size() == 1) {
-      auto cg_params = contributions.front().cg_params;
-      auto bloom_params = contributions.front().bloom_params;
+   if (_contributions.size() == 1) {
+      auto cg_params = _contributions.front().cg_params;
+      auto bloom_params = _contributions.front().bloom_params;
 
       cg_params.tonemapper = _global_cg_params.tonemapper;
 
@@ -230,23 +232,23 @@ auto Color_grading_regions_blender::blend(const glm::vec3 camera_position) noexc
    }
 
    const float total_weight =
-      std::accumulate(contributions.cbegin(), contributions.cend(), 0.0f,
+      std::accumulate(_contributions.cbegin(), _contributions.cend(), 0.0f,
                       [](const auto v, const auto contrib) {
                          return v + contrib.weight;
                       });
 
    auto blended_cg_params =
-      apply_params_weight(contributions[0].cg_params,
-                          contributions[0].weight / total_weight);
+      apply_params_weight(_contributions[0].cg_params,
+                          _contributions[0].weight / total_weight);
    auto blended_bloom_params =
-      apply_params_weight(contributions[0].bloom_params,
-                          contributions[0].weight / total_weight);
+      apply_params_weight(_contributions[0].bloom_params,
+                          _contributions[0].weight / total_weight);
 
-   for (auto i = 1; i < contributions.size(); ++i) {
-      const float weight = contributions[i].weight / total_weight;
+   for (auto i = 1; i < _contributions.size(); ++i) {
+      const float weight = _contributions[i].weight / total_weight;
 
-      add_params(blended_cg_params, contributions[i].cg_params, weight);
-      add_params(blended_bloom_params, contributions[i].bloom_params, weight);
+      add_params(blended_cg_params, _contributions[i].cg_params, weight);
+      add_params(blended_bloom_params, _contributions[i].bloom_params, weight);
    }
 
    blended_cg_params.tonemapper = _global_cg_params.tonemapper;

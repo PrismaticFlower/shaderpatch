@@ -116,7 +116,7 @@ private:
       const Bloom_params& bloom_params;
    };
 
-   std::vector<Contribution> contributions;
+   std::vector<Contribution> _contributions;
 
    Color_grading_params _global_cg_params{};
    Bloom_params _global_bloom_params{};
