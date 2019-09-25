@@ -398,7 +398,7 @@ struct IDirectInput8AHook final : public IDirectInput8A {
    {
       if (!lplpDirectInputDevice) return DIERR_INVALIDPARAM;
 
-      if (rguid == GUID_SysKeyboard || rguid == GUID_SysMouse && !pUnkOuter) {
+      if (!pUnkOuter) {
          Com_ptr<IDirectInputDevice8A> actual;
 
          if (const auto result =
