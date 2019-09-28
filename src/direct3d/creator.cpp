@@ -6,12 +6,15 @@
 #include "debug_trace.hpp"
 #include "device.hpp"
 #include "helpers.hpp"
+#include "utility.hpp"
 
 #include <algorithm>
+#include <codecvt>
 #include <cstdint>
 #include <cwchar>
 #include <float.h>
 #include <limits>
+#include <locale>
 #include <queue>
 
 #include <d3d11_4.h>
@@ -186,6 +189,8 @@ Creator::Creator() noexcept
    else {
       create_adapter(dxgi_create_flags);
    }
+
+   log(Log_level::info, "Selected GPU "sv, gpu_desc());
 }
 
 HRESULT Creator::CreateDevice(UINT adapter_index, D3DDEVTYPE, HWND focus_window,
@@ -291,12 +296,14 @@ HRESULT Creator::GetAdapterIdentifier(UINT adapter_index, DWORD,
 
    *identifier = D3DADAPTER_IDENTIFIER9{};
 
-   std::mbstate_t mbstate{};
-   const wchar_t* description = &desc.Description[0];
-   std::size_t converted_count;
-   wcsrtombs_s(&converted_count, &identifier->Description[0],
-               sizeof(identifier->Description), &description,
-               sizeof(identifier->Description), &mbstate);
+   const auto description = gpu_desc();
+
+   *identifier = D3DADAPTER_IDENTIFIER9{};
+
+   std::copy_n(description.data(),
+               safe_min(description.size() + 1, sizeof(identifier->Description)),
+               std::begin(identifier->Description));
+   *(std::end(identifier->Description) - 1) = '\0';
 
    identifier->DriverVersion.QuadPart = 1;
    identifier->VendorId = desc.VendorId;
@@ -458,6 +465,22 @@ void Creator::legacy_create_adapter(const UINT dxgi_create_flags) noexcept
    }
 
    adapater->QueryInterface(_adapter.clear_and_assign());
+}
+
+auto Creator::gpu_desc() noexcept -> std::string
+{
+   DXGI_ADAPTER_DESC desc{};
+   _adapter->GetDesc(&desc);
+
+   try {
+      std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
+      return converter.to_bytes(std::cbegin(desc.Description),
+                                std::find(std::cbegin(desc.Description),
+                                          std::cend(desc.Description), L'\0'));
+   }
+   catch (std::exception&) {
+      return "Unknown"s;
+   }
 }
 
 }

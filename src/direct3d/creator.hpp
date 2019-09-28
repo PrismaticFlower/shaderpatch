@@ -73,6 +73,8 @@ private:
 
    void legacy_create_adapter(const UINT dxgi_create_flags) noexcept;
 
+   auto gpu_desc() noexcept -> std::string;
+
    std::mutex _mutex;
 
    Com_ptr<IDXGIAdapter4> _adapter;
