@@ -90,6 +90,15 @@ void Shader_resource_database::insert(Com_ptr<ID3D11ShaderResourceView> srv,
 {
    std::string name_str{name.empty() ? unknown_resource_name(*srv) : name};
 
+   if (auto it =
+          std::find_if(_resources.begin(), _resources.end(),
+                       [&](const auto& res) { return res.second == name_str; });
+       it != _resources.end()) {
+      it->first = std::move(srv);
+
+      return;
+   }
+
    _resources.emplace_back(std::move(srv), std::move(name_str));
 }
 
@@ -105,10 +114,9 @@ void Shader_resource_database::erase(ID3D11ShaderResourceView* srv) noexcept
    _resources.erase(it);
 }
 
-auto Shader_resource_database::imgui_resource_picker() noexcept
-   -> ID3D11ShaderResourceView*
+auto Shader_resource_database::imgui_resource_picker() noexcept -> Imgui_pick_result
 {
-   ID3D11ShaderResourceView* result = nullptr;
+   Imgui_pick_result result{};
 
    ImGui::InputText("Filter", _imgui_filter);
 
@@ -126,7 +134,7 @@ auto Shader_resource_database::imgui_resource_picker() noexcept
       if (desc.ViewDimension == D3D11_SRV_DIMENSION_TEXTURE2D ||
           desc.ViewDimension == D3D11_SRV_DIMENSION_TEXTURE2DARRAY) {
          if (ImGui::ImageButton(srv, {64, 64})) {
-            result = srv;
+            result = {.srv = srv, .name = res.second};
             break;
          }
 
@@ -135,7 +143,7 @@ auto Shader_resource_database::imgui_resource_picker() noexcept
       }
       else {
          if (ImGui::Button(res.second.c_str())) {
-            result = srv;
+            result = {.srv = srv, .name = res.second};
             break;
          }
       }

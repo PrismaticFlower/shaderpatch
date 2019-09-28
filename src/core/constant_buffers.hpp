@@ -110,11 +110,13 @@ struct alignas(16) Draw_ps {
    std::int32_t cube_projtex;
    std::int32_t fog_enabled;
    std::int32_t limit_normal_shader_bright_lights;
+   float time_seconds;
+   std::array<std::uint32_t, 3> padding;
 };
 
 constexpr auto draw_ps_game_count = CB_MAX_GAME_CONSTANTS(Draw_ps, ps_view_positionWS);
 
-static_assert(sizeof(Draw_ps) == 144);
+static_assert(sizeof(Draw_ps) == 160);
 static_assert(draw_ps_game_count == 5);
 
 #undef CB_MAX_GAME_CONSTANTS

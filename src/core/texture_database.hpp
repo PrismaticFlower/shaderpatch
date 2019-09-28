@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <gsl/gsl>
@@ -14,6 +15,11 @@ namespace sp::core {
 
 class Shader_resource_database {
 public:
+   struct Imgui_pick_result {
+      ID3D11ShaderResourceView* srv = nullptr;
+      std::string_view name;
+   };
+
    auto at_if(const std::string_view name) const noexcept
       -> Com_ptr<ID3D11ShaderResourceView>;
 
@@ -24,7 +30,7 @@ public:
 
    void erase(ID3D11ShaderResourceView* srv) noexcept;
 
-   auto imgui_resource_picker() noexcept -> ID3D11ShaderResourceView*;
+   auto imgui_resource_picker() noexcept -> Imgui_pick_result;
 
 private:
    auto lookup(const std::string_view name) const noexcept

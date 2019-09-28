@@ -53,6 +53,7 @@ ucft
       "scene_blur"
       "scope_blur"
       "skybox"
+      "static_water"
       "stretch_texture"
    }
 }

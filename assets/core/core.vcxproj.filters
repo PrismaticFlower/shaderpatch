@@ -416,6 +416,11 @@
     <None Include="definitions\patch\bloom_alt.json">
       <Filter>definitions\patch</Filter>
     </None>
+    <None Include="src\gaussian_blur.fx" />
+    <None Include="src\bloom_alt.fx" />
+    <None Include="definitions\patch\static_water.json">
+      <Filter>definitions\patch</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">
@@ -435,10 +440,7 @@
     <CustomBuild Include="build_lvls.ps1" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="src\gaussian_blur.fx">
-      <Filter>src</Filter>
-    </FxCompile>
-    <FxCompile Include="src\bloom_alt.fx">
+    <FxCompile Include="src\static_water.fx">
       <Filter>src</Filter>
     </FxCompile>
   </ItemGroup>

@@ -72,6 +72,7 @@ cbuffer PSDrawConstants : register(b0)
    bool cube_projtex;
    bool fog_enabled;
    bool limit_normal_shader_bright_lights;
+   float time_seconds;
 }
 
 #ifdef __PIXEL_SHADER__

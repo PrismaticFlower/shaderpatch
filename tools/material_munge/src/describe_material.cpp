@@ -313,6 +313,18 @@ auto describe_material(const std::string_view name,
       }
    }
 
+   for (auto& texture : description["Default Textures"s]) {
+      try {
+         read_texture_mapping(texture.first.as<std::string>(), texture.second,
+                              description["Texture Mappings"s], config);
+      }
+      catch (std::exception& e) {
+         throw compose_exception<std::runtime_error>(
+            "Error occured while processing material default texture "sv,
+            std::quoted(texture.first.as<std::string>()), ": "sv, e.what());
+      }
+   }
+
    for (auto& texture : material["Textures"s]) {
       try {
          read_texture_mapping(texture.first.as<std::string>(), texture.second,

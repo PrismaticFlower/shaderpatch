@@ -117,6 +117,25 @@ struct Basic_unlit_cb {
 
 static_assert(sizeof(Basic_unlit_cb) == 16);
 
+struct Static_water_cb {
+   glm::vec3 refraction_color = {0.25f, 0.50f, 0.75f};
+   float refraction_scale = 1.333f;
+   glm::vec3 reflection_color = {0.25f, 0.50f, 0.75f};
+   float small_bump_scale = 1.0f;
+   glm::vec2 small_scroll = {0.2f, 0.2f};
+   glm::vec2 medium_scroll = {0.2f, 0.2f};
+   glm::vec2 large_scroll = {0.2f, 0.2f};
+   float medium_bump_scale = 1.0f;
+   float large_bump_scale = 1.0f;
+   glm::vec2 fresnel_min_max;
+   float specular_exponent_dir_lights = 64.0f;
+   float specular_strength_dir_lights = 1.0f;
+   glm::vec3 back_refraction_color = {0.25f, 0.50f, 0.75f};
+   float specular_exponent = 64.0f;
+};
+
+static_assert(sizeof(Static_water_cb) == 96);
+
 template<typename Type>
 auto apply_op(const Type value, [[maybe_unused]] const Material_property_var_op op) noexcept
 {
@@ -318,6 +337,31 @@ auto create_basic_unlit_buffer(const Material_properties_view& props) -> Basic_u
    return cb;
 }
 
+auto create_static_water_buffer(const Material_properties_view& props) -> Static_water_cb
+{
+   Static_water_cb cb{};
+
+   cb.refraction_color = props.value("RefractionColor"sv, cb.refraction_color);
+   cb.refraction_scale = props.value("RefractionScale"sv, cb.refraction_scale);
+   cb.reflection_color = props.value("ReflectionColor"sv, cb.reflection_color);
+   cb.small_bump_scale = props.value("SmallBumpScale"sv, cb.small_bump_scale);
+   cb.small_scroll = props.value("SmallScroll"sv, cb.small_scroll);
+   cb.medium_scroll = props.value("MediumScroll"sv, cb.medium_scroll);
+   cb.large_scroll = props.value("LargeScroll"sv, cb.large_scroll);
+   cb.medium_bump_scale = props.value("MediumBumpScale"sv, cb.medium_bump_scale);
+   cb.large_bump_scale = props.value("LargeBumpScale"sv, cb.large_bump_scale);
+   cb.fresnel_min_max = props.value("FresnelMinMax"sv, cb.fresnel_min_max);
+   cb.specular_exponent_dir_lights =
+      props.value("SpecularExponentDirLights"sv, cb.specular_exponent_dir_lights);
+   cb.specular_strength_dir_lights =
+      props.value("SpecularStrengthDirLights"sv, cb.specular_strength_dir_lights);
+   cb.back_refraction_color =
+      props.value("BackRefractionColor"sv, cb.back_refraction_color);
+   cb.specular_exponent = props.value("SpecularExponent"sv, cb.specular_exponent);
+
+   return cb;
+}
+
 }
 
 auto create_material_constant_buffer(ID3D11Device5& device,
@@ -347,6 +391,10 @@ auto create_material_constant_buffer(ID3D11Device5& device,
    }
    else if (cb_name == "basic_unlit"sv) {
       return create_immutable_constant_buffer(device, create_basic_unlit_buffer(
+                                                         properties_view));
+   }
+   else if (cb_name == "static_water"sv) {
+      return create_immutable_constant_buffer(device, create_static_water_buffer(
                                                          properties_view));
    }
 

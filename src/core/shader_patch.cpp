@@ -26,6 +26,7 @@ constexpr auto projtex_cube_slot = 4;
 constexpr auto shadow_texture_format = DXGI_FORMAT_A8_UNORM;
 constexpr auto flares_texture_format = DXGI_FORMAT_A8_UNORM;
 constexpr auto screenshots_folder = L"ScreenShots/";
+constexpr auto refraction_texture_name = "_SP_BUILTIN_refraction"sv;
 
 namespace {
 
@@ -98,7 +99,6 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
                              to_sample_count(user_config.graphics.antialiasing_method)},
      _farscene_depthstencil{*_device, width, height, 1},
      _reflectionscene_depthstencil{*_device, 512, 256, 1},
-     _refraction_rt{*_device, Swapchain::format, width / 2, height / 2},
      _bf2_log_monitor{user_config.developer.monitor_bfront2_log
                          ? std::make_unique<BF2_log_monitor>()
                          : nullptr}
@@ -1008,9 +1008,6 @@ void Shader_patch::set_patch_material(Patch_material* material) noexcept
    _shader_dirty = true;
 
    if (_patch_material) {
-      auto* const cb = _patch_material->constant_buffer.get();
-      _device_context->PSSetConstantBuffers(2, 1, &cb);
-
       _game_textures[0] = _patch_material->fail_safe_game_texture;
       _ps_textures_dirty = true;
 
@@ -1287,25 +1284,30 @@ void Shader_patch::game_rendertype_changed() noexcept
          _game_textures[0] = {_game_rendertargets[0].srv, _game_rendertargets[0].srv};
       }
    }
-   else if (_shader_rendertype == Rendertype::skyfog && _oit_provider.enabled()) {
+   else if (_shader_rendertype == Rendertype::skyfog) {
       _on_rendertype_changed = [&]() noexcept
       {
-         _oit_provider.prepare_resources(*_device_context,
-                                         *_game_rendertargets[0].texture,
-                                         *_game_rendertargets[0].rtv);
+         resolve_refraction_texture();
+
+         if (_oit_provider.enabled()) {
+            _oit_provider.prepare_resources(*_device_context,
+                                            *_game_rendertargets[0].texture,
+                                            *_game_rendertargets[0].rtv);
+            _om_targets_dirty = true;
+            _oit_active = true;
+
+            _on_stretch_rendertarget = [&](Game_rendertarget&, const RECT,
+                                           Game_rendertarget&, const RECT dest_rect) noexcept
+            {
+               if (dest_rect.left == 0 && dest_rect.top == 0 &&
+                   dest_rect.bottom == 256 && dest_rect.right == 256)
+                  return;
+
+               resolve_oit();
+            };
+         }
+
          _on_rendertype_changed = nullptr;
-         _om_targets_dirty = true;
-         _oit_active = true;
-
-         _on_stretch_rendertarget = [&](Game_rendertarget&, const RECT,
-                                        Game_rendertarget&, const RECT dest_rect) noexcept
-         {
-            if (dest_rect.left == 0 && dest_rect.top == 0 &&
-                dest_rect.bottom == 256 && dest_rect.right == 256)
-               return;
-
-            resolve_oit();
-         };
       };
    }
 
@@ -1635,10 +1637,12 @@ void Shader_patch::update_shader() noexcept
 
 void Shader_patch::update_frame_state() noexcept
 {
-   const auto time = std::chrono::steady_clock{}.now().time_since_epoch();
+   using namespace std::chrono;
+   const auto time = steady_clock{}.now().time_since_epoch();
 
    _cb_scene_dirty = true;
-   _cb_scene.time = std::chrono::duration<float>{(time % 30s)}.count();
+   _cb_scene.time = duration<float>{(time % 30s)}.count();
+   _cb_draw_ps.time_seconds = duration_cast<duration<float>>((time % 3600s)).count();
 
    _refraction_farscene_texture_resolve = false;
    _refraction_nearscene_texture_resolve = false;
@@ -1728,6 +1732,9 @@ void Shader_patch::update_rendertargets() noexcept
    _patch_backbuffer = {};
    _cmaa2_scratch_texture = {};
    _shadow_msaa_rt = {};
+   _refraction_rt =
+      Game_rendertarget{*_device, _current_rt_format, _swapchain.width() / 2,
+                        _swapchain.height() / 2, 1};
 
    if (_rt_sample_count > 1) {
       _patch_backbuffer =
@@ -1775,6 +1782,12 @@ void Shader_patch::update_rendertargets() noexcept
                                                  _game_rendertargets[i].width,
                                                  _game_rendertargets[i].height};
    }
+
+   _shader_resource_database.insert(_refraction_rt.srv, refraction_texture_name);
+
+   for (auto& mat : _materials) {
+      mat->update_resources(_shader_resource_database);
+   }
 }
 
 void Shader_patch::update_samplers() noexcept
@@ -1809,7 +1822,9 @@ void Shader_patch::set_linear_rendering(bool linear_rendering) noexcept
 
 void Shader_patch::resolve_refraction_texture() noexcept
 {
-   if (_current_depthstencil_id == Game_depthstencil::farscene) {
+   const bool far_scene = _current_depthstencil_id == Game_depthstencil::farscene;
+
+   if (far_scene) {
       if (std::exchange(_refraction_farscene_texture_resolve, true)) return;
    }
    else {
@@ -1817,7 +1832,8 @@ void Shader_patch::resolve_refraction_texture() noexcept
    }
 
    const auto& src_rt =
-      _game_rendertargets[static_cast<int>(_current_game_rendertarget)];
+      far_scene ? _game_rendertargets[static_cast<int>(_current_game_rendertarget)]
+                : _game_rendertargets[0];
 
    const D3D11_BOX src_box{0, 0, 0, src_rt.width, src_rt.height, 1};
    const D3D11_BOX dest_box{0,
@@ -1902,5 +1918,10 @@ void Shader_patch::restore_all_game_state() noexcept
    _primitive_topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
 
    bind_static_resources();
+
+   if (_patch_material) {
+      _patch_material->bind_constant_buffers(*_device_context);
+      _patch_material->bind_shader_resources(*_device_context);
+   }
 }
 }

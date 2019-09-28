@@ -67,8 +67,22 @@ Patch_material::Patch_material(Material_config material_config,
      name{std::move(material_config.name)},
      rendertype{material_config.rendertype},
      cb_name{material_config.cb_name},
-     properties{material_config.properties}
+     properties{material_config.properties},
+     vs_shader_resources_names{material_config.vs_resources},
+     hs_shader_resources_names{material_config.hs_resources},
+     ds_shader_resources_names{material_config.ds_resources},
+     gs_shader_resources_names{material_config.gs_resources},
+     ps_shader_resources_names{material_config.ps_resources}
 {
+}
+
+void Patch_material::update_resources(const Shader_resource_database& resource_database) noexcept
+{
+   vs_shader_resources = init_resources(vs_shader_resources_names, resource_database);
+   hs_shader_resources = init_resources(hs_shader_resources_names, resource_database);
+   ds_shader_resources = init_resources(ds_shader_resources_names, resource_database);
+   gs_shader_resources = init_resources(gs_shader_resources_names, resource_database);
+   ps_shader_resources = init_resources(ps_shader_resources_names, resource_database);
 }
 
 void Patch_material::bind_constant_buffers(ID3D11DeviceContext1& dc) noexcept

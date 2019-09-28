@@ -169,6 +169,7 @@
     <None Include="definitions\patch\scene_blur.json" />
     <None Include="definitions\patch\scope_blur.json" />
     <None Include="definitions\patch\skybox.json" />
+    <None Include="definitions\patch\static_water.json" />
     <None Include="shader_declarations.req">
       <FileType>Document</FileType>
     </None>
@@ -503,6 +504,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\bloom_alt.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\static_water.fx">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

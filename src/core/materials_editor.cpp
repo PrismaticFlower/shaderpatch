@@ -100,7 +100,8 @@ void property_editor(const std::string& name, Material_var<bool>& var) noexcept
 }
 
 void resources_editor(Shader_resource_database& resources,
-                      std::vector<Com_ptr<ID3D11ShaderResourceView>>& srvs)
+                      std::vector<Com_ptr<ID3D11ShaderResourceView>>& srvs,
+                      std::vector<std::string>& srv_names)
 {
    for (auto i = 0; i < srvs.size(); ++i) {
       if (!srvs[i]) continue;
@@ -122,10 +123,15 @@ void resources_editor(Shader_resource_database& resources,
          }
       }
 
-      if (ImGui::BeginPopup("Resource Picker")) {
-         auto* new_srv = resources.imgui_resource_picker();
+      if (ImGui::IsItemHovered()) ImGui::SetTooltip(srv_names[i].c_str());
 
-         if (new_srv) srvs[i] = copy_raw_com_ptr(new_srv);
+      if (ImGui::BeginPopup("Resource Picker")) {
+         auto [new_srv, name] = resources.imgui_resource_picker();
+
+         if (new_srv) {
+            srvs[i] = copy_raw_com_ptr(new_srv);
+            srv_names[i] = name;
+         }
 
          ImGui::EndPopup();
       }
@@ -151,19 +157,25 @@ void material_editor(ID3D11Device5& device, Shader_resource_database& resources,
 
    const auto create_resource_editor =
       [&resources](const char* const name,
-                   std::vector<Com_ptr<ID3D11ShaderResourceView>>& srvs) {
+                   std::vector<Com_ptr<ID3D11ShaderResourceView>>& srvs,
+                   std::vector<std::string>& srv_names) {
          if (!srvs.empty() && ImGui::TreeNode(name)) {
-            resources_editor(resources, srvs);
+            resources_editor(resources, srvs, srv_names);
 
             ImGui::TreePop();
          }
       };
 
-   create_resource_editor("VS Shader Resources", material.vs_shader_resources);
-   create_resource_editor("HS Shader Resources", material.hs_shader_resources);
-   create_resource_editor("DS Shader Resources", material.ds_shader_resources);
-   create_resource_editor("GS Shader Resources", material.gs_shader_resources);
-   create_resource_editor("PS Shader Resources", material.ps_shader_resources);
+   create_resource_editor("VS Shader Resources", material.vs_shader_resources,
+                          material.vs_shader_resources_names);
+   create_resource_editor("HS Shader Resources", material.hs_shader_resources,
+                          material.hs_shader_resources_names);
+   create_resource_editor("DS Shader Resources", material.ds_shader_resources,
+                          material.ds_shader_resources_names);
+   create_resource_editor("GS Shader Resources", material.gs_shader_resources,
+                          material.gs_shader_resources_names);
+   create_resource_editor("PS Shader Resources", material.ps_shader_resources,
+                          material.ps_shader_resources_names);
 
    if (ImGui::TreeNode("Advanced")) {
       ImGui::Text("Rendertype: %s", material.rendertype.c_str());
@@ -182,7 +194,7 @@ void material_editor(ID3D11Device5& device, Shader_resource_database& resources,
          }
 
          if (ImGui::BeginPopup("Texture Picker")) {
-            auto* new_srv = resources.imgui_resource_picker();
+            auto [new_srv, name] = resources.imgui_resource_picker();
 
             if (new_srv)
                material.fail_safe_game_texture.srv = copy_raw_com_ptr(new_srv);

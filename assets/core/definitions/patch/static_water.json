@@ -1,0 +1,135 @@
+{
+  "group_name": "static water",
+  "source_name": "static_water.fx",
+
+  "entrypoints": {
+    "main_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": true,
+          "normal": true,
+          "tangents": true,
+          "color": true,
+          "texture_coords": true
+        },
+
+        "flags_mask": {
+          "tangents": false
+        }
+      },
+
+      "defines": [
+        [ "STATIC_WATER_USE_SPECULAR", "0" ]
+      ]
+    },
+
+    "main_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": true
+      },
+
+      "static_flags": [
+        "STATIC_WATER_USE_SPECULAR"
+      ]
+    },
+
+    "oit_main_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": true
+      },
+
+      "static_flags": [
+        "STATIC_WATER_USE_SPECULAR"
+      ]
+    }
+  },
+
+  "rendertypes": {
+    "static_water": {
+      "static_flags": {
+        "STATIC_WATER_USE_SPECULAR": false
+      }
+    },
+    "static_water.specular": {
+      "static_flags": {
+        "STATIC_WATER_USE_SPECULAR": true
+      }
+    }
+  },
+
+  "states": {
+    "near transparent": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      },
+
+      "oit_pixel_shader": {
+        "entrypoint": "oit_main_ps"
+      }
+    },
+
+    "near transparent projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      },
+
+      "oit_pixel_shader": {
+        "entrypoint": "oit_main_ps"
+      }
+    },
+
+    "near transparent shadow": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      },
+
+      "oit_pixel_shader": {
+        "entrypoint": "oit_main_ps"
+      }
+    },
+
+    "near transparent shadow projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      },
+
+      "oit_pixel_shader": {
+        "entrypoint": "oit_main_ps"
+      }
+    }
+  }
+} }

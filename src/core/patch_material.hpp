@@ -22,6 +22,8 @@ struct Patch_material {
                   const Shader_resource_database& texture_database,
                   ID3D11Device5& device);
 
+   void update_resources(const Shader_resource_database& resource_database) noexcept;
+
    void bind_constant_buffers(ID3D11DeviceContext1& dc) noexcept;
 
    void bind_shader_resources(ID3D11DeviceContext1& dc) noexcept;
@@ -59,6 +61,11 @@ struct Patch_material {
    const std::string rendertype;
    const std::string cb_name;
    std::vector<Material_property> properties;
+   std::vector<std::string> vs_shader_resources_names;
+   std::vector<std::string> hs_shader_resources_names;
+   std::vector<std::string> ds_shader_resources_names;
+   std::vector<std::string> gs_shader_resources_names;
+   std::vector<std::string> ps_shader_resources_names;
 };
 
 }
