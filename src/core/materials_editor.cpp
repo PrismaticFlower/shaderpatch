@@ -3,6 +3,7 @@
 #include "material_constant_buffers.hpp"
 
 #include <algorithm>
+#include <type_traits>
 
 #include <imgui.h>
 
@@ -10,86 +11,40 @@ namespace sp::core {
 
 namespace {
 
-void property_editor(const std::string& name, Material_var<float>& var) noexcept
+template<typename Type>
+constexpr auto property_datatype() noexcept -> ImGuiDataType
 {
-   ImGui::InputFloat(name.c_str(), &var.value);
-
-   var.value = std::clamp(var.value, var.min, var.max);
+   if constexpr (std::is_same_v<Type, glm::uint8>) return ImGuiDataType_U8;
+   if constexpr (std::is_same_v<Type, glm::uint16>) return ImGuiDataType_U16;
+   if constexpr (std::is_same_v<Type, glm::uint32>) return ImGuiDataType_U32;
+   if constexpr (std::is_same_v<Type, glm::uint64>) return ImGuiDataType_U64;
+   if constexpr (std::is_same_v<Type, glm::int8>) return ImGuiDataType_S8;
+   if constexpr (std::is_same_v<Type, glm::int16>) return ImGuiDataType_S16;
+   if constexpr (std::is_same_v<Type, glm::int32>) return ImGuiDataType_S32;
+   if constexpr (std::is_same_v<Type, glm::int64>) return ImGuiDataType_S64;
+   if constexpr (std::is_same_v<Type, float>) return ImGuiDataType_Float;
+   if constexpr (std::is_same_v<Type, float>) return ImGuiDataType_Double;
 }
 
-void property_editor(const std::string& name, Material_var<glm::vec2>& var) noexcept
+template<typename Type>
+struct Property_traits {
+   inline constexpr static auto data_type = property_datatype<Type>();
+   inline constexpr static auto length = 1;
+};
+
+template<typename Type, std::size_t len>
+struct Property_traits<glm::vec<len, Type>> {
+   inline constexpr static auto data_type = property_datatype<Type>();
+   inline constexpr static auto length = len;
+};
+
+constexpr auto v = Property_traits<float>::length;
+
+template<typename Var_type>
+void property_editor(const std::string& name, Material_var<Var_type>& var) noexcept
 {
-   ImGui::InputFloat2(name.c_str(), &var.value.x);
-
-   var.value = glm::clamp(var.value, var.min, var.max);
-}
-
-void property_editor(const std::string& name, Material_var<glm::vec3>& var) noexcept
-{
-   ImGui::InputFloat3(name.c_str(), &var.value.x);
-
-   var.value = glm::clamp(var.value, var.min, var.max);
-}
-
-void property_editor(const std::string& name, Material_var<glm::vec4>& var) noexcept
-{
-   ImGui::InputFloat4(name.c_str(), &var.value.x);
-
-   var.value = glm::clamp(var.value, var.min, var.max);
-}
-
-void property_editor(const std::string& name, Material_var<std::int32_t>& var) noexcept
-{
-   ImGui::InputInt(name.c_str(), &var.value);
-
-   var.value = std::clamp(var.value, var.min, var.max);
-}
-
-void property_editor(const std::string& name, Material_var<glm::ivec2>& var) noexcept
-{
-   ImGui::InputInt2(name.c_str(), &var.value.x);
-
-   var.value = glm::clamp(var.value, var.min, var.max);
-}
-
-void property_editor(const std::string& name, Material_var<glm::ivec3>& var) noexcept
-{
-   ImGui::InputInt3(name.c_str(), &var.value.x);
-
-   var.value = glm::clamp(var.value, var.min, var.max);
-}
-
-void property_editor(const std::string& name, Material_var<glm::ivec4>& var) noexcept
-{
-   ImGui::InputInt4(name.c_str(), &var.value.x);
-
-   var.value = glm::clamp(var.value, var.min, var.max);
-}
-
-void property_editor(const std::string& name, Material_var<std::uint32_t>& var) noexcept
-{
-   ImGui::InputScalar(name.c_str(), ImGuiDataType_U32, &var.value);
-
-   var.value = std::clamp(var.value, var.min, var.max);
-}
-
-void property_editor(const std::string& name, Material_var<glm::uvec2>& var) noexcept
-{
-   ImGui::InputScalarN(name.c_str(), ImGuiDataType_U32, &var.value.x, 2);
-
-   var.value = glm::clamp(var.value, var.min, var.max);
-}
-
-void property_editor(const std::string& name, Material_var<glm::uvec3>& var) noexcept
-{
-   ImGui::InputScalarN(name.c_str(), ImGuiDataType_U32, &var.value.x, 3);
-
-   var.value = glm::clamp(var.value, var.min, var.max);
-}
-
-void property_editor(const std::string& name, Material_var<glm::uvec4>& var) noexcept
-{
-   ImGui::InputScalarN(name.c_str(), ImGuiDataType_U32, &var.value.x, 4);
+   ImGui::DragScalarN(name.c_str(), Property_traits<Var_type>::data_type, &var.value,
+                      Property_traits<Var_type>::length, 0.01f, &var.min, &var.max);
 
    var.value = glm::clamp(var.value, var.min, var.max);
 }
