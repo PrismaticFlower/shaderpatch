@@ -156,14 +156,16 @@ auto fold_cubemap(DX::ScratchImage image)
 
 auto remap_roughness_channels(DX::ScratchImage image) -> DirectX::ScratchImage
 {
-   const auto process_image = [&](Image_span dest_image) noexcept {
-      for_each(std::execution::par_unseq, dest_image, [&](const glm::ivec2 index) noexcept {
-         auto value = dest_image.load(index);
+   const auto process_image = [&](Image_span dest_image) noexcept
+   {
+      for_each(
+         std::execution::par_unseq, dest_image, [&](const glm::ivec2 index) noexcept {
+            auto value = dest_image.load(index);
 
-         value = {0.0f, value.r, 0.0f, 0.0f};
+            value = {0.0f, value.r, 0.0f, 0.0f};
 
-         dest_image.store(index, value);
-      });
+            dest_image.store(index, value);
+         });
    };
 
    for (auto index = 0; index < image.GetMetadata().arraySize; ++index) {
@@ -186,45 +188,47 @@ auto specular_anti_alias(DX::ScratchImage source_image, DX::ScratchImage normal_
    const glm::uvec2 normal_map_size{normal_map.GetMetadata().width,
                                     normal_map.GetMetadata().height};
 
-   const auto sample_average_normal =
-      [normal_map_span =
-          Image_span{*normal_map.GetImage(0, 0, 0)}](const glm::ivec2 position,
-                                                     const glm::ivec2 radius) noexcept {
-         glm::vec3 normal{};
+   const auto sample_average_normal = [normal_map_span =
+                                          Image_span{*normal_map.GetImage(0, 0, 0)}](
+      const glm::ivec2 position, const glm::ivec2 radius) noexcept
+   {
+      glm::vec3 normal{};
 
-         const auto offset = position * radius;
+      const auto offset = position * radius;
 
-         for (auto y = 0; y < radius.y; ++y) {
-            for (auto x = 0; x < radius.x; ++x) {
-               normal += glm::normalize(
-                  normal_map_span.load({offset + glm::ivec2{x, y}}).xyz * 2.0f - 1.0f);
-            }
+      for (auto y = 0; y < radius.y; ++y) {
+         for (auto x = 0; x < radius.x; ++x) {
+            normal += glm::normalize(
+               normal_map_span.load({offset + glm::ivec2{x, y}}).xyz * 2.0f - 1.0f);
          }
+      }
 
-         return normal / static_cast<float>(radius.x * radius.y);
-      };
+      return normal / static_cast<float>(radius.x * radius.y);
+   };
 
-   const auto process_mip = [&](const std::size_t index, const std::size_t mip) noexcept {
+   const auto process_mip = [&](const std::size_t index, const std::size_t mip) noexcept
+   {
       auto dest_image = Image_span{*source_image.GetImage(mip, index, 0)};
 
       const auto radius = normal_map_size / glm::uvec2{dest_image.size()};
 
       if (!glm::any(glm::greaterThan(radius, glm::uvec2{1}))) return;
 
-      for_each(std::execution::par_unseq, dest_image, [&](const glm::ivec2 index) noexcept {
-         glm::vec3 average_normal = sample_average_normal(index, radius);
+      for_each(
+         std::execution::par_unseq, dest_image, [&](const glm::ivec2 index) noexcept {
+            glm::vec3 average_normal = sample_average_normal(index, radius);
 
-         const float r = length(average_normal);
-         float k = 10000.0f;
+            const float r = length(average_normal);
+            float k = 10000.0f;
 
-         if (r < 1.f) k = (3.f * r - r * r * r) / (1.f - r * r);
+            if (r < 1.f) k = (3.f * r - r * r * r) / (1.f - r * r);
 
-         auto value = dest_image.load(index);
+            auto value = dest_image.load(index);
 
-         value.g = glm::sqrt(value.g * value.g + (1.f / k));
+            value.g = glm::sqrt(value.g * value.g + (1.f / k));
 
-         dest_image.store(index, value);
-      });
+            dest_image.store(index, value);
+         });
    };
 
    for (auto index = 0; index < source_image.GetMetadata().arraySize; ++index) {
@@ -238,14 +242,16 @@ auto specular_anti_alias(DX::ScratchImage source_image, DX::ScratchImage normal_
 
 auto premultiply_alpha(DX::ScratchImage image) -> DX::ScratchImage
 {
-   const auto process_image = [&](Image_span dest_image) noexcept {
-      for_each(std::execution::par_unseq, dest_image, [&](const glm::ivec2 index) noexcept {
-         auto value = dest_image.load(index);
+   const auto process_image = [&](Image_span dest_image) noexcept
+   {
+      for_each(
+         std::execution::par_unseq, dest_image, [&](const glm::ivec2 index) noexcept {
+            auto value = dest_image.load(index);
 
-         value.rgb = value.rgb * value.a;
+            value.rgb = value.rgb * value.a;
 
-         dest_image.store(index, value);
-      });
+            dest_image.store(index, value);
+         });
    };
 
    for (auto index = 0; index < image.GetMetadata().arraySize; ++index) {
@@ -331,7 +337,8 @@ auto mipmap_normalmap(DX::ScratchImage image) noexcept
    DX::ScratchImage mipped_image;
    mipped_image.Initialize(metadata);
 
-   const auto copy_and_normalize_image = [&](const UINT index, const UINT mip) noexcept {
+   const auto copy_and_normalize_image = [&](const UINT index, const UINT mip) noexcept
+   {
       const auto src_image = Image_span{*image.GetImage(mip, index, 0)};
       auto dest_image = Image_span{*mipped_image.GetImage(mip, index, 0)};
 
@@ -348,9 +355,12 @@ auto mipmap_normalmap(DX::ScratchImage image) noexcept
       copy_and_normalize_image(index, 0);
 
       for (auto mip = 1; mip < mipped_image.GetMetadata().mipLevels; ++mip) {
-         const auto sample_average_normal =
-            [upper_image = Image_span{*mipped_image.GetImage(mip - 1, index, 0)}](
-               const glm::ivec2 offset) noexcept -> glm::vec4 {
+         const auto sample_average_normal = [upper_image =
+                                                Image_span{
+                                                   *mipped_image.GetImage(mip - 1, index,
+                                                                          0)}](
+                                               const glm::ivec2 offset) noexcept->glm::vec4
+         {
             glm::vec3 normal{};
             float alpha = 0.0f;
 
@@ -551,13 +561,6 @@ auto process_image(const YAML::Node& config,
    if (type == Texture_type::roughness || type == Texture_type::metellic_roughness) {
       if (paired_image) {
          image = specular_anti_alias(std::move(image), std::move(*paired_image));
-      }
-      else {
-         synced_print(
-            "Image ", image_file_path,
-            " is intended for use as a roughness map without "
-            "a paired normal map reference, specular AA can not be "
-            "applied without it. If this is intentional then ignore this.");
       }
    }
 
