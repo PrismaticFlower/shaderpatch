@@ -102,7 +102,7 @@ void terrain_sample_heightmaps(Texture2DArray<float1> height_maps,
 
    [unroll] for (int i = 0; i < 3; ++i)
    {
-      [branch] if (vertex_texture_blend[i] > 0.0)
+      [branch] if (vertex_texture_blend[i] > 0.0 && height_scales[i] > 0.0)
       {
          parallax_height_map.index = texcoords[i].z;
 
@@ -116,10 +116,10 @@ void terrain_sample_heightmaps(Texture2DArray<float1> height_maps,
                parallax_occlusion_map(parallax_height_map, height_scales[i],
                                       texcoords[i].xy, unorm_viewTS);
          }
+      }
 
-         if (!terrain_common_basic_blending) {
-            heights[i] = height_maps.Sample(aniso_wrap_sampler, texcoords[i]);
-         }
+      if (!terrain_common_basic_blending) {
+         heights[i] = height_maps.Sample(aniso_wrap_sampler, texcoords[i]);
       }
    }
 }
