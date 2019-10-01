@@ -42,6 +42,21 @@ public:
 
    HRESULT __stdcall GetDisplayMode(UINT swap_chain, D3DDISPLAYMODE* mode) noexcept override;
 
+   HRESULT __stdcall SetCursorProperties(UINT, UINT, IDirect3DSurface9*) noexcept override
+   {
+      return S_OK;
+   }
+
+   void __stdcall SetCursorPosition(int, int, DWORD) noexcept override
+   {
+      return;
+   }
+
+   BOOL __stdcall ShowCursor(BOOL) noexcept override
+   {
+      return false;
+   }
+
    HRESULT __stdcall Reset(D3DPRESENT_PARAMETERS* presentation_parameters) noexcept override;
 
    HRESULT __stdcall Present(const RECT* source_rect, const RECT* dest_rect,
@@ -196,22 +211,6 @@ public:
 
    HRESULT __stdcall CreateQuery(D3DQUERYTYPE type,
                                  IDirect3DQuery9** query) noexcept override;
-
-   [[deprecated("unimplemented")]] HRESULT __stdcall SetCursorProperties(
-      UINT, UINT, IDirect3DSurface9*) noexcept override
-   {
-      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
-   }
-
-   [[deprecated("unimplemented")]] void __stdcall SetCursorPosition(int, int, DWORD) noexcept override
-   {
-      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
-   }
-
-   [[deprecated("unimplemented")]] BOOL __stdcall ShowCursor(BOOL) noexcept
-   {
-      log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
-   }
 
    [[deprecated("unimplemented")]] HRESULT __stdcall CreateRenderTarget(
       UINT, UINT, D3DFORMAT, D3DMULTISAMPLE_TYPE, DWORD, BOOL,
