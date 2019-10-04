@@ -207,6 +207,9 @@
     <ClCompile Include="src\imgui\imgui_stdlib.cpp">
       <Filter>src\imgui</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\basic_builtin_textures.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -460,6 +463,9 @@
     </ClInclude>
     <ClInclude Include="src\imgui\imgui_stdlib.h">
       <Filter>src\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\basic_builtin_textures.hpp">
+      <Filter>src\core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

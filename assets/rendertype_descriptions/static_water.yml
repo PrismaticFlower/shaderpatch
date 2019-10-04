@@ -93,10 +93,15 @@ Texture Mappings:
       -
          Stage: PS
          Slot: 1
-   RefractionMap:
+   DepthBuffer:
       -
          Stage: PS
          Slot: 2
+   RefractionMap:
+      -
+         Stage: PS
+         Slot: 3
 
 Default Textures:
+   DepthBuffer: $depth
    RefractionMap: $refraction

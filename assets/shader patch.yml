@@ -44,6 +44,12 @@ Graphics:
    # 
    # In some cases the alternative path may produce results that do not exactly match the intended look of a map.
    Enable Alternative Post Processing: yes
+   
+   # Quality level of refractions. Can be "Low", "Medium", "High" or "Ultra".
+   # "Low" sets the resolution of the refractions to 1/4 screen resolution, Medium 1/2, High 1/2 and Ultra matches screen resolution.
+   #
+   # On "High" or "Ultra" refractions will also be masked using the depth buffer.
+   Refraction Quality: Medium
 
    # Whether to let custom materials use tessellation shaders or not. On older GPUs this
    # may cause a performance hit.

@@ -139,6 +139,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\bf2_log_monitor.cpp" />
+    <ClCompile Include="src\core\basic_builtin_textures.cpp" />
     <ClCompile Include="src\core\d3d11_helpers.cpp" />
     <ClCompile Include="src\core\depth_msaa_resolver.cpp" />
     <ClCompile Include="src\core\game_alt_postprocessing.cpp" />
@@ -182,7 +183,10 @@
     <ClCompile Include="src\direct3d\upload_texture.cpp" />
     <ClCompile Include="src\direct3d\vertex_declaration.cpp" />
     <ClCompile Include="src\direct3d\vertex_shader.cpp" />
-    <ClCompile Include="src\direct3d\creator.cpp" />
+    <ClCompile Include="src\direct3d\creator.cpp">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;GLM_FORCE_SILENT_WARNINGS;GLM_FORCE_CXX17;_ENABLE_EXTENDED_ALIGNED_STORAGE=1;NOMINMAX;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;GLM_FORCE_SILENT_WARNINGS;GLM_FORCE_CXX17;_ENABLE_EXTENDED_ALIGNED_STORAGE=1;NOMINMAX;NDEBUG;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
     <ClCompile Include="src\effects\assao\ASSAODX11.cpp">
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4275;4251;4127;4018;4201;4189;4505;4389</DisableSpecificWarnings>
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4275;4251;4127;4018;4201;4189;4505;4389</DisableSpecificWarnings>
@@ -205,6 +209,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\bf2_log_monitor.hpp" />
+    <ClInclude Include="src\core\basic_builtin_textures.hpp" />
     <ClInclude Include="src\core\constant_buffers.hpp" />
     <ClInclude Include="src\core\depthstencil.hpp" />
     <ClInclude Include="src\core\depth_msaa_resolver.hpp" />

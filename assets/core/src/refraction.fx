@@ -1,9 +1,11 @@
-#include "adaptive_oit.hlsl" 
+#include "adaptive_oit.hlsl"
 #include "generic_vertex_input.hlsl"
-#include "vertex_utilities.hlsl"
-#include "vertex_transformer.hlsl"
 #include "lighting_utilities.hlsl"
 #include "pixel_utilities.hlsl"
+#include "vertex_transformer.hlsl"
+#include "vertex_utilities.hlsl"
+
+// clang-format off
 
 const static float distort_blend = ps_custom_constants[0].a;
 
@@ -82,7 +84,9 @@ Vs_nodistortion_output nodistortion_vs(Vertex_input input)
 struct Vs_distortion_output
 {
    float3 positionWS : POSITIONWS;
+   float  scene_texcoords_x : SCENETEXCOORDSX;
    float3 normalWS : NORMALWS;
+   float  scene_texcoords_y : SCENETEXCOORDSY;
 
    float2 bump_texcoords : TEXCOORD0;
    float3 distortion_texcoords : TEXCOORD1;
@@ -123,11 +127,14 @@ Vs_distortion_output distortion_vs(Vertex_input input)
    const float3 positionWS = transformer.positionWS();
    const float4 positionPS = transformer.positionPS();
    const float3 normalOS = transformer.normalOS();
+   const float2 scene_texcoords = (positionPS.xy / positionPS.w) * float2(0.5, -0.5) + 0.5;
 
    output.positionWS = positionWS;
    output.positionPS = positionPS;
    output.normalWS = transformer.normalWS();
 
+   output.scene_texcoords_x = scene_texcoords.x;
+   output.scene_texcoords_y = scene_texcoords.y;
    output.distortion_texcoords = distortion_texcoords(normalOS, positionOS,
                                                       distort_constant, distort_transform);
    output.projection_texcoords = mul(float4(positionWS, 1.0), light_proj_matrix).xyww;
@@ -178,14 +185,17 @@ float4 nodistortion_ps(Ps_nodistortion_input input,
 }
 
 Texture2D<float2> bump_texture : register(t0);
-Texture2D<float3> refraction_buffer : register(t4);
 Texture2D<float4> diffuse_texture : register(t2);
 Texture2D<float3> projection_texture : register(t3);
+Texture2D<float3> refraction_buffer : register(t4);
+Texture2D<float> depth_buffer : register(t5);
 
 struct Ps_near_input
 {
    float3 positionWS : POSITIONWS;
+   float  scene_texcoords_x : SCENETEXCOORDSX;
    float3 normalWS : NORMALWS;
+   float  scene_texcoords_y : SCENETEXCOORDSY;
 
    float2 bump_texcoords : TEXCOORD0;
    float3 distortion_texcoords : TEXCOORD1;
@@ -196,7 +206,32 @@ struct Ps_near_input
    float3 static_lighting : STATICLIGHT;
 
    float fog : FOG;
+
+   float4 positionSS : SV_Position;
 };
+
+float3 sample_distort_scene(float3 distort_texcoords, float2 scene_texcoords, float depth)
+{
+   float2 texcoords = distort_texcoords.xy / distort_texcoords.z;
+   
+   const float4 scene_depth = depth_buffer.Gather(linear_clamp_sampler, texcoords);
+   texcoords = (all(scene_depth > depth)) ? texcoords : scene_texcoords;
+
+   return refraction_buffer.SampleLevel(linear_wrap_sampler, texcoords, 0);
+}
+
+float3 sample_distort_scene(float3 distort_texcoords, float2 bump, float2 scene_texcoords, float depth)
+{
+   const static float2x2 bump_transform = {0.002f, -0.015f, 0.015f, 0.002f};
+
+   float2 texcoords = distort_texcoords.xy / distort_texcoords.z;
+   texcoords += mul(bump, bump_transform);
+   
+   const float4 scene_depth = depth_buffer.Gather(linear_clamp_sampler, texcoords);
+   texcoords = (all(scene_depth > depth)) ? texcoords : scene_texcoords;
+
+   return refraction_buffer.Sample(linear_wrap_sampler, texcoords, 0);
+}
 
 float4 near_diffuse_ps(Ps_near_input input) : SV_Target0
 {
@@ -209,10 +244,9 @@ float4 near_diffuse_ps(Ps_near_input input) : SV_Target0
                                         input.static_lighting, true,
                                         projection_texture_color);
 
-   const float2 distortion_texcoords = 
-      input.distortion_texcoords.xy / input.distortion_texcoords.z;
+   const float2 scene_texcoords = float2(input.scene_texcoords_x, input.scene_texcoords_y);
    const float3 distortion_color = 
-      refraction_buffer.SampleLevel(linear_wrap_sampler, distortion_texcoords, 0);
+      sample_distort_scene(input.distortion_texcoords, scene_texcoords, input.positionSS.z);
 
    const float4 diffuse_color = diffuse_texture.Sample(aniso_wrap_sampler,
                                                        input.diffuse_texcoords);
@@ -237,11 +271,10 @@ float4 near_ps(Ps_near_input input) : SV_Target0
    Lighting lighting = light::calculate(normalize(input.normalWS), input.positionWS,
                                         input.static_lighting, true,
                                         projection_texture_color);
-
-   const float2 distortion_texcoords =
-      input.distortion_texcoords.xy / input.distortion_texcoords.z;
-   const float3 distortion_color =
-      refraction_buffer.SampleLevel(linear_wrap_sampler, distortion_texcoords, 0);
+   
+   const float2 scene_texcoords = float2(input.scene_texcoords_x, input.scene_texcoords_y);
+   const float3 distortion_color = 
+      sample_distort_scene(input.distortion_texcoords, scene_texcoords, input.positionSS.z);
 
    float3 color = input.material_color_fade.rgb * lighting.color;
 
@@ -249,16 +282,6 @@ float4 near_ps(Ps_near_input input) : SV_Target0
    color = apply_fog(color, input.fog);
 
    return float4(color, input.material_color_fade.a);
-}
-
-float3 sample_distort_scene(float3 distort_texcoords, float2 bump)
-{
-   const static float2x2 bump_transform = {0.002f, -0.015f, 0.015f, 0.002f};
-
-   float2 texcoords = distort_texcoords.xy / distort_texcoords.z;
-   texcoords += mul(bump, bump_transform);
-
-   return refraction_buffer.Sample(linear_wrap_sampler, texcoords);
 }
 
 float4 near_diffuse_bump_ps(Ps_near_input input) : SV_Target0
@@ -278,7 +301,9 @@ float4 near_diffuse_bump_ps(Ps_near_input input) : SV_Target0
    float3 color = (diffuse_color.rgb * input.material_color_fade.rgb) * lighting.color;
 
    const float2 bump = bump_texture.Sample(aniso_wrap_sampler, input.bump_texcoords);
-   const float3 distortion_color = sample_distort_scene(input.distortion_texcoords, bump);
+   const float2 scene_texcoords = float2(input.scene_texcoords_x, input.scene_texcoords_y);
+   const float3 distortion_color = sample_distort_scene(input.distortion_texcoords, bump, 
+                                                        scene_texcoords, input.positionSS.z);
 
    float blend = -diffuse_color.a * distort_blend + diffuse_color.a;
    color = lerp(distortion_color, color, blend);
@@ -302,7 +327,9 @@ float4 near_bump_ps(Ps_near_input input) : SV_Target0
    float3 color = input.material_color_fade.rgb * lighting.color;
 
    const float2 bump = bump_texture.Sample(aniso_wrap_sampler, input.bump_texcoords);
-   const float3 distortion_color = sample_distort_scene(input.distortion_texcoords, bump);
+   const float2 scene_texcoords = float2(input.scene_texcoords_x, input.scene_texcoords_y);
+   const float3 distortion_color = sample_distort_scene(input.distortion_texcoords, bump, 
+                                                        scene_texcoords, input.positionSS.z);
 
    color = lerp(distortion_color, color, distort_blend);
    color = apply_fog(color, input.fog);
@@ -322,33 +349,33 @@ void oit_nodistortion_ps(Ps_nodistortion_input input,
 }
 
 [earlydepthstencil]
-void oit_near_diffuse_ps(Ps_near_input input, float4 positionSS : SV_Position, uint coverage : SV_Coverage)
+void oit_near_diffuse_ps(Ps_near_input input, uint coverage : SV_Coverage)
 {
    const float4 color = near_diffuse_ps(input);
 
-   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, coverage, color);
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, coverage, color);
 }
 
 [earlydepthstencil]
-void oit_near_ps(Ps_near_input input, float4 positionSS : SV_Position, uint coverage : SV_Coverage)
+void oit_near_ps(Ps_near_input input, uint coverage : SV_Coverage)
 {
    const float4 color = near_ps(input);
 
-   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, coverage, color);
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, coverage, color);
 }
 
 [earlydepthstencil]
-void oit_near_diffuse_bump_ps(Ps_near_input input, float4 positionSS : SV_Position, uint coverage : SV_Coverage)
+void oit_near_diffuse_bump_ps(Ps_near_input input, uint coverage : SV_Coverage)
 {
    const float4 color = near_diffuse_bump_ps(input);
 
-   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, coverage, color);
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, coverage, color);
 }
 
 [earlydepthstencil]
-void oit_near_bump_ps(Ps_near_input input, float4 positionSS : SV_Position, uint coverage : SV_Coverage)
+void oit_near_bump_ps(Ps_near_input input, uint coverage : SV_Coverage)
 {
    const float4 color = near_bump_ps(input);
 
-   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, coverage, color);
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, coverage, color);
 }

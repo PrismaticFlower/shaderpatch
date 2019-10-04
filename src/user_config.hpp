@@ -19,7 +19,7 @@
 
 namespace sp {
 
-enum class GPU_selection_method {
+enum class GPU_selection_method : std::int8_t {
    highest_performance,
    lowest_power_usage,
    highest_feature_level,
@@ -27,11 +27,13 @@ enum class GPU_selection_method {
    use_cpu
 };
 
-enum class Antialiasing_method { none, cmaa2, msaax4, msaax8 };
+enum class Antialiasing_method : std::int8_t { none, cmaa2, msaax4, msaax8 };
 
-enum class Anisotropic_filtering { off, x2, x4, x8, x16 };
+enum class Anisotropic_filtering : std::int8_t { off, x2, x4, x8, x16 };
 
-enum class SSAO_quality { fastest, fast, medium, high, highest };
+enum class SSAO_quality : std::int8_t { fastest, fast, medium, high, highest };
+
+enum class Refraction_quality : std::int8_t { low, medium, high, ultra };
 
 struct Effects_user_config {
    bool enabled = true;
@@ -60,8 +62,9 @@ struct User_config {
    struct {
       GPU_selection_method gpu_selection_method =
          GPU_selection_method::highest_performance;
-      Antialiasing_method antialiasing_method = Antialiasing_method::msaax4;
+      Antialiasing_method antialiasing_method = Antialiasing_method::cmaa2;
       Anisotropic_filtering anisotropic_filtering = Anisotropic_filtering::x16;
+      Refraction_quality refraction_quality = Refraction_quality::medium;
       bool enable_oit = false;
       bool enable_alternative_postprocessing = true;
       bool enable_16bit_color_rendering = true;
@@ -266,6 +269,76 @@ inline auto ssao_quality_from_string(const std::string_view string) noexcept -> 
    else {
       return SSAO_quality::medium;
    }
+}
+
+inline auto to_string(const Refraction_quality quality) noexcept -> std::string
+{
+   using namespace std::literals;
+
+   switch (quality) {
+   case Refraction_quality::low:
+      return "Low"s;
+   case Refraction_quality::medium:
+      return "Medium"s;
+   case Refraction_quality::high:
+      return "High"s;
+   case Refraction_quality::ultra:
+      return "Ultra"s;
+   }
+
+   std::terminate();
+}
+
+inline auto refraction_quality_from_string(const std::string_view string) noexcept
+   -> Refraction_quality
+{
+   if (string == to_string(Refraction_quality::low)) {
+      return Refraction_quality::low;
+   }
+   else if (string == to_string(Refraction_quality::medium)) {
+      return Refraction_quality::medium;
+   }
+   else if (string == to_string(Refraction_quality::high)) {
+      return Refraction_quality::high;
+   }
+   else if (string == to_string(Refraction_quality::ultra)) {
+      return Refraction_quality::ultra;
+   }
+   else {
+      return Refraction_quality::medium;
+   }
+}
+
+constexpr auto to_scale_factor(const Refraction_quality quality) noexcept -> int
+{
+   switch (quality) {
+   case Refraction_quality::low:
+      return 4;
+   case Refraction_quality::medium:
+      return 2;
+   case Refraction_quality::high:
+      return 2;
+   case Refraction_quality::ultra:
+      return 1;
+   }
+
+   return 2;
+}
+
+constexpr bool use_depth_refraction_mask(const Refraction_quality quality) noexcept
+{
+   switch (quality) {
+   case Refraction_quality::low:
+      return false;
+   case Refraction_quality::medium:
+      return false;
+   case Refraction_quality::high:
+      return true;
+   case Refraction_quality::ultra:
+      return true;
+   }
+
+   return false;
 }
 
 }

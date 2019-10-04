@@ -1,25 +1,27 @@
-#include "adaptive_oit.hlsl" 
+#include "adaptive_oit.hlsl"
 #include "constants_list.hlsl"
 #include "generic_vertex_input.hlsl"
 #include "normal_ext_common.hlsl"
-#include "vertex_utilities.hlsl"
-#include "vertex_transformer.hlsl"
-#include "pixel_utilities.hlsl"
 #include "pixel_sampler_states.hlsl"
+#include "pixel_utilities.hlsl"
+#include "vertex_transformer.hlsl"
+#include "vertex_utilities.hlsl"
+
+// clang-format off
 
 // Textures
 Texture2D<float3> projected_light_texture : register(ps, t2);
 Texture2D<float4> shadow_map : register(ps, t3);
-Texture2D<float4> diffuse_map : register(ps, t6);
-Texture2D<float4> normal_map : register(ps, t7);
-Texture2D<float>  height_map : register(ps, t8);
-Texture2D<float3> detail_map : register(ps, t9);
-Texture2D<float2> detail_normal_map : register(ps, t10);
-Texture2D<float3> emissive_map : register(ps, t11);
-Texture2D<float4> overlay_diffuse_map : register(ps, t12);
-Texture2D<float4> overlay_normal_map : register(ps, t13);
-Texture2D<float> ao_map : register(ps, t14);
-TextureCube<float3> env_map : register(ps, t15);
+Texture2D<float4> diffuse_map : register(ps, t7);
+Texture2D<float4> normal_map : register(ps, t8);
+Texture2D<float>  height_map : register(ps, t9);
+Texture2D<float3> detail_map : register(ps, t10);
+Texture2D<float2> detail_normal_map : register(ps, t11);
+Texture2D<float3> emissive_map : register(ps, t12);
+Texture2D<float4> overlay_diffuse_map : register(ps, t13);
+Texture2D<float4> overlay_normal_map : register(ps, t14);
+Texture2D<float> ao_map : register(ps, t15);
+TextureCube<float3> env_map : register(ps, t16);
 
 Texture2D<float>  displacement_map : register(ds, t0);
 

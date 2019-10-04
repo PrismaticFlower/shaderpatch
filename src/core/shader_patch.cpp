@@ -4,6 +4,7 @@
 #include "../input_hooker.hpp"
 #include "../logger.hpp"
 #include "../user_config.hpp"
+#include "basic_builtin_textures.hpp"
 #include "materials_editor.hpp"
 #include "patch_material_io.hpp"
 #include "patch_texture_io.hpp"
@@ -27,6 +28,7 @@ constexpr auto shadow_texture_format = DXGI_FORMAT_A8_UNORM;
 constexpr auto flares_texture_format = DXGI_FORMAT_A8_UNORM;
 constexpr auto screenshots_folder = L"ScreenShots/";
 constexpr auto refraction_texture_name = "_SP_BUILTIN_refraction"sv;
+constexpr auto depth_texture_name = "_SP_BUILTIN_depth"sv;
 
 namespace {
 
@@ -103,8 +105,10 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
                          ? std::make_unique<BF2_log_monitor>()
                          : nullptr}
 {
+   add_builtin_textures(*_device, _shader_resource_database);
    bind_static_resources();
    update_rendertargets();
+   update_refraction_target();
 
    _cb_scene.vertex_color_srgb = false;
    _cb_draw_ps.additive_blending = false;
@@ -168,6 +172,8 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
    _aa_method = Antialiasing_method::none;
 
    update_rendertargets();
+   update_refraction_target();
+   update_material_resources();
    restore_all_game_state();
 }
 
@@ -190,6 +196,7 @@ void Shader_patch::present() noexcept
    update_frame_state();
    update_effects();
    update_rendertargets();
+   update_refraction_target();
    update_samplers();
 
    if (_patch_backbuffer) _game_rendertargets[0] = _patch_backbuffer;
@@ -857,7 +864,7 @@ void Shader_patch::clear_depthstencil(const float depth, const UINT8 stencil,
                                       const bool clear_depth,
                                       const bool clear_stencil) noexcept
 {
-   auto* const dsv = current_depthstencil();
+   auto* const dsv = current_depthstencil(false);
 
    if (!dsv) return;
 
@@ -926,11 +933,15 @@ void Shader_patch::set_rasterizer_state(ID3D11RasterizerState& rasterizer_state)
 }
 
 void Shader_patch::set_depthstencil_state(ID3D11DepthStencilState& depthstencil_state,
-                                          const UINT8 stencil_ref) noexcept
+                                          const UINT8 stencil_ref,
+                                          const bool readonly) noexcept
 {
    _game_depthstencil_state = copy_raw_com_ptr(depthstencil_state);
    _game_stencil_ref = stencil_ref;
    _om_depthstencil_state_dirty = true;
+   _om_targets_dirty =
+      _om_targets_dirty |
+      (std::exchange(_om_depthstencil_readonly, readonly) != readonly);
 }
 
 void Shader_patch::set_blend_state(ID3D11BlendState1& blend_state,
@@ -1133,17 +1144,24 @@ auto Shader_patch::get_query_data(ID3D11Query& query, const bool flush,
    return Query_result::error;
 }
 
-auto Shader_patch::current_depthstencil() const noexcept -> ID3D11DepthStencilView*
+auto Shader_patch::current_depthstencil(const bool readonly) const noexcept
+   -> ID3D11DepthStencilView*
 {
-   if (_current_depthstencil_id == Game_depthstencil::nearscene)
-      return _use_interface_depthstencil ? _farscene_depthstencil.dsv.get()
-                                         : _nearscene_depthstencil.dsv.get();
-   else if (_current_depthstencil_id == Game_depthstencil::farscene)
-      return _farscene_depthstencil.dsv.get();
-   else if (_current_depthstencil_id == Game_depthstencil::reflectionscene)
-      return _reflectionscene_depthstencil.dsv.get();
+   const auto depthstencil = [this]() -> const Depthstencil* {
+      if (_current_depthstencil_id == Game_depthstencil::nearscene)
+         return &(_use_interface_depthstencil ? _farscene_depthstencil
+                                              : _nearscene_depthstencil);
+      else if (_current_depthstencil_id == Game_depthstencil::farscene)
+         return &_farscene_depthstencil;
+      else if (_current_depthstencil_id == Game_depthstencil::reflectionscene)
+         return &_reflectionscene_depthstencil;
+      else
+         return nullptr;
+   }();
 
-   return nullptr;
+   if (!depthstencil) return nullptr;
+
+   return readonly ? depthstencil->dsv_readonly.get() : depthstencil->dsv.get();
 }
 
 void Shader_patch::bind_static_resources() noexcept
@@ -1239,17 +1257,51 @@ void Shader_patch::game_rendertype_changed() noexcept
    else if (_shader_rendertype == Rendertype::refraction) {
       resolve_refraction_texture();
 
+      auto depth_srv = _shader_resource_database.at_if(
+         (_current_depthstencil_id == Game_depthstencil::farscene) ? "$null_depth"sv
+                                                                   : "$depth"sv);
       _game_textures[4] = {_refraction_rt.srv, _refraction_rt.srv};
+      _game_textures[5] = {depth_srv, depth_srv};
+
+      _om_targets_dirty = true;
+      _om_depthstencil_force_readonly = true;
+      _ps_textures_dirty = true;
+
+      _on_rendertype_changed = [this]() noexcept
+      {
+         _game_textures[5] = {};
+
+         _om_targets_dirty = true;
+         _om_depthstencil_force_readonly = false;
+         _ps_textures_dirty = true;
+         _on_rendertype_changed = nullptr;
+      };
    }
    else if (_shader_rendertype == Rendertype::water) {
       resolve_refraction_texture();
 
-      auto water_srv = _shader_resource_database.at_if("$water");
+      auto water_srv = _shader_resource_database.at_if("$water"sv);
+      auto depth_srv = _shader_resource_database.at_if(
+         (_current_depthstencil_id == Game_depthstencil::farscene) ? "$null_depth"sv
+                                                                   : "$depth"sv);
 
       _game_textures[4] = {water_srv, water_srv};
       _game_textures[5] = {_refraction_rt.srv, _refraction_rt.srv};
+      _game_textures[6] = {depth_srv, depth_srv};
 
+      _om_targets_dirty = true;
+      _om_depthstencil_force_readonly = true;
       _ps_textures_dirty = true;
+
+      _on_rendertype_changed = [this]() noexcept
+      {
+         _game_textures[6] = {};
+
+         _om_targets_dirty = true;
+         _om_depthstencil_force_readonly = false;
+         _ps_textures_dirty = true;
+         _on_rendertype_changed = nullptr;
+      };
    }
    else if (_shader_rendertype == Rendertype::flare ||
             _shader_rendertype == Rendertype::sample) {
@@ -1285,6 +1337,10 @@ void Shader_patch::game_rendertype_changed() noexcept
       }
    }
    else if (_shader_rendertype == Rendertype::skyfog) {
+      if (use_depth_refraction_mask(_refraction_quality)) {
+         resolve_msaa_depthstencil<true>();
+      }
+
       _on_rendertype_changed = [&]() noexcept
       {
          resolve_refraction_texture();
@@ -1391,16 +1447,11 @@ void Shader_patch::game_rendertype_changed() noexcept
 
    if (_effects_active) {
       if (_shader_rendertype == Rendertype::skyfog && _effects.ssao.enabled()) {
-         auto* const depth_srv = [&] {
-            if (_rt_sample_count != 1) {
-               _depth_msaa_resolver.resolve(*_device_context, _nearscene_depthstencil,
-                                            _farscene_depthstencil);
+         resolve_msaa_depthstencil<false>();
 
-               return _farscene_depthstencil.srv.get();
-            }
-
-            return _nearscene_depthstencil.srv.get();
-         }();
+         auto depth_srv = (_rt_sample_count != 1)
+                             ? _farscene_depthstencil.srv.get()
+                             : _nearscene_depthstencil.srv.get();
 
          _effects.ssao.apply(_effects.profiler, *_device_context, *depth_srv,
                              *_game_rendertargets[0].rtv, _informal_projection_matrix);
@@ -1497,7 +1548,8 @@ void Shader_patch::update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primit
                                srgb[3] ? _game_textures[3].srgb_srv.get()
                                        : _game_textures[3].srv.get(),
                                _game_textures[4].srv.get(),
-                               _game_textures[5].srv.get()};
+                               _game_textures[5].srv.get(),
+                               _game_textures[6].srv.get()};
 
          _device_context->PSSetShaderResources(0, srvs.size(), srvs.data());
       }
@@ -1507,7 +1559,8 @@ void Shader_patch::update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primit
                                _game_textures[2].srv.get(),
                                _game_textures[3].srv.get(),
                                _game_textures[4].srv.get(),
-                               _game_textures[5].srv.get()};
+                               _game_textures[5].srv.get(),
+                               _game_textures[6].srv.get()};
 
          _device_context->PSSetShaderResources(0, srvs.size(), srvs.data());
       }
@@ -1646,6 +1699,7 @@ void Shader_patch::update_frame_state() noexcept
 
    _refraction_farscene_texture_resolve = false;
    _refraction_nearscene_texture_resolve = false;
+   _msaa_depthstencil_resolve = false;
    _use_interface_depthstencil = false;
    _oit_active = false;
 }
@@ -1715,8 +1769,9 @@ void Shader_patch::update_rendertargets() noexcept
 
    if ((std::exchange(_current_rt_format, new_format) == new_format) &&
        (std::exchange(_aa_method, user_config.graphics.antialiasing_method) ==
-        user_config.graphics.antialiasing_method))
+        user_config.graphics.antialiasing_method)) {
       return;
+   }
 
    const auto new_sample_count =
       to_sample_count(user_config.graphics.antialiasing_method);
@@ -1732,9 +1787,6 @@ void Shader_patch::update_rendertargets() noexcept
    _patch_backbuffer = {};
    _cmaa2_scratch_texture = {};
    _shadow_msaa_rt = {};
-   _refraction_rt =
-      Game_rendertarget{*_device, _current_rt_format, _swapchain.width() / 2,
-                        _swapchain.height() / 2, 1};
 
    if (_rt_sample_count > 1) {
       _patch_backbuffer =
@@ -1782,12 +1834,36 @@ void Shader_patch::update_rendertargets() noexcept
                                                  _game_rendertargets[i].width,
                                                  _game_rendertargets[i].height};
    }
+}
+
+void Shader_patch::update_refraction_target() noexcept
+{
+   if (_refraction_rt.format == _current_rt_format &&
+       (std::exchange(_refraction_quality, user_config.graphics.refraction_quality) ==
+        user_config.graphics.refraction_quality)) {
+      return;
+   }
+
+   const auto scale_factor = to_scale_factor(_refraction_quality);
+
+   _refraction_rt = Game_rendertarget{*_device, _current_rt_format,
+                                      _swapchain.width() / scale_factor,
+                                      _swapchain.height() / scale_factor};
 
    _shader_resource_database.insert(_refraction_rt.srv, refraction_texture_name);
 
-   for (auto& mat : _materials) {
-      mat->update_resources(_shader_resource_database);
+   if (use_depth_refraction_mask(_refraction_quality)) {
+      _shader_resource_database.insert(_rt_sample_count != 1
+                                          ? _farscene_depthstencil.srv
+                                          : _nearscene_depthstencil.srv,
+                                       depth_texture_name);
    }
+   else {
+      _shader_resource_database.insert(_shader_resource_database.at_if("$null_depth"sv),
+                                       depth_texture_name);
+   }
+
+   update_material_resources();
 }
 
 void Shader_patch::update_samplers() noexcept
@@ -1797,6 +1873,13 @@ void Shader_patch::update_samplers() noexcept
    auto* const sampler = _sampler_states.aniso_wrap_sampler.get();
 
    _device_context->PSSetSamplers(0, 1, &sampler);
+}
+
+void Shader_patch::update_material_resources() noexcept
+{
+   for (auto& mat : _materials) {
+      mat->update_resources(_shader_resource_database);
+   }
 }
 
 void Shader_patch::set_linear_rendering(bool linear_rendering) noexcept

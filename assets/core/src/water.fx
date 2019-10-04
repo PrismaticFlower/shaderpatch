@@ -1,10 +1,12 @@
 #include "adaptive_oit.hlsl"
 #include "constants_list.hlsl"
 #include "generic_vertex_input.hlsl"
-#include "vertex_utilities.hlsl"
-#include "vertex_transformer.hlsl"
 #include "pixel_sampler_states.hlsl"
 #include "pixel_utilities.hlsl"
+#include "vertex_transformer.hlsl"
+#include "vertex_utilities.hlsl"
+
+// clang-format off
 
 const static float4 texcoords_projection = custom_constants[0];
 const static float4 fade_constant = custom_constants[1];
@@ -29,6 +31,7 @@ const static float bump_scale = 0.075;
 
 Texture2D<float2> normal_map_texture : register(t4);
 Texture2D<float3> refraction_buffer : register(t5);
+Texture2D<float> depth_buffer : register(t6);
 
 float4 discard_vs() : SV_Position
 {
@@ -104,10 +107,10 @@ Vs_lowquality_output lowquality_vs(Vertex_input input)
 
 struct Vs_normal_map_output
 {
-   float3 view_normalWS : VIEWNORMALWS;
+   float3 viewWS : VIEWWS;
+   float fog : FOG;
    float2 texcoords[4] : TEXCOORD0;
    float fade : FADE;
-   float fog : FOG;
 
    float4 positionPS : SV_Position;
 };
@@ -122,7 +125,7 @@ Vs_normal_map_output normal_map_vs(Vertex_input input)
    const float4 positionPS = transformer.positionPS();
 
    output.positionPS = positionPS;
-   output.view_normalWS = view_positionWS - positionWS;
+   output.viewWS = view_positionWS - positionWS;
 
    float2 texcoords = positionWS.xz;
 
@@ -164,10 +167,10 @@ float4 transmissive_pass_fade_ps(Ps_fade_input input) : SV_Target0
 
 struct Ps_normal_map_input
 {
-   float3 view_normalWS : VIEWNORMALWS;
+   float3 viewWS : VIEWWS;
+   float fog : FOG;
    float2 texcoords[4] : TEXCOORD0;
    float fade : FADE;
-   float fog : FOG;
 
    float4 positionSS : SV_Position;
 };
@@ -194,6 +197,14 @@ void sample_normal_maps(float2 texcoords[4], out float2 bump_out, out float3 nor
    normalWS_out = normalize(normal);
 }
 
+float3 sample_refraction(float depth, float2 texcoords, float2 refraction_texcoords)
+{
+   const float4 scene_depth = depth_buffer.Gather(linear_clamp_sampler, refraction_texcoords);
+   const float2 coords = (all(scene_depth > depth)) ? refraction_texcoords : texcoords;
+
+   return refraction_buffer.SampleLevel(linear_clamp_sampler, coords, 0);
+}
+
 float4 normal_map_distorted_reflection_ps(Ps_normal_map_input input,
                                           Texture2D<float3> reflection_buffer : register(t3)) : SV_Target0
 {
@@ -202,18 +213,18 @@ float4 normal_map_distorted_reflection_ps(Ps_normal_map_input input,
 
    sample_normal_maps(input.texcoords, bump, normalWS);
 
-   float2 reflection_coords = input.positionSS.xy * rt_resolution.zw;
-   reflection_coords += bump;
+   const float2 base_scene_texcoords = input.positionSS.xy * rt_resolution.zw;
+   const float2 reflection_coords = base_scene_texcoords + bump;
 
    const float3 reflection = 
       reflection_buffer.SampleLevel(linear_clamp_sampler, reflection_coords, 0);
    const float3 refraction = 
-      refraction_buffer.SampleLevel(linear_clamp_sampler, reflection_coords, 0);
+      sample_refraction(input.positionSS.z, base_scene_texcoords, reflection_coords);
 
-   const float3 view_normalWS = normalize(input.view_normalWS);
-   const float VdotN = max(dot(view_normalWS, normalWS), 0.0);
+   const float3 viewWS = normalize(input.viewWS);
+   const float NdotV = saturate(dot(normalWS, viewWS));
 
-   const float fresnel = calc_fresnel(VdotN);
+   const float fresnel = calc_fresnel(NdotV);
 
    const float3 water_color =
       ((refraction_colour.rgb * water_fade) * refraction) + (refraction * (1.0 - water_fade));
@@ -240,18 +251,18 @@ float4 normal_map_distorted_reflection_specular_ps(Ps_normal_map_input input,
       reflection_buffer.SampleLevel(linear_clamp_sampler, reflection_coords, 0);
    const float3 refraction =
       refraction_buffer.SampleLevel(linear_clamp_sampler, reflection_coords, 0);
+   
+   const float3 viewWS = normalize(input.viewWS);
+   const float NdotV = saturate(dot(normalWS, viewWS));
 
-   const float3 view_normalWS = normalize(input.view_normalWS);
-   const float VdotN = max(dot(view_normalWS, normalWS), 0.0);
-
-   const float fresnel = calc_fresnel(VdotN);
+   const float fresnel = calc_fresnel(NdotV);
 
    const float3 water_color =
       ((refraction_colour.rgb * water_fade) * refraction) + (refraction * (1.0 - water_fade));
    float3 color = lerp(water_color, reflection * reflection_colour.a, fresnel * water_fade);
 
-   const float3 half_normalWS = normalize(light_direction.xyz + view_normalWS);
-   const float NdotH = saturate(dot(normalWS, half_normalWS));
+   const float3 halfWS = normalize(light_direction.xyz + viewWS);
+   const float NdotH = saturate(dot(normalWS, halfWS));
    color += pow(NdotH, specular_exponent);
 
    color = apply_fog(color, input.fog);
@@ -265,11 +276,11 @@ float4 normal_map_ps(Ps_normal_map_input input) : SV_Target0
    float3 normalWS;
 
    sample_normal_maps(input.texcoords, bump, normalWS);
+   
+   const float3 viewWS = normalize(input.viewWS);
+   const float NdotV = saturate(dot(normalWS, viewWS));
 
-   const float3 view_normalWS = normalize(input.view_normalWS);
-   const float VdotN = max(dot(view_normalWS, normalWS), 0.0);
-
-   const float fresnel = calc_fresnel(VdotN);
+   const float fresnel = calc_fresnel(NdotV);
 
    const float3 color = apply_fog(refraction_colour.rgb, input.fog);
 
@@ -282,14 +293,14 @@ float4 normal_map_specular_ps(Ps_normal_map_input input) : SV_Target0
    float3 normalWS;
 
    sample_normal_maps(input.texcoords, bump, normalWS);
+   
+   const float3 viewWS = normalize(input.viewWS);
+   const float NdotV = saturate(dot(normalWS, viewWS));
 
-   const float3 view_normalWS = normalize(input.view_normalWS);
-   const float VdotN = max(dot(view_normalWS, normalWS), 0.0);
+   const float fresnel = calc_fresnel(NdotV);
 
-   const float fresnel = calc_fresnel(VdotN);
-
-   const float3 half_normalWS = normalize(light_direction.xyz + view_normalWS);
-   const float NdotH = saturate(dot(normalWS, half_normalWS));
+   const float3 halfWS = normalize(light_direction.xyz + viewWS);
+   const float NdotH = saturate(dot(normalWS, halfWS));
    const float spec = pow(NdotH, specular_exponent);
 
    float3 color = reflection_colour.rgb + spec;

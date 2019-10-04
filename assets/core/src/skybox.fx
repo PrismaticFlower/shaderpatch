@@ -1,10 +1,12 @@
 #include "constants_list.hlsl"
 #include "generic_vertex_input.hlsl"
-#include "vertex_transformer.hlsl"
 #include "pixel_sampler_states.hlsl"
+#include "vertex_transformer.hlsl"
 
-TextureCube<float3> skybox_map : register(ps, t6);
-TextureCube<float3> skybox_emissive_map : register(ps, t7);
+// clang-format off
+
+TextureCube<float3> skybox_map : register(ps, t7);
+TextureCube<float3> skybox_emissive_map : register(ps, t8);
 
 const static bool use_emissive_map = SKYBOX_USE_EMISSIVE_MAP;
 

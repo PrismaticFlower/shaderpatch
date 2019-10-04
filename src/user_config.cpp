@@ -43,6 +43,13 @@ void User_config::show_imgui() noexcept
                                             to_string(Anisotropic_filtering::x8),
                                             to_string(Anisotropic_filtering::x16)}));
 
+      graphics.refraction_quality = refraction_quality_from_string(ImGui::StringPicker(
+         "Refraction Quality", std::string{to_string(graphics.refraction_quality)},
+         std::initializer_list<std::string>{to_string(Refraction_quality::low),
+                                            to_string(Refraction_quality::medium),
+                                            to_string(Refraction_quality::high),
+                                            to_string(Refraction_quality::ultra)}));
+
       ImGui::Checkbox("Enable Order-Independent Transparency", &graphics.enable_oit);
 
       ImGui::Checkbox("Enable Alternative Post Processing",
@@ -108,6 +115,9 @@ void User_config::parse_file(const std::string& path)
 
    graphics.anisotropic_filtering = anisotropic_filtering_from_string(
       config["Graphics"s]["Anisotropic Filtering"s].as<std::string>());
+
+   graphics.refraction_quality = refraction_quality_from_string(
+      config["Graphics"s]["Refraction Quality"s].as<std::string>());
 
    graphics.enable_oit =
       config["Graphics"s]["Enable Order-Independent Transparency"s].as<bool>();

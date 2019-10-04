@@ -39,6 +39,20 @@ struct Depthstencil {
       }
 
       {
+         const CD3D11_DEPTH_STENCIL_VIEW_DESC desc{ms ? D3D11_DSV_DIMENSION_TEXTURE2DMS
+                                                      : D3D11_DSV_DIMENSION_TEXTURE2D,
+                                                   DXGI_FORMAT_D24_UNORM_S8_UINT,
+                                                   0,
+                                                   0,
+                                                   1,
+                                                   D3D11_DSV_READ_ONLY_DEPTH |
+                                                      D3D11_DSV_READ_ONLY_STENCIL};
+
+         device.CreateDepthStencilView(texture.get(), &desc,
+                                       dsv_readonly.clear_and_assign());
+      }
+
+      {
          const CD3D11_SHADER_RESOURCE_VIEW_DESC desc{ms ? D3D11_SRV_DIMENSION_TEXTURE2DMS
                                                         : D3D11_SRV_DIMENSION_TEXTURE2D,
                                                      DXGI_FORMAT_R24_UNORM_X8_TYPELESS};
@@ -61,10 +75,10 @@ struct Depthstencil {
 
    Com_ptr<ID3D11Texture2D> texture;
    Com_ptr<ID3D11DepthStencilView> dsv;
+   Com_ptr<ID3D11DepthStencilView> dsv_readonly;
    Com_ptr<ID3D11ShaderResourceView> srv;
-   Com_ptr<ID3D11RenderTargetView> rtv;
 
-   constexpr static auto format = DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
+   constexpr static auto default_format = DXGI_FORMAT_R32G8X24_TYPELESS;
 };
 
 }

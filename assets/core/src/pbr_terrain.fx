@@ -1,18 +1,20 @@
 
 #include "color_utilities.hlsl"
 #include "constants_list.hlsl"
+#include "lighting_utilities.hlsl"
 #include "pixel_sampler_states.hlsl"
 #include "pixel_utilities.hlsl"
 #include "terrain_common.hlsl"
-#include "lighting_utilities.hlsl"
+
+// clang-format off
 
 const static bool pbr_terrain_use_shadow_map = PBR_TERRAIN_USE_SHADOW_MAP;
 
 Texture2D<float4> shadow_map : register(t3);
-Texture2D<float3> terrain_normal_map : register(t6);
-Texture2DArray<float1> height_maps : register(t7);
-Texture2DArray<float4> albedo_ao_maps : register(t8);
-Texture2DArray<float4> normal_mr_maps : register(t9);
+Texture2D<float3> terrain_normal_map : register(t7);
+Texture2DArray<float1> height_maps : register(t8);
+Texture2DArray<float4> albedo_ao_maps : register(t9);
+Texture2DArray<float4> normal_mr_maps : register(t10);
 
 cbuffer MaterialConstants : register(MATERIAL_CB_INDEX) {
    float3 base_color;

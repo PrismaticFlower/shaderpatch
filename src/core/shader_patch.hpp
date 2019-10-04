@@ -186,7 +186,7 @@ public:
    void set_rasterizer_state(ID3D11RasterizerState& rasterizer_state) noexcept;
 
    void set_depthstencil_state(ID3D11DepthStencilState& depthstencil_state,
-                               const UINT8 stencil_ref) noexcept;
+                               const UINT8 stencil_ref, const bool readonly) noexcept;
 
    void set_blend_state(ID3D11BlendState1& blend_state,
                         const bool additive_blending) noexcept;
@@ -235,7 +235,14 @@ public:
                        gsl::span<std::byte> data) noexcept -> Query_result;
 
 private:
-   auto current_depthstencil() const noexcept -> ID3D11DepthStencilView*;
+   auto current_depthstencil(const bool readonly) const noexcept
+      -> ID3D11DepthStencilView*;
+
+   auto current_depthstencil() const noexcept -> ID3D11DepthStencilView*
+   {
+      return current_depthstencil(_om_depthstencil_readonly |
+                                  _om_depthstencil_force_readonly);
+   }
 
    void bind_static_resources() noexcept;
 
@@ -255,11 +262,26 @@ private:
 
    void update_rendertargets() noexcept;
 
+   void update_refraction_target() noexcept;
+
    void update_samplers() noexcept;
+
+   void update_material_resources() noexcept;
 
    void set_linear_rendering(bool linear_rendering) noexcept;
 
    void resolve_refraction_texture() noexcept;
+
+   template<bool restore_state>
+   void resolve_msaa_depthstencil() noexcept
+   {
+      if ((!std::exchange(_msaa_depthstencil_resolve, true)) & (_rt_sample_count != 1)) {
+         _depth_msaa_resolver.resolve(*_device_context, _nearscene_depthstencil,
+                                      _farscene_depthstencil);
+
+         if constexpr (restore_state) restore_all_game_state();
+      }
+   }
 
    void resolve_oit() noexcept;
 
@@ -306,7 +328,7 @@ private:
    Rendertype _previous_shader_rendertype = Rendertype::invalid;
    Rendertype _shader_rendertype = Rendertype::invalid;
 
-   std::array<Game_texture, 6> _game_textures;
+   std::array<Game_texture, 7> _game_textures;
    Patch_material* _patch_material = nullptr;
 
    Com_ptr<ID3D11Buffer> _game_index_buffer;
@@ -327,6 +349,8 @@ private:
    bool _rs_state_dirty = true;
    bool _om_targets_dirty = true;
    UINT8 _game_stencil_ref = 0xff;
+   bool _om_depthstencil_readonly = true;
+   bool _om_depthstencil_force_readonly = false;
    bool _om_depthstencil_state_dirty = true;
    bool _om_blend_state_dirty = true;
    bool _ps_textures_dirty = true;
@@ -339,6 +363,7 @@ private:
    bool _use_interface_depthstencil = false;
    bool _refraction_farscene_texture_resolve = false;
    bool _refraction_nearscene_texture_resolve = false;
+   bool _msaa_depthstencil_resolve = false;
    bool _linear_rendering = false;
    bool _oit_active = false;
 
@@ -417,6 +442,7 @@ private:
 
    UINT _rt_sample_count = 1;
    Antialiasing_method _aa_method = Antialiasing_method::none;
+   Refraction_quality _refraction_quality = Refraction_quality::medium;
 
    std::unique_ptr<BF2_log_monitor> _bf2_log_monitor;
 };

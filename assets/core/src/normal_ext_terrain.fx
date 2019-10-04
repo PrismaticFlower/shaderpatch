@@ -1,19 +1,21 @@
 
 #include "color_utilities.hlsl"
 #include "constants_list.hlsl"
+#include "lighting_utilities.hlsl"
 #include "normal_ext_common.hlsl"
 #include "pixel_sampler_states.hlsl"
 #include "pixel_utilities.hlsl"
 #include "terrain_common.hlsl"
-#include "lighting_utilities.hlsl"
+
+// clang-format off
 
 Texture2D<float3> projected_light_texture : register(t2);
 Texture2D<float4> shadow_map : register(t3);
-Texture2D<float3> terrain_normal_map : register(t6);
-Texture2DArray<float1> height_maps : register(t7);
-Texture2DArray<float4> diffuse_ao_maps : register(t8);
-Texture2DArray<float3> normal_gloss_maps : register(t9);
-TextureCube<float3> envmap : register(t10);
+Texture2D<float3> terrain_normal_map : register(t7);
+Texture2DArray<float1> height_maps : register(t8);
+Texture2DArray<float4> diffuse_ao_maps : register(t9);
+Texture2DArray<float3> normal_gloss_maps : register(t10);
+TextureCube<float3> envmap : register(t11);
 
 struct Texture_vars {
    float height_scale;

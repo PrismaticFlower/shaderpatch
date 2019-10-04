@@ -11,9 +11,10 @@
 
 // Textures
 Texture2D<float3> projected_light_texture : register(ps, t3);
-Texture2D<float2> normal_map : register(ps, t6);
-TextureCube<float3> reflection_map : register(ps, t7);
-Texture2D<float3> refraction_map : register(ps, t8);
+Texture2D<float2> normal_map : register(ps, t7);
+TextureCube<float3> reflection_map : register(ps, t8);
+Texture2D<float> depth_buffer : register(ps, t9);
+Texture2D<float3> refraction_map : register(ps, t10);
 
 // Game Custom Constants
 
@@ -145,11 +146,13 @@ float3 sample_reflection_map(float3 reflectWS)
    return reflection * reflection_color * lighting_scale;
 }
 
-void sample_refraction_map(float2 texcoords, float3 normalTS, 
+void sample_refraction_map(float2 texcoords, float3 normalTS, float depth,
                            out float3 refraction, out float3 back_refraction)
 {
-   const float2 disort_texcoords = texcoords + (refraction_scale * normalTS.xy);
-   const float3 scene = refraction_map.SampleLevel(linear_clamp_sampler, disort_texcoords, 0);
+   const float2 disort_texcoords = texcoords + (refraction_scale * normalTS.xy);  
+   const float4 scene_depth = depth_buffer.Gather(linear_clamp_sampler, disort_texcoords);
+   const float2 final_texcoords = (all(scene_depth > depth)) ? disort_texcoords : texcoords;
+   const float3 scene = refraction_map.SampleLevel(linear_clamp_sampler, final_texcoords, 0);
 
    refraction = scene * refraction_color;
    back_refraction = scene * back_refraction_color;
@@ -173,7 +176,8 @@ float4 main_ps(Ps_input input) : SV_Target0
 
    const float3 reflection = sample_reflection_map(reflectWS);
    float3 refraction, back_refraction;
-   sample_refraction_map(input.refraction_texcoords, normalTS, refraction, back_refraction);
+   sample_refraction_map(input.refraction_texcoords, normalTS, input.positionSS.z, 
+                         refraction, back_refraction);
 
    float3 color = lerp(refraction, reflection, fresnel);
 
