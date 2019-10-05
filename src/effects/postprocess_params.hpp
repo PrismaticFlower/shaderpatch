@@ -27,10 +27,10 @@ struct Bloom_params {
    float intensity = 0.75f;
    glm::vec3 tint{1.0f, 1.0f, 1.0f};
 
-   float inner_scale = 0.25f;
+   float inner_scale = 1.0f;
    glm::vec3 inner_tint{1.0f, 1.0f, 1.0f};
 
-   float inner_mid_scale = 0.5f;
+   float inner_mid_scale = 1.0f;
    glm::vec3 inner_mid_tint{1.0f, 1.0f, 1.0f};
 
    float mid_scale = 1.0f;
