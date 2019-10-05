@@ -20,6 +20,8 @@ cbuffer SceneConstants : register(b0)
    float time;
    float tessellation_resolution_factor;
    bool particle_texture_scale;
+   float prev_near_fade_scale;
+   float prev_near_fade_offset;
 }
 
 cbuffer DrawConstants : register(b1)

@@ -86,9 +86,16 @@ void generate_terrain_tangents(float3 normal, out float3 tangent,
    bitangent = normalize(-normal.z * normal + float3(0.0, 0.0, 1.0));
 }
 
-float calculate_near_fade(float depthPS)
+float calculate_near_fade(float viewZ)
 {
-   return depthPS * near_fade_scale + near_fade_offset;
+   return viewZ * near_fade_scale + near_fade_offset;
+}
+
+float calculate_prev_far_fade(float viewZ)
+{
+   // We use the previous frames fade values are used for calculating fade in far scene
+   // when needed as the current frame's ones are not yet available.
+   return -(viewZ * prev_near_fade_scale + prev_near_fade_offset);
 }
 
 float calculate_fog(float heightWS, float depthPS)

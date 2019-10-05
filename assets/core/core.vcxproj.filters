@@ -406,7 +406,6 @@
     <None Include="src\color_grading_lut_baker.hlsl">
       <Filter>src</Filter>
     </None>
-    <None Include="src\scope_blur.fx" />
     <None Include="definitions\patch\gaussian_blur.json">
       <Filter>definitions\patch</Filter>
     </None>
@@ -416,10 +415,18 @@
     <None Include="definitions\patch\bloom_alt.json">
       <Filter>definitions\patch</Filter>
     </None>
-    <None Include="src\gaussian_blur.fx" />
-    <None Include="src\bloom_alt.fx" />
     <None Include="definitions\patch\static_water.json">
       <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="src\static_water.fx" />
+    <None Include="src\bloom_alt.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\scope_blur.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\gaussian_blur.fx">
+      <Filter>src</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -438,10 +445,5 @@
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="build_lvls.ps1" />
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="src\static_water.fx">
-      <Filter>src</Filter>
-    </FxCompile>
   </ItemGroup>
 </Project>

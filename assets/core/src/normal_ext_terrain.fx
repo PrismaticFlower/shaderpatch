@@ -45,6 +45,7 @@ struct Vs_output {
    nointerpolation uint3 texture_indices : TEXTUREINDICES;
 
    float4 positionPS : SV_Position;
+   float  cull_distance : SV_CullDistance;
 };
 
 Vs_output main_vs(Packed_terrain_vertex packed_vertex)
@@ -65,7 +66,10 @@ Vs_output main_vs(Packed_terrain_vertex packed_vertex)
    float fade;
    calculate_near_fade_and_fog(output.positionWS, output.positionPS, fade,
                                output.fog);
-   output.fade = saturate(fade);
+   output.fade = fade;
+
+   output.cull_distance = 
+      terrain_common_low_detail ? calculate_prev_far_fade(output.positionPS.z + terrain_low_detail_cull_bias) : fade;
 
    return output;
 }
@@ -166,5 +170,5 @@ float4 main_ps(Vs_output input) : SV_Target0
 
    color = apply_fog(color, input.fog);
 
-   return float4(color, input.fade);
+   return float4(color, saturate(input.fade));
 }

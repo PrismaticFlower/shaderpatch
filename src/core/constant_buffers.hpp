@@ -36,7 +36,8 @@ struct alignas(16) Scene {
    glm::vec3 vs_view_positionWS;
    float _buffer_padding0;
    glm::vec4 fog_info;
-   glm::vec2 near_scene_fade;
+   float near_scene_fade_scale;
+   float near_scene_fade_offset;
    float vs_lighting_scale;
    float _buffer_padding2;
    std::array<glm::vec4, 3> shadow_map_transform;
@@ -45,7 +46,8 @@ struct alignas(16) Scene {
    float time;
    float tessellation_resolution_factor;
    std::uint32_t particle_texture_scale;
-   std::array<std::uint32_t, 2> _buffer_padding1;
+   float prev_near_scene_fade_scale;
+   float prev_near_scene_fade_offset;
 };
 
 constexpr auto scene_game_count = CB_MAX_GAME_CONSTANTS(Scene, pixel_offset);

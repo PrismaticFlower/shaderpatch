@@ -1037,7 +1037,7 @@ void Shader_patch::set_constants(const cb::Scene_tag, const UINT offset,
                   (offset * sizeof(std::array<float, 4>)),
                constants.data(), constants.size_bytes());
 
-   if (offset < (offsetof(cb::Scene, near_scene_fade) / sizeof(glm::vec4))) {
+   if (offset < (offsetof(cb::Scene, near_scene_fade_scale) / sizeof(glm::vec4))) {
       const float scale = _linear_rendering ? 1.0f : _cb_scene.vs_lighting_scale;
 
       _cb_draw_ps_dirty = true;
@@ -1338,6 +1338,9 @@ void Shader_patch::game_rendertype_changed() noexcept
       }
    }
    else if (_shader_rendertype == Rendertype::skyfog) {
+      _cb_scene.prev_near_scene_fade_scale = _cb_scene.near_scene_fade_scale;
+      _cb_scene.prev_near_scene_fade_offset = _cb_scene.near_scene_fade_offset;
+
       if (use_depth_refraction_mask(_refraction_quality)) {
          resolve_msaa_depthstencil<true>();
       }

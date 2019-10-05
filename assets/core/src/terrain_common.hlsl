@@ -12,6 +12,8 @@ const static bool terrain_common_use_parallax_occlusion_mapping =
 const static bool terrain_common_basic_blending = TERRAIN_COMMON_BASIC_BLENDING;
 const static bool terrain_common_low_detail = TERRAIN_COMMON_LOW_DETAIL;
 
+const static float terrain_low_detail_cull_bias = 16.0;
+
 struct Packed_terrain_vertex {
    int4 position : POSITION;
    unorm float4 normal : NORMAL;
