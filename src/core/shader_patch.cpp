@@ -171,6 +171,7 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
    _previous_shader_rendertype = Rendertype::invalid;
    _shader_rendertype = Rendertype::invalid;
    _aa_method = Antialiasing_method::none;
+   _current_rt_format = Swapchain::format;
 
    update_rendertargets();
    update_refraction_target();
