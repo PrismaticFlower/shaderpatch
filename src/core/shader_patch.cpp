@@ -116,6 +116,7 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
    _cb_draw_ps.cube_projtex = false;
 
    install_window_hooks(window);
+   install_dinput_hooks();
    set_input_hotkey(user_config.developer.toggle_key);
    set_input_hotkey_func([this]() noexcept {
       if (!std::exchange(_imgui_enabled, !_imgui_enabled))

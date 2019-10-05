@@ -1,7 +1,6 @@
 
 #include "direct3d/creator.hpp"
 #include "file_hooks.hpp"
-#include "input_hooker.hpp"
 #include "user_config.hpp"
 
 #include <Windows.h>
@@ -42,7 +41,6 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD reason, LPVOID)
 {
    if (reason == DLL_PROCESS_ATTACH) {
       sp::install_file_hooks();
-      sp::install_dinput_hooks();
    }
 
    return true;

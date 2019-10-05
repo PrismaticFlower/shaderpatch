@@ -11,14 +11,22 @@
 namespace sp {
 
 template<typename Class>
-inline auto get_vtable_pointer(const Class& object) -> const std::uintptr_t*
+[[nodiscard]] inline auto get_vtable_pointer(const Class& object)
+   -> const std::uintptr_t*
 {
    return reinterpret_cast<const std::uintptr_t* const&>(object);
 }
 
 template<typename Function, typename Class>
-inline auto hook_vtable(Class& object, const std::size_t index,
-                        Function* function) noexcept -> Function*
+[[nodiscard]] inline auto get_vfunc_pointer(const Class& object,
+                                            const std::size_t index) -> Function*
+{
+   return reinterpret_cast<Function*>(get_vtable_pointer(object)[index]);
+}
+
+template<typename Function, typename Class>
+[[nodiscard]] inline auto hook_vtable(Class& object, const std::size_t index,
+                                      Function* function) noexcept -> Function*
 {
    static_assert(std::is_polymorphic_v<Class>, "Class must be polymorphic!");
    static_assert(sizeof(void*) == sizeof(std::uintptr_t));
