@@ -418,7 +418,6 @@
     <None Include="definitions\patch\static_water.json">
       <Filter>definitions\patch</Filter>
     </None>
-    <None Include="src\static_water.fx" />
     <None Include="src\bloom_alt.fx">
       <Filter>src</Filter>
     </None>
@@ -426,6 +425,9 @@
       <Filter>src</Filter>
     </None>
     <None Include="src\gaussian_blur.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\static_water.fx">
       <Filter>src</Filter>
     </None>
   </ItemGroup>

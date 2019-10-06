@@ -150,9 +150,9 @@ void sample_refraction_map(float2 texcoords, float3 normalTS, float depth,
                            out float3 refraction, out float3 back_refraction)
 {
    const float2 disort_texcoords = texcoords + (refraction_scale * normalTS.xy);  
-   const float4 scene_depth = depth_buffer.Gather(linear_clamp_sampler, disort_texcoords);
+   const float4 scene_depth = depth_buffer.Gather(linear_mirror_sampler, disort_texcoords);
    const float2 final_texcoords = (all(scene_depth > depth)) ? disort_texcoords : texcoords;
-   const float3 scene = refraction_map.SampleLevel(linear_clamp_sampler, final_texcoords, 0);
+   const float3 scene = refraction_map.SampleLevel(linear_mirror_sampler, final_texcoords, 0);
 
    refraction = scene * refraction_color;
    back_refraction = scene * back_refraction_color;

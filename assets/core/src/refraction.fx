@@ -214,10 +214,10 @@ float3 sample_distort_scene(float3 distort_texcoords, float2 scene_texcoords, fl
 {
    float2 texcoords = distort_texcoords.xy / distort_texcoords.z;
    
-   const float4 scene_depth = depth_buffer.Gather(linear_clamp_sampler, texcoords);
+   const float4 scene_depth = depth_buffer.Gather(linear_mirror_sampler, texcoords);
    texcoords = (all(scene_depth > depth)) ? texcoords : scene_texcoords;
 
-   return refraction_buffer.SampleLevel(linear_wrap_sampler, texcoords, 0);
+   return refraction_buffer.SampleLevel(linear_mirror_sampler, texcoords, 0);
 }
 
 float3 sample_distort_scene(float3 distort_texcoords, float2 bump, float2 scene_texcoords, float depth)
@@ -227,10 +227,10 @@ float3 sample_distort_scene(float3 distort_texcoords, float2 bump, float2 scene_
    float2 texcoords = distort_texcoords.xy / distort_texcoords.z;
    texcoords += mul(bump, bump_transform);
    
-   const float4 scene_depth = depth_buffer.Gather(linear_clamp_sampler, texcoords);
+   const float4 scene_depth = depth_buffer.Gather(linear_mirror_sampler, texcoords);
    texcoords = (all(scene_depth > depth)) ? texcoords : scene_texcoords;
 
-   return refraction_buffer.Sample(linear_wrap_sampler, texcoords, 0);
+   return refraction_buffer.Sample(linear_mirror_sampler, texcoords, 0);
 }
 
 float4 near_diffuse_ps(Ps_near_input input) : SV_Target0
