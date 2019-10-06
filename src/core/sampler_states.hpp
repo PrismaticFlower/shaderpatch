@@ -13,6 +13,7 @@ struct Sampler_states {
    Com_ptr<ID3D11SamplerState> aniso_wrap_sampler;
    const Com_ptr<ID3D11SamplerState> linear_clamp_sampler;
    const Com_ptr<ID3D11SamplerState> linear_wrap_sampler;
+   const Com_ptr<ID3D11SamplerState> linear_mirror_sampler;
    const Com_ptr<ID3D11SamplerState> point_clamp_sampler;
    const Com_ptr<ID3D11SamplerState> point_wrap_sampler;
 

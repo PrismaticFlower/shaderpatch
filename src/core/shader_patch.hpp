@@ -314,6 +314,7 @@ private:
    Game_rendertarget _cmaa2_scratch_texture;
    Game_rendertarget _shadow_msaa_rt;
    Game_rendertarget _refraction_rt;
+   Game_rendertarget _farscene_refraction_rt;
 
    Depthstencil _nearscene_depthstencil;
    Depthstencil _farscene_depthstencil;
@@ -361,6 +362,7 @@ private:
 
    // Frame State
    bool _use_interface_depthstencil = false;
+   bool _lock_projtex_cube_slot = false;
    bool _refraction_farscene_texture_resolve = false;
    bool _refraction_nearscene_texture_resolve = false;
    bool _msaa_depthstencil_resolve = false;

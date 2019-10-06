@@ -35,11 +35,11 @@ struct Game_rendertarget {
    Com_ptr<ID3D11Texture2D> texture;
    Com_ptr<ID3D11RenderTargetView> rtv;
    Com_ptr<ID3D11ShaderResourceView> srv;
-   DXGI_FORMAT format;
-   std::uint16_t width;
-   std::uint16_t height;
-   std::uint16_t sample_count;
-   Game_rt_type type;
+   DXGI_FORMAT format = DXGI_FORMAT_UNKNOWN;
+   std::uint16_t width{};
+   std::uint16_t height{};
+   std::uint16_t sample_count{};
+   Game_rt_type type = Game_rt_type::untyped;
 
    explicit operator bool() const noexcept
    {

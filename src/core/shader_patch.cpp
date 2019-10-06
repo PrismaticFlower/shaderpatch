@@ -152,7 +152,8 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
    _game_rendertargets.emplace_back() = _swapchain.game_rendertarget();
    _nearscene_depthstencil = {*_device, width, height, _rt_sample_count};
    _farscene_depthstencil = {*_device, width, height, 1};
-   _refraction_rt = {*_device, Swapchain::format, width / 2, height / 2};
+   _refraction_rt = {};
+   _farscene_refraction_rt = {};
    _current_game_rendertarget = _game_backbuffer_index;
    _primitive_topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
    _patch_material_topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
@@ -989,11 +990,11 @@ void Shader_patch::set_projtex_mode(const Projtex_mode mode) noexcept
 {
    if (mode == Projtex_mode::clamp) {
       auto* const sampler = _sampler_states.linear_clamp_sampler.get();
-      _device_context->PSSetSamplers(3, 1, &sampler);
+      _device_context->PSSetSamplers(4, 1, &sampler);
    }
    else if (mode == Projtex_mode::wrap) {
       auto* const sampler = _sampler_states.linear_wrap_sampler.get();
-      _device_context->PSSetSamplers(3, 1, &sampler);
+      _device_context->PSSetSamplers(4, 1, &sampler);
    }
 }
 
@@ -1011,6 +1012,8 @@ void Shader_patch::set_projtex_type(const Projtex_type type) noexcept
 
 void Shader_patch::set_projtex_cube(const Game_texture& texture) noexcept
 {
+   if (_lock_projtex_cube_slot) return;
+
    _game_textures[projtex_cube_slot] = texture;
    _ps_textures_dirty = true;
 }
@@ -1198,6 +1201,7 @@ void Shader_patch::bind_static_resources() noexcept
    const auto ps_samplers = std::array{_sampler_states.aniso_wrap_sampler.get(),
                                        _sampler_states.linear_clamp_sampler.get(),
                                        _sampler_states.linear_wrap_sampler.get(),
+                                       _sampler_states.linear_mirror_sampler.get(),
                                        _sampler_states.linear_clamp_sampler.get()};
 
    _device_context->PSSetSamplers(0, ps_samplers.size(), ps_samplers.data());
@@ -1259,10 +1263,14 @@ void Shader_patch::game_rendertype_changed() noexcept
    else if (_shader_rendertype == Rendertype::refraction) {
       resolve_refraction_texture();
 
+      const bool far_scene = (_current_depthstencil_id == Game_depthstencil::farscene);
+
       auto depth_srv = _shader_resource_database.at_if(
          (_current_depthstencil_id == Game_depthstencil::farscene) ? "$null_depth"sv
                                                                    : "$depth"sv);
-      _game_textures[4] = {_refraction_rt.srv, _refraction_rt.srv};
+      const auto& refraction_src = far_scene ? _farscene_refraction_rt : _refraction_rt;
+
+      _game_textures[4] = {refraction_src.srv, refraction_src.srv};
       _game_textures[5] = {depth_srv, depth_srv};
 
       _om_targets_dirty = true;
@@ -1282,18 +1290,22 @@ void Shader_patch::game_rendertype_changed() noexcept
    else if (_shader_rendertype == Rendertype::water) {
       resolve_refraction_texture();
 
+      const bool far_scene = (_current_depthstencil_id == Game_depthstencil::farscene);
+
       auto water_srv = _shader_resource_database.at_if("$water"sv);
-      auto depth_srv = _shader_resource_database.at_if(
-         (_current_depthstencil_id == Game_depthstencil::farscene) ? "$null_depth"sv
-                                                                   : "$depth"sv);
+      auto depth_srv =
+         _shader_resource_database.at_if(far_scene ? "$null_depth"sv : "$depth"sv);
+
+      const auto& refraction_src = far_scene ? _farscene_refraction_rt : _refraction_rt;
 
       _game_textures[4] = {water_srv, water_srv};
-      _game_textures[5] = {_refraction_rt.srv, _refraction_rt.srv};
+      _game_textures[5] = {refraction_src.srv, refraction_src.srv};
       _game_textures[6] = {depth_srv, depth_srv};
 
       _om_targets_dirty = true;
       _om_depthstencil_force_readonly = true;
       _ps_textures_dirty = true;
+      _lock_projtex_cube_slot = true;
 
       _on_rendertype_changed = [this]() noexcept
       {
@@ -1302,6 +1314,7 @@ void Shader_patch::game_rendertype_changed() noexcept
          _om_targets_dirty = true;
          _om_depthstencil_force_readonly = false;
          _ps_textures_dirty = true;
+         _lock_projtex_cube_slot = false;
          _on_rendertype_changed = nullptr;
       };
    }
@@ -1699,13 +1712,14 @@ void Shader_patch::update_frame_state() noexcept
    const auto time = steady_clock{}.now().time_since_epoch();
 
    _cb_scene_dirty = true;
-   _cb_scene.time = duration<float>{(time % 30s)}.count();
+   _cb_scene.time = duration<float>{(time % 3600s)}.count();
    _cb_draw_ps.time_seconds = duration_cast<duration<float>>((time % 3600s)).count();
 
    _refraction_farscene_texture_resolve = false;
    _refraction_nearscene_texture_resolve = false;
    _msaa_depthstencil_resolve = false;
    _use_interface_depthstencil = false;
+   _lock_projtex_cube_slot = false;
    _oit_active = false;
 }
 
@@ -1854,6 +1868,9 @@ void Shader_patch::update_refraction_target() noexcept
    _refraction_rt = Game_rendertarget{*_device, _current_rt_format,
                                       _swapchain.width() / scale_factor,
                                       _swapchain.height() / scale_factor};
+   _farscene_refraction_rt =
+      Game_rendertarget{*_device, _current_rt_format, _swapchain.width() / 8,
+                        _swapchain.height() / 8};
 
    _shader_resource_database.insert(_refraction_rt.srv, refraction_texture_name);
 
@@ -1922,16 +1939,12 @@ void Shader_patch::resolve_refraction_texture() noexcept
    const auto& src_rt =
       far_scene ? _game_rendertargets[static_cast<int>(_current_game_rendertarget)]
                 : _game_rendertargets[0];
+   const auto& dest_rt = far_scene ? _farscene_refraction_rt : _refraction_rt;
 
    const D3D11_BOX src_box{0, 0, 0, src_rt.width, src_rt.height, 1};
-   const D3D11_BOX dest_box{0,
-                            0,
-                            0,
-                            _refraction_rt.width,
-                            _refraction_rt.height,
-                            1};
+   const D3D11_BOX dest_box{0, 0, 0, dest_rt.width, dest_rt.height, 1};
 
-   _image_stretcher.stretch(*_device_context, src_box, src_rt, dest_box, _refraction_rt);
+   _image_stretcher.stretch(*_device_context, src_box, src_rt, dest_box, dest_rt);
 
    restore_all_game_state();
 }

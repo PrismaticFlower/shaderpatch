@@ -37,6 +37,8 @@ Sampler_states::Sampler_states(ID3D11Device1& device) noexcept
                                        D3D11_TEXTURE_ADDRESS_CLAMP)},
      linear_wrap_sampler{make_sampler(device, D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT,
                                       D3D11_TEXTURE_ADDRESS_WRAP)},
+     linear_mirror_sampler{make_sampler(device, D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT,
+                                        D3D11_TEXTURE_ADDRESS_MIRROR)},
      point_clamp_sampler{make_sampler(device, D3D11_FILTER_MIN_MAG_MIP_POINT,
                                       D3D11_TEXTURE_ADDRESS_CLAMP)},
      point_wrap_sampler{make_sampler(device, D3D11_FILTER_MIN_MAG_MIP_POINT,

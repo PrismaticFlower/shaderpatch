@@ -23,7 +23,7 @@ const static float4 blend_map_constant = ps_custom_constants[3];
 const static float4 blend_specular_constant = ps_custom_constants[4];
 
 const static float water_fade = saturate(fade_constant.z + fade_constant.w);
-const static float4 time_scales = {0.009, 0.01, 0.008, 0.01};
+const static float4 time_scales = {0.0091666, 0.01, 0.00833, 0.01};
 const static float4 tex_scales = {0.03, 0.04, 0.01, 0.04};
 const static float2 water_direction = {0.5, 1.0};
 const static float specular_exponent = 256;
@@ -199,10 +199,10 @@ void sample_normal_maps(float2 texcoords[4], out float2 bump_out, out float3 nor
 
 float3 sample_refraction(float depth, float2 texcoords, float2 refraction_texcoords)
 {
-   const float4 scene_depth = depth_buffer.Gather(linear_clamp_sampler, refraction_texcoords);
+   const float4 scene_depth = depth_buffer.Gather(linear_mirror_sampler, refraction_texcoords);
    const float2 coords = (all(scene_depth > depth)) ? refraction_texcoords : texcoords;
 
-   return refraction_buffer.SampleLevel(linear_clamp_sampler, coords, 0);
+   return refraction_buffer.SampleLevel(linear_mirror_sampler, coords, 0);
 }
 
 float4 normal_map_distorted_reflection_ps(Ps_normal_map_input input,
@@ -217,7 +217,7 @@ float4 normal_map_distorted_reflection_ps(Ps_normal_map_input input,
    const float2 reflection_coords = base_scene_texcoords + bump;
 
    const float3 reflection = 
-      reflection_buffer.SampleLevel(linear_clamp_sampler, reflection_coords, 0);
+      reflection_buffer.SampleLevel(linear_mirror_sampler, reflection_coords, 0);
    const float3 refraction = 
       sample_refraction(input.positionSS.z, base_scene_texcoords, reflection_coords);
 
@@ -243,14 +243,14 @@ float4 normal_map_distorted_reflection_specular_ps(Ps_normal_map_input input,
    float3 normalWS;
 
    sample_normal_maps(input.texcoords, bump, normalWS);
-
-   float2 reflection_coords = input.positionSS.xy * rt_resolution.zw;
-   reflection_coords += bump;
+   
+   const float2 base_scene_texcoords = input.positionSS.xy * rt_resolution.zw;
+   const float2 reflection_coords = base_scene_texcoords + bump;
 
    const float3 reflection =
-      reflection_buffer.SampleLevel(linear_clamp_sampler, reflection_coords, 0);
-   const float3 refraction =
-      refraction_buffer.SampleLevel(linear_clamp_sampler, reflection_coords, 0);
+      reflection_buffer.SampleLevel(linear_mirror_sampler, reflection_coords, 0);
+   const float3 refraction = 
+      sample_refraction(input.positionSS.z, base_scene_texcoords, reflection_coords);
    
    const float3 viewWS = normalize(input.viewWS);
    const float NdotV = saturate(dot(normalWS, viewWS));
