@@ -55,21 +55,6 @@ auto sample(const std::unique_ptr<Type[]>& data, const int length,
    return total;
 }
 
-auto sample_height_min(const std::unique_ptr<glm::vec3[]>& data, const int length,
-                       const int x_offs, const int y_offs, const int footprint) -> float
-{
-   const auto inv_total_weight = 1.0f / (footprint * footprint);
-   float min_height = std::numeric_limits<float>::max();
-
-   for (auto y = y_offs; y < (y_offs + footprint); ++y) {
-      for (auto x = x_offs; x < (x_offs + footprint); ++x) {
-         min_height = safe_min(data[index(length, x, y)].y, min_height);
-      }
-   }
-
-   return min_height;
-}
-
 void downsample_positions(const Terrain_map& input, const Terrain_map& output,
                           const int footprint) noexcept
 {
@@ -84,11 +69,12 @@ void downsample_positions(const Terrain_map& input, const Terrain_map& output,
 
          const float z_pos = glm::mix(z_begin, z_end, y / (output.length - 1.0f));
 
-         output.position[index(output.length, x, y)] =
-            {x_pos,
-             sample_height_min(input.position, input.length, x * footprint,
-                               y * footprint, footprint),
-             z_pos};
+         output.position[index(output.length, x, y)] = {x_pos,
+                                                        sample(input.position,
+                                                               input.length, x * footprint,
+                                                               y * footprint, footprint)
+                                                           .y,
+                                                        z_pos};
       }
    }
 }
