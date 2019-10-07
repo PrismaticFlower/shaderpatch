@@ -42,7 +42,7 @@ struct Terrain_materials_config {
    Terrain_bumpmapping bumpmapping = Terrain_bumpmapping::parallax_offset_mapping;
    Terrain_blending blending = Terrain_blending::height;
    Terrain_rendertype rendertype = Terrain_rendertype::normal_ext;
-   Terrain_far far_terrain = Terrain_far::downsampled;
+   Terrain_far far_terrain = Terrain_far::fullres;
 
    glm::vec3 base_color = {1.0f, 1.0f, 1.0f};
    float base_metallicness = 1.0f;
@@ -128,7 +128,7 @@ struct convert<sp::Terrain_materials_config> {
          throw std::runtime_error{"Invalid BlendingMode"s};
       }
 
-      if (const auto lowres = global["FarTerrain"s].as<std::string>("Downsampled"s);
+      if (const auto lowres = global["FarTerrain"s].as<std::string>("Fullres"s);
           lowres == "Downsampled"sv) {
          config.far_terrain = sp::Terrain_far::downsampled;
       }
