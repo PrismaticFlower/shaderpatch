@@ -60,9 +60,11 @@ Vs_output main_vs(Packed_terrain_vertex packed_vertex)
    calculate_near_fade_and_fog(output.positionWS, output.positionPS, fade,
                                output.fog);
    output.fade = fade;
-
+   
    output.cull_distance = 
-      terrain_common_low_detail ? calculate_prev_far_fade(output.positionPS.z + terrain_low_detail_cull_bias) : fade;
+      terrain_common_low_detail ? 
+                                  calculate_prev_far_fade(output.positionPS.z * terrain_low_detail_cull_dist_mult) : 
+                                  output.fade;
 
 
    return output;
