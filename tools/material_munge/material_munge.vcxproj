@@ -185,7 +185,6 @@
     <ClCompile Include="src\terrain_model_segment.cpp" />
     <ClCompile Include="src\terrain_model_shadows.cpp" />
     <ClCompile Include="src\terrain_save_material.cpp" />
-    <ClCompile Include="src\terrain_save_normal_map.cpp" />
     <ClCompile Include="src\terrain_vertex_buffer.cpp" />
     <ClCompile Include="src\vertex_buffer.cpp" />
     <ClCompile Include="src\weld_vertex_list.cpp" />
@@ -210,7 +209,6 @@
     <ClInclude Include="src\terrain_model_segment.hpp" />
     <ClInclude Include="src\terrain_model_shadows.hpp" />
     <ClInclude Include="src\terrain_save_material.hpp" />
-    <ClInclude Include="src\terrain_save_normal_map.hpp" />
     <ClInclude Include="src\terrain_texture_transform.hpp" />
     <ClInclude Include="src\terrain_vertex_buffer.hpp" />
     <ClInclude Include="src\terrain_map.hpp" />

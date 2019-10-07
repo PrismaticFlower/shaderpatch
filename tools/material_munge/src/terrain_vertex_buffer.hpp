@@ -14,6 +14,7 @@ namespace sp {
 
 struct Terrain_vertex {
    glm::vec3 position;
+   glm::vec3 normal;
    glm::vec3 diffuse_lighting;
    glm::vec3 base_color;
    std::array<float, 2> texture_blend;

@@ -7,7 +7,6 @@
 #include "terrain_materials_config.hpp"
 #include "terrain_modelify.hpp"
 #include "terrain_save_material.hpp"
-#include "terrain_save_normal_map.hpp"
 #include "ucfb_reader.hpp"
 #include "utility.hpp"
 
@@ -101,7 +100,6 @@ void munge_terrain_materials(const std::unordered_map<Ci_string, std::filesystem
                              config.far_terrain == Terrain_far::fullres,
                              config.use_ze_static_lighting,
                              munged_terrain_input_file_path, terrain_output_file_path);
-            terrain_save_normal_map(terrain_map, terrain_suffix, output_munge_files_dir);
          }
 
          const auto terrain_textures = get_terrain_textures(terrain_map);

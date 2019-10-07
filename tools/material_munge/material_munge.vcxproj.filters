@@ -66,9 +66,6 @@
     <ClCompile Include="src\terrain_map.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\terrain_save_normal_map.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\terrain_downsample.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -144,9 +141,6 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\terrain_cut.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\terrain_save_normal_map.hpp">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\terrain_downsample.hpp">

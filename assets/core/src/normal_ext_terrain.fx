@@ -11,11 +11,10 @@
 
 Texture2D<float3> projected_light_texture : register(t2);
 Texture2D<float4> shadow_map : register(t3);
-Texture2D<float3> terrain_normal_map : register(t7);
-Texture2DArray<float1> height_maps : register(t8);
-Texture2DArray<float4> diffuse_ao_maps : register(t9);
-Texture2DArray<float3> normal_gloss_maps : register(t10);
-TextureCube<float3> envmap : register(t11);
+Texture2DArray<float1> height_maps : register(t7);
+Texture2DArray<float4> diffuse_ao_maps : register(t8);
+Texture2DArray<float3> normal_gloss_maps : register(t9);
+TextureCube<float3> envmap : register(t10);
 
 struct Texture_vars {
    float height_scale;
@@ -36,9 +35,9 @@ cbuffer MaterialConstants : register(MATERIAL_CB_INDEX) {
 struct Vs_output {
    float3 positionWS : POSITIONWS;
    float fog : FOG;
-   float3 static_diffuse_lighting : STATICLIGHT;
+   float3 normalWS : NORMALWS;
    float texture_blend0 : TEXBLEND0;
-   float2 terrain_coords : TERCOORDS;
+   float3 static_diffuse_lighting : STATICLIGHT;
    float texture_blend1 : TEXBLEND1;
    float fade : FADE;
 
@@ -55,10 +54,10 @@ Vs_output main_vs(Packed_terrain_vertex packed_vertex)
    Vs_output output;
 
    output.positionWS = input.positionWS;
+   output.normalWS = input.normalWS;
    output.texture_blend0 = input.texture_blend[0];
    output.texture_blend1 = input.texture_blend[1];
    output.texture_indices = input.texture_indices;
-   output.terrain_coords = input.terrain_coords;
    output.static_diffuse_lighting = input.color;
 
    output.positionPS = mul(float4(output.positionWS, 1.0), projection_matrix);
@@ -139,7 +138,7 @@ Unpacked_textures sample_textures(const Vs_output input, const float3x3 tangent_
 float4 main_ps(Vs_output input) : SV_Target0
 {
    const float3x3 tangent_to_world =
-      terrain_sample_normal_map(terrain_normal_map, input.terrain_coords);
+      terrain_tangent_to_world(normalize(input.normalWS));
 
    const Unpacked_textures textures = sample_textures(input, tangent_to_world);
 

@@ -22,8 +22,8 @@ struct Packed_terrain_vertex {
 
 struct Terrain_vertex {
    float3 positionWS;
+   float3 normalWS;
    float3 color;
-   float2 terrain_coords;
    uint3 texture_indices;
    float2 texture_blend;
 };
@@ -41,12 +41,13 @@ Terrain_vertex unpack_vertex(Packed_terrain_vertex packed, const bool srgb_color
    unpacked.texture_blend[0] = packed.normal.x;
    unpacked.texture_blend[1] = packed.normal.y;
 
+   unpacked.normalWS.xz = packed.normal.zw * (255.0 / 127.0) - (128.0 / 127.0);
+   unpacked.normalWS.y =
+      sqrt(1.0 - saturate(dot(unpacked.normalWS.xz, unpacked.normalWS.xz)));
+
    unpacked.color = float3(packed.tangent.rgb);
 
    if (srgb_colors) unpacked.color = srgb_to_linear(unpacked.color);
-
-   unpacked.terrain_coords =
-      max((float2)packed.position.xz / 32767.0f, -1.0) * float2(1.0, -1.0) * 0.5 + 0.5;
 
    return unpacked;
 }
@@ -57,17 +58,6 @@ float3x3 terrain_tangent_to_world(const float3 normalWS)
    const float3 bitangentWS = normalize(cross(normalWS, float3(-1.0, 0.0, 0.0)));
 
    return float3x3(tangentWS, bitangentWS, normalWS);
-}
-
-float3x3 terrain_sample_normal_map(Texture2D<float3> terrain_normal_map,
-                                   const float2 terrain_coords)
-{
-   float3 normalWS = terrain_normal_map.Sample(aniso_wrap_sampler, terrain_coords) *
-                        (1023.0 / 511.0) -
-                     (512.0 / 511.0);
-   normalWS = normalize(normalWS);
-
-   return terrain_tangent_to_world(normalWS);
 }
 
 class Terrain_parallax_texture : Parallax_input_texture {

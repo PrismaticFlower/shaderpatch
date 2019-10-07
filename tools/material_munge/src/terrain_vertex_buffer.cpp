@@ -134,10 +134,60 @@ auto select_textures(const Terrain_map& terrain, const std::array<glm::ivec2, 3>
                                std::array{tri_weights[2][0], tri_weights[2][1]}}};
 }
 
+auto create_terrain_normal_map(const Terrain_map& terrain) -> std::vector<glm::vec3>
+{
+   Expects(terrain.length >= 2);
+
+   std::vector<glm::vec3> normals;
+   normals.resize(terrain.length * terrain.length);
+
+   for (auto y = 0; y < (terrain.length - 1); ++y) {
+      for (auto x = 0; x < (terrain.length - 1); ++x) {
+         const auto i0 = x + (y * terrain.length);
+         const auto i1 = x + ((y + 1) * terrain.length);
+         const auto i2 = (x + 1) + (y * terrain.length);
+         const auto i3 = (x + 1) + ((y + 1) * terrain.length);
+
+         const auto v0 = terrain.position[i0];
+         const auto v1 = terrain.position[i1];
+         const auto v2 = terrain.position[i2];
+         const auto v3 = terrain.position[i3];
+
+         // tri 0
+         {
+            const glm::vec3 e1 = terrain.position[i2] - terrain.position[i0];
+            const glm::vec3 e2 = terrain.position[i3] - terrain.position[i0];
+            const glm::vec3 normal = glm::cross(e1, e2);
+
+            normals[i0] += normal;
+            normals[i2] += normal;
+            normals[i3] += normal;
+         }
+
+         // tri 1
+         {
+            const glm::vec3 e1 = terrain.position[i3] - terrain.position[i0];
+            const glm::vec3 e2 = terrain.position[i1] - terrain.position[i0];
+            const glm::vec3 normal = glm::cross(e1, e2);
+
+            normals[i0] += normal;
+            normals[i3] += normal;
+            normals[i1] += normal;
+         }
+      }
+   }
+
+   for (auto& normal : normals) normal = glm::normalize(normal);
+
+   return normals;
+}
+
 auto create_terrain_triangles(const Terrain_map& terrain) -> Terrain_triangle_list
 {
    Terrain_triangle_list tris;
    tris.reserve((terrain.length - 1) * (terrain.length - 1) * 2);
+
+   const auto normals = create_terrain_normal_map(terrain);
 
    for (auto y = 0; y < (terrain.length - 1); ++y) {
       for (auto x = 0; x < (terrain.length - 1); ++x) {
@@ -157,18 +207,22 @@ auto create_terrain_triangles(const Terrain_map& terrain) -> Terrain_triangle_li
          Terrain_vertex v3;
 
          v0.position = terrain.position[i0];
+         v0.normal = normals[i0];
          v0.diffuse_lighting = terrain.diffuse_lighting[i0];
          v0.base_color = terrain.color[i0];
 
          v1.position = terrain.position[i1];
+         v1.normal = normals[i1];
          v1.diffuse_lighting = terrain.diffuse_lighting[i1];
          v1.base_color = terrain.color[i1];
 
          v2.position = terrain.position[i2];
+         v2.normal = normals[i2];
          v2.diffuse_lighting = terrain.diffuse_lighting[i2];
          v2.base_color = terrain.color[i2];
 
          v3.position = terrain.position[i3];
+         v3.normal = normals[i3];
          v3.diffuse_lighting = terrain.diffuse_lighting[i3];
          v3.base_color = terrain.color[i3];
 
@@ -223,6 +277,8 @@ auto pack_vertex(const Terrain_vertex& vertex,
 
    packed.normal |= pack_unorm(vertex.texture_blend[0]) << 16;
    packed.normal |= pack_unorm(vertex.texture_blend[1]) << 8;
+   packed.normal |= pack_unorm(vertex.normal.x * 0.5f + 0.5f);
+   packed.normal |= pack_unorm(vertex.normal.z * 0.5f + 0.5f) << 24;
 
    const auto srgb_color = glm::convertLinearToSRGB(
       pack_lighting ? vertex.diffuse_lighting : glm::vec3{0.0f});

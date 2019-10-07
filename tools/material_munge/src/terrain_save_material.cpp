@@ -147,14 +147,12 @@ auto select_textures(const Terrain_materials_config& config,
                      const std::string_view suffix) -> std::vector<std::string>
 {
    if (config.rendertype == Terrain_rendertype::pbr) {
-      return {std::string{terrain_normal_map_texture_name} += suffix,
-              std::string{terrain_height_texture_name} += suffix,
+      return {std::string{terrain_height_texture_name} += suffix,
               std::string{terrain_albedo_ao_texture_name} += suffix,
               std::string{terrain_normal_mr_texture_name} += suffix};
    }
    else {
-      return {std::string{terrain_normal_map_texture_name} += suffix,
-              std::string{terrain_height_texture_name} += suffix,
+      return {std::string{terrain_height_texture_name} += suffix,
               std::string{terrain_diffuse_ao_texture_name} += suffix,
               std::string{terrain_normal_gloss_texture_name} += suffix,
               config.use_envmap ? config.envmap_name : ""s};
