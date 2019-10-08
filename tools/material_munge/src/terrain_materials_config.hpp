@@ -94,7 +94,7 @@ struct convert<sp::Terrain_materials_config> {
       config.srgb_diffuse_maps = global["sRGBDiffuseMaps"s].as<bool>(true);
 
       if (const auto bumpmapping =
-             global["BumpMappingType"s].as<std::string>("Parallax Offset Mapping"s);
+             global["BumpMappingType"s].as<std::string>("Normal Mapping"s);
           bumpmapping == "Normal Mapping"sv) {
          config.bumpmapping = sp::Terrain_bumpmapping::normal_mapping;
       }
