@@ -38,5 +38,6 @@ struct Terrain_map {
    std::unique_ptr<std::array<float, 16>[]> texture_weights;
 };
 
-auto load_terrain_map(const std::filesystem::path& path) -> Terrain_map;
+auto load_terrain_map(const std::filesystem::path& path,
+                      const glm::vec3 terrain_offset) -> Terrain_map;
 }

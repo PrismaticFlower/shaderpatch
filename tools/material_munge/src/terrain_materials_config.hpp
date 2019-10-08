@@ -51,6 +51,8 @@ struct Terrain_materials_config {
    glm::vec3 diffuse_color = {1.0f, 1.0f, 1.0f};
    glm::vec3 specular_color = {1.0f, 1.0f, 1.0f};
 
+   glm::vec3 terrain_offset = {0.0f, 0.0f, 0.0f};
+
    std::map<std::string, Terrain_material, std::less<>> materials;
 };
 }
@@ -148,6 +150,9 @@ struct convert<sp::Terrain_materials_config> {
          global["DiffuseColor"s].as<glm::vec3>(glm::vec3{1.f, 1.f, 1.f});
       config.specular_color =
          global["SpecularColor"s].as<glm::vec3>(glm::vec3{1.f, 1.f, 1.f});
+
+      config.terrain_offset =
+         global["TerrainOffset"s].as<glm::vec3>(glm::vec3{0.f, 0.f, 0.f});
 
       for (auto& entry : node["Materials"s]) {
          config.materials.emplace(entry.first.as<std::string>(),

@@ -224,9 +224,9 @@ auto read_texture_transforms(const Terr_header& header,
    return transforms;
 }
 
-void read_height_map(std::ifstream& file, const float height_scale,
-                     const float grid_scale, const Terrain_indexer& indexer,
-                     const gsl::span<glm::vec3> output)
+void read_height_map(std::ifstream& file, const glm::vec3 terrain_offset,
+                     const float height_scale, const float grid_scale,
+                     const Terrain_indexer& indexer, const gsl::span<glm::vec3> output)
 {
    Expects(output.size() == indexer.output_length() * indexer.output_length());
 
@@ -240,9 +240,10 @@ void read_height_map(std::ifstream& file, const float height_scale,
       for (auto x = indexer.begin(); x <= indexer.end(); ++x) {
          const auto [x_pos, z_pos] = indexer.position(x, y, grid_scale);
 
-         output[indexer.out(x, y)] = {x_pos,
-                                      fixed_point_heightmap[indexer.in(x, y)] * height_scale,
-                                      z_pos};
+         output[indexer.out(x, y)] =
+            terrain_offset +
+            glm::vec3{x_pos, fixed_point_heightmap[indexer.in(x, y)] * height_scale,
+                      z_pos};
       }
    }
 }
@@ -381,7 +382,8 @@ Terrain_map::Terrain_map(const Terrain_map& other)
                this->texture_weights.get());
 }
 
-auto load_terrain_map(const std::filesystem::path& path) -> Terrain_map
+auto load_terrain_map(const std::filesystem::path& path,
+                      const glm::vec3 terrain_offset) -> Terrain_map
 {
    std::ifstream file{path, std::ios::binary};
    file.exceptions(std::ios::badbit | std::ios::failbit);
@@ -405,7 +407,7 @@ auto load_terrain_map(const std::filesystem::path& path) -> Terrain_map
                  : 8,
               std::ios::cur);
 
-   read_height_map(file, header.height_scale, header.grid_scale, indexer,
+   read_height_map(file, terrain_offset, header.height_scale, header.grid_scale, indexer,
                    gsl::make_span(map.position.get(), indexer.output_length() *
                                                          indexer.output_length()));
    read_color_maps(file, indexer,
