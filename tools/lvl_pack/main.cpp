@@ -46,7 +46,7 @@ auto load_and_transform_req_files(fs::path path)
 
    // Process "animbank" and "anim" entries.
    for (auto it = req.begin(); it != req.cend();) {
-      if (it->first == "animbank"_svci) {
+      if (it->first == "animbank"_svci || it->first == "animset"_svci) {
          const std::vector<std::string> animbanks{it->second};
 
          for (auto& anim : animbanks) {
