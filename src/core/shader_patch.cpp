@@ -613,8 +613,11 @@ auto Shader_patch::create_patch_texture(const gsl::span<const std::byte> texture
 
       const auto texture_deleter = [this](ID3D11ShaderResourceView * srv) noexcept
       {
-         log(Log_level::info, "Destroying texture "sv,
-             std::quoted(_shader_resource_database.lookup_name(srv)));
+         const auto [exists, name] = _shader_resource_database.reverse_lookup(srv);
+
+         if (!exists) return; // Texture has already been replaced.
+
+         log(Log_level::info, "Destroying texture "sv, std::quoted(name));
 
          _shader_resource_database.erase(srv);
       };

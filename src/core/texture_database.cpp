@@ -73,16 +73,17 @@ auto Shader_resource_database::at_if(const std::string_view name) const noexcept
    return nullptr;
 }
 
-auto Shader_resource_database::lookup_name(ID3D11ShaderResourceView* srv) -> std::string
+auto Shader_resource_database::reverse_lookup(ID3D11ShaderResourceView* srv) noexcept
+   -> Reverse_lookup_result
 {
    auto it = std::find_if(_resources.cbegin(), _resources.cend(),
                           [srv](const auto& res) { return res.first == srv; });
 
    if (it == _resources.cend()) {
-      log_and_terminate("Attempt to lookup shader resource name not present in database!"sv);
+      return {.found = false};
    }
 
-   return it->second;
+   return {.found = true, .name = it->second};
 }
 
 void Shader_resource_database::insert(Com_ptr<ID3D11ShaderResourceView> srv,

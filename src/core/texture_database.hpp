@@ -20,10 +20,15 @@ public:
       std::string_view name;
    };
 
+   struct Reverse_lookup_result {
+      bool found = false;
+      std::string_view name;
+   };
+
    auto at_if(const std::string_view name) const noexcept
       -> Com_ptr<ID3D11ShaderResourceView>;
 
-   auto lookup_name(ID3D11ShaderResourceView* srv) -> std::string;
+   auto reverse_lookup(ID3D11ShaderResourceView* srv) noexcept -> Reverse_lookup_result;
 
    void insert(Com_ptr<ID3D11ShaderResourceView> texture_srv,
                const std::string_view name) noexcept;
