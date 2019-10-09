@@ -7,7 +7,7 @@ Display:
 
    # Allow tearing when displaying frames. This can allow lower latency and is also required for 
    # variable refresh rate technologies to work.
-   Allow Tearing: no
+   Allow Tearing: yes
    
    # Whether to centre the window or not. If `ScreenPercent` is 100 there will be 
    # no difference between a centred and uncentred window.
