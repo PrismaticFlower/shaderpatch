@@ -1225,26 +1225,33 @@ void Shader_patch::game_rendertype_changed() noexcept
       _discard_draw_calls = false;
 
       const bool multisampled = _rt_sample_count > 1;
-      auto* const shadow_rtv = [&]() -> ID3D11RenderTargetView* {
+      auto* const shadow_rt = [&]() -> Game_rendertarget* {
          auto it =
             std::find_if(_game_rendertargets.begin(), _game_rendertargets.end(),
                          [&](const Game_rendertarget& rt) {
                             return (rt.type == Game_rt_type::shadow);
                          });
 
-         return it != _game_rendertargets.end() ? it->rtv.get() : nullptr;
+         return it != _game_rendertargets.end() ? &(*it) : nullptr;
       }();
-      auto* const rtv = multisampled ? _shadow_msaa_rt.rtv.get() : shadow_rtv;
+      auto* const rt = multisampled ? &_shadow_msaa_rt : shadow_rt;
 
-      if (rtv) {
+      auto backup_rt = _game_rendertargets[0];
+
+      if (rt) {
          _device_context
-            ->ClearRenderTargetView(rtv, std::array{1.0f, 1.0f, 1.0f, 1.0f}.data());
-         _device_context->OMSetRenderTargets(1, &rtv, current_depthstencil());
+            ->ClearRenderTargetView(rt->rtv.get(),
+                                    std::array{1.0f, 1.0f, 1.0f, 1.0f}.data());
+
+         _game_rendertargets[0] = *rt;
       }
 
-      _on_stretch_rendertarget = [this](Game_rendertarget&, const RECT,
-                                        Game_rendertarget& dest, const RECT) noexcept
+      _on_stretch_rendertarget =
+         [ this, backup_rt = std::move(backup_rt) ](Game_rendertarget&, const RECT,
+                                                    Game_rendertarget& dest,
+                                                    const RECT) noexcept
       {
+         _game_rendertargets[0] = std::move(backup_rt);
          _on_stretch_rendertarget = nullptr;
          _om_targets_dirty = true;
 

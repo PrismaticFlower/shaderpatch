@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+#include <cstddef>
 #include <functional>
 #include <type_traits>
 #include <utility>
@@ -66,7 +68,7 @@ public:
 
    auto operator()(Args... args) const noexcept -> Return
    {
-      return _invoke(&_invocable_storage, std::forward<Args>(args)...);
+      return _invoke(_invocable_storage.data(), std::forward<Args>(args)...);
    }
 
    explicit operator bool() const noexcept
@@ -88,11 +90,13 @@ private:
    void create(Invocable&& invocable) noexcept
    {
       using Invocable_type = std::remove_reference_t<std::remove_cv_t<Invocable>>;
-
       static_assert(sizeof(Invocable_type) <= sizeof(_invocable_storage),
                     "Invocable_type is too large!");
+      static_assert(alignof(Invocable_type) <= alignof(int),
+                    "Invocable_type will be misaligned!");
 
-      new (&_invocable_storage) Invocable_type{std::forward<Invocable>(invocable)};
+      new (_invocable_storage.data())
+         Invocable_type{std::forward<Invocable>(invocable)};
 
       _invoke = [](const void* invocable_storage, Args... args) noexcept
       {
@@ -115,7 +119,7 @@ private:
 
    void cleanup() noexcept
    {
-      if (_invoke) _destroy(&_invocable_storage);
+      if (_invoke) _destroy(_invocable_storage.data());
 
       _invoke = nullptr;
       _destroy = nullptr;
@@ -126,7 +130,7 @@ private:
 
    Invoke_fn _invoke = nullptr;
    Destory_fn _destroy = nullptr;
-   std::aligned_storage_t<24, 4> _invocable_storage{};
+   alignas(int) std::array<std::byte, 32> _invocable_storage;
 };
 
 }

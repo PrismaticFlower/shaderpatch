@@ -182,6 +182,13 @@ void Render_state_manager::update_blend_state(core::Shader_patch& shader_patch) 
 
 void Render_state_manager::update_depthstencil_state(core::Shader_patch& shader_patch) noexcept
 {
+   const bool depth_readonly = _current_depthstencil_state.depth_write_enable == 0;
+   const bool stencil_readonly =
+      (_current_depthstencil_state.stencil_write_mask == 0) |
+      ((_current_depthstencil_state.stencil_enabled == 0) &
+       (_current_depthstencil_state.stencil_doublesided_enabled == 0));
+   const bool readonly_depthstencil = depth_readonly & stencil_readonly;
+
    if (const auto depthstencil_state =
           std::find_if(_depthstencil_states.cbegin(), _depthstencil_states.cend(),
                        [current_depthstencil_state{_current_depthstencil_state}](
@@ -191,7 +198,7 @@ void Render_state_manager::update_depthstencil_state(core::Shader_patch& shader_
        depthstencil_state != _depthstencil_states.cend()) {
       shader_patch.set_depthstencil_state(*depthstencil_state->second,
                                           _current_depthstencil_state.stencil_ref,
-                                          !_current_depthstencil_state.depth_write_enable);
+                                          readonly_depthstencil);
 
       return;
    }
@@ -204,7 +211,7 @@ void Render_state_manager::update_depthstencil_state(core::Shader_patch& shader_
 
    shader_patch.set_depthstencil_state(depthstencil_state,
                                        _current_depthstencil_state.stencil_ref,
-                                       !_current_depthstencil_state.depth_write_enable);
+                                       readonly_depthstencil);
 }
 
 void Render_state_manager::update_rasterizer_state(core::Shader_patch& shader_patch) noexcept
