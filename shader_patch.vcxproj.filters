@@ -467,6 +467,9 @@
     <ClInclude Include="src\core\basic_builtin_textures.hpp">
       <Filter>src\core</Filter>
     </ClInclude>
+    <ClInclude Include="src\env_vars.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />

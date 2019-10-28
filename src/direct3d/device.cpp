@@ -1,5 +1,6 @@
 
 #include "device.hpp"
+#include "../env_vars.hpp"
 #include "../user_config.hpp"
 #include "../window_helpers.hpp"
 #include "buffer.hpp"
@@ -178,49 +179,55 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
    MONITORINFO info{sizeof(MONITORINFO)};
    GetMonitorInfoW(MonitorFromWindow(_window, MONITOR_DEFAULTTONEAREST), &info);
 
-   const auto monitor_width =
-      static_cast<std::uint32_t>(info.rcMonitor.right - info.rcMonitor.left);
-   const auto monitor_height =
-      static_cast<std::uint32_t>(info.rcMonitor.bottom - info.rcMonitor.top);
+   if (env_vars::no_window_changes) {
+      _width = params->BackBufferWidth;
+      _height = params->BackBufferHeight;
+   }
+   else {
+      const auto monitor_width =
+         static_cast<std::uint32_t>(info.rcMonitor.right - info.rcMonitor.left);
+      const auto monitor_height =
+         static_cast<std::uint32_t>(info.rcMonitor.bottom - info.rcMonitor.top);
 
-   if (user_config.display.use_custom_resolution) {
-      _width = user_config.display.custom_resolution_width;
-      _height = user_config.display.custom_resolution_height;
+      if (user_config.display.use_custom_resolution) {
+         _width = user_config.display.custom_resolution_width;
+         _height = user_config.display.custom_resolution_height;
 
-      if (user_config.display.custom_resolution_fullscreen) {
-         win32::resize_window(_window, monitor_width, monitor_height);
+         if (user_config.display.custom_resolution_fullscreen) {
+            win32::resize_window(_window, monitor_width, monitor_height);
+         }
+         else {
+            win32::resize_window(_window, _width, _height);
+         }
       }
       else {
+         if (user_config.display.treat_800x600_as_interface &&
+             params->BackBufferWidth == 800 && params->BackBufferHeight == 600) {
+            _width = 800;
+            _height = 600;
+         }
+         else {
+            _width = static_cast<std::uint16_t>(
+               monitor_width * user_config.display.screen_percent / 100);
+            _height = static_cast<std::uint16_t>(
+               monitor_height * user_config.display.screen_percent / 100);
+         }
+
          win32::resize_window(_window, _width, _height);
       }
-   }
-   else {
-      if (user_config.display.treat_800x600_as_interface &&
-          params->BackBufferWidth == 800 && params->BackBufferHeight == 600) {
-         _width = 800;
-         _height = 600;
+
+      if (user_config.display.centred || user_config.display.screen_percent == 100) {
+         win32::centre_window(_window);
       }
       else {
-         _width = static_cast<std::uint16_t>(
-            monitor_width * user_config.display.screen_percent / 100);
-         _height = static_cast<std::uint16_t>(
-            monitor_height * user_config.display.screen_percent / 100);
+         win32::leftalign_window(_window);
       }
 
-      win32::resize_window(_window, _width, _height);
-   }
+      win32::clip_cursor_to_window(_window);
 
-   if (user_config.display.centred || user_config.display.screen_percent == 100) {
-      win32::centre_window(_window);
+      params->BackBufferWidth = _width;
+      params->BackBufferHeight = _height;
    }
-   else {
-      win32::leftalign_window(_window);
-   }
-
-   win32::clip_cursor_to_window(_window);
-
-   params->BackBufferWidth = _width;
-   params->BackBufferHeight = _height;
 
    _render_state_manager.reset();
    _texture_stage_manager.reset();
