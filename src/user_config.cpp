@@ -107,6 +107,18 @@ void User_config::parse_file(const std::string& path)
    display.treat_800x600_as_interface =
       config["Display"s]["Treat 800x600 As Interface"s].as<bool>();
 
+   display.use_custom_resolution =
+      config["Display"s]["Use Custom Resolution"s].as<bool>();
+
+   display.custom_resolution_fullscreen =
+      config["Display"s]["Custom Resolution Fullscreen"s].as<bool>();
+
+   display.custom_resolution_width =
+      config["Display"s]["Custom Resolution"s][0].as<std::uint32_t>();
+
+   display.custom_resolution_height =
+      config["Display"s]["Custom Resolution"s][1].as<std::uint32_t>();
+
    graphics.gpu_selection_method = gpu_selection_method_from_string(
       config["Graphics"s]["GPU Selection Method"s].as<std::string>());
 

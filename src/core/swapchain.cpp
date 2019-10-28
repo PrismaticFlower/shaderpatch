@@ -12,6 +12,14 @@ namespace {
 
 constexpr auto swap_chain_buffers = 2;
 
+auto scaling_mode()
+{
+   return (user_config.display.use_custom_resolution &&
+           user_config.display.custom_resolution_fullscreen)
+             ? DXGI_SCALING_STRETCH
+             : DXGI_SCALING_NONE;
+}
+
 auto create_swapchain(ID3D11Device1& device, IDXGIAdapter2& adapter,
                       const HWND window, const UINT width, const UINT height,
                       const bool allow_tearing) noexcept -> Com_ptr<IDXGISwapChain1>
@@ -29,7 +37,7 @@ auto create_swapchain(ID3D11Device1& device, IDXGIAdapter2& adapter,
    swap_chain_desc.BufferUsage =
       DXGI_USAGE_SHADER_INPUT | DXGI_USAGE_RENDER_TARGET_OUTPUT;
    swap_chain_desc.BufferCount = swap_chain_buffers;
-   swap_chain_desc.Scaling = DXGI_SCALING_NONE;
+   swap_chain_desc.Scaling = scaling_mode();
    swap_chain_desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
    swap_chain_desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
    swap_chain_desc.Flags = allow_tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
