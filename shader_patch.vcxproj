@@ -281,7 +281,6 @@
     <ClInclude Include="src\effects\rendertarget_allocator.hpp" />
     <ClInclude Include="src\effects\ssao.hpp" />
     <ClInclude Include="src\effects\tonemappers.hpp" />
-    <ClInclude Include="src\env_vars.hpp" />
     <ClInclude Include="src\file_hooks.hpp" />
     <ClInclude Include="src\hook_vtable.hpp" />
     <ClInclude Include="src\imgui\imgui_ext.hpp" />
