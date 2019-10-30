@@ -67,10 +67,6 @@ Graphics:
 # to their mods at their discretion and configuration. Below are options provided to 
 # tweak the performance of this system for low-end/older GPUs.
 Effects:
-   # For some _very_ old or _very_ low-end GPUs the Effects system may prove too much to handle
-   # at an acceptable framerate and in this case this can be used to switch them off.
-   Enabled: yes
-   
    # Enable or disable a mod using the Bloom effect. This effect is can have a slight performance impact.
    Bloom: yes
    

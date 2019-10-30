@@ -36,7 +36,6 @@ enum class SSAO_quality : std::int8_t { fastest, fast, medium, high, highest };
 enum class Refraction_quality : std::int8_t { low, medium, high, ultra };
 
 struct Effects_user_config {
-   bool enabled = true;
    bool bloom = true;
    bool vignette = true;
    bool film_grain = true;

@@ -65,8 +65,6 @@ void User_config::show_imgui() noexcept
    }
 
    if (ImGui::CollapsingHeader("Effects", ImGuiTreeNodeFlags_DefaultOpen)) {
-      ImGui::Checkbox("Enabled", &effects.enabled);
-
       ImGui::Checkbox("Bloom", &effects.bloom);
       ImGui::Checkbox("Vignette", &effects.vignette);
       ImGui::Checkbox("Film Grain", &effects.film_grain);
@@ -136,8 +134,6 @@ void User_config::parse_file(const std::string& path)
 
    graphics.user_effects_config =
       config["Graphics"s]["User Effects Config"s].as<std::string>();
-
-   effects.enabled = config["Effects"s]["Enabled"s].as<bool>();
 
    effects.bloom = config["Effects"s]["Bloom"s].as<bool>();
 

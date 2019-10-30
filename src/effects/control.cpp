@@ -50,14 +50,12 @@ bool Control::enabled(const bool enabled) noexcept
    if (!_enabled && user_config.graphics.enable_user_effects_config)
       load_params_from_yaml_file(user_config.graphics.user_effects_config);
 
-   return (_enabled || user_config.graphics.enable_user_effects_config) &&
-          user_config.effects.enabled;
+   return (_enabled || user_config.graphics.enable_user_effects_config);
 }
 
 bool Control::enabled() const noexcept
 {
-   return (_enabled || user_config.graphics.enable_user_effects_config) &&
-          user_config.effects.enabled;
+   return (_enabled || user_config.graphics.enable_user_effects_config);
 }
 
 void Control::show_imgui(HWND game_window) noexcept
