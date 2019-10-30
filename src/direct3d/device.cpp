@@ -178,37 +178,24 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
    MONITORINFO info{sizeof(MONITORINFO)};
    GetMonitorInfoW(MonitorFromWindow(_window, MONITOR_DEFAULTTONEAREST), &info);
 
-   const auto monitor_width =
-      static_cast<std::uint32_t>(info.rcMonitor.right - info.rcMonitor.left);
-   const auto monitor_height =
-      static_cast<std::uint32_t>(info.rcMonitor.bottom - info.rcMonitor.top);
-
-   if (user_config.display.use_custom_resolution) {
-      _width = user_config.display.custom_resolution_width;
-      _height = user_config.display.custom_resolution_height;
-
-      if (user_config.display.custom_resolution_fullscreen) {
-         win32::resize_window(_window, monitor_width, monitor_height);
-      }
-      else {
-         win32::resize_window(_window, _width, _height);
-      }
+   if (user_config.display.treat_800x600_as_interface &&
+       params->BackBufferWidth == 800 && params->BackBufferHeight == 600) {
+      _width = 800;
+      _height = 600;
    }
    else {
-      if (user_config.display.treat_800x600_as_interface &&
-          params->BackBufferWidth == 800 && params->BackBufferHeight == 600) {
-         _width = 800;
-         _height = 600;
-      }
-      else {
-         _width = static_cast<std::uint16_t>(
-            monitor_width * user_config.display.screen_percent / 100);
-         _height = static_cast<std::uint16_t>(
-            monitor_height * user_config.display.screen_percent / 100);
-      }
+      const auto monitor_width =
+         static_cast<std::uint32_t>(info.rcMonitor.right - info.rcMonitor.left);
+      const auto monitor_height =
+         static_cast<std::uint32_t>(info.rcMonitor.bottom - info.rcMonitor.top);
 
-      win32::resize_window(_window, _width, _height);
+      _width = static_cast<std::uint16_t>(
+         monitor_width * user_config.display.screen_percent / 100);
+      _height = static_cast<std::uint16_t>(
+         monitor_height * user_config.display.screen_percent / 100);
    }
+
+   win32::resize_window(_window, _width, _height);
 
    if (user_config.display.centred || user_config.display.screen_percent == 100) {
       win32::centre_window(_window);

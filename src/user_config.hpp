@@ -57,10 +57,6 @@ struct User_config {
       bool allow_tearing = true;
       bool centred = false;
       bool treat_800x600_as_interface = true;
-      bool use_custom_resolution = false;
-      bool custom_resolution_fullscreen = true;
-      std::uint32_t custom_resolution_width = 1920;
-      std::uint32_t custom_resolution_height = 1080;
    } display;
 
    struct {

@@ -18,19 +18,6 @@ Display:
    # the interface usable while still letting you enjoy fullscreen ingame.
    Treat 800x600 As Interface: yes
 
-   # Whether to force the game to a custom resolution or not.
-   Use Custom Resolution: no
-
-   # Whether or not stretch the game's window across the full screen when using
-   # a custom resolution. Does *not* cause display mode changing. 
-   #
-   # May also break the developer screen's cursor for resolutions that 
-   # differ greatly from the desktop resolution
-   Custom Resolution Fullscreen: yes
-
-   # The custom resolution to use when "Use Custom Resolution" is enabled.
-   Custom Resolution: [1920, 1080]
-
 Graphics:
    # How to select the GPU to use. Can be "Highest Performance", "Lowest Power Usage", "Highest Feature Level", "Most Memory" or "Use CPU".
    GPU Selection Method: Highest Performance
