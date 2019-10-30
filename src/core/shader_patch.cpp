@@ -1373,7 +1373,8 @@ void Shader_patch::game_rendertype_changed() noexcept
       {
          resolve_refraction_texture();
 
-         if (_oit_provider.enabled()) {
+         if (_oit_provider.enabled() ||
+             (_effects_active && _effects.config().oit_requested)) {
             _oit_provider.prepare_resources(*_device_context,
                                             *_game_rendertargets[0].texture,
                                             *_game_rendertargets[0].rtv);

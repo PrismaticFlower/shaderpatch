@@ -75,6 +75,16 @@ void Control::show_imgui(HWND game_window) noexcept
                   "HDR rendering works best with custom materials "
                   "and may give poor results without them.");
             }
+
+            ImGui::Checkbox("Request Order-Independent Transparency",
+                            &_config.oit_requested);
+
+            if (ImGui::IsItemHovered()) {
+               ImGui::SetTooltip(
+                  "Informs SP that OIT is required for some models to "
+                  "render correctly and that it should be enabled if the "
+                  "user's GPU supports it.");
+            }
          }
 
          ImGui::Checkbox("Profiler Enabled", &profiler.enabled);

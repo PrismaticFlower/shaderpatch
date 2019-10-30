@@ -24,6 +24,7 @@ namespace sp::effects {
 
 struct Effects_control_config {
    bool hdr_rendering = false;
+   bool oit_requested = false;
 };
 
 class Control {
@@ -89,6 +90,7 @@ struct convert<sp::effects::Effects_control_config> {
       YAML::Node node;
 
       node["HDRRendering"s] = config.hdr_rendering;
+      node["RequestOIT"s] = config.oit_requested;
 
       return node;
    }
@@ -100,6 +102,7 @@ struct convert<sp::effects::Effects_control_config> {
       config = sp::effects::Effects_control_config{};
 
       config.hdr_rendering = node["HDRRendering"s].as<bool>(config.hdr_rendering);
+      config.oit_requested = node["RequestOIT"s].as<bool>(config.oit_requested);
 
       return true;
    }
