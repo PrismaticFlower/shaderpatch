@@ -35,7 +35,9 @@ Graphics:
    Enable 16-Bit Color Channel Rendering: yes
 
    # Enables the use of an Order-Independent Transparency approximation. It should go without saying that this increases the cost of rendering.
-   # Requires a GPU with support for Rasterizer Ordered Views and typed Unordered Access View loads. Known to be buggy on NVIDIA GPUs.
+   # Requires a GPU with support for Rasterizer Ordered Views and typed Unordered Access View loads. 
+   #
+   # Known to be buggy on old NVIDIA drivers. Try updating your GPU driver if you encounter issues.
    Enable Order-Independent Transparency: no
 
    # Enables the use of an alternative post processing path for some of the game's post processing effects. The benefit to this 
