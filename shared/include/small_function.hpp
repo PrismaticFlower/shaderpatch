@@ -92,7 +92,7 @@ private:
       using Invocable_type = std::remove_reference_t<std::remove_cv_t<Invocable>>;
       static_assert(sizeof(Invocable_type) <= sizeof(_invocable_storage),
                     "Invocable_type is too large!");
-      static_assert(alignof(Invocable_type) <= alignof(int),
+      static_assert(alignof(Invocable_type) <= alignof(std::intptr_t),
                     "Invocable_type will be misaligned!");
 
       new (_invocable_storage.data())
@@ -130,7 +130,7 @@ private:
 
    Invoke_fn _invoke = nullptr;
    Destory_fn _destroy = nullptr;
-   alignas(int) std::array<std::byte, 32> _invocable_storage;
+   alignas(std::intptr_t) std::array<std::byte, 32> _invocable_storage;
 };
 
 }
