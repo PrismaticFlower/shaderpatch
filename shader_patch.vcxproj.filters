@@ -114,15 +114,6 @@
     <ClCompile Include="src\core\patch_material.cpp">
       <Filter>src\core</Filter>
     </ClCompile>
-    <ClCompile Include="src\imgui\imgui_impl_dx11.cpp">
-      <Filter>src\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\imgui\imgui_impl_win32.cpp">
-      <Filter>src\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="src\imgui\imgui_impl_dx11_shaders.hpp">
-      <Filter>src\imgui</Filter>
-    </ClCompile>
     <ClCompile Include="src\core\swapchain.cpp">
       <Filter>src\core</Filter>
     </ClCompile>
@@ -204,11 +195,30 @@
     <ClCompile Include="src\bf2_log_monitor.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\basic_builtin_textures.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui\imgui_impl_dx11_shaders.hpp" />
+    <ClCompile Include="src\imgui\imgui.cpp">
+      <Filter>src\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui\imgui_demo.cpp">
+      <Filter>src\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui\imgui_draw.cpp">
+      <Filter>src\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui\imgui_impl_dx11.cpp">
+      <Filter>src\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui\imgui_impl_win32.cpp">
+      <Filter>src\imgui</Filter>
+    </ClCompile>
     <ClCompile Include="src\imgui\imgui_stdlib.cpp">
       <Filter>src\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\basic_builtin_textures.cpp">
-      <Filter>src\core</Filter>
+    <ClCompile Include="src\imgui\imgui_widgets.cpp">
+      <Filter>src\imgui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -374,12 +384,6 @@
     <ClInclude Include="src\direct3d\texture3d_resource.hpp">
       <Filter>src\direct3d</Filter>
     </ClInclude>
-    <ClInclude Include="src\imgui\imgui_impl_dx11.h">
-      <Filter>src\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\imgui\imgui_impl_win32.h">
-      <Filter>src\imgui</Filter>
-    </ClInclude>
     <ClInclude Include="src\core\swapchain.hpp">
       <Filter>src\core</Filter>
     </ClInclude>
@@ -391,9 +395,6 @@
     </ClInclude>
     <ClInclude Include="src\core\material_shader_factory.hpp">
       <Filter>src\core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\imgui\imgui_ext.hpp">
-      <Filter>src\imgui</Filter>
     </ClInclude>
     <ClInclude Include="src\file_hooks.hpp">
       <Filter>src</Filter>
@@ -461,11 +462,41 @@
     <ClInclude Include="src\bf2_log_monitor.hpp">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="src\core\basic_builtin_textures.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\imgui\imconfig.h">
+      <Filter>src\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="src\imgui\imgui.h">
+      <Filter>src\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="src\imgui\imgui_ext.hpp">
+      <Filter>src\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="src\imgui\imgui_impl_dx11.h">
+      <Filter>src\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="src\imgui\imgui_impl_dx11_shaders.hpp">
+      <Filter>src\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="src\imgui\imgui_impl_win32.h">
+      <Filter>src\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="src\imgui\imgui_internal.h">
+      <Filter>src\imgui</Filter>
+    </ClInclude>
     <ClInclude Include="src\imgui\imgui_stdlib.h">
       <Filter>src\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\basic_builtin_textures.hpp">
-      <Filter>src\core</Filter>
+    <ClInclude Include="src\imgui\imstb_rectpack.h">
+      <Filter>src\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="src\imgui\imstb_textedit.h">
+      <Filter>src\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="src\imgui\imstb_truetype.h">
+      <Filter>src\imgui</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

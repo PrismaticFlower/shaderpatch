@@ -1,5 +1,5 @@
 
-const static unsigned char imgui_impl_dx11_vs_shader[] =
+constexpr inline static unsigned char imgui_impl_dx11_vs_shader[] =
    {68,  88,  66,  67,  193, 41,  206, 126, 110, 128, 143, 52,  233, 167, 187,
     47,  111, 86,  223, 148, 1,   0,   0,   0,   80,  4,   0,   0,   6,   0,
     0,   0,   56,  0,   0,   0,   24,  1,   0,   0,   32,  2,   0,   0,   156,
@@ -75,7 +75,7 @@ const static unsigned char imgui_impl_dx11_vs_shader[] =
     79,  83,  73,  84,  73,  79,  78,  0,   67,  79,  76,  79,  82,  0,   84,
     69,  88,  67,  79,  79,  82,  68,  0,   171};
 
-const static unsigned char imgui_impl_dx11_ps_shader[] =
+constexpr inline static unsigned char imgui_impl_dx11_ps_shader[] =
    {68,  88,  66,  67,  150, 64,  133, 239, 64,  93,  176, 41,  27,  158, 89,
     90,  221, 169, 17,  109, 1,   0,   0,   0,   32,  3,   0,   0,   6,   0,
     0,   0,   56,  0,   0,   0,   192, 0,   0,   0,   92,  1,   0,   0,   216,

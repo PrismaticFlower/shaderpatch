@@ -4,7 +4,8 @@
 #include <algorithm>
 
 #include <gsl/gsl>
-#include <imgui.h>
+
+#include "../imgui/imgui.h"
 
 namespace sp::effects {
 

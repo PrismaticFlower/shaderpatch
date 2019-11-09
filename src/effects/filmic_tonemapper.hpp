@@ -3,7 +3,8 @@
 #include "postprocess_params.hpp"
 
 #include <glm/glm.hpp>
-#include <imgui.h>
+
+#include "../imgui/imgui.h"
 
 // This is almost entirely John Hable's work explained here,
 // http://filmicworlds.com/blog/filmic-tonemapping-with-piecewise-power-curves/

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2036
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29503.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shader_patch", "shader_patch.vcxproj", "{77065F00-E7E4-4EDF-8C98-6EB87BC49C4D}"
 EndProject
@@ -26,13 +26,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "texture_munge", "tools\text
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spfx_munge", "tools\spfx_munge\spfx_munge.vcxproj", "{3E809000-E8D9-4C1B-8A1A-738587477265}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "imgui", "submodules\imgui\imgui.vcxitems", "{1D2D408C-571E-4FDB-931E-62645A8008F7}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shared", "shared\shared.vcxproj", "{CC4890F2-40E7-446F-8971-5114EA566C27}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		submodules\imgui\imgui.vcxitems*{1d2d408c-571e-4fdb-931e-62645a8008f7}*SharedItemsImports = 9
 		submodules\imgui\imgui.vcxitems*{77065f00-e7e4-4edf-8c98-6eb87bc49c4d}*SharedItemsImports = 4
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

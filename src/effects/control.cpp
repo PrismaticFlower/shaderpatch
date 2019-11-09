@@ -11,7 +11,7 @@
 #include <sstream>
 #include <string_view>
 
-#include <imgui.h>
+#include "../imgui/imgui.h"
 
 namespace sp::effects {
 
