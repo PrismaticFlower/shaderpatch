@@ -17,7 +17,7 @@ enum class Material_flags : std::uint32_t {
    specular = 128,
    env_map = 256,
    vertex_lit = 512,
-   unknown = 2048,
+   tiled_normalmap = 2048,
    doublesided = 65536,
 
    scrolling = 16777216,
