@@ -43,64 +43,37 @@ public:
    Logger(Logger&&) = delete;
    Logger& operator=(Logger&&) = delete;
 
-   friend inline Logger& get_logger() noexcept;
-
-   void write(const std::string_view what) noexcept
-   {
-      _log_file << what << '\n';
-   }
-
-   void flush() noexcept
-   {
-      _log_file.flush();
-   }
+   friend auto get_log_stream() noexcept -> std::ostream&;
 
 private:
    Logger() noexcept
    {
       _log_file.open(logger_path);
-
       _log_file << "Shader Patch log started. Shader Patch version is "sv
-                << current_shader_patch_version_string << '\n';
+                << current_shader_patch_version_string << std::endl;
    }
 
    std::ofstream _log_file;
 };
 
-inline Logger& get_logger() noexcept
+inline auto get_log_stream() noexcept -> std::ostream&
 {
    static Logger logger;
 
-   return logger;
+   return logger._log_file;
 }
 
 template<typename... Args>
 inline void log(const Log_level level, Args&&... args) noexcept
 {
-   auto& logger = get_logger();
-
-   std::stringstream stream;
+   auto& stream = get_log_stream();
 
    const auto time = std::time(nullptr);
    const auto local_time = std::localtime(&time);
 
    stream << level << ' ' << std::put_time(local_time, "%T") << ' ';
-
-   // TODO: Switch this to a fold expression once VC++ supports them.
-   using std::operator<<;
-
-   const auto write_out = [&](auto&& arg) {
-      stream << std::forward<decltype(arg)>(arg);
-   };
-
-   [[maybe_unused]] const bool dummy_list[] = {
-      (write_out(std::forward<Args>(args)), false)...};
-
-   // stream << ... << args;
-
-   logger.write(stream.str());
-
-   if (level == Log_level::error) logger.flush();
+   (stream << ... << args);
+   stream << std::endl;
 }
 
 template<typename... Args>
