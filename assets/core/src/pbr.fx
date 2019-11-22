@@ -75,7 +75,7 @@ Vs_output main_vs(Vertex_input input)
 
    float near_fade;
    calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
-   output.fade = saturate(near_fade);
+   output.fade = saturate(near_fade) * get_material_color(input.color()).a;
 
    return output;
 }
