@@ -106,8 +106,14 @@ auto munge_material(const fs::path& material_path, const fs::path& output_file_p
    options.transparent = flags_node["Transparent"s].as<bool>(false);
    options.hard_edged = flags_node["HardEdged"s].as<bool>(false);
    options.double_sided = flags_node["DoubleSided"s].as<bool>(false);
-   options.statically_lit = flags_node["StaticallyLit"s].as<bool>(false);
    options.unlit = flags_node["Unlit"s].as<bool>(false);
+
+   if (flags_node["StaticallyLit"s].as<bool>(false)) {
+      synced_print(
+         "Warning material \""sv, material_path.filename().string(),
+         "\" has StaticallyLit set. This flag interferes the .msh.option "
+         "-verterlighting and has been removed."sv);
+   }
 
    const auto rendertype = root_node["RenderType"s].as<std::string>();
    const auto desc_name = make_ci_string(split_string_on(rendertype, "."sv)[0]);

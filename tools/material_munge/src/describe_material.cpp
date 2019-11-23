@@ -266,8 +266,6 @@ auto read_desc_material_options(const YAML::Node& node, Material_options& materi
          material_options.hard_edged = opt.second.as<bool>();
       else if (key == "Double Sided"s)
          material_options.double_sided = opt.second.as<bool>();
-      else if (key == "Statically Lit"s)
-         material_options.statically_lit = opt.second.as<bool>();
       else if (key == "Unlit"s)
          material_options.unlit = opt.second.as<bool>();
       else if (key == "Compressed"s)

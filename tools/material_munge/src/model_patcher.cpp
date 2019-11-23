@@ -160,9 +160,6 @@ void edit_mtrl(ucfb::Tweaker mtrl_tweaker, const Material_options options) noexc
    if (options.double_sided) mtrl_flags |= Material_flags::doublesided;
    else mtrl_flags &= ~Material_flags::doublesided;
 
-   if (options.statically_lit) mtrl_flags |= Material_flags::vertex_lit;
-   else mtrl_flags &= ~Material_flags::vertex_lit;
-
    if (options.unlit) mtrl_flags &= ~Material_flags::normal;
    else mtrl_flags |= Material_flags::normal;
 
