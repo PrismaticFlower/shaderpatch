@@ -1,0 +1,7 @@
+kernel.ispc
+kernel_ispc.h
+kernel_ispc_avx.h
+kernel_ispc_avx2.h
+kernel_ispc_avx512skx.h
+kernel_ispc_sse2.h
+kernel_ispc_sse4.h
