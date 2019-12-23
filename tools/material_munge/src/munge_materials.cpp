@@ -174,45 +174,43 @@ void fixup_munged_models(
 {
    std::set<fs::path> affected_models;
 
-   std::for_each(
-      texture_references.cbegin(),
-      texture_references.cend(), [&](const std::pair<Ci_string, std::vector<fs::path>>& tex_ref) noexcept {
-         for (const auto& model : tex_ref.second) {
-            if (changed_materials.contains(tex_ref.first) ||
-                (material_index.contains(tex_ref.first) &&
-                 output_model_out_of_date(model, output_dir))) {
-               affected_models.insert(model);
-            }
-         }
-      });
+   std::for_each(texture_references.cbegin(), texture_references.cend(),
+                 [&](const std::pair<Ci_string, std::vector<fs::path>>& tex_ref) noexcept {
+                    for (const auto& model : tex_ref.second) {
+                       if (changed_materials.count(tex_ref.first) ||
+                           (material_index.count(tex_ref.first) &&
+                            output_model_out_of_date(model, output_dir))) {
+                          affected_models.insert(model);
+                       }
+                    }
+                 });
 
-   std::for_each(
-      std::execution::par, affected_models.cbegin(),
-      affected_models.cend(), [&](const fs::path& input_path) noexcept {
-         const auto output_file_path = output_dir / input_path.filename();
-         const auto extension = input_path.extension() += ".req"sv;
+   std::for_each(std::execution::par, affected_models.cbegin(),
+                 affected_models.cend(), [&](const fs::path& input_path) noexcept {
+                    const auto output_file_path = output_dir / input_path.filename();
+                    const auto extension = input_path.extension() += ".req"sv;
 
-         auto req_file_path = input_path;
-         req_file_path.replace_extension(extension);
+                    auto req_file_path = input_path;
+                    req_file_path.replace_extension(extension);
 
-         if (fs::exists(req_file_path)) {
-            auto output_req_file_path = output_file_path;
-            output_req_file_path.replace_extension(extension);
+                    if (fs::exists(req_file_path)) {
+                       auto output_req_file_path = output_file_path;
+                       output_req_file_path.replace_extension(extension);
 
-            fs::copy_file(req_file_path, output_req_file_path,
-                          fs::copy_options::overwrite_existing);
-         }
+                       fs::copy_file(req_file_path, output_req_file_path,
+                                     fs::copy_options::overwrite_existing);
+                    }
 
-         synced_print("Editing "sv, output_file_path.filename().string(),
-                      " for Shader Patch..."sv);
+                    synced_print("Editing "sv, output_file_path.filename().string(),
+                                 " for Shader Patch..."sv);
 
-         try {
-            patch_model(input_path, output_file_path, material_index);
-         }
-         catch (std::exception& e) {
-            synced_error_print(e.what());
-         }
-      });
+                    try {
+                       patch_model(input_path, output_file_path, material_index);
+                    }
+                    catch (std::exception& e) {
+                       synced_error_print(e.what());
+                    }
+                 });
 }
 
 }

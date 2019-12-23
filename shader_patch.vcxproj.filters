@@ -198,7 +198,6 @@
     <ClCompile Include="src\core\basic_builtin_textures.cpp">
       <Filter>src\core</Filter>
     </ClCompile>
-    <ClCompile Include="src\imgui\imgui_impl_dx11_shaders.hpp" />
     <ClCompile Include="src\imgui\imgui.cpp">
       <Filter>src\imgui</Filter>
     </ClCompile>
