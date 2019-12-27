@@ -4,6 +4,8 @@
 #include "constants_list.hlsl"
 #include "pixel_sampler_states.hlsl"
 
+// clang-format off
+
 TextureCube<float3> cube_projected_texture : register(t4);
 
 float3x3 generate_tangent_to_world(const float3 normalWS, const float3 positionWS, const float2 texcoords)
@@ -263,7 +265,7 @@ float3 gaussian_sample(Texture2D<float3> tex, SamplerState samp,
 float3 apply_fog(float3 color, float fog)
 {
    if (fog_enabled) {
-      return lerp(fog_color, color, fog);
+      return lerp(fog_color, color, saturate(fog));
    }
    else {
       return color;

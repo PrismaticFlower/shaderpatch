@@ -55,9 +55,8 @@ Vs_fade_output transmissive_pass_fade_vs(Vertex_input input)
    const float4 positionPS = transformer.positionPS();
 
    output.positionPS = positionPS;
-   output.fade = saturate(positionPS.z * fade_constant.z + fade_constant.w);
-   float near_fade;
-   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
+   output.fade = positionPS.w * fade_constant.z + fade_constant.w;
+   output.fog = calculate_fog(positionWS, positionPS);
 
    return output;
 }
@@ -97,10 +96,8 @@ Vs_lowquality_output lowquality_vs(Vertex_input input)
    const float4 positionPS = transformer.positionPS();
 
    output.positionPS = positionPS;
-
-   float near_fade;
-   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
-   output.fade = saturate(positionPS.z * fade_constant.z + fade_constant.w);
+   output.fade = positionPS.w * fade_constant.z + fade_constant.w;
+   output.fog = calculate_fog(positionWS, positionPS);
 
    return output;
 }
@@ -136,9 +133,8 @@ Vs_normal_map_output normal_map_vs(Vertex_input input)
    output.texcoords[2] = (texcoords * tex_scales[2]) * float2(0.125, 1.0) + (time_scales[2] * time);
    output.texcoords[3] = mul(rotation, texcoords * tex_scales[3]) + (time_scales[3] * time);
 
-   float near_fade;
-   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
-   output.fade = saturate(positionPS.z * fade_constant.z + fade_constant.w);
+   output.fade = positionPS.w * fade_constant.z + fade_constant.w;
+   output.fog = calculate_fog(positionWS, positionPS);
 
    return output;
 }
@@ -162,7 +158,7 @@ struct Ps_fade_input
 
 float4 transmissive_pass_fade_ps(Ps_fade_input input) : SV_Target0
 {
-   return float4(apply_fog(refraction_colour.rgb * input.fade, input.fog), input.fade);
+   return float4(apply_fog(refraction_colour.rgb * input.fade, input.fog), saturate(input.fade));
 }
 
 struct Ps_normal_map_input
@@ -233,7 +229,7 @@ float4 normal_map_distorted_reflection_ps(Ps_normal_map_input input,
 
    color = apply_fog(color, input.fog);
 
-   return float4(color, input.fade);
+   return float4(color, saturate(input.fade));
 }
 
 float4 normal_map_distorted_reflection_specular_ps(Ps_normal_map_input input,
@@ -267,7 +263,7 @@ float4 normal_map_distorted_reflection_specular_ps(Ps_normal_map_input input,
 
    color = apply_fog(color, input.fog);
 
-   return float4(color, input.fade);
+   return float4(color, saturate(input.fade));
 }
 
 float4 normal_map_ps(Ps_normal_map_input input) : SV_Target0
@@ -284,7 +280,7 @@ float4 normal_map_ps(Ps_normal_map_input input) : SV_Target0
 
    const float3 color = apply_fog(refraction_colour.rgb, input.fog);
 
-   return float4(color, input.fade * fresnel);
+   return float4(color, saturate(input.fade) * fresnel);
 }
 
 float4 normal_map_specular_ps(Ps_normal_map_input input) : SV_Target0
@@ -306,7 +302,7 @@ float4 normal_map_specular_ps(Ps_normal_map_input input) : SV_Target0
    float3 color = reflection_colour.rgb + spec;
    color = apply_fog(color, input.fog);
 
-   return float4(color, input.fade * fresnel);
+   return float4(color, saturate(input.fade) * fresnel);
 }
 
 struct Ps_lowquality_input
@@ -326,7 +322,7 @@ float4 lowquality_ps(Ps_lowquality_input input,
 
    float4 color = refraction_colour * diffuse_color;
    color.rgb *= lighting_scale;
-   color.a *= input.fade;
+   color.a *= saturate(input.fade);
 
    color.rgb = apply_fog(color.rgb, input.fog);
 
@@ -350,7 +346,7 @@ float4 lowquality_specular_ps(Ps_lowquality_input input,
 
    color.rgb += (spec_mask * input.specular);
    color.rgb *= lighting_scale;
-   color.a *= input.fade;
+   color.a *= saturate(input.fade);
 
    color.rgb = apply_fog(color.rgb, input.fog);
 

@@ -39,15 +39,7 @@
       }
     },
 
-    "far_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
-    },
-
-    "near_ps": {
+    "main_ps": {
       "stage": "pixel",
 
       "pixel_state": {
@@ -67,7 +59,7 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "far_ps"
+        "entrypoint": "main_ps"
       }
     },
 
@@ -79,7 +71,7 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "near_ps"
+        "entrypoint": "main_ps"
       }
     }
   }

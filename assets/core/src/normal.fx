@@ -51,12 +51,12 @@ Vs_output_unlit unlit_main_vs(Vertex_input input)
    output.detail_texcoords = transformer.texcoords(texture_transforms[2],
                                                    texture_transforms[3]);
 
-   float near_fade;
-   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
-
    output.material_color_fade.rgb = lighting_scale * lighting_factor.x + lighting_factor.y;
-   output.material_color_fade.a = saturate(near_fade);
+   output.material_color_fade.a = 
+      use_transparency ? calculate_near_fade_transparent(positionPS) : 
+                         calculate_near_fade(positionPS);
    output.material_color_fade *= get_material_color(input.color());
+   output.fog = calculate_fog(positionWS, positionPS);
 
    return output;
 }
@@ -101,12 +101,12 @@ Vs_output main_vs(Vertex_input input)
    output.projection_texcoords = mul(float4(positionWS, 1.0), light_proj_matrix);
    output.shadow_texcoords = transform_shadowmap_coords(positionPS);
 
-   float near_fade;
-   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
-
    output.material_color_fade = get_material_color(input.color());
-   output.material_color_fade.a *= saturate(near_fade);
+   output.material_color_fade.a *=
+      use_transparency ? calculate_near_fade_transparent(positionPS) : 
+                         calculate_near_fade(positionPS);
    output.static_lighting = get_static_diffuse_color(input.color());
+   output.fog = calculate_fog(positionWS, positionPS);
 
    return output;
 }
@@ -153,7 +153,7 @@ float4 unlit_main_ps(Ps_input_unlit input) : SV_Target0
 
    color = apply_fog(color, input.fog);
 
-   return float4(color, alpha);
+   return float4(color, saturate(alpha));
 }
 
 struct Ps_input
@@ -230,7 +230,7 @@ float4 main_ps(Ps_input input) : SV_Target0
 
    color = apply_fog(color, input.fog);
 
-   return float4(color, alpha);
+   return float4(color, saturate(alpha));
 }
 
 [earlydepthstencil]

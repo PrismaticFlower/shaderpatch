@@ -24,10 +24,13 @@
         }
       },
 
+      "static_flags": [
+        "PBR_USE_TRANSPARENCY"
+      ],
+
       "defines": [
         [ "PBR_USE_METALLIC_ROUGHNESS_MAP", "0" ],
         [ "PBR_USE_EMISSIVE_MAP", "0" ],
-        [ "PBR_USE_TRANSPARENCY", "0" ],
         [ "PBR_USE_HARDEDGED_TEST", "0" ],
         [ "PBR_USE_SHADOW_MAP", "0" ]
       ]
@@ -64,7 +67,7 @@
       ],
 
       "defines": [
-        [ "PBR_USE_TRANSPARENCY", "1" ] 
+        [ "PBR_USE_TRANSPARENCY", "1" ]
       ]
     }
   },
@@ -134,7 +137,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "PBR_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {
@@ -154,7 +161,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "PBR_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {
@@ -207,7 +218,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "PBR_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {
@@ -227,7 +242,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "PBR_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {
@@ -318,7 +337,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "PBR_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {
@@ -343,7 +366,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "PBR_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {
@@ -370,7 +397,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "PBR_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {
@@ -395,7 +426,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "PBR_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {

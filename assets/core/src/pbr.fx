@@ -72,10 +72,10 @@ Vs_output main_vs(Vertex_input input)
 
    output.texcoords = transformer.texcoords(x_texcoords_transform, y_texcoords_transform);
    output.shadow_texcoords = transform_shadowmap_coords(positionPS);
-
-   float near_fade;
-   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
-   output.fade = saturate(near_fade) * get_material_color(input.color()).a;
+   output.fade =
+      use_transparency ? calculate_near_fade_transparent(positionPS) : 
+                         calculate_near_fade(positionPS);
+   output.fog = calculate_fog(positionWS, positionPS);
 
    return output;
 }
@@ -146,7 +146,7 @@ float4 main_ps(Ps_input input) : SV_Target0
       color /= max(alpha, 1e-5);
    }
    else {
-      alpha = input.fade;
+      alpha = saturate(input.fade);
    }
 
    return float4(color, alpha);

@@ -25,13 +25,13 @@
       },
 
       "static_flags": [
-        "NORMAL_EXT_USE_DYNAMIC_TANGENTS"
+        "NORMAL_EXT_USE_DYNAMIC_TANGENTS",
+        "NORMAL_EXT_USE_TRANSPARENCY"
       ],
 
       "defines": [
         [ "NORMAL_EXT_USE_TEXCOORDS_TRANSFORM", "1" ],
         [ "NORMAL_EXT_USE_SPECULAR", "0" ],
-        [ "NORMAL_EXT_USE_TRANSPARENCY", "0" ],
         [ "NORMAL_EXT_USE_HARDEDGED_TEST", "0" ],
         [ "NORMAL_EXT_USE_SHADOW_MAP", "0" ],
         [ "NORMAL_EXT_USE_PROJECTED_TEXTURE", "0" ],
@@ -166,7 +166,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {
@@ -186,7 +190,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {
@@ -244,7 +252,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {
@@ -269,7 +281,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {
@@ -364,7 +380,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {
@@ -389,7 +409,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {
@@ -416,7 +440,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {
@@ -443,7 +471,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "NORMAL_EXT_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {

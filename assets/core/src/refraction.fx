@@ -44,9 +44,7 @@ Vs_nodistortion_output far_vs(Vertex_input input)
 
    output.material_color_fade = get_material_color(input.color());
    output.static_lighting = get_static_diffuse_color(input.color());
-
-   float near_fade;
-   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
+   output.fog = calculate_fog(positionWS, positionPS);
 
    return output;
 }
@@ -69,14 +67,10 @@ Vs_nodistortion_output nodistortion_vs(Vertex_input input)
 
    output.texcoords = transformer.texcoords(x_texcoords_transform, y_texcoords_transform);
 
-   float near_fade;
-   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
-   near_fade = saturate(near_fade);
-   near_fade *= near_fade;
-
    output.material_color_fade = get_material_color(input.color());
-   output.material_color_fade.a *= near_fade;
+   output.material_color_fade.a *= calculate_near_fade_transparent(positionPS);
    output.static_lighting = get_static_diffuse_color(input.color());
+   output.fog = calculate_fog(positionWS, positionPS);
 
    return output;
 }
@@ -144,14 +138,10 @@ Vs_distortion_output distortion_vs(Vertex_input input)
    output.diffuse_texcoords = transformer.texcoords(x_diffuse_texcoords_transform,
                                                     y_diffuse_texcoords_transform);
 
-   float near_fade;
-   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
-   near_fade = saturate(near_fade);
-   near_fade *= near_fade;
-
    output.material_color_fade = get_material_color(input.color());
-   output.material_color_fade.a *= near_fade;
+   output.material_color_fade.a *= calculate_near_fade_transparent(positionPS);
    output.static_lighting = get_static_diffuse_color(input.color());
+   output.fog = calculate_fog(positionWS, positionPS);
 
    return output;
 }

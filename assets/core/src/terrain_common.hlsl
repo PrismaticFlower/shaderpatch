@@ -130,4 +130,12 @@ float3 terrain_blend_weights(const float3 heights, const float3 vertex_texture_b
    return (1.0 * b) / max(b[0] + b[1] + b[2], 1e-5);
 }
 
+float terrain_far_scene_fade(float4 positionPS)
+{
+   // We use the previous frames fade values are used for calculating fade in
+   // far scene when needed as the current frame's ones are not yet available.
+   return -((positionPS.w * terrain_low_detail_cull_dist_mult) * prev_near_fade_scale +
+            prev_near_fade_offset);
+}
+
 #endif

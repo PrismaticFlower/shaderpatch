@@ -24,8 +24,11 @@
         }
       },
 
+      "static_flags": [
+        "BASIC_UNLIT_USE_TRANSPARENCY"
+      ],
+
       "defines": [
-        [ "BASIC_UNLIT_USE_TRANSPARENCY", "0" ],
         [ "BASIC_UNLIT_USE_HARDEDGED_TEST", "0" ]
       ]
     },
@@ -58,7 +61,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": false
+        }
       },
 
       "pixel_shader": {
@@ -79,7 +86,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": false
+        }
       },
 
       "pixel_shader": {
@@ -100,7 +111,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {
@@ -121,7 +136,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {

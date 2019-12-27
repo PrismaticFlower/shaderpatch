@@ -91,11 +91,8 @@ Vs_output main_vs(Vertex_input input)
    output.texcoords = transformer.texcoords(x_diffuse_texcoords_transform,
                                             y_diffuse_texcoords_transform);
    output.refraction_texcoords = (output.positionPS.xy / output.positionPS.w) * float2(0.5, -0.5) + 0.5;
-
-   float near_fade;
-   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
-
-   output.fade = saturate(near_fade);
+   output.fade = calculate_near_fade(positionPS);
+   output.fog = calculate_fog(positionWS, positionPS);
 
    return output;
 }
@@ -193,7 +190,7 @@ float4 main_ps(Ps_input input) : SV_Target0
    // Apply fog.
    color = apply_fog(color, input.fog);
 
-   return float4(color, input.fade);
+   return float4(color, saturate(input.fade));
 }
 
 [earlydepthstencil] 

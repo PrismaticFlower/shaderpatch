@@ -28,9 +28,10 @@ struct Vs_blendmap_output
 
    float2 texcoords[4] : TEXCOORD0;
 
-   float3 blend_values_fade : BLENDVALUES;
    float3 static_lighting : STATICLIGHT;
    float fog : FOG;
+   float2 blend_values : BLENDVALUES;
+   float fade : FADE;
 
    float4 positionPS : SV_Position;
 };
@@ -53,15 +54,12 @@ Vs_blendmap_output diffuse_blendmap_vs(Vs_input input)
       output.texcoords[i].y = dot(float4(positionWS, 1.0), y_texcoords_tranforms[i]);
    }
 
-   float near_fade, fog;
-   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, fog);
-
-   output.blend_values_fade.x = input.normal.w;
-   output.blend_values_fade.y = (float)input.position.w * lighting_constant.w; 
-   output.blend_values_fade.z = saturate(near_fade);
+   output.blend_values.x = input.normal.w;
+   output.blend_values.y = (float)input.position.w * lighting_constant.w;
 
    output.static_lighting = get_static_diffuse_color(input.color);
-   output.fog = fog;
+   output.fade = calculate_near_fade(positionPS);
+   output.fog = calculate_fog(positionWS, positionPS);
 
    return output;
 }
@@ -103,9 +101,7 @@ Vs_detail_output detailing_vs(Vs_input input)
    output.projection_texcoords = mul(float4(positionWS, 1.0), light_proj_matrix);
    output.shadow_map_texcoords = (positionPS.xy / positionPS.w) * float2(0.5, -0.5) + 0.5;
    output.static_lighting = get_static_diffuse_color(input.color);
-
-   float near_fade;
-   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
+   output.fog = calculate_fog(positionWS, positionPS);
 
    return output;
 }
@@ -116,19 +112,20 @@ struct Ps_blendmap_input
    float3 normalWS : NORMALWS;
 
    float2 texcoords[4] : TEXCOORD0;
-
-   float3 blend_values_fade : BLENDVALUES;
+   
    float3 static_lighting : STATICLIGHT;
    float fog : FOG;
+   float2 blend_values : BLENDVALUES;
+   float fade : FADE;
 };
 
 float4 diffuse_blendmap_ps(Ps_blendmap_input input, 
                            Texture2D<float3> diffuse_maps[3] : register(t0),
                            Texture2D<float3> detail_map : register(t3)): SV_Target0
 {
-   const float blend_weights[3] = {(1.0 - input.blend_values_fade.y) - input.blend_values_fade.x,
-                                   input.blend_values_fade.x,
-                                   input.blend_values_fade.y};
+   const float blend_weights[3] = {(1.0 - input.blend_values.y) - input.blend_values.x,
+                                   input.blend_values.x,
+                                   input.blend_values.y};
 
    float3 diffuse_color = 0.0;
 
@@ -150,7 +147,7 @@ float4 diffuse_blendmap_ps(Ps_blendmap_input input,
 
    color = apply_fog(color, input.fog);
 
-   return float4(color, input.blend_values_fade.z);
+   return float4(color, saturate(input.fade));
 }
 
 struct Ps_detail_input

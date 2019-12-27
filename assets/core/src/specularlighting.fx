@@ -48,9 +48,7 @@ Vs_normalmapped_ouput normalmapped_vs(Vertex_input input)
    const float3x3 TBN = {tangentWS, bitangentWS, normalWS};
 
    output.TBN = transpose(TBN);
-
-   float near_fade;
-   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
+   output.fog = calculate_fog(positionWS, positionPS);
 
    return output;
 }
@@ -80,9 +78,7 @@ Vs_blinn_phong_ouput blinn_phong_vs(Vertex_input input)
 
    output.texcoords =
       transformer.texcoords(x_texcoords_transform, y_texcoords_transform);
-
-   float near_fade;
-   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
+   output.fog = calculate_fog(positionWS, positionPS);
 
    return output;
 }

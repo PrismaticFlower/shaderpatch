@@ -1,8 +1,10 @@
-#include "adaptive_oit.hlsl" 
+#include "adaptive_oit.hlsl"
 #include "constants_list.hlsl"
 #include "generic_vertex_input.hlsl"
 #include "pixel_utilities.hlsl"
 #include "vertex_transformer.hlsl"
+
+// clang-format off
 
 struct Vs_input
 {
@@ -28,15 +30,10 @@ Vs_output lightbeam_vs(Vertex_input input)
 
    output.positionPS = positionPS;
 
-   float near_fade;
-   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
-   near_fade = saturate(near_fade);
-   near_fade *= near_fade;
-
-   float4 material_color = get_material_color(input.color());
-
-   output.color.rgb = material_color.rgb * lighting_scale;
-   output.color.a = saturate(material_color.a * near_fade);
+   output.color = get_material_color(input.color());
+   output.color.rgb *= lighting_scale;
+   output.color.a *= calculate_near_fade_transparent(positionPS);
+   output.fog = calculate_fog(positionWS, positionPS);
 
    return output;
 }

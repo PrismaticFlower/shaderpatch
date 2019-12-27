@@ -62,9 +62,7 @@ Vs_perpixel_output perpixel_vs(Vertex_input input)
    output.positionPS = positionPS;
    output.normalWS = transformer.normalWS();
    output.static_lighting = get_static_diffuse_color(input.color());
-
-   float near_fade;
-   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
+   output.fog = calculate_fog(positionWS, positionPS);
 
    return output;
 }
@@ -118,9 +116,7 @@ Vs_normalmapped_output normalmapped_vs(Vertex_input input)
    output.TBN = transpose(TBN);
 
    output.static_lighting = get_static_diffuse_color(input.color());
-
-   float near_fade;
-   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
+   output.fog = calculate_fog(positionWS, positionPS);
 
    return output;
 }
@@ -161,9 +157,7 @@ Vs_perpixel_spotlight_output perpixel_spotlight_vs(Vertex_input input)
    output.normalWS = transformer.normalWS();
    output.projection_coords = transform_spotlight_projection(positionWS);
    output.static_lighting = get_static_diffuse_color(input.color());
-
-   float near_fade;
-   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
+   output.fog = calculate_fog(positionWS, positionPS);
 
    return output;
 }
@@ -220,9 +214,7 @@ Vs_normalmapped_spotlight_output normalmapped_spotlight_vs(Vertex_input input)
    output.TBN = transpose(TBN);
 
    output.static_lighting = get_static_diffuse_color(input.color());
-
-   float near_fade;
-   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
+   output.fog = calculate_fog(positionWS, positionPS);
 
    return output;
 }

@@ -40,15 +40,12 @@ Vs_normal_output normal_vs(Vertex_input input)
          (input.texcoords() * 32767.0 * (1.0 / 2048.0)) * texcoords_transform.xy + texcoords_transform.zw;
    }
 
-   float near_fade;
-   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
-   near_fade = saturate(near_fade);
-   near_fade *= near_fade;
-   
+   const float near_fade = calculate_near_fade_transparent(positionPS);
    const float fade_scale = saturate(positionPS.w * fade_factor.x + fade_factor.y);
 
    output.color.rgb = get_material_color(input.color()).rgb * lighting_scale;
    output.color.a = (near_fade * fade_scale) * get_material_color(input.color()).a;
+   output.fog = calculate_fog(positionWS, positionPS);
 
    return output;
 }
@@ -73,16 +70,13 @@ Vs_blur_output blur_vs(Vertex_input input)
    output.positionPS = positionPS;
 
    output.texcoords = input.texcoords() * texcoords_transform.xy + texcoords_transform.zw;
-
-   float near_fade;
-   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, output.fog);
-   near_fade = saturate(near_fade);
-   near_fade *= near_fade;
-
+   
+   const float near_fade = calculate_near_fade_transparent(positionPS);
    const float fade_scale = saturate(positionPS.w * fade_factor.x + fade_factor.y);
 
    output.color.rgb = get_material_color(input.color()).rgb;
    output.color.a = (near_fade * fade_scale) * get_material_color(input.color()).a;
+   output.fog = calculate_fog(positionWS, positionPS);
 
    return output;
 }

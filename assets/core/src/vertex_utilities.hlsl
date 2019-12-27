@@ -86,31 +86,25 @@ void generate_terrain_tangents(float3 normal, out float3 tangent,
    bitangent = normalize(-normal.z * normal + float3(0.0, 0.0, 1.0));
 }
 
-float calculate_near_fade(float viewZ)
+float calculate_near_fade(float4 positionPS)
 {
-   return viewZ * near_fade_scale + near_fade_offset;
+   return positionPS.w * near_fade_scale + near_fade_offset;
 }
 
-float calculate_prev_far_fade(float viewZ)
+float calculate_near_fade_transparent(float4 positionPS)
 {
-   // We use the previous frames fade values are used for calculating fade in far scene
-   // when needed as the current frame's ones are not yet available.
-   return -(viewZ * prev_near_fade_scale + prev_near_fade_offset);
+   float fade = saturate(calculate_near_fade(positionPS));
+
+   return fade * fade;
 }
 
-float calculate_fog(float heightWS, float depthPS)
+float calculate_fog(float3 positionWS, float4 positionPS)
 {
-   const float depth_fog = depthPS * depth_fog_scale + depth_fog_offset;
-   const float height_fog = heightWS * height_fog_scale + height_fog_offset;
+   const float camera_fog = positionPS.w * depth_fog_scale + depth_fog_offset;
+   const float height_fog = positionWS.y * height_fog_scale + height_fog_offset;
 
-   return saturate(min(depth_fog, height_fog));
+   return min(camera_fog, height_fog);
 }
 
-void calculate_near_fade_and_fog(float3 positionWS, float4 positionPS,
-                                 out float near_fade, out float fog)
-{
-   near_fade = calculate_near_fade(positionPS.z);
-   fog = calculate_fog(positionWS.y, positionPS.z);
-}
 
 #endif

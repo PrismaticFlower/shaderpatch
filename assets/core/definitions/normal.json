@@ -1,5 +1,5 @@
 {
-  "group_name":  "normal",
+  "group_name": "normal",
   "source_name": "normal.fx",
 
   "entrypoints": {
@@ -20,8 +20,11 @@
         }
       },
 
+      "static_flags": [
+        "NORMAL_USE_TRANSPARENCY"
+      ],
+
       "defines": [
-        [ "NORMAL_USE_TRANSPARENCY", "false" ],
         [ "NORMAL_USE_HARDEDGED_TEST", "false" ],
         [ "NORMAL_USE_SHADOW_MAP", "false" ],
         [ "NORMAL_USE_PROJECTED_TEXTURE", "false" ]
@@ -81,8 +84,11 @@
         }
       },
 
+      "static_flags": [
+        "NORMAL_USE_TRANSPARENCY"
+      ],
+
       "defines": [
-        [ "NORMAL_USE_TRANSPARENCY", "false" ],
         [ "NORMAL_USE_HARDEDGED_TEST", "false" ],
         [ "NORMAL_USE_SHADOW_MAP", "false" ],
         [ "NORMAL_USE_PROJECTED_TEXTURE", "false" ]
@@ -133,7 +139,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "unlit_main_vs"
+        "entrypoint": "unlit_main_vs",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": false
+        }
       },
 
       "pixel_shader": {
@@ -150,7 +160,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "unlit_main_vs"
+        "entrypoint": "unlit_main_vs",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": false
+        }
       },
 
       "pixel_shader": {
@@ -167,7 +181,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "unlit_main_vs"
+        "entrypoint": "unlit_main_vs",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {
@@ -192,7 +210,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "unlit_main_vs"
+        "entrypoint": "unlit_main_vs",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {
@@ -217,7 +239,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": false
+        }
       },
 
       "pixel_shader": {
@@ -236,7 +262,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": false
+        }
       },
 
       "pixel_shader": {
@@ -255,7 +285,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {
@@ -284,7 +318,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {
@@ -313,7 +351,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": false
+        }
       },
 
       "pixel_shader": {
@@ -332,7 +374,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": false
+        }
       },
 
       "pixel_shader": {
@@ -351,7 +397,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {
@@ -380,7 +430,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {
@@ -409,7 +463,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": false
+        }
       },
 
       "pixel_shader": {
@@ -428,7 +486,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": false
+        }
       },
 
       "pixel_shader": {
@@ -447,7 +509,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": false
+        }
       },
 
       "pixel_shader": {
@@ -466,7 +532,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": false
+        }
       },
 
       "pixel_shader": {
@@ -485,7 +555,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {
@@ -514,7 +588,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {
@@ -543,7 +621,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {
@@ -572,7 +654,11 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "NORMAL_USE_TRANSPARENCY": true
+        }
       },
 
       "pixel_shader": {

@@ -61,13 +61,12 @@ Vs_output main_vs(Packed_terrain_vertex packed_vertex)
    output.static_diffuse_lighting = input.color;
 
    output.positionPS = mul(float4(output.positionWS, 1.0), projection_matrix);
-
-   output.fog = calculate_fog(output.positionWS.y, output.positionPS.z);
-   output.fade = calculate_near_fade(output.positionPS.z);
+   output.fade = calculate_near_fade(output.positionPS);
+   output.fog = calculate_fog(output.positionWS, output.positionPS);
 
    output.cull_distance = 
       terrain_common_low_detail ? 
-                                  calculate_prev_far_fade(output.positionPS.z * terrain_low_detail_cull_dist_mult) : 
+                                  terrain_far_scene_fade(output.positionPS) : 
                                   output.fade;
 
    return output;

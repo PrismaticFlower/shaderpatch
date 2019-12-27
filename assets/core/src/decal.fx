@@ -1,7 +1,9 @@
 
 #include "constants_list.hlsl"
-#include "vertex_utilities.hlsl"
 #include "pixel_sampler_states.hlsl"
+#include "vertex_utilities.hlsl"
+
+// clang-format off
 
 Texture2D<float4> diffuse_map : register(t0);
 Texture2D<float4> bump_map : register(t1);
@@ -32,16 +34,8 @@ Vs_output decal_vs(Vs_input input)
 
    output.positionPS = positionPS;
    output.texcoords = input.texcoords;
-
-   float near_fade, fog;
-   calculate_near_fade_and_fog(positionWS, positionPS, near_fade, fog);
-
-   float4 color;
-   color.rgb = input.color.rgb * material_diffuse_color.rgb;
-   color.rgb *= lighting_scale;
-   color.a = material_diffuse_color.a * near_fade;
-
-   output.color = get_material_color(input.color);
+   output.color = get_material_color(input.color) * lighting_scale;
+   output.color.a *= calculate_near_fade(positionPS);
 
    return output;
 }
@@ -58,7 +52,7 @@ float4 diffuse_ps(Ps_input input) : SV_Target0
 
    float3 color = diffuse_color.rgb * input.color.rgb;
 
-   color = lerp(decal_constants[0].rgb, color, diffuse_color.a * input.color.a);
+   color = lerp(decal_constants[0].rgb, color, diffuse_color.a * saturate(input.color.a));
 
    return float4(color, decal_constants[0].a);
 }
