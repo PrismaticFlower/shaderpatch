@@ -123,65 +123,32 @@ class Terrain_indexer {
 public:
    Terrain_indexer(const Terr_header& header)
    {
-      _input_length = header.terrain_length;
-      _half_input_length = _input_length / 2;
-      _begin = _half_input_length + safe_min(header.extents[0], header.extents[1]);
-      _end = _half_input_length + safe_max(header.extents[2], header.extents[3]);
-      _output_length = std::abs(_end - _begin) + 1;
+      _terrain_length = header.terrain_length;
+      _out_length = std::abs(header.extents[0] - header.extents[2]) + 1;
+      _in_base = header.terrain_length / 2;
+      _in_mask = header.terrain_length - 1;
+      _out_offset_y = header.extents[3];
+      _out_offset_x = header.extents[2];
    };
 
-   auto input_length() const noexcept -> std::int32_t
+   auto in(const std::ptrdiff_t x, const std::ptrdiff_t y) const noexcept -> std::ptrdiff_t
    {
-      return _input_length;
+      return (((_in_base + y) & _in_mask) * _terrain_length) +
+             ((_in_base + x) & _in_mask);
    }
 
-   auto output_length() const noexcept -> std::int32_t
+   auto out(const std::ptrdiff_t x, const std::ptrdiff_t y) const noexcept -> std::ptrdiff_t
    {
-      return _output_length;
-   }
-
-   auto begin() const noexcept -> std::int32_t
-   {
-      return _begin;
-   }
-
-   auto end() const noexcept -> std::int32_t
-   {
-      return _end;
-   }
-
-   auto in(const std::int32_t x, const std::int32_t y) const noexcept -> std::size_t
-   {
-      const auto wrapped_x = x % _input_length;
-      const auto wrapped_y = y % _input_length;
-
-      return static_cast<std::size_t>(wrapped_x + (wrapped_y * _input_length));
-   }
-
-   auto out(const std::int32_t x, const std::int32_t y) const noexcept -> std::size_t
-   {
-      const auto offset_x = x - _begin;
-      const auto offset_y = y - _begin;
-
-      const auto wrapped_x = offset_x % _output_length;
-      const auto wrapped_y = offset_y % _output_length;
-
-      return static_cast<std::size_t>(offset_x + (offset_y * _output_length));
-   }
-
-   auto position(const std::int32_t x, const std::int32_t y, const float scale) const
-      noexcept -> std::array<float, 2>
-   {
-      return {(x - _half_input_length) * scale, -((y - _half_input_length) * scale)};
+      return ((y + _out_offset_y) * _out_length) + (x + _out_offset_x);
    }
 
 private:
-   std::int32_t _input_length{};
-   std::int32_t _half_input_length{};
-
-   std::int32_t _begin{};
-   std::int32_t _end{};
-   std::int32_t _output_length{};
+   int _terrain_length = 0;
+   int _in_base = 0;
+   int _in_mask = 0;
+   int _out_length = 0;
+   int _out_offset_y = 0;
+   int _out_offset_x = 0;
 };
 
 auto read_texture_names(const Terr_header& header) noexcept
@@ -225,46 +192,41 @@ auto read_texture_transforms(const Terr_header& header,
 }
 
 void read_height_map(std::ifstream& file, const glm::vec3 terrain_offset,
-                     const float height_scale, const float grid_scale,
-                     const Terrain_indexer& indexer, const gsl::span<glm::vec3> output)
+                     const Terr_header& header, const Terrain_indexer& indexer,
+                     const gsl::span<glm::vec3> output)
 {
-   Expects(output.size() == indexer.output_length() * indexer.output_length());
-
    std::vector<std::int16_t> fixed_point_heightmap;
-   fixed_point_heightmap.resize(indexer.input_length() * indexer.input_length());
+   fixed_point_heightmap.resize(header.terrain_length * header.terrain_length);
 
    file.read(reinterpret_cast<char*>(fixed_point_heightmap.data()),
              fixed_point_heightmap.size() * sizeof(std::int16_t));
 
-   for (auto y = indexer.begin(); y <= indexer.end(); ++y) {
-      for (auto x = indexer.begin(); x <= indexer.end(); ++x) {
-         const auto [x_pos, z_pos] = indexer.position(x, y, grid_scale);
-
+   for (std::ptrdiff_t y = header.extents[1]; y <= header.extents[3]; ++y) {
+      for (std::ptrdiff_t x = header.extents[0]; x <= header.extents[2]; ++x) {
          output[indexer.out(x, y)] =
-            terrain_offset +
-            glm::vec3{x_pos, fixed_point_heightmap[indexer.in(x, y)] * height_scale,
-                      z_pos};
+            glm::vec3{x * header.grid_scale,
+                      fixed_point_heightmap[indexer.in(x, y)] * header.height_scale,
+                      -(y * header.grid_scale)} +
+            terrain_offset;
       }
    }
 }
 
-void read_color_maps(std::ifstream& file, const Terrain_indexer& indexer,
-                     const gsl::span<glm::vec3> output)
+void read_color_maps(std::ifstream& file, const Terr_header& header,
+                     const Terrain_indexer& indexer, const gsl::span<glm::vec3> output)
 {
-   Expects(output.size() == indexer.output_length() * indexer.output_length());
-
    std::vector<Terrain_color> unorm_foreground;
    std::vector<Terrain_color> unorm_background;
-   unorm_foreground.resize(indexer.input_length() * indexer.input_length());
-   unorm_background.resize(indexer.input_length() * indexer.input_length());
+   unorm_foreground.resize(header.terrain_length * header.terrain_length);
+   unorm_background.resize(header.terrain_length * header.terrain_length);
 
    file.read(reinterpret_cast<char*>(unorm_foreground.data()),
              unorm_foreground.size() * sizeof(Terrain_color));
    file.read(reinterpret_cast<char*>(unorm_background.data()),
              unorm_background.size() * sizeof(Terrain_color));
 
-   for (auto y = indexer.begin(); y <= indexer.end(); ++y) {
-      for (auto x = indexer.begin(); x <= indexer.end(); ++x) {
+   for (std::ptrdiff_t y = header.extents[1]; y <= header.extents[3]; ++y) {
+      for (std::ptrdiff_t x = header.extents[0]; x <= header.extents[2]; ++x) {
          const glm::vec4 foreground = unorm_foreground[indexer.in(x, y)];
          const glm::vec4 background = unorm_foreground[indexer.in(x, y)];
          const glm::vec3 background_premult = background.rgb * background.a;
@@ -275,19 +237,18 @@ void read_color_maps(std::ifstream& file, const Terrain_indexer& indexer,
    }
 }
 
-void read_diffuse_lighting(std::ifstream& file, const Terrain_indexer& indexer,
+void read_diffuse_lighting(std::ifstream& file, const Terr_header& header,
+                           const Terrain_indexer& indexer,
                            const gsl::span<glm::vec3> output)
 {
-   Expects(output.size() == indexer.output_length() * indexer.output_length());
-
    std::vector<Terrain_color> unorm_lighting;
-   unorm_lighting.resize(indexer.input_length() * indexer.input_length());
+   unorm_lighting.resize(header.terrain_length * header.terrain_length);
 
    file.read(reinterpret_cast<char*>(unorm_lighting.data()),
              unorm_lighting.size() * sizeof(Terrain_color));
 
-   for (auto y = indexer.begin(); y <= indexer.end(); ++y) {
-      for (auto x = indexer.begin(); x <= indexer.end(); ++x) {
+   for (std::ptrdiff_t y = header.extents[1]; y <= header.extents[3]; ++y) {
+      for (std::ptrdiff_t x = header.extents[0]; x <= header.extents[2]; ++x) {
          output[indexer.out(x, y)] = glm::vec4{unorm_lighting[indexer.in(x, y)]}.xyz;
       }
    }
@@ -295,19 +256,17 @@ void read_diffuse_lighting(std::ifstream& file, const Terrain_indexer& indexer,
 
 void read_texture_weights(std::ifstream& file,
                           const std::array<std::uint8_t, 16>& texture_remap,
-                          const Terrain_indexer& indexer,
+                          const Terr_header& header, const Terrain_indexer& indexer,
                           const gsl::span<std::array<float, 16>> output)
 {
-   Expects(output.size() == indexer.output_length() * indexer.output_length());
-
    std::vector<std::array<std::uint8_t, 16>> unorm_weights;
-   unorm_weights.resize(indexer.input_length() * indexer.input_length());
+   unorm_weights.resize(header.terrain_length * header.terrain_length);
 
    file.read(reinterpret_cast<char*>(unorm_weights.data()),
              unorm_weights.size() * sizeof(std::array<std::uint8_t, 16>));
 
-   for (auto y = indexer.begin(); y <= indexer.end(); ++y) {
-      for (auto x = indexer.begin(); x <= indexer.end(); ++x) {
+   for (std::ptrdiff_t y = header.extents[1]; y <= header.extents[3]; ++y) {
+      for (std::ptrdiff_t x = header.extents[0]; x <= header.extents[2]; ++x) {
          auto& unorm_weight = unorm_weights[indexer.in(x, y)];
 
          for (auto i = 0; i < unorm_weight.size(); ++i) {
@@ -394,7 +353,8 @@ auto load_terrain_map(const std::filesystem::path& path,
 
    const Terrain_indexer indexer{header};
 
-   Terrain_map map{static_cast<std::uint16_t>(indexer.output_length())};
+   Terrain_map map{static_cast<std::uint16_t>(
+      std::abs(header.extents[0] - header.extents[2]) + 1)};
    std::array<std::uint8_t, 16> texture_remap;
 
    std::tie(map.texture_names, texture_remap) = read_texture_names(header);
@@ -402,29 +362,22 @@ auto load_terrain_map(const std::filesystem::path& path,
    map.detail_texture = header.texture_names[0].detail;
 
    // Skip Decal Tiles
-   file.seekg(header.decal_settings.tile_count > 0
-                 ? sizeof(Decal_tile) * header.decal_settings.tile_count
-                 : 8,
-              std::ios::cur);
+   file.seekg(sizeof(Decal_tile) * header.decal_settings.tile_count + 8, std::ios::cur);
 
-   read_height_map(file, terrain_offset, header.height_scale, header.grid_scale, indexer,
-                   gsl::make_span(map.position.get(), indexer.output_length() *
-                                                         indexer.output_length()));
-   read_color_maps(file, indexer,
-                   gsl::make_span(map.color.get(), indexer.output_length() *
-                                                      indexer.output_length()));
+   read_height_map(file, terrain_offset, header, indexer,
+                   gsl::make_span(map.position.get(), map.length * map.length));
+   read_color_maps(file, header, indexer,
+                   gsl::make_span(map.color.get(), map.length * map.length));
 
    if (header.prelit) {
-      read_diffuse_lighting(file, indexer,
+      read_diffuse_lighting(file, header, indexer,
                             gsl::make_span(map.diffuse_lighting.get(),
-                                           indexer.output_length() *
-                                              indexer.output_length()));
+                                           map.length * map.length));
    }
 
-   read_texture_weights(file, texture_remap, indexer,
+   read_texture_weights(file, texture_remap, header, indexer,
                         gsl::make_span(map.texture_weights.get(),
-                                       indexer.output_length() *
-                                          indexer.output_length()));
+                                       map.length * map.length));
 
    try {
       const auto terrain_length_half_sq =
