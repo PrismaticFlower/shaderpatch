@@ -426,18 +426,25 @@ auto load_terrain_map(const std::filesystem::path& path,
                                        indexer.output_length() *
                                           indexer.output_length()));
 
-   const auto terrain_length_half_sq =
-      (header.terrain_length / 2) * (header.terrain_length / 2);
+   try {
+      const auto terrain_length_half_sq =
+         (header.terrain_length / 2) * (header.terrain_length / 2);
 
-   file.seekg(terrain_length_half_sq / 2, std::ios::cur); // Unknown data
-   file.seekg(terrain_length_half_sq / 2, std::ios::cur); // Unknown data
-   file.seekg((terrain_length_half_sq / 4) * 3,
-              std::ios::cur);         // Patch data
-   file.seekg(131072, std::ios::cur); // Foliage map
-   file.seekg(262144, std::ios::cur); // Unknown data
-   file.seekg(131072, std::ios::cur); // Unknown data
+      file.seekg(terrain_length_half_sq / 2, std::ios::cur); // Unknown data
+      file.seekg(terrain_length_half_sq / 2, std::ios::cur); // Unknown data
+      file.seekg((terrain_length_half_sq / 4) * 3,
+                 std::ios::cur);         // Patch data
+      file.seekg(131072, std::ios::cur); // Foliage map
+      file.seekg(262144, std::ios::cur); // Unknown data
+      file.seekg(131072, std::ios::cur); // Unknown data
 
-   map.cuts = read_terrain_cuts(file);
+      map.cuts = read_terrain_cuts(file);
+   }
+   catch (std::ios_base::failure&) {
+      // Sometimes terrain files end abruptly, terrainmunge
+      // and Zero Editor still treat them as valid however
+      // so we must be prepared for it to happen here.
+   }
 
    return map;
 }
