@@ -1,6 +1,7 @@
 #include "terrain_vertex_buffer.hpp"
 #include "generate_tangents.hpp"
 #include "image_span.hpp"
+#include "srgb_conversion.hpp"
 #include "vertex_buffer.hpp"
 
 #include <algorithm>
@@ -8,8 +9,6 @@
 #include <iterator>
 #include <memory>
 #include <stdexcept>
-
-#include <glm/gtc/color_space.hpp>
 
 namespace sp {
 
@@ -280,8 +279,8 @@ auto pack_vertex(const Terrain_vertex& vertex,
    packed.normal |= pack_unorm(vertex.normal.x * 0.5f + 0.5f);
    packed.normal |= pack_unorm(vertex.normal.z * 0.5f + 0.5f) << 24;
 
-   const auto srgb_color = glm::convertLinearToSRGB(
-      pack_lighting ? vertex.diffuse_lighting : glm::vec3{0.0f});
+   const auto srgb_color =
+      compress_srgb(pack_lighting ? vertex.diffuse_lighting : glm::vec3{0.0f});
 
    packed.tangent |= pack_unorm(srgb_color.r) << 16;
    packed.tangent |= pack_unorm(srgb_color.g) << 8;

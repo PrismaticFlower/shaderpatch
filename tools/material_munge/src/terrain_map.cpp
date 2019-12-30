@@ -1,6 +1,7 @@
 
 #include "terrain_map.hpp"
 #include "enum_flags.hpp"
+#include "srgb_conversion.hpp"
 #include "string_utilities.hpp"
 
 #include <algorithm>
@@ -9,8 +10,6 @@
 #include <fstream>
 #include <string_view>
 #include <tuple>
-
-#include <glm/gtc/color_space.hpp>
 
 namespace sp {
 
@@ -50,7 +49,7 @@ struct Terrain_color {
 
    operator glm::vec4() const noexcept
    {
-      return glm::convertSRGBToLinear(
+      return decompress_srgb(
          glm::vec4{red / 255.f, green / 255.f, blue / 255.f, alpha / 255.f});
    };
 };

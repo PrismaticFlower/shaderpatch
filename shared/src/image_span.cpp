@@ -2,8 +2,8 @@
 #pragma warning(disable : 4701) // For GLM - potentially uninitialized local variable used
 
 #include "image_span.hpp"
+#include "srgb_conversion.hpp"
 
-#include <glm/gtc/color_space.hpp>
 #include <glm/gtc/packing.hpp>
 #include <gsl/gsl>
 
@@ -377,7 +377,7 @@ auto load_r8g8b8a8_unorm_srgb(const glm::ivec2 index, const std::size_t row_pitc
 
    std::memcpy(&value, texel_address(index, row_pitch, texel_size, data), texel_size);
 
-   return glm::convertSRGBToLinear(glm::unpackUnorm4x8(value));
+   return decompress_srgb(glm::unpackUnorm4x8(value));
 }
 
 void store_r8g8b8a8_unorm_srgb(const glm::vec4 value, const glm::ivec2 index,
@@ -385,7 +385,7 @@ void store_r8g8b8a8_unorm_srgb(const glm::vec4 value, const glm::ivec2 index,
 {
    constexpr auto texel_size = sizeof(glm::uint32);
 
-   const auto packed = glm::packUnorm4x8(glm::convertLinearToSRGB(value));
+   const auto packed = glm::packUnorm4x8(compress_srgb(value));
 
    std::memcpy(texel_address(index, row_pitch, texel_size, data), &packed, texel_size);
 }
