@@ -36,7 +36,10 @@ public:
 private:
    inline static std::vector<const char*> _trace = [] {
       std::vector<const char*> vec;
+
+#ifndef NDEBUG
       vec.reserve(8192);
+#endif
 
       return vec;
    }();
