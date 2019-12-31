@@ -20,5 +20,6 @@ void munge_materials(
    const std::filesystem::path& output_path,
    const std::unordered_map<Ci_string, std::vector<std::filesystem::path>>& texture_references,
    const std::unordered_map<Ci_string, std::filesystem::path>& files,
-   const std::unordered_map<Ci_string, YAML::Node>& descriptions);
+   const std::unordered_map<Ci_string, YAML::Node>& descriptions,
+   const bool patch_material_flags);
 }

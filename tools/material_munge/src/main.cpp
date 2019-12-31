@@ -30,6 +30,7 @@ int main(int arg_count, char* args[])
    using namespace clara;
 
    bool help = false;
+   bool use_mtrl_file_flags = false;
    auto output_dir = "./"s;
    auto source_dir = "./"s;
    auto munged_input_dir = "./"s;
@@ -50,7 +51,10 @@ int main(int arg_count, char* args[])
       | Opt{description_dirs, "description directory"s}
       ["--descdir"s]["-d"s]
       ("Add a path to search (non recursively) for input *.yml files"
-       " holding descriptions of rendertypes."s);
+       " holding descriptions of rendertypes."s)
+      | Opt{use_mtrl_file_flags, "use mtrl file flags"s}
+      ["--usemtrlflags"s]
+      ("Use the deprecated Flags section in .mtrl files."s);
 
    // clang-format on
 
@@ -99,7 +103,8 @@ int main(int arg_count, char* args[])
    auto files = files_result.get();
    auto descriptions = descriptions_async.get();
 
-   munge_materials(output_dir, texture_references, files, descriptions);
+   munge_materials(output_dir, texture_references, files, descriptions,
+                   use_mtrl_file_flags);
    munge_terrain_materials(files, output_dir, munged_input_dir, output_dir);
 
    return 0;

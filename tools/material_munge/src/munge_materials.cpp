@@ -170,7 +170,8 @@ void fixup_munged_models(
    const fs::path& output_dir,
    const std::unordered_map<Ci_string, std::vector<fs::path>>& texture_references,
    const std::unordered_map<Ci_string, Material_options>& material_index,
-   const std::unordered_set<Ci_string>& changed_materials)
+   const std::unordered_set<Ci_string>& changed_materials,
+   const bool patch_material_flags)
 {
    std::set<fs::path> affected_models;
 
@@ -205,7 +206,8 @@ void fixup_munged_models(
                                  " for Shader Patch..."sv);
 
                     try {
-                       patch_model(input_path, output_file_path, material_index);
+                       patch_model(input_path, output_file_path, material_index,
+                                   patch_material_flags);
                     }
                     catch (std::exception& e) {
                        synced_error_print(e.what());
@@ -218,7 +220,8 @@ void fixup_munged_models(
 void munge_materials(const fs::path& output_dir,
                      const std::unordered_map<Ci_string, std::vector<fs::path>>& texture_references,
                      const std::unordered_map<Ci_string, fs::path>& files,
-                     const std::unordered_map<Ci_string, YAML::Node>& descriptions)
+                     const std::unordered_map<Ci_string, YAML::Node>& descriptions,
+                     const bool patch_material_flags)
 {
    std::unordered_set<Ci_string> changed_materials;
 
@@ -249,7 +252,8 @@ void munge_materials(const fs::path& output_dir,
       }
    }
 
-   fixup_munged_models(output_dir, texture_references, index, changed_materials);
+   fixup_munged_models(output_dir, texture_references, index, changed_materials,
+                       patch_material_flags);
    save_materials_index(output_dir, index);
 }
 }

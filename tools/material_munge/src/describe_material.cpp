@@ -261,13 +261,13 @@ auto read_desc_material_options(const YAML::Node& node, Material_options& materi
 {
    for (const auto& opt : node) {
       if (const auto key = opt.first.as<std::string>(); key == "Transparent"s)
-         material_options.transparent = opt.second.as<bool>();
+         material_options.forced_transparent_value = opt.second.as<bool>();
       else if (key == "Hard Edged"s)
-         material_options.hard_edged = opt.second.as<bool>();
+         material_options.forced_hard_edged_value = opt.second.as<bool>();
       else if (key == "Double Sided"s)
-         material_options.double_sided = opt.second.as<bool>();
+         material_options.forced_double_sided_value = opt.second.as<bool>();
       else if (key == "Unlit"s)
-         material_options.unlit = opt.second.as<bool>();
+         material_options.forced_unlit_value = opt.second.as<bool>();
       else if (key == "Compressed"s)
          material_options.compressed = opt.second.as<bool>();
       else if (key == "Generate Tangents"s)

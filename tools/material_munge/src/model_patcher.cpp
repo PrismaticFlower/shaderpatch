@@ -137,7 +137,8 @@ void edit_ibuf_vbufs(ucfb::Editor_parent_chunk& segm, const Material_options opt
    }
 }
 
-void edit_mtrl(ucfb::Tweaker mtrl_tweaker, const Material_options options) noexcept
+void edit_mtrl(ucfb::Tweaker mtrl_tweaker, const Material_options options,
+               const bool patch_material_flags) noexcept
 {
    auto mtrl_flags_proxy = mtrl_tweaker.get<Material_flags>();
    auto mtrl_flags = mtrl_flags_proxy.load();
@@ -151,17 +152,39 @@ void edit_mtrl(ucfb::Tweaker mtrl_tweaker, const Material_options options) noexc
 
    // clang-format off
 
-   if (options.transparent) mtrl_flags |= Material_flags::transparent;
-   else mtrl_flags &= ~Material_flags::transparent;
+   if (patch_material_flags) {
+      if (options.transparent) mtrl_flags |= Material_flags::transparent;
+      else mtrl_flags &= ~Material_flags::transparent;
 
-   if (options.hard_edged) mtrl_flags |= Material_flags::hardedged;
-   else mtrl_flags &= ~Material_flags::hardedged;
+      if (options.hard_edged) mtrl_flags |= Material_flags::hardedged;
+      else mtrl_flags &= ~Material_flags::hardedged;
 
-   if (options.double_sided) mtrl_flags |= Material_flags::doublesided;
-   else mtrl_flags &= ~Material_flags::doublesided;
+      if (options.double_sided) mtrl_flags |= Material_flags::doublesided;
+      else mtrl_flags &= ~Material_flags::doublesided;
 
-   if (options.unlit) mtrl_flags &= ~Material_flags::normal;
-   else mtrl_flags |= Material_flags::normal;
+      if (options.unlit) mtrl_flags &= ~Material_flags::normal;
+      else mtrl_flags |= Material_flags::normal;
+   }
+   
+   if (options.forced_transparent_value) {
+      if (options.forced_transparent_value.value()) mtrl_flags |= Material_flags::transparent;
+      else mtrl_flags &= ~Material_flags::transparent;
+   }
+   
+   if (options.forced_hard_edged_value) {
+      if (options.forced_hard_edged_value.value()) mtrl_flags |= Material_flags::hardedged;
+      else mtrl_flags &= ~Material_flags::hardedged;
+   }
+   
+   if (options.forced_double_sided_value) {
+      if (options.forced_double_sided_value.value()) mtrl_flags |= Material_flags::doublesided;
+      else mtrl_flags &= ~Material_flags::doublesided;
+   }
+   
+   if (options.forced_unlit_value) {
+      if (options.forced_unlit_value.value()) mtrl_flags &= ~Material_flags::normal;
+      else mtrl_flags |= Material_flags::normal;
+   }
 
    // clang-format on
 
@@ -193,7 +216,7 @@ void edit_tnams(ucfb::Editor_parent_chunk& segm) noexcept
 
 void edit_segm(ucfb::Editor_parent_chunk& segm,
                const std::unordered_map<Ci_string, Material_options>& material_index,
-               const std::array<glm::vec3, 2> vert_box)
+               const bool patch_material_flags, const std::array<glm::vec3, 2> vert_box)
 {
    bool edit = false;
 
@@ -249,14 +272,15 @@ void edit_segm(ucfb::Editor_parent_chunk& segm,
    // Edit MTRL to have the correct render flags for use with custom materials.
    edit_mtrl({mtrl_chunk->first,
               std::get<ucfb::Editor_data_chunk>(mtrl_chunk->second).span()},
-             options);
+             options, patch_material_flags);
 
    // Edit IBUF and VBUFS to generate tangents and optimize face and vertex layout.
    edit_ibuf_vbufs(segm, options, vert_box);
 }
 
 void edit_modl(ucfb::Editor_parent_chunk& modl,
-               const std::unordered_map<Ci_string, Material_options>& material_index)
+               const std::unordered_map<Ci_string, Material_options>& material_index,
+               const bool patch_material_flags)
 {
    const auto vert_box = [&] {
       auto info = make_reader(ucfb::find(modl, "INFO"_mn));
@@ -271,30 +295,32 @@ void edit_modl(ucfb::Editor_parent_chunk& modl,
    for (auto it = ucfb::find(modl, "segm"_mn); it != modl.end();
         it = ucfb::find(it + 1, modl.end(), "segm"_mn)) {
       edit_segm(std::get<ucfb::Editor_parent_chunk>(it->second), material_index,
-                vert_box);
+                patch_material_flags, vert_box);
    }
 }
 
 void edit_modl_chunks(ucfb::Editor_parent_chunk& root,
-                      const std::unordered_map<Ci_string, Material_options>& material_index)
+                      const std::unordered_map<Ci_string, Material_options>& material_index,
+                      const bool patch_material_flags)
 {
    for (auto it = ucfb::find(root, "modl"_mn); it != root.end();
         it = ucfb::find(it + 1, root.end(), "modl"_mn)) {
-      edit_modl(std::get<ucfb::Editor_parent_chunk>(it->second), material_index);
+      edit_modl(std::get<ucfb::Editor_parent_chunk>(it->second), material_index,
+                patch_material_flags);
    }
 }
 }
 
 void patch_model(const std::filesystem::path& model_path,
                  const std::filesystem::path& output_model_path,
-                 const std::unordered_map<Ci_string, Material_options>& material_index)
+                 const std::unordered_map<Ci_string, Material_options>& material_index,
+                 const bool patch_material_flags)
 {
    try {
       ucfb::Editor editor = [&] {
          win32::Memeory_mapped_file file{model_path,
                                          win32::Memeory_mapped_file::Mode::read};
-         const auto is_parent = [](const Magic_number mn) noexcept
-         {
+         const auto is_parent = [](const Magic_number mn) noexcept {
             if (mn == "modl"_mn || mn == "shdw"_mn || mn == "segm"_mn)
                return true;
 
@@ -308,7 +334,7 @@ void patch_model(const std::filesystem::path& model_path,
       clean_chunks(editor);
 
       // Apply edits to `modl` chunks.
-      edit_modl_chunks(editor, material_index);
+      edit_modl_chunks(editor, material_index, patch_material_flags);
 
       // Output new file.
       std::ofstream output{output_model_path, std::ios::binary};
