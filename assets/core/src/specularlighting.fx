@@ -193,8 +193,7 @@ float4 blinn_phong_ps(Ps_blinn_phong_input input, uniform Texture2D<float4> diff
 
       float3 reflectionWS = calculate_envmap_reflection(normalWS, view_normalWS);
 
-      float3 env_color =
-         envmap.Sample(aniso_wrap_sampler, reflectionWS) * specular_color.rgb;
+      float3 env_color = envmap.Sample(aniso_wrap_sampler, reflectionWS);
 
       color += lerp(spec_contrib, env_color, envmap_state);
    }
