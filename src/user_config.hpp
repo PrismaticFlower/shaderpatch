@@ -68,6 +68,7 @@ struct User_config {
       bool enable_alternative_postprocessing = true;
       bool enable_16bit_color_rendering = true;
       bool enable_tessellation = true;
+      bool disable_light_brightness_rescaling = false;
       bool enable_user_effects_config = false;
       std::string user_effects_config;
    } graphics;

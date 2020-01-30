@@ -85,6 +85,18 @@ void Control::show_imgui(HWND game_window) noexcept
                   "render correctly and that it should be enabled if the "
                   "user's GPU supports it.");
             }
+
+            if (!_config.hdr_rendering) {
+               ImGui::Checkbox("Disable Light Brightness Rescaling",
+                               &_config.disable_light_brightness_rescaling);
+
+               if (ImGui::IsItemHovered()) {
+                  ImGui::SetTooltip(
+                     "Disable light brightness rescaling in stock shaders. Has "
+                     "no affect on custom materials. HDR Rendering implies "
+                     "this option.");
+               }
+            }
          }
 
          ImGui::Checkbox("Profiler Enabled", &profiler.enabled);

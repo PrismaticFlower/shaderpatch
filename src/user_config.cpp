@@ -60,6 +60,9 @@ void User_config::show_imgui() noexcept
 
       ImGui::Checkbox("Enable Tessellation", &graphics.enable_tessellation);
 
+      ImGui::Checkbox("Disable Light Brightness Rescaling",
+                      &graphics.disable_light_brightness_rescaling);
+
       ImGui::Checkbox("Enable User Effects Config", &graphics.enable_user_effects_config);
       ImGui::InputText("User Effects Config", graphics.user_effects_config);
    }
@@ -128,6 +131,9 @@ void User_config::parse_file(const std::string& path)
 
    graphics.enable_tessellation =
       config["Graphics"s]["Enable Tessellation"s].as<bool>();
+
+   graphics.disable_light_brightness_rescaling =
+      config["Graphics"s]["Disable Light Brightness Rescaling"s].as<bool>();
 
    graphics.enable_user_effects_config =
       config["Graphics"s]["Enable User Effects Config"s].as<bool>();

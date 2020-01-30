@@ -611,8 +611,7 @@ auto Shader_patch::create_patch_texture(const gsl::span<const std::byte> texture
 
       _shader_resource_database.insert(std::move(srv), name);
 
-      const auto texture_deleter = [this](ID3D11ShaderResourceView * srv) noexcept
-      {
+      const auto texture_deleter = [this](ID3D11ShaderResourceView* srv) noexcept {
          const auto [exists, name] = _shader_resource_database.reverse_lookup(srv);
 
          if (!exists) return; // Texture has already been replaced.
@@ -644,8 +643,7 @@ auto Shader_patch::create_patch_material(const gsl::span<const std::byte> materi
 
       log(Log_level::info, "Loaded material "sv, std::quoted(material->name));
 
-      const auto material_deleter = [&](Patch_material * material) noexcept
-      {
+      const auto material_deleter = [&](Patch_material* material) noexcept {
          if (_patch_material == material) set_patch_material(nullptr);
 
          for (auto it = _materials.begin(); it != _materials.end(); ++it) {
@@ -684,8 +682,7 @@ auto Shader_patch::create_patch_effects_config(const gsl::span<const std::byte> 
 
       const auto fx_id = _current_effects_id += 1;
 
-      const auto on_destruction = [ fx_id, this ]() noexcept
-      {
+      const auto on_destruction = [fx_id, this]() noexcept {
          if (fx_id != _current_effects_id) return;
 
          _effects.enabled(false);
@@ -1215,8 +1212,7 @@ void Shader_patch::game_rendertype_changed() noexcept
    if (_on_rendertype_changed) _on_rendertype_changed();
 
    if (_shader_rendertype == Rendertype::stencilshadow) {
-      _on_rendertype_changed = [this]() noexcept
-      {
+      _on_rendertype_changed = [this]() noexcept {
          _discard_draw_calls = true;
          _on_rendertype_changed = nullptr;
       };
@@ -1247,28 +1243,27 @@ void Shader_patch::game_rendertype_changed() noexcept
       }
 
       _on_stretch_rendertarget =
-         [ this, backup_rt = std::move(backup_rt) ](Game_rendertarget&, const RECT,
-                                                    Game_rendertarget& dest,
-                                                    const RECT) noexcept
-      {
-         _game_rendertargets[0] = std::move(backup_rt);
-         _on_stretch_rendertarget = nullptr;
-         _om_targets_dirty = true;
+         [this, backup_rt = std::move(backup_rt)](Game_rendertarget&, const RECT,
+                                                  Game_rendertarget& dest,
+                                                  const RECT) noexcept {
+            _game_rendertargets[0] = std::move(backup_rt);
+            _on_stretch_rendertarget = nullptr;
+            _om_targets_dirty = true;
 
-         if (dest.type != Game_rt_type::shadow) {
-            dest = Game_rendertarget{*_device,
-                                     shadow_texture_format,
-                                     _swapchain.width(),
-                                     _swapchain.height(),
-                                     1,
-                                     Game_rt_type::shadow};
-         }
+            if (dest.type != Game_rt_type::shadow) {
+               dest = Game_rendertarget{*_device,
+                                        shadow_texture_format,
+                                        _swapchain.width(),
+                                        _swapchain.height(),
+                                        1,
+                                        Game_rt_type::shadow};
+            }
 
-         if (_rt_sample_count > 1)
-            _device_context->ResolveSubresource(dest.texture.get(), 0,
-                                                _shadow_msaa_rt.texture.get(),
-                                                0, shadow_texture_format);
-      };
+            if (_rt_sample_count > 1)
+               _device_context->ResolveSubresource(dest.texture.get(), 0,
+                                                   _shadow_msaa_rt.texture.get(),
+                                                   0, shadow_texture_format);
+         };
    }
    else if (_shader_rendertype == Rendertype::refraction) {
       resolve_refraction_texture();
@@ -1287,8 +1282,7 @@ void Shader_patch::game_rendertype_changed() noexcept
       _om_depthstencil_force_readonly = true;
       _ps_textures_dirty = true;
 
-      _on_rendertype_changed = [this]() noexcept
-      {
+      _on_rendertype_changed = [this]() noexcept {
          _game_textures[5] = {};
 
          _om_targets_dirty = true;
@@ -1317,8 +1311,7 @@ void Shader_patch::game_rendertype_changed() noexcept
       _ps_textures_dirty = true;
       _lock_projtex_cube_slot = true;
 
-      _on_rendertype_changed = [this]() noexcept
-      {
+      _on_rendertype_changed = [this]() noexcept {
          _game_textures[6] = {};
 
          _om_targets_dirty = true;
@@ -1369,8 +1362,7 @@ void Shader_patch::game_rendertype_changed() noexcept
          resolve_msaa_depthstencil<true>();
       }
 
-      _on_rendertype_changed = [&]() noexcept
-      {
+      _on_rendertype_changed = [&]() noexcept {
          resolve_refraction_texture();
 
          if (_oit_provider.enabled() ||
@@ -1382,8 +1374,8 @@ void Shader_patch::game_rendertype_changed() noexcept
             _oit_active = true;
 
             _on_stretch_rendertarget = [&](Game_rendertarget&, const RECT,
-                                           Game_rendertarget&, const RECT dest_rect) noexcept
-            {
+                                           Game_rendertarget&,
+                                           const RECT dest_rect) noexcept {
                if (dest_rect.left == 0 && dest_rect.top == 0 &&
                    dest_rect.bottom == 256 && dest_rect.right == 256)
                   return;
@@ -1416,8 +1408,7 @@ void Shader_patch::game_rendertype_changed() noexcept
    if (user_config.graphics.enable_alternative_postprocessing) {
       if (_shader_rendertype == Rendertype::filtercopy) {
          _discard_draw_calls = true;
-         _on_rendertype_changed = [&]() noexcept
-         {
+         _on_rendertype_changed = [&]() noexcept {
             _discard_draw_calls = false;
             _on_rendertype_changed = nullptr;
          };
@@ -1430,8 +1421,7 @@ void Shader_patch::game_rendertype_changed() noexcept
                                                _rendertarget_allocator);
          restore_all_game_state();
 
-         _on_rendertype_changed = [&]() noexcept
-         {
+         _on_rendertype_changed = [&]() noexcept {
             _discard_draw_calls = false;
             _on_rendertype_changed = nullptr;
          };
@@ -1445,8 +1435,7 @@ void Shader_patch::game_rendertype_changed() noexcept
                                                _rendertarget_allocator);
          restore_all_game_state();
 
-         _on_rendertype_changed = [&]() noexcept
-         {
+         _on_rendertype_changed = [&]() noexcept {
             _discard_draw_calls = false;
             _on_rendertype_changed = nullptr;
          };
@@ -1466,8 +1455,7 @@ void Shader_patch::game_rendertype_changed() noexcept
 
          restore_all_game_state();
 
-         _on_rendertype_changed = [&]() noexcept
-         {
+         _on_rendertype_changed = [&]() noexcept {
             _discard_draw_calls = false;
             _on_rendertype_changed = nullptr;
          };
@@ -1524,8 +1512,7 @@ void Shader_patch::game_rendertype_changed() noexcept
 
          restore_all_game_state();
 
-         _on_rendertype_changed = [this]() noexcept
-         {
+         _on_rendertype_changed = [this]() noexcept {
             _discard_draw_calls = false;
             _on_rendertype_changed = nullptr;
          };
@@ -1924,8 +1911,13 @@ void Shader_patch::set_linear_rendering(bool linear_rendering) noexcept
       _cb_draw_ps.ps_lighting_scale = 1.0f;
    }
    else {
+      const bool limit_normal_shader_bright_lights =
+         !(_effects.config().disable_light_brightness_rescaling |
+           (user_config.graphics.disable_light_brightness_rescaling &
+            !_effects.enabled()));
+
       _cb_scene.vertex_color_srgb = false;
-      _cb_draw_ps.limit_normal_shader_bright_lights = true;
+      _cb_draw_ps.limit_normal_shader_bright_lights = limit_normal_shader_bright_lights;
       _cb_scene.vs_lighting_scale = 0.5f;
       _cb_draw_ps.ps_lighting_scale = 0.5f;
    }

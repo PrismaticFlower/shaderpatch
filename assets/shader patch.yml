@@ -57,6 +57,16 @@ Graphics:
    # may cause a performance hit.
    Enable Tessellation: yes
 
+   # In the vanilla shaders for most surfaces after calculating incoming light for a surface the brightness of the 
+   # light is rescaled to keep it from being too dark or too bright. (Or at least that is what I *assume* the reason to be.) 
+   #  
+   # Disabling this can increase the realism and correctness of lighting for objects lit by the affected shaders. But 
+   # for maps/mods that have had their lighting carefully balanced by the author it could do more harm than good. It is also likely 
+   # to increase the amount of surfaces that are bright enough to cause light bloom in a scene.
+   #
+   # This setting has no affect on custom materials or when Effects are enabled. (Effects have an equivalent setting however.)
+   Disable Light Brightness Rescaling: no
+
    # When a map or mod has not loaded an Effects Config Shader Patch can use a user specified 
    # config.
    Enable User Effects Config: no
