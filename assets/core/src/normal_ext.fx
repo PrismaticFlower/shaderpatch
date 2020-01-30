@@ -302,7 +302,7 @@ float4 main_ps(Ps_input input) : SV_Target0
          light::pbr::specular_occlusion(saturate(dot(normalWS, viewWS)),
                                         ao, roughness);
 
-      color += (so * env_map_vis * env * base_specular_color);
+      color += (gloss * so * env_map_vis * env * base_specular_color);
    }
 
    // Apply fog.
