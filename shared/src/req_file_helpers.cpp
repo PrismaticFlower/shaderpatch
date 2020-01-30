@@ -112,8 +112,10 @@ auto parse_req_file(const std::filesystem::path& filepath, std::string_view plat
 
          if (key.empty()) continue;
 
-         if (const auto split = split_string_on(key, "="sv); split[0] == "platform"sv) {
-            if (split[1] != platform) keep_keys = false;
+         if (begins_with(key, "platform="sv)) {
+            const auto [_, section_platform] = split_string_on(key, "="sv);
+
+            keep_keys = section_platform == platform;
          }
 
          if (keep_keys) keys.emplace_back(std::move(key));
