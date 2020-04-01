@@ -198,7 +198,7 @@ void Control::save_params_to_munged_file(const fs::path& save_to) noexcept
       save_volume_resource(save_to, save_to.stem().string(),
                            Volume_resource_type::fx_config,
                            gsl::span{reinterpret_cast<std::byte*>(config.data()),
-                                     gsl::narrow_cast<gsl::index>(config.size())});
+                                     config.size()});
       _save_failure = false;
    }
    catch (std::exception& e) {

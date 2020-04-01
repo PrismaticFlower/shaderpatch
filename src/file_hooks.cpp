@@ -14,7 +14,7 @@
 #include <string_view>
 
 #include <Windows.h>
-#include <detours.h>
+#include <detours/detours.h>
 #include <io.h>
 
 namespace sp {

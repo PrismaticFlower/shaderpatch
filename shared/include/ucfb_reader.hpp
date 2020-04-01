@@ -154,8 +154,8 @@ public:
    //! \exception std::runtime_error Thrown when reading the array would go past the end
    //! of the chunk.
    template<typename Type>
-   auto read_array(const typename gsl::span<const Type>::index_type size,
-                   const bool unaligned = false) -> gsl::span<const Type>
+   auto read_array(const std::size_t size, const bool unaligned = false)
+      -> gsl::span<const Type>
    {
       static_assert(std::is_standard_layout_v<Type>,
                     "Type must be standard layout.");
@@ -183,8 +183,7 @@ public:
    //! \exception std::runtime_error Thrown when reading the array would go past the end
    //! of the chunk.
    template<typename Type>
-   auto read_array_unaligned(const typename gsl::span<const Type>::index_type size)
-      -> gsl::span<const Type>
+   auto read_array_unaligned(const std::size_t size) -> gsl::span<const Type>
    {
       return read_array<Type>(size, true);
    }
@@ -317,7 +316,7 @@ public:
    auto read_child_strict(const bool unaligned = false) -> Reader_strict<type_mn>
    {
       return {read_child_strict(type_mn, unaligned),
-              Reader_strict<type_mn>::Unchecked_tag{}};
+              typename Reader_strict<type_mn>::Unchecked_tag{}};
    }
 
    //! \brief Reads an unaligned child if it's magic number matches an expected
@@ -356,7 +355,7 @@ public:
       const auto child = read_child_strict_optional(type_mn, unaligned);
 
       if (child) {
-         return {{*child, Reader_strict<type_mn>::Unchecked_tag{}}};
+         return {{*child, typename Reader_strict<type_mn>::Unchecked_tag{}}};
       }
 
       return {};

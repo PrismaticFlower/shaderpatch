@@ -59,14 +59,15 @@ void make_opaque(const DirectX::Image image) noexcept
    Expects(image.format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB ||
            image.format == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB);
 
-   std::for_each_n(std::execution::par_unseq, Index_iterator{}, image.height, [&](const auto y) {
-      const gsl::span<std::uint8_t> row{image.pixels + y * image.rowPitch,
-                                        static_cast<std::ptrdiff_t>(image.rowPitch)};
+   std::for_each_n(std::execution::par_unseq, Index_iterator{}, image.height,
+                   [&](const auto y) {
+                      const gsl::span<std::uint8_t> row{image.pixels + y * image.rowPitch,
+                                                        image.rowPitch};
 
-      for (auto x = 0; x < image.width; ++x) {
-         row[x * 4 + 3] = 0xff;
-      }
-   });
+                      for (auto x = 0; x < image.width; ++x) {
+                         row[x * 4 + 3] = 0xff;
+                      }
+                   });
 }
 
 void save_screenshot(const std::filesystem::path& save_file, const Swapchain& swapchain,

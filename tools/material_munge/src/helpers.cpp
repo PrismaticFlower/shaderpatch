@@ -9,8 +9,6 @@
 
 #include <gsl/gsl>
 
-#include <stb_image.h>
-
 namespace sp {
 
 using namespace std::literals;

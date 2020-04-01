@@ -50,7 +50,7 @@ public:
       }
    }
 
-   int count() const noexcept
+   auto count() const noexcept -> std::size_t
    {
       return _flag_count;
    }
@@ -131,7 +131,7 @@ private:
       return flags;
    }
 
-   int _flag_count = 0;
+   std::size_t _flag_count = 0;
    std::array<std::string, max_flags> _flag_names;
    std::array<std::vector<std::pair<std::size_t, Flag_op>>, max_flags> _flag_ops;
 };

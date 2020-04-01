@@ -87,10 +87,9 @@ private:
                               core::Mapped_texture dest) noexcept
    {
       std::for_each_n(std::execution::par_unseq, Index_iterator{}, height, [&](const int y) {
-         const auto src_row = gsl::span{source.data + (source.row_pitch * y),
-                                        static_cast<gsl::index>(source.row_pitch)};
-         auto dest_row = gsl::span{dest.data + (dest.row_pitch * y),
-                                   static_cast<gsl::index>(dest.row_pitch)};
+         const auto src_row =
+            gsl::span{source.data + (source.row_pitch * y), source.row_pitch};
+         auto dest_row = gsl::span{dest.data + (dest.row_pitch * y), dest.row_pitch};
 
          for (auto x = 0; x < width; ++x) {
             auto dest_pixel = dest_row.subspan(4 * x, 4);
@@ -175,10 +174,9 @@ private:
                               core::Mapped_texture dest) noexcept
    {
       std::for_each_n(std::execution::par_unseq, Index_iterator{}, height, [&](const int y) {
-         const auto src_row = gsl::span{source.data + (source.row_pitch * y),
-                                        static_cast<gsl::index>(source.row_pitch)};
-         auto dest_row = gsl::span{dest.data + (dest.row_pitch * y),
-                                   static_cast<gsl::index>(dest.row_pitch)};
+         const auto src_row =
+            gsl::span{source.data + (source.row_pitch * y), source.row_pitch};
+         auto dest_row = gsl::span{dest.data + (dest.row_pitch * y), dest.row_pitch};
 
          for (auto x = 0; x < width; ++x) {
             dest_row[x * 4] = src_row[x * 2];

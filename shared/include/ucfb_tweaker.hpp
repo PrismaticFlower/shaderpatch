@@ -212,7 +212,7 @@ public:
    //! return a string that is not null-terminated.
    auto read_string(const bool unaligned = false) -> std::string_view
    {
-      const auto string_max_length = _data.size() - _head;
+      const std::ptrdiff_t string_max_length = std::ssize(_data) - _head;
       char* const string_begin = reinterpret_cast<char*>(&_data[_head]);
       const auto string_end =
          std::find(string_begin, string_begin + string_max_length, '\0');

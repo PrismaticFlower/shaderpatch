@@ -68,7 +68,9 @@ inline void for_each(Policy&& policy, const Image_span& span, Func func) noexcep
 
                          for (auto y = 0; y < work_size; ++y) {
                             for (auto x = 0; x < span_x_size; ++x) {
-                               func(glm::ivec2{x, offset + y});
+                               const glm::ivec2 index{x, offset + y};
+
+                               func(index);
                             }
                          }
                       });
