@@ -14,8 +14,6 @@ extern "C" IDirect3D9* __stdcall shader_patch_direct3d9_create(UINT sdk) noexcep
 
 namespace {
 
-static decltype(&Direct3DCreate9) true_direct3d9_create = nullptr;
-
 auto load_system_d3d9_dll() noexcept -> HMODULE
 {
    std::wstring buffer;
@@ -79,8 +77,6 @@ void install_game_d3d9_redirection() noexcept
             if (strcmp("Direct3DCreate9", name) == 0) {
                auto memory_lock = sp::unlock_memory(func_ptr_ptr, sizeof(void*));
 
-               true_direct3d9_create =
-                  static_cast<decltype(&Direct3DCreate9)>(*func_ptr_ptr);
                *func_ptr_ptr = shader_patch_direct3d9_create;
 
                return false;
@@ -107,8 +103,6 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD reason, LPVOID)
 
 extern "C" IDirect3D9* __stdcall direct3d9_create(UINT sdk) noexcept
 {
-   if (true_direct3d9_create) return true_direct3d9_create(sdk);
-
    const static auto d3d9_create =
       get_dll_export<decltype(Direct3DCreate9)>(load_system_d3d9_dll(),
                                                 "Direct3DCreate9");
