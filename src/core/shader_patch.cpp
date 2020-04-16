@@ -1784,9 +1784,11 @@ void Shader_patch::update_rendertargets() noexcept
          return Swapchain::format;
    }();
 
-   if ((std::exchange(_current_rt_format, new_format) == new_format) &&
-       (std::exchange(_aa_method, user_config.graphics.antialiasing_method) ==
-        user_config.graphics.antialiasing_method)) {
+   if (const auto [old_format, old_aa_method] =
+          std::pair{std::exchange(_current_rt_format, new_format),
+                    std::exchange(_aa_method, user_config.graphics.antialiasing_method)};
+       (old_format == new_format) &&
+       (old_aa_method == user_config.graphics.antialiasing_method)) {
       return;
    }
 
