@@ -3,7 +3,7 @@
 #include <array>
 #include <cctype>
 #include <functional>
-#include <iosfwd>
+#include <iostream>
 #include <optional>
 #include <string>
 #include <string_view>

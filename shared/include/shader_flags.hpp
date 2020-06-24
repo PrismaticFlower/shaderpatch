@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace sp {
 
@@ -124,6 +125,62 @@ inline auto get_pass_flags(std::string base_input, bool lighting,
    }
 
    return flags;
+}
+
+inline auto to_string(const Vertex_shader_flags flags) noexcept
+{
+   using namespace std::literals;
+
+   if (flags == Vertex_shader_flags::none) return "none"s;
+
+   std::string result;
+
+   bool first = true;
+
+   const auto add_flag = [&](const Vertex_shader_flags flag, const std::string_view str) {
+      if ((flags & flag) != Vertex_shader_flags::none) {
+         if (not std::exchange(first, false)) result += " | "sv;
+
+         result += str;
+      }
+   };
+
+   add_flag(Vertex_shader_flags::compressed, "compressed"sv);
+   add_flag(Vertex_shader_flags::position, "position"sv);
+   add_flag(Vertex_shader_flags::normal, "normal"sv);
+   add_flag(Vertex_shader_flags::tangents, "tangents"sv);
+   add_flag(Vertex_shader_flags::texcoords, "texcoords"sv);
+   add_flag(Vertex_shader_flags::color, "color"sv);
+   add_flag(Vertex_shader_flags::hard_skinned, "hard_skinned"sv);
+
+   return result;
+}
+
+inline auto to_string(const Pixel_shader_flags flags) noexcept
+{
+   using namespace std::literals;
+
+   if (flags == Pixel_shader_flags::none) return "none"s;
+
+   std::string result;
+
+   bool first = true;
+
+   const auto add_flag = [&](const Pixel_shader_flags flag, const std::string_view str) {
+      if ((flags & flag) != Pixel_shader_flags::none) {
+         if (not std::exchange(first, false)) result += " | "sv;
+
+         result += str;
+      }
+   };
+
+   add_flag(Pixel_shader_flags::light_point_1, "light_point_1"sv);
+   add_flag(Pixel_shader_flags::light_point_2, "light_point_2"sv);
+   add_flag(Pixel_shader_flags::light_point_4, "light_point_4"sv);
+   add_flag(Pixel_shader_flags::light_spot, "light_spot"sv);
+   add_flag(Pixel_shader_flags::light_directional, "light_directional"sv);
+
+   return result;
 }
 
 }

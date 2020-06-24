@@ -17,7 +17,8 @@ auto Material_shader_factory::create(const std::string& rendertype) noexcept
    return _cache
       .emplace(rendertype,
                std::make_shared<Material_shader>(_device,
-                                                 _shader_database->rendertypes.at(rendertype)))
+                                                 _shader_database->rendertypes.at(rendertype),
+                                                 rendertype))
       .first->second;
 }
 

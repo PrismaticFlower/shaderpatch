@@ -11,14 +11,19 @@
 
 namespace sp::core {
 
+template<typename T>
+class Material_shader_index {
+public:
+};
+
 class Material_shader {
 public:
    Material_shader(Com_ptr<ID3D11Device1> device,
-                   const Shader_rendertype& rendertype) noexcept;
+                   const Shader_rendertype& rendertype, std::string name) noexcept;
 
    void update(ID3D11DeviceContext1& dc,
                const Input_layout_descriptions& layout_descriptions,
-               const std::uint16_t layout_index, const std::string& shader_name,
+               const std::uint16_t layout_index, const std::string& state_name,
                const Vertex_shader_flags vertex_shader_flags,
                const Pixel_shader_flags pixel_shader_flags,
                const bool oit_active) noexcept;
@@ -26,7 +31,7 @@ public:
    void update_for_zprepass(ID3D11DeviceContext1& dc,
                             const Input_layout_descriptions& layout_descriptions,
                             const std::uint16_t layout_index,
-                            const std::string& shader_name,
+                            const std::string& state_name,
                             const Vertex_shader_flags vertex_shader_flags) noexcept;
 
 private:
@@ -41,12 +46,21 @@ private:
       std::unordered_map<Pixel_shader_flags, Com_ptr<ID3D11PixelShader>> pixel;
       std::unordered_map<Pixel_shader_flags, Com_ptr<ID3D11PixelShader>> pixel_oit;
 
+      auto get_vs(const Vertex_shader_flags flags, const std::string& state_name,
+                  const std::string& shader_name) noexcept -> Material_vertex_shader&;
+
+      auto get_ps(const Pixel_shader_flags flags, const bool oit_active,
+                  const std::string& state_name,
+                  const std::string& shader_name) noexcept -> ID3D11PixelShader&;
+
       Com_ptr<ID3D11HullShader> hull;
       Com_ptr<ID3D11DomainShader> domain;
       Com_ptr<ID3D11GeometryShader> geometry;
    };
 
    using Shaders = std::unordered_map<std::string, Material_shader_state>;
+
+   auto get_state(const std::string& state_name) noexcept -> Material_shader_state&;
 
    static auto init_shaders(const Shader_rendertype& rendertype) noexcept -> Shaders;
 
@@ -63,6 +77,7 @@ private:
    const Com_ptr<ID3D11Device1> _device;
 
    Shaders _shaders;
+   std::string _name;
 };
 
 }
