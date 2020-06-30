@@ -41,11 +41,18 @@ public:
       }
    }
 
-   auto copy(const std::uint32_t static_flags = 0) const noexcept -> Com_ptr<Type>
+   auto copy_if(const std::uint32_t static_flags = 0) const noexcept -> Com_ptr<Type>
    {
       if (const auto it = _variations.find(static_flags); it != _variations.end()) {
          return it->second;
       }
+
+      return nullptr;
+   }
+
+   auto copy(const std::uint32_t static_flags = 0) const noexcept -> Com_ptr<Type>
+   {
+      if (auto shader = copy_if(static_flags); shader) return shader;
 
       log_and_terminate("Attempt to copy nonexistant shader!");
    }
@@ -111,8 +118,7 @@ public:
    }
 
    template<typename Output_func>
-   void copy_all_if(const std::uint16_t static_flags, Output_func output_func) const
-      noexcept
+   void copy_all_if(const std::uint16_t static_flags, Output_func output_func) const noexcept
    {
       static_assert(
          std::is_nothrow_invocable_v<Output_func, Vertex_shader_flags,
@@ -191,8 +197,7 @@ public:
    }
 
    template<typename Output_func>
-   void copy_all_if(const std::uint16_t static_flags, Output_func output_func) const
-      noexcept
+   void copy_all_if(const std::uint16_t static_flags, Output_func output_func) const noexcept
    {
       static_assert(
          std::is_nothrow_invocable_v<Output_func, Pixel_shader_flags, Com_ptr<ID3D11PixelShader>>);

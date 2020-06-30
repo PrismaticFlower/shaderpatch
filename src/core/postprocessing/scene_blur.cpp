@@ -67,8 +67,16 @@ void Scene_blur::apply(ID3D11DeviceContext4& dc, const Game_rendertarget& dest,
    auto* const samp = _sampler.get();
    dc.PSSetSamplers(0, 1, &samp);
 
-   const auto x_rt = rt_allocator.allocate(dest.format, input_width, input_height);
-   const auto y_rt = rt_allocator.allocate(dest.format, input_width, input_height);
+   const auto x_rt =
+      rt_allocator.allocate({.format = dest.format,
+                             .width = input_width,
+                             .height = input_height,
+                             .bind_flags = effects::rendertarget_bind_srv_rtv});
+   const auto y_rt =
+      rt_allocator.allocate({.format = dest.format,
+                             .width = input_width,
+                             .height = input_height,
+                             .bind_flags = effects::rendertarget_bind_srv_rtv});
 
    const CD3D11_VIEWPORT blur_viewport{0.0f, 0.0f, static_cast<float>(input_width),
                                        static_cast<float>(input_height)};

@@ -4,6 +4,8 @@
 #include "fullscreen_tri_vs.hlsl"
 #include "postprocess_common.hlsl"
 
+// clang-format off
+
 #pragma warning(disable : 3571)
 
 const static bool vignette = VIGNETTE_ACTIVE;
@@ -92,7 +94,7 @@ Postprocessing_output main_ps(float2 texcoords : TEXCOORD, float4 positionSS : S
    output.color = color;
 
 #  if OUTPUT_CMAA2_LUMA
-      output.luma = dot(color.rgb, float3(0.299, 0.587, 0.114));
+      output.luma = dot(sqrt(color), float3(0.299, 0.587, 0.114));
 #  endif
 
    return output;

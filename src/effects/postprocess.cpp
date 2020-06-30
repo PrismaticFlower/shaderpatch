@@ -66,6 +66,7 @@ void do_pass(ID3D11DeviceContext1& dc, std::array<ID3D11ShaderResourceView*, 5> 
 }
 
 }
+
 using namespace std::literals;
 
 Postprocess::Postprocess(Com_ptr<ID3D11Device1> device,
@@ -171,68 +172,7 @@ void Postprocess::hdr_state(Hdr_state state) noexcept
 void Postprocess::apply(ID3D11DeviceContext1& dc,
                         Rendertarget_allocator& rt_allocator, Profiler& profiler,
                         const core::Shader_resource_database& textures,
-                        const glm::vec3 camera_position, const Postprocess_input input,
-                        const Postprocess_output output) noexcept
-{
-   dc.ClearState();
-   dc.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-   dc.VSSetShader(_fullscreen_vs.get(), nullptr, 0);
-
-   auto* const sampler = _linear_clamp_sampler.get();
-   dc.PSSetSamplers(0, 1, &sampler);
-
-   update_colorgrading_bloom(dc, camera_position);
-   update_shaders();
-   update_and_bind_cb(dc, input.width, input.height);
-
-   const auto process_format = _hdr_state == Hdr_state::hdr
-                                  ? DXGI_FORMAT_R16G16B16A16_FLOAT
-                                  : DXGI_FORMAT_R11G11B10_FLOAT;
-
-   if (input.sample_count != 1) {
-      auto resolve_target =
-         rt_allocator.allocate(process_format, input.width, input.height);
-
-      const Postprocess_input resolved_input{resolve_target.srv(), process_format,
-                                             input.width, input.height, 1};
-
-      msaa_resolve_input(dc, input, resolve_target, profiler);
-
-      if (_bloom_enabled)
-         do_bloom_and_color_grading(dc, rt_allocator, textures, resolved_input,
-                                    output, profiler, *_postprocess_ps);
-      else
-         do_color_grading(dc, textures, resolved_input, output, profiler,
-                          *_postprocess_ps);
-   }
-   else {
-      auto linear_target =
-         rt_allocator.allocate(process_format, input.width, input.height);
-
-      const Postprocess_input linear_input = [&] {
-         if (_hdr_state == Hdr_state::stock) {
-            linearize_input(dc, input, linear_target, profiler);
-
-            return Postprocess_input{linear_target.srv(), process_format,
-                                     input.width, input.height, 1};
-         }
-
-         return input;
-      }();
-
-      if (_bloom_enabled)
-         do_bloom_and_color_grading(dc, rt_allocator, textures, linear_input,
-                                    output, profiler, *_postprocess_ps);
-      else
-         do_color_grading(dc, textures, linear_input, output, profiler, *_postprocess_ps);
-   }
-}
-
-void Postprocess::apply(ID3D11DeviceContext1& dc,
-                        Rendertarget_allocator& rt_allocator, Profiler& profiler,
-                        const core::Shader_resource_database& textures,
-                        const glm::vec3 camera_position, CMAA2& cmaa2,
-                        const Postprocess_cmaa2_temp_target cmaa2_target,
+                        const glm::vec3 camera_position, FFX_cas& ffx_cas,
                         const Postprocess_input input,
                         const Postprocess_output output) noexcept
 {
@@ -251,37 +191,197 @@ void Postprocess::apply(ID3D11DeviceContext1& dc,
                                   ? DXGI_FORMAT_R16G16B16A16_FLOAT
                                   : DXGI_FORMAT_R11G11B10_FLOAT;
 
-   auto linear_target =
-      rt_allocator.allocate(process_format, input.width, input.height);
+   const bool stock_hdr = _hdr_state == Hdr_state::stock;
+   const bool msaa_input = input.sample_count != 1;
+
+   auto linear_target = (stock_hdr | msaa_input)
+                           ? std::optional{rt_allocator.allocate(
+                                {.format = process_format,
+                                 .width = input.width,
+                                 .height = input.height,
+                                 .bind_flags = rendertarget_bind_srv_rtv})}
+                           : std::nullopt;
 
    const Postprocess_input linear_input = [&] {
-      if (_hdr_state == Hdr_state::stock) {
-         linearize_input(dc, input, linear_target, profiler);
+      if (msaa_input) {
+         msaa_resolve_input(dc, input, *linear_target, profiler);
 
-         return Postprocess_input{linear_target.srv(), process_format,
+         return Postprocess_input{linear_target->srv(), process_format,
+                                  input.width, input.height, 1};
+      }
+      else if (stock_hdr) {
+         linearize_input(dc, input, *linear_target, profiler);
+
+         return Postprocess_input{linear_target->srv(), process_format,
                                   input.width, input.height, 1};
       }
 
       return input;
    }();
 
-   const Postprocess_output intermediate_output{cmaa2_target.rtv, cmaa2_target.width,
-                                                cmaa2_target.height};
+   if (ffx_cas.params().enabled) {
+      auto intermediate_target =
+         rt_allocator.allocate({.format = DXGI_FORMAT_R8G8B8A8_TYPELESS,
+                                .width = input.width,
+                                .height = input.height,
+                                .bind_flags = rendertarget_bind_srv_rtv,
+                                .srv_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+                                .rtv_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+                                .uav_format = DXGI_FORMAT_R8G8B8A8_UNORM});
+
+      const Postprocess_output intermediate_output{intermediate_target.rtv(),
+                                                   input.width, input.height};
+
+      // Apply main postprocessing.
+      if (_bloom_enabled) {
+         do_bloom_and_color_grading(dc, rt_allocator, textures, linear_input,
+                                    intermediate_output, profiler,
+                                    *_postprocess_cmaa2_pre_ps);
+      }
+      else {
+         do_color_grading(dc, textures, linear_input, intermediate_output,
+                          profiler, *_postprocess_cmaa2_pre_ps);
+      }
+
+      auto cas_target =
+         rt_allocator.allocate({.format = DXGI_FORMAT_R8G8B8A8_TYPELESS,
+                                .width = input.width,
+                                .height = input.height,
+                                .bind_flags = rendertarget_bind_srv_rtv_uav,
+                                .srv_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+                                .rtv_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+                                .uav_format = DXGI_FORMAT_R8G8B8A8_UNORM});
+
+      ffx_cas.apply(dc, profiler,
+                    {.width = input.width,
+                     .height = input.height,
+                     .input = intermediate_target.srv(),
+                     .output = cas_target.uav()});
+
+      // Copy the sharpened scene into the backbuffer, apply dithering and film grain.
+      {
+         Profile profile{profiler, dc, "Postprocessing - Finalize Output"};
+
+         dc.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+         dc.VSSetShader(_fullscreen_vs.get(), nullptr, 0);
+
+         auto* const cb = _global_constant_buffer.get();
+         dc.PSSetSamplers(0, 1, &sampler);
+         dc.PSSetConstantBuffers(global_cb_slot, 1, &cb);
+         dc.PSSetShader(_postprocess_cmaa2_post_ps.get(), nullptr, 0);
+
+         set_viewport(dc, output.width, output.height);
+         do_pass(dc, cas_target.srv(), output.rtv);
+      }
+   }
+   else {
+      if (_bloom_enabled)
+         do_bloom_and_color_grading(dc, rt_allocator, textures, linear_input,
+                                    output, profiler, *_postprocess_ps);
+      else
+         do_color_grading(dc, textures, linear_input, output, profiler, *_postprocess_ps);
+   }
+}
+
+void Postprocess::apply(ID3D11DeviceContext1& dc,
+                        Rendertarget_allocator& rt_allocator, Profiler& profiler,
+                        const core::Shader_resource_database& textures,
+                        const glm::vec3 camera_position, FFX_cas& ffx_cas,
+                        CMAA2& cmaa2, const Postprocess_input input,
+                        const Postprocess_output output) noexcept
+{
+   dc.ClearState();
+   dc.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+   dc.VSSetShader(_fullscreen_vs.get(), nullptr, 0);
+
+   auto* const sampler = _linear_clamp_sampler.get();
+   dc.PSSetSamplers(0, 1, &sampler);
+
+   update_colorgrading_bloom(dc, camera_position);
+   update_shaders();
+   update_and_bind_cb(dc, input.width, input.height);
+
+   const auto process_format = _hdr_state == Hdr_state::hdr
+                                  ? DXGI_FORMAT_R16G16B16A16_FLOAT
+                                  : DXGI_FORMAT_R11G11B10_FLOAT;
+   const bool stock_hdr = _hdr_state == Hdr_state::stock;
+
+   auto linear_target = stock_hdr ? std::optional{rt_allocator.allocate(
+                                       {.format = process_format,
+                                        .width = input.width,
+                                        .height = input.height,
+                                        .bind_flags = rendertarget_bind_srv_rtv})}
+                                  : std::nullopt;
+
+   if (stock_hdr) linearize_input(dc, input, *linear_target, profiler);
+
+   const auto linear_input = stock_hdr
+                                ? Postprocess_input{.srv = linear_target->srv(),
+                                                    .format = process_format,
+                                                    .width = input.width,
+                                                    .height = input.height,
+                                                    .sample_count = 1}
+                                : input;
+
+   const bool cas_enabled = ffx_cas.params().enabled;
+
+   auto intermediate_target = rt_allocator.allocate(
+      {.format = DXGI_FORMAT_R8G8B8A8_TYPELESS,
+       .width = input.width,
+       .height = input.height,
+       .bind_flags = cas_enabled ? rendertarget_bind_srv_rtv : rendertarget_bind_srv_rtv_uav,
+       .srv_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+       .rtv_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+       .uav_format = DXGI_FORMAT_R8G8B8A8_UNORM});
+
+   const Postprocess_output intermediate_output{intermediate_target.rtv(),
+                                                input.width, input.height};
 
    auto luma_target =
-      rt_allocator.allocate(DXGI_FORMAT_R8_UNORM, input.width, input.height);
+      rt_allocator.allocate({.format = DXGI_FORMAT_R8_UNORM,
+                             .width = input.width,
+                             .height = input.height,
+                             .bind_flags = rendertarget_bind_srv_rtv});
 
    // Apply main postprocessing.
-   if (_bloom_enabled)
+   if (_bloom_enabled) {
       do_bloom_and_color_grading(dc, rt_allocator, textures, linear_input,
                                  intermediate_output, profiler,
                                  *_postprocess_cmaa2_pre_ps, &luma_target.rtv());
-   else
+   }
+   else {
       do_color_grading(dc, textures, linear_input, intermediate_output,
                        profiler, *_postprocess_cmaa2_pre_ps, &luma_target.rtv());
+   }
+
+   auto cas_target = cas_enabled
+                        ? std::optional{rt_allocator.allocate(
+                             {.format = DXGI_FORMAT_R8G8B8A8_TYPELESS,
+                              .width = input.width,
+                              .height = input.height,
+                              .bind_flags = rendertarget_bind_srv_rtv_uav,
+                              .srv_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+                              .rtv_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+                              .uav_format = DXGI_FORMAT_R8G8B8A8_UNORM})}
+                        : std::nullopt;
+
+   if (cas_enabled) {
+      ffx_cas.apply(dc, profiler,
+                    {.width = input.width,
+                     .height = input.height,
+                     .input = intermediate_target.srv(),
+                     .output = cas_target->uav()});
+   }
+
+   auto& final_target = cas_enabled ? *cas_target : intermediate_target;
 
    // Apply anti-aliasing.
-   cmaa2.apply(dc, profiler, cmaa2_target.texture, luma_target.srv());
+   cmaa2.apply(dc, profiler,
+               {.input = final_target.srv(),
+                .output = final_target.uav(),
+                .luma_srv = &luma_target.srv(),
+                .width = input.width,
+                .height = input.height});
 
    // Copy the anti-aliased scene into the backbuffer, apply dithering and film grain.
    {
@@ -295,8 +395,8 @@ void Postprocess::apply(ID3D11DeviceContext1& dc,
       dc.PSSetConstantBuffers(global_cb_slot, 1, &cb);
       dc.PSSetShader(_postprocess_cmaa2_post_ps.get(), nullptr, 0);
 
-      set_viewport(dc, cmaa2_target.width, cmaa2_target.height);
-      do_pass(dc, cmaa2_target.srv, output.rtv);
+      set_viewport(dc, output.width, output.height);
+      do_pass(dc, final_target.srv(), output.rtv);
    }
 }
 
@@ -357,11 +457,26 @@ void Postprocess::do_bloom_and_color_grading(
 {
    Expects(input.sample_count == 1);
 
-   auto rt_a = allocator.allocate(input.format, input.width / 2, input.height / 2);
-   auto rt_b = allocator.allocate(input.format, input.width / 4, input.height / 4);
-   auto rt_c = allocator.allocate(input.format, input.width / 8, input.height / 8);
-   auto rt_d = allocator.allocate(input.format, input.width / 16, input.height / 16);
-   auto rt_e = allocator.allocate(input.format, input.width / 32, input.height / 32);
+   auto rt_a = allocator.allocate({.format = input.format,
+                                   .width = input.width / 2,
+                                   .height = input.height / 2,
+                                   .bind_flags = rendertarget_bind_srv_rtv});
+   auto rt_b = allocator.allocate({.format = input.format,
+                                   .width = input.width / 4,
+                                   .height = input.height / 4,
+                                   .bind_flags = rendertarget_bind_srv_rtv});
+   auto rt_c = allocator.allocate({.format = input.format,
+                                   .width = input.width / 8,
+                                   .height = input.height / 8,
+                                   .bind_flags = rendertarget_bind_srv_rtv});
+   auto rt_d = allocator.allocate({.format = input.format,
+                                   .width = input.width / 16,
+                                   .height = input.height / 16,
+                                   .bind_flags = rendertarget_bind_srv_rtv});
+   auto rt_e = allocator.allocate({.format = input.format,
+                                   .width = input.width / 32,
+                                   .height = input.height / 32,
+                                   .bind_flags = rendertarget_bind_srv_rtv});
 
    // Bloom Threshold
    {
@@ -469,8 +584,8 @@ void Postprocess::do_color_grading(ID3D11DeviceContext1& dc,
       do_pass(dc, srvs, output.rtv);
 }
 
-auto Postprocess::select_msaa_resolve_shader(const Postprocess_input& input) const
-   noexcept -> ID3D11PixelShader*
+auto Postprocess::select_msaa_resolve_shader(const Postprocess_input& input) const noexcept
+   -> ID3D11PixelShader*
 {
    Expects(input.sample_count > 1);
 

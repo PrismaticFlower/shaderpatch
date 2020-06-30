@@ -159,6 +159,7 @@
     <None Include="definitions\patch\cmaa2.json" />
     <None Include="definitions\patch\color_grading_lut_baker.json" />
     <None Include="definitions\patch\depth_msaa_resolve.json" />
+    <None Include="definitions\patch\ffx_cas.json" />
     <None Include="definitions\patch\gaussian_blur.json" />
     <None Include="definitions\patch\late_backbuffer_resolve.json" />
     <None Include="definitions\patch\normal_ext-tessellated.json" />
@@ -250,6 +251,7 @@
     <None Include="definitions\water.json" />
     <None Include="definitions\zprepass.json" />
     <None Include="src\color_grading.hlsl" />
+    <None Include="src\ffx_cas.hlsl" />
     <None Include="src\scene_blur.fx" />
     <None Include="src\scope_blur_common.hlsl" />
     <None Include="textures.req" />
@@ -516,6 +518,10 @@
     <None Include="src\pixel_sampler_states.hlsl">
       <FileType>Document</FileType>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\ffx_a.h" />
+    <ClInclude Include="src\ffx_cas.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
