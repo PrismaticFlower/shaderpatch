@@ -10,6 +10,7 @@
 #include "color_grading_regions_blender.hpp"
 #include "color_grading_regions_io.hpp"
 #include "com_ptr.hpp"
+#include "ffx_cas.hpp"
 #include "helpers.hpp"
 #include "postprocess_params.hpp"
 #include "profiler.hpp"
@@ -34,15 +35,6 @@ struct Postprocess_input {
    UINT width;
    UINT height;
    UINT sample_count;
-};
-
-struct Postprocess_cmaa2_temp_target {
-   ID3D11Texture2D& texture;
-   ID3D11RenderTargetView& rtv;
-   ID3D11ShaderResourceView& srv;
-
-   UINT width;
-   UINT height;
 };
 
 struct Postprocess_output {
@@ -99,13 +91,12 @@ public:
 
    void apply(ID3D11DeviceContext1& dc, Rendertarget_allocator& rt_allocator,
               Profiler& profiler, const core::Shader_resource_database& textures,
-              const glm::vec3 camera_position, const Postprocess_input input,
-              const Postprocess_output output) noexcept;
+              const glm::vec3 camera_position, FFX_cas& ffx_cas,
+              const Postprocess_input input, const Postprocess_output output) noexcept;
 
    void apply(ID3D11DeviceContext1& dc, Rendertarget_allocator& rt_allocator,
               Profiler& profiler, const core::Shader_resource_database& textures,
-              const glm::vec3 camera_position, CMAA2& cmaa2,
-              const Postprocess_cmaa2_temp_target cmaa2_target,
+              const glm::vec3 camera_position, FFX_cas& ffx_cas, CMAA2& cmaa2,
               const Postprocess_input input, const Postprocess_output output) noexcept;
 
    void hdr_state(Hdr_state state) noexcept;
@@ -134,8 +125,8 @@ private:
                          ID3D11PixelShader& postprocess_shader,
                          ID3D11RenderTargetView* luma_rtv = nullptr) noexcept;
 
-   auto select_msaa_resolve_shader(const Postprocess_input& input) const
-      noexcept -> ID3D11PixelShader*;
+   auto select_msaa_resolve_shader(const Postprocess_input& input) const noexcept
+      -> ID3D11PixelShader*;
 
    void update_and_bind_cb(ID3D11DeviceContext1& dc, const UINT width,
                            const UINT height) noexcept;

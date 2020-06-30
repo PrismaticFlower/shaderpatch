@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../effects/cmaa2.hpp"
+#include "../effects/ffx_cas.hpp"
 #include "../effects/postprocess.hpp"
 #include "../effects/profiler.hpp"
 #include "../effects/ssao.hpp"
@@ -56,6 +57,7 @@ public:
    effects::Postprocess postprocess;
    effects::CMAA2 cmaa2;
    effects::SSAO ssao;
+   effects::FFX_cas ffx_cas;
    effects::Profiler profiler;
 
 private:

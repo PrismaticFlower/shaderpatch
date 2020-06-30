@@ -431,6 +431,8 @@
       <Filter>src</Filter>
     </None>
     <None Include="src\pixel_sampler_states.hlsl" />
+    <None Include="src\ffx_cas.hlsl" />
+    <None Include="definitions\patch\ffx_cas.json" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">
@@ -448,5 +450,9 @@
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="build_lvls.ps1" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\ffx_a.h" />
+    <ClInclude Include="src\ffx_cas.h" />
   </ItemGroup>
 </Project>

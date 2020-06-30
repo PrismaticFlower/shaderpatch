@@ -3,6 +3,7 @@
 #include "../effects/control.hpp"
 #include "../effects/profiler.hpp"
 #include "../effects/rendertarget_allocator.hpp"
+#include "backbuffer_cmaa2_views.hpp"
 #include "com_ptr.hpp"
 #include "constant_buffers.hpp"
 #include "d3d11_helpers.hpp"
@@ -311,10 +312,11 @@ private:
    std::vector<Game_rendertarget> _game_rendertargets = {_swapchain.game_rendertarget()};
    Game_rendertarget_id _current_game_rendertarget = _game_backbuffer_index;
    Game_rendertarget _patch_backbuffer;
-   Game_rendertarget _cmaa2_scratch_texture;
    Game_rendertarget _shadow_msaa_rt;
    Game_rendertarget _refraction_rt;
    Game_rendertarget _farscene_refraction_rt;
+
+   Backbuffer_cmaa2_views _backbuffer_cmaa2_views;
 
    Depthstencil _nearscene_depthstencil;
    Depthstencil _farscene_depthstencil;

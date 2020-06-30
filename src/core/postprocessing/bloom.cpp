@@ -122,12 +122,18 @@ void Bloom::apply(ID3D11DeviceContext4& dc, const Game_rendertarget& dest,
    auto* const samp = _sampler.get();
    dc.PSSetSamplers(0, 1, &samp);
 
-   const auto process_width = dest.width / 4;
-   const auto process_height = dest.height / 4;
-   const auto x_rt = rt_allocator.allocate(DXGI_FORMAT_R11G11B10_FLOAT,
-                                           process_width, process_height);
-   const auto y_rt = rt_allocator.allocate(DXGI_FORMAT_R11G11B10_FLOAT,
-                                           process_width, process_height);
+   const auto process_width = dest.width / 4u;
+   const auto process_height = dest.height / 4u;
+   const auto x_rt =
+      rt_allocator.allocate({.format = DXGI_FORMAT_R11G11B10_FLOAT,
+                             .width = process_width,
+                             .height = process_height,
+                             .bind_flags = effects::rendertarget_bind_srv_rtv});
+   const auto y_rt =
+      rt_allocator.allocate({.format = DXGI_FORMAT_R11G11B10_FLOAT,
+                             .width = process_width,
+                             .height = process_height,
+                             .bind_flags = effects::rendertarget_bind_srv_rtv});
 
    update_dynamic_buffer(dc, *_constant_buffer,
                          Input_vars{.threshold = _glow_threshold,

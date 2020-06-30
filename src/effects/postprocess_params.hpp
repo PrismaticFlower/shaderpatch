@@ -110,6 +110,12 @@ struct SSAO_params {
    float sharpness = 0.98f;
 };
 
+struct FFX_cas_params {
+   bool enabled = false;
+
+   float sharpness = 0.0f;
+};
+
 inline auto to_string(const Tonemapper tonemapper) noexcept
 {
    using namespace std::literals;
@@ -483,4 +489,32 @@ struct convert<sp::effects::SSAO_params> {
       return true;
    }
 };
+
+template<>
+struct convert<sp::effects::FFX_cas_params> {
+   static Node encode(const sp::effects::FFX_cas_params& params)
+   {
+      using namespace std::literals;
+
+      YAML::Node node;
+
+      node["Enable"s] = params.enabled;
+      node["Sharpness"s] = params.sharpness;
+
+      return node;
+   }
+
+   static bool decode(const Node& node, sp::effects::FFX_cas_params& params)
+   {
+      using namespace std::literals;
+
+      params = sp::effects::FFX_cas_params{};
+
+      params.enabled = node["Enable"s].as<bool>(params.enabled);
+      params.sharpness = node["Sharpness"s].as<float>(params.sharpness);
+
+      return true;
+   }
+};
+
 }

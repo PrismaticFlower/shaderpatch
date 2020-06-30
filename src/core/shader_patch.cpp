@@ -1489,21 +1489,17 @@ void Shader_patch::game_rendertype_changed() noexcept
                                                             _patch_backbuffer.sample_count};
 
          if (_aa_method == Antialiasing_method::cmaa2) {
-            const effects::Postprocess_cmaa2_temp_target cmaa2_target{
-               *_cmaa2_scratch_texture.texture, *_cmaa2_scratch_texture.rtv,
-               *_cmaa2_scratch_texture.srv, _cmaa2_scratch_texture.width,
-               _cmaa2_scratch_texture.height};
-
             _effects.postprocess.apply(*_device_context, _rendertarget_allocator,
                                        _effects.profiler, _shader_resource_database,
-                                       _cb_scene.vs_view_positionWS, _effects.cmaa2,
-                                       cmaa2_target, postprocess_input,
+                                       _cb_scene.vs_view_positionWS, _effects.ffx_cas,
+                                       _effects.cmaa2, postprocess_input,
                                        _swapchain.postprocess_output());
          }
          else {
             _effects.postprocess.apply(*_device_context, _rendertarget_allocator,
                                        _effects.profiler, _shader_resource_database,
-                                       _cb_scene.vs_view_positionWS, postprocess_input,
+                                       _cb_scene.vs_view_positionWS,
+                                       _effects.ffx_cas, postprocess_input,
                                        _swapchain.postprocess_output());
          }
 
@@ -1804,8 +1800,8 @@ void Shader_patch::update_rendertargets() noexcept
    _nearscene_depthstencil = {*_device, _swapchain.width(), _swapchain.height(),
                               _rt_sample_count};
    _patch_backbuffer = {};
-   _cmaa2_scratch_texture = {};
    _shadow_msaa_rt = {};
+   _backbuffer_cmaa2_views = {};
 
    if (_rt_sample_count > 1) {
       _patch_backbuffer =
@@ -1821,23 +1817,18 @@ void Shader_patch::update_rendertargets() noexcept
                            _swapchain.height(), 1};
    }
 
-   if (_aa_method == Antialiasing_method::cmaa2) {
-      if (user_config.graphics.enable_16bit_color_rendering || _effects_active) {
-         _cmaa2_scratch_texture = Game_rendertarget{*_device,
-                                                    DXGI_FORMAT_R8G8B8A8_TYPELESS,
-                                                    DXGI_FORMAT_R8G8B8A8_UNORM,
-                                                    _swapchain.width(),
-                                                    _swapchain.height(),
-                                                    D3D11_BIND_UNORDERED_ACCESS};
-      }
-      else {
-         _patch_backbuffer = Game_rendertarget{*_device,
-                                               DXGI_FORMAT_R8G8B8A8_TYPELESS,
-                                               DXGI_FORMAT_R8G8B8A8_UNORM,
-                                               _swapchain.width(),
-                                               _swapchain.height(),
-                                               D3D11_BIND_UNORDERED_ACCESS};
-      }
+   if (_aa_method == Antialiasing_method::cmaa2 &&
+       !(user_config.graphics.enable_16bit_color_rendering || _effects_active)) {
+      _patch_backbuffer = Game_rendertarget{*_device,
+                                            DXGI_FORMAT_R8G8B8A8_TYPELESS,
+                                            DXGI_FORMAT_R8G8B8A8_UNORM,
+                                            _swapchain.width(),
+                                            _swapchain.height(),
+                                            D3D11_BIND_UNORDERED_ACCESS};
+      _backbuffer_cmaa2_views =
+         Backbuffer_cmaa2_views{*_device, *_patch_backbuffer.texture,
+                                DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+                                DXGI_FORMAT_R8G8B8A8_UNORM};
    }
 
    _game_rendertargets[0] =
@@ -1977,7 +1968,10 @@ void Shader_patch::patch_backbuffer_resolve() noexcept
       else {
          if (user_config.graphics.antialiasing_method == Antialiasing_method::cmaa2) {
             _effects.cmaa2.apply(*_device_context, _effects.profiler,
-                                 *_game_rendertargets[0].texture);
+                                 {.input = *_backbuffer_cmaa2_views.srv,
+                                  .output = *_backbuffer_cmaa2_views.uav,
+                                  .width = _game_rendertargets[0].width,
+                                  .height = _game_rendertargets[0].height});
          }
 
          _device_context->CopyResource(_swapchain.texture(),
@@ -1985,15 +1979,25 @@ void Shader_patch::patch_backbuffer_resolve() noexcept
       }
    }
    else if (user_config.graphics.antialiasing_method == Antialiasing_method::cmaa2) {
+      auto cmma_target = _rendertarget_allocator.allocate(
+         {.format = DXGI_FORMAT_R8G8B8A8_TYPELESS,
+          .width = _game_rendertargets[0].width,
+          .height = _game_rendertargets[0].height,
+          .bind_flags = effects::rendertarget_bind_srv_rtv_uav,
+          .srv_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+          .rtv_format = DXGI_FORMAT_R8G8B8A8_UNORM,
+          .uav_format = DXGI_FORMAT_R8G8B8A8_UNORM});
+
       _late_backbuffer_resolver.resolve(*_device_context, _shader_resource_database,
-                                        _game_rendertargets[0],
-                                        *_cmaa2_scratch_texture.rtv);
+                                        _game_rendertargets[0], cmma_target.rtv());
 
       _effects.cmaa2.apply(*_device_context, _effects.profiler,
-                           *_cmaa2_scratch_texture.texture);
+                           {.input = cmma_target.srv(),
+                            .output = cmma_target.uav(),
+                            .width = _game_rendertargets[0].width,
+                            .height = _game_rendertargets[0].height});
 
-      _device_context->CopyResource(_swapchain.texture(),
-                                    _cmaa2_scratch_texture.texture.get());
+      _device_context->CopyResource(_swapchain.texture(), &cmma_target.texture());
    }
    else {
       _late_backbuffer_resolver.resolve(*_device_context, _shader_resource_database,

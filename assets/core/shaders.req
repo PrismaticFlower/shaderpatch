@@ -35,6 +35,7 @@ ucft
       "cmaa2"
       "color_grading_lut_baker"
       "depth_msaa_resolve"
+      "ffx_cas"
       "fixedfunc_color_fill"
       "fixedfunc_damage_overlay"
       "fixedfunc_plain_texture"
