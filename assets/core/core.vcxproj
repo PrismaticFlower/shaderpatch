@@ -162,7 +162,6 @@
     <None Include="definitions\patch\ffx_cas.json" />
     <None Include="definitions\patch\gaussian_blur.json" />
     <None Include="definitions\patch\late_backbuffer_resolve.json" />
-    <None Include="definitions\patch\normal_ext-tessellated.json" />
     <None Include="definitions\patch\normal_ext_terrain.json" />
     <None Include="definitions\patch\pbr_terrain.json" />
     <None Include="definitions\patch\postprocess_bloom.json" />

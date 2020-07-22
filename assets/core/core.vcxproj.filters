@@ -331,9 +331,6 @@
     <None Include="src\postprocess_bloom.fx">
       <Filter>src</Filter>
     </None>
-    <None Include="definitions\patch\normal_ext-tessellated.json">
-      <Filter>definitions\patch</Filter>
-    </None>
     <None Include="definitions\patch\cmaa2.json">
       <Filter>definitions\patch</Filter>
     </None>
@@ -354,9 +351,6 @@
     </None>
     <None Include="src\CMAA2.hlsl">
       <Filter>src</Filter>
-    </None>
-    <None Include="definitions\patch\normal_ext_terrain.json">
-      <Filter>definitions\patch</Filter>
     </None>
     <None Include="definitions\patch\skybox.json">
       <Filter>definitions\patch</Filter>
@@ -433,6 +427,7 @@
     <None Include="src\pixel_sampler_states.hlsl" />
     <None Include="src\ffx_cas.hlsl" />
     <None Include="definitions\patch\ffx_cas.json" />
+    <None Include="definitions\patch\normal_ext_terrain.json" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">
