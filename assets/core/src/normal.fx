@@ -16,9 +16,9 @@ Texture2D<float3> projected_texture : register(t2);
 Texture2D<float4> shadow_map : register(t3);
 
 const static float4 blend_constants = ps_custom_constants[0];
-const static float2 lighting_factor = custom_constants[0].xy;
 const static float4 texture_transforms[4] = 
    {custom_constants[1], custom_constants[2], custom_constants[3], custom_constants[4]};
+const static bool lighting_pass = custom_constants[0].x >= 1.0;
 
 
 const static bool use_transparency = NORMAL_USE_TRANSPARENCY;
@@ -51,7 +51,7 @@ Vs_output_unlit unlit_main_vs(Vertex_input input)
    output.detail_texcoords = transformer.texcoords(texture_transforms[2],
                                                    texture_transforms[3]);
 
-   output.material_color_fade.rgb = lighting_scale * lighting_factor.x + lighting_factor.y;
+   output.material_color_fade.rgb = lighting_scale;
    output.material_color_fade.a = 
       use_transparency ? calculate_near_fade_transparent(positionPS) : 
                          calculate_near_fade(positionPS);
@@ -191,12 +191,8 @@ float4 main_ps(Ps_input input) : SV_Target0
                                         input.static_lighting, use_projected_texture,
                                         projection_texture_color);
 
-   lighting.color = lighting.color * lighting_factor.x + lighting_factor.y;
+   float3 color = lighting_pass ? lighting.color : lighting_scale.xxx;
 
-   float3 color = 0.0;
-
-   // Apply lighting to diffuse colour.
-   color += lighting.color;
    color *= diffuse_color; 
 
    if (use_shadow_map) {

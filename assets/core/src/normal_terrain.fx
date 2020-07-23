@@ -9,7 +9,7 @@
 // Disbale forced loop unroll warning.
 #pragma warning(disable : 3550)
 
-const static float4 lighting_constant = custom_constants[0];
+const static float4 lighting_factor = custom_constants[0];
 const static float4 x_texcoords_tranforms[4] = {custom_constants[1], custom_constants[3],
                                                 custom_constants[5], custom_constants[7]};
 const static float4 y_texcoords_tranforms[4] = {custom_constants[2], custom_constants[4],
@@ -55,7 +55,7 @@ Vs_blendmap_output diffuse_blendmap_vs(Vs_input input)
    }
 
    output.blend_values.x = input.normal.w;
-   output.blend_values.y = (float)input.position.w * lighting_constant.w;
+   output.blend_values.y = (float)input.position.w * lighting_factor.w;
 
    output.static_lighting = get_static_diffuse_color(input.color);
    output.fade = calculate_near_fade(positionPS);
@@ -141,9 +141,8 @@ float4 diffuse_blendmap_ps(Ps_blendmap_input input,
    Lighting lighting = light::calculate(normalize(input.normalWS), input.positionWS,
                                         input.static_lighting);
 
-   lighting.color = lighting.color * lighting_constant.x + lighting_constant.y;
-
-   float3 color = diffuse_color * lighting.color;
+   float3 color = lighting.color * lighting_factor.x + lighting_factor.y;
+   color *= diffuse_color;
 
    color = apply_fog(color, input.fog);
 
@@ -168,8 +167,7 @@ float4 detailing_ps(Ps_detail_input input,
                     Texture2D<float3> projected_texture : register(t2),
                     Texture2D<float4> shadow_map : register(t3)) : SV_Target0
 {
-   const float3 detail_color_0 = detail_maps[0].Sample(aniso_wrap_sampler, input.detail_texcoords[0]);
-   const float3 detail_color_1 = detail_maps[1].Sample(aniso_wrap_sampler, input.detail_texcoords[1]);
+   const float3 detail_color = detail_maps[0].Sample(aniso_wrap_sampler, input.detail_texcoords[0]);
 
    const float3 projection_texture_color = sample_projected_light(projected_texture,
                                                                   input.projection_texcoords);
@@ -179,20 +177,14 @@ float4 detailing_ps(Ps_detail_input input,
                                         input.static_lighting, true,
                                         projection_texture_color);
 
-   lighting.color = lighting.color * lighting_constant.x + lighting_constant.y;
-
-   float3 color = lighting.color;
+   float3 color = (lighting_factor.x > 0.0) ? lighting.color : lighting_scale.xxx;
 
    const float shadow_map_value = shadow_map.SampleLevel(linear_clamp_sampler,
                                                          input.shadow_map_texcoords, 0.0).a;
    
    const float shadow = 1.0 - (lighting.intensity * (1.0 - shadow_map_value));
-   
-   float3 blended_detail_color = (detail_color_0 * shadow)  * 2.0;
-   blended_detail_color *=  (detail_color_1 * 2.0);
 
-   color *= blended_detail_color;
-
+   color = detail_color * shadow  * 2.0 * color;
    color = apply_fog(color, input.fog);
 
    return float4(color, 1.0);
