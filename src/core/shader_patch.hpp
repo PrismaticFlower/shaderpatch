@@ -325,8 +325,6 @@ private:
 
    Game_input_layout _game_input_layout{};
    D3D11_PRIMITIVE_TOPOLOGY _primitive_topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
-   D3D11_PRIMITIVE_TOPOLOGY _patch_material_topology =
-      D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
    std::shared_ptr<Game_shader> _game_shader{};
    Rendertype _previous_shader_rendertype = Rendertype::invalid;
    Rendertype _shader_rendertype = Rendertype::invalid;
@@ -345,7 +343,6 @@ private:
 
    bool _discard_draw_calls = false;
    bool _shader_rendertype_changed = false;
-   bool _use_patch_material_topology = false;
    bool _shader_dirty = true;
    bool _ia_index_buffer_dirty = true;
    bool _ia_vertex_buffer_dirty = true;

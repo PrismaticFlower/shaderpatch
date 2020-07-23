@@ -156,7 +156,6 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
    _farscene_refraction_rt = {};
    _current_game_rendertarget = _game_backbuffer_index;
    _primitive_topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
-   _patch_material_topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
    _game_input_layout = {};
    _game_shader = {};
    _game_textures = {};
@@ -1525,11 +1524,7 @@ void Shader_patch::update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primit
       update_shader();
    }
 
-   const auto primitive_topology = _use_patch_material_topology
-                                      ? _patch_material_topology
-                                      : draw_primitive_topology;
-
-   if (std::exchange(_primitive_topology, primitive_topology) != primitive_topology)
+   if (std::exchange(_primitive_topology, draw_primitive_topology) != draw_primitive_topology)
       _device_context->IASetPrimitiveTopology(_primitive_topology);
 
    if (std::exchange(_ia_index_buffer_dirty, false)) {
@@ -1646,11 +1641,6 @@ void Shader_patch::update_shader() noexcept
       if (_game_input_layout.compressed)
          vs_flags |= Vertex_shader_flags::compressed;
 
-      _use_patch_material_topology = (_patch_material->tessellation &&
-                                      user_config.graphics.enable_tessellation);
-      if (_use_patch_material_topology)
-         _patch_material_topology = _patch_material->tessellation_primitive_topology;
-
       if (_shader_rendertype == _patch_material->overridden_rendertype) {
          _patch_material->shader->update(*_device_context, _input_layout_descriptions,
                                          _game_input_layout.layout_index,
@@ -1659,21 +1649,7 @@ void Shader_patch::update_shader() noexcept
                                          _oit_active);
          return;
       }
-      else if (_shader_rendertype == Rendertype::zprepass &&
-               _patch_material->tessellation &&
-               user_config.graphics.enable_tessellation) {
-         vs_flags |= Vertex_shader_flags::normal;
-
-         _patch_material->shader->update_for_zprepass(*_device_context,
-                                                      _input_layout_descriptions,
-                                                      _game_input_layout.layout_index,
-                                                      _game_shader->shader_name,
-                                                      vs_flags);
-         return;
-      }
    }
-
-   _use_patch_material_topology = false;
 
    if (_game_input_layout.compressed) {
       auto& input_layout =
@@ -1695,9 +1671,6 @@ void Shader_patch::update_shader() noexcept
    _device_context->PSSetShader(_oit_active ? _game_shader->ps_oit.get()
                                             : _game_shader->ps.get(),
                                 nullptr, 0);
-   _device_context->HSSetShader(nullptr, nullptr, 0);
-   _device_context->DSSetShader(nullptr, nullptr, 0);
-   _device_context->GSSetShader(nullptr, nullptr, 0);
 }
 
 void Shader_patch::update_frame_state() noexcept

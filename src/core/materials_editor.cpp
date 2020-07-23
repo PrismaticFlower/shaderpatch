@@ -123,12 +123,6 @@ void material_editor(ID3D11Device5& device, Shader_resource_database& resources,
 
    create_resource_editor("VS Shader Resources", material.vs_shader_resources,
                           material.vs_shader_resources_names);
-   create_resource_editor("HS Shader Resources", material.hs_shader_resources,
-                          material.hs_shader_resources_names);
-   create_resource_editor("DS Shader Resources", material.ds_shader_resources,
-                          material.ds_shader_resources_names);
-   create_resource_editor("GS Shader Resources", material.gs_shader_resources,
-                          material.gs_shader_resources_names);
    create_resource_editor("PS Shader Resources", material.ps_shader_resources,
                           material.ps_shader_resources_names);
 
@@ -137,10 +131,6 @@ void material_editor(ID3D11Device5& device, Shader_resource_database& resources,
       ImGui::Text("Constant Buffer Name: %s", material.cb_name.c_str());
       ImGui::Text("Overridden Rendertype: %s",
                   to_string(material.overridden_rendertype).c_str());
-
-      ImGui::Checkbox("Tessellation", &material.tessellation);
-      ImGui::Text("Tessellation Primitive Topology: %i",
-                  material.tessellation_primitive_topology);
 
       if (ImGui::TreeNode("Fail Safe Game Texture")) {
 

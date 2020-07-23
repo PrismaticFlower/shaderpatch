@@ -55,23 +55,15 @@ Patch_material::Patch_material(Material_config material_config,
      constant_buffer{create_material_constant_buffer(device, material_config.cb_name,
                                                      material_config.properties)},
      vs_shader_resources{init_resources(material_config.vs_resources, resource_database)},
-     hs_shader_resources{init_resources(material_config.hs_resources, resource_database)},
-     ds_shader_resources{init_resources(material_config.ds_resources, resource_database)},
-     gs_shader_resources{init_resources(material_config.gs_resources, resource_database)},
      ps_shader_resources{init_resources(material_config.ps_resources, resource_database)},
      fail_safe_game_texture{
         init_fail_safe_texture(ps_shader_resources,
                                material_config.fail_safe_texture_index)},
-     tessellation{material_config.tessellation},
-     tessellation_primitive_topology{material_config.tessellation_primitive_topology},
      name{std::move(material_config.name)},
      rendertype{material_config.rendertype},
      cb_name{material_config.cb_name},
      properties{material_config.properties},
      vs_shader_resources_names{material_config.vs_resources},
-     hs_shader_resources_names{material_config.hs_resources},
-     ds_shader_resources_names{material_config.ds_resources},
-     gs_shader_resources_names{material_config.gs_resources},
      ps_shader_resources_names{material_config.ps_resources}
 {
 }
@@ -79,9 +71,6 @@ Patch_material::Patch_material(Material_config material_config,
 void Patch_material::update_resources(const Shader_resource_database& resource_database) noexcept
 {
    vs_shader_resources = init_resources(vs_shader_resources_names, resource_database);
-   hs_shader_resources = init_resources(hs_shader_resources_names, resource_database);
-   ds_shader_resources = init_resources(ds_shader_resources_names, resource_database);
-   gs_shader_resources = init_resources(gs_shader_resources_names, resource_database);
    ps_shader_resources = init_resources(ps_shader_resources_names, resource_database);
 }
 
@@ -92,18 +81,6 @@ void Patch_material::bind_constant_buffers(ID3D11DeviceContext1& dc) noexcept
    if ((cb_shader_stages & Material_cb_shader_stages::vs) ==
        Material_cb_shader_stages::vs)
       dc.VSSetConstantBuffers(vs_cb_offset, 1, &cb);
-
-   if ((cb_shader_stages & Material_cb_shader_stages::hs) ==
-       Material_cb_shader_stages::hs)
-      dc.HSSetConstantBuffers(hs_cb_offset, 1, &cb);
-
-   if ((cb_shader_stages & Material_cb_shader_stages::ds) ==
-       Material_cb_shader_stages::ds)
-      dc.DSSetConstantBuffers(ds_cb_offset, 1, &cb);
-
-   if ((cb_shader_stages & Material_cb_shader_stages::gs) ==
-       Material_cb_shader_stages::gs)
-      dc.GSSetConstantBuffers(gs_cb_offset, 1, &cb);
 
    if ((cb_shader_stages & Material_cb_shader_stages::ps) ==
        Material_cb_shader_stages::ps)
@@ -119,21 +96,6 @@ void Patch_material::bind_shader_resources(ID3D11DeviceContext1& dc) noexcept
       dc.VSSetShaderResources(vs_resources_offset, vs_shader_resources.size(),
                               reinterpret_cast<ID3D11ShaderResourceView**>(
                                  vs_shader_resources.data()));
-
-   if (!hs_shader_resources.empty())
-      dc.HSSetShaderResources(hs_resources_offset, hs_shader_resources.size(),
-                              reinterpret_cast<ID3D11ShaderResourceView**>(
-                                 hs_shader_resources.data()));
-
-   if (!ds_shader_resources.empty())
-      dc.DSSetShaderResources(ds_resources_offset, ds_shader_resources.size(),
-                              reinterpret_cast<ID3D11ShaderResourceView**>(
-                                 ds_shader_resources.data()));
-
-   if (!gs_shader_resources.empty())
-      dc.GSSetShaderResources(gs_resources_offset, gs_shader_resources.size(),
-                              reinterpret_cast<ID3D11ShaderResourceView**>(
-                                 gs_shader_resources.data()));
 
    if (!ps_shader_resources.empty())
       dc.PSSetShaderResources(ps_resources_offset, ps_shader_resources.size(),

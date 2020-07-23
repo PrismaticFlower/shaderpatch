@@ -53,10 +53,6 @@ Graphics:
    # On "High" or "Ultra" refractions will also be masked using the depth buffer.
    Refraction Quality: Medium
 
-   # Whether to let custom materials use tessellation shaders or not. On older GPUs this
-   # may cause a performance hit.
-   Enable Tessellation: yes
-
    # In the vanilla shaders for most surfaces after calculating incoming light for a surface the brightness of the 
    # light is rescaled to keep it from being too dark or too bright. (Or at least that is what I *assume* the reason to be.) 
    #  

@@ -46,45 +46,6 @@ void Material_shader::update(ID3D11DeviceContext1& dc,
 
    dc.PSSetShader(&state.get_ps(pixel_shader_flags, oit_active, state_name, _name),
                   nullptr, 0);
-
-   if (user_config.graphics.enable_tessellation) {
-      dc.HSSetShader(state.hull.get(), nullptr, 0);
-      dc.DSSetShader(state.domain.get(), nullptr, 0);
-   }
-   else {
-      dc.HSSetShader(nullptr, nullptr, 0);
-      dc.DSSetShader(nullptr, nullptr, 0);
-   }
-
-   dc.GSSetShader(state.geometry.get(), nullptr, 0);
-}
-
-void Material_shader::update_for_zprepass(
-   ID3D11DeviceContext1& dc, const Input_layout_descriptions& layout_descriptions,
-   const std::uint16_t layout_index, const std::string& state_name,
-   const Vertex_shader_flags vertex_shader_flags) noexcept
-{
-   auto& state = get_state(state_name);
-
-   auto& vs = state.get_vs(vertex_shader_flags, state_name, _name);
-
-   auto& input_layout =
-      vs.input_layouts.get(*_device, layout_descriptions, layout_index);
-
-   dc.IASetInputLayout(&input_layout);
-   dc.VSSetShader(vs.vs.get(), nullptr, 0);
-   dc.PSSetShader(nullptr, nullptr, 0);
-
-   if (user_config.graphics.enable_tessellation) {
-      dc.HSSetShader(state.hull.get(), nullptr, 0);
-      dc.DSSetShader(state.domain.get(), nullptr, 0);
-   }
-   else {
-      dc.HSSetShader(nullptr, nullptr, 0);
-      dc.DSSetShader(nullptr, nullptr, 0);
-   }
-
-   dc.GSSetShader(state.geometry.get(), nullptr, 0);
 }
 
 auto Material_shader::Material_shader_state::get_vs(const Vertex_shader_flags flags,
@@ -148,10 +109,7 @@ auto Material_shader::init_state(const Shader_state& state) noexcept -> Material
    return {init_vs_entrypoint(state.vertex.entrypoint(), state.vertex.static_flags()),
            init_ps_entrypoint(state.pixel.entrypoint(), state.pixel.static_flags()),
            init_ps_entrypoint(state.pixel_oit.entrypoint(),
-                              state.pixel_oit.static_flags()),
-           state.hull,
-           state.domain,
-           state.geometry};
+                              state.pixel_oit.static_flags())};
 }
 
 auto Material_shader::init_vs_entrypoint(const Vertex_shader_entrypoint& vs,

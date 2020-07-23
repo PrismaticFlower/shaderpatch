@@ -58,8 +58,6 @@ void User_config::show_imgui() noexcept
       ImGui::Checkbox("Enable 16-Bit Color Channel Rendering",
                       &graphics.enable_16bit_color_rendering);
 
-      ImGui::Checkbox("Enable Tessellation", &graphics.enable_tessellation);
-
       ImGui::Checkbox("Disable Light Brightness Rescaling",
                       &graphics.disable_light_brightness_rescaling);
 
@@ -128,9 +126,6 @@ void User_config::parse_file(const std::string& path)
 
    graphics.enable_16bit_color_rendering =
       config["Graphics"s]["Enable 16-Bit Color Channel Rendering"s].as<bool>();
-
-   graphics.enable_tessellation =
-      config["Graphics"s]["Enable Tessellation"s].as<bool>();
 
    graphics.disable_light_brightness_rescaling =
       config["Graphics"s]["Disable Light Brightness Rescaling"s].as<bool>();
