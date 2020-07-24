@@ -21,7 +21,7 @@ struct Shader_patch_version {
    std::uint16_t prerelease{};
 };
 
-inline const Shader_patch_version current_shader_patch_version{1, 3, 3};
+inline const Shader_patch_version current_shader_patch_version{1, 3, 4};
 
 extern const std::string current_shader_patch_version_string;
 

@@ -108,7 +108,7 @@ auto Material_shader::Material_shader_state::get_ps(const Pixel_shader_flags fla
                                                     const std::string& shader_name) noexcept
    -> ID3D11PixelShader&
 {
-   auto& shaders = oit_active ? pixel : pixel_oit;
+   auto& shaders = oit_active ? pixel_oit : pixel;
 
    if (auto shader = shaders.find(flags); shader != shaders.cend()) {
       return *shader->second;
