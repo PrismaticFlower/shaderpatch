@@ -45,6 +45,7 @@ ucft
       "late_backbuffer_resolve"
       "normal_ext"
       "normal_ext_terrain"
+      "particle_ext"
       "pbr"
       "pbr_terrain"
       "postprocess"

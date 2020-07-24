@@ -428,6 +428,7 @@
     <None Include="src\ffx_cas.hlsl" />
     <None Include="definitions\patch\ffx_cas.json" />
     <None Include="definitions\patch\normal_ext_terrain.json" />
+    <None Include="definitions\patch\particle_ext.json" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">
@@ -449,5 +450,8 @@
   <ItemGroup>
     <ClInclude Include="src\ffx_a.h" />
     <ClInclude Include="src\ffx_cas.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="src\particle_ext.fx" />
   </ItemGroup>
 </Project>

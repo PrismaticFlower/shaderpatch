@@ -136,6 +136,14 @@ struct Static_water_cb {
 
 static_assert(sizeof(Static_water_cb) == 96);
 
+struct Particle_ext_cb {
+   std::uint32_t use_aniso_wrap_sampler = false;
+   float emissive_power = 1.0f;
+   std::array<std::uint32_t, 2> _padding{};
+};
+
+static_assert(sizeof(Particle_ext_cb) == 16);
+
 template<typename Type>
 auto apply_op(const Type value, [[maybe_unused]] const Material_property_var_op op) noexcept
 {
@@ -362,6 +370,17 @@ auto create_static_water_buffer(const Material_properties_view& props) -> Static
    return cb;
 }
 
+auto create_particle_ext_buffer(const Material_properties_view& props) -> Particle_ext_cb
+{
+   Particle_ext_cb cb{};
+
+   cb.use_aniso_wrap_sampler =
+      props.value<bool>("UseAnisotropicFiltering"sv, cb.use_aniso_wrap_sampler);
+   cb.emissive_power = props.value<float>("EmissivePower"sv, cb.emissive_power);
+
+   return cb;
+}
+
 }
 
 auto create_material_constant_buffer(ID3D11Device5& device,
@@ -395,6 +414,10 @@ auto create_material_constant_buffer(ID3D11Device5& device,
    }
    else if (cb_name == "static_water"sv) {
       return create_immutable_constant_buffer(device, create_static_water_buffer(
+                                                         properties_view));
+   }
+   else if (cb_name == "particle_ext"sv) {
+      return create_immutable_constant_buffer(device, create_particle_ext_buffer(
                                                          properties_view));
    }
 

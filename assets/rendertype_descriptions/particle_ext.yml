@@ -1,0 +1,27 @@
+Overridden RenderType: particle
+Failsafe Texture Index: 0
+Constant Buffer Name: particle_ext
+
+Constant Buffer Stages:
+   VS: no
+   HS: no
+   DS: no
+   GS: no
+   PS: yes
+
+Properties:
+   UseAnisotropicFiltering:
+      Type: bool
+      Default: false
+
+   EmissivePower:
+      Type: float
+      Default: 0.0
+      Range: [-2048.0, 2048.0]
+      Op: exp2
+
+Texture Mappings:
+   ColorMap:
+      -
+         Stage: PS
+         Slot: 0

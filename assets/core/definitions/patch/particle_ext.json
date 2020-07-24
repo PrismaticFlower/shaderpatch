@@ -1,0 +1,76 @@
+{
+  "group_name": "particle_ext",
+  "source_name": "particle_ext.fx",
+
+  "entrypoints": {
+    "main_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "main_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
+    },
+
+    "oit_main_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
+    }
+  },
+
+  "rendertypes": { "particle_ext": {} },
+
+  "states": {
+    "normal": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_main_ps"
+      }
+    },
+
+    "blur": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_main_ps"
+      }
+    }
+  }
+}
