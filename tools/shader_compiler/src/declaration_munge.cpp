@@ -24,6 +24,26 @@ namespace fs = std::filesystem;
 
 namespace sp {
 
+namespace {
+
+auto point_light_count(const Shader_flags flags) noexcept -> std::uint8_t
+{
+   if (const auto masked = (flags & Shader_flags::light_point4);
+       masked == Shader_flags::light_point4) {
+      return 4;
+   }
+   else if (masked == Shader_flags::light_point2) {
+      return 2;
+   }
+   else if (masked == Shader_flags::light_point) {
+      return 1;
+   }
+
+   return 0;
+}
+
+}
+
 Declaration_munge::Declaration_munge(const fs::path& declaration_path,
                                      const fs::path& output_dir)
 {
@@ -160,10 +180,16 @@ auto Declaration_munge::munge_pass(const nlohmann::json& pass_def,
       shader.shader_name = pass_def.at("name"s).get<std::string>();
       shader.srgb_state = srgb_state;
 
+      const auto flags = std::get<Shader_flags>(variation);
+
+      shader.light_active = (flags & Shader_flags::light_dir) == Shader_flags::light_dir;
+      shader.light_active_point_count = point_light_count(flags);
+      shader.light_active_spot =
+         (flags & Shader_flags::light_spot) == Shader_flags::light_spot;
+
       Shader_ref shader_ref;
 
-      std::tie(shader_ref.flags, shader.vertex_shader_flags,
-               shader.pixel_shader_flags) = variation;
+      std::tie(shader_ref.flags, shader.vertex_shader_flags) = variation;
 
       shader_ref.index = static_cast<std::uint32_t>(_shaders.size());
 

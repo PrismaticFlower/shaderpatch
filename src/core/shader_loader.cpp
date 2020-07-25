@@ -337,7 +337,6 @@ auto read_entrypoints(ucfb::Reader_strict<"PSHD"_mn> reader, ID3D11Device& devic
       for (auto vari_index = 0u; vari_index < variation_count; ++vari_index) {
          auto vari_reader = vrs_reader.read_child_strict<"VARI"_mn>();
 
-         const auto flags = vari_reader.read<Pixel_shader_flags>();
          const auto static_flags = vari_reader.read<std::uint32_t>();
          const auto bytecode_size = vari_reader.read<std::uint32_t>();
          const auto bytecode = vari_reader.read_array<std::byte>(bytecode_size);
@@ -355,7 +354,7 @@ auto read_entrypoints(ucfb::Reader_strict<"PSHD"_mn> reader, ID3D11Device& devic
          }
 
          entrypoint.insert(std::move(shader),
-                           gsl::narrow_cast<std::uint16_t>(static_flags), flags);
+                           gsl::narrow_cast<std::uint16_t>(static_flags));
       }
 
       group.pixel.insert(std::string{ep_name}, std::move(entrypoint));
@@ -387,13 +386,9 @@ void read_state(ucfb::Reader_strict<"STAT"_mn> reader,
    state.vertex = Shader_state_stage_vertex{Vertex_shader_entrypoint{
                                                shader_group.vertex.at(vs_entrypoint)},
                                             vs_static_flags};
-   state.pixel = Shader_state_stage_pixel{Pixel_shader_entrypoint{
-                                             shader_group.pixel.at(ps_entrypoint)},
-                                          ps_static_flags};
+   state.pixel = shader_group.pixel.at(ps_entrypoint).copy(ps_static_flags);
    state.pixel_oit =
-      Shader_state_stage_pixel{Pixel_shader_entrypoint{
-                                  shader_group.pixel.at(ps_oit_entrypoint)},
-                               ps_oit_static_flags};
+      shader_group.pixel.at(ps_oit_entrypoint).copy(ps_oit_static_flags);
 
    const auto hs_use = info_reader.read<bool>();
    const auto hs_entrypoint = std::string{info_reader.read_string()};

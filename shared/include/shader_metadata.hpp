@@ -24,7 +24,10 @@ struct Shader_metadata {
    std::string shader_name;
 
    Vertex_shader_flags vertex_shader_flags = Vertex_shader_flags::none;
-   Pixel_shader_flags pixel_shader_flags = Pixel_shader_flags::none;
+
+   bool light_active = false;
+   std::uint8_t light_active_point_count = 0;
+   bool light_active_spot = 0;
 
    std::array<bool, 4> srgb_state = {false, false, false, false};
 };
@@ -41,8 +44,9 @@ inline auto serialize_shader_metadata(const Shader_metadata& metadata) noexcept
    meta["shader_name"s] = metadata.shader_name;
    meta["vertex_shader_flags"s] =
       static_cast<std::uint32_t>(metadata.vertex_shader_flags);
-   meta["pixel_shader_flags"s] =
-      static_cast<std::uint32_t>(metadata.pixel_shader_flags);
+   meta["light_active"s] = metadata.light_active;
+   meta["light_active_point_count"s] = metadata.light_active_point_count;
+   meta["light_active_spot"s] = metadata.light_active_spot;
    meta["srgb_state"s] = metadata.srgb_state;
 
    const auto cbor = nlohmann::json::to_cbor(meta);
@@ -79,8 +83,9 @@ inline auto deserialize_shader_metadata(const std::byte* const data) noexcept ->
 
    metadata.vertex_shader_flags =
       static_cast<Vertex_shader_flags>(std::uint32_t{json["vertex_shader_flags"s]});
-   metadata.pixel_shader_flags =
-      static_cast<Pixel_shader_flags>(std::uint32_t{json["pixel_shader_flags"s]});
+   metadata.light_active = json["light_active"s];
+   metadata.light_active_point_count = json["light_active_point_count"s];
+   metadata.light_active_spot = json["light_active_spot"s];
    metadata.srgb_state = json["srgb_state"s];
 
    return metadata;

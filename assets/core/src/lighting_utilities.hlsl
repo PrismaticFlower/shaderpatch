@@ -4,6 +4,8 @@
 #include "constants_list.hlsl"
 #include "vertex_utilities.hlsl"
 
+#pragma warning(disable : 3078) // **sigh**...: loop control variable conflicts with a previous declaration in the outer scope
+
 struct Lighting {
    float3 color;
    float intensity;
@@ -52,9 +54,9 @@ void spot_params(float3 positionWS, out float attenuation, out float3 light_dirW
    attenuation *= cone_falloff;
 }
 
-float intensity_directional(float3 normalWS, float4 direction)
+float intensity_directional(float3 normalWS, float3 direction)
 {
-   return max(dot(normalWS, -direction.xyz), 0.0);
+   return max(dot(normalWS, -direction), 0.0);
 }
 
 float intensity_point(float3 normal, float3 position, float3 light_position,
@@ -89,43 +91,39 @@ Lighting calculate(float3 normalWS, float3 positionWS,
 
    float4 light = float4(ambient(normalWS) + static_diffuse_lighting, 0.0);
 
-   if (ps_light_active_directional) {
-      float4 intensity = float4(light.rgb, 1.0);
+   // clang-format off
 
-      intensity.x = intensity_directional(normalWS, light_directional_0_dir);
-      light += intensity.x * light_directional_0_color;
+   [branch]
+   if (light_active) { 
+      float3 proj_light_intensities = light.rgb;
+      float intensity = 0.0;
 
-      intensity.w = intensity_directional(normalWS, light_directional_1_dir);
-      light += intensity.w * light_directional_1_color;
+      [loop]
+      for (uint i = 0; i < 2; ++i) {
+         const float intensity = intensity_directional(normalWS, light_directional_dir(i));
+         light += intensity * light_directional_color(i);
 
-      if (ps_light_active_point_0) {
-         intensity.y = intensity_point(normalWS, positionWS, light_point_0_pos,
-                                       light_point_0_inv_range_sqr);
-         light += intensity.y * light_point_0_color;
+         if (i == 0) proj_light_intensities[0] = intensity;
       }
 
-      if (ps_light_active_point_1) {
-         intensity.w = intensity_point(normalWS, positionWS, light_point_1_pos,
-                                       light_point_1_inv_range_sqr);
-         light += intensity.w * light_point_1_color;
+      [loop]
+      for (uint i = 0; i < light_active_point_count; ++i) {
+         const float intensity = intensity_point(normalWS, positionWS, light_point_pos(i),
+                                                 light_point_inv_range_sqr(i));
+         light += intensity * light_point_color(i);
+
+         if (i == 0) proj_light_intensities[1] = intensity;
       }
 
-      if (ps_light_active_point_23) {
-         intensity.w = intensity_point(normalWS, positionWS, light_point_2_pos,
-                                       light_point_2_inv_range_sqr);
-         light += intensity.w * light_point_2_color;
+      if (light_active_spot) {
+         const float intensity = intensity_spot(normalWS, positionWS);
+         light += intensity * light_spot_color;
 
-         intensity.w = intensity_point(normalWS, positionWS, light_point_3_pos,
-                                       light_point_3_inv_range_sqr);
-         light += intensity.w * light_point_3_color;
-      }
-      else if (ps_light_active_spot_light) {
-         intensity.z = intensity_spot(normalWS, positionWS);
-         light += intensity.z * light_spot_color;
+         proj_light_intensities[2] = intensity;
       }
 
       if (use_projected_light) {
-         const float proj_light_intensity = dot(light_proj_selector, intensity);
+         const float proj_light_intensity = dot(light_proj_selector.xyz, proj_light_intensities);
 
          light.rgb -= (light_proj_color.rgb * proj_light_intensity);
          light.rgb += (projected_light_texture_color * light_proj_color.rgb *
@@ -142,10 +140,13 @@ Lighting calculate(float3 normalWS, float3 positionWS,
       lighting.color = light.rgb;
       lighting.intensity = light.a;
    }
-   else {
+   else
+   {
       lighting.color = lighting_scale;
       lighting.intensity = 0.0;
    }
+
+   // clang-format on
 
    return lighting;
 }
@@ -349,56 +350,34 @@ float3 calculate(float3 normalWS, float3 view_normalWS, float3 positionWS,
 
    float3 light = 0.0;
 
-   if (ps_light_active_directional) {
-      light += brdf_light(diffuse, F0, roughness, normalWS,
-                          -light_directional_0_dir.xyz, view_normalWS, NdotV,
-                          1.0, light_directional_0_color.rgb);
+   // clang-format off
 
-      light += brdf_light(diffuse, F0, roughness, normalWS,
-                          -light_directional_1_dir.xyz, view_normalWS, NdotV,
-                          1.0, light_directional_1_color.rgb);
+   [branch]
+   if (light_active) {
+
+      [loop]
+      for (uint i = 0; i < 2; ++i) {
+         light += brdf_light(diffuse, F0, roughness, normalWS,
+                             -light_directional_dir(i), view_normalWS, NdotV,
+                             1.0, light_directional_color(i).rgb);
+      }
 
       light *= shadow;
-
-      if (ps_light_active_point_0) {
+      
+      [loop]
+      for (uint i = 0; i < light_active_point_count; ++i) {
          float3 light_dirWS;
          float attenuation;
 
-         point_params(positionWS, light_point_0_pos,
-                      light_point_0_inv_range_sqr, light_dirWS, attenuation);
+         point_params(positionWS, light_point_pos(i),
+                      light_point_inv_range_sqr(i), light_dirWS, attenuation);
 
          light += brdf_light(diffuse, F0, roughness, normalWS, light_dirWS, view_normalWS,
-                             NdotV, attenuation, light_point_0_color.rgb);
+                             NdotV, attenuation, light_point_color(i).rgb);
       }
 
-      if (ps_light_active_point_1) {
-         float3 light_dirWS;
-         float attenuation;
-
-         point_params(positionWS, light_point_1_pos,
-                      light_point_1_inv_range_sqr, light_dirWS, attenuation);
-
-         light += brdf_light(diffuse, F0, roughness, normalWS, light_dirWS, view_normalWS,
-                             NdotV, attenuation, light_point_1_color.rgb);
-      }
-
-      if (ps_light_active_point_23) {
-         float3 light_dirWS;
-         float attenuation;
-
-         point_params(positionWS, light_point_2_pos,
-                      light_point_2_inv_range_sqr, light_dirWS, attenuation);
-
-         light += brdf_light(diffuse, F0, roughness, normalWS, light_dirWS, view_normalWS,
-                             NdotV, attenuation, light_point_2_color.rgb);
-
-         point_params(positionWS, light_point_3_pos,
-                      light_point_3_inv_range_sqr, light_dirWS, attenuation);
-
-         light += brdf_light(diffuse, F0, roughness, normalWS, light_dirWS, view_normalWS,
-                             NdotV, attenuation, light_point_3_color.rgb);
-      }
-      else if (ps_light_active_spot_light) {
+      [branch]
+      if (light_active_spot) {
          float3 light_dirWS;
          float attenuation;
 
@@ -413,6 +392,8 @@ float3 calculate(float3 normalWS, float3 view_normalWS, float3 positionWS,
    else {
       light = 0.0;
    }
+
+   // clang-format on
 
    return light;
 }

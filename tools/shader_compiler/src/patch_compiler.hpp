@@ -48,11 +48,6 @@ private:
       std::vector<std::string> static_flag_names;
    };
 
-   struct Compiled_pixel_entrypoint {
-      std::map<std::pair<Pixel_shader_flags, std::uint32_t>, Com_ptr<ID3DBlob>> variations;
-      std::vector<std::string> static_flag_names;
-   };
-
    struct Assembled_state {
       std::string vs_entrypoint;
       std::uint32_t vs_static_flags;
@@ -92,8 +87,6 @@ private:
       const std::pair<std::string, shader::Entrypoint>& entrypoint,
       const std::unordered_map<std::string, std::vector<shader::Input_element>>& input_layouts);
 
-   void compile_pixel_entrypoint(const std::pair<std::string, shader::Entrypoint>& entrypoint);
-
    auto compile_generic_shader(const std::string& entry_point,
                                Preprocessor_defines defines,
                                const std::string& shader_define,
@@ -101,9 +94,6 @@ private:
 
    auto compile_vertex_shader(const std::string& entry_point,
                               Preprocessor_defines defines) -> Com_ptr<ID3DBlob>;
-
-   auto compile_pixel_shader(const std::string& entry_point,
-                             Preprocessor_defines defines) -> Com_ptr<ID3DBlob>;
 
    void assemble_rendertypes(
       const std::unordered_map<std::string, shader::Rendertype>& rendertypes);
@@ -116,10 +106,6 @@ private:
       ucfb::Writer& writer,
       const std::unordered_map<std::string, Compiled_vertex_entrypoint>& entrypoints) const;
 
-   void write_entrypoints(
-      ucfb::Writer& writer,
-      const std::unordered_map<std::string, Compiled_pixel_entrypoint>& entrypoints) const;
-
    DWORD _compiler_flags;
 
    std::string _group_name;
@@ -127,7 +113,7 @@ private:
 
    std::unordered_map<std::string, Compiled_generic_entrypoint> _compute_entrypoints;
    std::unordered_map<std::string, Compiled_vertex_entrypoint> _vertex_entrypoints;
-   std::unordered_map<std::string, Compiled_pixel_entrypoint> _pixel_entrypoints;
+   std::unordered_map<std::string, Compiled_generic_entrypoint> _pixel_entrypoints;
    std::unordered_map<std::string, Compiled_generic_entrypoint> _hull_entrypoints;
    std::unordered_map<std::string, Compiled_generic_entrypoint> _domain_entrypoints;
    std::unordered_map<std::string, Compiled_generic_entrypoint> _geometry_entrypoints;

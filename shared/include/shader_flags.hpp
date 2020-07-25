@@ -20,15 +20,6 @@ enum class Vertex_shader_flags : std::uint32_t {
    hard_skinned = 0b1000000
 };
 
-enum class Pixel_shader_flags : std::uint32_t {
-   none = 0b0,
-   light_point_1 = 0b1,
-   light_point_2 = 0b10,
-   light_point_4 = 0b100,
-   light_spot = 0b1000,
-   light_directional = 0b10000
-};
-
 enum class Shader_flags : std::uint32_t {
    none = 0,
 
@@ -65,9 +56,7 @@ enum class Pass_flags : std::uint32_t {
 template<>
 struct is_enum_flag<Vertex_shader_flags> : std::true_type {
 };
-template<>
-struct is_enum_flag<Pixel_shader_flags> : std::true_type {
-};
+
 template<>
 struct is_enum_flag<Shader_flags> : std::true_type {
 };
@@ -78,7 +67,6 @@ struct is_enum_flag<Pass_flags> : std::true_type {
 template<typename Type>
 constexpr bool is_shader_flag_v =
    std::is_same_v<Type, Vertex_shader_flags> ||
-   std::is_same_v<Type, Pixel_shader_flags> ||
    std::is_same_v<Type, Shader_flags> || std::is_same_v<Type, Pass_flags>;
 
 constexpr bool pass_flag_set(const Pass_flags& flags, const Pass_flags& test_flag) noexcept
@@ -152,33 +140,6 @@ inline auto to_string(const Vertex_shader_flags flags) noexcept
    add_flag(Vertex_shader_flags::texcoords, "texcoords"sv);
    add_flag(Vertex_shader_flags::color, "color"sv);
    add_flag(Vertex_shader_flags::hard_skinned, "hard_skinned"sv);
-
-   return result;
-}
-
-inline auto to_string(const Pixel_shader_flags flags) noexcept
-{
-   using namespace std::literals;
-
-   if (flags == Pixel_shader_flags::none) return "none"s;
-
-   std::string result;
-
-   bool first = true;
-
-   const auto add_flag = [&](const Pixel_shader_flags flag, const std::string_view str) {
-      if ((flags & flag) != Pixel_shader_flags::none) {
-         if (not std::exchange(first, false)) result += " | "sv;
-
-         result += str;
-      }
-   };
-
-   add_flag(Pixel_shader_flags::light_point_1, "light_point_1"sv);
-   add_flag(Pixel_shader_flags::light_point_2, "light_point_2"sv);
-   add_flag(Pixel_shader_flags::light_point_4, "light_point_4"sv);
-   add_flag(Pixel_shader_flags::light_spot, "light_spot"sv);
-   add_flag(Pixel_shader_flags::light_directional, "light_directional"sv);
 
    return result;
 }

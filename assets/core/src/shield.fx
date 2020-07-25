@@ -71,7 +71,7 @@ struct Ps_input {
 {
    const float3 normalWS = normalize(input.normalWS);
    const float3 view_normalWS = normalize(input.positionWS - view_positionWS);
-   const float3 H = normalize(-light_directional_0_dir.xyz + view_normalWS);
+   const float3 H = normalize(-light_directional_dir(0) + view_normalWS);
    const float NdotH = saturate(dot(normalWS, H));
    float3 specular = pow(NdotH, 64.0);
    specular *= specular_color.rgb;
@@ -98,7 +98,7 @@ struct Ps_input {
                                        : SV_Coverage) {
    const float3 normalWS = normalize(input.normalWS);
    const float3 view_normalWS = normalize(input.positionWS - view_positionWS);
-   const float3 H = normalize(-light_directional_0_dir.xyz + view_normalWS);
+   const float3 H = normalize(-light_directional_dir(0) + view_normalWS);
    const float NdotH = saturate(dot(normalWS, H));
    float3 specular = pow(NdotH, 64.0);
    specular *= specular_color.rgb;

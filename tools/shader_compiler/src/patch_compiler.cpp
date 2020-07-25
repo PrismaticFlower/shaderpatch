@@ -233,7 +233,8 @@ void Patch_compiler::compile_entrypoints(
          compile_vertex_entrypoint(entrypoint, input_layouts);
          break;
       case shader::Stage::pixel:
-         compile_pixel_entrypoint(entrypoint);
+         compile_generic_entrypoint(entrypoint, "__PIXEL_SHADER__"s, "ps_5_0"s,
+                                    _pixel_entrypoints);
          break;
       case shader::Stage::hull:
          compile_generic_entrypoint(entrypoint, "__HULL_SHADER__"s, "hs_5_0"s,
@@ -327,43 +328,6 @@ void Patch_compiler::compile_vertex_entrypoint(
    _vertex_entrypoints.emplace(entrypoint.first, std::move(compiled));
 }
 
-void Patch_compiler::compile_pixel_entrypoint(
-   const std::pair<std::string, shader::Entrypoint>& entrypoint)
-{
-   Expects(entrypoint.second.stage == shader::Stage::pixel);
-   Expects(!_pixel_entrypoints.count(entrypoint.first));
-
-   auto& state = std::get<shader::Pixel_state>(entrypoint.second.stage_state);
-
-   auto variations = shader::get_pixel_shader_variations(state);
-
-   if (entrypoint.second.static_flags.count()) {
-      variations =
-         shader::combine_variations(variations,
-                                    shader::get_custom_variations<shader::Pixel_variation>(
-                                       entrypoint.second.static_flags));
-   }
-
-   Compiled_pixel_entrypoint compiled;
-
-   const auto entrypoint_func =
-      entrypoint.second.function_name.value_or(entrypoint.first);
-
-   for (const auto& variation : variations) {
-      compiled.variations
-         .emplace(std::pair{variation.flags, variation.static_flags},
-                  compile_pixel_shader(entrypoint_func,
-                                       combine_defines(entrypoint.second.defines,
-                                                       variation.defines)));
-   }
-
-   const auto static_flags_names = entrypoint.second.static_flags.list_flags();
-   compiled.static_flag_names.assign(std::cbegin(static_flags_names),
-                                     std::cend(static_flags_names));
-
-   _pixel_entrypoints.emplace(entrypoint.first, std::move(compiled));
-}
-
 auto Patch_compiler::compile_generic_shader(const std::string& entry_point,
                                             Preprocessor_defines defines,
                                             const std::string& shader_define,
@@ -384,16 +348,6 @@ auto Patch_compiler::compile_vertex_shader(const std::string& entry_point,
 
    return compile_shader_impl(_compiler_flags, entry_point, defines.get(),
                               _source_path, "vs_5_0"s);
-}
-
-auto Patch_compiler::compile_pixel_shader(const std::string& entry_point,
-                                          Preprocessor_defines defines)
-   -> Com_ptr<ID3DBlob>
-{
-   defines.add_define("__PIXEL_SHADER__"s, "1");
-
-   return compile_shader_impl(_compiler_flags, entry_point, defines.get(),
-                              _source_path, "ps_5_0"s);
 }
 
 void Patch_compiler::assemble_rendertypes(
@@ -541,51 +495,6 @@ void Patch_compiler::write_entrypoints(
                   ialo_writer.write(elem.type);
                }
             }
-         }
-      }
-
-      // write entry point flag names
-      {
-         auto flag_names_writer = ep_writer.emplace_child("FLGS"_mn);
-
-         flag_names_writer.write(
-            static_cast<std::uint32_t>(entrypoint.second.static_flag_names.size()));
-
-         for (const auto& name : entrypoint.second.static_flag_names) {
-            flag_names_writer.write(name);
-         }
-      }
-   }
-}
-
-void Patch_compiler::write_entrypoints(
-   ucfb::Writer& writer,
-   const std::unordered_map<std::string, Compiled_pixel_entrypoint>& entrypoints) const
-{
-   writer.emplace_child("SIZE"_mn).write(
-      static_cast<std::uint32_t>(entrypoints.size()));
-
-   for (const auto& entrypoint : entrypoints) {
-      auto ep_writer = writer.emplace_child("EP__"_mn);
-
-      ep_writer.emplace_child("NAME"_mn).write(entrypoint.first);
-
-      // write entry point variations
-      {
-         auto vrs_writer = ep_writer.emplace_child("VRS_"_mn);
-
-         vrs_writer.emplace_child("SIZE"_mn).write(
-            static_cast<std::uint32_t>(entrypoint.second.variations.size()));
-
-         for (const auto& vari : entrypoint.second.variations) {
-            auto vari_writer = vrs_writer.emplace_child("VARI"_mn);
-
-            vari_writer.write(vari.first.first);
-            vari_writer.write(vari.first.second);
-            vari_writer.write(static_cast<std::uint32_t>(vari.second->GetBufferSize()));
-            vari_writer.write(gsl::span{static_cast<const std::byte*>(
-                                           vari.second->GetBufferPointer()),
-                                        vari.second->GetBufferSize()});
          }
       }
 

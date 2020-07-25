@@ -17,11 +17,14 @@ struct Game_shader {
    const Com_ptr<ID3D11PixelShader> ps;
    const Com_ptr<ID3D11PixelShader> ps_oit;
 
+   const bool light_active;
+   const std::uint8_t light_active_point_count;
+   const bool light_active_spot;
+
    const Rendertype rendertype;
    const std::array<bool, 4> srgb_state;
    const std::string shader_name;
    const Vertex_shader_flags vertex_shader_flags;
-   const Pixel_shader_flags pixel_shader_flags;
 
    Shader_input_layouts input_layouts;
    Shader_input_layouts input_layouts_compressed;

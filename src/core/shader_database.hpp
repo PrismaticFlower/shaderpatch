@@ -70,6 +70,7 @@ using Compute_shader_entrypoint = Generic_shader_entrypoint<ID3D11ComputeShader>
 using Hull_shader_entrypoint = Generic_shader_entrypoint<ID3D11HullShader>;
 using Domain_shader_entrypoint = Generic_shader_entrypoint<ID3D11DomainShader>;
 using Geometry_shader_entrypoint = Generic_shader_entrypoint<ID3D11GeometryShader>;
+using Pixel_shader_entrypoint = Generic_shader_entrypoint<ID3D11PixelShader>;
 
 class Vertex_shader_entrypoint {
 public:
@@ -155,81 +156,6 @@ private:
    std::unordered_map<std::uint32_t,
                       std::tuple<Com_ptr<ID3D11VertexShader>, std::vector<std::byte>, std::vector<Shader_input_element>>>
       _variations;
-};
-
-class Pixel_shader_entrypoint {
-public:
-   Pixel_shader_entrypoint() = default;
-   explicit Pixel_shader_entrypoint(const Pixel_shader_entrypoint&) = default;
-   Pixel_shader_entrypoint(Pixel_shader_entrypoint&&) = default;
-   Pixel_shader_entrypoint& operator=(Pixel_shader_entrypoint&&) = default;
-
-   Pixel_shader_entrypoint& operator=(const Pixel_shader_entrypoint&) = delete;
-
-   auto get(const std::uint16_t static_flags = 0,
-            const Pixel_shader_flags game_flags = {}) const noexcept -> ID3D11PixelShader*
-   {
-      if (const auto it = _variations.find(index(static_flags, game_flags));
-          it != _variations.end()) {
-         return it->second.get();
-      }
-      else {
-         return nullptr;
-      }
-   }
-
-   auto copy(const std::uint16_t static_flags = 0,
-             const Pixel_shader_flags game_flags = {}) const noexcept
-      -> Com_ptr<ID3D11PixelShader>
-   {
-      if (const auto it = _variations.find(index(static_flags, game_flags));
-          it != _variations.end()) {
-         return it->second;
-      }
-
-      log_and_terminate("Attempt to copy nonexistant shader!");
-   }
-
-   void insert(Com_ptr<ID3D11PixelShader> shader, const std::uint16_t static_flags,
-               const Pixel_shader_flags game_flags) noexcept
-   {
-      _variations[index(static_flags, game_flags)] = std::move(shader);
-   }
-
-   template<typename Output_func>
-   void copy_all_if(const std::uint16_t static_flags, Output_func output_func) const noexcept
-   {
-      static_assert(
-         std::is_nothrow_invocable_v<Output_func, Pixel_shader_flags, Com_ptr<ID3D11PixelShader>>);
-
-      for (const auto& vari : _variations) {
-         const auto [vari_static_flags, ps_flags] = decompose_index(vari.first);
-
-         if (vari_static_flags != static_flags) continue;
-
-         output_func(ps_flags, vari.second);
-      }
-   }
-
-private:
-   static constexpr std::uint32_t index(const std::uint16_t static_flags,
-                                        const Pixel_shader_flags game_flags) noexcept
-   {
-      static_assert(sizeof(Pixel_shader_flags) <= sizeof(std::uint32_t));
-
-      return static_cast<std::uint32_t>(game_flags) | (static_flags << 16u);
-   }
-
-   static constexpr auto decompose_index(const std::uint32_t index) noexcept
-      -> std::pair<std::uint16_t, Pixel_shader_flags>
-   {
-      const auto ps_flags = Pixel_shader_flags{index & 0xffffu};
-      const auto static_flags = static_cast<std::uint16_t>(index >> 16u);
-
-      return {static_flags, ps_flags};
-   }
-
-   std::unordered_map<std::uint32_t, Com_ptr<ID3D11PixelShader>> _variations;
 };
 
 template<typename Entrypoint>
@@ -434,59 +360,6 @@ private:
    std::uint16_t _static_flags = 0;
 };
 
-class Shader_state_stage_pixel {
-public:
-   Shader_state_stage_pixel(Pixel_shader_entrypoint pixel_shader_entrypoint,
-                            std::uint16_t pixel_static_flags) noexcept
-      : _entrypoint{std::move(pixel_shader_entrypoint)}, _static_flags{pixel_static_flags} {};
-
-   Shader_state_stage_pixel() = default;
-   explicit Shader_state_stage_pixel(const Shader_state_stage_pixel&) = default;
-   Shader_state_stage_pixel(Shader_state_stage_pixel&&) = default;
-   Shader_state_stage_pixel& operator=(Shader_state_stage_pixel&&) = default;
-
-   Shader_state_stage_pixel& operator=(const Shader_state_stage_pixel&) = delete;
-
-   auto at(const Pixel_shader_flags pixel_flags = {}) const noexcept
-      -> Com_ptr<ID3D11PixelShader>
-   {
-      auto ps = at_if(pixel_flags);
-
-      if (!ps) {
-         log_and_terminate("Attempt to get nonexistent pixel shader variation."sv);
-      }
-
-      return Com_ptr{ps};
-   }
-
-   auto at_if(const Pixel_shader_flags pixel_flags = {}) const noexcept
-      -> Com_ptr<ID3D11PixelShader>
-   {
-      ID3D11PixelShader* ps = nullptr;
-
-      if (ps = _entrypoint.get(_static_flags, pixel_flags); !ps) {
-         return nullptr;
-      }
-      ps->AddRef();
-
-      return Com_ptr{ps};
-   }
-
-   auto entrypoint() const noexcept -> const Pixel_shader_entrypoint&
-   {
-      return _entrypoint;
-   }
-
-   auto static_flags() const noexcept -> std::uint16_t
-   {
-      return _static_flags;
-   }
-
-private:
-   Pixel_shader_entrypoint _entrypoint;
-   std::uint16_t _static_flags = 0;
-};
-
 struct Shader_state {
 public:
    Shader_state() = default;
@@ -497,8 +370,9 @@ public:
    Shader_state& operator=(const Shader_state&) = delete;
 
    Shader_state_stage_vertex vertex;
-   Shader_state_stage_pixel pixel;
-   Shader_state_stage_pixel pixel_oit;
+
+   Com_ptr<ID3D11PixelShader> pixel;
+   Com_ptr<ID3D11PixelShader> pixel_oit;
 
    Com_ptr<ID3D11HullShader> hull;
    Com_ptr<ID3D11DomainShader> domain;

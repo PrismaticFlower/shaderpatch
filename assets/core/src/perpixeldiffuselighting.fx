@@ -10,31 +10,23 @@
 const static float4 x_texcoords_transform = custom_constants[0];
 const static float4 y_texcoords_transform = custom_constants[1];
 
-const static float4 light_constants[7] = {light_directional_0_color,
-                                          light_directional_0_dir,
-                                          light_directional_1_color,
-                                          light_directional_1_dir,
-                                          light_point_0_color,
-                                          float4(light_point_0_pos,
-                                                 light_point_0_inv_range_sqr),
-                                          light_point_1_color};
-
 const static float3 light_colors[3] = {ps_custom_constants[0].xyz,
                                        ps_custom_constants[1].xyz,
                                        ps_custom_constants[2].xyz};
 
-const static float4 light_positionsWS[3] = {light_constants[0], light_constants[2],
-                                            light_constants[4]};
+const static float4 light_positionsWS[3] = {light_packed_constants[0],
+                                            light_packed_constants[2],
+                                            light_packed_constants[4]};
 const static float light_radiuses[3] =
-   {(1.0 / light_constants[1].x) * light_constants[1].y,
-    (1.0 / light_constants[3].x) * light_constants[3].y,
-    (1.0 / light_constants[5].x) * light_constants[5].y};
+   {(1.0 / light_packed_constants[1].x) * light_packed_constants[1].y,
+    (1.0 / light_packed_constants[3].x) * light_packed_constants[3].y,
+    (1.0 / light_packed_constants[5].x) * light_packed_constants[5].y};
 
 const static float3 spotlight_color = light_colors[0];
-const static float3 spotlight_positionWS = light_constants[0].xyz;
+const static float3 spotlight_positionWS = light_packed_constants[0].xyz;
 const static float spotlight_range =
-   (1.0 / light_constants[1].x) * light_constants[1].y;
-const static float3 spotlight_directionWS = light_constants[2].xyz;
+   (1.0 / light_packed_constants[1].x) * light_packed_constants[1].y;
+const static float3 spotlight_directionWS = light_packed_constants[2].xyz;
 
 const static bool generate_texcoords = PERPIXEL_GENERATE_TEXCOORDS;
 const static bool generate_tangents = PERPIXEL_GENERATE_TANGENTS;
@@ -125,10 +117,10 @@ float4 transform_spotlight_projection(float3 positionWS)
 {
    float4 projection_coords;
 
-   projection_coords.x = dot(float4(positionWS, 1.0), light_constants[3]);
-   projection_coords.y = dot(float4(positionWS, 1.0), light_constants[4]);
-   projection_coords.z = dot(float4(positionWS, 1.0), light_constants[5]);
-   projection_coords.w = dot(float4(positionWS, 1.0), light_constants[6]);
+   projection_coords.x = dot(float4(positionWS, 1.0), light_packed_constants[3]);
+   projection_coords.y = dot(float4(positionWS, 1.0), light_packed_constants[4]);
+   projection_coords.z = dot(float4(positionWS, 1.0), light_packed_constants[5]);
+   projection_coords.w = dot(float4(positionWS, 1.0), light_packed_constants[6]);
 
    return projection_coords;
 }

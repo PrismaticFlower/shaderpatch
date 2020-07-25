@@ -25,7 +25,6 @@ public:
                const Input_layout_descriptions& layout_descriptions,
                const std::uint16_t layout_index, const std::string& state_name,
                const Vertex_shader_flags vertex_shader_flags,
-               const Pixel_shader_flags pixel_shader_flags,
                const bool oit_active) noexcept;
 
 private:
@@ -37,15 +36,11 @@ private:
 
    struct Material_shader_state {
       std::unordered_map<Vertex_shader_flags, Material_vertex_shader> vertex;
-      std::unordered_map<Pixel_shader_flags, Com_ptr<ID3D11PixelShader>> pixel;
-      std::unordered_map<Pixel_shader_flags, Com_ptr<ID3D11PixelShader>> pixel_oit;
+      Com_ptr<ID3D11PixelShader> pixel;
+      Com_ptr<ID3D11PixelShader> pixel_oit;
 
       auto get_vs(const Vertex_shader_flags flags, const std::string& state_name,
                   const std::string& shader_name) noexcept -> Material_vertex_shader&;
-
-      auto get_ps(const Pixel_shader_flags flags, const bool oit_active,
-                  const std::string& state_name,
-                  const std::string& shader_name) noexcept -> ID3D11PixelShader&;
    };
 
    using Shaders = std::unordered_map<std::string, Material_shader_state>;
@@ -59,10 +54,6 @@ private:
    static auto init_vs_entrypoint(const Vertex_shader_entrypoint& vs,
                                   const std::uint16_t static_flags) noexcept
       -> std::unordered_map<Vertex_shader_flags, Material_vertex_shader>;
-
-   static auto init_ps_entrypoint(const Pixel_shader_entrypoint& ps,
-                                  const std::uint16_t static_flags) noexcept
-      -> std::unordered_map<Pixel_shader_flags, Com_ptr<ID3D11PixelShader>>;
 
    const Com_ptr<ID3D11Device1> _device;
 

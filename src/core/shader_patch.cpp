@@ -722,13 +722,15 @@ auto Shader_patch::create_game_shader(const Shader_metadata metadata) noexcept
    auto game_shader = std::make_shared<Game_shader>(
       Game_shader{std::move(vs),
                   std::move(vs_compressed),
-                  state.pixel.at(metadata.pixel_shader_flags),
-                  state.pixel_oit.at_if(metadata.pixel_shader_flags),
+                  state.pixel,
+                  state.pixel_oit,
+                  metadata.light_active,
+                  metadata.light_active_point_count,
+                  metadata.light_active_spot,
                   metadata.rendertype,
                   metadata.srgb_state,
                   metadata.shader_name,
                   metadata.vertex_shader_flags,
-                  metadata.pixel_shader_flags,
                   {std::move(vs_inputlayout), std::move(vs_bytecode)},
                   {std::move(vs_inputlayout_compressed),
                    std::move(vs_bytecode_compressed)}});
@@ -914,6 +916,17 @@ void Shader_patch::set_game_shader(std::shared_ptr<Game_shader> shader) noexcept
    _previous_shader_rendertype = _shader_rendertype;
    _shader_rendertype_changed =
       std::exchange(_shader_rendertype, rendertype) != rendertype;
+
+   const std::uint32_t light_active = shader->light_active;
+   const std::uint32_t light_active_point_count = shader->light_active_point_count;
+   const std::uint32_t light_active_spot = shader->light_active_spot;
+
+   _cb_draw_ps_dirty |=
+      ((std::exchange(_cb_draw_ps.light_active, light_active) != light_active) |
+       (std::exchange(_cb_draw_ps.light_active_point_count,
+                      light_active_point_count) != light_active_point_count) |
+       (std::exchange(_cb_draw_ps.light_active_spot, light_active_spot) !=
+        light_active_spot));
 }
 
 void Shader_patch::set_rendertarget(const Game_rendertarget_id rendertarget) noexcept
@@ -1645,7 +1658,6 @@ void Shader_patch::update_shader() noexcept
          _patch_material->shader->update(*_device_context, _input_layout_descriptions,
                                          _game_input_layout.layout_index,
                                          _game_shader->shader_name, vs_flags,
-                                         _game_shader->pixel_shader_flags,
                                          _oit_active);
          return;
       }

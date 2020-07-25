@@ -108,12 +108,14 @@ struct alignas(16) Draw_ps {
    glm::vec4 rt_resolution; // x = width, y = height, z = 1 / width, w = 1 / height
    glm::vec3 fog_color;
    float rcp_sample_count;
-   std::int32_t additive_blending;
-   std::int32_t cube_projtex;
-   std::int32_t fog_enabled;
-   std::int32_t limit_normal_shader_bright_lights;
+   std::uint32_t light_active = 0;
+   std::uint32_t light_active_point_count = 0;
+   std::uint32_t light_active_spot = 0;
+   std::uint32_t additive_blending;
+   std::uint32_t cube_projtex;
+   std::uint32_t fog_enabled;
+   std::uint32_t limit_normal_shader_bright_lights;
    float time_seconds;
-   std::array<std::uint32_t, 3> padding;
 };
 
 constexpr auto draw_ps_game_count = CB_MAX_GAME_CONSTANTS(Draw_ps, ps_view_positionWS);
