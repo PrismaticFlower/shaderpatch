@@ -34,15 +34,10 @@ const static float  max_tess_factor = 48.0;
 
 cbuffer MaterialConstants : register(MATERIAL_CB_INDEX)
 {
-   float  disp_scale;
-   float  disp_offset;
-   float  material_tess_detail;
-   float  tess_smoothing_amount;
    float3 base_diffuse_color;
    float  gloss_map_weight;
    float3 base_specular_color;
    float  specular_exponent;
-   bool   use_parallax_occlusion_mapping;
    float  height_scale;
    bool   use_detail_textures;
    float  detail_texture_scale;
@@ -60,6 +55,7 @@ cbuffer MaterialConstants : register(MATERIAL_CB_INDEX)
 // Shader Feature Controls
 const static bool use_texcoords_transform = NORMAL_EXT_USE_TEXCOORDS_TRANSFORM;
 const static bool use_specular = NORMAL_EXT_USE_SPECULAR;
+const static bool use_parallax_occlusion_mapping = NORMAL_EXT_USE_PARALLAX_OCCLUSION_MAPPING;
 const static bool use_transparency = NORMAL_EXT_USE_TRANSPARENCY;
 const static bool use_hardedged_test = NORMAL_EXT_USE_HARDEDGED_TEST;
 

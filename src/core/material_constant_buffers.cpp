@@ -46,18 +46,12 @@ struct PBR_terrain_cb {
 static_assert(sizeof(PBR_terrain_cb) == 800);
 
 struct Normal_ext_cb {
-   float disp_scale = 1.0f;
-   float disp_offset = 0.0f;
-   float tess_detail = 64.0f;
-   float tess_smoothing_amount = 1.0f;
-
    glm::vec3 diffuse_color = {1.0f, 1.0f, 1.0f};
    float gloss_map_weight = 1.0f;
 
    glm::vec3 specular_color = {1.0f, 1.0f, 1.0f};
    float specular_exponent = 64.0f;
 
-   std::uint32_t use_parallax_occlusion_mapping = false;
    float height_scale = 0.1f;
 
    std::uint32_t use_detail_textures = false;
@@ -76,10 +70,9 @@ struct Normal_ext_cb {
    float env_map_vis = 1.0f;
 
    float dynamic_normal_sign = 1.0f;
-   std::array<std::uint32_t, 3> padding;
 };
 
-static_assert(sizeof(Normal_ext_cb) == 112);
+static_assert(sizeof(Normal_ext_cb) == 80);
 
 struct Normal_ext_texture_vars {
    float height_scale = 0.05f;
@@ -269,19 +262,11 @@ auto create_normal_ext_constant_buffer(const Material_properties_view& props) ->
 {
    Normal_ext_cb cb{};
 
-   cb.disp_scale = props.value<float>("DisplacementScale"sv, cb.disp_scale);
-   cb.disp_offset = props.value<float>("DisplacementOffset"sv, cb.disp_offset);
-   cb.tess_detail = props.value<float>("TessellationDetail"sv, cb.tess_detail);
-   cb.tess_smoothing_amount =
-      props.value<float>("TessellationSmoothingAmount"sv, cb.tess_smoothing_amount);
    cb.diffuse_color = props.value<glm::vec3>("DiffuseColor"sv, cb.diffuse_color);
    cb.gloss_map_weight = props.value<float>("GlossMapWeight"sv, cb.gloss_map_weight);
    cb.specular_color = props.value<glm::vec3>("SpecularColor"sv, cb.specular_color);
    cb.specular_exponent =
       props.value<float>("SpecularExponent"sv, cb.specular_exponent);
-   cb.use_parallax_occlusion_mapping =
-      props.value<bool>("UseParallaxOcclusionMapping"sv,
-                        cb.use_parallax_occlusion_mapping);
    cb.height_scale = props.value<float>("HeightScale"sv, cb.height_scale);
    cb.use_detail_textures =
       props.value<bool>("UseDetailMaps"sv, cb.use_detail_textures);

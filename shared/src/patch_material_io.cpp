@@ -116,6 +116,31 @@ namespace {
 
 namespace v_2 {
 
+void fixup_normal_ext_parallax_occlusion_mapping(Material_config& config)
+{
+   // For normal_ext parallax occlusion mapping changed from being toggled via
+   // branching in the shader (lazy, but let the shader permutations compile sometime this century) to
+   // being implemented as distinct rendertypes with distinct shader permutations.
+   //
+   // This function implements a fixup to convert from old-style POM usage (user controlled via properties) to
+   // new style (user controlled via rendertype).
+
+   if (!config.rendertype.starts_with("normal_ext"sv)) return;
+
+   auto prop = std::find_if(config.properties.begin(), config.properties.end(),
+                            [](const auto& prop) {
+                               return prop.name == "UseParallaxOcclusionMapping"sv;
+                            });
+
+   if (prop == config.properties.end()) return;
+
+   if (std::get<Material_var<bool>>(prop->value).value) {
+      config.rendertype += ".parallax occlusion mapped"sv;
+   }
+
+   config.properties.erase(prop);
+}
+
 auto read_material_prop_var(ucfb::Reader_strict<"PRPS"_mn>& prps,
                             const std::uint32_t type_index) -> Material_property::Value
 {
@@ -205,6 +230,8 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
    read_resources(reader.read_child_strict<"DSSR"_mn>(), config.ds_resources);
    read_resources(reader.read_child_strict<"GSSR"_mn>(), config.gs_resources);
    read_resources(reader.read_child_strict<"PSSR"_mn>(), config.ps_resources);
+
+   fixup_normal_ext_parallax_occlusion_mapping(config);
 
    return config;
 }
