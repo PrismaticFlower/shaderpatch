@@ -46,6 +46,11 @@ Graphics:
    # 
    # In some cases the alternative path may produce results that do not exactly match the intended look of a map.
    Enable Alternative Post Processing: yes
+
+   # Enables maps to make use of the game's scene blur effect. Has a performance cost but using it will keep the 
+   # map's artwork more inline with the creators vision. Note this is **unrelated** to the Effects system and also 
+   # only takes effect when `Enable Alternative Post Processing` is `yes`.
+   Enable Scene Blur: yes
    
    # Quality level of refractions. Can be "Low", "Medium", "High" or "Ultra".
    # "Low" sets the resolution of the refractions to 1/4 screen resolution, Medium 1/2, High 1/2 and Ultra matches screen resolution.

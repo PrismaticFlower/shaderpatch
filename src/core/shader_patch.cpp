@@ -1428,10 +1428,12 @@ void Shader_patch::game_rendertype_changed() noexcept
       else if (_shader_rendertype == Rendertype::fixedfunc_scene_blur) {
          _discard_draw_calls = true;
 
-         _game_postprocessing.apply_scene_blur(*_device_context,
-                                               _game_rendertargets[0],
-                                               _rendertarget_allocator);
-         restore_all_game_state();
+         if (user_config.graphics.enable_scene_blur) {
+            _game_postprocessing.apply_scene_blur(*_device_context,
+                                                  _game_rendertargets[0],
+                                                  _rendertarget_allocator);
+            restore_all_game_state();
+         }
 
          _on_rendertype_changed = [&]() noexcept {
             _discard_draw_calls = false;

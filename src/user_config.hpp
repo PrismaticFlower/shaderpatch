@@ -66,6 +66,7 @@ struct User_config {
       Refraction_quality refraction_quality = Refraction_quality::medium;
       bool enable_oit = false;
       bool enable_alternative_postprocessing = true;
+      bool enable_scene_blur = true;
       bool enable_16bit_color_rendering = true;
       bool disable_light_brightness_rescaling = false;
       bool enable_user_effects_config = false;
