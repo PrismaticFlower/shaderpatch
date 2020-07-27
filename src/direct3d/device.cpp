@@ -196,6 +196,11 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
        params->BackBufferWidth == 800 && params->BackBufferHeight == 600) {
       _perceived_width = 800;
       _perceived_height = 600;
+
+      if (user_config.display.windowed_interface) {
+         _actual_width = 800;
+         _actual_height = 600;
+      }
    }
    else {
       if (user_config.display.enable_game_perceived_resolution_override) {

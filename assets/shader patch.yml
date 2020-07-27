@@ -18,6 +18,10 @@ Display:
    # the interface usable while still letting you enjoy fullscreen ingame.
    Treat 800x600 As Interface: yes
 
+   # When `Treat 800x600 As Interface` is `yes` controls whether the game's interface will be rendered fullscreen (which can lead to 
+   # stretching on the UI) or if it'll be kept in a 800x600 window.
+   Windowed Interface: no
+
    # Enables the overriding the resolution the game thinks it is rendering at, without changing the 
    # resolution it is actually rendered at. This can have the affect of altering the aspect ratio 
    # of the game and the scaling and position of UI/HUD elements.
