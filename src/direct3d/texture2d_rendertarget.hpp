@@ -13,8 +13,10 @@ public:
    static constexpr auto reported_format = D3DFMT_A8R8G8B8;
 
    static Com_ptr<Texture2d_rendertarget> create(core::Shader_patch& shader_patch,
-                                                 const UINT width,
-                                                 const UINT height) noexcept;
+                                                 const UINT actual_width,
+                                                 const UINT actual_height,
+                                                 const UINT perceived_width,
+                                                 const UINT perceived_height) noexcept;
 
    Texture2d_rendertarget(const Texture2d_rendertarget&) = delete;
    Texture2d_rendertarget& operator=(const Texture2d_rendertarget&) = delete;
@@ -56,8 +58,7 @@ public:
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
 
-   [[deprecated(
-      "unimplemented")]] DWORD __stdcall GetPriority() noexcept override
+   [[deprecated("unimplemented")]] DWORD __stdcall GetPriority() noexcept override
    {
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
@@ -121,8 +122,9 @@ public:
    }
 
 private:
-   Texture2d_rendertarget(core::Shader_patch& shader_patch, const UINT width,
-                          const UINT height) noexcept;
+   Texture2d_rendertarget(core::Shader_patch& shader_patch, const UINT actual_width,
+                          const UINT actual_height, const UINT perceived_width,
+                          const UINT perceived_height) noexcept;
 
    ~Texture2d_rendertarget() = default;
 
@@ -177,8 +179,7 @@ private:
             "Unimplemented function \"" __FUNCSIG__ "\" called.");
       }
 
-      [[deprecated(
-         "unimplemented")]] DWORD __stdcall GetPriority() noexcept override
+      [[deprecated("unimplemented")]] DWORD __stdcall GetPriority() noexcept override
       {
          log_and_terminate(
             "Unimplemented function \"" __FUNCSIG__ "\" called.");
@@ -238,8 +239,8 @@ private:
    const Rendertarget_id _rendertarget_id;
    Surface _surface{*this};
 
-   const UINT _width;
-   const UINT _height;
+   const UINT _perceived_width;
+   const UINT _perceived_height;
    UINT _ref_count = 1;
 };
 

@@ -1078,18 +1078,11 @@ void Shader_patch::set_constants(const cb::Draw_tag, const UINT offset,
 }
 
 void Shader_patch::set_constants(const cb::Fixedfunction_tag,
-                                 const glm::vec4 texture_factor) noexcept
+                                 cb::Fixedfunction constants) noexcept
 {
-   const auto& rt = _game_rendertargets[static_cast<int>(_current_game_rendertarget)];
-
-   cb::Fixedfunction constants;
-
-   constants.texture_factor = texture_factor;
-   constants.inv_resolution = {1.0f / rt.width, 1.0f / rt.height};
-
    update_dynamic_buffer(*_device_context, *_cb_fixedfunction_buffer, constants);
 
-   _game_postprocessing.blur_factor(texture_factor.a);
+   _game_postprocessing.blur_factor(constants.texture_factor.a);
 }
 
 void Shader_patch::set_constants(const cb::Skin_tag, const UINT offset,

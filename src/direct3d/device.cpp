@@ -43,8 +43,10 @@ Device::Device(IDirect3D9& parent, IDXGIAdapter4& adapter, const HWND window,
      _shader_patch{adapter, window, width, height},
      _adapter{copy_raw_com_ptr(adapter)},
      _window{window},
-     _width{width},
-     _height{height}
+     _actual_width{width},
+     _actual_height{height},
+     _perceived_width{width},
+     _perceived_height{height}
 {
    _parent.AddRef();
 }
@@ -178,24 +180,32 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
    MONITORINFO info{sizeof(MONITORINFO)};
    GetMonitorInfoW(MonitorFromWindow(_window, MONITOR_DEFAULTTONEAREST), &info);
 
+   const auto monitor_width =
+      static_cast<std::uint32_t>(info.rcMonitor.right - info.rcMonitor.left);
+   const auto monitor_height =
+      static_cast<std::uint32_t>(info.rcMonitor.bottom - info.rcMonitor.top);
+
+   const auto window_width = monitor_width * user_config.display.screen_percent / 100;
+   const auto window_height =
+      monitor_height * user_config.display.screen_percent / 100;
+
+   _actual_width = static_cast<std::uint16_t>(window_width);
+   _actual_height = static_cast<std::uint16_t>(monitor_height);
+
    if (user_config.display.treat_800x600_as_interface &&
        params->BackBufferWidth == 800 && params->BackBufferHeight == 600) {
-      _width = 800;
-      _height = 600;
+      _perceived_width = 800;
+      _perceived_height = 600;
    }
    else {
-      const auto monitor_width =
-         static_cast<std::uint32_t>(info.rcMonitor.right - info.rcMonitor.left);
-      const auto monitor_height =
-         static_cast<std::uint32_t>(info.rcMonitor.bottom - info.rcMonitor.top);
-
-      _width = static_cast<std::uint16_t>(
-         monitor_width * user_config.display.screen_percent / 100);
-      _height = static_cast<std::uint16_t>(
-         monitor_height * user_config.display.screen_percent / 100);
+      _perceived_width = _actual_width;
+      _perceived_height = _actual_height;
    }
 
-   win32::resize_window(_window, _width, _height);
+   params->BackBufferWidth = _perceived_width;
+   params->BackBufferHeight = _perceived_height;
+
+   win32::resize_window(_window, _actual_width, _actual_height);
 
    if (user_config.display.centred || user_config.display.screen_percent == 100) {
       win32::centre_window(_window);
@@ -206,21 +216,18 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
 
    win32::clip_cursor_to_window(_window);
 
-   params->BackBufferWidth = _width;
-   params->BackBufferHeight = _height;
-
    _render_state_manager.reset();
    _texture_stage_manager.reset();
-   _shader_patch.reset(params->BackBufferWidth, params->BackBufferHeight);
+   _shader_patch.reset(_actual_width, _actual_height);
    _fixed_func_active = true;
 
-   _backbuffer =
-      Surface_backbuffer::create(_shader_patch.get_back_buffer(), _width, _height);
+   _backbuffer = Surface_backbuffer::create(_shader_patch.get_back_buffer(),
+                                            _perceived_width, _perceived_height);
    _rendertarget = _backbuffer;
    _depthstencil = Surface_depthstencil::create(core::Game_depthstencil::nearscene,
-                                                _width, _height);
+                                                _perceived_width, _perceived_height);
 
-   _viewport = {0, 0, _width, _height, 0.0f, 1.0f};
+   _viewport = {0, 0, _perceived_width, _perceived_height, 0.0f, 1.0f};
 
    return S_OK;
 }
@@ -450,7 +457,21 @@ HRESULT Device::StretchRect(IDirect3DSurface9* source_surface,
 
    if (!source_id || !dest_id) return D3DERR_INVALIDCALL;
 
-   _shader_patch.stretch_rendertarget(*source_id, *source_rect, *dest_id, *dest_rect);
+   const auto perceived_rect_to_actual = [this](const D3DSURFACE_DESC& desc, RECT rect) {
+      if (desc.Width == _perceived_width && desc.Height == _perceived_height) {
+         rect.left = rect.left * _actual_width / _perceived_width;
+         rect.right = rect.right * _actual_width / _perceived_width;
+         rect.top = rect.top * _actual_height / _perceived_height;
+         rect.bottom = rect.bottom * _actual_height / _perceived_height;
+      }
+
+      return rect;
+   };
+
+   _shader_patch.stretch_rendertarget(*source_id,
+                                      perceived_rect_to_actual(src_desc, *source_rect),
+                                      *dest_id,
+                                      perceived_rect_to_actual(dest_desc, *dest_rect));
 
    return S_OK;
 }
@@ -508,6 +529,15 @@ HRESULT Device::SetRenderTarget(DWORD rendertarget_index,
       reinterpret_cast<Resource*>(rendertarget)->get_if<core::Game_rendertarget_id>();
 
    if (!rendertarget_id) return D3DERR_INVALIDCALL;
+
+   // update viewport
+   {
+      D3DSURFACE_DESC desc{};
+
+      rendertarget->GetDesc(&desc);
+
+      _viewport = {0, 0, desc.Width, desc.Height, 0.0f, 1.0f};
+   }
 
    _shader_patch.set_rendertarget(*rendertarget_id);
 
@@ -1218,8 +1248,14 @@ auto Device::create_texture2d_managed(const UINT width, const UINT height,
 auto Device::create_texture2d_rendertarget(const UINT width, const UINT height) noexcept
    -> Com_ptr<IDirect3DTexture9>
 {
+   const UINT texture_actual_width = width == _perceived_width ? _actual_width : width;
+   const UINT texture_actual_height =
+      height == _perceived_height ? _actual_height : height;
+
    return Com_ptr{reinterpret_cast<IDirect3DTexture9*>(
-      Texture2d_rendertarget::create(_shader_patch, width, height).release())};
+      Texture2d_rendertarget::create(_shader_patch, texture_actual_width,
+                                     texture_actual_height, width, height)
+         .release())};
 }
 
 auto Device::create_texture3d_managed(const UINT width, const UINT height,
@@ -1314,7 +1350,7 @@ void Device::draw_common() noexcept
 {
    if (_fixed_func_active) {
       _texture_stage_manager.update(_shader_patch,
-                                    _render_state_manager.texture_factor());
+                                    _render_state_manager.texture_factor(), _viewport);
    }
 
    _render_state_manager.update_dirty(_shader_patch);

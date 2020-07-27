@@ -337,8 +337,7 @@ public:
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
 
-   [[deprecated(
-      "unimplemented")]] HRESULT __stdcall BeginStateBlock() noexcept override
+   [[deprecated("unimplemented")]] HRESULT __stdcall BeginStateBlock() noexcept override
    {
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
@@ -413,8 +412,7 @@ public:
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
 
-   [[deprecated(
-      "unimplemented")]] float __stdcall GetNPatchMode() noexcept override
+   [[deprecated("unimplemented")]] float __stdcall GetNPatchMode() noexcept override
    {
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
@@ -596,21 +594,26 @@ private:
 
    bool _fixed_func_active = true;
 
-   UINT _width;
-   UINT _height;
+   UINT _actual_width;
+   UINT _actual_height;
+   UINT _perceived_width;
+   UINT _perceived_height;
 
    Com_ptr<IUnknown> _backbuffer{
-      Surface_backbuffer::create(_shader_patch.get_back_buffer(), _width, _height)};
+      Surface_backbuffer::create(_shader_patch.get_back_buffer(),
+                                 _perceived_width, _perceived_height)};
 
    Com_ptr<IUnknown> _rendertarget{_backbuffer};
 
    Com_ptr<IUnknown> _depthstencil{
-      Surface_depthstencil::create(core::Game_depthstencil::nearscene, _width, _height)};
+      Surface_depthstencil::create(core::Game_depthstencil::nearscene,
+                                   _perceived_width, _perceived_height)};
 
    const Com_ptr<IUnknown> _triangle_fan_quad_ibuf{
       create_triangle_fan_quad_ibuf(_shader_patch)};
 
-   D3DVIEWPORT9 _viewport{0, 0, _width, _height, 0.0f, 1.0f};
+   D3DVIEWPORT9 _viewport{0,    0,   _perceived_width, _perceived_height,
+                          0.0f, 1.0f};
    Texture_stage_state_manager _texture_stage_manager{_shader_patch};
 
    ULONG _ref_count = 1;

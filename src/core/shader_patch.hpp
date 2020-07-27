@@ -212,7 +212,8 @@ public:
    void set_constants(const cb::Draw_tag, const UINT offset,
                       const gsl::span<const std::array<float, 4>> constants) noexcept;
 
-   void set_constants(const cb::Fixedfunction_tag, const glm::vec4 texture_factor) noexcept;
+   void set_constants(const cb::Fixedfunction_tag,
+                      const cb::Fixedfunction constants) noexcept;
 
    void set_constants(const cb::Skin_tag, const UINT offset,
                       const gsl::span<const std::array<float, 4>> constants) noexcept;

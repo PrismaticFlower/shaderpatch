@@ -5,19 +5,25 @@
 namespace sp::d3d9 {
 
 Texture2d_rendertarget::Texture2d_rendertarget(core::Shader_patch& shader_patch,
-                                               const UINT width, const UINT height) noexcept
+                                               const UINT actual_width,
+                                               const UINT actual_height,
+                                               const UINT perceived_width,
+                                               const UINT perceived_height) noexcept
    : Base_texture{Texture_type::rendertarget},
-     _rendertarget_id{shader_patch.create_game_rendertarget(width, height), shader_patch},
-     _width{width},
-     _height{height}
+     _rendertarget_id{shader_patch.create_game_rendertarget(actual_width, actual_height),
+                      shader_patch},
+     _perceived_width{perceived_width},
+     _perceived_height{perceived_height}
 {
    this->resource = _rendertarget_id.id;
 }
 
 Com_ptr<Texture2d_rendertarget> Texture2d_rendertarget::create(
-   core::Shader_patch& shader_patch, const UINT width, const UINT height) noexcept
+   core::Shader_patch& shader_patch, const UINT actual_width, const UINT actual_height,
+   const UINT perceived_width, const UINT perceived_height) noexcept
 {
-   return Com_ptr{new Texture2d_rendertarget{shader_patch, width, height}};
+   return Com_ptr{new Texture2d_rendertarget{shader_patch, actual_width, actual_height,
+                                             perceived_width, perceived_height}};
 }
 
 HRESULT Texture2d_rendertarget::QueryInterface(const IID& iid, void** object) noexcept
@@ -94,8 +100,8 @@ HRESULT Texture2d_rendertarget::GetLevelDesc(UINT level, D3DSURFACE_DESC* desc) 
    desc->Pool = D3DPOOL_DEFAULT;
    desc->MultiSampleType = D3DMULTISAMPLE_NONE;
    desc->MultiSampleQuality = 0;
-   desc->Width = _width;
-   desc->Height = _height;
+   desc->Width = _perceived_width;
+   desc->Height = _perceived_height;
 
    return S_OK;
 }

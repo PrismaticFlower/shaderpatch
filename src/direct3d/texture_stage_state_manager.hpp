@@ -17,8 +17,8 @@ public:
 
    DWORD get(const UINT stage, const D3DTEXTURESTAGESTATETYPE state) const noexcept;
 
-   void update(core::Shader_patch& shader_patch, const DWORD texture_factor) const
-      noexcept;
+   void update(core::Shader_patch& shader_patch, const DWORD texture_factor,
+               const D3DVIEWPORT9& viewport) const noexcept;
 
    void reset() noexcept;
 

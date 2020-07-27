@@ -186,7 +186,8 @@ DWORD Texture_stage_state_manager::get(const UINT stage,
 }
 
 void Texture_stage_state_manager::update(core::Shader_patch& shader_patch,
-                                         const DWORD texture_factor) const noexcept
+                                         const DWORD texture_factor,
+                                         const D3DVIEWPORT9& viewport) const noexcept
 {
    if (is_color_fill_state()) {
       shader_patch.set_game_shader(_color_fill_shader);
@@ -207,7 +208,10 @@ void Texture_stage_state_manager::update(core::Shader_patch& shader_patch,
       log_and_terminate("Unexpected fixed function texture state!");
    }
 
-   shader_patch.set_constants(core::cb::fixedfunction, unpack_d3dcolor(texture_factor));
+   shader_patch.set_constants(core::cb::fixedfunction,
+                              {.texture_factor = unpack_d3dcolor(texture_factor),
+                               .inv_resolution = {1.0f / viewport.Width,
+                                                  1.0f / viewport.Height}});
 }
 
 void Texture_stage_state_manager::reset() noexcept
@@ -249,8 +253,7 @@ bool Texture_stage_state_manager::is_zoom_blur_state() const noexcept
    return true;
 }
 
-bool Texture_stage_state_manager::is_damage_overlay_state(const DWORD texture_factor) const
-   noexcept
+bool Texture_stage_state_manager::is_damage_overlay_state(const DWORD texture_factor) const noexcept
 {
    constexpr auto damage_color = 0xdf2020u;
 
