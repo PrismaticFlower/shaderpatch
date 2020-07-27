@@ -4,6 +4,7 @@
 #include "device.hpp"
 #include "smart_win32_handle.hpp"
 
+#include <array>
 #include <atomic>
 #include <mutex>
 #include <vector>
@@ -76,6 +77,11 @@ private:
    auto gpu_desc() noexcept -> std::string;
 
    std::mutex _mutex;
+
+   std::array<D3DDISPLAYMODE, 3> pseudo_display_modes = {
+      {{640, 480, 60, D3DFMT_X8R8G8B8},
+       {800, 600, 60, D3DFMT_X8R8G8B8},
+       {1024, 768, 60, D3DFMT_X8R8G8B8}}};
 
    Com_ptr<IDXGIAdapter4> _adapter;
    Com_ptr<Device> _device;

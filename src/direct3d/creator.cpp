@@ -165,11 +165,6 @@ void update_fp_control() noexcept
           "Failed to set FP control flags, strange bugs may appear.");
 }
 
-const std::initializer_list<D3DDISPLAYMODE>
-   pseudo_display_modes{{640, 480, 60, D3DFMT_X8R8G8B8},
-                        {800, 600, 60, D3DFMT_X8R8G8B8},
-                        {1024, 768, 60, D3DFMT_X8R8G8B8}};
-
 }
 
 Com_ptr<Creator> Creator::create() noexcept
@@ -191,6 +186,12 @@ Creator::Creator() noexcept
    }
 
    log(Log_level::info, "Selected GPU "sv, gpu_desc());
+
+   MONITORINFO info{sizeof(MONITORINFO)};
+   GetMonitorInfoW(MonitorFromPoint({0, 0}, MONITOR_DEFAULTTOPRIMARY), &info);
+
+   pseudo_display_modes[2].Width = (info.rcMonitor.right - info.rcMonitor.left);
+   pseudo_display_modes[2].Height = (info.rcMonitor.bottom - info.rcMonitor.top);
 }
 
 HRESULT Creator::CreateDevice(UINT adapter_index, D3DDEVTYPE, HWND focus_window,
