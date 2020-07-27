@@ -190,7 +190,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
       monitor_height * user_config.display.screen_percent / 100;
 
    _actual_width = static_cast<std::uint16_t>(window_width);
-   _actual_height = static_cast<std::uint16_t>(monitor_height);
+   _actual_height = static_cast<std::uint16_t>(window_height);
 
    if (user_config.display.treat_800x600_as_interface &&
        params->BackBufferWidth == 800 && params->BackBufferHeight == 600) {
