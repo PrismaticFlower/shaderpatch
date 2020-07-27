@@ -108,6 +108,15 @@ void User_config::parse_file(const std::string& path)
    display.treat_800x600_as_interface =
       config["Display"s]["Treat 800x600 As Interface"s].as<bool>();
 
+   display.enable_game_perceived_resolution_override =
+      config["Display"s]["Enable Game Perceived Resolution Override"s].as<bool>();
+
+   display.game_perceived_resolution_override_width =
+      config["Display"s]["Game Perceived Resolution Override"s][0].as<std::uint32_t>();
+
+   display.game_perceived_resolution_override_height =
+      config["Display"s]["Game Perceived Resolution Override"s][1].as<std::uint32_t>();
+
    graphics.gpu_selection_method = gpu_selection_method_from_string(
       config["Graphics"s]["GPU Selection Method"s].as<std::string>());
 

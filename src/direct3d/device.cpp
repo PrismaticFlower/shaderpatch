@@ -198,8 +198,15 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
       _perceived_height = 600;
    }
    else {
-      _perceived_width = _actual_width;
-      _perceived_height = _actual_height;
+      if (user_config.display.enable_game_perceived_resolution_override) {
+         _perceived_width = user_config.display.game_perceived_resolution_override_width;
+         _perceived_height =
+            user_config.display.game_perceived_resolution_override_height;
+      }
+      else {
+         _perceived_width = _actual_width;
+         _perceived_height = _actual_height;
+      }
    }
 
    params->BackBufferWidth = _perceived_width;
