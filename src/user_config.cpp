@@ -110,6 +110,10 @@ void User_config::parse_file(const std::string& path)
 
    display.windowed_interface = config["Display"s]["Windowed Interface"s].as<bool>();
 
+   display.dpi_aware = config["Display"s]["Display Scaling Aware"s].as<bool>();
+
+   display.dpi_scaling = config["Display"s]["Display Scaling"s].as<bool>();
+
    display.enable_game_perceived_resolution_override =
       config["Display"s]["Enable Game Perceived Resolution Override"s].as<bool>();
 

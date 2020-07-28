@@ -180,17 +180,18 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
    MONITORINFO info{sizeof(MONITORINFO)};
    GetMonitorInfoW(MonitorFromWindow(_window, MONITOR_DEFAULTTONEAREST), &info);
 
-   const auto monitor_width =
-      static_cast<std::uint32_t>(info.rcMonitor.right - info.rcMonitor.left);
-   const auto monitor_height =
-      static_cast<std::uint32_t>(info.rcMonitor.bottom - info.rcMonitor.top);
+   const UINT monitor_width = info.rcMonitor.right - info.rcMonitor.left;
+   const UINT monitor_height = info.rcMonitor.bottom - info.rcMonitor.top;
 
-   const auto window_width = monitor_width * user_config.display.screen_percent / 100;
-   const auto window_height =
+   const UINT window_width = monitor_width * user_config.display.screen_percent / 100;
+   const UINT window_height =
       monitor_height * user_config.display.screen_percent / 100;
 
-   _actual_width = static_cast<std::uint16_t>(window_width);
-   _actual_height = static_cast<std::uint16_t>(window_height);
+   const UINT dpi = GetDpiForWindow(_window);
+   const UINT base_dpi = 96;
+
+   _actual_width = window_width;
+   _actual_height = window_height;
 
    if (user_config.display.treat_800x600_as_interface &&
        params->BackBufferWidth == 800 && params->BackBufferHeight == 600) {
@@ -198,8 +199,14 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
       _perceived_height = 600;
 
       if (user_config.display.windowed_interface) {
-         _actual_width = 800;
-         _actual_height = 600;
+         if (user_config.display.dpi_aware && user_config.display.dpi_scaling) {
+            _actual_width = std::min(800 * dpi / base_dpi, monitor_width);
+            _actual_height = std::min(600 * dpi / base_dpi, monitor_height);
+         }
+         else {
+            _actual_width = 800;
+            _actual_height = 600;
+         }
       }
    }
    else {
@@ -207,6 +214,10 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
          _perceived_width = user_config.display.game_perceived_resolution_override_width;
          _perceived_height =
             user_config.display.game_perceived_resolution_override_height;
+      }
+      else if (user_config.display.dpi_aware && user_config.display.dpi_scaling) {
+         _perceived_width = _actual_width * base_dpi / dpi;
+         _perceived_height = _actual_height * base_dpi / dpi;
       }
       else {
          _perceived_width = _actual_width;

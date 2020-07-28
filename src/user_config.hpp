@@ -55,6 +55,8 @@ struct User_config {
       std::uint32_t screen_percent = 100;
       bool allow_tearing = true;
       bool centred = false;
+      bool dpi_aware = true;
+      bool dpi_scaling = true;
       bool treat_800x600_as_interface = true;
       bool windowed_interface = false;
       bool enable_game_perceived_resolution_override = false;

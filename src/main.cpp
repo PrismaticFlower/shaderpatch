@@ -4,6 +4,7 @@
 #include "logger.hpp"
 #include "unlock_memory.hpp"
 #include "user_config.hpp"
+#include "window_hooks.hpp"
 
 #include <string.h>
 
@@ -95,6 +96,7 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD reason, LPVOID)
 {
    if (reason == DLL_PROCESS_ATTACH) {
       sp::install_file_hooks();
+      sp::install_window_hooks(GetCurrentThreadId());
       install_game_d3d9_redirection();
    }
 

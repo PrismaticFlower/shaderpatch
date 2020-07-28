@@ -224,6 +224,7 @@
     <ClCompile Include="src\input_hooker.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\user_config.cpp" />
+    <ClCompile Include="src\window_hooks.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\bf2_log_monitor.hpp" />
@@ -320,6 +321,7 @@
     <ClInclude Include="src\unlock_memory.hpp" />
     <ClInclude Include="src\user_config.hpp" />
     <ClInclude Include="src\window_helpers.hpp" />
+    <ClInclude Include="src\window_hooks.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />

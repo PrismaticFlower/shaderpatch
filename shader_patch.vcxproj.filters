@@ -225,6 +225,9 @@
     <ClCompile Include="src\core\backbuffer_cmaa2_views.cpp">
       <Filter>src\core</Filter>
     </ClCompile>
+    <ClCompile Include="src\window_hooks.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -508,6 +511,9 @@
     </ClInclude>
     <ClInclude Include="src\core\backbuffer_cmaa2_views.hpp">
       <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\window_hooks.hpp">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
