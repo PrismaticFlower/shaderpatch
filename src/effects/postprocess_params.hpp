@@ -301,8 +301,8 @@ struct convert<sp::effects::Vignette_params> {
 
       params.enabled = node["Enable"s].as<bool>(params.enabled);
 
-      params.end = node["Threshold"s].as<float>(params.end);
-      params.start = node["Intensity"s].as<float>(params.start);
+      params.end = node["End"s].as<float>(params.end);
+      params.start = node["Start"s].as<float>(params.start);
 
       return true;
    }
