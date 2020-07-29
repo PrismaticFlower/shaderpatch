@@ -13,9 +13,9 @@ Display:
    # no difference between a centred and uncentred window.
    Centred: yes
 
-   # Whether 800x600 will be treated as the resolution used by interface. When enabled causes
-   # Shader Patch to let the game believe it's resolution it is set to 800x600. Doing this keeps 
-   # the interface usable while still letting you enjoy native resolution ingame (outside the main menu).
+   # Whether 800x600 will be treated as the resolution used by the game's main menu interface. When enabled 
+   # causes Shader Patch to override the game's resolution without informing the game it has 
+   # done so. Doing this keeps the interface usable while still letting you enjoy fullscreen ingame.
    Treat 800x600 As Interface: yes
 
    # When `Treat 800x600 As Interface` is `yes` controls whether the game's interface will be rendered fullscreen (which can lead to 
