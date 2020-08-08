@@ -36,6 +36,85 @@ auto pack_size(const std::uint32_t size) noexcept
 
 }
 
+void write_volume_resource(ucfb::Writer& writer, const std::string_view name,
+                           const Volume_resource_type type,
+                           gsl::span<const std::byte> data)
+{
+   if (data.size() > resource_max_byte_size) {
+      throw std::runtime_error{"Resource is too large to store!"};
+   }
+
+   using namespace std::literals;
+
+   auto tex = writer.emplace_child("tex_"_mn);
+
+   std::string prefix;
+
+   // clang-format off
+   if (type == Volume_resource_type::texture) prefix = "_SP_TEXTURE_"s;
+   if (type == Volume_resource_type::fx_config) prefix = "_SP_FXCFG_"s;
+   if (type == Volume_resource_type::colorgrading_regions) prefix = "_SP_CLRRGNS_"s;
+   // clang-format on
+
+   tex.emplace_child("NAME"_mn).write(prefix += name);
+
+   // write texture format list
+   {
+      auto info = tex.emplace_child("INFO"_mn);
+      info.write(std::uint32_t{1}, volume_resource_format);
+   }
+
+   // write texture format chunk
+   {
+      auto fmt = tex.emplace_child("FMT_"_mn);
+
+      const auto payload_size = sizeof(Volume_resource_header) + data.size();
+      const auto [padded_payload_size, resolution] =
+         pack_size(gsl::narrow_cast<std::uint32_t>(payload_size));
+
+      // write texture format info
+      {
+         auto info = fmt.emplace_child("INFO"_mn);
+
+         constexpr std::uint32_t volume_texture_id = 1795;
+
+         info.write(volume_resource_format);      // Format
+         info.write_unaligned(resolution[0]);     // Width
+         info.write_unaligned(resolution[1]);     // Height
+         info.write_unaligned(std::uint16_t{1});  // Depth
+         info.write_unaligned(std::uint16_t{1});  // Mipcount
+         info.write_unaligned(volume_texture_id); // Texturetype
+      }
+
+      // write texture level
+      {
+         auto face = fmt.emplace_child("FACE"_mn);
+         auto lvl = face.emplace_child("LVL_"_mn);
+
+         // write level info
+         {
+            auto info_writer = lvl.emplace_child("INFO"_mn);
+
+            info_writer.write(std::uint32_t{0}); // Mip level index.
+            info_writer.write(payload_size);     // Mip level size.
+         }
+
+         // write level body
+         {
+            auto body = lvl.emplace_child("BODY"_mn);
+
+            Volume_resource_header header;
+            header.type = type;
+            header.payload_size = gsl::narrow_cast<std::uint32_t>(data.size());
+
+            body.write_unaligned(header);
+            body.write_unaligned(data);
+            body.pad(gsl::narrow_cast<std::uint32_t>(padded_payload_size - payload_size));
+         }
+      }
+   }
+}
+
 void save_volume_resource(const std::filesystem::path& output_path,
                           const std::string_view name, const Volume_resource_type type,
                           gsl::span<const std::byte> data)
@@ -48,75 +127,9 @@ void save_volume_resource(const std::filesystem::path& output_path,
 
    auto file = ucfb::open_file_for_output(output_path);
 
-   ucfb::Writer root_writer{file};
-   auto writer = root_writer.emplace_child("tex_"_mn);
+   ucfb::Writer writer{file};
 
-   std::string prefix;
-
-   // clang-format off
-   if (type == Volume_resource_type::texture) prefix = "_SP_TEXTURE_"s;
-   if (type == Volume_resource_type::fx_config) prefix = "_SP_FXCFG_"s;
-   if (type == Volume_resource_type::colorgrading_regions) prefix = "_SP_CLRRGNS_"s;
-   // clang-format on
-
-   writer.emplace_child("NAME"_mn).write(prefix += name);
-
-   // write texture format list
-   {
-      auto info_writer = writer.emplace_child("INFO"_mn);
-      info_writer.write(std::uint32_t{1}, volume_resource_format);
-   }
-
-   // write texture format chunk
-   {
-      auto fmt_writer = writer.emplace_child("FMT_"_mn);
-
-      const auto payload_size = sizeof(Volume_resource_header) + data.size();
-      const auto [padded_payload_size, resolution] =
-         pack_size(gsl::narrow_cast<std::uint32_t>(payload_size));
-
-      // write texture format info
-      {
-         auto info_writer = fmt_writer.emplace_child("INFO"_mn);
-
-         constexpr std::uint32_t volume_texture_id = 1795;
-
-         info_writer.write(volume_resource_format);      // Format
-         info_writer.write_unaligned(resolution[0]);     // Width
-         info_writer.write_unaligned(resolution[1]);     // Height
-         info_writer.write_unaligned(std::uint16_t{1});  // Depth
-         info_writer.write_unaligned(std::uint16_t{1});  // Mipcount
-         info_writer.write_unaligned(volume_texture_id); // Texturetype
-      }
-
-      // write texture level
-      {
-         auto face_writer = fmt_writer.emplace_child("FACE"_mn);
-         auto lvl_writer = face_writer.emplace_child("LVL_"_mn);
-
-         // write level info
-         {
-            auto info_writer = lvl_writer.emplace_child("INFO"_mn);
-
-            info_writer.write(std::uint32_t{0}); // Mip level index.
-            info_writer.write(payload_size);     // Mip level size.
-         }
-
-         // write level body
-         {
-            auto body_writer = lvl_writer.emplace_child("BODY"_mn);
-
-            Volume_resource_header header;
-            header.type = type;
-            header.payload_size = gsl::narrow_cast<std::uint32_t>(data.size());
-
-            body_writer.write_unaligned(header);
-            body_writer.write_unaligned(data);
-            body_writer.pad(gsl::narrow_cast<std::uint32_t>(padded_payload_size -
-                                                            payload_size));
-         }
-      }
-   }
+   write_volume_resource(writer, name, type, data);
 }
 
 auto load_volume_resource(const std::filesystem::path& path)

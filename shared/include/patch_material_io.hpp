@@ -3,6 +3,7 @@
 #include "enum_flags.hpp"
 #include "game_rendertypes.hpp"
 #include "ucfb_reader.hpp"
+#include "ucfb_writer.hpp"
 #include "utility.hpp"
 
 #include <cstddef>
@@ -113,6 +114,8 @@ struct Material_config {
    D3D11_PRIMITIVE_TOPOLOGY tessellation_primitive_topology =
       D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
 };
+
+void write_patch_material(ucfb::Writer& writer, const Material_config& config);
 
 void write_patch_material(const std::filesystem::path& save_path,
                           const Material_config& config);

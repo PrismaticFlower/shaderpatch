@@ -373,6 +373,8 @@ auto create_material_constant_buffer(ID3D11Device5& device,
                                      const std::vector<Material_property>& properties)
    -> Com_ptr<ID3D11Buffer>
 {
+   if (cb_name == "none"sv) return nullptr;
+
    if (Material_properties_view properties_view{properties}; cb_name == "pbr"sv) {
       return create_immutable_constant_buffer(device, create_pbr_constant_buffer(
                                                          properties_view));

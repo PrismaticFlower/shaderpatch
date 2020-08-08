@@ -86,6 +86,34 @@ void load_patch_texture(
    }
 }
 
+void write_patch_texture(ucfb::Writer& writer, const std::string_view name,
+                         const Texture_info& texture_info,
+                         const std::vector<Texture_data>& texture_data,
+                         const Texture_file_type file_type)
+{
+   if (file_type == Texture_file_type::volume_resource) {
+      std::ostringstream string_stream;
+
+      {
+         ucfb::Writer sptx{string_stream, "sptx"_mn};
+
+         write_sptx(sptx, name, texture_info, texture_data);
+      }
+
+      const auto sptx_data = string_stream.str();
+      const auto sptx_span =
+         gsl::span<const std::byte>(reinterpret_cast<const std::byte*>(sptx_data.data()),
+                                    sptx_data.size());
+
+      write_volume_resource(writer, name, Volume_resource_type::texture, sptx_span);
+   }
+   else {
+      auto sptx = writer.emplace_child("sptx"_mn);
+
+      write_sptx(sptx, name, texture_info, texture_data);
+   }
+}
+
 void write_patch_texture(const std::filesystem::path& save_path,
                          const Texture_info& texture_info,
                          const std::vector<Texture_data>& texture_data,

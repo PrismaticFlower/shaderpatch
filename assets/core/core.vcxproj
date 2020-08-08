@@ -171,6 +171,7 @@
     <None Include="definitions\patch\scope_blur.json" />
     <None Include="definitions\patch\skybox.json" />
     <None Include="definitions\patch\static_water.json" />
+    <None Include="definitions\patch\text.json" />
     <None Include="shader_declarations.req">
       <FileType>Document</FileType>
     </None>
@@ -525,6 +526,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\particle_ext.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\text.fx">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

@@ -2,6 +2,7 @@
 
 #include "com_ptr.hpp"
 #include "ucfb_reader.hpp"
+#include "ucfb_writer.hpp"
 
 #include <filesystem>
 #include <functional>
@@ -50,6 +51,11 @@ void load_patch_texture(
    ucfb::Reader_strict<"sptx"_mn> reader,
    std::function<void(const Texture_info info)> info_callback,
    std::function<void(const std::uint32_t item, const std::uint32_t mip, const Texture_data data)> data_callback);
+
+void write_patch_texture(ucfb::Writer& writer, const std::string_view name,
+                         const Texture_info& texture_info,
+                         const std::vector<Texture_data>& texture_data,
+                         const Texture_file_type file_type);
 
 void write_patch_texture(const std::filesystem::path& save_path,
                          const Texture_info& texture_info,

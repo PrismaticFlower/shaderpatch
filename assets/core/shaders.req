@@ -56,5 +56,6 @@ ucft
       "skybox"
       "static_water"
       "stretch_texture"
+      "text"
    }
 }

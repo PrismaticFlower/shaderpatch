@@ -4,7 +4,6 @@
 #include "game_rendertypes.hpp"
 #include "string_utilities.hpp"
 #include "ucfb_reader.hpp"
-#include "ucfb_writer.hpp"
 #include "volume_resource.hpp"
 
 #include <array>
@@ -33,30 +32,26 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config;
 }
 }
 
-void write_patch_material(const std::filesystem::path& save_path,
-                          const Material_config& config)
+void write_patch_material(ucfb::Writer& writer, const Material_config& config)
 {
-   using namespace std::literals;
-   namespace fs = std::filesystem;
-
    std::ostringstream ostream;
 
    // write material chunk
    {
-      ucfb::Writer writer{ostream, "matl"_mn};
+      ucfb::Writer matl{ostream, "matl"_mn};
 
-      writer.emplace_child("VER_"_mn).write(Material_version::current);
+      matl.emplace_child("VER_"_mn).write(Material_version::current);
 
-      writer.emplace_child("INFO"_mn).write(config.name, config.rendertype,
-                                            config.overridden_rendertype,
-                                            config.cb_shader_stages, config.cb_name,
-                                            config.fail_safe_texture_index,
-                                            config.tessellation,
-                                            config.tessellation_primitive_topology);
+      matl.emplace_child("INFO"_mn).write(config.name, config.rendertype,
+                                          config.overridden_rendertype,
+                                          config.cb_shader_stages, config.cb_name,
+                                          config.fail_safe_texture_index,
+                                          config.tessellation,
+                                          config.tessellation_primitive_topology);
 
       // write properties
       {
-         auto prps = writer.emplace_child("PRPS"_mn);
+         auto prps = matl.emplace_child("PRPS"_mn);
 
          prps.write(static_cast<std::uint32_t>(config.properties.size()));
 
@@ -72,7 +67,7 @@ void write_patch_material(const std::filesystem::path& save_path,
 
       const auto write_resources = [&](const Magic_number mn,
                                        const std::vector<std::string>& textures) {
-         auto texs = writer.emplace_child(mn);
+         auto texs = matl.emplace_child(mn);
 
          texs.write<std::uint32_t>(gsl::narrow_cast<std::uint32_t>(textures.size()));
          for (const auto& texture : textures) texs.write(texture);
@@ -90,8 +85,17 @@ void write_patch_material(const std::filesystem::path& save_path,
       gsl::span<const std::byte>(reinterpret_cast<const std::byte*>(matl_data.data()),
                                  matl_data.size());
 
-   save_volume_resource(save_path, save_path.stem().string(),
-                        Volume_resource_type::material, matl_span);
+   write_volume_resource(writer, config.name, Volume_resource_type::material, matl_span);
+}
+
+void write_patch_material(const std::filesystem::path& save_path,
+                          const Material_config& config)
+{
+   auto file = ucfb::open_file_for_output(save_path);
+
+   ucfb::Writer writer{file};
+
+   write_patch_material(writer, config);
 }
 
 auto read_patch_material(ucfb::Reader_strict<"matl"_mn> reader) -> Material_config
