@@ -1,4 +1,5 @@
 ﻿
+#include "atlas_description.hpp"
 #include "patch_material_io.hpp"
 #include "patch_texture_io.hpp"
 #include "synced_io.hpp"
@@ -29,7 +30,7 @@ struct Glyph {
    unsigned int width;
    unsigned int height;
    unsigned int pitch;
-   std::vector<std::byte> bitmap;
+   std::vector<std::uint8_t> bitmap;
 };
 
 struct Packed_glyph {
@@ -39,8 +40,8 @@ struct Packed_glyph {
    int bearing_y;
    unsigned int width;
    unsigned int height;
-   glm::vec2 atlas_top_left;
-   glm::vec2 atlas_bottom_right;
+   Atlas_location bitmap_location;
+   Atlas_location msdf_location;
 };
 
 constexpr std::array exported_glyphs{
@@ -79,6 +80,16 @@ constexpr std::array exported_glyphs{
    u'\u00fe', u'\u00ff'};
 
 constexpr auto glyph_count = exported_glyphs.size();
+constexpr auto render_scale = 32;
+
+struct alignas(16) Font_cb {
+   glm::vec2 bitmap_atlas_size;
+   glm::vec2 padding{};
+   std::array<glm::vec4, glyph_count> bitmap;
+   std::array<glm::vec4, glyph_count> msdf;
+};
+
+static_assert(sizeof(Font_cb) == 7248);
 
 struct Packed_font {
    unsigned int size = 0;
@@ -87,11 +98,10 @@ struct Packed_font {
    DirectX::ScratchImage atlas;
 };
 
-void save_font(const std::string& output_dir, const std::string& name,
-               const Packed_font& packed);
-
 void save_shader_patch_font(const std::string& output_dir,
                             const std::string& name, const Packed_font& packed);
+
+auto pack_font_cb(const Packed_font& packed) -> Aligned_vector<std::byte, 16>;
 
 int main(int arg_count, char* args[])
 {
@@ -100,6 +110,7 @@ int main(int arg_count, char* args[])
    bool help = false;
    auto output_dir = "./"s;
    std::string font_path = R"(C:/Windows/Fonts/ariblk.ttf)"s;
+   std::string atlas_desc_path;
    std::string name = "gamefont_large"s;
    FT_UInt font_size = 14;
 
@@ -115,6 +126,9 @@ int main(int arg_count, char* args[])
       | Opt{font_path, "font path"s}
       ["--fontpath"s]
       ("Path to the input font file."s)
+      | Opt{atlas_desc_path, "atlas description path"s}
+      ["--atlasdescpath"s]
+      ("Path to the atlas description file."s)
       | Opt{name, "name"s}
       ["--name"s]
       ("Name of the output font i.e gamefont_large"s);
@@ -198,7 +212,9 @@ int main(int arg_count, char* args[])
 
    std::array<Packed_glyph, glyph_count> packed_glyphs;
 
-   const glm::vec2 texture_size{packed_width, packed_height};
+   auto mdsf_atlas_desc = read_atlas_description(atlas_desc_path);
+
+   const glm::vec2 texture_size{packed_width - 1, packed_height - 1};
 
    unsigned int pack_head = 1;
 
@@ -220,37 +236,20 @@ int main(int arg_count, char* args[])
       const glm::vec2 atlas_bottom_right =
          atlas_top_left + glm::vec2{glyph.width, glyph.height};
 
-      packed_glyphs[i] = {.codepoint = glyph.codepoint,
-                          .advance = glyph.advance,
-                          .bearing_x = glyph.bearing_x,
-                          .bearing_y = glyph.bearing_y,
-                          .width = glyph.width,
-                          .height = glyph.height,
-                          .atlas_top_left = atlas_top_left / texture_size,
-                          .atlas_bottom_right = atlas_bottom_right / texture_size};
+      packed_glyphs[i] =
+         {.codepoint = glyph.codepoint,
+          .advance = glyph.advance,
+          .bearing_x = glyph.bearing_x,
+          .bearing_y = glyph.bearing_y,
+          .width = glyph.width,
+          .height = glyph.height,
+          .bitmap_location = {.left = atlas_top_left.x / texture_size.x,
+                              .right = atlas_bottom_right.x / texture_size.x,
+                              .top = atlas_top_left.y / texture_size.y,
+                              .bottom = atlas_bottom_right.y / texture_size.y},
+          .msdf_location = mdsf_atlas_desc[glyph.codepoint]};
 
       pack_head += (glyph.width + 1);
-   }
-
-   // TEMP: Expand the image channels.
-   if constexpr (false) {
-      DirectX::ScratchImage red_image;
-
-      DirectX::Convert(*packed_image.GetImage(0, 0, 0), DXGI_FORMAT_B8G8R8A8_UNORM,
-                       DirectX::TEX_FILTER_FORCE_NON_WIC, 0.0f, red_image);
-
-      DirectX::TransformImage(
-         *red_image.GetImage(0, 0, 0),
-         [](DirectX::XMVECTOR* outPixels, const DirectX::XMVECTOR* inPixels,
-            size_t width, size_t) {
-            for (auto i = 0u; i < width; ++i) {
-               auto v = DirectX::XMFLOAT4{1.0f, 1.0f, 1.0f,
-                                          DirectX::XMVectorGetX(inPixels[i])};
-
-               outPixels[i] = DirectX::XMLoadFloat4(&v);
-            }
-         },
-         packed_image);
    }
 
    save_shader_patch_font(output_dir, name,
@@ -268,10 +267,12 @@ void save_shader_patch_font(const std::string& output_dir,
 
    ucfb::Writer out{file};
 
+   const auto bitmap_atlas_name = "_SP_BUILTIN_"s + name + "_atlas"s;
+
    {
       auto image = *packed.atlas.GetImage(0, 0, 0);
 
-      write_patch_texture(out, name,
+      write_patch_texture(out, bitmap_atlas_name,
                           {.type = Texture_type::texture2d,
                            .width = static_cast<std::uint32_t>(image.width),
                            .height = static_cast<std::uint32_t>(image.height),
@@ -307,11 +308,16 @@ void save_shader_patch_font(const std::string& output_dir,
 
          ftex.emplace_child("NAME"_mn).write(name + "_tex0"s);
 
-         write_patch_material(ftex, {.name = name + "_tex0"s,
-                                     .rendertype = "text"s,
-                                     .overridden_rendertype = Rendertype::_interface,
-                                     .cb_name = "none"s,
-                                     .ps_resources = {name}});
+         write_patch_material(ftex,
+                              {.name = name + "_tex0"s,
+                               .rendertype = "text"s,
+                               .overridden_rendertype = Rendertype::_interface,
+                               .cb_type = Material_cb_type::binary,
+                               .cb_shader_stages = Material_cb_shader_stages::vs |
+                                                   Material_cb_shader_stages::gs,
+                               .cb_data = pack_font_cb(packed),
+                               .ps_resources = {bitmap_atlas_name,
+                                                "_SP_BUILTIN_font_atlas"s}});
       }
 
       {
@@ -319,13 +325,15 @@ void save_shader_patch_font(const std::string& output_dir,
 
          int max_bearing_y = std::numeric_limits<int>::min();
 
-         for (auto glyph : packed.glyphs) {
+         for (auto& glyph : packed.glyphs) {
             max_bearing_y = std::max(max_bearing_y, glyph.bearing_y);
          }
 
          int y_offset = (packed.height - packed.size) / 2;
 
-         for (auto glyph : packed.glyphs) {
+         for (auto i = 0; i < packed.glyphs.size(); ++i) {
+            auto& glyph = packed.glyphs[i];
+
             int left = std::max(glyph.bearing_x, 0);
             int right = left + glyph.width;
             int top = std::max(max_bearing_y - glyph.bearing_y, 0) + y_offset;
@@ -338,109 +346,35 @@ void save_shader_patch_font(const std::string& output_dir,
             fbod.write_unaligned(static_cast<std::uint8_t>(right));
             fbod.write_unaligned(static_cast<std::uint8_t>(top));
             fbod.write_unaligned(static_cast<std::uint8_t>(bottom));
-            fbod.write_unaligned(glyph.atlas_top_left.x);
-            fbod.write_unaligned(glyph.atlas_bottom_right.x);
-            fbod.write_unaligned(glyph.atlas_top_left.y);
-            fbod.write_unaligned(glyph.atlas_bottom_right.y);
+            fbod.write_unaligned(static_cast<float>((i << 2) | 0)); // left
+            fbod.write_unaligned(static_cast<float>((i << 2) | 1)); // right
+            fbod.write_unaligned(static_cast<float>((i << 2) | 2)); // top
+            fbod.write_unaligned(static_cast<float>((i << 2) | 3)); // bottom
          }
       }
    }
 }
 
-void save_font(const std::string& output_dir, const std::string& name,
-               const Packed_font& packed)
+auto pack_font_cb(const Packed_font& packed) -> Aligned_vector<std::byte, 16>
 {
-   auto file = ucfb::open_file_for_output(
-      (std::filesystem::path{output_dir} /= name) += L".font"s);
+   Font_cb cb;
 
-   ucfb::Writer out{file};
+   cb.bitmap_atlas_size = glm::vec2{packed.atlas.GetMetadata().width,
+                                    packed.atlas.GetMetadata().height};
 
-   {
-      auto font = out.emplace_child("font"_mn);
+   for (auto i = 0; i < packed.glyphs.size(); ++i) {
+      auto& glyph = packed.glyphs[i];
 
-      font.emplace_child("NAME"_mn).write(name);
-
-      {
-         auto head = font.emplace_child("HEAD"_mn);
-
-         head.write_unaligned(static_cast<std::uint16_t>(glyph_count));
-         head.write_unaligned(static_cast<std::uint8_t>(1)); // atlas count
-         head.write_unaligned(static_cast<std::uint8_t>(packed.height));
-         head.write_unaligned(static_cast<std::int8_t>(0));
-         head.write_unaligned(static_cast<std::int8_t>(0));
-      }
-
-      {
-         auto ftex = font.emplace_child("FTEX"_mn);
-
-         ftex.emplace_child("NAME"_mn).write(name + "_tex0"s);
-
-         {
-            auto tex = ftex.emplace_child("tex_"_mn);
-
-            tex.emplace_child("NAME"_mn).write(name + "_tex0"s);
-            tex.emplace_child("INFO"_mn).write(std::uint32_t{1}, std::uint32_t{21});
-
-            {
-               auto fmt = tex.emplace_child("FMT_"_mn);
-
-               {
-                  auto info = fmt.emplace_child("INFO"_mn);
-
-                  info.write(std::uint32_t{21}); // Format
-                  info.write_unaligned(static_cast<std::uint16_t>(
-                     packed.atlas.GetMetadata().width)); // Width
-                  info.write_unaligned(static_cast<std::uint16_t>(
-                     packed.atlas.GetMetadata().height)); // Height
-                  info.write_unaligned(std::uint16_t{1}); // Depth
-                  info.write_unaligned(std::uint16_t{1}); // Mipcount
-                  info.write_unaligned(std::uint32_t{1}); // Texturetype
-               }
-
-               {
-                  auto out_face = fmt.emplace_child("FACE"_mn);
-                  auto lvl = out_face.emplace_child("LVL_"_mn);
-
-                  lvl.emplace_child("INFO"_mn).write(std::uint32_t{0},
-                                                     static_cast<std::uint32_t>(
-                                                        packed.atlas.GetPixelsSize()));
-
-                  lvl.emplace_child("BODY"_mn).write(
-                     gsl::span{packed.atlas.GetPixels(), packed.atlas.GetPixelsSize()});
-               }
-            }
-         }
-      }
-
-      {
-         auto fbod = font.emplace_child("FBOD"_mn);
-
-         int max_bearing_y = std::numeric_limits<int>::min();
-
-         for (auto glyph : packed.glyphs) {
-            max_bearing_y = std::max(max_bearing_y, glyph.bearing_y);
-         }
-
-         int y_offset = (packed.height - packed.size) / 2;
-
-         for (auto glyph : packed.glyphs) {
-            int left = std::max(glyph.bearing_x, 0);
-            int right = left + glyph.width;
-            int top = std::max(max_bearing_y - glyph.bearing_y, 0) + y_offset;
-            int bottom = top + glyph.height;
-
-            fbod.write_unaligned(glyph.codepoint);
-            fbod.write_unaligned(static_cast<std::uint8_t>(0));
-            fbod.write_unaligned(static_cast<std::uint8_t>(glyph.advance));
-            fbod.write_unaligned(static_cast<std::uint8_t>(left));
-            fbod.write_unaligned(static_cast<std::uint8_t>(right));
-            fbod.write_unaligned(static_cast<std::uint8_t>(top));
-            fbod.write_unaligned(static_cast<std::uint8_t>(bottom));
-            fbod.write_unaligned(glyph.atlas_top_left.x);
-            fbod.write_unaligned(glyph.atlas_bottom_right.x);
-            fbod.write_unaligned(glyph.atlas_top_left.y);
-            fbod.write_unaligned(glyph.atlas_bottom_right.y);
-         }
-      }
+      cb.bitmap[i] = {glyph.bitmap_location.left, glyph.bitmap_location.right,
+                      glyph.bitmap_location.top, glyph.bitmap_location.bottom};
+      cb.msdf[i] = {glyph.msdf_location.left, glyph.msdf_location.right,
+                    glyph.msdf_location.top, glyph.msdf_location.bottom};
    }
+
+   Aligned_vector<std::byte, 16> vec;
+   vec.resize(sizeof(cb));
+
+   std::memcpy(vec.data(), &cb, sizeof(cb));
+
+   return vec;
 }

@@ -431,6 +431,7 @@
     <None Include="definitions\patch\particle_ext.json" />
     <None Include="src\particle_ext.fx" />
     <None Include="definitions\patch\text.json" />
+    <None Include="src\text.fx" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">
@@ -452,8 +453,5 @@
   <ItemGroup>
     <ClInclude Include="src\ffx_a.h" />
     <ClInclude Include="src\ffx_cas.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="src\text.fx" />
   </ItemGroup>
 </Project>

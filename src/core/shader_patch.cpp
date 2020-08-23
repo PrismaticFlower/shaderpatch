@@ -1193,10 +1193,6 @@ void Shader_patch::bind_static_resources() noexcept
    auto* const cb_skin_buffer = _cb_skin_buffer_srv.get();
    _device_context->VSSetShaderResources(0, 1, &cb_skin_buffer);
 
-   _device_context->HSSetConstantBuffers(0, 1, &cb_scene);
-   _device_context->DSSetConstantBuffers(0, 1, &cb_scene);
-   _device_context->GSSetConstantBuffers(0, 1, &cb_scene);
-
    const auto ps_constant_buffers =
       std::array{_cb_draw_ps_buffer.get(), _cb_draw_buffer.get()};
 
@@ -1674,6 +1670,8 @@ void Shader_patch::update_shader() noexcept
       _device_context->IASetInputLayout(&input_layout);
       _device_context->VSSetShader(_game_shader->vs.get(), nullptr, 0);
    }
+
+   _device_context->GSSetShader(nullptr, nullptr, 0);
 
    _device_context->PSSetShader(_oit_active ? _game_shader->ps_oit.get()
                                             : _game_shader->ps.get(),

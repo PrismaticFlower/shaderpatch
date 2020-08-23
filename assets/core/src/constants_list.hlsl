@@ -126,7 +126,7 @@ static const float4 light_spot_params = light_packed_constants[light_spot_offset
 #elif defined(__PIXEL_SHADER__)
 #define MATERIAL_CB_INDEX b2
 #else
-#define MATERIAL_CB_INDEX b1
+#define MATERIAL_CB_INDEX b0
 #endif
 
 #endif

@@ -21,9 +21,13 @@ using namespace std::literals;
 namespace sp {
 
 namespace {
-enum class Material_version : std::uint32_t { v_1, v_2, current = v_2 };
+enum class Material_version : std::uint32_t { v_1, v_2, v_3, current = v_3 };
 
-inline namespace v_2 {
+inline namespace v_3 {
+auto read_patch_material_impl(ucfb::Reader reader) -> Material_config;
+}
+
+namespace v_2 {
 auto read_patch_material_impl(ucfb::Reader reader) -> Material_config;
 }
 
@@ -43,11 +47,9 @@ void write_patch_material(ucfb::Writer& writer, const Material_config& config)
       matl.emplace_child("VER_"_mn).write(Material_version::current);
 
       matl.emplace_child("INFO"_mn).write(config.name, config.rendertype,
-                                          config.overridden_rendertype,
+                                          config.overridden_rendertype, config.cb_type,
                                           config.cb_shader_stages, config.cb_name,
-                                          config.fail_safe_texture_index,
-                                          config.tessellation,
-                                          config.tessellation_primitive_topology);
+                                          config.fail_safe_texture_index);
 
       // write properties
       {
@@ -63,6 +65,10 @@ void write_patch_material(ucfb::Writer& writer, const Material_config& config)
             prps.write(static_cast<std::uint32_t>(prop.value.index()));
             std::visit([&](const auto& v) { prps.write(v); }, prop.value);
          }
+      }
+
+      if (config.cb_type == Material_cb_type::binary) {
+         matl.emplace_child("CBDT"_mn).write(gsl::make_span(config.cb_data));
       }
 
       const auto write_resources = [&](const Magic_number mn,
@@ -110,6 +116,8 @@ auto read_patch_material(ucfb::Reader_strict<"matl"_mn> reader) -> Material_conf
       return read_patch_material_impl(reader);
    case Material_version::v_1:
       return v_1::read_patch_material_impl(reader);
+   case Material_version::v_2:
+      return v_2::read_patch_material_impl(reader);
    default:
       throw std::runtime_error{"material has newer version than supported by "
                                "this version of Shader Patch!"};
@@ -117,8 +125,6 @@ auto read_patch_material(ucfb::Reader_strict<"matl"_mn> reader) -> Material_conf
 }
 
 namespace {
-
-namespace v_2 {
 
 void fixup_normal_ext_parallax_occlusion_mapping(Material_config& config)
 {
@@ -182,6 +188,71 @@ auto read_material_prop_var(ucfb::Reader_strict<"PRPS"_mn>& prps,
    std::terminate();
 }
 
+namespace v_3 {
+auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
+{
+   Material_config config{};
+
+   const auto version =
+      reader.read_child_strict<"VER_"_mn>().read<Material_version>();
+
+   Ensures(version == Material_version::v_3);
+
+   {
+      auto info = reader.read_child_strict<"INFO"_mn>();
+
+      config.name = info.read_string();
+      config.rendertype = info.read_string();
+      config.overridden_rendertype = info.read<Rendertype>();
+      config.cb_type = info.read<Material_cb_type>();
+      config.cb_shader_stages = info.read<Material_cb_shader_stages>();
+      config.cb_name = info.read_string();
+      config.fail_safe_texture_index = info.read<std::uint32_t>();
+   }
+
+   {
+      auto prps = reader.read_child_strict<"PRPS"_mn>();
+
+      const auto count = prps.read<std::uint32_t>();
+
+      config.properties.reserve(count);
+
+      for (auto i = 0; i < count; ++i) {
+         const auto name = prps.read_string();
+         const auto type_index = prps.read<std::uint32_t>();
+
+         config.properties.emplace_back(std::string{name},
+                                        read_material_prop_var(prps, type_index));
+      }
+   }
+
+   if (auto cbdt = reader.read_child_strict_optional<"CBDT"_mn>(); cbdt) {
+      auto data = cbdt->read_array<std::byte>(cbdt->size());
+
+      config.cb_data = {data.cbegin(), data.cend()};
+   }
+
+   const auto read_resources = [&](auto texs, std::vector<std::string>& textures) {
+      const auto count = texs.read<std::uint32_t>();
+      textures.reserve(count);
+
+      for (auto i = 0; i < count; ++i)
+         textures.emplace_back(texs.read_string());
+   };
+
+   read_resources(reader.read_child_strict<"VSSR"_mn>(), config.vs_resources);
+   read_resources(reader.read_child_strict<"HSSR"_mn>(), config.hs_resources);
+   read_resources(reader.read_child_strict<"DSSR"_mn>(), config.ds_resources);
+   read_resources(reader.read_child_strict<"GSSR"_mn>(), config.gs_resources);
+   read_resources(reader.read_child_strict<"PSSR"_mn>(), config.ps_resources);
+
+   fixup_normal_ext_parallax_occlusion_mapping(config);
+
+   return config;
+}
+}
+
+namespace v_2 {
 auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
 {
    Material_config config{};
@@ -199,10 +270,10 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
       config.overridden_rendertype = info.read<Rendertype>();
       config.cb_shader_stages = info.read<Material_cb_shader_stages>();
       config.cb_name = info.read_string();
+      config.fail_safe_texture_index = info.read<std::uint32_t>();
 
-      std::tie(config.fail_safe_texture_index, config.tessellation,
-               config.tessellation_primitive_topology) =
-         info.read_multi<std::uint32_t, bool, D3D11_PRIMITIVE_TOPOLOGY>();
+      [[maybe_unused]] auto [tessellation, tessellation_primitive_topology] =
+         info.read_multi<bool, D3D11_PRIMITIVE_TOPOLOGY>();
    }
 
    {
@@ -273,8 +344,6 @@ auto convert_material_info_to_material_config(const Material_info& info) -> Mate
    config.gs_resources = info.gs_textures;
    config.ps_resources = info.ps_textures;
    config.fail_safe_texture_index = info.fail_safe_texture_index;
-   config.tessellation = info.tessellation;
-   config.tessellation_primitive_topology = info.tessellation_primitive_topology;
 
    if (begins_with(info.rendertype, "pbr"sv)) {
       config.cb_name = "pbr"s;

@@ -41,6 +41,10 @@
       }
     },
 
+    "main_gs": {
+      "stage": "geometry"
+    },
+
     "main_ps": {
       "stage": "pixel",
 
@@ -60,6 +64,10 @@
 
       "vertex_shader": {
         "entrypoint": "main_vs"
+      },
+
+      "geometry_shader": {
+        "entrypoint": "main_gs"
       },
 
       "pixel_shader": {

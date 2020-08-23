@@ -398,7 +398,7 @@ void Patch_compiler::assemble_rendertypes(
             assembled_state.gs_entrypoint = state.second.gs_entrypoint;
             assembled_state.gs_static_flags = resolve_state_flags(
                state.second.gs_static_flag_values,
-               _domain_entrypoints.at(*assembled_state.gs_entrypoint).static_flag_names);
+               _geometry_entrypoints.at(*assembled_state.gs_entrypoint).static_flag_names);
          }
 
          assembled_rt.states.emplace(state.first, std::move(assembled_state));

@@ -98,7 +98,7 @@ void resources_editor(Shader_resource_database& resources,
 void material_editor(ID3D11Device5& device, Shader_resource_database& resources,
                      Patch_material& material) noexcept
 {
-   if (ImGui::TreeNode("Properties")) {
+   if (!material.properties.empty() && ImGui::TreeNode("Properties")) {
       for (auto& prop : material.properties) {
          std::visit([&](auto& value) { property_editor(prop.name, value); },
                     prop.value);

@@ -20,6 +20,8 @@
 
 namespace sp {
 
+enum class Material_cb_type : std::uint8_t { named, binary };
+
 enum class Material_cb_shader_stages : std::uint32_t {
    none = 0b0u,
    vs = 0b10u,
@@ -99,8 +101,10 @@ struct Material_config {
 
    std::vector<Material_property> properties;
 
+   Material_cb_type cb_type = Material_cb_type::named;
    Material_cb_shader_stages cb_shader_stages = Material_cb_shader_stages::none;
    std::string cb_name{};
+   Aligned_vector<std::byte, 16> cb_data{};
 
    std::vector<std::string> vs_resources{};
    std::vector<std::string> hs_resources{};
@@ -109,10 +113,6 @@ struct Material_config {
    std::vector<std::string> ps_resources{};
 
    std::uint32_t fail_safe_texture_index{};
-
-   bool tessellation = false;
-   D3D11_PRIMITIVE_TOPOLOGY tessellation_primitive_topology =
-      D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
 };
 
 void write_patch_material(ucfb::Writer& writer, const Material_config& config);
