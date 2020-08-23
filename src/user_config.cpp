@@ -114,6 +114,8 @@ void User_config::parse_file(const std::string& path)
 
    display.dpi_scaling = config["Display"s]["Display Scaling"s].as<bool>();
 
+   display.scalable_fonts = config["Display"s]["Scalable Fonts"s].as<bool>();
+
    display.enable_game_perceived_resolution_override =
       config["Display"s]["Enable Game Perceived Resolution Override"s].as<bool>();
 

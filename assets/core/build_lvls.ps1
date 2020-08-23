@@ -9,6 +9,6 @@ $compile_expression =  "shader_compiler --outputdir munged\ --declarationinputdi
 Invoke-Expression $compile_expression | Write-Host
 
 sp_texture_munge --outputdir "munged\" --sourcedir "textures\"
-lvl_pack -i "munged\" --sourcedir ".\" --outputdir ".\"
+lvl_pack -i "munged\" -i "fonts\" --sourcedir ".\" --outputdir ".\"
 
 $env:Path = $old_path

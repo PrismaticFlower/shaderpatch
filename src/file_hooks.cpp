@@ -8,6 +8,8 @@
 #include "ucfb_writer.hpp"
 #include "user_config.hpp"
 
+#include <algorithm>
+#include <array>
 #include <filesystem>
 #include <iomanip>
 #include <sstream>
@@ -65,9 +67,44 @@ auto create_tmp_file() -> std::pair<std::ofstream, win32::Unique_handle>
    return {std::move(stream), std::move(file)};
 }
 
+auto edit_core_lvl_fonts(ucfb::Editor& core_editor)
+{
+   constexpr std::array replaced_fonts{"gamefont_large"_svci, "gamefont_medium"_svci,
+                                       "gamefont_small"_svci, "gamefont_tiny"_svci,
+                                       "gamefont_super_tiny"_svci};
+
+   for (auto it = ucfb::find(core_editor, "font"_mn); it != core_editor.end();
+        it = ucfb::find(it, core_editor.end(), "font"_mn)) {
+      auto& font_editor = std::get<ucfb::Editor_parent_chunk>(it->second);
+
+      if (auto name_it = ucfb::find(font_editor, "NAME"_mn);
+          name_it != font_editor.end()) {
+         auto name = ucfb::make_reader(name_it).read_string_unaligned();
+
+         if (std::any_of(replaced_fonts.begin(), replaced_fonts.end(),
+                         [name](const Ci_String_view replace) {
+                            return replace == name;
+                         })) {
+            it = core_editor.erase(it);
+         }
+      }
+   }
+
+   const auto fonts_editor = [] {
+      win32::Memeory_mapped_file file{"data/shaderpatch/fonts.lvl"sv};
+
+      return ucfb::Editor{ucfb::Reader_strict<"ucfb"_mn>{file.bytes()},
+                          [](const auto) noexcept { return false; }};
+   }();
+
+   core_editor.insert(core_editor.end(), fonts_editor.cbegin(), fonts_editor.cend());
+}
+
 auto edit_core_lvl() noexcept -> win32::Unique_handle
 {
-   constexpr static auto is_parent = [](const auto) noexcept { return false; };
+   constexpr static auto is_parent = [](const Magic_number mn) noexcept {
+      return mn == "font"_mn;
+   };
 
    win32::Memeory_mapped_file file{"data/_lvl_pc/core.lvl"sv};
 
@@ -91,6 +128,8 @@ auto edit_core_lvl() noexcept -> win32::Unique_handle
 
    core_editor.insert(core_editor.end(), shader_decls_editor.cbegin(),
                       shader_decls_editor.cend());
+
+   if (user_config.display.scalable_fonts) edit_core_lvl_fonts(core_editor);
 
    auto [ostream, file_handle] = create_tmp_file();
 

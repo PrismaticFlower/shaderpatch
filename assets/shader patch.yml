@@ -30,6 +30,10 @@ Display:
    # This effectively adjusts the scale UI and HUD elements are positioned and drawn with to match the display's scale.
    Display Scaling: yes
 
+   # Whether to replace the game's core bitmap fonts with ones that can be scaled while preserving sharp edges. If you have any mods 
+   # installed that also replace the game's fonts when this setting is enabled then they will be superseded by Shader Patch's fonts.
+   Scalable Fonts: yes
+
    # Enables the overriding the resolution the game thinks it is rendering at, without changing the 
    # resolution it is actually rendered at. This can have the affect of altering the aspect ratio 
    # of the game and the scaling and position of UI/HUD elements.
