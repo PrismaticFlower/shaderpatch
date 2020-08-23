@@ -295,9 +295,6 @@ auto describe_material(const std::string_view name,
    config.cb_shader_stages = read_cb_stages(description["Constant Buffer Stages"s]);
    config.fail_safe_texture_index =
       description["Failsafe Texture Index"s].as<std::uint32_t>();
-   config.tessellation = description["Tessellation"s].as<bool>(false);
-   config.tessellation_primitive_topology =
-      read_topology(description["Tessellation Primitive Topology"s]);
 
    for (auto& prop : description["Properties"s]) {
       try {
