@@ -49,7 +49,7 @@ auto read_prop_op(const std::string_view op) -> Material_property_var_op
    if (op == "log"sv)  return Material_property_var_op::log;
    if (op == "log2"sv) return Material_property_var_op::log2;
    if (op == "rcp"sv)  return Material_property_var_op::rcp;
-   if (op == "sign"sv)  return Material_property_var_op::sign;
+   if (op == "sign"sv) return Material_property_var_op::sign;
    // clang-format on
 
    throw std::runtime_error{"Invalid property op!"};
