@@ -214,7 +214,7 @@ int main(int arg_count, char* args[])
 
    auto mdsf_atlas_desc = read_atlas_description(atlas_desc_path);
 
-   const glm::vec2 texture_size{packed_width - 1, packed_height - 1};
+   const glm::vec2 texture_size{packed_width, packed_height};
 
    unsigned int pack_head = 1;
 
