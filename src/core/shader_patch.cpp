@@ -1757,20 +1757,24 @@ void Shader_patch::update_rendertargets() noexcept
          return Swapchain::format;
    }();
 
+   const auto new_aa_method = [&] {
+      if (user_config.graphics.antialiasing_method != Antialiasing_method::none &&
+          (_oit_provider.enabled() ||
+           (_effects.enabled() && _effects.config().oit_requested))) {
+         return Antialiasing_method::cmaa2;
+      }
+
+      return user_config.graphics.antialiasing_method;
+   }();
+
    if (const auto [old_format, old_aa_method] =
           std::pair{std::exchange(_current_rt_format, new_format),
-                    std::exchange(_aa_method, user_config.graphics.antialiasing_method)};
-       (old_format == new_format) &&
-       (old_aa_method == user_config.graphics.antialiasing_method)) {
+                    std::exchange(_aa_method, new_aa_method)};
+       (old_format == new_format) && (old_aa_method == new_aa_method)) {
       return;
    }
 
-   const auto new_sample_count =
-      to_sample_count(user_config.graphics.antialiasing_method);
-
-   _cb_draw_ps_dirty = true;
-
-   _rt_sample_count = to_sample_count(user_config.graphics.antialiasing_method);
+   _rt_sample_count = to_sample_count(_aa_method);
    _om_targets_dirty = true;
 
    _nearscene_depthstencil = {*_device, _swapchain.width(), _swapchain.height(),
@@ -1944,7 +1948,7 @@ void Shader_patch::patch_backbuffer_resolve() noexcept
                                              0, _game_rendertargets[0].format);
       }
       else {
-         if (user_config.graphics.antialiasing_method == Antialiasing_method::cmaa2) {
+         if (_aa_method == Antialiasing_method::cmaa2) {
             _effects.cmaa2.apply(*_device_context, _effects.profiler,
                                  {.input = *_backbuffer_cmaa2_views.srv,
                                   .output = *_backbuffer_cmaa2_views.uav,
@@ -1956,7 +1960,7 @@ void Shader_patch::patch_backbuffer_resolve() noexcept
                                        _game_rendertargets[0].texture.get());
       }
    }
-   else if (user_config.graphics.antialiasing_method == Antialiasing_method::cmaa2) {
+   else if (_aa_method == Antialiasing_method::cmaa2) {
       auto cmma_target = _rendertarget_allocator.allocate(
          {.format = DXGI_FORMAT_R8G8B8A8_TYPELESS,
           .width = _game_rendertargets[0].width,

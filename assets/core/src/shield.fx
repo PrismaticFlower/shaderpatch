@@ -93,9 +93,8 @@ struct Ps_input {
    return float4(color, 1.0);
 }
 
-[earlydepthstencil] void oit_shield_ps(Ps_input input, float4 positionSS
-                                       : SV_Position, uint coverage
-                                       : SV_Coverage) {
+[earlydepthstencil] void oit_shield_ps(Ps_input input, float4 positionSS : SV_Position) 
+{
    const float3 normalWS = normalize(input.normalWS);
    const float3 view_normalWS = normalize(input.positionWS - view_positionWS);
    const float3 H = normalize(-light_directional_dir(0) + view_normalWS);
@@ -116,6 +115,5 @@ struct Ps_input {
    color = (color + (specular / max(alpha, 1e-5))) * lighting_scale;
    color = apply_fog(color, input.fog);
 
-   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, coverage,
-                     float4(color, alpha));
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, float4(color, alpha));
 }

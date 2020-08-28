@@ -330,42 +330,41 @@ float4 near_bump_ps(Ps_near_input input) : SV_Target0
 [earlydepthstencil]
 void oit_nodistortion_ps(Ps_nodistortion_input input, 
                          float4 positionSS : SV_Position,
-                         uint coverage : SV_Coverage,
                          Texture2D<float4> diffuse_texture : register(t0))
 {
    const float4 color = nodistortion_ps(input, diffuse_texture);
 
-   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, coverage, color);
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, color);
 }
 
 [earlydepthstencil]
-void oit_near_diffuse_ps(Ps_near_input input, uint coverage : SV_Coverage)
+void oit_near_diffuse_ps(Ps_near_input input)
 {
    const float4 color = near_diffuse_ps(input);
 
-   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, coverage, color);
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, color);
 }
 
 [earlydepthstencil]
-void oit_near_ps(Ps_near_input input, uint coverage : SV_Coverage)
+void oit_near_ps(Ps_near_input input)
 {
    const float4 color = near_ps(input);
 
-   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, coverage, color);
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, color);
 }
 
 [earlydepthstencil]
-void oit_near_diffuse_bump_ps(Ps_near_input input, uint coverage : SV_Coverage)
+void oit_near_diffuse_bump_ps(Ps_near_input input)
 {
    const float4 color = near_diffuse_bump_ps(input);
 
-   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, coverage, color);
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, color);
 }
 
 [earlydepthstencil]
-void oit_near_bump_ps(Ps_near_input input, uint coverage : SV_Coverage)
+void oit_near_bump_ps(Ps_near_input input)
 {
    const float4 color = near_bump_ps(input);
 
-   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, coverage, color);
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, color);
 }

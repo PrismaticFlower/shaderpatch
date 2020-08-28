@@ -317,9 +317,9 @@ float4 main_ps(Ps_input input) : SV_Target0
 }
 
 [earlydepthstencil]
-void oit_main_ps(Ps_input input, uint coverage : SV_Coverage)
+void oit_main_ps(Ps_input input)
 {
    const float4 color = main_ps(input);
 
-   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, coverage, color);
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, color);
 }
