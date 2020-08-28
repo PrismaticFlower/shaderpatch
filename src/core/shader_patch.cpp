@@ -110,10 +110,11 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
    update_rendertargets();
    update_refraction_target();
 
-   _cb_scene.vertex_color_srgb = false;
+   _cb_scene.input_color_srgb = false;
    _cb_draw_ps.additive_blending = false;
    _cb_draw_ps.limit_normal_shader_bright_lights = true;
    _cb_draw_ps.cube_projtex = false;
+   _cb_draw_ps.input_color_srgb = false;
 
    install_window_hooks(window);
    install_dinput_hooks();
@@ -1606,8 +1607,6 @@ void Shader_patch::update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primit
          _cb_scene_dirty = true;
          _cb_scene.pixel_offset =
             glm::vec2{1.f, -1.f} / glm::vec2{viewport.Width, viewport.Height};
-         _cb_scene.tessellation_resolution_factor =
-            std::sqrt((viewport.Width * viewport.Height) / (1920.0f * 1080.0f));
       }
    }
 
@@ -1769,7 +1768,6 @@ void Shader_patch::update_rendertargets() noexcept
    const auto new_sample_count =
       to_sample_count(user_config.graphics.antialiasing_method);
 
-   _cb_draw_ps.rcp_sample_count = 1.0f / new_sample_count;
    _cb_draw_ps_dirty = true;
 
    _rt_sample_count = to_sample_count(user_config.graphics.antialiasing_method);
@@ -1876,7 +1874,8 @@ void Shader_patch::update_material_resources() noexcept
 void Shader_patch::set_linear_rendering(bool linear_rendering) noexcept
 {
    if (linear_rendering) {
-      _cb_scene.vertex_color_srgb = true;
+      _cb_scene.input_color_srgb = true;
+      _cb_draw_ps.input_color_srgb = true;
       _cb_scene.vs_lighting_scale = 1.0f;
       _cb_draw_ps.limit_normal_shader_bright_lights = false;
       _cb_draw_ps.ps_lighting_scale = 1.0f;
@@ -1887,7 +1886,8 @@ void Shader_patch::set_linear_rendering(bool linear_rendering) noexcept
            (user_config.graphics.disable_light_brightness_rescaling &
             !_effects.enabled()));
 
-      _cb_scene.vertex_color_srgb = false;
+      _cb_scene.input_color_srgb = false;
+      _cb_draw_ps.input_color_srgb = false;
       _cb_draw_ps.limit_normal_shader_bright_lights = limit_normal_shader_bright_lights;
       _cb_scene.vs_lighting_scale = 0.5f;
       _cb_draw_ps.ps_lighting_scale = 0.5f;

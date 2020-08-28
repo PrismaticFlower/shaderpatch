@@ -1,11 +1,13 @@
 
+#include "color_utilities.hlsl"
 #include "constants_list.hlsl"
 #include "pixel_sampler_states.hlsl"
 
 // clang-format off
 
 const static float4 interface_scale_offset = custom_constants[0];
-const static float4 interface_color = ps_custom_constants[0]; // TODO: sRGB handling for this
+const static float4 interface_color = input_color_srgb ? srgb_to_linear(ps_custom_constants[0]) : 
+                                                         ps_custom_constants[0];
 
 Texture2D<float4> element_texture : register(t0);
 Texture2D<float4> element_mask : register(t1);

@@ -1,4 +1,5 @@
 
+#include "color_utilities.hlsl"
 #include "constants_list.hlsl"
 #include "pixel_sampler_states.hlsl"
 
@@ -14,7 +15,8 @@ cbuffer FontAtlasIndex : register(MATERIAL_CB_INDEX)
 };
 
 const static float4 interface_scale_offset = custom_constants[0];
-const static float4 interface_color = ps_custom_constants[0];
+const static float4 interface_color = input_color_srgb ? srgb_to_linear(ps_custom_constants[0]) : 
+                                                         ps_custom_constants[0];
 const static float msdf_use_threshold = 1.1;
 
 Texture2D<float> bitmap_glyph_atlas : register(t7);

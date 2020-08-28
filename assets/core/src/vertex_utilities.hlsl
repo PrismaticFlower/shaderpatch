@@ -29,7 +29,7 @@ float4 get_material_color()
 {
    float3 color;
 
-   if (vertex_color_srgb) {
+   if (input_color_srgb) {
       color = srgb_to_linear(material_diffuse_color.rgb);
    }
    else {
@@ -42,7 +42,7 @@ float4 get_material_color()
 float4 get_material_color(float4 color)
 {
 #ifdef __VERTEX_INPUT_COLOR__
-   if (vertex_color_srgb) {
+   if (input_color_srgb) {
       const float3 vertex_lin = srgb_to_linear(color.rgb * color_state.y + color_state.x);
       const float3 matl_lin = srgb_to_linear(material_diffuse_color.rgb);
 
@@ -63,7 +63,7 @@ float4 get_material_color(float4 color)
 float3 get_static_diffuse_color(float4 color)
 {
 #ifdef __VERTEX_INPUT_COLOR__   
-   if (vertex_color_srgb) {
+   if (input_color_srgb) {
       return srgb_to_linear(color.rgb * color_state.x + color_state.z);
    }
    else {

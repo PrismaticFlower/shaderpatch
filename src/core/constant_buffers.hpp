@@ -34,20 +34,20 @@ static constexpr Draw_ps_tag draw_ps{};
 struct alignas(16) Scene {
    std::array<glm::vec4, 4> projection_matrix;
    glm::vec3 vs_view_positionWS;
-   float _buffer_padding0;
+   float _padding0;
    glm::vec4 fog_info;
    float near_scene_fade_scale;
    float near_scene_fade_offset;
    float vs_lighting_scale;
-   float _buffer_padding2;
+   std::uint32_t _padding1{};
    std::array<glm::vec4, 3> shadow_map_transform;
    glm::vec2 pixel_offset;
-   std::uint32_t vertex_color_srgb;
+   std::uint32_t input_color_srgb;
    float time;
-   float tessellation_resolution_factor;
    std::uint32_t particle_texture_scale;
    float prev_near_scene_fade_scale;
    float prev_near_scene_fade_offset;
+   std::uint32_t _padding2{};
 };
 
 constexpr auto scene_game_count = CB_MAX_GAME_CONSTANTS(Scene, pixel_offset);
@@ -107,7 +107,6 @@ struct alignas(16) Draw_ps {
    float ps_lighting_scale;
    glm::vec4 rt_resolution; // x = width, y = height, z = 1 / width, w = 1 / height
    glm::vec3 fog_color;
-   float rcp_sample_count;
    std::uint32_t light_active = 0;
    std::uint32_t light_active_point_count = 0;
    std::uint32_t light_active_spot = 0;
@@ -115,6 +114,7 @@ struct alignas(16) Draw_ps {
    std::uint32_t cube_projtex;
    std::uint32_t fog_enabled;
    std::uint32_t limit_normal_shader_bright_lights;
+   std::uint32_t input_color_srgb;
    float time_seconds;
 };
 

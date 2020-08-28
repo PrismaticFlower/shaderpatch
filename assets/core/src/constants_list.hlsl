@@ -16,9 +16,8 @@ cbuffer SceneConstants : register(b0)
    float _bufferPadding1;
    float4x3 shadow_map_transform;
    float2 vs_pixel_offset;
-   bool vertex_color_srgb;
+   bool vs_input_color_srgb;
    float time;
-   float tessellation_resolution_factor;
    bool particle_texture_scale;
    float prev_near_fade_scale;
    float prev_near_fade_offset;
@@ -59,7 +58,6 @@ cbuffer PSDrawConstants : register(b0)
    float ps_lighting_scale;
    float4 rt_resolution; // x = width, y = height, z = 1 / width, w = 1 / height
    float3 fog_color;
-   float rcp_sample_count;
    bool light_active;
    uint light_active_point_count;
    bool light_active_spot;
@@ -67,15 +65,18 @@ cbuffer PSDrawConstants : register(b0)
    bool cube_projtex;
    bool fog_enabled;
    bool limit_normal_shader_bright_lights;
+   bool ps_input_color_srgb;
    float time_seconds;
 }
 
 #ifdef __PIXEL_SHADER__
 static const float3 view_positionWS = ps_view_positionWS;
 static const float lighting_scale = ps_lighting_scale;
+static const bool input_color_srgb = ps_input_color_srgb;
 #else
 static const float3 view_positionWS = vs_view_positionWS;
 static const float lighting_scale = vs_lighting_scale;
+static const bool input_color_srgb = vs_input_color_srgb;
 #endif
 
 const static uint light_directional_color_offset = 0;

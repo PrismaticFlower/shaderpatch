@@ -49,7 +49,7 @@ struct Vs_output {
 
 Vs_output main_vs(Packed_terrain_vertex packed_vertex)
 {
-   Terrain_vertex input = unpack_vertex(packed_vertex, vertex_color_srgb);
+   Terrain_vertex input = unpack_vertex(packed_vertex, input_color_srgb);
 
    Vs_output output;
 
