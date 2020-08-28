@@ -3,8 +3,6 @@
 
 #include <gsl/gsl>
 
-#include <VersionHelpers.h>
-
 namespace sp::d3d9 {
 
 using namespace std::literals;
@@ -37,6 +35,7 @@ const Shader_metadata plain_texture_shader_metadata = [] {
    meta.rendertype = Rendertype::fixedfunc_plain_texture;
    meta.rendertype_name = to_string(meta.rendertype);
    meta.shader_name = "plain texture"s;
+   meta.srgb_state = {true, false, false, false};
 
    return meta;
 }();

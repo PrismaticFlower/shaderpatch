@@ -2,7 +2,6 @@
 #include "swapchain.hpp"
 #include "../user_config.hpp"
 
-#include <VersionHelpers.h>
 #include <comdef.h>
 #include <dxgi1_6.h>
 
