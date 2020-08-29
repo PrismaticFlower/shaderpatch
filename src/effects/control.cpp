@@ -89,6 +89,16 @@ void Control::show_imgui(HWND game_window) noexcept
             }
 
             if (!_config.hdr_rendering) {
+               ImGui::Checkbox("Floating-point Render Targets",
+                               &_config.fp_rendertargets);
+
+               if (ImGui::IsItemHovered()) {
+                  ImGui::SetTooltip("Controls usage of floating-point "
+                                    "rendertargets, which can preserve more "
+                                    "color detail in the bright areas of the "
+                                    "scene for when Bloom is applied.");
+               }
+
                ImGui::Checkbox("Disable Light Brightness Rescaling",
                                &_config.disable_light_brightness_rescaling);
 

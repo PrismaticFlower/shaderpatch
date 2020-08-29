@@ -41,6 +41,7 @@ Late_backbuffer_resolver::Late_backbuffer_resolver(ID3D11Device1& device,
 
 void Late_backbuffer_resolver::resolve(ID3D11DeviceContext1& dc,
                                        const Shader_resource_database& textures,
+                                       const bool linear_source,
                                        const Game_rendertarget& source,
                                        ID3D11RenderTargetView& target) noexcept
 {
@@ -66,7 +67,7 @@ void Late_backbuffer_resolver::resolve(ID3D11DeviceContext1& dc,
    auto* const cb = _cb.get();
    dc.PSSetConstantBuffers(0, 1, &cb);
 
-   dc.PSSetShader(get_pixel_shader(source), nullptr, 0);
+   dc.PSSetShader(get_pixel_shader(linear_source, source), nullptr, 0);
 
    dc.Draw(3, 0);
 }
@@ -77,12 +78,11 @@ void Late_backbuffer_resolver::update_blue_noise_srv(const Shader_resource_datab
                                     std::to_string(_rand_dist(_xorshift)));
 }
 
-auto Late_backbuffer_resolver::get_pixel_shader(const Game_rendertarget& source) const
-   noexcept -> ID3D11PixelShader*
+auto Late_backbuffer_resolver::get_pixel_shader(const bool linear_source,
+                                                const Game_rendertarget& source) const noexcept
+   -> ID3D11PixelShader*
 {
-   if (source.format == DXGI_FORMAT_R32G32B32A32_FLOAT ||
-       source.format == DXGI_FORMAT_R16G16B16A16_FLOAT ||
-       source.format == DXGI_FORMAT_R11G11B10_FLOAT) {
+   if (linear_source) {
       switch (source.sample_count) {
       case 1:
          return _ps_linear.get();

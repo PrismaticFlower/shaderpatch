@@ -23,12 +23,14 @@ public:
    Late_backbuffer_resolver& operator=(Late_backbuffer_resolver&&) = default;
 
    void resolve(ID3D11DeviceContext1& dc, const Shader_resource_database& textures,
-                const Game_rendertarget& source, ID3D11RenderTargetView& target) noexcept;
+                const bool linear_source, const Game_rendertarget& source,
+                ID3D11RenderTargetView& target) noexcept;
 
 private:
    void update_blue_noise_srv(const Shader_resource_database& textures);
 
-   auto get_pixel_shader(const Game_rendertarget& source) const noexcept
+   auto get_pixel_shader(const bool linear_source,
+                         const Game_rendertarget& source) const noexcept
       -> ID3D11PixelShader*;
 
    const Com_ptr<ID3D11VertexShader> _vs;

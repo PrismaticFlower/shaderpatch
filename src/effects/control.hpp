@@ -27,6 +27,7 @@ struct Effects_control_config {
    bool hdr_rendering = false;
    bool oit_requested = false;
    bool disable_light_brightness_rescaling = false;
+   bool fp_rendertargets = false;
 };
 
 class Control {
@@ -96,6 +97,7 @@ struct convert<sp::effects::Effects_control_config> {
       node["RequestOIT"s] = config.oit_requested;
       node["DisableLightBrightnessRescaling"s] =
          config.disable_light_brightness_rescaling;
+      node["FPRenderTargets"s] = config.fp_rendertargets;
 
       return node;
    }
@@ -111,6 +113,8 @@ struct convert<sp::effects::Effects_control_config> {
       config.disable_light_brightness_rescaling =
          node["DisableLightBrightnessRescaling"s].as<bool>(
             config.disable_light_brightness_rescaling);
+      config.fp_rendertargets =
+         node["FPRenderTargets"s].as<bool>(config.fp_rendertargets);
 
       return true;
    }

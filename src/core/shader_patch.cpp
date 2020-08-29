@@ -1749,7 +1749,8 @@ void Shader_patch::update_effects() noexcept
 void Shader_patch::update_rendertargets() noexcept
 {
    const auto new_format = [&] {
-      if (_effects_active && _effects.config().hdr_rendering)
+      if (_effects_active &&
+          (_effects.config().hdr_rendering || _effects.config().fp_rendertargets))
          return DXGI_FORMAT_R16G16B16A16_FLOAT;
       else if (user_config.graphics.enable_16bit_color_rendering)
          return DXGI_FORMAT_R16G16B16A16_UNORM;
@@ -1971,6 +1972,7 @@ void Shader_patch::patch_backbuffer_resolve() noexcept
           .uav_format = DXGI_FORMAT_R8G8B8A8_UNORM});
 
       _late_backbuffer_resolver.resolve(*_device_context, _shader_resource_database,
+                                        _effects_active && _effects.config().hdr_rendering,
                                         _game_rendertargets[0], cmma_target.rtv());
 
       _effects.cmaa2.apply(*_device_context, _effects.profiler,
@@ -1983,6 +1985,7 @@ void Shader_patch::patch_backbuffer_resolve() noexcept
    }
    else {
       _late_backbuffer_resolver.resolve(*_device_context, _shader_resource_database,
+                                        _effects_active && _effects.config().hdr_rendering,
                                         _game_rendertargets[0], *_swapchain.rtv());
    }
 
