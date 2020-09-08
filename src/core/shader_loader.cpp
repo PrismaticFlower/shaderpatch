@@ -388,7 +388,7 @@ void read_state(ucfb::Reader_strict<"STAT"_mn> reader,
                                             vs_static_flags};
    state.pixel = shader_group.pixel.at(ps_entrypoint).copy(ps_static_flags);
    state.pixel_oit =
-      shader_group.pixel.at(ps_oit_entrypoint).copy(ps_oit_static_flags);
+      shader_group.pixel.at(ps_oit_entrypoint).copy_if(ps_oit_static_flags);
 
    const auto hs_use = info_reader.read<bool>();
    const auto hs_entrypoint = std::string{info_reader.read_string()};
