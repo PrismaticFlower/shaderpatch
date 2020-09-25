@@ -2,7 +2,7 @@
 Shader Patch is a mod for SWBFII (2005) primarilly focused around two things providing sublte but meaningful, non-intrusive improvements to the game's shaders and exposing more advanced capabilties relating to shaders for modders. 
 
 
-All polite feedback, bug reports and feature requets are welcomed. You can do so here or if Discord is more your speed you can use it to do so [here](https://discord.gg/x6UQvZb).
+All polite feedback, bug reports and feature requets are welcomed. You can do so here or if Discord is more your speed you can use it to do so [here](https://discord.gg/KmbJVK3).
 
 ## Features Overview
 There are more than this but below is a short list of some of the key features Shader Patch currently has.
