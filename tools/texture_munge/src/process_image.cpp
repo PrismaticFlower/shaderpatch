@@ -156,9 +156,15 @@ auto fold_cubemap(DX::ScratchImage image)
 
 auto remap_roughness_channels(DX::ScratchImage image) -> DirectX::ScratchImage
 {
-   const auto process_image = [&](Image_span dest_image) noexcept {
-      for_each(std::execution::par_unseq, dest_image, [&](const glm::ivec2 index) noexcept {
-         auto value = dest_image.load(index);
+   auto remapped_metadata = image.GetMetadata();
+   remapped_metadata.format = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+   DX::ScratchImage remapped_image;
+   remapped_image.Initialize(remapped_metadata);
+
+   const auto process_image = [&](Image_span src_image, Image_span dest_image) noexcept {
+      for_each(std::execution::par_unseq, src_image, [&](const glm::ivec2 index) noexcept {
+         auto value = src_image.load(index);
 
          value = {0.0f, value.r, 0.0f, 0.0f};
 
@@ -169,12 +175,13 @@ auto remap_roughness_channels(DX::ScratchImage image) -> DirectX::ScratchImage
    for (auto index = 0; index < image.GetMetadata().arraySize; ++index) {
       for (auto mip = 0; mip < image.GetMetadata().mipLevels; ++mip) {
          for (auto slice = 0; slice < image.GetMetadata().depth; ++slice) {
-            process_image(*image.GetImage(mip, index, slice));
+            process_image(*image.GetImage(mip, index, slice),
+                          *remapped_image.GetImage(mip, index, slice));
          }
       }
    }
 
-   return image;
+   return remapped_image;
 }
 
 auto specular_anti_alias(DX::ScratchImage source_image, DX::ScratchImage normal_map)
