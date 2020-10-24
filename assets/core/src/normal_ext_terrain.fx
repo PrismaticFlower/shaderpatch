@@ -1,6 +1,7 @@
 
 #include "color_utilities.hlsl"
 #include "constants_list.hlsl"
+#include "lighting_pbr.hlsl"
 #include "lighting_utilities.hlsl"
 #include "normal_ext_common.hlsl"
 #include "pixel_sampler_states.hlsl"
@@ -160,8 +161,7 @@ float4 main_ps(Vs_output input) : SV_Target0
       const float3 env_coords = calculate_envmap_reflection(normalWS, viewWS);
       const float3 env = envmap.Sample(aniso_wrap_sampler, env_coords);
       const float roughness = light::specular_exp_to_roughness(specular_exponent);
-      const float so =
-         light::pbr::specular_occlusion(saturate(dot(normalWS, viewWS)), ao, roughness);
+      const float so = pbr::specular_occlusion(saturate(dot(normalWS, viewWS)), ao, roughness);
 
       color += (so * env * specular);
    }

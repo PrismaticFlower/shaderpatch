@@ -424,14 +424,42 @@
     <None Include="src\static_water.fx">
       <Filter>src</Filter>
     </None>
-    <None Include="src\pixel_sampler_states.hlsl" />
-    <None Include="src\ffx_cas.hlsl" />
-    <None Include="definitions\patch\ffx_cas.json" />
-    <None Include="definitions\patch\normal_ext_terrain.json" />
-    <None Include="definitions\patch\particle_ext.json" />
-    <None Include="src\particle_ext.fx" />
-    <None Include="definitions\patch\text.json" />
-    <None Include="src\text.fx" />
+    <None Include="src\ffx_cas.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="definitions\patch\ffx_cas.json">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\lighting_pbr.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="definitions\patch\normal_ext_terrain.json">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\particle_ext.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="definitions\patch\particle_ext.json">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\pixel_sampler_states.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\text.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="definitions\patch\text.json">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="src\lighting_ibl.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\lighting_brdf.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\lighting_occlusion.hlsl">
+      <Filter>src</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">
@@ -451,7 +479,11 @@
     <CustomBuild Include="build_lvls.ps1" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\ffx_a.h" />
-    <ClInclude Include="src\ffx_cas.h" />
+    <ClInclude Include="src\ffx_a.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ffx_cas.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

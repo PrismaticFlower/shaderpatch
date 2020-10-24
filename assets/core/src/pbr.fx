@@ -1,7 +1,7 @@
 #include "adaptive_oit.hlsl"
 #include "constants_list.hlsl"
 #include "generic_vertex_input.hlsl"
-#include "lighting_utilities.hlsl"
+#include "lighting_pbr.hlsl"
 #include "pixel_sampler_states.hlsl"
 #include "pixel_utilities.hlsl"
 #include "vertex_transformer.hlsl"
@@ -39,6 +39,7 @@ const static bool use_emissive_map = PBR_USE_EMISSIVE_MAP;
 const static bool use_transparency = PBR_USE_TRANSPARENCY;
 const static bool use_hardedged_test = PBR_USE_HARDEDGED_TEST;
 const static bool use_shadow_map = PBR_USE_SHADOW_MAP;
+const static bool use_ibl = PBR_USE_IBL;
 
 struct Vs_output
 {
@@ -106,13 +107,13 @@ float4 main_ps(Ps_input input) : SV_Target0
 
    // Calculate Metallicness & Roughness factors
    float metallicness = base_metallicness;
-   float roughness = base_roughness;
+   float perceptual_roughness = base_roughness;
 
    if (use_metallic_roughness_map) {
       const float2 mr_map_color = metallic_roughness_map.Sample(aniso_wrap_sampler, input.texcoords);
 
       metallicness *= mr_map_color.x;
-      roughness *= mr_map_color.y;
+      perceptual_roughness *= mr_map_color.y;
    }
 
    // Calculate lighting.
@@ -127,8 +128,19 @@ float4 main_ps(Ps_input input) : SV_Target0
       use_shadow_map ? shadow_map.SampleLevel(linear_clamp_sampler, input.shadow_texcoords, 0).a : 1.0;
    const float ao = ao_map.Sample(aniso_wrap_sampler, input.texcoords) * ao_strength;
 
-   float3 color = light::pbr::calculate(normalWS, normalize(view_positionWS - input.positionWS), input.positionWS,
-                                        albedo, metallicness, roughness, ao, shadow);
+   pbr::surface_info surface;
+
+   surface.normalWS = normalWS;
+   surface.viewWS = normalize(view_positionWS - input.positionWS);
+   surface.positionWS = input.positionWS;
+   surface.base_color = albedo;
+   surface.metallicness = metallicness;
+   surface.perceptual_roughness = perceptual_roughness;
+   surface.sun_shadow = shadow;
+   surface.ao = ao;
+   surface.use_ibl = use_ibl;
+
+   float3 color = pbr::calculate(surface);
 
    if (use_emissive_map) {
       color += 

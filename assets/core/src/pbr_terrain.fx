@@ -1,6 +1,7 @@
 
 #include "color_utilities.hlsl"
 #include "constants_list.hlsl"
+#include "lighting_pbr.hlsl"
 #include "lighting_utilities.hlsl"
 #include "pixel_sampler_states.hlsl"
 #include "pixel_utilities.hlsl"
@@ -131,21 +132,24 @@ float4 main_ps(Vs_output input) : SV_Target0
       terrain_tangent_to_world(normalize(input.normalWS));
 
    const Pbr_unpacked_textures textures = sample_textures(input, tangent_to_world);
+   
+   pbr::surface_info surface;
 
    const uint2 shadow_coords = (uint2)input.positionPS.xy;
-   const float shadow = pbr_terrain_use_shadow_map ? shadow_map[shadow_coords].a : 1.0;
-   const float3 albedo = textures.albedo * base_color;
-   const float ao = textures.ao;
-   const float metallicness = textures.metallicness * base_metallicness;
-   const float roughness = textures.roughness * base_roughness;
-   const float3 normalWS = normalize(mul(textures.normalTS, tangent_to_world));
-   const float3 viewWS = normalize(view_positionWS - input.positionWS);
 
-   float3 color = light::pbr::calculate(normalWS, viewWS, input.positionWS, 
-                                        albedo, metallicness, roughness,
-                                        ao, shadow);
+   surface.normalWS = normalize(mul(textures.normalTS, tangent_to_world));
+   surface.viewWS = normalize(view_positionWS - input.positionWS); 
+   surface.positionWS = input.positionWS;
+   surface.metallicness = textures.metallicness * base_metallicness;
+   surface.perceptual_roughness = textures.roughness * base_roughness;
+   surface.base_color = textures.albedo * base_color;
+   surface.sun_shadow = pbr_terrain_use_shadow_map ? shadow_map[shadow_coords].a : 1.0;
+   surface.ao = textures.ao;
+   surface.use_ibl = false;
 
-   color += (input.static_lighting * ao * (albedo / light::pbr::PI));
+   float3 color = pbr::calculate(surface);
+
+   color += (input.static_lighting * surface.ao * (surface.base_color / pbr::PI));
 
    color = apply_fog(color, input.fog);
 

@@ -1,6 +1,8 @@
 #include "adaptive_oit.hlsl"
 #include "constants_list.hlsl"
 #include "generic_vertex_input.hlsl"
+#include "lighting_brdf.hlsl"
+#include "lighting_pbr.hlsl"
 #include "lighting_utilities.hlsl"
 #include "pixel_sampler_states.hlsl"
 #include "pixel_utilities.hlsl"
@@ -168,8 +170,7 @@ float4 main_ps(Ps_input input) : SV_Target0
    const float3 viewWS = normalize(view_positionWS - input.positionWS);
    const float3 reflectWS = normalize(reflect(-viewWS, normalWS));
 
-   const float fresnel = 
-      clamp(light::pbr::fresnel(0.05, normalWS, viewWS).x, fresnel_min, fresnel_max);
+   const float fresnel = clamp(pbr::F_schlick(0.05, normalWS, viewWS).x, fresnel_min, fresnel_max);
 
    const float3 reflection = sample_reflection_map(reflectWS);
    float3 refraction, back_refraction;
@@ -219,7 +220,7 @@ float3 get_specular(float3 normalWS, float3 viewWS, float3 positionWS)
          float3 light_dirWS;
          float attenuation;
       
-         light::pbr::point_params(positionWS, light_point_pos(i), light_point_inv_range_sqr(i), light_dirWS, attenuation);
+         pbr::point_params(positionWS, light_point_pos(i), light_point_inv_range_sqr(i), light_dirWS, attenuation);
 
          light::blinnphong::calculate(throwaway_diffuse, specular, normalWS, viewWS, light_dirWS, 
                                       attenuation, light_point_color(i), specular_exponent);
@@ -230,7 +231,7 @@ float3 get_specular(float3 normalWS, float3 viewWS, float3 positionWS)
          float3 light_dirWS;
          float attenuation;
 
-         light::pbr::spot_params(positionWS, attenuation, light_dirWS);
+         pbr::spot_params(positionWS, attenuation, light_dirWS);
          
          light::blinnphong::calculate(throwaway_diffuse, specular, normalWS, viewWS, light_dirWS, 
                                       attenuation, light_spot_color, specular_exponent);

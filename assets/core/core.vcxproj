@@ -253,6 +253,10 @@
     <None Include="definitions\zprepass.json" />
     <None Include="src\color_grading.hlsl" />
     <None Include="src\ffx_cas.hlsl" />
+    <None Include="src\lighting_brdf.hlsl" />
+    <None Include="src\lighting_ibl.hlsl" />
+    <None Include="src\lighting_occlusion.hlsl" />
+    <None Include="src\lighting_pbr.hlsl" />
     <None Include="src\scene_blur.fx" />
     <None Include="src\scope_blur_common.hlsl" />
     <None Include="textures.req" />
