@@ -92,7 +92,7 @@ public:
    {
       const auto init = reader.read_array<std::byte>(reader.size());
 
-      assign(init.cbegin(), init.cend());
+      assign(init.begin(), init.end());
    }
 
    explicit Editor_data_chunk(const Editor_data_chunk&) = default;

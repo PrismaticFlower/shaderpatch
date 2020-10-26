@@ -35,7 +35,7 @@ void Editor_data_writer::write(const gsl::span<const std::byte> span, Alignment 
 {
    const auto bytes = gsl::as_bytes(span);
 
-   _data.insert(_data.cend(), bytes.cbegin(), bytes.cend());
+   _data.insert(_data.cend(), bytes.begin(), bytes.end());
 
    if (alignment == Alignment::aligned) align();
 }
@@ -45,7 +45,7 @@ void Editor_data_writer::write(const std::string_view string, Alignment alignmen
    const auto bytes =
       gsl::make_span(reinterpret_cast<const std::byte*>(string.data()), string.size());
 
-   _data.insert(_data.cend(), bytes.cbegin(), bytes.cend());
+   _data.insert(_data.cend(), bytes.begin(), bytes.end());
    _data.push_back(std::byte{'\0'});
 
    if (alignment == Alignment::aligned) align();

@@ -17,21 +17,22 @@ auto Input_layout_descriptions::try_add(const gsl::span<const Input_layout_eleme
       log_and_terminate("Too many input layouts!");
    }
 
-   _descriptions.emplace_back(layout.cbegin(), layout.cend());
+   _descriptions.emplace_back(layout.begin(), layout.end());
 
    return static_cast<std::uint16_t>(index);
 }
 
-auto Input_layout_descriptions::operator[](const std::uint16_t index) const
-   noexcept -> gsl::span<const Input_layout_element>
+auto Input_layout_descriptions::operator[](const std::uint16_t index) const noexcept
+   -> gsl::span<const Input_layout_element>
 {
    Expects(index < _descriptions.size());
 
    return _descriptions[index];
 }
 
-auto Input_layout_descriptions::find_layout(const gsl::span<const Input_layout_element> layout) const
-   noexcept -> std::optional<std::uint16_t>
+auto Input_layout_descriptions::find_layout(
+   const gsl::span<const Input_layout_element> layout) const noexcept
+   -> std::optional<std::uint16_t>
 {
    for (int i = 0; i < _descriptions.size(); ++i) {
       if (gsl::make_span(_descriptions[i]) == layout) {

@@ -44,7 +44,7 @@ auto Shader_input_layouts::create_layout(
 
    for (const auto& sig_elem : _input_signature) {
       if (const auto it =
-             std::find_if(layout_desc.cbegin(), layout_desc.cend(),
+             std::find_if(layout_desc.begin(), layout_desc.end(),
                           [&](const Input_layout_element& elem) {
                              const bool match =
                                 (elem.semantic_name == sig_elem.semantic_name) &&
@@ -58,7 +58,7 @@ auto Shader_input_layouts::create_layout(
 
                              return match;
                           });
-          it != layout_desc.cend()) {
+          it != layout_desc.end()) {
          input_layout.emplace_back(*it);
       }
       else {

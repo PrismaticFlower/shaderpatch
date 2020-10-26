@@ -13,19 +13,13 @@ namespace sp::d3d9 {
 
 namespace {
 
-constexpr std::pair particle_decl_patch =
-   {std::array{D3DVERTEXELEMENT9{0, 0, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT,
-                                 D3DDECLUSAGE_POSITION, 0},
-               D3DVERTEXELEMENT9{0, 12, D3DDECLTYPE_D3DCOLOR,
-                                 D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0},
-               D3DVERTEXELEMENT9{0, 16, D3DDECLTYPE_SHORT2, D3DDECLMETHOD_DEFAULT,
-                                 D3DDECLUSAGE_TEXCOORD, 0}},
-    std::array{D3DVERTEXELEMENT9{0, 0, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT,
-                                 D3DDECLUSAGE_POSITION, 0},
-               D3DVERTEXELEMENT9{0, 12, D3DDECLTYPE_D3DCOLOR,
-                                 D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0},
-               D3DVERTEXELEMENT9{0, 16, D3DDECLTYPE_SHORT2N, D3DDECLMETHOD_DEFAULT,
-                                 D3DDECLUSAGE_TEXCOORD, 0}}};
+constexpr std::pair<std::array<D3DVERTEXELEMENT9, 3>, std::array<D3DVERTEXELEMENT9, 3>> particle_decl_patch =
+   {{{{0, 0, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0},
+      {0, 12, D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0},
+      {0, 16, D3DDECLTYPE_SHORT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0}}},
+    {{{0, 0, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0},
+      {0, 12, D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0},
+      {0, 16, D3DDECLTYPE_SHORT2N, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0}}}};
 
 const std::map<gsl::span<const D3DVERTEXELEMENT9>, gsl::span<const D3DVERTEXELEMENT9>> patchups = {
    {gsl::make_span(particle_decl_patch.first),
@@ -164,8 +158,8 @@ auto create_input_layout(core::Shader_patch& shader_patch,
    const bool particle_texture_scale =
       d3d9_elements == gsl::make_span(particle_decl_patch.second);
 
-   std::vector<D3DVERTEXELEMENT9> patched_d3d9_elements{d3d9_elements.cbegin(),
-                                                        d3d9_elements.cend()};
+   std::vector<D3DVERTEXELEMENT9> patched_d3d9_elements{d3d9_elements.begin(),
+                                                        d3d9_elements.end()};
 
    add_missing_normal(patched_d3d9_elements, compressed);
    add_missing_tangents(patched_d3d9_elements, compressed);

@@ -150,7 +150,7 @@ auto load_volume_resource(const std::filesystem::path& path)
                const auto data =
                   body.read_array_unaligned<std::byte>(header.payload_size);
 
-               return {header, {data.cbegin(), data.cend()}};
+               return {header, {data.begin(), data.end()}};
             }
          }
       }
