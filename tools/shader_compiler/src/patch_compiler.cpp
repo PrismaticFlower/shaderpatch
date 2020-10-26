@@ -478,7 +478,7 @@ void Patch_compiler::write_entrypoints(
 
             vari_writer.write(vari.first);
             vari_writer.write(static_cast<std::uint32_t>(vari.second->GetBufferSize()));
-            vari_writer.write(gsl::span{static_cast<const std::byte*>(
+            vari_writer.write(std::span{static_cast<const std::byte*>(
                                            vari.second->GetBufferPointer()),
                                         vari.second->GetBufferSize()});
          }
@@ -524,7 +524,7 @@ void Patch_compiler::write_entrypoints(
             vari_writer.write(vari.first.second);
             vari_writer.write(
                static_cast<std::uint32_t>(vari.second.bytecode->GetBufferSize()));
-            vari_writer.write(gsl::span{static_cast<const std::byte*>(
+            vari_writer.write(std::span{static_cast<const std::byte*>(
                                            vari.second.bytecode->GetBufferPointer()),
                                         vari.second.bytecode->GetBufferSize()});
 
@@ -583,7 +583,7 @@ void Patch_compiler::write_entrypoints(
             vari_writer.write(vari.first.first);
             vari_writer.write(vari.first.second);
             vari_writer.write(static_cast<std::uint32_t>(vari.second->GetBufferSize()));
-            vari_writer.write(gsl::span{static_cast<const std::byte*>(
+            vari_writer.write(std::span{static_cast<const std::byte*>(
                                            vari.second->GetBufferPointer()),
                                         vari.second->GetBufferSize()});
          }

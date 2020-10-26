@@ -5,7 +5,6 @@
 
 #include <algorithm>
 #include <array>
-#include <map>
 #include <utility>
 #include <vector>
 
@@ -21,21 +20,18 @@ constexpr std::pair<std::array<D3DVERTEXELEMENT9, 3>, std::array<D3DVERTEXELEMEN
       {0, 12, D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0},
       {0, 16, D3DDECLTYPE_SHORT2N, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0}}}};
 
-const std::map<gsl::span<const D3DVERTEXELEMENT9>, gsl::span<const D3DVERTEXELEMENT9>> patchups = {
-   {gsl::make_span(particle_decl_patch.first),
-    gsl::make_span(particle_decl_patch.second)}};
-
-auto apply_patchups(const gsl::span<const D3DVERTEXELEMENT9> elements) noexcept
-   -> gsl::span<const D3DVERTEXELEMENT9>
+auto apply_patchups(const std::span<const D3DVERTEXELEMENT9> elements) noexcept
+   -> std::span<const D3DVERTEXELEMENT9>
 {
-   if (const auto it = patchups.find(elements); it != patchups.end()) {
-      return it->second;
+   if (std::equal(elements.begin(), elements.end(), particle_decl_patch.first.begin(),
+                  particle_decl_patch.first.end())) {
+      return particle_decl_patch.second;
    }
 
    return elements;
 }
 
-bool is_compressed_input(const gsl::span<const D3DVERTEXELEMENT9> elements) noexcept
+bool is_compressed_input(const std::span<const D3DVERTEXELEMENT9> elements) noexcept
 {
    for (const auto& elem : elements) {
       if (is_d3d_decl_type_int(static_cast<D3DDECLTYPE>(elem.Type)))
@@ -128,7 +124,7 @@ void add_missing_tangents(std::vector<D3DVERTEXELEMENT9>& elements,
    }
 }
 
-auto translate_vertex_elements(const gsl::span<const D3DVERTEXELEMENT9> elements) noexcept
+auto translate_vertex_elements(const std::span<const D3DVERTEXELEMENT9> elements) noexcept
    -> std::vector<core::Input_layout_element>
 {
    std::vector<core::Input_layout_element> result;
@@ -150,13 +146,15 @@ auto translate_vertex_elements(const gsl::span<const D3DVERTEXELEMENT9> elements
 }
 
 auto create_input_layout(core::Shader_patch& shader_patch,
-                         gsl::span<const D3DVERTEXELEMENT9> d3d9_elements) noexcept
+                         std::span<const D3DVERTEXELEMENT9> d3d9_elements) noexcept
    -> core::Game_input_layout
 {
    d3d9_elements = apply_patchups(d3d9_elements);
    const bool compressed = is_compressed_input(d3d9_elements);
    const bool particle_texture_scale =
-      d3d9_elements == gsl::make_span(particle_decl_patch.second);
+      std::equal(d3d9_elements.begin(), d3d9_elements.end(),
+                 particle_decl_patch.second.begin(),
+                 particle_decl_patch.second.end());
 
    std::vector<D3DVERTEXELEMENT9> patched_d3d9_elements{d3d9_elements.begin(),
                                                         d3d9_elements.end()};
@@ -174,7 +172,7 @@ auto create_input_layout(core::Shader_patch& shader_patch,
 
 Com_ptr<Vertex_declaration> Vertex_declaration::create(
    core::Shader_patch& shader_patch,
-   const gsl::span<const D3DVERTEXELEMENT9> elements) noexcept
+   const std::span<const D3DVERTEXELEMENT9> elements) noexcept
 {
    return Com_ptr{new Vertex_declaration{shader_patch, elements}};
 }
@@ -221,7 +219,7 @@ ULONG Vertex_declaration::Release() noexcept
 }
 
 Vertex_declaration::Vertex_declaration(core::Shader_patch& shader_patch,
-                                       const gsl::span<const D3DVERTEXELEMENT9> elements) noexcept
+                                       const std::span<const D3DVERTEXELEMENT9> elements) noexcept
    : _input_layout{create_input_layout(shader_patch, elements)}
 {
 }

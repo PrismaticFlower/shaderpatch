@@ -36,7 +36,7 @@ auto Shader_input_layouts::find_layout(const std::uint16_t index) const noexcept
 }
 
 auto Shader_input_layouts::create_layout(
-   ID3D11Device1& device, const gsl::span<const Input_layout_element> layout_desc) noexcept
+   ID3D11Device1& device, const std::span<const Input_layout_element> layout_desc) noexcept
    -> Com_ptr<ID3D11InputLayout>
 {
    std::vector<D3D11_INPUT_ELEMENT_DESC> input_layout;

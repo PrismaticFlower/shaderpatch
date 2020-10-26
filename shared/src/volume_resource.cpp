@@ -7,6 +7,8 @@
 #include <cmath>
 #include <utility>
 
+#include <gsl/gsl>
+
 #include <d3d9.h>
 
 namespace sp {
@@ -38,7 +40,7 @@ auto pack_size(const std::uint32_t size) noexcept
 
 void save_volume_resource(const std::filesystem::path& output_path,
                           const std::string_view name, const Volume_resource_type type,
-                          gsl::span<const std::byte> data)
+                          std::span<const std::byte> data)
 {
    if (data.size() > resource_max_byte_size) {
       throw std::runtime_error{"Resource is too large to store!"};

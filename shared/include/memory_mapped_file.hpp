@@ -3,8 +3,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <memory>
-
-#include <gsl/gsl>
+#include <span>
 
 namespace sp::win32 {
 
@@ -24,9 +23,9 @@ public:
 
    ~Memeory_mapped_file() = default;
 
-   auto bytes() noexcept -> gsl::span<std::byte>;
+   auto bytes() noexcept -> std::span<std::byte>;
 
-   auto bytes() const noexcept -> gsl::span<const std::byte>;
+   auto bytes() const noexcept -> std::span<const std::byte>;
 
 private:
    static void unmap(std::byte* mapping) noexcept;

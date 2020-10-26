@@ -101,9 +101,7 @@ void write_patch_texture(const std::filesystem::path& save_path,
       }
 
       const auto sptx_data = string_stream.str();
-      const auto sptx_span =
-         gsl::span<const std::byte>(reinterpret_cast<const std::byte*>(sptx_data.data()),
-                                    sptx_data.size());
+      const auto sptx_span = std::as_bytes(std::span{sptx_data});
 
       save_volume_resource(save_path, save_path.stem().string(),
                            Volume_resource_type::texture, sptx_span);

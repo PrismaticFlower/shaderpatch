@@ -173,7 +173,7 @@ void write_file_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
       return;
    }
 
-   ucfb::Reader reader{gsl::make_span(file_data)};
+   ucfb::Reader reader{file_data};
 
    if (filepath.extension() == ".lvl"s) {
       auto lvl_writer = writer.emplace_child("lvl_"_mn);

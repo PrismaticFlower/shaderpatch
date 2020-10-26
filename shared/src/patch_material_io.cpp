@@ -86,9 +86,7 @@ void write_patch_material(const std::filesystem::path& save_path,
    }
 
    const auto matl_data = ostream.str();
-   const auto matl_span =
-      gsl::span<const std::byte>(reinterpret_cast<const std::byte*>(matl_data.data()),
-                                 matl_data.size());
+   const auto matl_span = std::as_bytes(std::span{matl_data});
 
    save_volume_resource(save_path, save_path.stem().string(),
                         Volume_resource_type::material, matl_span);

@@ -93,7 +93,7 @@ auto load_sptex(const std::filesystem::path& path) -> DirectX::ScratchImage
    Texture_info texture_info;
 
    load_patch_texture(
-      ucfb::Reader_strict<"sptx"_mn>{gsl::make_span(vr_data)},
+      ucfb::Reader_strict<"sptx"_mn>{vr_data},
       [&](const Texture_info& info) {
          switch (info.type) {
          case Texture_type::texture1d:
@@ -399,8 +399,8 @@ void save_texture(const std::filesystem::path output_path,
          Texture_data data;
          data.pitch = gsl::narrow_cast<UINT>(sub_image->rowPitch);
          data.slice_pitch = gsl::narrow_cast<UINT>(sub_image->slicePitch);
-         data.data = gsl::make_span(reinterpret_cast<std::byte*>(sub_image->pixels),
-                                    sub_image->slicePitch);
+         data.data = std::span{reinterpret_cast<std::byte*>(sub_image->pixels),
+                               sub_image->slicePitch};
 
          texture_data.emplace_back(data);
       }

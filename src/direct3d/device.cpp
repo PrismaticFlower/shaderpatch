@@ -1064,9 +1064,8 @@ HRESULT Device::SetVertexShaderConstantF(UINT start_register, const float* const
 
    if (start_register < 2) return S_OK;
 
-   if (const auto constants =
-          gsl::make_span(reinterpret_cast<const std::array<float, 4>*>(constant_data),
-                         vector4f_count);
+   if (const std::span constants{reinterpret_cast<const std::array<float, 4>*>(constant_data),
+                                 vector4f_count};
        start_register < 12) {
       const auto start = start_register - 2u;
       const auto count = safe_min(vector4f_count, core::cb::scene_game_count - start);
@@ -1148,7 +1147,7 @@ HRESULT Device::SetPixelShaderConstantF(UINT start_register, const float* consta
    const auto count =
       safe_min(vector4f_count, core::cb::draw_ps_game_count - start_register);
    const auto constants =
-      gsl::make_span(reinterpret_cast<const std::array<float, 4>*>(constant_data), count);
+      std::span{reinterpret_cast<const std::array<float, 4>*>(constant_data), count};
 
    _shader_patch.set_constants(core::cb::draw_ps, start_register, constants);
 
@@ -1297,7 +1296,7 @@ auto Device::create_vertex_declaration(const D3DVERTEXELEMENT9* const vertex_ele
 {
    constexpr D3DVERTEXELEMENT9 decl_end D3DDECL_END();
 
-   int decl_count = 0;
+   std::size_t decl_count = 0;
    for (; std::memcmp(&vertex_elements[decl_count], &decl_end,
                       sizeof(D3DVERTEXELEMENT9)) != 0;
         ++decl_count) {
@@ -1307,7 +1306,7 @@ auto Device::create_vertex_declaration(const D3DVERTEXELEMENT9* const vertex_ele
    }
 
    return Vertex_declaration::create(_shader_patch,
-                                     gsl::make_span(vertex_elements, decl_count));
+                                     std::span{vertex_elements, decl_count});
 }
 
 void Device::draw_common() noexcept

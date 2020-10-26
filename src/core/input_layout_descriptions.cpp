@@ -2,11 +2,14 @@
 #include "input_layout_descriptions.hpp"
 #include "../logger.hpp"
 
+#include <algorithm>
 #include <tuple>
+
+#include <gsl/gsl>
 
 namespace sp::core {
 
-auto Input_layout_descriptions::try_add(const gsl::span<const Input_layout_element> layout) noexcept
+auto Input_layout_descriptions::try_add(const std::span<const Input_layout_element> layout) noexcept
    -> std::uint16_t
 {
    if (const auto index = find_layout(layout); index) return *index;
@@ -23,7 +26,7 @@ auto Input_layout_descriptions::try_add(const gsl::span<const Input_layout_eleme
 }
 
 auto Input_layout_descriptions::operator[](const std::uint16_t index) const noexcept
-   -> gsl::span<const Input_layout_element>
+   -> std::span<const Input_layout_element>
 {
    Expects(index < _descriptions.size());
 
@@ -31,11 +34,12 @@ auto Input_layout_descriptions::operator[](const std::uint16_t index) const noex
 }
 
 auto Input_layout_descriptions::find_layout(
-   const gsl::span<const Input_layout_element> layout) const noexcept
+   const std::span<const Input_layout_element> layout) const noexcept
    -> std::optional<std::uint16_t>
 {
    for (int i = 0; i < _descriptions.size(); ++i) {
-      if (gsl::make_span(_descriptions[i]) == layout) {
+      if (std::equal(_descriptions[i].cbegin(), _descriptions[i].cend(),
+                     layout.begin(), layout.end())) {
          return static_cast<std::uint16_t>(i);
       }
    }

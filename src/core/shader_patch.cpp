@@ -270,7 +270,7 @@ void Shader_patch::destroy_game_rendertarget(const Game_rendertarget_id id) noex
 
 auto Shader_patch::create_game_texture2d(const UINT width, const UINT height,
                                          const UINT mip_levels, const DXGI_FORMAT format,
-                                         const gsl::span<const Mapped_texture> data) noexcept
+                                         const std::span<const Mapped_texture> data) noexcept
    -> Game_texture
 {
    Expects(width != 0 && height != 0 && mip_levels != 0);
@@ -431,7 +431,7 @@ auto Shader_patch::create_game_dynamic_texture2d(const Game_texture& texture) no
 auto Shader_patch::create_game_texture3d(const UINT width, const UINT height,
                                          const UINT depth, const UINT mip_levels,
                                          const DXGI_FORMAT format,
-                                         const gsl::span<const Mapped_texture> data) noexcept
+                                         const std::span<const Mapped_texture> data) noexcept
    -> Game_texture
 {
    Expects(width != 0 && height != 0 && depth != 0 && mip_levels != 0);
@@ -514,7 +514,7 @@ auto Shader_patch::create_game_texture3d(const UINT width, const UINT height,
 auto Shader_patch::create_game_texture_cube(const UINT width, const UINT height,
                                             const UINT mip_levels,
                                             const DXGI_FORMAT format,
-                                            const gsl::span<const Mapped_texture> data) noexcept
+                                            const std::span<const Mapped_texture> data) noexcept
    -> Game_texture
 {
    Expects(width != 0 && height != 0 && mip_levels != 0);
@@ -598,7 +598,7 @@ auto Shader_patch::create_game_texture_cube(const UINT width, const UINT height,
    return Game_texture{std::move(srv), std::move(srgb_srv)};
 }
 
-auto Shader_patch::create_patch_texture(const gsl::span<const std::byte> texture_data) noexcept
+auto Shader_patch::create_patch_texture(const std::span<const std::byte> texture_data) noexcept
    -> Texture_handle
 {
    try {
@@ -630,7 +630,7 @@ auto Shader_patch::create_patch_texture(const gsl::span<const std::byte> texture
    }
 }
 
-auto Shader_patch::create_patch_material(const gsl::span<const std::byte> material_data) noexcept
+auto Shader_patch::create_patch_material(const std::span<const std::byte> material_data) noexcept
    -> Material_handle
 {
    try {
@@ -668,7 +668,7 @@ auto Shader_patch::create_patch_material(const gsl::span<const std::byte> materi
    }
 }
 
-auto Shader_patch::create_patch_effects_config(const gsl::span<const std::byte> effects_config) noexcept
+auto Shader_patch::create_patch_effects_config(const std::span<const std::byte> effects_config) noexcept
    -> Patch_effects_config_handle
 {
    try {
@@ -696,7 +696,7 @@ auto Shader_patch::create_patch_effects_config(const gsl::span<const std::byte> 
 }
 
 auto Shader_patch::create_game_input_layout(
-   const gsl::span<const Input_layout_element> layout, const bool compressed,
+   const std::span<const Input_layout_element> layout, const bool compressed,
    const bool particle_texture_scale) noexcept -> Game_input_layout
 {
    return {_input_layout_descriptions.try_add(layout), compressed,
@@ -764,7 +764,7 @@ auto Shader_patch::create_ia_buffer(const UINT size, const bool vertex_buffer,
    return buffer;
 }
 
-void Shader_patch::load_colorgrading_regions(const gsl::span<const std::byte> regions_data) noexcept
+void Shader_patch::load_colorgrading_regions(const std::span<const std::byte> regions_data) noexcept
 {
    try {
       _effects.postprocess.color_grading_regions(sp::load_colorgrading_regions(
@@ -1033,7 +1033,7 @@ void Shader_patch::set_patch_material(Patch_material* material) noexcept
 }
 
 void Shader_patch::set_constants(const cb::Scene_tag, const UINT offset,
-                                 const gsl::span<const std::array<float, 4>> constants) noexcept
+                                 const std::span<const std::array<float, 4>> constants) noexcept
 {
    _cb_scene_dirty = true;
 
@@ -1056,7 +1056,7 @@ void Shader_patch::set_constants(const cb::Scene_tag, const UINT offset,
 }
 
 void Shader_patch::set_constants(const cb::Draw_tag, const UINT offset,
-                                 const gsl::span<const std::array<float, 4>> constants) noexcept
+                                 const std::span<const std::array<float, 4>> constants) noexcept
 {
    _cb_draw_dirty = true;
 
@@ -1081,7 +1081,7 @@ void Shader_patch::set_constants(const cb::Fixedfunction_tag,
 }
 
 void Shader_patch::set_constants(const cb::Skin_tag, const UINT offset,
-                                 const gsl::span<const std::array<float, 4>> constants) noexcept
+                                 const std::span<const std::array<float, 4>> constants) noexcept
 {
    _cb_skin_dirty = true;
 
@@ -1091,7 +1091,7 @@ void Shader_patch::set_constants(const cb::Skin_tag, const UINT offset,
 }
 
 void Shader_patch::set_constants(const cb::Draw_ps_tag, const UINT offset,
-                                 const gsl::span<const std::array<float, 4>> constants) noexcept
+                                 const std::span<const std::array<float, 4>> constants) noexcept
 {
    _cb_draw_ps_dirty = true;
 
@@ -1137,7 +1137,7 @@ void Shader_patch::end_query(ID3D11Query& query) noexcept
 }
 
 auto Shader_patch::get_query_data(ID3D11Query& query, const bool flush,
-                                  gsl::span<std::byte> data) noexcept -> Query_result
+                                  std::span<std::byte> data) noexcept -> Query_result
 {
    const auto result =
       _device_context->GetData(&query, data.data(), data.size(),

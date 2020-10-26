@@ -5,6 +5,7 @@
 #include "shader_input_element.hpp"
 
 #include <cstddef>
+#include <span>
 #include <vector>
 
 #include <d3d11_1.h>
@@ -33,7 +34,7 @@ private:
    auto find_layout(const std::uint16_t index) const noexcept -> ID3D11InputLayout*;
 
    auto create_layout(ID3D11Device1& device,
-                      const gsl::span<const Input_layout_element> descriptions) noexcept
+                      const std::span<const Input_layout_element> descriptions) noexcept
       -> Com_ptr<ID3D11InputLayout>;
 
    std::vector<std::pair<std::int32_t, Com_ptr<ID3D11InputLayout>>> _layouts;

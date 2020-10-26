@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <optional>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -56,7 +57,7 @@ public:
    //!
    //! \exception std::runtime_error Thrown when the size of the chunk does not
    //! match the size of the span.
-   Tweaker(const gsl::span<std::byte> bytes)
+   Tweaker(const std::span<std::byte> bytes)
       : _mn{reinterpret_cast<const Magic_number&>(bytes[0])},
         _data{&bytes[8], reinterpret_cast<const std::uint32_t&>(bytes[4])}
    {
@@ -73,7 +74,7 @@ public:
    //!
    //! \param mn The magic number of the chunk.
    //! \param bytes The contents of the chunk.
-   Tweaker(const Magic_number mn, const gsl::span<std::byte> bytes)
+   Tweaker(const Magic_number mn, const std::span<std::byte> bytes)
       : _mn{mn}, _data{bytes}
    {
    }
@@ -320,9 +321,9 @@ private:
    }
 
    const Magic_number _mn;
-   const gsl::span<std::byte> _data;
+   const std::span<std::byte> _data;
 
-   gsl::span<std::byte>::size_type _head = 0;
+   std::span<std::byte>::size_type _head = 0;
 };
 
 //! \brief Find the first child chunk mathcing a magic number starting

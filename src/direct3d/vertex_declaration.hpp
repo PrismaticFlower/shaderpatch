@@ -14,7 +14,7 @@ class Vertex_declaration final : public IDirect3DVertexDeclaration9 {
 public:
    static Com_ptr<Vertex_declaration> create(
       core::Shader_patch& shader_patch,
-      const gsl::span<const D3DVERTEXELEMENT9> elements) noexcept;
+      const std::span<const D3DVERTEXELEMENT9> elements) noexcept;
 
    Vertex_declaration(const Vertex_declaration&) = delete;
    Vertex_declaration& operator=(const Vertex_declaration&) = delete;
@@ -47,7 +47,7 @@ public:
 
 private:
    Vertex_declaration(core::Shader_patch& shader_patch,
-                      const gsl::span<const D3DVERTEXELEMENT9> elements) noexcept;
+                      const std::span<const D3DVERTEXELEMENT9> elements) noexcept;
    ~Vertex_declaration() = default;
 
    const core::Game_input_layout _input_layout;

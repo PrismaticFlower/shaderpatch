@@ -3,15 +3,16 @@
 #include "magic_number.hpp"
 #include "utility.hpp"
 
-#include <gsl/gsl>
-
 #include <cstddef>
 #include <new>
 #include <optional>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <tuple>
 #include <type_traits>
+
+#include <gsl/gsl>
 
 namespace sp::ucfb {
 
@@ -45,7 +46,7 @@ public:
    //!
    //! \exception std::runtime_error Thrown when the size of the chunk does not
    //! match the size of the span.
-   Reader(const gsl::span<const std::byte> bytes)
+   Reader(const std::span<const std::byte> bytes)
       : _mn{bit_cast<Magic_number>(bytes)},
         _size{bit_cast<std::uint32_t>(
            bytes.subspan(sizeof(Magic_number), sizeof(std::uint32_t)))},
@@ -66,7 +67,7 @@ public:
    //! \param bytes The span of memory holding the ucfb chunk. The size of the
    //! span must be at least 8.
    //!
-   Reader(const Magic_number mn, const gsl::span<const std::byte> bytes)
+   Reader(const Magic_number mn, const std::span<const std::byte> bytes)
       : _mn{mn}, _size{static_cast<std::size_t>(bytes.size())}, _data{bytes.data()}
    {
    }
@@ -96,7 +97,7 @@ public:
 
       if (!unaligned) align_head();
 
-      return bit_cast<Type>(gsl::make_span(&_data[cur_pos], sizeof(Type)));
+      return bit_cast<Type>(std::span{&_data[cur_pos], sizeof(Type)});
    }
 
    //! \brief Reads a trivial unaligned value from the chunk.
@@ -155,7 +156,7 @@ public:
    //! of the chunk.
    template<typename Type>
    auto read_array(const std::size_t size, const bool unaligned = false)
-      -> gsl::span<const Type>
+      -> std::span<const Type>
    {
       static_assert(std::is_standard_layout_v<Type>,
                     "Type must be standard layout.");
@@ -183,7 +184,7 @@ public:
    //! \exception std::runtime_error Thrown when reading the array would go past the end
    //! of the chunk.
    template<typename Type>
-   auto read_array_unaligned(const std::size_t size) -> gsl::span<const Type>
+   auto read_array_unaligned(const std::size_t size) -> std::span<const Type>
    {
       return read_array<Type>(size, true);
    }
@@ -527,7 +528,7 @@ public:
    //!
    //! \exception std::runtime_error Thrown when the size of the chunk does not
    //! match the size of the span.
-   explicit Reader_strict(const gsl::span<const std::byte> bytes)
+   explicit Reader_strict(const std::span<const std::byte> bytes)
       : Reader{bytes}
    {
       Expects(magic_number() == type_mn);

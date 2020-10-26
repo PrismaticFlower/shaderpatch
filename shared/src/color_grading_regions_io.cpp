@@ -4,6 +4,7 @@
 #include "volume_resource.hpp"
 
 #include <limits>
+#include <span>
 
 #include <gsl/gsl>
 
@@ -54,14 +55,12 @@ void write_colorgrading_regions(const std::filesystem::path& save_path,
          }
 
          writer.write<std::uint32_t>(static_cast<std::uint32_t>(yaml.size()));
-         writer.write(gsl::make_span(yaml));
+         writer.write(std::span{yaml});
       }
    }
 
    const auto regions_data = ostream.str();
-   const auto regions_span =
-      gsl::span<const std::byte>(reinterpret_cast<const std::byte*>(regions_data.data()),
-                                 regions_data.size());
+   const auto regions_span = std::as_bytes(std::span{regions_data});
 
    save_volume_resource(save_path, save_path.stem().string(),
                         Volume_resource_type::colorgrading_regions, regions_span);

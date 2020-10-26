@@ -179,7 +179,9 @@ print(string.format("Shader Patch Scripting API loaded. Shader Patch version is 
 
          // Write out the string as a span of unaligned chars to avoid the null
          // terminator as this will cause the Lua loader to fail.
-         body.writer().write_unaligned(gsl::make_span(script.str()));
+         auto str = script.str();
+
+         body.writer().write_unaligned(std::span{str});
 
          // Manually pad out the chunk with new lines, once again to avoid nulls.
          if (const auto remainder = body.size() % 4u; remainder != 0) {

@@ -325,14 +325,6 @@ auto create_triangle_fan_quad_ibuf(core::Shader_patch& shader_patch) noexcept
 }
 }
 
-inline bool operator<(const D3DVERTEXELEMENT9 left, const D3DVERTEXELEMENT9 right) noexcept
-{
-   return std::tie(left.Stream, left.Offset, left.Type, left.Method, left.Usage,
-                   left.UsageIndex) < std::tie(right.Stream, right.Offset,
-                                               right.Type, right.Method,
-                                               right.Usage, right.UsageIndex);
-}
-
 inline bool operator==(const D3DVERTEXELEMENT9 left, const D3DVERTEXELEMENT9 right) noexcept
 {
    return std::tie(left.Stream, left.Offset, left.Type, left.Method, left.Usage,

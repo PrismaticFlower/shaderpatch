@@ -6,9 +6,9 @@
 
 #include <array>
 #include <execution>
+#include <span>
 
 #include <glm/glm.hpp>
-#include <gsl/gsl>
 
 #include <comdef.h>
 
@@ -20,10 +20,10 @@ Upload_scratch_buffer patchup_scratch_buffer{524288u, 524288u};
 
 class Format_patcher_l8 final : public Format_patcher {
 public:
-   auto patch_texture(const DXGI_FORMAT format, const UINT width,
-                      const UINT height, const UINT mip_levels,
-                      const UINT array_size, Upload_texture& input_texture) const
-      noexcept -> std::pair<DXGI_FORMAT, std::unique_ptr<Upload_texture>> override
+   auto patch_texture(const DXGI_FORMAT format, const UINT width, const UINT height,
+                      const UINT mip_levels, const UINT array_size,
+                      Upload_texture& input_texture) const noexcept
+      -> std::pair<DXGI_FORMAT, std::unique_ptr<Upload_texture>> override
    {
       Expects(format == DXGI_FORMAT_R8_UNORM);
 
@@ -88,8 +88,8 @@ private:
    {
       std::for_each_n(std::execution::par_unseq, Index_iterator{}, height, [&](const int y) {
          const auto src_row =
-            gsl::span{source.data + (source.row_pitch * y), source.row_pitch};
-         auto dest_row = gsl::span{dest.data + (dest.row_pitch * y), dest.row_pitch};
+            std::span{source.data + (source.row_pitch * y), source.row_pitch};
+         auto dest_row = std::span{dest.data + (dest.row_pitch * y), dest.row_pitch};
 
          for (auto x = 0; x < width; ++x) {
             auto dest_pixel = dest_row.subspan(4 * x, 4);
@@ -107,10 +107,10 @@ private:
 
 class Format_patcher_a8l8 final : public Format_patcher {
 public:
-   auto patch_texture(const DXGI_FORMAT format, const UINT width,
-                      const UINT height, const UINT mip_levels,
-                      const UINT array_size, Upload_texture& input_texture) const
-      noexcept -> std::pair<DXGI_FORMAT, std::unique_ptr<Upload_texture>> override
+   auto patch_texture(const DXGI_FORMAT format, const UINT width, const UINT height,
+                      const UINT mip_levels, const UINT array_size,
+                      Upload_texture& input_texture) const noexcept
+      -> std::pair<DXGI_FORMAT, std::unique_ptr<Upload_texture>> override
    {
       Expects(format == DXGI_FORMAT_R8G8_UNORM);
 
@@ -175,8 +175,8 @@ private:
    {
       std::for_each_n(std::execution::par_unseq, Index_iterator{}, height, [&](const int y) {
          const auto src_row =
-            gsl::span{source.data + (source.row_pitch * y), source.row_pitch};
-         auto dest_row = gsl::span{dest.data + (dest.row_pitch * y), dest.row_pitch};
+            std::span{source.data + (source.row_pitch * y), source.row_pitch};
+         auto dest_row = std::span{dest.data + (dest.row_pitch * y), dest.row_pitch};
 
          for (auto x = 0; x < width; ++x) {
             dest_row[x * 4] = src_row[x * 2];

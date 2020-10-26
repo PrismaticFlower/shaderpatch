@@ -6,12 +6,12 @@
 #include <array>
 #include <bitset>
 #include <cstdint>
+#include <span>
 #include <string>
 #include <string_view>
 #include <type_traits>
 #include <vector>
 
-#include <gsl/gsl>
 #include <nlohmann/json.hpp>
 
 namespace sp::shader {
@@ -55,9 +55,9 @@ public:
       return _flag_count;
    }
 
-   auto list_flags() const noexcept -> gsl::span<const std::string>
+   auto list_flags() const noexcept -> std::span<const std::string>
    {
-      return gsl::span{_flag_names.data(), _flag_count};
+      return std::span{_flag_names.data(), _flag_count};
    }
 
    auto generate_variations() const noexcept

@@ -30,10 +30,10 @@
 #include "texture_database.hpp"
 #include "texture_loader.hpp"
 
+#include <span>
 #include <vector>
 
 #include <glm/glm.hpp>
-#include <gsl/gsl>
 
 #include <DirectXTex.h>
 #include <d3d11_4.h>
@@ -105,7 +105,7 @@ public:
 
    auto create_game_texture2d(const UINT width, const UINT height,
                               const UINT mip_levels, const DXGI_FORMAT format,
-                              const gsl::span<const Mapped_texture> data) noexcept
+                              const std::span<const Mapped_texture> data) noexcept
       -> Game_texture;
 
    auto create_game_dynamic_texture2d(const Game_texture& texture) noexcept
@@ -113,24 +113,24 @@ public:
 
    auto create_game_texture3d(const UINT width, const UINT height, const UINT depth,
                               const UINT mip_levels, const DXGI_FORMAT format,
-                              const gsl::span<const Mapped_texture> data) noexcept
+                              const std::span<const Mapped_texture> data) noexcept
       -> Game_texture;
 
    auto create_game_texture_cube(const UINT width, const UINT height,
                                  const UINT mip_levels, const DXGI_FORMAT format,
-                                 const gsl::span<const Mapped_texture> data) noexcept
+                                 const std::span<const Mapped_texture> data) noexcept
       -> Game_texture;
 
-   auto create_patch_texture(const gsl::span<const std::byte> texture_data) noexcept
+   auto create_patch_texture(const std::span<const std::byte> texture_data) noexcept
       -> Texture_handle;
 
-   auto create_patch_material(const gsl::span<const std::byte> material_data) noexcept
+   auto create_patch_material(const std::span<const std::byte> material_data) noexcept
       -> Material_handle;
 
-   auto create_patch_effects_config(const gsl::span<const std::byte> effects_config) noexcept
+   auto create_patch_effects_config(const std::span<const std::byte> effects_config) noexcept
       -> Patch_effects_config_handle;
 
-   auto create_game_input_layout(const gsl::span<const Input_layout_element> layout,
+   auto create_game_input_layout(const std::span<const Input_layout_element> layout,
                                  const bool compressed,
                                  const bool particle_texture_scale) noexcept
       -> Game_input_layout;
@@ -142,7 +142,7 @@ public:
                          const bool index_buffer, const bool dynamic) noexcept
       -> Com_ptr<ID3D11Buffer>;
 
-   void load_colorgrading_regions(const gsl::span<const std::byte> regions_data) noexcept;
+   void load_colorgrading_regions(const std::span<const std::byte> regions_data) noexcept;
 
    void update_ia_buffer(ID3D11Buffer& buffer, const UINT offset,
                          const UINT size, const std::byte* data) noexcept;
@@ -206,18 +206,18 @@ public:
    void set_patch_material(Patch_material* material) noexcept;
 
    void set_constants(const cb::Scene_tag, const UINT offset,
-                      const gsl::span<const std::array<float, 4>> constants) noexcept;
+                      const std::span<const std::array<float, 4>> constants) noexcept;
 
    void set_constants(const cb::Draw_tag, const UINT offset,
-                      const gsl::span<const std::array<float, 4>> constants) noexcept;
+                      const std::span<const std::array<float, 4>> constants) noexcept;
 
    void set_constants(const cb::Fixedfunction_tag, const glm::vec4 texture_factor) noexcept;
 
    void set_constants(const cb::Skin_tag, const UINT offset,
-                      const gsl::span<const std::array<float, 4>> constants) noexcept;
+                      const std::span<const std::array<float, 4>> constants) noexcept;
 
    void set_constants(const cb::Draw_ps_tag, const UINT offset,
-                      const gsl::span<const std::array<float, 4>> constants) noexcept;
+                      const std::span<const std::array<float, 4>> constants) noexcept;
 
    void set_informal_projection_matrix(const glm::mat4 matrix) noexcept;
 
@@ -232,7 +232,7 @@ public:
    void end_query(ID3D11Query& query) noexcept;
 
    auto get_query_data(ID3D11Query& query, const bool flush,
-                       gsl::span<std::byte> data) noexcept -> Query_result;
+                       std::span<std::byte> data) noexcept -> Query_result;
 
 private:
    auto current_depthstencil(const bool readonly) const noexcept

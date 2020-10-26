@@ -55,7 +55,7 @@ auto read_json_shader_state(const nlohmann::json& j,
 
 auto read_json_static_flag_values(const nlohmann::json& j,
                                   const nlohmann::json& j_rt_static_flags,
-                                  gsl::span<const std::string> flags)
+                                  std::span<const std::string> flags)
    -> std::unordered_map<std::string, bool>;
 
 inline void from_json(const nlohmann::json& j, Description& description)
@@ -213,7 +213,7 @@ inline auto read_json_shader_state(
 
 inline auto read_json_static_flag_values(const nlohmann::json& j,
                                          const nlohmann::json& j_rt_static_flags,
-                                         gsl::span<const std::string> flags)
+                                         std::span<const std::string> flags)
    -> std::unordered_map<std::string, bool>
 {
    using namespace std::literals;

@@ -27,10 +27,10 @@ public:
 
    auto subresource(const UINT mip, const UINT index) noexcept -> core::Mapped_texture;
 
-   auto subresources() noexcept -> gsl::span<const core::Mapped_texture>;
+   auto subresources() noexcept -> std::span<const core::Mapped_texture>;
 
 private:
-   gsl::span<core::Mapped_texture> _surfaces;
+   std::span<core::Mapped_texture> _surfaces;
 
    Upload_scratch_buffer& _scratch_buffer;
    const UINT _mip_levels;

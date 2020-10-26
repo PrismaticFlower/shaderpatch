@@ -6,11 +6,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <span>
 #include <string_view>
 #include <utility>
 #include <vector>
-
-#include <gsl/gsl>
 
 namespace sp {
 
@@ -34,7 +33,7 @@ static_assert(sizeof(Volume_resource_header) == 16);
 
 void save_volume_resource(const std::filesystem::path& output_path,
                           const std::string_view name, const Volume_resource_type type,
-                          gsl::span<const std::byte> data);
+                          std::span<const std::byte> data);
 
 auto load_volume_resource(const std::filesystem::path& path)
    -> std::pair<Volume_resource_header, std::vector<std::byte>>;
