@@ -38,7 +38,7 @@ public:
 
       _flag_count = static_cast<int>(flags.size());
 
-      for (auto i = 0; i < _flag_count; ++i)
+      for (auto i = 0u; i < _flag_count; ++i)
          std::swap(_flag_names[i], flags[i]);
 
       for (auto& flag_op : flag_ops) {
@@ -81,7 +81,7 @@ public:
 
          Preprocessor_defines defines;
 
-         for (auto flag = 0; flag < _flag_count; ++flag) {
+         for (auto flag = 0u; flag < _flag_count; ++flag) {
             defines.add_define(_flag_names[flag], flags[flag] ? "1"s : "0"s);
          }
 
@@ -106,7 +106,7 @@ private:
    auto apply_flag_ops(std::bitset<max_flags> flags) const noexcept
       -> std::bitset<max_flags>
    {
-      for (auto flag = 0; flag < _flag_count; ++flag) {
+      for (auto flag = 0u; flag < _flag_count; ++flag) {
          if (!flags[flag]) continue;
 
          auto& ops = _flag_ops[flag];
