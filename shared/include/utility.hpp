@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstring>
 #include <iterator>
+#include <span>
 #include <vector>
 
 #include <gsl/gsl>
@@ -25,7 +26,7 @@ inline To bit_cast(const From from) noexcept
 }
 
 template<typename To>
-inline To bit_cast(const gsl::span<const std::byte> from) noexcept
+inline To bit_cast(const std::span<const std::byte> from) noexcept
 {
    static_assert(std::is_standard_layout_v<To>);
 
@@ -39,9 +40,9 @@ inline To bit_cast(const gsl::span<const std::byte> from) noexcept
 }
 
 template<typename To>
-inline To bit_cast(const gsl::span<std::byte> from) noexcept
+inline To bit_cast(const std::span<std::byte> from) noexcept
 {
-   return bit_cast<To>(gsl::span<const std::byte>{from});
+   return bit_cast<To>(std::span<const std::byte>{from});
 }
 
 template<typename From>

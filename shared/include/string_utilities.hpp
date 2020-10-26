@@ -5,6 +5,7 @@
 #include <functional>
 #include <iostream>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -327,7 +328,7 @@ struct Ci_char_traits : public std::char_traits<char> {
    {
       const auto lower_ch = std::tolower(ch);
 
-      for (const auto& c : gsl::make_span(p, count)) {
+      for (const auto& c : std::span{p, count}) {
          if (std::tolower(c) == lower_ch) {
             return &c;
          }

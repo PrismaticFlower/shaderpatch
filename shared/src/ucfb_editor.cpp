@@ -31,21 +31,18 @@ Editor_data_writer::Editor_data_writer(Editor_data_chunk& data_chunk) noexcept
 {
 }
 
-void Editor_data_writer::write(const gsl::span<const std::byte> span, Alignment alignment)
+void Editor_data_writer::write(const std::span<const std::byte> span, Alignment alignment)
 {
-   const auto bytes = gsl::as_bytes(span);
-
-   _data.insert(_data.cend(), bytes.cbegin(), bytes.cend());
+   _data.insert(_data.cend(), span.begin(), span.end());
 
    if (alignment == Alignment::aligned) align();
 }
 
 void Editor_data_writer::write(const std::string_view string, Alignment alignment)
 {
-   const auto bytes =
-      gsl::make_span(reinterpret_cast<const std::byte*>(string.data()), string.size());
+   const auto bytes = std::as_bytes(std::span{string});
 
-   _data.insert(_data.cend(), bytes.cbegin(), bytes.cend());
+   _data.insert(_data.cend(), bytes.begin(), bytes.end());
    _data.push_back(std::byte{'\0'});
 
    if (alignment == Alignment::aligned) align();
@@ -63,7 +60,7 @@ void Editor_data_writer::align() noexcept
    if (remainder != 0) {
       const std::array<std::byte, 4> nulls{};
 
-      write(gsl::make_span(nulls.data(), (4 - remainder)), Alignment::unaligned);
+      write(std::span{nulls.data(), (4 - remainder)}, Alignment::unaligned);
    }
 }
 

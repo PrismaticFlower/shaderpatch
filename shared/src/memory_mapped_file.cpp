@@ -7,8 +7,6 @@
 #include <memory>
 #include <tuple>
 
-#include <gsl/gsl>
-
 #include <Windows.h>
 
 namespace sp::win32 {
@@ -60,14 +58,14 @@ Memeory_mapped_file::Memeory_mapped_file(const std::filesystem::path& path,
    }
 }
 
-auto Memeory_mapped_file::bytes() noexcept -> gsl::span<std::byte>
+auto Memeory_mapped_file::bytes() noexcept -> std::span<std::byte>
 {
-   return gsl::make_span(_view.get(), _size);
+   return std::span{_view.get(), _size};
 }
 
-auto Memeory_mapped_file::bytes() const noexcept -> gsl::span<const std::byte>
+auto Memeory_mapped_file::bytes() const noexcept -> std::span<const std::byte>
 {
-   return gsl::make_span(_view.get(), _size);
+   return std::span{_view.get(), _size};
 }
 
 void Memeory_mapped_file::unmap(std::byte* mapping) noexcept

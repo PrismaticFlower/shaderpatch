@@ -1,6 +1,7 @@
 #pragma once
 
 #include "compose_exception.hpp"
+#include "magic_number.hpp"
 #include "small_function.hpp"
 #include "utility.hpp"
 
@@ -8,6 +9,7 @@
 #include <filesystem>
 #include <fstream>
 #include <ostream>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -15,8 +17,6 @@
 #include <utility>
 
 #include <gsl/gsl>
-
-#include "magic_number.hpp"
 
 namespace sp::ucfb {
 
@@ -109,7 +109,7 @@ public:
    }
 
    template<typename Type>
-   void write(const gsl::span<Type> span, Alignment alignment = Alignment::aligned)
+   void write(const std::span<Type> span, Alignment alignment = Alignment::aligned)
    {
       _out.write(reinterpret_cast<const char*>(span.data()), span.size_bytes());
       increase_size(span.size_bytes());
@@ -208,7 +208,7 @@ private:
 //! This function does writes two things, first at the current position in writer it writes
 //! the offset (in a uint32) from _after_ it that the data will be written. Then it write the data.
 template<std::size_t alignment>
-inline void write_at_alignment(Writer& writer, const gsl::span<const std::byte> data) noexcept
+inline void write_at_alignment(Writer& writer, const std::span<const std::byte> data) noexcept
 {
    // Calculate needed alignment.
    const auto align_from_size = writer.absolute_size() + sizeof(std::uint32_t);

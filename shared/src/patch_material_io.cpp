@@ -68,7 +68,7 @@ void write_patch_material(ucfb::Writer& writer, const Material_config& config)
       }
 
       if (config.cb_type == Material_cb_type::binary) {
-         matl.emplace_child("CBDT"_mn).write(gsl::make_span(config.cb_data));
+         matl.emplace_child("CBDT"_mn).write(std::span{config.cb_data});
       }
 
       const auto write_resources = [&](const Magic_number mn,
@@ -87,9 +87,7 @@ void write_patch_material(ucfb::Writer& writer, const Material_config& config)
    }
 
    const auto matl_data = ostream.str();
-   const auto matl_span =
-      gsl::span<const std::byte>(reinterpret_cast<const std::byte*>(matl_data.data()),
-                                 matl_data.size());
+   const auto matl_span = std::as_bytes(std::span{matl_data});
 
    write_volume_resource(writer, config.name, Volume_resource_type::material, matl_span);
 }
@@ -229,7 +227,7 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
    if (auto cbdt = reader.read_child_strict_optional<"CBDT"_mn>(); cbdt) {
       auto data = cbdt->read_array<std::byte>(cbdt->size());
 
-      config.cb_data = {data.cbegin(), data.cend()};
+      config.cb_data = {data.begin(), data.end()};
    }
 
    const auto read_resources = [&](auto texs, std::vector<std::string>& textures) {

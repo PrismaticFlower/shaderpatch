@@ -4,6 +4,7 @@
 #include <execution>
 #include <filesystem>
 #include <iomanip>
+#include <span>
 #include <sstream>
 
 #include "../logger.hpp"
@@ -13,8 +14,6 @@
 #include <DirectXTex.h>
 #include <d3d11_2.h>
 #include <wincodec.h>
-
-#include <gsl/gsl>
 
 #pragma warning(disable : 4996) // std::localtime use
 
@@ -61,7 +60,7 @@ void make_opaque(const DirectX::Image image) noexcept
 
    std::for_each_n(std::execution::par_unseq, Index_iterator{}, image.height,
                    [&](const auto y) {
-                      const gsl::span<std::uint8_t> row{image.pixels + y * image.rowPitch,
+                      const std::span<std::uint8_t> row{image.pixels + y * image.rowPitch,
                                                         image.rowPitch};
 
                       for (auto x = 0; x < image.width; ++x) {

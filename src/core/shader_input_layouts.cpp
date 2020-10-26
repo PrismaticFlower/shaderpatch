@@ -36,7 +36,7 @@ auto Shader_input_layouts::find_layout(const std::uint16_t index) const noexcept
 }
 
 auto Shader_input_layouts::create_layout(
-   ID3D11Device1& device, const gsl::span<const Input_layout_element> layout_desc) noexcept
+   ID3D11Device1& device, const std::span<const Input_layout_element> layout_desc) noexcept
    -> Com_ptr<ID3D11InputLayout>
 {
    std::vector<D3D11_INPUT_ELEMENT_DESC> input_layout;
@@ -44,7 +44,7 @@ auto Shader_input_layouts::create_layout(
 
    for (const auto& sig_elem : _input_signature) {
       if (const auto it =
-             std::find_if(layout_desc.cbegin(), layout_desc.cend(),
+             std::find_if(layout_desc.begin(), layout_desc.end(),
                           [&](const Input_layout_element& elem) {
                              const bool match =
                                 (elem.semantic_name == sig_elem.semantic_name) &&
@@ -58,7 +58,7 @@ auto Shader_input_layouts::create_layout(
 
                              return match;
                           });
-          it != layout_desc.cend()) {
+          it != layout_desc.end()) {
          input_layout.emplace_back(*it);
       }
       else {

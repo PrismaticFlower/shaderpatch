@@ -6,11 +6,10 @@
 
 #include <filesystem>
 #include <functional>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
-
-#include <gsl/gsl>
 
 #include <d3d11_1.h>
 
@@ -41,7 +40,7 @@ struct Texture_info {
 struct Texture_data {
    UINT pitch;
    UINT slice_pitch;
-   gsl::span<const std::byte> data;
+   std::span<const std::byte> data;
 };
 
 auto load_patch_texture(ucfb::Reader_strict<"sptx"_mn> reader, ID3D11Device1& device)

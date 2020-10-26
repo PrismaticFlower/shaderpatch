@@ -104,8 +104,8 @@ void Declaration_munge::save(const fs::path& output_path,
 
             const auto data = serialize_shader_metadata(shader);
 
-            vs__.write(static_cast<std::uint32_t>(gsl::make_span(data).size_bytes()));
-            vs__.write(gsl::make_span(data));
+            vs__.write(static_cast<std::uint32_t>(std::span{data}.size_bytes()));
+            vs__.write(std::span{data});
          }
       }
 

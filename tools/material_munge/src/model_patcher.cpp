@@ -108,7 +108,7 @@ void edit_ibuf_vbufs(ucfb::Editor_parent_chunk& segm, const Material_options opt
       auto ibuf_writer = ibuf.writer();
 
       ibuf_writer.write(static_cast<std::uint32_t>(index_buffer.size() * 3),
-                        gsl::as_bytes(gsl::make_span(index_buffer)));
+                        std::as_bytes(std::span{index_buffer}));
    }
 
    // Update VBUF.

@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cstring>
 #include <limits>
+#include <span>
 
 namespace sp::d3d9 {
 
@@ -143,7 +144,7 @@ public:
       const bool flush = flags == D3DGETDATA_FLUSH;
 
       const auto result =
-         Type::get_data(flush, gsl::make_span(static_cast<std::byte*>(data), size));
+         Type::get_data(flush, std::span{static_cast<std::byte*>(data), size});
 
       switch (result) {
       case core::Query_result::success:
@@ -183,7 +184,7 @@ public:
          _shader_patch.end_query(*_query);
    }
 
-   auto get_data(const bool flush, gsl::span<std::byte> data) noexcept -> core::Query_result
+   auto get_data(const bool flush, std::span<std::byte> data) noexcept -> core::Query_result
    {
       Expects(data.size() == sizeof(BOOL));
 
@@ -223,7 +224,7 @@ public:
       _shader_patch.end_query(*_query);
    }
 
-   auto get_data(const bool flush, gsl::span<std::byte> data) noexcept -> core::Query_result
+   auto get_data(const bool flush, std::span<std::byte> data) noexcept -> core::Query_result
    {
       Expects(data.size() == sizeof(DWORD));
 
@@ -231,8 +232,8 @@ public:
 
       const auto result =
          _shader_patch.get_query_data(*_query, flush,
-                                      gsl::make_span(reinterpret_cast<std::byte*>(&sample_count),
-                                                     sizeof(sample_count)));
+                                      std::span{reinterpret_cast<std::byte*>(&sample_count),
+                                                sizeof(sample_count)});
 
       if (result != core::Query_result::success) return result;
 

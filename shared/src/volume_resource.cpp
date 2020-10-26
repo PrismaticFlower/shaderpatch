@@ -7,6 +7,8 @@
 #include <cmath>
 #include <utility>
 
+#include <gsl/gsl>
+
 #include <d3d9.h>
 
 namespace sp {
@@ -38,7 +40,7 @@ auto pack_size(const std::uint32_t size) noexcept
 
 void write_volume_resource(ucfb::Writer& writer, const std::string_view name,
                            const Volume_resource_type type,
-                           gsl::span<const std::byte> data)
+                           std::span<const std::byte> data)
 {
    if (data.size() > resource_max_byte_size) {
       throw std::runtime_error{"Resource is too large to store!"};
@@ -117,7 +119,7 @@ void write_volume_resource(ucfb::Writer& writer, const std::string_view name,
 
 void save_volume_resource(const std::filesystem::path& output_path,
                           const std::string_view name, const Volume_resource_type type,
-                          gsl::span<const std::byte> data)
+                          std::span<const std::byte> data)
 {
    if (data.size() > resource_max_byte_size) {
       throw std::runtime_error{"Resource is too large to store!"};
@@ -163,7 +165,7 @@ auto load_volume_resource(const std::filesystem::path& path)
                const auto data =
                   body.read_array_unaligned<std::byte>(header.payload_size);
 
-               return {header, {data.cbegin(), data.cend()}};
+               return {header, {data.begin(), data.end()}};
             }
          }
       }

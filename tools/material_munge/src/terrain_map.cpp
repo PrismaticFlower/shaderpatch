@@ -192,7 +192,7 @@ auto read_texture_transforms(const Terr_header& header,
 
 void read_height_map(std::ifstream& file, const glm::vec3 terrain_offset,
                      const Terr_header& header, const Terrain_indexer& indexer,
-                     const gsl::span<glm::vec3> output)
+                     const std::span<glm::vec3> output)
 {
    std::vector<std::int16_t> fixed_point_heightmap;
    fixed_point_heightmap.resize(header.terrain_length * header.terrain_length);
@@ -212,7 +212,7 @@ void read_height_map(std::ifstream& file, const glm::vec3 terrain_offset,
 }
 
 void read_color_maps(std::ifstream& file, const Terr_header& header,
-                     const Terrain_indexer& indexer, const gsl::span<glm::vec3> output)
+                     const Terrain_indexer& indexer, const std::span<glm::vec3> output)
 {
    std::vector<Terrain_color> unorm_foreground;
    std::vector<Terrain_color> unorm_background;
@@ -238,7 +238,7 @@ void read_color_maps(std::ifstream& file, const Terr_header& header,
 
 void read_diffuse_lighting(std::ifstream& file, const Terr_header& header,
                            const Terrain_indexer& indexer,
-                           const gsl::span<glm::vec3> output)
+                           const std::span<glm::vec3> output)
 {
    std::vector<Terrain_color> unorm_lighting;
    unorm_lighting.resize(header.terrain_length * header.terrain_length);
@@ -256,7 +256,7 @@ void read_diffuse_lighting(std::ifstream& file, const Terr_header& header,
 void read_texture_weights(std::ifstream& file,
                           const std::array<std::uint8_t, 16>& texture_remap,
                           const Terr_header& header, const Terrain_indexer& indexer,
-                          const gsl::span<std::array<float, 16>> output)
+                          const std::span<std::array<float, 16>> output)
 {
    std::vector<std::array<std::uint8_t, 16>> unorm_weights;
    unorm_weights.resize(header.terrain_length * header.terrain_length);
@@ -364,19 +364,21 @@ auto load_terrain_map(const std::filesystem::path& path,
    file.seekg(sizeof(Decal_tile) * header.decal_settings.tile_count + 8, std::ios::cur);
 
    read_height_map(file, terrain_offset, header, indexer,
-                   gsl::make_span(map.position.get(), map.length * map.length));
+                   std::span{map.position.get(),
+                             static_cast<std::size_t>(map.length * map.length)});
    read_color_maps(file, header, indexer,
-                   gsl::make_span(map.color.get(), map.length * map.length));
+                   std::span{map.color.get(),
+                             static_cast<std::size_t>(map.length * map.length)});
 
    if (header.prelit) {
       read_diffuse_lighting(file, header, indexer,
-                            gsl::make_span(map.diffuse_lighting.get(),
-                                           map.length * map.length));
+                            std::span{map.diffuse_lighting.get(),
+                                      static_cast<std::size_t>(map.length * map.length)});
    }
 
    read_texture_weights(file, texture_remap, header, indexer,
-                        gsl::make_span(map.texture_weights.get(),
-                                       map.length * map.length));
+                        std::span{map.texture_weights.get(),
+                                  static_cast<std::size_t>(map.length * map.length)});
 
    try {
       const auto terrain_length_half_sq =

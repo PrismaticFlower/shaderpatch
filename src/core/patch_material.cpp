@@ -12,7 +12,7 @@ namespace {
 auto init_constant_buffer(ID3D11Device5& device, const Material_config& material_config)
 {
    if (material_config.cb_type == Material_cb_type::binary) {
-      const gsl::span<const std::byte> data{material_config.cb_data};
+      const std::span<const std::byte> data{material_config.cb_data};
 
       return create_immutable_constant_buffer(device, data);
    }

@@ -4,6 +4,8 @@
 #include "upload_scratch_buffer.hpp"
 #include "volume_resource.hpp"
 
+#include <span>
+
 namespace sp::d3d9 {
 
 Com_ptr<Texture3d_resource> Texture3d_resource::create(core::Shader_patch& patch,
@@ -141,14 +143,14 @@ HRESULT Texture3d_resource::UnlockBox(UINT level) noexcept
 void Texture3d_resource::create_resource() noexcept
 {
    const auto volume_res_header = bit_cast<Volume_resource_header>(
-      gsl::span{_lock_data, sizeof(Volume_resource_header)});
+      std::span{_lock_data, sizeof(Volume_resource_header)});
 
    if (volume_res_header.mn != "spvr"_mn) {
       log_and_terminate("Unexpected volume resource magic number!");
    }
 
-   const auto payload = gsl::make_span(_lock_data + sizeof(Volume_resource_header),
-                                       volume_res_header.payload_size);
+   const std::span payload{_lock_data + sizeof(Volume_resource_header),
+                           volume_res_header.payload_size};
 
    switch (volume_res_header.type) {
    case Volume_resource_type::material:

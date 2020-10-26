@@ -53,8 +53,7 @@ Upload_texture::Upload_texture(Upload_scratch_buffer& scratch_buffer,
    const auto size = calc_size(format, width, height, depth, mip_levels, array_size);
    auto* const data = scratch_buffer.lock(size);
 
-   _surfaces = gsl::make_span(reinterpret_cast<core::Mapped_texture*>(data),
-                              array_size * mip_levels);
+   _surfaces = {reinterpret_cast<core::Mapped_texture*>(data), array_size * mip_levels};
 
    std::uninitialized_default_construct(_surfaces.begin(), _surfaces.end());
 
@@ -99,7 +98,7 @@ auto Upload_texture::subresource(const UINT mip, const UINT index) noexcept
    return _surfaces[index * _mip_levels + mip];
 }
 
-auto Upload_texture::subresources() noexcept -> gsl::span<const core::Mapped_texture>
+auto Upload_texture::subresources() noexcept -> std::span<const core::Mapped_texture>
 {
    return _surfaces;
 }

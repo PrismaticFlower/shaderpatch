@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string_view>
 #include <variant>
 #include <vector>
@@ -30,7 +31,7 @@ public:
    Editor_data_writer(Editor_data_writer&&) = delete;
    Editor_data_writer& operator=(Editor_data_writer&&) = delete;
 
-   void write(const gsl::span<const std::byte> bytes,
+   void write(const std::span<const std::byte> bytes,
               Alignment alignment = Alignment::aligned);
 
    template<typename Type>
@@ -41,23 +42,20 @@ public:
       static_assert(std::is_trivially_destructible_v<Type>,
                     "Type must be trivially destructible!");
 
-      const auto bytes =
-         gsl::make_span(reinterpret_cast<const std::byte*>(&value), sizeof(Type));
+      const auto bytes = std::as_bytes(std::span{&value, 1});
 
       write(bytes, alignment);
    }
 
    template<typename Type>
-   void write(const gsl::span<Type> span, Alignment alignment = Alignment::aligned)
+   void write(const std::span<Type> span, Alignment alignment = Alignment::aligned)
    {
       static_assert(std::is_standard_layout_v<Type>,
                     "Type must be standard layout!");
       static_assert(std::is_trivially_destructible_v<Type>,
                     "Type must be trivially destructible!");
 
-      const auto bytes = gsl::as_bytes(span);
-
-      write(bytes, alignment);
+      write(std::as_bytes(span), alignment);
    }
 
    void write(const std::string_view string, Alignment alignment = Alignment::aligned);
@@ -92,7 +90,7 @@ public:
    {
       const auto init = reader.read_array<std::byte>(reader.size());
 
-      assign(init.cbegin(), init.cend());
+      assign(init.begin(), init.end());
    }
 
    explicit Editor_data_chunk(const Editor_data_chunk&) = default;
@@ -145,14 +143,14 @@ public:
       return *this;
    }
 
-   auto span() noexcept -> gsl::span<value_type>
+   auto span() noexcept -> std::span<value_type>
    {
-      return gsl::make_span(data(), size());
+      return std::span{data(), size()};
    }
 
-   auto span() const noexcept -> gsl::span<const value_type>
+   auto span() const noexcept -> std::span<const value_type>
    {
-      return gsl::make_span(data(), size());
+      return std::span{data(), size()};
    }
 };
 

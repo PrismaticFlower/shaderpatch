@@ -162,7 +162,7 @@ void add_terrain_model_segm(ucfb::Editor_parent_chunk& modl,
             .writer();
 
       ibuf.write(static_cast<std::uint32_t>(segment.indices.size() * 3));
-      ibuf.write(gsl::as_bytes(gsl::make_span(segment.indices)));
+      ibuf.write(std::as_bytes(std::span{segment.indices}));
    }
 
    // VBUF
@@ -188,7 +188,7 @@ void add_terrain_model_modl(ucfb::Editor& editor, const std::string_view model_n
                             const std::string_view skel_bone_name,
                             const std::string_view material_name,
                             const std::array<glm::vec3, 2> model_aabb,
-                            const gsl::span<const Terrain_model_segment> segments,
+                            const std::span<const Terrain_model_segment> segments,
                             const bool keep_static_lighting)
 {
    auto& modl =
@@ -323,7 +323,7 @@ void add_terrain_model_chunk(ucfb::Editor& editor,
    // modl - LOWD
    if (low_detail_segment) {
       add_terrain_model_modl(editor, model_name_lowd, skel_bone_name, material_name_lowd,
-                             model_aabb, gsl::span(&(*low_detail_segment), 1),
+                             model_aabb, std::span(&(*low_detail_segment), 1),
                              keep_static_lighting);
    }
    else if (high_res_far_terrain) {
@@ -530,8 +530,7 @@ void terrain_modelify(const Terrain_map& terrain, const std::string_view materia
    ucfb::Editor editor = [&] {
       win32::Memeory_mapped_file file{munged_input_terrain_path,
                                       win32::Memeory_mapped_file::Mode::read};
-      const auto is_parent = [](const Magic_number mn) noexcept
-      {
+      const auto is_parent = [](const Magic_number mn) noexcept {
          return mn == "tern"_mn;
       };
 

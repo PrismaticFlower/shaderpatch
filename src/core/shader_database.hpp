@@ -11,11 +11,10 @@
 #include <functional>
 #include <iomanip>
 #include <optional>
+#include <span>
 #include <string>
 #include <tuple>
 #include <unordered_map>
-
-#include <gsl/gsl>
 
 #include <d3d11_1.h>
 
@@ -83,13 +82,13 @@ public:
 
    auto get(const std::uint16_t static_flags = 0,
             const Vertex_shader_flags game_flags = {}) const noexcept
-      -> std::optional<std::tuple<ID3D11VertexShader*, gsl::span<const std::byte>, gsl::span<const Shader_input_element>>>
+      -> std::optional<std::tuple<ID3D11VertexShader*, std::span<const std::byte>, std::span<const Shader_input_element>>>
    {
       if (const auto it = _variations.find(index(static_flags, game_flags));
           it != _variations.end()) {
          return std::tuple{std::get<0>(it->second).get(),
-                           gsl::make_span(std::get<1>(it->second)),
-                           gsl::make_span(std::get<2>(it->second))};
+                           std::span{std::get<1>(it->second)},
+                           std::span{std::get<2>(it->second)}};
       }
       else {
          return std::nullopt;

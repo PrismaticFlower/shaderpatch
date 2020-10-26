@@ -5,7 +5,7 @@
 namespace sp::core {
 
 auto create_immutable_constant_buffer(ID3D11Device5& device,
-                                      const gsl::span<const std::byte> data) noexcept
+                                      const std::span<const std::byte> data) noexcept
    -> Com_ptr<ID3D11Buffer>
 {
    Expects(is_multiple_of<16u>(data.size()));

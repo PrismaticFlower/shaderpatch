@@ -113,8 +113,8 @@ auto get_texture_data(const DX::ScratchImage& image) -> std::vector<Texture_data
          Texture_data data;
          data.pitch = gsl::narrow_cast<UINT>(sub_image->rowPitch);
          data.slice_pitch = gsl::narrow_cast<UINT>(sub_image->slicePitch);
-         data.data = gsl::make_span(reinterpret_cast<std::byte*>(sub_image->pixels),
-                                    sub_image->slicePitch * depth);
+         data.data = std::span{reinterpret_cast<std::byte*>(sub_image->pixels),
+                               sub_image->slicePitch * depth};
 
          texture_data.emplace_back(data);
       }
