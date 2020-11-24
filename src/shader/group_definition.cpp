@@ -157,7 +157,7 @@ void from_json(const nlohmann::json& j, Group_definition::State& state)
    read_state_entrypoint("vertex_shader"s, state.vs_entrypoint, state.vs_static_flags);
    read_state_entrypoint("pixel_shader"s, state.ps_entrypoint, state.ps_static_flags);
 
-   read_state_entrypoint_optional("oit_pixel_shader"s, state.ps_oit_entrypoint,
+   read_state_entrypoint_optional("pixel_oit_shader"s, state.ps_oit_entrypoint,
                                   state.ps_oit_static_flags);
    read_state_entrypoint_optional("hull_shader"s, state.hs_entrypoint,
                                   state.hs_static_flags);
