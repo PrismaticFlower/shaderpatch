@@ -7,15 +7,14 @@
 #include <DirectXTex.h>
 #include <gsl/gsl>
 
+using namespace std::literals;
+
 namespace sp::core {
 
-Image_stretcher::Image_stretcher(ID3D11Device1& device,
-                                 const Shader_database& shader_database) noexcept
-   : _vs{std::get<0>(
-        shader_database.groups.at("stretch_texture"s).vertex.at("main_vs"s).copy())},
-     _ps{shader_database.groups.at("stretch_texture"s).pixel.at("main_ps"s).copy()},
-     _ps_ms{
-        shader_database.groups.at("stretch_texture"s).pixel.at("main_ms_ps"s).copy()},
+Image_stretcher::Image_stretcher(ID3D11Device1& device, shader::Database& shaders) noexcept
+   : _vs{std::get<0>(shaders.vertex("stretch_texture"sv).entrypoint("main_vs"s))},
+     _ps{shaders.pixel("stretch_texture"sv).entrypoint("main_ps"sv)},
+     _ps_ms{shaders.pixel("stretch_texture"sv).entrypoint("main_ms_ps"sv)},
      _constant_buffer{create_dynamic_constant_buffer(device, sizeof(Input_vars))}
 {
 }
@@ -62,8 +61,8 @@ void Image_stretcher::stretch(ID3D11DeviceContext1& dc, const D3D11_BOX& source_
    dc.Draw(3, 0);
 }
 
-auto Image_stretcher::get_pixel_shader(const Game_rendertarget& source) const
-   noexcept -> ID3D11PixelShader*
+auto Image_stretcher::get_pixel_shader(const Game_rendertarget& source) const noexcept
+   -> ID3D11PixelShader*
 {
    return (source.sample_count == 1) ? _ps.get() : _ps_ms.get();
 }

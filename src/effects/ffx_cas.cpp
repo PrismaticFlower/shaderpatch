@@ -4,6 +4,8 @@
 
 #include <cmath>
 
+using namespace std::literals;
+
 namespace sp::effects {
 
 namespace {
@@ -23,17 +25,19 @@ bool fp16_supported(ID3D11Device1& device)
 
 }
 
-FFX_cas::FFX_cas(Com_ptr<ID3D11Device1> device,
-                 const core::Shader_group_collection& shader_groups) noexcept
+FFX_cas::FFX_cas(Com_ptr<ID3D11Device1> device, shader::Database& shaders) noexcept
    : _fp16_supported{fp16_supported(*device)},
      _constant_buffer{core::create_dynamic_constant_buffer(*device, sizeof(Constants))},
      _cs_sharpen_only{
-        shader_groups.at("ffx_cas"s).compute.at("main_cs"s).copy(cas_sharpen_only_flag)},
-     _cs_upscale{shader_groups.at("ffx_cas"s).compute.at("main_cs"s).copy(0b0)},
+        shaders.compute("ffx_cas"sv).entrypoint("main_cs"sv, cas_sharpen_only_flag)},
+     _cs_upscale{shaders.compute("ffx_cas"sv).entrypoint("main_cs"sv)},
      _cs_fp16_sharpen_only{
-        shader_groups.at("ffx_cas"s).compute.at("main_cs"s).copy_if(cas_fp16_flag | cas_sharpen_only_flag)},
-     _cs_fp16_upscale{
-        shader_groups.at("ffx_cas"s).compute.at("main_cs"s).copy_if(cas_fp16_flag)}
+        _fp16_supported
+           ? shaders.compute("ffx_cas"sv).entrypoint("main_cs"sv, cas_fp16_flag | cas_sharpen_only_flag)
+           : nullptr},
+     _cs_fp16_upscale{_fp16_supported
+                         ? shaders.compute("ffx_cas"sv).entrypoint("main_cs"sv, cas_fp16_flag)
+                         : nullptr}
 {
 }
 

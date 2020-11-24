@@ -1,5 +1,6 @@
 
 #include "patch_material.hpp"
+#include "../logger.hpp"
 #include "d3d11_helpers.hpp"
 #include "material_constant_buffers.hpp"
 

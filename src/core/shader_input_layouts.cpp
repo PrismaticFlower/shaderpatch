@@ -8,8 +8,8 @@
 
 namespace sp::core {
 
-Shader_input_layouts::Shader_input_layouts(std::vector<Shader_input_element> input_signature,
-                                           std::vector<std::byte> bytecode) noexcept
+Shader_input_layouts::Shader_input_layouts(shader::Vertex_input_layout input_signature,
+                                           shader::Bytecode_blob bytecode) noexcept
    : _input_signature{std::move(input_signature)}, _bytecode{std::move(bytecode)}
 {
 }
@@ -50,8 +50,8 @@ auto Shader_input_layouts::create_layout(
                                 (elem.semantic_name == sig_elem.semantic_name) &&
                                 (elem.semantic_index == sig_elem.semantic_index);
 
-                             if (match && (dxgi_format_to_input_type(elem.format) !=
-                                           sig_elem.input_type)) {
+                             if (match && (shader::dxgi_format_to_input_type(
+                                              elem.format) != sig_elem.input_type)) {
                                 log_and_terminate(
                                    "Unexpected IA layout format!");
                              }

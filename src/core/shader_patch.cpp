@@ -706,39 +706,32 @@ auto Shader_patch::create_game_input_layout(
 auto Shader_patch::create_game_shader(const Shader_metadata metadata) noexcept
    -> std::shared_ptr<Game_shader>
 {
-   auto& state =
-      _shader_database->rendertypes.at(metadata.rendertype_name).at(metadata.shader_name);
+   auto& state = _shader_rendertypes_database[metadata.rendertype_name].state(
+      metadata.shader_name);
 
-   auto vertex_shader = state.vertex.at_if(metadata.vertex_shader_flags);
-
-   auto [vs, vs_bytecode, vs_inputlayout] =
-      vertex_shader.value_or(decltype(vertex_shader)::value_type{});
-
-   auto vertex_shader_compressed = state.vertex.at_if(
-      metadata.vertex_shader_flags | Vertex_shader_flags::compressed);
-
+   auto [vs, vs_bytecode, vs_inputlayout] = state.vertex(metadata.vertex_shader_flags);
    auto [vs_compressed, vs_bytecode_compressed, vs_inputlayout_compressed] =
-      vertex_shader_compressed.value_or(decltype(vertex_shader)::value_type{});
+      state.vertex(metadata.vertex_shader_flags | Vertex_shader_flags::compressed);
+
+   if (!vs && !vs_compressed) {
+      log_and_terminate("Game shader has no vertex shader!"sv);
+   }
 
    auto game_shader = std::make_shared<Game_shader>(
-      Game_shader{std::move(vs),
-                  std::move(vs_compressed),
-                  state.pixel,
-                  state.pixel_oit,
-                  metadata.light_active,
-                  metadata.light_active_point_count,
-                  metadata.light_active_spot,
-                  metadata.rendertype,
-                  metadata.srgb_state,
-                  metadata.shader_name,
-                  metadata.vertex_shader_flags,
-                  {std::move(vs_inputlayout), std::move(vs_bytecode)},
-                  {std::move(vs_inputlayout_compressed),
-                   std::move(vs_bytecode_compressed)}});
-
-   if (!game_shader->vs && !game_shader->vs_compressed)
-      log_and_terminate("Game_shader has no vertex shader!");
-   if (!game_shader->ps) log_and_terminate("Game_shader has no pixel shader!");
+      Game_shader{.vs = std::move(vs),
+                  .vs_compressed = std::move(vs_compressed),
+                  .ps = state.pixel(),
+                  .ps_oit = state.pixel_oit(),
+                  .light_active = metadata.light_active,
+                  .light_active_point_count = metadata.light_active_point_count,
+                  .light_active_spot = metadata.light_active_spot,
+                  .rendertype = metadata.rendertype,
+                  .srgb_state = metadata.srgb_state,
+                  .shader_name = metadata.shader_name,
+                  .vertex_shader_flags = metadata.vertex_shader_flags,
+                  .input_layouts = {std::move(vs_inputlayout), std::move(vs_bytecode)},
+                  .input_layouts_compressed = {std::move(vs_inputlayout_compressed),
+                                               std::move(vs_bytecode_compressed)}});
 
    return game_shader;
 }

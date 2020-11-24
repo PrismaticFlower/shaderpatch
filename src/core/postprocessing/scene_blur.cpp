@@ -9,12 +9,10 @@
 
 namespace sp::core::postprocessing {
 
-Scene_blur::Scene_blur(ID3D11Device5& device, const Shader_database& shader_database) noexcept
-   : _vs{std::get<0>(
-        shader_database.groups.at("postprocess"s).vertex.at("main_vs"s).copy())},
-     _ps_blur{shader_database.groups.at("scene blur"s).pixel.at("blur_ps"s).copy()},
-     _ps_overlay{
-        shader_database.groups.at("scene blur"s).pixel.at("overlay_ps"s).copy()},
+Scene_blur::Scene_blur(ID3D11Device5& device, shader::Database& shaders) noexcept
+   : _vs{std::get<0>(shaders.vertex("postprocess"sv).entrypoint("main_vs"sv))},
+     _ps_blur{shaders.pixel("scene blur"sv).entrypoint("blur_ps"sv)},
+     _ps_overlay{shaders.pixel("scene blur"sv).entrypoint("overlay_ps"sv)},
      _constant_buffer{create_dynamic_constant_buffer(device, sizeof(Input_vars))},
      _sampler{[&] {
         Com_ptr<ID3D11SamplerState> sampler;

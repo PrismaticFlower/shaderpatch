@@ -32,8 +32,7 @@ struct Effects_control_config {
 
 class Control {
 public:
-   Control(Com_ptr<ID3D11Device4> device,
-           const core::Shader_group_collection& shader_groups) noexcept;
+   Control(Com_ptr<ID3D11Device4> device, shader::Database& shaders) noexcept;
 
    bool enabled(const bool enabled) noexcept;
 

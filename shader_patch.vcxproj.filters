@@ -22,6 +22,9 @@
     <Filter Include="src\core\postprocessing">
       <UniqueIdentifier>{ff8b3a06-0d9a-4998-bf6f-08ec760c426d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\shader">
+      <UniqueIdentifier>{4e3a658b-0076-4ec8-b981-52b71cc90224}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -80,9 +83,6 @@
     </ClCompile>
     <ClCompile Include="src\direct3d\query.cpp">
       <Filter>src\direct3d</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\shader_loader.cpp">
-      <Filter>src\core</Filter>
     </ClCompile>
     <ClCompile Include="src\core\shader_patch.cpp">
       <Filter>src\core</Filter>
@@ -228,6 +228,18 @@
     <ClCompile Include="src\window_hooks.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\shader\database.cpp">
+      <Filter>src\shader</Filter>
+    </ClCompile>
+    <ClCompile Include="src\shader\vertex_input_layout.cpp">
+      <Filter>src\shader</Filter>
+    </ClCompile>
+    <ClCompile Include="src\shader\compiler.cpp">
+      <Filter>src\shader</Filter>
+    </ClCompile>
+    <ClCompile Include="src\shader\group_definition.cpp">
+      <Filter>src\shader</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -341,12 +353,6 @@
     <ClInclude Include="src\direct3d\query.hpp">
       <Filter>src\direct3d</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\shader_database.hpp">
-      <Filter>src\core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\shader_loader.hpp">
-      <Filter>src\core</Filter>
-    </ClInclude>
     <ClInclude Include="src\core\game_rendertarget.hpp">
       <Filter>src\core</Filter>
     </ClInclude>
@@ -372,9 +378,6 @@
       <Filter>src\core</Filter>
     </ClInclude>
     <ClInclude Include="src\core\shader_input_layouts.hpp">
-      <Filter>src\core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\shader_input_element.hpp">
       <Filter>src\core</Filter>
     </ClInclude>
     <ClInclude Include="src\core\image_stretcher.hpp">
@@ -514,6 +517,42 @@
     </ClInclude>
     <ClInclude Include="src\window_hooks.hpp">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader\database.hpp">
+      <Filter>src\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader\common.hpp">
+      <Filter>src\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader\static_flags.hpp">
+      <Filter>src\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader\preprocessor_defines.hpp">
+      <Filter>src\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader\cache.hpp">
+      <Filter>src\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader\entrypoint_description.hpp">
+      <Filter>src\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader\bytecode_blob.hpp">
+      <Filter>src\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader\compiler.hpp">
+      <Filter>src\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader\vertex_input_layout.hpp">
+      <Filter>src\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader\group_definition.hpp">
+      <Filter>src\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader\rendertype_state_description.hpp">
+      <Filter>src\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader\source_file_store.hpp">
+      <Filter>src\shader</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

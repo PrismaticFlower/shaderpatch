@@ -37,9 +37,8 @@ FFX_cas_params show_ffx_cas_imgui(FFX_cas_params params) noexcept;
 void show_tonemapping_curve(std::function<float(float)> tonemapper) noexcept;
 }
 
-Control::Control(Com_ptr<ID3D11Device4> device,
-                 const core::Shader_group_collection& shader_groups) noexcept
-   : postprocess{device, shader_groups}, cmaa2{device, shader_groups}, ssao{device}, ffx_cas{device, shader_groups}, profiler{device}
+Control::Control(Com_ptr<ID3D11Device4> device, shader::Database& shaders) noexcept
+   : postprocess{device, shaders}, cmaa2{device, shaders}, ssao{device}, ffx_cas{device, shaders}, profiler{device}
 {
    if (user_config.graphics.enable_user_effects_config)
       load_params_from_yaml_file(user_config.graphics.user_effects_config);

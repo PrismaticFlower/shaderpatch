@@ -1,7 +1,7 @@
 #pragma once
 
+#include "../shader/database.hpp"
 #include "com_ptr.hpp"
-#include "shader_database.hpp"
 
 #include <d3d11_4.h>
 
@@ -9,8 +9,7 @@ namespace sp::core {
 
 class OIT_provider {
 public:
-   OIT_provider(Com_ptr<ID3D11Device5> device,
-                const Shader_group_collection& shaders) noexcept;
+   OIT_provider(Com_ptr<ID3D11Device5> device, shader::Database& shaders) noexcept;
 
    ~OIT_provider() noexcept = default;
 

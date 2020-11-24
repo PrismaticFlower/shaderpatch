@@ -9,12 +9,11 @@ namespace sp::core {
 
 using namespace std::literals;
 
-OIT_provider::OIT_provider(Com_ptr<ID3D11Device5> device,
-                           const Shader_group_collection& shaders) noexcept
+OIT_provider::OIT_provider(Com_ptr<ID3D11Device5> device, shader::Database& shaders) noexcept
    : _device{device},
      _vs{std::get<Com_ptr<ID3D11VertexShader>>(
-        shaders.at("adaptive oit resolve"s).vertex.at("main_vs").copy())},
-     _ps{shaders.at("adaptive oit resolve"s).pixel.at("main_ps").copy()}
+        shaders.vertex("adaptive oit resolve"sv).entrypoint("main_vs"))},
+     _ps{shaders.pixel("adaptive oit resolve"sv).entrypoint("main_ps")}
 {
    if (_usable) {
       log(Log_level::info,

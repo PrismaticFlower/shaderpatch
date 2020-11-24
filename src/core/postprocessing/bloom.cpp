@@ -14,37 +14,20 @@ namespace {
 const auto threshold_scoped_flag = 0b1;
 }
 
-Bloom::Bloom(ID3D11Device5& device, const Shader_database& shader_database) noexcept
-   : _vs{std::get<0>(
-        shader_database.groups.at("postprocess"s).vertex.at("main_vs"s).copy())},
-     _ps_threshold{
-        shader_database.groups.at("bloom alt"s).pixel.at("threshold_ps"s).copy()},
+Bloom::Bloom(ID3D11Device5& device, shader::Database& shaders) noexcept
+   : _vs{std::get<0>(shaders.vertex("postprocess"sv).entrypoint("main_vs"sv))},
+     _ps_threshold{shaders.pixel("bloom alt"sv).entrypoint("threshold_ps"sv)},
      _ps_scoped_threshold{
-        shader_database.groups.at("bloom alt"s).pixel.at("threshold_ps"s).copy(threshold_scoped_flag)},
-     _ps_overlay{shader_database.groups.at("bloom alt"s).pixel.at("overlay_ps"s).copy()},
-     _ps_brighten{
-        shader_database.groups.at("bloom alt"s).pixel.at("brighten_ps"s).copy()},
-     _ps_199_blur{shader_database.groups.at("gaussian blur"s)
-                     .pixel.at("gaussian_blur_199_ps"s)
-                     .copy()},
-     _ps_151_blur{shader_database.groups.at("gaussian blur"s)
-                     .pixel.at("gaussian_blur_151_ps"s)
-                     .copy()},
-     _ps_99_blur{shader_database.groups.at("gaussian blur"s)
-                    .pixel.at("gaussian_blur_99_ps"s)
-                    .copy()},
-     _ps_75_blur{shader_database.groups.at("gaussian blur"s)
-                    .pixel.at("gaussian_blur_75_ps"s)
-                    .copy()},
-     _ps_51_blur{shader_database.groups.at("gaussian blur"s)
-                    .pixel.at("gaussian_blur_51_ps"s)
-                    .copy()},
-     _ps_39_blur{shader_database.groups.at("gaussian blur"s)
-                    .pixel.at("gaussian_blur_39_ps"s)
-                    .copy()},
-     _ps_23_blur{shader_database.groups.at("gaussian blur"s)
-                    .pixel.at("gaussian_blur_23_ps"s)
-                    .copy()},
+        shaders.pixel("bloom alt"sv).entrypoint("threshold_ps"sv, threshold_scoped_flag)},
+     _ps_overlay{shaders.pixel("bloom alt"sv).entrypoint("overlay_ps"sv)},
+     _ps_brighten{shaders.pixel("bloom alt"sv).entrypoint("brighten_ps"sv)},
+     _ps_199_blur{shaders.pixel("gaussian blur"sv).entrypoint("gaussian_blur_199_ps"sv)},
+     _ps_151_blur{shaders.pixel("gaussian blur"sv).entrypoint("gaussian_blur_151_ps"sv)},
+     _ps_99_blur{shaders.pixel("gaussian blur"sv).entrypoint("gaussian_blur_99_ps"sv)},
+     _ps_75_blur{shaders.pixel("gaussian blur"sv).entrypoint("gaussian_blur_75_ps"sv)},
+     _ps_51_blur{shaders.pixel("gaussian blur"sv).entrypoint("gaussian_blur_51_ps"sv)},
+     _ps_39_blur{shaders.pixel("gaussian blur"sv).entrypoint("gaussian_blur_39_ps"sv)},
+     _ps_23_blur{shaders.pixel("gaussian blur"sv).entrypoint("gaussian_blur_23_ps"sv)},
      _constant_buffer{create_dynamic_constant_buffer(device, sizeof(Input_vars))},
      _blur_constant_buffer{
         create_dynamic_constant_buffer(device, sizeof(Blur_input_vars))},

@@ -3,6 +3,7 @@
 #include "enum_flags.hpp"
 
 #include <cstdint>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../core/shader_database.hpp"
+#include "../shader/database.hpp"
 #include "com_ptr.hpp"
 #include "profiler.hpp"
 
@@ -21,8 +21,7 @@ struct CMAA2_input_output {
 
 class CMAA2 {
 public:
-   CMAA2(Com_ptr<ID3D11Device1> device, const core::Shader_group_collection& shader_groups)
-   noexcept;
+   CMAA2(Com_ptr<ID3D11Device1> device, shader::Database& shaders) noexcept;
 
    void apply(ID3D11DeviceContext1& dc, Profiler& profiler,
               CMAA2_input_output input_output) noexcept;
@@ -59,7 +58,7 @@ private:
 
    const Com_ptr<ID3D11SamplerState> _point_sampler;
    const Com_ptr<ID3D11Device1> _device;
-   const core::Shader_entrypoints<core::Compute_shader_entrypoint> _shader_entrypoints;
+   shader::Group_compute& _shaders;
 };
 
 }

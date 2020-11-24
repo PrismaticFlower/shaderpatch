@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../core/d3d11_helpers.hpp"
-#include "../core/shader_database.hpp"
+#include "../shader/database.hpp"
 #include "color_grading_regions_io.hpp"
 #include "com_ptr.hpp"
 #include "filmic_tonemapper.hpp"
@@ -21,7 +21,7 @@ public:
    constexpr static auto lut_dimension = 32u;
 
    Color_grading_lut_baker(Com_ptr<ID3D11Device1> device,
-                           const core::Shader_group_collection& shader_groups) noexcept;
+                           shader::Database& shaders) noexcept;
 
    void bake_color_grading_lut(ID3D11DeviceContext1& dc,
                                const Color_grading_params& params) noexcept;

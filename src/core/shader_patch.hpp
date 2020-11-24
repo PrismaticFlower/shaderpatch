@@ -3,6 +3,7 @@
 #include "../effects/control.hpp"
 #include "../effects/profiler.hpp"
 #include "../effects/rendertarget_allocator.hpp"
+#include "../shader/database.hpp"
 #include "backbuffer_cmaa2_views.hpp"
 #include "com_ptr.hpp"
 #include "constant_buffers.hpp"
@@ -23,8 +24,6 @@
 #include "patch_effects_config_handle.hpp"
 #include "patch_material.hpp"
 #include "sampler_states.hpp"
-#include "shader_database.hpp"
-#include "shader_loader.hpp"
 #include "shader_metadata.hpp"
 #include "small_function.hpp"
 #include "swapchain.hpp"
@@ -39,8 +38,6 @@
 #include <DirectXTex.h>
 #include <d3d11_4.h>
 #include <dxgi1_6.h>
-
-#pragma warning(disable : 4324)
 
 namespace sp {
 class BF2_log_monitor;
@@ -306,9 +303,8 @@ private:
    Swapchain _swapchain;
 
    Input_layout_descriptions _input_layout_descriptions;
-   const std::shared_ptr<Shader_database> _shader_database =
-      std::make_shared<Shader_database>(
-         load_shader_lvl(L"data/shaderpatch/shaders.lvl", *_device));
+   shader::Database _shader_database{_device};
+   shader::Rendertypes_database _shader_rendertypes_database{_shader_database};
 
    std::vector<Game_rendertarget> _game_rendertargets = {_swapchain.game_rendertarget()};
    Game_rendertarget_id _current_game_rendertarget = _game_backbuffer_index;
@@ -418,20 +414,20 @@ private:
       return buffer;
    }();
 
-   OIT_provider _oit_provider{_device, _shader_database->groups};
+   OIT_provider _oit_provider{_device, _shader_database};
 
-   const Image_stretcher _image_stretcher{*_device, *_shader_database};
-   Late_backbuffer_resolver _late_backbuffer_resolver{*_device, *_shader_database};
-   const Depth_msaa_resolver _depth_msaa_resolver{*_device, *_shader_database};
+   const Image_stretcher _image_stretcher{*_device, _shader_database};
+   Late_backbuffer_resolver _late_backbuffer_resolver{*_device, _shader_database};
+   const Depth_msaa_resolver _depth_msaa_resolver{*_device, _shader_database};
    Sampler_states _sampler_states{*_device};
    Shader_resource_database _shader_resource_database{
       load_texture_lvl(L"data/shaderpatch/textures.lvl", *_device)};
-   Game_alt_postprocessing _game_postprocessing{*_device, *_shader_database};
+   Game_alt_postprocessing _game_postprocessing{*_device, _shader_database};
 
-   effects::Control _effects{_device, _shader_database->groups};
+   effects::Control _effects{_device, _shader_database};
    effects::Rendertarget_allocator _rendertarget_allocator{_device};
 
-   Material_shader_factory _material_shader_factory{_device, _shader_database};
+   Material_shader_factory _material_shader_factory{_device, _shader_rendertypes_database};
    std::vector<std::unique_ptr<Patch_material>> _materials;
 
    glm::mat4 _informal_projection_matrix;
@@ -450,5 +446,3 @@ private:
 };
 }
 }
-
-#pragma warning(default : 4324)

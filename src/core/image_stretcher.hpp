@@ -1,8 +1,8 @@
 #pragma once
 
+#include "../shader/database.hpp"
 #include "com_ptr.hpp"
 #include "game_rendertarget.hpp"
-#include "shader_database.hpp"
 
 #include <glm/glm.hpp>
 
@@ -12,7 +12,7 @@ namespace sp::core {
 
 class Image_stretcher {
 public:
-   Image_stretcher(ID3D11Device1& device, const Shader_database& shader_database) noexcept;
+   Image_stretcher(ID3D11Device1& device, shader::Database& shaders) noexcept;
 
    ~Image_stretcher() = default;
    Image_stretcher(const Image_stretcher&) = default;
