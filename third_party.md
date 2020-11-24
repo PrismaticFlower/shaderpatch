@@ -575,13 +575,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-### (FreeType)[https://www.freetype.org]
+### [FreeType](https://www.freetype.org)
 Used in font_packer to easily load and render fonts.
 ```
 Portions of this software are copyright © 2020 The FreeType
 Project (www.freetype.org).  All rights reserved.
 ```
-### (abseil-cpp)[https://github.com/abseil/abseil-cpp]
+### [abseil-cpp](https://github.com/abseil/abseil-cpp)
 Used for it's containers.
 ```
 
@@ -789,7 +789,7 @@ Used for it's containers.
    limitations under the License.
 ```
 
-### ({fmt})[https://github.com/fmtlib/fmt]
+### [{fmt}](https://github.com/fmtlib/fmt)
 Used unsurprisingly for string formatting.
 ```
 Copyright (c) 2012 - present, Victor Zverovich
