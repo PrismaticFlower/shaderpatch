@@ -324,7 +324,7 @@ public:
                            entrypoint_name, "' from group '"sv, group_name, "'"sv);
       }
 
-      auto bytecode = _compiler.compile(entrypoint_desc, static_flags);
+      auto bytecode = _compiler.compile(entrypoint_desc, static_flags, game_flags);
 
       auto shader = create_shader<ID3D11VertexShader>(*_device, bytecode);
 
