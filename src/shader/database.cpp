@@ -477,7 +477,7 @@ auto Group_vertex::entrypoint(const std::string_view entrypoint_name,
    return _database.get_vs(_name, entrypoint_name, static_flags, game_flags);
 }
 
-Rendertypes_database::Rendertypes_database(Database& database) noexcept
+Rendertypes_database::Rendertypes_database(Database& database, const bool oit_capable) noexcept
 {
    const auto& rendertypes_states =
       database.internal().get_shader_rendertypes_states();
@@ -486,7 +486,8 @@ Rendertypes_database::Rendertypes_database(Database& database) noexcept
 
    for (const auto& [rendertype, states] : rendertypes_states) {
       _rendertypes[rendertype] =
-         std::make_unique<Rendertype>(database.internal(), states, rendertype);
+         std::make_unique<Rendertype>(database.internal(), states, rendertype,
+                                      oit_capable);
    }
 }
 
@@ -502,13 +503,13 @@ auto Rendertypes_database::operator[](const std::string_view rendertype) noexcep
 
 Rendertype::Rendertype(Database_internal& database,
                        const absl::flat_hash_map<std::string, Rendertype_state_description>& states,
-                       std::string name)
+                       std::string name, const bool oit_capable)
    : _name{std::move(name)}
 {
    _states.reserve(states.size());
 
    for (const auto& [state, desc] : states) {
-      _states[state] = std::make_unique<Rendertype_state>(database, desc);
+      _states[state] = std::make_unique<Rendertype_state>(database, desc, oit_capable);
    }
 }
 
@@ -523,8 +524,9 @@ auto Rendertype::state(const std::string_view state) noexcept -> Rendertype_stat
 }
 
 Rendertype_state::Rendertype_state(Database_internal& database,
-                                   Rendertype_state_description description)
-   : _database{database}, _desc{std::move(description)}
+                                   Rendertype_state_description description,
+                                   const bool oit_capable)
+   : _database{database}, _desc{std::move(description)}, _oit_capable{oit_capable}
 {
 }
 
@@ -545,7 +547,7 @@ auto Rendertype_state::pixel() noexcept -> Com_ptr<ID3D11PixelShader>
 
 auto Rendertype_state::pixel_oit() noexcept -> Com_ptr<ID3D11PixelShader>
 {
-   if (!_desc.ps_oit_entrypoint) return nullptr;
+   if (!_oit_capable || !_desc.ps_oit_entrypoint) return nullptr;
 
    return _database.get<ID3D11PixelShader>(_desc.group_name, *_desc.ps_oit_entrypoint,
                                            _desc.ps_oit_static_flags);

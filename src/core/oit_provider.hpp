@@ -30,6 +30,8 @@ public:
 
    bool enabled() const noexcept;
 
+   static bool usable(ID3D11Device5& device) noexcept;
+
 private:
    void update_resources(ID3D11Texture2D& opaque_texture,
                          ID3D11RenderTargetView& opaque_rtv) noexcept;
@@ -67,12 +69,6 @@ private:
 
    Com_ptr<ID3D11CommandList> _resolve_commandlist;
 
-   const bool _usable = [this] {
-      D3D11_FEATURE_DATA_D3D11_OPTIONS2 data{};
-
-      _device->CheckFeatureSupport(D3D11_FEATURE_D3D11_OPTIONS2, &data, sizeof(data));
-
-      return data.TypedUAVLoadAdditionalFormats && data.ROVsSupported;
-   }();
+   const bool _usable = usable(*_device);
 };
 }

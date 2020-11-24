@@ -184,7 +184,7 @@ class Rendertype_state;
 
 class Rendertypes_database {
 public:
-   Rendertypes_database(Database& database) noexcept;
+   Rendertypes_database(Database& database, const bool oit_capable) noexcept;
 
    Rendertypes_database(const Rendertypes_database&) = delete;
    auto operator=(const Rendertypes_database&) -> Rendertypes_database& = delete;
@@ -209,7 +209,7 @@ public:
 
    Rendertype(Database_internal& database,
               const absl::flat_hash_map<std::string, Rendertype_state_description>& states,
-              std::string name);
+              std::string name, const bool oit_capable);
 
    Rendertype(const Rendertype&) = delete;
    auto operator=(const Rendertype&) -> Rendertype& = delete;
@@ -257,7 +257,7 @@ private:
 class Rendertype_state {
 public:
    Rendertype_state(Database_internal& database,
-                    Rendertype_state_description description);
+                    Rendertype_state_description description, const bool oit_capable);
 
    Rendertype_state(const Rendertype_state&) = delete;
    auto operator=(const Rendertype_state&) -> Rendertype_state& = delete;
@@ -355,6 +355,8 @@ private:
    Database_internal& _database;
 
    const Rendertype_state_description _desc;
+
+   const bool _oit_capable;
 };
 
 }

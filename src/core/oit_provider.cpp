@@ -80,6 +80,15 @@ bool OIT_provider::enabled() const noexcept
    return _usable && user_config.graphics.enable_oit;
 }
 
+bool OIT_provider::usable(ID3D11Device5& device) noexcept
+{
+   D3D11_FEATURE_DATA_D3D11_OPTIONS2 data{};
+
+   device.CheckFeatureSupport(D3D11_FEATURE_D3D11_OPTIONS2, &data, sizeof(data));
+
+   return data.TypedUAVLoadAdditionalFormats && data.ROVsSupported;
+}
+
 void OIT_provider::update_resources(ID3D11Texture2D& opaque_texture,
                                     ID3D11RenderTargetView& opaque_rtv) noexcept
 {

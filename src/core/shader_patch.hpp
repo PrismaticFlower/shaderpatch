@@ -304,7 +304,9 @@ private:
 
    Input_layout_descriptions _input_layout_descriptions;
    shader::Database _shader_database{_device};
-   shader::Rendertypes_database _shader_rendertypes_database{_shader_database};
+   shader::Rendertypes_database _shader_rendertypes_database{_shader_database,
+                                                             OIT_provider::usable(
+                                                                *_device)};
 
    std::vector<Game_rendertarget> _game_rendertargets = {_swapchain.game_rendertarget()};
    Game_rendertarget_id _current_game_rendertarget = _game_backbuffer_index;
