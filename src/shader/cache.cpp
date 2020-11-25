@@ -14,6 +14,8 @@ namespace sp::shader {
 
 void Cache::save_to_file(const std::filesystem::path& cache_path)
 {
+   std::shared_lock lock{_mutex};
+
    try {
       const auto write_path = std::filesystem::path{cache_path} += L".TEMP"sv;
 
@@ -63,7 +65,7 @@ void Cache::save_to_file(const std::filesystem::path& cache_path)
 void Cache::load_from_file(ID3D11Device5& device, const std::filesystem::path& cache_path)
 {
    if (!std::filesystem::exists(cache_path)) {
-      log(Log_level::info, "Shader bytecode cache no present on disk."sv);
+      log(Log_level::info, "Shader bytecode cache not present on disk."sv);
 
       return;
    }

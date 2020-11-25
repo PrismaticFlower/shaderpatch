@@ -8,6 +8,8 @@
 
 #include <algorithm>
 #include <bitset>
+#include <chrono>
+#include <future>
 #include <ranges>
 
 #include <absl/container/flat_hash_map.h>
@@ -234,6 +236,38 @@ auto create_rendertype_state_descs(const Group_definition& definition,
    return states;
 }
 
+class Cache_disk_updater {
+public:
+   constexpr static auto min_update_interval = 1min;
+
+   void mark_dirty() noexcept
+   {
+      _disk_cache_dirty = true;
+   }
+
+   bool should_update() const noexcept
+   {
+      if (!_disk_cache_dirty) return false;
+
+      return (std::chrono::steady_clock::now() - _last_update) >= min_update_interval;
+   }
+
+   void update(Cache& cache) noexcept
+   {
+      _update_future = std::async(std::launch::async, [&cache] {
+         cache.save_to_file(shader_cache_path);
+      });
+      _disk_cache_dirty = false;
+      _last_update = std::chrono::steady_clock::now();
+   }
+
+private:
+   bool _disk_cache_dirty = false;
+   std::chrono::steady_clock::time_point _last_update =
+      std::chrono::steady_clock::now();
+   std::future<void> _update_future;
+};
+
 }
 
 class Database_internal {
@@ -292,8 +326,7 @@ public:
 
       _cache.add<T>(group_name, entrypoint_name, static_flags,
                     {.shader = shader, .bytecode = bytecode});
-
-      _cache.save_to_file(shader_cache_path); // TEMP for testing: Save shader cache after every new shader. This needs to be moved to a better place.
+      _cache_disk_updater.mark_dirty();
 
       return shader;
    }
@@ -337,8 +370,16 @@ public:
 
       _cache.add_vs(group_name, entrypoint_name, static_flags, game_flags,
                     {.shader = shader, .bytecode = bytecode});
+      _cache_disk_updater.mark_dirty();
 
       return {shader, bytecode, std::move(vertex_input_layout)};
+   }
+
+   void cache_update() noexcept
+   {
+      if (_cache_disk_updater.should_update()) {
+         _cache_disk_updater.update(_cache);
+      }
    }
 
    template<typename T>
@@ -389,6 +430,7 @@ private:
    Com_ptr<ID3D11Device5> _device;
    Cache _cache{*_device, shader_cache_path};
    Compiler _compiler;
+   Cache_disk_updater _cache_disk_updater;
 
    absl::flat_hash_map<std::string, absl::flat_hash_map<std::string, Entrypoint_description>> _entrypoint_descs;
    absl::flat_hash_map<std::string, absl::flat_hash_map<std::string, Rendertype_state_description>> _rendertypes_states;
@@ -435,6 +477,11 @@ auto Database::geometry(const std::string_view name) noexcept -> Group_geometry&
 auto Database::pixel(const std::string_view name) noexcept -> Group_pixel&
 {
    return get_shader_group(_groups_pixel, name);
+}
+
+void Database::cache_update() noexcept
+{
+   _database->cache_update();
 }
 
 auto Database::internal() noexcept -> Database_internal&

@@ -184,6 +184,7 @@ void Shader_patch::present() noexcept
 {
    _effects.profiler.end_frame(*_device_context);
    _game_postprocessing.end_frame();
+   _shader_database.cache_update();
 
    if (_game_rendertargets[0].type != Game_rt_type::presentation)
       patch_backbuffer_resolve();

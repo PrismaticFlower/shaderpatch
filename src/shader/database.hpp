@@ -75,6 +75,8 @@ public:
 
    auto pixel(const std::string_view name) noexcept -> Group_pixel&;
 
+   void cache_update() noexcept;
+
    auto internal() noexcept -> Database_internal&;
 
 private:

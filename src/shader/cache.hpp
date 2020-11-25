@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include <filesystem>
+#include <shared_mutex>
 #include <tuple>
 #include <vector>
 
@@ -75,6 +76,8 @@ public:
                const std::uint64_t static_flags) const noexcept
       -> const Cache_entry<T>*
    {
+      std::shared_lock lock{_mutex};
+
       return get_if_impl(cache_map<T>(*this),
                          std::tie(group_name, entrypoint_name, static_flags));
    }
@@ -85,6 +88,8 @@ public:
                   const Vertex_shader_flags game_flags) const noexcept
       -> const Cache_entry<ID3D11VertexShader>*
    {
+      std::shared_lock lock{_mutex};
+
       return get_if_impl(_vs_cache, std::tie(group_name, entrypoint_name,
                                              static_flags, game_flags));
    }
@@ -93,6 +98,8 @@ public:
    void add(const std::string_view group_name, const std::string_view entrypoint_name,
             const std::uint64_t static_flags, Cache_entry<T> cache_entry) noexcept
    {
+      std::scoped_lock lock{_mutex};
+
       auto& cache = cache_map<T>(*this);
 
       cache[Cache_index{.group = std::string{group_name},
@@ -104,6 +111,8 @@ public:
                const std::uint64_t static_flags, const Vertex_shader_flags game_flags,
                Cache_entry<ID3D11VertexShader> cache_entry) noexcept
    {
+      std::scoped_lock lock{_mutex};
+
       _vs_cache[Cache_index_vs{.group = std::string{group_name},
                                .entrypoint = std::string{entrypoint_name},
                                .static_flags = static_flags,
@@ -165,6 +174,8 @@ private:
          return self._ps_cache;
       }
    }
+
+   mutable std::shared_mutex _mutex;
 
    Cache_map_vs _vs_cache;
 
