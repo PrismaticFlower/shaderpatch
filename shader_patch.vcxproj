@@ -65,7 +65,7 @@
       <SDLCheck>true</SDLCheck>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <PreprocessorDefinitions>GLM_FORCE_SILENT_WARNINGS;GLM_FORCE_CXX17;_ENABLE_EXTENDED_ALIGNED_STORAGE=1;NOMINMAX;_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GLM_FORCE_SILENT_WARNINGS;GLM_FORCE_CXX17;_ENABLE_EXTENDED_ALIGNED_STORAGE=1;NOMINMAX;_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING;_CRT_SECURE_NO_WARNINGS;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>4324;4275;4251;4127;4018</DisableSpecificWarnings>
       <ConformanceMode>true</ConformanceMode>
@@ -104,7 +104,7 @@
       <SDLCheck>true</SDLCheck>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <PreprocessorDefinitions>GLM_FORCE_SILENT_WARNINGS;GLM_FORCE_CXX17;_ENABLE_EXTENDED_ALIGNED_STORAGE=1;NOMINMAX;_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING;NDEBUG;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GLM_FORCE_SILENT_WARNINGS;GLM_FORCE_CXX17;_ENABLE_EXTENDED_ALIGNED_STORAGE=1;NOMINMAX;_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING;_CRT_SECURE_NO_WARNINGS;NDEBUG;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>true</TreatWarningAsError>
       <AdditionalIncludeDirectories>$(SolutionDir)/shared/include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4324;4275;4251;4127;4018</DisableSpecificWarnings>
@@ -222,6 +222,7 @@
     </ClCompile>
     <ClCompile Include="src\input_hooker.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\shader\cache.cpp" />
     <ClCompile Include="src\shader\compiler.cpp" />
     <ClCompile Include="src\shader\database.cpp" />
     <ClCompile Include="src\shader\group_definition.cpp" />

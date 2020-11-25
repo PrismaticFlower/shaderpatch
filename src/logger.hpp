@@ -90,7 +90,7 @@ inline void log_debug([[maybe_unused]] std::string_view format_str,
 
    stream << Log_level::info << ' ' << std::put_time(local_time, "%T") << ' ';
    stream << fmt::format(format_str, args...);
-   stream << std::endl;
+   stream << '\n';
 #endif
 }
 

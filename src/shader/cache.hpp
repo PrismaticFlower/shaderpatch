@@ -5,6 +5,7 @@
 #include "shader_flags.hpp"
 
 #include <cstddef>
+#include <filesystem>
 #include <tuple>
 #include <vector>
 
@@ -64,6 +65,11 @@ struct Cache_index_vs {
 
 class Cache {
 public:
+   Cache(ID3D11Device5& device, const std::filesystem::path& cache_path) noexcept
+   {
+      load_from_file(device, cache_path);
+   }
+
    template<typename T>
    auto get_if(const std::string_view group_name, const std::string_view entrypoint_name,
                const std::uint64_t static_flags) const noexcept
@@ -104,7 +110,11 @@ public:
                                .game_flags = game_flags}] = std::move(cache_entry);
    }
 
+   void save_to_file(const std::filesystem::path& cache_path);
+
 private:
+   void load_from_file(ID3D11Device5& device, const std::filesystem::path& cache_path);
+
    struct Hash_transparent {
       using is_transparent = void;
 

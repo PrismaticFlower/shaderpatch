@@ -176,6 +176,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="include\algorithm.hpp" />
+    <ClInclude Include="include\binary_io_winapi.hpp" />
     <ClInclude Include="include\color_grading_regions_io.hpp" />
     <ClInclude Include="include\compose_exception.hpp" />
     <ClInclude Include="include\com_ptr.hpp" />

@@ -21,7 +21,8 @@ namespace sp::shader {
 namespace {
 
 constexpr auto TEMP_definitions_directory =
-   LR"(C:\GitHub\swbfii-shaderpatch\assets\core\definitions)";
+   LR"(C:\GitHub\swbfii-shaderpatch\assets\core\definitions)"sv;
+constexpr auto shader_cache_path = LR"(.\data\shaderpatch\.shader_dxbc_cache)"sv;
 
 template<typename T>
 auto get_shader_group(const absl::flat_hash_map<std::string, std::unique_ptr<T>>& groups,
@@ -292,6 +293,8 @@ public:
       _cache.add<T>(group_name, entrypoint_name, static_flags,
                     {.shader = shader, .bytecode = bytecode});
 
+      _cache.save_to_file(shader_cache_path); // TEMP for testing: Save shader cache after every new shader. This needs to be moved to a better place.
+
       return shader;
    }
 
@@ -384,7 +387,7 @@ private:
    }
 
    Com_ptr<ID3D11Device5> _device;
-   Cache _cache;
+   Cache _cache{*_device, shader_cache_path};
    Compiler _compiler;
 
    absl::flat_hash_map<std::string, absl::flat_hash_map<std::string, Entrypoint_description>> _entrypoint_descs;
