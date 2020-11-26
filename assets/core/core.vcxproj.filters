@@ -262,7 +262,6 @@
     <None Include="definitions\water.json">
       <Filter>definitions</Filter>
     </None>
-    <None Include="shaders.req" />
     <None Include="definitions\normalmapadder.json">
       <Filter>definitions</Filter>
     </None>
