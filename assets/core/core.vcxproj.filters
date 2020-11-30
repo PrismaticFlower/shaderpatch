@@ -305,7 +305,6 @@
       <Filter>definitions\patch</Filter>
     </None>
     <None Include="textures.req" />
-    <None Include="shader_declarations.req" />
     <None Include="src\color_utilities.hlsl">
       <Filter>src</Filter>
     </None>

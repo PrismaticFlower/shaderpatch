@@ -4,7 +4,6 @@ $old_path = $env:Path
 
 $env:Path += ";" + $BinPath
 
-shader_compiler --outputdir "munged\" --declarationinputdir "declarations\""
 sp_texture_munge --outputdir "munged\" --sourcedir "textures\"
 lvl_pack -i "munged\" -i "fonts\" --sourcedir ".\" --outputdir ".\"
 

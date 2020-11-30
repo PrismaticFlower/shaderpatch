@@ -172,9 +172,6 @@
     <None Include="definitions\patch\skybox.json" />
     <None Include="definitions\patch\static_water.json" />
     <None Include="definitions\patch\text.json" />
-    <None Include="shader_declarations.req">
-      <FileType>Document</FileType>
-    </None>
     <CustomBuild Include="build_lvls.ps1">
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">powershell -Command  "./build_lvls.ps1"  -BinPath $(SolutionDir)\tools\bin\$(Platform)\Release\ </Command>
