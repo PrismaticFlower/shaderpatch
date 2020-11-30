@@ -614,7 +614,7 @@ private:
 
    D3DVIEWPORT9 _viewport{0,    0,   _perceived_width, _perceived_height,
                           0.0f, 1.0f};
-   Texture_stage_state_manager _texture_stage_manager{_shader_patch};
+   Texture_stage_state_manager _texture_stage_manager{};
 
    ULONG _ref_count = 1;
 };

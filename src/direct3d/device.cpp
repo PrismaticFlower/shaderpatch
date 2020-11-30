@@ -1087,10 +1087,7 @@ HRESULT Device::CreateVertexShader(const DWORD* function,
    if (!function) return D3DERR_INVALIDCALL;
    if (!shader) return D3DERR_INVALIDCALL;
 
-   *shader = Vertex_shader::create(_shader_patch,
-                                   deserialize_shader_metadata(
-                                      reinterpret_cast<const std::byte*>(function)))
-                .release();
+   *shader = Vertex_shader::create(std::uint32_t{*function}).release();
 
    return S_OK;
 }

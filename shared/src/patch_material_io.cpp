@@ -36,13 +36,13 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config;
 }
 }
 
-void write_patch_material(ucfb::Writer& writer, const Material_config& config)
+void write_patch_material(ucfb::File_writer& writer, const Material_config& config)
 {
    std::ostringstream ostream;
 
    // write material chunk
    {
-      ucfb::Writer matl{ostream, "matl"_mn};
+      ucfb::File_writer matl{"matl"_mn, ostream};
 
       matl.emplace_child("VER_"_mn).write(Material_version::current);
 
@@ -97,7 +97,7 @@ void write_patch_material(const std::filesystem::path& save_path,
 {
    auto file = ucfb::open_file_for_output(save_path);
 
-   ucfb::Writer writer{file};
+   ucfb::File_writer writer{"ucfb"_mn, file};
 
    write_patch_material(writer, config);
 }

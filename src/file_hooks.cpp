@@ -1,4 +1,5 @@
 
+#include "game_support/munged_shader_declarations.hpp"
 #include "logger.hpp"
 #include "memory_mapped_file.hpp"
 #include "shader_patch_version.hpp"
@@ -12,6 +13,7 @@
 #include <array>
 #include <filesystem>
 #include <iomanip>
+#include <ranges>
 #include <sstream>
 #include <string_view>
 
@@ -31,7 +33,7 @@ auto create_tmp_file() -> std::pair<std::ofstream, win32::Unique_handle>
 
    std::array<wchar_t, MAX_PATH> tmp_file_path{};
 
-   GetTempFileNameW(temp_directory.c_str(), nullptr, 0, tmp_file_path.data());
+   GetTempFileNameW(temp_directory.c_str(), L"SP_", 0, tmp_file_path.data());
 
    if (const auto code = GetLastError(); code != ERROR_SUCCESS) {
       log_and_terminate("Unable to get temporary file name. Error code is "sv,
@@ -137,14 +139,14 @@ auto edit_core_lvl() noexcept -> win32::Unique_handle
       it = core_editor.erase(it);
    }
 
-   const auto shader_decls_editor = [] {
-      win32::Memeory_mapped_file file{"data/shaderpatch/shader_declarations.lvl"sv};
+   const auto shader_declarations =
+      game_support::munged_shader_declarations().munged_declarations |
+      std::views::transform([](const ucfb::Editor_parent_chunk& chunk) {
+         return std::pair{"SHDR"_mn, chunk};
+      });
 
-      return ucfb::Editor{ucfb::Reader_strict<"ucfb"_mn>{file.bytes()}, is_parent};
-   }();
-
-   core_editor.insert(core_editor.end(), shader_decls_editor.cbegin(),
-                      shader_decls_editor.cend());
+   core_editor.insert(core_editor.end(), shader_declarations.begin(),
+                      shader_declarations.end());
 
    if (user_config.display.scalable_fonts) edit_core_lvl_fonts(core_editor);
 
@@ -152,7 +154,7 @@ auto edit_core_lvl() noexcept -> win32::Unique_handle
 
    // Output new core.lvl to temp file
    {
-      ucfb::Writer writer{ostream};
+      ucfb::File_writer writer{"ucfb"_mn, ostream};
 
       core_editor.assemble(writer);
    }
@@ -256,7 +258,7 @@ print(string.format("Shader Patch Scripting API loaded. Shader Patch version is 
 
    // Output script to temp file.
    {
-      ucfb::Writer writer{ostream};
+      ucfb::File_writer writer{"ucfb"_mn, ostream};
 
       editor.assemble(writer);
    }

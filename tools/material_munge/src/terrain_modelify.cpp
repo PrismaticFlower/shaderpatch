@@ -557,7 +557,7 @@ void terrain_modelify(const Terrain_map& terrain, const std::string_view materia
                             keep_static_lighting);
 
    auto file = ucfb::open_file_for_output(output_path);
-   ucfb::Writer writer{file};
+   ucfb::File_writer writer{"ucfb"_mn, file};
    editor.assemble(writer);
 
    write_req_path(output_path, material_name);

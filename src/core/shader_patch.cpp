@@ -158,7 +158,7 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
    _current_game_rendertarget = _game_backbuffer_index;
    _primitive_topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
    _game_input_layout = {};
-   _game_shader = {};
+   _game_shader = nullptr;
    _game_textures = {};
    _game_stencil_ref = 0xff;
    _game_index_buffer_offset = 0;
@@ -704,39 +704,6 @@ auto Shader_patch::create_game_input_layout(
            particle_texture_scale};
 }
 
-auto Shader_patch::create_game_shader(const Shader_metadata metadata) noexcept
-   -> std::shared_ptr<Game_shader>
-{
-   auto& state = _shader_rendertypes_database[metadata.rendertype_name].state(
-      metadata.shader_name);
-
-   auto [vs, vs_bytecode, vs_inputlayout] = state.vertex(metadata.vertex_shader_flags);
-   auto [vs_compressed, vs_bytecode_compressed, vs_inputlayout_compressed] =
-      state.vertex(metadata.vertex_shader_flags | Vertex_shader_flags::compressed);
-
-   if (!vs && !vs_compressed) {
-      log_and_terminate("Game shader has no vertex shader!"sv);
-   }
-
-   auto game_shader = std::make_shared<Game_shader>(
-      Game_shader{.vs = std::move(vs),
-                  .vs_compressed = std::move(vs_compressed),
-                  .ps = state.pixel(),
-                  .ps_oit = state.pixel_oit(),
-                  .light_active = metadata.light_active,
-                  .light_active_point_count = metadata.light_active_point_count,
-                  .light_active_spot = metadata.light_active_spot,
-                  .rendertype = metadata.rendertype,
-                  .srgb_state = metadata.srgb_state,
-                  .shader_name = metadata.shader_name,
-                  .vertex_shader_flags = metadata.vertex_shader_flags,
-                  .input_layouts = {std::move(vs_inputlayout), std::move(vs_bytecode)},
-                  .input_layouts_compressed = {std::move(vs_inputlayout_compressed),
-                                               std::move(vs_bytecode_compressed)}});
-
-   return game_shader;
-}
-
 auto Shader_patch::create_ia_buffer(const UINT size, const bool vertex_buffer,
                                     const bool index_buffer, const bool dynamic) noexcept
    -> Com_ptr<ID3D11Buffer>
@@ -901,9 +868,9 @@ void Shader_patch::set_input_layout(const Game_input_layout& input_layout) noexc
    }
 }
 
-void Shader_patch::set_game_shader(std::shared_ptr<Game_shader> shader) noexcept
+void Shader_patch::set_game_shader(const std::uint32_t shader_index) noexcept
 {
-   _game_shader = shader;
+   _game_shader = &_game_shaders[shader_index];
    _shader_dirty = true;
 
    const auto rendertype = _game_shader->rendertype;
@@ -912,9 +879,9 @@ void Shader_patch::set_game_shader(std::shared_ptr<Game_shader> shader) noexcept
    _shader_rendertype_changed =
       std::exchange(_shader_rendertype, rendertype) != rendertype;
 
-   const std::uint32_t light_active = shader->light_active;
-   const std::uint32_t light_active_point_count = shader->light_active_point_count;
-   const std::uint32_t light_active_spot = shader->light_active_spot;
+   const std::uint32_t light_active = _game_shader->light_active;
+   const std::uint32_t light_active_point_count = _game_shader->light_active_point_count;
+   const std::uint32_t light_active_spot = _game_shader->light_active_spot;
 
    _cb_draw_ps_dirty |=
       ((std::exchange(_cb_draw_ps.light_active, light_active) != light_active) |

@@ -32,7 +32,7 @@ struct Volume_resource_header {
 
 static_assert(sizeof(Volume_resource_header) == 16);
 
-void write_volume_resource(ucfb::Writer& writer, const std::string_view name,
+void write_volume_resource(ucfb::File_writer& writer, const std::string_view name,
                            const Volume_resource_type type,
                            std::span<const std::byte> data);
 

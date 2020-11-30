@@ -25,6 +25,12 @@
     <Filter Include="src\shader">
       <UniqueIdentifier>{4e3a658b-0076-4ec8-b981-52b71cc90224}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\game_support">
+      <UniqueIdentifier>{368939a8-58ec-4d33-b4dd-cbc4157e4ad9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\game_support\declarations">
+      <UniqueIdentifier>{ad6c4cf8-c1c6-497e-973e-5d0351e73880}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -242,6 +248,12 @@
     </ClCompile>
     <ClCompile Include="src\shader\cache.cpp">
       <Filter>src\shader</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_support\munged_shader_declarations.cpp">
+      <Filter>src\game_support</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\game_shader.cpp">
+      <Filter>src\core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -556,6 +568,90 @@
     </ClInclude>
     <ClInclude Include="src\shader\source_file_store.hpp">
       <Filter>src\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\shader_declaration.hpp">
+      <Filter>src\game_support</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\bloom_stock.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\decal.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\filtercopy.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\flare.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\interface.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\lightbeam.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\normal.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\normal_terrain.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\normalmapadder.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\ocean.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\particle.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\perpixeldiffuselighting.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\prereflection.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\rain.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\refraction.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\sample.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\shadowquad.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\shield.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\skyfog.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\specularlighting.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\stencilshadow.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\water.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\zprepass.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\shader_declarations.hpp">
+      <Filter>src\game_support</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\munged_shader_declarations.hpp">
+      <Filter>src\game_support</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\shader_metadata.hpp">
+      <Filter>src\game_support</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\fixedfunc_shader_metadata.hpp">
+      <Filter>src\game_support</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

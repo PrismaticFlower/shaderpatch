@@ -3,6 +3,7 @@
 #include "magic_number.hpp"
 #include "ucfb_reader.hpp"
 #include "ucfb_tweaker.hpp"
+#include "ucfb_writer.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -16,7 +17,6 @@
 
 namespace sp::ucfb {
 
-class Writer;
 class Editor_data_chunk;
 
 class Editor_data_writer {
@@ -127,6 +127,7 @@ public:
    using std::vector<value_type>::size;
    using std::vector<value_type>::max_size;
    using std::vector<value_type>::reserve;
+   using std::vector<value_type>::resize;
    using std::vector<value_type>::capacity;
    using std::vector<value_type>::shrink_to_fit;
 
@@ -234,7 +235,32 @@ public:
    {
    }
 
-   void assemble(Writer& output) const noexcept;
+   template<Writer_target T>
+   void assemble(Writer<T>& output) const noexcept
+   {
+      assemble_impl(output, *this);
+   }
+
+private:
+   template<Writer_target T>
+   static void assemble_impl(Writer<T>& writer, const Editor_data_chunk& data) noexcept
+   {
+      writer.write(data.span());
+   }
+
+   template<Writer_target T>
+   static void assemble_impl(Writer<T>& writer, const Editor_parent_chunk& parent) noexcept
+   {
+      for (const auto& child : parent) {
+         std::visit(
+            [&](const auto& chunk) mutable noexcept {
+               auto child_writer = writer.emplace_child(child.first);
+
+               assemble_impl(child_writer, chunk);
+            },
+            child.second);
+      }
+   }
 };
 
 inline auto make_reader(Editor_parent_chunk::const_iterator it) noexcept -> ucfb::Reader

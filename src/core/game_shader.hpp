@@ -1,13 +1,16 @@
 #pragma once
 
+#include "../shader/database.hpp"
 #include "com_ptr.hpp"
 #include "game_rendertypes.hpp"
 #include "shader_flags.hpp"
 #include "shader_input_layouts.hpp"
 
 #include <array>
+#include <exception>
+#include <vector>
 
-#include <d3d11_1.h>
+#include <d3d11_4.h>
 
 namespace sp::core {
 
@@ -28,6 +31,21 @@ struct Game_shader {
 
    Shader_input_layouts input_layouts;
    Shader_input_layouts input_layouts_compressed;
+};
+
+class Game_shader_store {
+public:
+   explicit Game_shader_store(shader::Rendertypes_database& database) noexcept;
+
+   auto operator[](const std::uint32_t index) noexcept -> Game_shader&
+   {
+      if (index >= _shaders.size()) std::terminate();
+
+      return _shaders[index];
+   }
+
+private:
+   std::vector<Game_shader> _shaders;
 };
 
 }

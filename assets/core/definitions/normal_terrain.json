@@ -97,6 +97,18 @@
       }
     },
 
+    "diffuse blendmap unlit": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "diffuse_blendmap_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "diffuse_blendmap_ps"
+      }
+    },
+
     "detailing": {
       "type": "standard",
 

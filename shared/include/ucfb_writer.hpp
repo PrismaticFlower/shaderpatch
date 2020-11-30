@@ -5,9 +5,12 @@
 #include "small_function.hpp"
 #include "utility.hpp"
 
+#include <algorithm>
+#include <concepts>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <ostream>
 #include <span>
 #include <stdexcept>
@@ -20,13 +23,94 @@
 
 namespace sp::ucfb {
 
-template<typename Last_act, typename Writer_type>
+// clang-format off
+template<typename T>
+concept Writer_target_position = requires(const T& target) {
+   { target.position() } -> std::copyable;
+   { target.position() } -> std::convertible_to<std::uint32_t>;
+};
+
+template<typename T>
+concept Writer_target_output = requires(T& target, std::span<const std::byte> out_data, 
+                                        std::invoke_result_t<decltype(&T::position), T> position) {
+   { target.write(out_data) };
+   { target.write_at_position(out_data, position) };
+};
+
+template<typename T>
+concept Writer_target = Writer_target_position<T> && Writer_target_output<T>;
+// clang-format on
+
+class Writer_target_ostream {
+public:
+   explicit Writer_target_ostream(std::ostream& out) : _out{out}
+   {
+      Expects(out.good());
+   }
+
+   auto position() const -> std::streampos
+   {
+      return _out.tellp();
+   }
+
+   void write(std::span<const std::byte> out_data)
+   {
+      _out.write(reinterpret_cast<const char*>(out_data.data()), out_data.size());
+   }
+
+   void write_at_position(std::span<const std::byte> out_data, std::streampos position)
+   {
+      const auto cur_pos = _out.tellp();
+
+      _out.seekp(position);
+
+      write(out_data);
+
+      _out.seekp(cur_pos);
+   }
+
+private:
+   std::ostream& _out;
+};
+
+template<typename T>
+class Writer_target_container {
+public:
+   explicit Writer_target_container(T& out) : _out{out} {}
+
+   auto position() const noexcept -> std::size_t
+   {
+      return _out.size();
+   }
+
+   void write(std::span<const std::byte> out_data)
+   {
+      _out.insert(_out.end(), out_data.begin(), out_data.end());
+   }
+
+   void write_at_position(std::span<const std::byte> out_data, std::size_t position)
+   {
+      if (position + out_data.size() > _out.size()) {
+         _out.resize(position + out_data.size());
+      }
+
+      auto where = _out.begin();
+
+      std::ranges::advance(where, position);
+      std::ranges::copy(out_data, where);
+   }
+
+private:
+   T& _out;
+};
+
+template<Writer_target Output, typename Last_act, typename Writer_type>
 class Writer_child : public Writer_type {
    static_assert(std::is_invocable_v<Last_act, decltype(Writer_type::_size)>);
 
 public:
-   Writer_child(Last_act last_act, std::ostream& output_stream, const Magic_number mn)
-      : Writer_type{output_stream, mn}, _last_act{std::move(last_act)}
+   Writer_child(Output& output, const Magic_number mn, Last_act last_act)
+      : Writer_type{mn, output}, _last_act{std::move(last_act)}
    {
    }
 
@@ -45,31 +129,27 @@ private:
    Last_act _last_act;
 };
 
+template<Writer_target Output>
 class Writer {
 public:
    enum class Alignment : bool { aligned, unaligned };
 
-   Writer(std::ostream& output_stream, const Magic_number root_mn = "ucfb"_mn)
-      : _out{output_stream}
+   template<typename... Output_args>
+   Writer(const Magic_number root_mn,
+          Output_args&&... output) requires std::constructible_from<Output, Output_args...>
+      : _out{std::forward<Output_args>(output)...}
    {
-      Expects(output_stream.good());
+      _out.write(std::as_bytes(std::span{&root_mn, 1}));
 
-      _out.write(reinterpret_cast<const char*>(&root_mn), sizeof(Magic_number));
-
-      _size_pos = _out.tellp();
-      _out.write(reinterpret_cast<const char*>(&size_place_hold),
-                 sizeof(size_place_hold));
+      _size_pos = _out.position();
+      _out.write(std::as_bytes(std::span{&size_place_hold, 1}));
    }
 
    ~Writer()
    {
-      const auto cur_pos = _out.tellp();
-
       const auto chunk_size = static_cast<std::int32_t>(_size);
 
-      _out.seekp(_size_pos);
-      _out.write(reinterpret_cast<const char*>(&chunk_size), sizeof(chunk_size));
-      _out.seekp(cur_pos);
+      _out.write_at_position(std::as_bytes(std::span{&chunk_size, 1}), _size_pos);
    }
 
    Writer() = delete;
@@ -90,7 +170,22 @@ public:
 
       increase_size(8);
 
-      return Writer_child<decltype(last_act), Writer>{last_act, _out, mn};
+      return Writer_child<Output, decltype(last_act), Writer>{_out, mn, last_act};
+   }
+
+   void write(const std::span<const std::byte> span,
+              Alignment alignment = Alignment::aligned)
+   {
+      _out.write(span);
+      increase_size(span.size());
+
+      if (alignment == Alignment::aligned) align_file();
+   }
+
+   template<typename Type>
+   void write(const std::span<Type> span, Alignment alignment = Alignment::aligned)
+   {
+      write(std::as_bytes(span), alignment);
    }
 
    template<typename Type>
@@ -101,30 +196,13 @@ public:
       static_assert(std::is_trivially_destructible_v<Type>,
                     "Type must be trivially destructible!");
 
-      _out.write(reinterpret_cast<const char*>(&value), sizeof(Type));
-
-      increase_size(sizeof(Type));
-
-      if (alignment == Alignment::aligned) align_file();
-   }
-
-   template<typename Type>
-   void write(const std::span<Type> span, Alignment alignment = Alignment::aligned)
-   {
-      _out.write(reinterpret_cast<const char*>(span.data()), span.size_bytes());
-      increase_size(span.size_bytes());
-
-      if (alignment == Alignment::aligned) align_file();
+      write(std::span{&value, 1}, alignment);
    }
 
    void write(const std::string_view string, Alignment alignment = Alignment::aligned)
    {
-      _out.write(string.data(), string.size());
-      _out.put('\0');
-
-      increase_size(string.length() + 1ll);
-
-      if (alignment == Alignment::aligned) align_file();
+      write(std::span{string}, Alignment::unaligned);
+      write('\0', alignment);
    }
 
    void write(const std::string& string, Alignment alignment = Alignment::aligned)
@@ -148,9 +226,9 @@ public:
 
    auto pad(const std::uint32_t amount, Alignment alignment = Alignment::aligned)
    {
-      for (auto i = 0u; i < amount; ++i) _out.put('\0');
-
-      increase_size(amount);
+      for (auto i = 0u; i < amount; ++i) {
+         write(std::array{std::byte{}}, Alignment::unaligned);
+      }
 
       if (alignment == Alignment::aligned) align_file();
    }
@@ -162,25 +240,17 @@ public:
 
    auto absolute_size() const noexcept -> std::uint32_t
    {
-      return gsl::narrow_cast<std::uint32_t>(_out.tellp());
+      return gsl::narrow_cast<std::uint32_t>(_out.position());
    }
 
 private:
-   template<typename Last_act, typename Writer_type>
+   template<Writer_target Output, typename Last_act, typename Writer_type>
    friend class Writer_child;
 
+   using Position = std::invoke_result_t<decltype(&Output::position), Output>;
+
    constexpr static std::uint32_t size_place_hold = 0;
-
-   void align_file()
-   {
-      const auto remainder = _size % 4;
-
-      if (remainder != 0) {
-         _out.write("\0\0\0\0", (4 - remainder));
-
-         increase_size(4 - remainder);
-      }
-   }
+   constexpr static std::int64_t write_alignment = 4;
 
    void increase_size(const std::int64_t len)
    {
@@ -193,10 +263,32 @@ private:
       Ensures(_size <= std::numeric_limits<std::int32_t>::max());
    }
 
-   std::ostream& _out;
-   std::streampos _size_pos;
+   void align_file()
+   {
+      constexpr std::array<const std::byte, 4> data{};
+
+      const auto alignment_bytes =
+         static_cast<std::size_t>(next_multiple_of<write_alignment>(_size) - _size);
+
+      if (alignment_bytes == 0) return;
+
+      write(std::span{data}.subspan(alignment_bytes), Alignment::unaligned);
+   }
+
+   Output _out;
+   Position _size_pos;
    std::int64_t _size{};
 };
+
+using File_writer = Writer<Writer_target_ostream>;
+
+template<typename T>
+struct Memory_writer : Writer<Writer_target_container<T>> {
+   using Writer<Writer_target_container<T>>::Writer;
+};
+
+template<typename T>
+Memory_writer(const Magic_number, T&) -> Memory_writer<T>;
 
 //! \brief Helping for writing _from_ an alignment in a chunk.
 //!
@@ -207,8 +299,9 @@ private:
 //!
 //! This function does writes two things, first at the current position in writer it writes
 //! the offset (in a uint32) from _after_ it that the data will be written. Then it write the data.
-template<std::size_t alignment>
-inline void write_at_alignment(Writer& writer, const std::span<const std::byte> data) noexcept
+template<std::size_t alignment, Writer_target Output>
+inline void write_at_alignment(Writer<Output>& writer,
+                               const std::span<const std::byte> data) noexcept
 {
    // Calculate needed alignment.
    const auto align_from_size = writer.absolute_size() + sizeof(std::uint32_t);

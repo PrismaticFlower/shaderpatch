@@ -24,7 +24,6 @@
 #include "patch_effects_config_handle.hpp"
 #include "patch_material.hpp"
 #include "sampler_states.hpp"
-#include "shader_metadata.hpp"
 #include "small_function.hpp"
 #include "swapchain.hpp"
 #include "texture_database.hpp"
@@ -133,9 +132,6 @@ public:
                                  const bool particle_texture_scale) noexcept
       -> Game_input_layout;
 
-   auto create_game_shader(const Shader_metadata metadata) noexcept
-      -> std::shared_ptr<Game_shader>;
-
    auto create_ia_buffer(const UINT size, const bool vertex_buffer,
                          const bool index_buffer, const bool dynamic) noexcept
       -> Com_ptr<ID3D11Buffer>;
@@ -175,7 +171,7 @@ public:
 
    void set_input_layout(const Game_input_layout& input_layout) noexcept;
 
-   void set_game_shader(std::shared_ptr<Game_shader> shader) noexcept;
+   void set_game_shader(const std::uint32_t game_shader_index) noexcept;
 
    void set_rendertarget(const Game_rendertarget_id rendertarget) noexcept;
 
@@ -308,6 +304,8 @@ private:
                                                              OIT_provider::usable(
                                                                 *_device)};
 
+   Game_shader_store _game_shaders{_shader_rendertypes_database};
+
    std::vector<Game_rendertarget> _game_rendertargets = {_swapchain.game_rendertarget()};
    Game_rendertarget_id _current_game_rendertarget = _game_backbuffer_index;
    Game_rendertarget _patch_backbuffer;
@@ -324,7 +322,7 @@ private:
 
    Game_input_layout _game_input_layout{};
    D3D11_PRIMITIVE_TOPOLOGY _primitive_topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
-   std::shared_ptr<Game_shader> _game_shader{};
+   Game_shader* _game_shader = nullptr;
    Rendertype _previous_shader_rendertype = Rendertype::invalid;
    Rendertype _shader_rendertype = Rendertype::invalid;
 
