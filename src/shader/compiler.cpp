@@ -155,11 +155,12 @@ auto get_target(const Entrypoint_description& entrypoint) -> const char*
 
 }
 
-auto Compiler::compile(const Entrypoint_description& entrypoint,
+auto Compiler::compile(const Source_file_store& file_store,
+                       const Entrypoint_description& entrypoint,
                        const std::uint64_t static_flags,
                        const Vertex_shader_flags vertex_shader_flags) noexcept -> Bytecode_blob
 {
-   auto source = _file_store.data(entrypoint.source_name);
+   auto source = file_store.data(entrypoint.source_name);
 
    if (!source) {
       log_and_terminate("Unable to get shader source code. Can't compile.");
@@ -168,13 +169,13 @@ auto Compiler::compile(const Entrypoint_description& entrypoint,
    auto shader_defines =
       get_shader_defines(entrypoint, static_flags, vertex_shader_flags);
 
-   Includer includer{_file_store};
+   Includer includer{file_store};
    Com_ptr<ID3DBlob> bytecode_result;
    Com_ptr<ID3DBlob> error_messages;
 
    auto result =
       D3DCompile(source->data(), source->size(),
-                 _file_store.file_path(entrypoint.source_name).data(),
+                 file_store.file_path(entrypoint.source_name).data(),
                  shader_defines.data(), &includer,
                  entrypoint.function_name.data(), get_target(entrypoint),
                  D3DCOMPILE_OPTIMIZATION_LEVEL2 | D3DCOMPILE_WARNINGS_ARE_ERRORS,

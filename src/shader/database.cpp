@@ -25,6 +25,8 @@ namespace {
 constexpr auto TEMP_definitions_directory =
    LR"(C:\GitHub\swbfii-shaderpatch\assets\core\definitions)"sv;
 constexpr auto shader_cache_path = LR"(.\data\shaderpatch\.shader_dxbc_cache)"sv;
+constexpr auto TEMP_file_store_source =
+   LR"(C:\GitHub\swbfii-shaderpatch\assets\core\src)"sv;
 
 template<typename T>
 auto get_shader_group(const absl::flat_hash_map<std::string, std::unique_ptr<T>>& groups,
@@ -316,7 +318,8 @@ public:
                            entrypoint_name, "' from group '"sv, group_name, "'"sv);
       }
 
-      auto bytecode = _compiler.compile(entrypoint_desc, static_flags);
+      auto bytecode =
+         _compiler.compile(_source_file_store, entrypoint_desc, static_flags);
 
       auto shader = create_shader<T>(*_device, bytecode);
 
@@ -360,7 +363,8 @@ public:
                            entrypoint_name, "' from group '"sv, group_name, "'"sv);
       }
 
-      auto bytecode = _compiler.compile(entrypoint_desc, static_flags, game_flags);
+      auto bytecode = _compiler.compile(_source_file_store, entrypoint_desc,
+                                        static_flags, game_flags);
 
       auto shader = create_shader<ID3D11VertexShader>(*_device, bytecode);
 
@@ -431,6 +435,7 @@ private:
    Cache _cache{*_device, shader_cache_path};
    Compiler _compiler;
    Cache_disk_updater _cache_disk_updater;
+   Source_file_store _source_file_store{TEMP_file_store_source};
 
    absl::flat_hash_map<std::string, absl::flat_hash_map<std::string, Entrypoint_description>> _entrypoint_descs;
    absl::flat_hash_map<std::string, absl::flat_hash_map<std::string, Rendertype_state_description>> _rendertypes_states;
