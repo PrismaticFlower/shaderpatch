@@ -357,6 +357,7 @@
     <ClInclude Include="src\shader\group_definition.hpp" />
     <ClInclude Include="src\shader\preprocessor_defines.hpp" />
     <ClInclude Include="src\shader\rendertype_state_description.hpp" />
+    <ClInclude Include="src\shader\source_file_dependency_tracker.hpp" />
     <ClInclude Include="src\shader\source_file_store.hpp" />
     <ClInclude Include="src\shader\static_flags.hpp" />
     <ClInclude Include="src\shader\vertex_input_layout.hpp" />

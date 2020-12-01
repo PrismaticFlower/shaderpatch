@@ -5,6 +5,7 @@
 
 #include <filesystem>
 #include <optional>
+#include <ranges>
 #include <string>
 #include <string_view>
 
@@ -14,6 +15,11 @@ namespace sp::shader {
 
 class Source_file_store {
 public:
+   struct File_ref {
+      std::string_view name;
+      std::string_view data;
+   };
+
    explicit Source_file_store(const std::filesystem::path& source_path) noexcept
    {
       for (const auto& entry : std::filesystem::directory_iterator{source_path}) {
@@ -45,6 +51,13 @@ public:
 
       log_and_terminate("Failed to find file '"sv, name,
                         "' in shader source file store. This may be caused by the case sensitivty of the source file store."sv);
+   }
+
+   auto get_range() const noexcept
+   {
+      return _files | std::views::transform([](const auto& file) noexcept {
+                return File_ref{.name = file.first, .data = file.second.data};
+             });
    }
 
 private:

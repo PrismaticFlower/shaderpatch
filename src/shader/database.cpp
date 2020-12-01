@@ -5,6 +5,8 @@
 #include "compiler.hpp"
 #include "entrypoint_description.hpp"
 #include "group_definition.hpp"
+#include "source_file_dependency_index.hpp"
+#include "source_file_store.hpp"
 
 #include <algorithm>
 #include <bitset>
@@ -25,6 +27,8 @@ namespace {
 constexpr auto TEMP_definitions_directory =
    LR"(C:\GitHub\swbfii-shaderpatch\assets\core\definitions)"sv;
 constexpr auto shader_cache_path = LR"(.\data\shaderpatch\.shader_dxbc_cache)"sv;
+constexpr auto TEMP_file_store_source =
+   LR"(C:\GitHub\swbfii-shaderpatch\assets\core\src)"sv;
 constexpr auto TEMP_file_store_source =
    LR"(C:\GitHub\swbfii-shaderpatch\assets\core\src)"sv;
 
@@ -436,6 +440,7 @@ private:
    Compiler _compiler;
    Cache_disk_updater _cache_disk_updater;
    Source_file_store _source_file_store{TEMP_file_store_source};
+   Source_file_dependency_index _source_dependency_index{_source_file_store};
 
    absl::flat_hash_map<std::string, absl::flat_hash_map<std::string, Entrypoint_description>> _entrypoint_descs;
    absl::flat_hash_map<std::string, absl::flat_hash_map<std::string, Rendertype_state_description>> _rendertypes_states;

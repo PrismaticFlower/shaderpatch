@@ -653,6 +653,9 @@
     <ClInclude Include="src\game_support\fixedfunc_shader_metadata.hpp">
       <Filter>src\game_support</Filter>
     </ClInclude>
+    <ClInclude Include="src\shader\source_file_dependency_tracker.hpp">
+      <Filter>src\shader</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />
