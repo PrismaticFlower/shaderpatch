@@ -408,21 +408,13 @@ auto munge_declarations() noexcept -> Munged_shader_declarations
 {
    Munged_shader_declarations result;
 
-   const auto munge_tuple = [&]<typename... Ts, std::size_t... indices>(
-      const std::tuple<Ts...>& decls, std::index_sequence<indices...>) noexcept
-   {
-      const auto munge_tuple_decl = [&]<typename Index>(const Index) noexcept {
-         constexpr auto index = Index::value;
-
-         result.munged_declarations[index] =
-            munge_declaration(std::get<index>(decls), result.shader_pool);
-      };
-
-      (munge_tuple_decl(std::integral_constant<std::size_t, indices>{}), ...);
-   };
-
-   munge_tuple(shader_declarations,
-               std::make_index_sequence<std::tuple_size_v<decltype(shader_declarations)>>{});
+   std::invoke(
+      [&]<std::size_t... indices>(std::index_sequence<indices...>) {
+         ((result.munged_declarations[indices] =
+              munge_declaration(std::get<indices>(shader_declarations), result.shader_pool)),
+          ...);
+      },
+      std::make_index_sequence<std::tuple_size_v<decltype(shader_declarations)>>{});
 
    result.shader_pool.insert(result.shader_pool.cend(),
                              fixedfunc_shader_declarations.cbegin(),
