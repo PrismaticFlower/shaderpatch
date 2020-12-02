@@ -26,11 +26,9 @@ namespace {
 
 constexpr auto TEMP_definitions_directory =
    LR"(C:\GitHub\swbfii-shaderpatch\assets\core\definitions)"sv;
+constexpr auto TEMP_file_store_directory =
+   LR"(C:\GitHub\swbfii-shaderpatch\assets\core\src)"sv;
 constexpr auto shader_cache_path = LR"(.\data\shaderpatch\.shader_dxbc_cache)"sv;
-constexpr auto TEMP_file_store_source =
-   LR"(C:\GitHub\swbfii-shaderpatch\assets\core\src)"sv;
-constexpr auto TEMP_file_store_source =
-   LR"(C:\GitHub\swbfii-shaderpatch\assets\core\src)"sv;
 
 template<typename T>
 auto get_shader_group(const absl::flat_hash_map<std::string, std::unique_ptr<T>>& groups,
@@ -302,6 +300,9 @@ public:
                                                                       rendertype_def));
          }
       }
+
+      _cache.clear_stale_entries(_source_dependency_index, _source_file_store,
+                                 definitions);
    }
 
    template<typename T>
@@ -439,7 +440,7 @@ private:
    Cache _cache{*_device, shader_cache_path};
    Compiler _compiler;
    Cache_disk_updater _cache_disk_updater;
-   Source_file_store _source_file_store{TEMP_file_store_source};
+   Source_file_store _source_file_store{TEMP_file_store_directory};
    Source_file_dependency_index _source_dependency_index{_source_file_store};
 
    absl::flat_hash_map<std::string, absl::flat_hash_map<std::string, Entrypoint_description>> _entrypoint_descs;

@@ -9,8 +9,61 @@
 #include <vector>
 
 using namespace std::literals;
+using std::filesystem::file_time_type;
 
 namespace sp::shader {
+
+Cache::Cache(ID3D11Device5& device, const std::filesystem::path& cache_path) noexcept
+{
+   load_from_file(device, cache_path);
+}
+
+void Cache::clear_stale_entries(const Source_file_dependency_index& dependency_index,
+                                const Source_file_store& file_store,
+                                const std::span<const Group_definition> groups) noexcept
+{
+   std::lock_guard lock{_mutex};
+
+   absl::flat_hash_set<std::string_view> dependents;
+   dependents.reserve(file_store.size());
+
+   for (auto& group : groups) {
+      if (group.last_write_time > std::exchange(_group_last_write_times[group.group_name],
+                                                group.last_write_time)) {
+         invalidate_group_nolock(group.group_name);
+         continue;
+      }
+
+      dependents.clear();
+
+      const auto add_dependents = [&](const auto& add_dependents,
+                                      const std::string_view file) noexcept {
+         auto [iter, inserted] = dependents.insert(file);
+
+         if (!inserted) return;
+
+         for (const auto& dependent_file : dependency_index[file]) {
+            add_dependents(add_dependents, dependent_file);
+         }
+      };
+
+      add_dependents(add_dependents, group.source_name);
+
+      for (const auto& dependent : dependents) {
+         if (file_store.last_write_time(dependent) >
+             _shader_last_write_times[dependent]) {
+            invalidate_group_nolock(group.group_name);
+            break;
+         }
+      }
+   }
+
+   _shader_last_write_times.clear();
+
+   for (const auto& file : file_store.get_range()) {
+      _shader_last_write_times[file.name] = file.last_write_time;
+   }
+}
 
 void Cache::save_to_file(const std::filesystem::path& cache_path)
 {
@@ -51,6 +104,20 @@ void Cache::save_to_file(const std::filesystem::path& cache_path)
       write_stage_cache(_gs_cache);
       write_stage_cache(_ps_cache);
 
+      // write last write times
+      const auto write_last_writes =
+         [&file](const absl::flat_hash_map<std::string, std::filesystem::file_time_type>& last_writes) {
+            file.write(last_writes.size());
+
+            for (const auto& [name, last_write_time] : last_writes) {
+               file.write(name.size(), name);
+               file.write(last_write_time.time_since_epoch().count());
+            }
+         };
+
+      write_last_writes(_group_last_write_times);
+      write_last_writes(_shader_last_write_times);
+
       file.close();
 
       std::filesystem::rename(write_path, cache_path);
@@ -81,16 +148,17 @@ void Cache::load_from_file(ID3D11Device5& device, const std::filesystem::path& c
 
       if (cache_sp_version != current_shader_patch_version) return;
 
+      const auto read_string = [&file](auto& out) {
+         out.resize(file.read<std::size_t>());
+
+         file.read_to(out);
+      };
+
       const auto read_stage_cache =
          [&]<typename K, typename V>(Basic_cache_map<K, V>& cache, auto create) {
             const auto entry_count = file.read<std::size_t>();
 
             for (std::size_t i = 0; i < entry_count; ++i) {
-               const auto read_string = [&file](auto& out) {
-                  out.resize(file.read<std::size_t>());
-
-                  file.read_to(out);
-               };
 
                K index;
 
@@ -134,6 +202,26 @@ void Cache::load_from_file(ID3D11Device5& device, const std::filesystem::path& c
       read_stage_cache(_hs_cache, &ID3D11Device5::CreateHullShader);
       read_stage_cache(_gs_cache, &ID3D11Device5::CreateGeometryShader);
       read_stage_cache(_ps_cache, &ID3D11Device5::CreatePixelShader);
+
+      // read last write times
+      const auto read_last_writes =
+         [&](absl::flat_hash_map<std::string, std::filesystem::file_time_type>& last_writes) {
+            const auto count = file.read<std::size_t>();
+
+            last_writes.reserve(count);
+
+            for (std::size_t i = 0; i < count; ++i) {
+               std::string name;
+
+               read_string(name);
+
+               last_writes[std::move(name)] = file_time_type{file_time_type::duration{
+                  file.read<file_time_type::duration::rep>()}};
+            }
+         };
+
+      read_last_writes(_group_last_write_times);
+      read_last_writes(_shader_last_write_times);
    }
    catch (std::exception&) {
       log(Log_level::warning,

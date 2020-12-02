@@ -3,6 +3,7 @@
 #include "source_file_store.hpp"
 #include "string_utilities.hpp"
 
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -25,6 +26,15 @@ public:
       for (const auto& file : source_files.get_range()) {
          rescan_entry(file.name, file.data);
       }
+   }
+
+   auto operator[](const std::string_view source_file) const noexcept
+      -> std::span<const std::string>
+   {
+      auto files = _dependencies_map.find(source_file);
+
+      return files != _dependencies_map.cend() ? files->second
+                                               : std::span<const std::string>{};
    }
 
 private:

@@ -2,7 +2,10 @@
 
 #include "bytecode_blob.hpp"
 #include "com_ptr.hpp"
+#include "group_definition.hpp"
 #include "shader_flags.hpp"
+#include "source_file_dependency_index.hpp"
+#include "source_file_store.hpp"
 
 #include <cstddef>
 #include <filesystem>
@@ -11,6 +14,7 @@
 #include <vector>
 
 #include <absl/container/flat_hash_map.h>
+#include <absl/container/flat_hash_set.h>
 #include <d3d11_4.h>
 
 namespace sp::shader {
@@ -66,10 +70,7 @@ struct Cache_index_vs {
 
 class Cache {
 public:
-   Cache(ID3D11Device5& device, const std::filesystem::path& cache_path) noexcept
-   {
-      load_from_file(device, cache_path);
-   }
+   Cache(ID3D11Device5& device, const std::filesystem::path& cache_path) noexcept;
 
    template<typename T>
    auto get_if(const std::string_view group_name, const std::string_view entrypoint_name,
@@ -119,10 +120,44 @@ public:
                                .game_flags = game_flags}] = std::move(cache_entry);
    }
 
+   void invalidate_group(const std::string_view group) noexcept
+   {
+      std::lock_guard lock{_mutex};
+
+      invalidate_group_nolock(group);
+   }
+
+   void clear_stale_entries(const Source_file_dependency_index& dependency_index,
+                            const Source_file_store& file_store,
+                            const std::span<const Group_definition> groups) noexcept;
+
    void save_to_file(const std::filesystem::path& cache_path);
 
 private:
    void load_from_file(ID3D11Device5& device, const std::filesystem::path& cache_path);
+
+   void invalidate_group_nolock(const std::string_view group) noexcept
+   {
+      invalidate_group_impl(group, _vs_cache, _cs_cache, _ds_cache, _hs_cache,
+                            _gs_cache, _ps_cache);
+   }
+
+   template<typename... Args>
+   void invalidate_group_impl(const std::string_view group, Args&... args) noexcept
+   {
+      (erase_if(args,
+                [group](const auto& key_value) noexcept {
+                   return key_value.first.group == group;
+                }),
+       ...);
+   }
+
+   struct Group_info {
+      bool dirty = true;
+      std::string name;
+      std::string source_name;
+      std::filesystem::file_time_type desc_last_write{};
+   };
 
    struct Hash_transparent {
       using is_transparent = void;
@@ -184,6 +219,9 @@ private:
    Cache_map<ID3D11HullShader> _hs_cache;
    Cache_map<ID3D11GeometryShader> _gs_cache;
    Cache_map<ID3D11PixelShader> _ps_cache;
+
+   absl::flat_hash_map<std::string, std::filesystem::file_time_type> _group_last_write_times;
+   absl::flat_hash_map<std::string, std::filesystem::file_time_type> _shader_last_write_times;
 };
 
 }

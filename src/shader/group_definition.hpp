@@ -58,6 +58,7 @@ struct Group_definition {
 
    std::string group_name;
    std::string source_name;
+   std::filesystem::file_time_type last_write_time;
 
    absl::flat_hash_map<std::string, std::vector<Vertex_input_element>> input_layouts;
    absl::flat_hash_map<std::string, Entrypoint> entrypoints;

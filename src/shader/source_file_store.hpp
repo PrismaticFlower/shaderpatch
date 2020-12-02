@@ -5,7 +5,9 @@
 
 #include <filesystem>
 #include <optional>
+#ifndef __INTELLISENSE__
 #include <ranges>
+#endif
 #include <string>
 #include <string_view>
 
@@ -18,6 +20,7 @@ public:
    struct File_ref {
       std::string_view name;
       std::string_view data;
+      std::filesystem::file_time_type last_write_time;
    };
 
    explicit Source_file_store(const std::filesystem::path& source_path) noexcept
@@ -26,7 +29,9 @@ public:
          if (!entry.is_regular_file()) continue;
 
          _files[entry.path().filename().string()] =
-            File{.data = load_string_file(entry), .path = entry.path().string()};
+            File{.data = load_string_file(entry),
+                 .path = entry.path().string(),
+                 .last_write_time = entry.last_write_time()};
       }
    }
 
@@ -53,17 +58,38 @@ public:
                         "' in shader source file store. This may be caused by the case sensitivty of the source file store."sv);
    }
 
+   auto last_write_time(const std::string_view name) const noexcept
+      -> std::filesystem::file_time_type
+   {
+      if (auto it = _files.find(name); it != _files.end()) {
+         return it->second.last_write_time;
+      }
+
+      log_and_terminate("Failed to find file '"sv, name,
+                        "' in shader source file store. This may be caused by the case sensitivty of the source file store."sv);
+   }
+
+#ifndef __INTELLISENSE__
    auto get_range() const noexcept
    {
       return _files | std::views::transform([](const auto& file) noexcept {
-                return File_ref{.name = file.first, .data = file.second.data};
+                return File_ref{.name = file.first,
+                                .data = file.second.data,
+                                .last_write_time = file.second.last_write_time};
              });
+   }
+#endif
+
+   auto size() const noexcept
+   {
+      return _files.size();
    }
 
 private:
    struct File {
       std::string data;
       std::string path;
+      std::filesystem::file_time_type last_write_time;
    };
 
    absl::flat_hash_map<std::string, File> _files;

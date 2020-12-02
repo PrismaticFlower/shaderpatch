@@ -42,7 +42,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>bin\$(Configuration)\</OutDir>
+    <OutDir>D:\GOG Games\Star Wars - Battlefront 2\GameData\</OutDir>
     <IntDir>build\$(Configuration)\</IntDir>
     <TargetName>d3d9</TargetName>
     <TargetExt>.dll</TargetExt>
@@ -51,7 +51,7 @@
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>bin\$(Configuration)\</OutDir>
+    <OutDir>D:\GOG Games\Star Wars - Battlefront 2\GameData\</OutDir>
     <IntDir>build\$(Configuration)\</IntDir>
     <TargetName>d3d9</TargetName>
     <TargetExt>.dll</TargetExt>
@@ -357,7 +357,7 @@
     <ClInclude Include="src\shader\group_definition.hpp" />
     <ClInclude Include="src\shader\preprocessor_defines.hpp" />
     <ClInclude Include="src\shader\rendertype_state_description.hpp" />
-    <ClInclude Include="src\shader\source_file_dependency_tracker.hpp" />
+    <ClInclude Include="src\shader\source_file_dependency_index.hpp" />
     <ClInclude Include="src\shader\source_file_store.hpp" />
     <ClInclude Include="src\shader\static_flags.hpp" />
     <ClInclude Include="src\shader\vertex_input_layout.hpp" />

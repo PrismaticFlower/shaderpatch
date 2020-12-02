@@ -184,7 +184,11 @@ namespace {
 auto load_group_definition(const std::filesystem::path& path) noexcept -> Group_definition
 {
    try {
-      return nlohmann::json::parse(load_string_file(path));
+      Group_definition definition = nlohmann::json::parse(load_string_file(path));
+
+      definition.last_write_time = std::filesystem::last_write_time(path);
+
+      return definition;
    }
    catch (std::exception& e) {
       // TODO: Display dialog to retry?
