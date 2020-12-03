@@ -323,8 +323,7 @@ public:
                            entrypoint_name, "' from group '"sv, group_name, "'"sv);
       }
 
-      auto bytecode =
-         _compiler.compile(_source_file_store, entrypoint_desc, static_flags);
+      auto bytecode = compile(_source_file_store, entrypoint_desc, static_flags);
 
       auto shader = create_shader<T>(*_device, bytecode);
 
@@ -368,8 +367,8 @@ public:
                            entrypoint_name, "' from group '"sv, group_name, "'"sv);
       }
 
-      auto bytecode = _compiler.compile(_source_file_store, entrypoint_desc,
-                                        static_flags, game_flags);
+      auto bytecode =
+         compile(_source_file_store, entrypoint_desc, static_flags, game_flags);
 
       auto shader = create_shader<ID3D11VertexShader>(*_device, bytecode);
 
@@ -438,7 +437,6 @@ private:
 
    Com_ptr<ID3D11Device5> _device;
    Cache _cache{*_device, shader_cache_path};
-   Compiler _compiler;
    Cache_disk_updater _cache_disk_updater;
    Source_file_store _source_file_store{TEMP_file_store_directory};
    Source_file_dependency_index _source_dependency_index{_source_file_store};

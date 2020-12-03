@@ -6,13 +6,9 @@
 
 namespace sp::shader {
 
-class Compiler {
-public:
-   auto compile(const Source_file_store& file_store,
-                const Entrypoint_description& entrypoint,
-                const std::uint64_t static_flags,
-                const Vertex_shader_flags vertex_shader_flags = Vertex_shader_flags::none) noexcept
-      -> Bytecode_blob;
-};
+auto compile(const Source_file_store& file_store,
+             const Entrypoint_description& entrypoint, const std::uint64_t static_flags,
+             const Vertex_shader_flags vertex_shader_flags = Vertex_shader_flags::none) noexcept
+   -> Bytecode_blob;
 
 }

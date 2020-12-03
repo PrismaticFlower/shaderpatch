@@ -155,10 +155,9 @@ auto get_target(const Entrypoint_description& entrypoint) -> const char*
 
 }
 
-auto Compiler::compile(const Source_file_store& file_store,
-                       const Entrypoint_description& entrypoint,
-                       const std::uint64_t static_flags,
-                       const Vertex_shader_flags vertex_shader_flags) noexcept -> Bytecode_blob
+auto compile(const Source_file_store& file_store,
+             const Entrypoint_description& entrypoint, const std::uint64_t static_flags,
+             const Vertex_shader_flags vertex_shader_flags) noexcept -> Bytecode_blob
 {
    auto source = file_store.data(entrypoint.source_name);
 
