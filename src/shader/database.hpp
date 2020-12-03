@@ -84,6 +84,8 @@ public:
 
    void cache_update() noexcept;
 
+   void force_cache_save_to_disk() noexcept;
+
    auto internal() noexcept -> Database_internal&;
 
 private:

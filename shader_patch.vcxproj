@@ -229,6 +229,7 @@
     <ClCompile Include="src\shader\database.cpp" />
     <ClCompile Include="src\shader\group_definition.cpp" />
     <ClCompile Include="src\shader\vertex_input_layout.cpp" />
+    <ClCompile Include="src\shader_cache_primer.cpp" />
     <ClCompile Include="src\user_config.cpp" />
     <ClCompile Include="src\window_hooks.cpp" />
   </ItemGroup>

@@ -385,6 +385,11 @@ public:
       }
    }
 
+   void force_cache_save_to_disk() noexcept
+   {
+      _cache.save_to_file(_file_paths.shader_cache);
+   }
+
    template<typename T>
    auto get_shader_groups() noexcept
       -> absl::flat_hash_map<std::string, std::unique_ptr<T>>
@@ -487,6 +492,11 @@ auto Database::pixel(const std::string_view name) noexcept -> Group_pixel&
 void Database::cache_update() noexcept
 {
    _database->cache_update();
+}
+
+void Database::force_cache_save_to_disk() noexcept
+{
+   _database->force_cache_save_to_disk();
 }
 
 auto Database::internal() noexcept -> Database_internal&

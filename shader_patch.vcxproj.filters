@@ -255,6 +255,9 @@
     <ClCompile Include="src\core\game_shader.cpp">
       <Filter>src\core</Filter>
     </ClCompile>
+    <ClCompile Include="src\shader_cache_primer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">

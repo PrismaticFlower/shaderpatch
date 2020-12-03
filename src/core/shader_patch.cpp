@@ -1116,6 +1116,11 @@ auto Shader_patch::get_query_data(ID3D11Query& query, const bool flush,
    return Query_result::error;
 }
 
+void Shader_patch::force_shader_cache_save_to_disk() noexcept
+{
+   _shader_database.force_cache_save_to_disk();
+}
+
 auto Shader_patch::current_depthstencil(const bool readonly) const noexcept
    -> ID3D11DepthStencilView*
 {

@@ -229,6 +229,8 @@ public:
    auto get_query_data(ID3D11Query& query, const bool flush,
                        std::span<std::byte> data) noexcept -> Query_result;
 
+   void force_shader_cache_save_to_disk() noexcept;
+
 private:
    auto current_depthstencil(const bool readonly) const noexcept
       -> ID3D11DepthStencilView*;
