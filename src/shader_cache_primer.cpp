@@ -54,7 +54,7 @@ auto make_window() -> std::pair<unique_windows_class, unique_window>
 
 }
 
-__declspec(dllexport) void initialize_shader_cache() noexcept
+__declspec(dllexport) void prime_shader_cache() noexcept
 {
    // Never take this as an example that it's okay to set "user_config.*" stuff ___anywhere__
    // but it's constructor function and ImGUi function. I've only deemed this "safe" because this
