@@ -184,6 +184,15 @@ void User_config::parse_file(const std::string& path)
 
    developer.use_dxgi_1_2_factory =
       config["Developer"s]["Use DXGI 1.2 Factory"s].as<bool>();
+
+   developer.shader_cache_path =
+      config["Developer"s]["Shader Cache Path"s].as<std::string>();
+
+   developer.shader_definitions_path =
+      config["Developer"s]["Shader Definitions Path"s].as<std::string>();
+
+   developer.shader_source_path =
+      config["Developer"s]["Shader Source Path"s].as<std::string>();
 }
 
 }

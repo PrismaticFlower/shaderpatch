@@ -8,6 +8,7 @@
 #include "small_function.hpp"
 #include "vertex_input_layout.hpp"
 
+#include <filesystem>
 #include <memory>
 #include <optional>
 #include <string>
@@ -51,9 +52,15 @@ constexpr auto to_stage() noexcept -> Stage
    if (std::is_same_v<T, ID3D11PixelShader>) return Stage::pixel;
 }
 
+struct Database_file_paths {
+   std::filesystem::path shader_cache;
+   std::filesystem::path shader_definitions;
+   std::filesystem::path shader_source_files;
+};
+
 class Database {
 public:
-   Database(Com_ptr<ID3D11Device5> device) noexcept;
+   Database(Com_ptr<ID3D11Device5> device, Database_file_paths file_paths) noexcept;
 
    ~Database();
 

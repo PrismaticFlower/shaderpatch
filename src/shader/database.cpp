@@ -24,12 +24,6 @@ namespace sp::shader {
 
 namespace {
 
-constexpr auto TEMP_definitions_directory =
-   LR"(C:\GitHub\swbfii-shaderpatch\assets\core\definitions)"sv;
-constexpr auto TEMP_file_store_directory =
-   LR"(C:\GitHub\swbfii-shaderpatch\assets\core\src)"sv;
-constexpr auto shader_cache_path = LR"(.\data\shaderpatch\.shader_dxbc_cache)"sv;
-
 template<typename T>
 auto get_shader_group(const absl::flat_hash_map<std::string, std::unique_ptr<T>>& groups,
                       const std::string_view name) noexcept -> T&
@@ -256,10 +250,10 @@ public:
       return (std::chrono::steady_clock::now() - _last_update) >= min_update_interval;
    }
 
-   void update(Cache& cache) noexcept
+   void update(Cache& cache, const std::filesystem::path& cache_path) noexcept
    {
-      _update_future = std::async(std::launch::async, [&cache] {
-         cache.save_to_file(shader_cache_path);
+      _update_future = std::async(std::launch::async, [&cache, cache_path] {
+         cache.save_to_file(cache_path);
       });
       _disk_cache_dirty = false;
       _last_update = std::chrono::steady_clock::now();
@@ -276,9 +270,10 @@ private:
 
 class Database_internal {
 public:
-   Database_internal(Com_ptr<ID3D11Device5> device) : _device{device}
+   Database_internal(Com_ptr<ID3D11Device5> device, Database_file_paths file_paths)
+      : _device{device}, _file_paths{std::move(file_paths)}
    {
-      const auto definitions = load_group_definitions(TEMP_definitions_directory);
+      const auto definitions = load_group_definitions(_file_paths.shader_definitions);
 
       using std::views::filter;
 
@@ -386,7 +381,7 @@ public:
    void cache_update() noexcept
    {
       if (_cache_disk_updater.should_update()) {
-         _cache_disk_updater.update(_cache);
+         _cache_disk_updater.update(_cache, _file_paths.shader_cache);
       }
    }
 
@@ -436,17 +431,18 @@ private:
    }
 
    Com_ptr<ID3D11Device5> _device;
-   Cache _cache{*_device, shader_cache_path};
+   const Database_file_paths _file_paths;
+   Cache _cache{*_device, _file_paths.shader_cache};
    Cache_disk_updater _cache_disk_updater;
-   Source_file_store _source_file_store{TEMP_file_store_directory};
+   Source_file_store _source_file_store{_file_paths.shader_source_files};
    Source_file_dependency_index _source_dependency_index{_source_file_store};
 
    absl::flat_hash_map<std::string, absl::flat_hash_map<std::string, Entrypoint_description>> _entrypoint_descs;
    absl::flat_hash_map<std::string, absl::flat_hash_map<std::string, Rendertype_state_description>> _rendertypes_states;
 };
 
-Database::Database(Com_ptr<ID3D11Device5> device) noexcept
-   : _database{std::make_unique<Database_internal>(device)}
+Database::Database(Com_ptr<ID3D11Device5> device, Database_file_paths file_paths) noexcept
+   : _database{std::make_unique<Database_internal>(device, std::move(file_paths))}
 {
    _groups_compute = _database->get_shader_groups<Group_compute>();
    _groups_vertex = _database->get_shader_groups<Group_vertex>();

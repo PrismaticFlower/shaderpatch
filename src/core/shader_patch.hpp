@@ -299,7 +299,12 @@ private:
    Swapchain _swapchain;
 
    Input_layout_descriptions _input_layout_descriptions;
-   shader::Database _shader_database{_device};
+   shader::Database _shader_database{_device,
+                                     {.shader_cache = user_config.developer.shader_cache_path,
+                                      .shader_definitions =
+                                         user_config.developer.shader_definitions_path,
+                                      .shader_source_files =
+                                         user_config.developer.shader_source_path}};
    shader::Rendertypes_database _shader_rendertypes_database{_shader_database,
                                                              OIT_provider::usable(
                                                                 *_device)};

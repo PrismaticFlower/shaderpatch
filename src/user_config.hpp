@@ -4,6 +4,7 @@
 #include "logger.hpp"
 
 #include <cstdint>
+#include <filesystem>
 #include <iomanip>
 #include <string>
 #include <string_view>
@@ -89,6 +90,12 @@ struct User_config {
       bool allow_event_queries = false;
       bool use_d3d11_debug_layer = false;
       bool use_dxgi_1_2_factory = false;
+
+      std::filesystem::path shader_cache_path =
+         LR"(.\data\shaderpatch\.shader_dxbc_cache)";
+      std::filesystem::path shader_definitions_path =
+         LR"(.\data\shaderpatch\shaders\definitions)";
+      std::filesystem::path shader_source_path = LR"(.\data\shaderpatch\shaders\src)";
    } developer;
 
    void show_imgui() noexcept;
