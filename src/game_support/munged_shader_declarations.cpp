@@ -1,5 +1,6 @@
 
 #include "munged_shader_declarations.hpp"
+#include "../shader/common.hpp"
 #include "fixedfunc_shader_metadata.hpp"
 #include "shader_declarations.hpp"
 
@@ -55,6 +56,23 @@ constexpr bool marked_as_enum_flag(Pass_flags)
    return true;
 }
 
+enum class Shader_flags : std::uint32_t {
+   none = 0,
+   light_point = 1,
+   light_point2 = 2,
+   light_point4 = 3,
+   light_spot = 4,
+   light_dir = 16,
+   // soft_skinned = 32, // Soft Skinned
+   skinned = 64,     // Hard Skinned
+   vertexcolor = 128 // Vertexcolor
+};
+
+constexpr bool marked_as_enum_flag(Shader_flags)
+{
+   return true;
+}
+
 auto add_flag_skinned_variations(absl::InlinedVector<Shader_flags, variation_count> current)
    -> absl::InlinedVector<Shader_flags, variation_count>
 {
@@ -104,8 +122,10 @@ auto get_flag_variations(const Shader_entry& shader) noexcept
    return variations;
 }
 
-auto get_base_vertex_flags(const Shader_entry& shader) noexcept -> Vertex_shader_flags
+auto get_base_vertex_flags(const Shader_entry& shader) noexcept -> shader::Vertex_shader_flags
 {
+   using shader::Vertex_shader_flags;
+
    Vertex_shader_flags flags = Vertex_shader_flags::none;
 
    if (shader.base_input >= Base_input::position) {
@@ -132,6 +152,8 @@ auto get_shader_variations(const Rendertype& rendertype, const Shader_entry& sha
                            std::vector<Shader_metadata>& global_shader_pool) noexcept
    -> absl::InlinedVector<std::pair<Shader_flags, std::size_t>, variation_count>
 {
+   using shader::Vertex_shader_flags;
+
    const Shader_metadata base_metadata{.rendertype = rendertype,
                                        .shader_name = shader.name,
                                        .vertex_shader_flags =

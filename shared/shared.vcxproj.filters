@@ -54,9 +54,6 @@
     <ClInclude Include="include\req_file_helpers.hpp">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="include\shader_flags.hpp">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="include\small_function.hpp">
       <Filter>include</Filter>
     </ClInclude>

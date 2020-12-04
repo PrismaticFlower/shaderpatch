@@ -15,7 +15,7 @@ auto make_game_shader(shader::Rendertypes_database& database,
 
    auto [vs, vs_bytecode, vs_inputlayout] = state.vertex(metadata.vertex_shader_flags);
    auto [vs_compressed, vs_bytecode_compressed, vs_inputlayout_compressed] =
-      state.vertex(metadata.vertex_shader_flags | Vertex_shader_flags::compressed);
+      state.vertex(metadata.vertex_shader_flags | shader::Vertex_shader_flags::compressed);
 
    if (!vs && !vs_compressed) {
       log_and_terminate("Game shader has no vertex shader!"sv);

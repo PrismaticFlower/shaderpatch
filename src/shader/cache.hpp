@@ -3,7 +3,6 @@
 #include "bytecode_blob.hpp"
 #include "com_ptr.hpp"
 #include "group_definition.hpp"
-#include "shader_flags.hpp"
 #include "source_file_dependency_index.hpp"
 #include "source_file_store.hpp"
 

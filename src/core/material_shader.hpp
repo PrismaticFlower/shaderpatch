@@ -24,7 +24,7 @@ public:
    void update(ID3D11DeviceContext1& dc,
                const Input_layout_descriptions& layout_descriptions,
                const std::uint16_t layout_index, const std::string& state_name,
-               const Vertex_shader_flags vertex_shader_flags,
+               const shader::Vertex_shader_flags vertex_shader_flags,
                const bool oit_active) noexcept;
 
 private:
@@ -35,13 +35,14 @@ private:
    };
 
    struct Material_shader_state {
-      std::unordered_map<Vertex_shader_flags, Material_vertex_shader> vertex;
+      std::unordered_map<shader::Vertex_shader_flags, Material_vertex_shader> vertex;
       Com_ptr<ID3D11GeometryShader> geometry;
       Com_ptr<ID3D11PixelShader> pixel;
       Com_ptr<ID3D11PixelShader> pixel_oit;
 
-      auto get_vs(const Vertex_shader_flags flags, const std::string& state_name,
-                  const std::string& shader_name) noexcept -> Material_vertex_shader&;
+      auto get_vs(const shader::Vertex_shader_flags flags,
+                  const std::string& state_name, const std::string& shader_name) noexcept
+         -> Material_vertex_shader&;
    };
 
    using Shaders = std::unordered_map<std::string, Material_shader_state>;
@@ -54,7 +55,7 @@ private:
       -> Material_shader_state;
 
    static auto init_vs_entrypoint(shader::Rendertype_state& state) noexcept
-      -> std::unordered_map<Vertex_shader_flags, Material_vertex_shader>;
+      -> std::unordered_map<shader::Vertex_shader_flags, Material_vertex_shader>;
 
    const Com_ptr<ID3D11Device1> _device;
 

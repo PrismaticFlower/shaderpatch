@@ -1,7 +1,6 @@
 #pragma once
 
 #include "common.hpp"
-#include "shader_flags.hpp"
 
 #include <cstdint>
 #include <string>

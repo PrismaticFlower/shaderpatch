@@ -1608,7 +1608,7 @@ void Shader_patch::update_shader() noexcept
       auto vs_flags = _game_shader->vertex_shader_flags;
 
       if (_game_input_layout.compressed)
-         vs_flags |= Vertex_shader_flags::compressed;
+         vs_flags |= shader::Vertex_shader_flags::compressed;
 
       if (_shader_rendertype == _patch_material->overridden_rendertype) {
          _patch_material->shader->update(*_device_context, _input_layout_descriptions,

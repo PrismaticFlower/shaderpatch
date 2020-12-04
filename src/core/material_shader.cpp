@@ -29,7 +29,7 @@ void Material_shader::update(ID3D11DeviceContext1& dc,
                              const Input_layout_descriptions& layout_descriptions,
                              const std::uint16_t layout_index,
                              const std::string& state_name,
-                             const Vertex_shader_flags vertex_shader_flags,
+                             const shader::Vertex_shader_flags vertex_shader_flags,
                              const bool oit_active) noexcept
 {
    auto& state = get_state(state_name);
@@ -47,10 +47,9 @@ void Material_shader::update(ID3D11DeviceContext1& dc,
    dc.PSSetShader((oit_active ? state.pixel_oit : state.pixel).get(), nullptr, 0);
 }
 
-auto Material_shader::Material_shader_state::get_vs(const Vertex_shader_flags flags,
-                                                    const std::string& state_name,
-                                                    const std::string& shader_name) noexcept
-   -> Material_vertex_shader&
+auto Material_shader::Material_shader_state::get_vs(
+   const shader::Vertex_shader_flags flags, const std::string& state_name,
+   const std::string& shader_name) noexcept -> Material_vertex_shader&
 {
    if (auto shader = vertex.find(flags); shader != vertex.cend()) {
       return shader->second;
@@ -91,11 +90,12 @@ auto Material_shader::init_state(shader::Rendertype_state& state) noexcept -> Ma
 }
 
 auto Material_shader::init_vs_entrypoint(shader::Rendertype_state& state) noexcept
-   -> std::unordered_map<Vertex_shader_flags, Material_vertex_shader>
+   -> std::unordered_map<shader::Vertex_shader_flags, Material_vertex_shader>
 {
-   std::unordered_map<Vertex_shader_flags, Material_vertex_shader> shaders;
+   std::unordered_map<shader::Vertex_shader_flags, Material_vertex_shader> shaders;
 
-   state.vertex_copy_all([&](Vertex_shader_flags flags, Com_ptr<ID3D11VertexShader> shader,
+   state.vertex_copy_all([&](shader::Vertex_shader_flags flags,
+                             Com_ptr<ID3D11VertexShader> shader,
                              sp::shader::Bytecode_blob bytecode,
                              sp::shader::Vertex_input_layout input_sig) noexcept {
       shaders.emplace(flags,

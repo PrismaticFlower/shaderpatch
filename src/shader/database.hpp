@@ -4,7 +4,6 @@
 #include "com_ptr.hpp"
 #include "common.hpp"
 #include "rendertype_state_description.hpp"
-#include "shader_flags.hpp"
 #include "small_function.hpp"
 #include "vertex_input_layout.hpp"
 

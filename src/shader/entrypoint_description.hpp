@@ -2,7 +2,6 @@
 
 #include "common.hpp"
 #include "preprocessor_defines.hpp"
-#include "shader_flags.hpp"
 #include "static_flags.hpp"
 #include "vertex_input_layout.hpp"
 
