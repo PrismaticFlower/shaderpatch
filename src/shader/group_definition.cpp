@@ -2,6 +2,7 @@
 #include "group_definition.hpp"
 #include "../logger.hpp"
 #include "file_helpers.hpp"
+#include "retry_dialog.hpp"
 
 #include <algorithm>
 #include <fstream>
@@ -191,7 +192,11 @@ auto load_group_definition(const std::filesystem::path& path) noexcept -> Group_
       return definition;
    }
    catch (std::exception& e) {
-      // TODO: Display dialog to retry?
+      if (retry_dialog("Shader Definition Error"s,
+                       "Failed to load shader group definition!\nfile: {}\nreason: {}"sv,
+                       path.string(), e.what())) {
+         return load_group_definition(path);
+      }
 
       log_and_terminate("Failed to load shader group definition '"sv,
                         path.filename().string(), "' reason: "sv, e.what());

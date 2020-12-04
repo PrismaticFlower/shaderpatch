@@ -195,6 +195,7 @@
     <ClInclude Include="include\patch_texture_io.hpp" />
     <ClInclude Include="include\random.hpp" />
     <ClInclude Include="include\req_file_helpers.hpp" />
+    <ClInclude Include="include\retry_dialog.hpp" />
     <ClInclude Include="include\shader_flags.hpp" />
     <ClInclude Include="include\shader_input_type.hpp" />
     <ClInclude Include="include\shader_patch_version.hpp" />

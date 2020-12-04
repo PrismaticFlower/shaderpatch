@@ -1,6 +1,7 @@
 
 #include "compiler.hpp"
 #include "../logger.hpp"
+#include "retry_dialog.hpp"
 
 #include <type_traits>
 
@@ -155,8 +156,8 @@ auto get_target(const Entrypoint_description& entrypoint) -> const char*
 
 }
 
-auto compile(const Source_file_store& file_store,
-             const Entrypoint_description& entrypoint, const std::uint64_t static_flags,
+auto compile(Source_file_store& file_store, const Entrypoint_description& entrypoint,
+             const std::uint64_t static_flags,
              const Vertex_shader_flags vertex_shader_flags) noexcept -> Bytecode_blob
 {
    auto source = file_store.data(entrypoint.source_name);
@@ -182,11 +183,17 @@ auto compile(const Source_file_store& file_store,
                  error_messages.clear_and_assign());
 
    if (FAILED(result)) {
-      // TODO: Error dialog and retry option here.
-      log_and_terminate("Unable to compile shader!\n",
-                        std::string_view{static_cast<const char*>(
-                                            error_messages->GetBufferPointer()),
-                                         error_messages->GetBufferSize()});
+      const std::string_view error_message_view = {static_cast<const char*>(
+                                                      error_messages->GetBufferPointer()),
+                                                   error_messages->GetBufferSize()};
+
+      if (retry_dialog("Shader Compile Error"s, error_message_view)) {
+         file_store.reload();
+
+         return compile(file_store, entrypoint, static_flags, vertex_shader_flags);
+      }
+
+      log_and_terminate("Unable to compile shader!\n", error_message_view);
    }
 
    log_debug("Compiled shader {}:{}({:x})"sv, entrypoint.source_name,

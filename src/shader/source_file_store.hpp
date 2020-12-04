@@ -85,6 +85,11 @@ public:
       return _files.size();
    }
 
+   void reload() noexcept
+   {
+      for (auto& [name, file] : _files) file.data = load_string_file(file.path);
+   }
+
 private:
    struct File {
       std::string data;
