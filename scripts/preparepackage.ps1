@@ -11,6 +11,7 @@ md .\packages
 md .\packages\shaderpatch
 md .\packages\shaderpatch\data\
 md .\packages\shaderpatch\data\shaderpatch\
+md .\packages\shaderpatch\data\shaderpatch\shaders\
 md .\packages\shaderpatch\data\shaderpatch\bin\
 
 copy .\LICENSE ".\packages\shaderpatch\shader patch license.txt"
@@ -32,6 +33,8 @@ copy ".\bin\Release\shader patch installer.exe" ".\packages\shaderpatch\Shader P
 copy '.\assets\shader patch.yml' .\packages\shaderpatch\
 copy '.\assets\shader patch user readme.txt' '.\packages\shaderpatch\shader patch readme.txt'
 copy '.\assets\core\*.lvl' .\packages\shaderpatch\data\shaderpatch\
+copy '.\assets\core\definitions\' .\packages\shaderpatch\data\shaderpatch\shaders\definitions\ -Recurse
+copy '.\assets\core\src\' .\packages\shaderpatch\data\shaderpatch\shaders\src\ -Recurse
 
 # Package tools.
 md .\packages\shaderpatch-x86-tools
@@ -43,9 +46,12 @@ copy '.\assets\rendertype_descriptions\' '.\packages\shaderpatch-x64-tools\rende
 copy .\third_party.md ".\packages\shaderpatch-x86-tools\shader patch acknowledgements.txt"
 copy .\tools\bin\Win32\Release\*.dll .\packages\shaderpatch-x86-tools\
 copy .\tools\bin\Win32\Release\*.exe .\packages\shaderpatch-x86-tools\
-del .\packages\shaderpatch-x86-tools\shader_compiler.exe
 
 copy .\third_party.md ".\packages\shaderpatch-x64-tools\shader patch acknowledgements.txt"
 copy .\tools\bin\x64\Release\*.dll .\packages\shaderpatch-x64-tools\
 copy .\tools\bin\x64\Release\*.exe .\packages\shaderpatch-x64-tools\
-del .\packages\shaderpatch-x64-tools\shader_compiler.exe
+
+# Create Shader Cache
+Write-Host "Creating shader cache..."
+Start-Process -FilePath ".\bin\Release\shader_cache_primer.exe" -WorkingDirectory ".\packages\shaderpatch" -NoNewWindow -Wait
+del ".\packages\shaderpatch\shader patch.log"

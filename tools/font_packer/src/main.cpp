@@ -230,7 +230,8 @@ int main(int arg_count, char* args[])
                            .pixels = (std::uint8_t*)glyph.bitmap.data()};
 
       DirectX::CopyRectangle(image, {0, 0, glyph.width, glyph.height},
-                             *packed_image.GetImage(0, 0, 0), 0, pack_head, 1);
+                             *packed_image.GetImage(0, 0, 0),
+                             DirectX::TEX_FILTER_DEFAULT, pack_head, 1);
 
       const glm::vec2 atlas_top_left{pack_head + 0.5f, 1.0f + 0.5f};
       const glm::vec2 atlas_bottom_right =
@@ -265,7 +266,7 @@ void save_shader_patch_font(const std::string& output_dir,
    auto file = ucfb::open_file_for_output(
       (std::filesystem::path{output_dir} /= name) += L".font"s);
 
-   ucfb::Writer out{file};
+   ucfb::File_writer out{"ucfb"_mn, file};
 
    const auto bitmap_atlas_name = "_SP_BUILTIN_"s + name + "_atlas"s;
 

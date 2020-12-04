@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../core/shader_database.hpp"
+#include "../shader/database.hpp"
 #include "com_ptr.hpp"
 #include "postprocess_params.hpp"
 #include "profiler.hpp"
@@ -18,8 +18,7 @@ struct FFX_cas_inputs {
 
 class FFX_cas {
 public:
-   FFX_cas(Com_ptr<ID3D11Device1> device,
-           const core::Shader_group_collection& shader_groups) noexcept;
+   FFX_cas(Com_ptr<ID3D11Device1> device, shader::Database& shaders) noexcept;
 
    void apply(ID3D11DeviceContext1& dc, Profiler& profiler,
               const FFX_cas_inputs inputs) noexcept;

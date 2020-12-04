@@ -308,6 +308,103 @@ constexpr auto trim_whitespace(std::basic_string_view<char, Char_triats> string)
    return string;
 }
 
+constexpr auto split_first_of_exclusive(std::string_view str,
+                                        std::string_view delimiter) noexcept
+   -> std::array<std::string_view, 2>
+{
+   const auto offset = str.find(delimiter);
+
+   if (offset == str.npos) return {str, ""};
+
+   return {str.substr(0, offset),
+           str.substr(offset + delimiter.size(), str.size() - offset)};
+}
+
+struct Line {
+   int number = 0;
+   std::string_view string;
+};
+
+class Lines_iterator {
+public:
+   using value_type = Line;
+   using pointer = Line*;
+   using reference = Line&;
+   using iterator_category = std::input_iterator_tag;
+
+   explicit Lines_iterator(std::string_view str) noexcept : _str{str}
+   {
+      advance();
+   }
+
+   auto operator++() noexcept -> Lines_iterator&
+   {
+      advance();
+
+      return *this;
+   }
+
+   void operator++(int) noexcept
+   {
+      advance();
+   }
+
+   auto operator*() const noexcept -> const Line&
+   {
+      return _line;
+   }
+
+   auto operator->() const noexcept -> const Line&
+   {
+      return _line;
+   }
+
+   auto begin() noexcept -> Lines_iterator
+   {
+      return *this;
+   }
+
+   auto end() noexcept -> std::nullptr_t
+   {
+      return nullptr;
+   }
+
+   bool operator==(std::nullptr_t) const noexcept
+   {
+      return _is_end;
+   }
+
+private:
+   void advance() noexcept
+   {
+      using namespace std::literals;
+
+      if (_next_is_end) {
+         _is_end = true;
+
+         return;
+      }
+
+      auto [line, rest] = split_first_of_exclusive(_str, "\n"sv);
+      _str = rest;
+
+      if (not line.empty() and line.back() == '\r') {
+         line = line.substr(0, line.size() - 1);
+      }
+
+      _line = {.number = _line_number, .string = line};
+
+      _line_number += 1;
+      _next_is_end = _str.empty();
+   }
+
+   int _line_number = 1;
+   std::string_view _str;
+   Line _line{};
+   bool _next_is_end = false;
+   bool _is_end = false;
+};
+
 struct Ci_char_traits : public std::char_traits<char> {
    static bool eq(char l, char r)
    {

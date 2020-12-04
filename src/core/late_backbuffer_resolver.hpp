@@ -1,9 +1,9 @@
 #pragma once
 
+#include "../shader/database.hpp"
 #include "com_ptr.hpp"
 #include "game_rendertarget.hpp"
 #include "random.hpp"
-#include "shader_database.hpp"
 #include "swapchain.hpp"
 #include "texture_database.hpp"
 
@@ -13,8 +13,7 @@ namespace sp::core {
 
 class Late_backbuffer_resolver {
 public:
-   Late_backbuffer_resolver(ID3D11Device1& device,
-                            const Shader_database& shader_database) noexcept;
+   Late_backbuffer_resolver(ID3D11Device1& device, shader::Database& shaders) noexcept;
 
    ~Late_backbuffer_resolver() = default;
    Late_backbuffer_resolver(const Late_backbuffer_resolver&) = default;

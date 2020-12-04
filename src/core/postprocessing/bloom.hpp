@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../../effects/rendertarget_allocator.hpp"
+#include "../../shader/database.hpp"
 #include "../game_rendertarget.hpp"
-#include "../shader_database.hpp"
 #include "com_ptr.hpp"
 
 #include <cstdint>
@@ -15,7 +15,7 @@ namespace sp::core::postprocessing {
 
 class Bloom {
 public:
-   Bloom(ID3D11Device5& device, const Shader_database& shader_database) noexcept;
+   Bloom(ID3D11Device5& device, shader::Database& shaders) noexcept;
 
    ~Bloom() = default;
    Bloom(const Bloom&) = default;

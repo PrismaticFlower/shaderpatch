@@ -176,6 +176,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="include\algorithm.hpp" />
+    <ClInclude Include="include\binary_io_winapi.hpp" />
     <ClInclude Include="include\color_grading_regions_io.hpp" />
     <ClInclude Include="include\compose_exception.hpp" />
     <ClInclude Include="include\com_ptr.hpp" />
@@ -194,9 +195,7 @@
     <ClInclude Include="include\patch_texture_io.hpp" />
     <ClInclude Include="include\random.hpp" />
     <ClInclude Include="include\req_file_helpers.hpp" />
-    <ClInclude Include="include\shader_flags.hpp" />
-    <ClInclude Include="include\shader_input_type.hpp" />
-    <ClInclude Include="include\shader_metadata.hpp" />
+    <ClInclude Include="include\retry_dialog.hpp" />
     <ClInclude Include="include\shader_patch_version.hpp" />
     <ClInclude Include="include\small_function.hpp" />
     <ClInclude Include="include\smart_win32_handle.hpp" />

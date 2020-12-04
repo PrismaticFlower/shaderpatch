@@ -7,20 +7,18 @@ using namespace std::literals;
 
 namespace sp::effects {
 
-Color_grading_lut_baker::Color_grading_lut_baker(
-   Com_ptr<ID3D11Device1> device, const core::Shader_group_collection& shader_groups) noexcept
+Color_grading_lut_baker::Color_grading_lut_baker(Com_ptr<ID3D11Device1> device,
+                                                 shader::Database& shaders) noexcept
    : _device{std::move(device)},
      _cs_main_filmic{
-        shader_groups.at("color grading lut baker"s).compute.at("main filmic"s).copy()},
+        shaders.compute("color grading lut baker"sv).entrypoint("main filmic"sv)},
      _cs_main_aces{
-        shader_groups.at("color grading lut baker"s).compute.at("main aces"s).copy()},
-     _cs_main_heji2015{shader_groups.at("color grading lut baker"s)
-                          .compute.at("main heji2015"s)
-                          .copy()},
-     _cs_main_reinhard{shader_groups.at("color grading lut baker"s)
-                          .compute.at("main reinhard"s)
-                          .copy()},
-     _cs_main{shader_groups.at("color grading lut baker"s).compute.at("main"s).copy()}
+        shaders.compute("color grading lut baker"sv).entrypoint("main aces"sv)},
+     _cs_main_heji2015{
+        shaders.compute("color grading lut baker"sv).entrypoint("main heji2015"sv)},
+     _cs_main_reinhard{
+        shaders.compute("color grading lut baker"sv).entrypoint("main reinhard"sv)},
+     _cs_main{shaders.compute("color grading lut baker"sv).entrypoint("main"sv)}
 {
 }
 

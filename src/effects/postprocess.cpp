@@ -69,40 +69,31 @@ void do_pass(ID3D11DeviceContext1& dc, std::array<ID3D11ShaderResourceView*, 5> 
 
 using namespace std::literals;
 
-Postprocess::Postprocess(Com_ptr<ID3D11Device1> device,
-                         const core::Shader_group_collection& shader_groups)
+Postprocess::Postprocess(Com_ptr<ID3D11Device1> device, shader::Database& shaders)
    : _device{device},
      _fullscreen_vs{
-        std::get<0>(shader_groups.at("postprocess"s).vertex.at("main_vs"s).copy())},
-     _postprocess_ps_ep{shader_groups.at("postprocess"s).pixel.at("main_ps"s)},
-     _postprocess_cmaa2_pre_ps_ep{
-        shader_groups.at("postprocess"s).pixel.at("main_cmaa2_pre_ps"s)},
-     _postprocess_cmaa2_post_ps_ep{
-        shader_groups.at("postprocess"s).pixel.at("main_cmaa2_post_ps"s)},
+        std::get<0>(shaders.vertex("postprocess"sv).entrypoint("main_vs"sv))},
+     _shaders{shaders.pixel("postprocess"sv)},
      _stock_hdr_to_linear_ps{
-        shader_groups.at("postprocess"s).pixel.at("stock_hdr_to_linear_ps"s).copy()},
+        shaders.pixel("postprocess"sv).entrypoint("stock_hdr_to_linear_ps"sv)},
      _msaa_hdr_resolve_x2_ps{
-        shader_groups.at("postprocess_msaa_resolve"s).pixel.at("main_x2_ps"s).copy()},
+        shaders.pixel("postprocess_msaa_resolve"sv).entrypoint("main_x2_ps"sv)},
      _msaa_hdr_resolve_x4_ps{
-        shader_groups.at("postprocess_msaa_resolve"s).pixel.at("main_x4_ps"s).copy()},
+        shaders.pixel("postprocess_msaa_resolve"sv).entrypoint("main_x4_ps"sv)},
      _msaa_hdr_resolve_x8_ps{
-        shader_groups.at("postprocess_msaa_resolve"s).pixel.at("main_x8_ps"s).copy()},
-     _msaa_stock_hdr_resolve_x2_ps{shader_groups.at("postprocess_msaa_resolve"s)
-                                      .pixel.at("main_stock_hdr_x2_ps"s)
-                                      .copy()},
-     _msaa_stock_hdr_resolve_x4_ps{shader_groups.at("postprocess_msaa_resolve"s)
-                                      .pixel.at("main_stock_hdr_x4_ps"s)
-                                      .copy()},
-     _msaa_stock_hdr_resolve_x8_ps{shader_groups.at("postprocess_msaa_resolve"s)
-                                      .pixel.at("main_stock_hdr_x8_ps"s)
-                                      .copy()},
+        shaders.pixel("postprocess_msaa_resolve"sv).entrypoint("main_x8_ps"sv)},
+     _msaa_stock_hdr_resolve_x2_ps{
+        shaders.pixel("postprocess_msaa_resolve"sv).entrypoint("main_stock_hdr_x2_ps"sv)},
+     _msaa_stock_hdr_resolve_x4_ps{
+        shaders.pixel("postprocess_msaa_resolve"sv).entrypoint("main_stock_hdr_x4_ps"sv)},
+     _msaa_stock_hdr_resolve_x8_ps{
+        shaders.pixel("postprocess_msaa_resolve"sv).entrypoint("main_stock_hdr_x8_ps"sv)},
      _bloom_downsample_ps{
-        shader_groups.at("postprocess_bloom"s).pixel.at("downsample_ps"s).copy()},
-     _bloom_upsample_ps{
-        shader_groups.at("postprocess_bloom"s).pixel.at("upsample_ps"s).copy()},
+        shaders.pixel("postprocess_bloom"sv).entrypoint("downsample_ps"sv)},
+     _bloom_upsample_ps{shaders.pixel("postprocess_bloom"sv).entrypoint("upsample_ps"sv)},
      _bloom_threshold_ps{
-        shader_groups.at("postprocess_bloom"s).pixel.at("threshold_ps"s).copy()},
-     _color_grading_lut_baker{_device, shader_groups}
+        shaders.pixel("postprocess_bloom"sv).entrypoint("threshold_ps"sv)},
+     _color_grading_lut_baker{_device, shaders}
 {
    bloom_params(Bloom_params{});
    vignette_params(Vignette_params{});
@@ -725,12 +716,11 @@ void Postprocess::update_shaders() noexcept
       }
    }
 
-   _postprocess_ps =
-      _postprocess_ps_ep.copy(static_cast<std::uint16_t>(postprocess_flags));
-   _postprocess_cmaa2_pre_ps = _postprocess_cmaa2_pre_ps_ep.copy(
-      static_cast<std::uint16_t>(postprocess_cmaa2_pre_flags));
-   _postprocess_cmaa2_post_ps = _postprocess_cmaa2_post_ps_ep.copy(
-      static_cast<std::uint16_t>(postprocess_cmaa2_post_flags));
+   _postprocess_ps = _shaders.entrypoint("main_ps"sv, postprocess_flags);
+   _postprocess_cmaa2_pre_ps =
+      _shaders.entrypoint("main_cmaa2_pre_ps"sv, postprocess_cmaa2_pre_flags);
+   _postprocess_cmaa2_post_ps =
+      _shaders.entrypoint("main_cmaa2_post_ps"sv, postprocess_cmaa2_post_flags);
 }
 
 }

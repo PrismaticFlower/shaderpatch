@@ -66,8 +66,7 @@ auto create_structured_buffer_uav(ID3D11Device1& device, const UINT size,
 }
 }
 
-CMAA2::CMAA2(Com_ptr<ID3D11Device1> device,
-             const core::Shader_group_collection& shader_groups) noexcept
+CMAA2::CMAA2(Com_ptr<ID3D11Device1> device, shader::Database& shaders) noexcept
    : _point_sampler{[&] {
         CD3D11_SAMPLER_DESC desc{CD3D11_DEFAULT{}};
 
@@ -80,7 +79,7 @@ CMAA2::CMAA2(Com_ptr<ID3D11Device1> device,
         return sampler;
      }()},
      _device{device},
-     _shader_entrypoints{shader_groups.at("CMAA2"s).compute}
+     _shaders{shaders.compute("CMAA2"sv)}
 {
 }
 
@@ -280,14 +279,9 @@ void CMAA2::update_shaders() noexcept
    if (_luma_separate_texture)
       flags |= cmaa2_flags::edge_detection_luma_separate_texture;
 
-   const auto uint_flags = static_cast<std::uint32_t>(flags);
-
-   _edges_color2x2 = _shader_entrypoints.at("EdgesColor2x2CS"s).copy(uint_flags);
-   _compute_dispatch_args =
-      _shader_entrypoints.at("ComputeDispatchArgsCS"s).copy(uint_flags);
-   _process_candidates =
-      _shader_entrypoints.at("ProcessCandidatesCS"s).copy(uint_flags);
-   _deferred_color_apply2x2 =
-      _shader_entrypoints.at("DeferredColorApply2x2CS"s).copy(uint_flags);
+   _edges_color2x2 = _shaders.entrypoint("EdgesColor2x2CS"sv, flags);
+   _compute_dispatch_args = _shaders.entrypoint("ComputeDispatchArgsCS"sv, flags);
+   _process_candidates = _shaders.entrypoint("ProcessCandidatesCS"sv, flags);
+   _deferred_color_apply2x2 = _shaders.entrypoint("DeferredColorApply2x2CS"sv, flags);
 }
 }

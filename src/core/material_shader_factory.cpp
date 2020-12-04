@@ -3,9 +3,9 @@
 
 namespace sp::core {
 
-Material_shader_factory::Material_shader_factory(Com_ptr<ID3D11Device1> device,
-                                                 std::shared_ptr<Shader_database> shader_database) noexcept
-   : _device{std::move(device)}, _shader_database{std::move(shader_database)}
+Material_shader_factory::Material_shader_factory(Com_ptr<ID3D11Device5> device,
+                                                 shader::Rendertypes_database& shaders) noexcept
+   : _device{std::move(device)}, _shaders{shaders}
 {
 }
 
@@ -16,9 +16,7 @@ auto Material_shader_factory::create(const std::string& rendertype) noexcept
 
    return _cache
       .emplace(rendertype,
-               std::make_shared<Material_shader>(_device,
-                                                 _shader_database->rendertypes.at(rendertype),
-                                                 rendertype))
+               std::make_shared<Material_shader>(_device, _shaders[rendertype], rendertype))
       .first->second;
 }
 

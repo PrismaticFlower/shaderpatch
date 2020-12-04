@@ -104,13 +104,13 @@ auto make_extern_files_set(const std::vector<std::string>& extern_files_list_pat
    return extern_files_set;
 }
 
-void write_file_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
+void write_file_to_lvl(const fs::path& req_file_path, ucfb::File_writer& writer,
                        std::unordered_set<fs::path::string_type>& added_files,
                        const std::vector<fs::path>& source_dirs,
                        const std::unordered_set<Ci_string>& extern_files,
                        const fs::path& filepath);
 
-void write_req_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
+void write_req_to_lvl(const fs::path& req_file_path, ucfb::File_writer& writer,
                       std::unordered_set<fs::path::string_type>& added_files,
                       const std::vector<fs::path>& source_dirs,
                       const std::unordered_set<Ci_string>& extern_files,
@@ -147,7 +147,7 @@ auto read_binary_in(const fs::path& path) -> std::vector<std::byte>
    return vector;
 }
 
-void write_file_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
+void write_file_to_lvl(const fs::path& req_file_path, ucfb::File_writer& writer,
                        std::unordered_set<fs::path::string_type>& added_files,
                        const std::vector<fs::path>& input_dirs,
                        const std::unordered_set<Ci_string>& extern_files,
@@ -188,7 +188,7 @@ void write_file_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
    added_files.emplace(normalized_path);
 }
 
-void write_req_to_lvl(const fs::path& req_file_path, ucfb::Writer& writer,
+void write_req_to_lvl(const fs::path& req_file_path, ucfb::File_writer& writer,
                       std::unordered_set<fs::path::string_type>& added_files,
                       const std::vector<fs::path>& input_dirs,
                       const std::unordered_set<Ci_string>& extern_files,
@@ -227,8 +227,8 @@ void build_lvl_file(const fs::path& req_file_path, const fs::path& output_direct
          if (!success) fs::remove(output_path, err);
       });
 
-      auto file = ucfb::open_file_for_output(output_path.string());
-      ucfb::Writer writer{file};
+      auto file = ucfb::open_file_for_output(output_path);
+      ucfb::File_writer writer{"ucfb"_mn, file};
 
       std::unordered_set<fs::path::string_type> added_files;
 

@@ -115,7 +115,7 @@ struct Material_config {
    std::uint32_t fail_safe_texture_index{};
 };
 
-void write_patch_material(ucfb::Writer& writer, const Material_config& config);
+void write_patch_material(ucfb::File_writer& writer, const Material_config& config);
 
 void write_patch_material(const std::filesystem::path& save_path,
                           const Material_config& config);

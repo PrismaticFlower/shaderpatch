@@ -1,7 +1,7 @@
 #pragma once
 
+#include "../shader/database.hpp"
 #include "com_ptr.hpp"
-#include "shader_database.hpp"
 
 #include <d3d11_4.h>
 
@@ -9,8 +9,7 @@ namespace sp::core {
 
 class OIT_provider {
 public:
-   OIT_provider(Com_ptr<ID3D11Device5> device,
-                const Shader_group_collection& shaders) noexcept;
+   OIT_provider(Com_ptr<ID3D11Device5> device, shader::Database& shaders) noexcept;
 
    ~OIT_provider() noexcept = default;
 
@@ -30,6 +29,8 @@ public:
    auto uavs() const noexcept -> std::array<ID3D11UnorderedAccessView*, 3>;
 
    bool enabled() const noexcept;
+
+   static bool usable(ID3D11Device5& device) noexcept;
 
 private:
    void update_resources(ID3D11Texture2D& opaque_texture,
@@ -68,12 +69,6 @@ private:
 
    Com_ptr<ID3D11CommandList> _resolve_commandlist;
 
-   const bool _usable = [this] {
-      D3D11_FEATURE_DATA_D3D11_OPTIONS2 data{};
-
-      _device->CheckFeatureSupport(D3D11_FEATURE_D3D11_OPTIONS2, &data, sizeof(data));
-
-      return data.TypedUAVLoadAdditionalFormats && data.ROVsSupported;
-   }();
+   const bool _usable = usable(*_device);
 };
 }

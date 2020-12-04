@@ -157,3 +157,12 @@ Developer:
    # Limit Shader Patch to using a DXGI 1.2 factory to work around a crash in the 
    # Visual Studio Graphics Debugger. This also bypasses all GPU selection logic.
    Use DXGI 1.2 Factory: no
+   
+   # Path to file to use 
+   Shader Cache Path: .\data\shaderpatch\.shader_dxbc_cache
+
+   # Path to shader definitions. (.json files describing shader entrypoints and variations within a file)
+   Shader Definitions Path: .\data\shaderpatch\shaders\definitions
+
+   # Path to shader HLSL source files. 
+   Shader Source Path: .\data\shaderpatch\shaders\src

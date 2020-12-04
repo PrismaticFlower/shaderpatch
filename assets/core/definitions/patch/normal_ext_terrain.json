@@ -41,12 +41,9 @@
           "skinned": false,
           "normal": true,
           "tangents": true,
+          "tangents_unflagged": true,
           "color": false,
           "texture_coords": true
-        },
-
-        "flags_mask": {
-          "tangents": false
         }
       },
 

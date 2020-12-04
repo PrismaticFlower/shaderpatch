@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../../effects/rendertarget_allocator.hpp"
+#include "../../shader/database.hpp"
 #include "../game_rendertarget.hpp"
-#include "../shader_database.hpp"
 #include "com_ptr.hpp"
 
 #include <cstdint>
@@ -15,7 +15,7 @@ namespace sp::core::postprocessing {
 
 class Scene_blur {
 public:
-   Scene_blur(ID3D11Device5& device, const Shader_database& shader_database) noexcept;
+   Scene_blur(ID3D11Device5& device, shader::Database& shaders) noexcept;
 
    ~Scene_blur() = default;
    Scene_blur(const Scene_blur&) = default;

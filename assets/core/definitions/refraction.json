@@ -96,7 +96,15 @@
         "lighting": true
       }
     },
-   
+
+    "oit_nodistortion_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": true
+      }
+    },
+
     "oit_near_ps": {
       "stage": "pixel",
 

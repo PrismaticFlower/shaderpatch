@@ -7,34 +7,19 @@
 namespace sp::core {
 
 Late_backbuffer_resolver::Late_backbuffer_resolver(ID3D11Device1& device,
-                                                   const Shader_database& shader_database) noexcept
-   : _vs{std::get<0>(shader_database.groups.at("late_backbuffer_resolve"s)
-                        .vertex.at("main_vs"s)
-                        .copy())},
-     _ps{shader_database.groups.at("late_backbuffer_resolve"s)
-            .pixel.at("main_ps"s)
-            .copy()},
-     _ps_x2{shader_database.groups.at("late_backbuffer_resolve"s)
-               .pixel.at("main_x2_ps"s)
-               .copy()},
-     _ps_x4{shader_database.groups.at("late_backbuffer_resolve"s)
-               .pixel.at("main_x4_ps"s)
-               .copy()},
-     _ps_x8{shader_database.groups.at("late_backbuffer_resolve"s)
-               .pixel.at("main_x8_ps"s)
-               .copy()},
-     _ps_linear{shader_database.groups.at("late_backbuffer_resolve"s)
-                   .pixel.at("main_linear_ps"s)
-                   .copy()},
-     _ps_linear_x2{shader_database.groups.at("late_backbuffer_resolve"s)
-                      .pixel.at("main_linear_x2_ps"s)
-                      .copy()},
-     _ps_linear_x4{shader_database.groups.at("late_backbuffer_resolve"s)
-                      .pixel.at("main_linear_x4_ps"s)
-                      .copy()},
-     _ps_linear_x8{shader_database.groups.at("late_backbuffer_resolve"s)
-                      .pixel.at("main_linear_x8_ps"s)
-                      .copy()},
+                                                   shader::Database& shaders) noexcept
+   : _vs{std::get<0>(shaders.vertex("late_backbuffer_resolve"sv).entrypoint("main_vs"sv))},
+     _ps{shaders.pixel("late_backbuffer_resolve"sv).entrypoint("main_ps"sv)},
+     _ps_x2{shaders.pixel("late_backbuffer_resolve"sv).entrypoint("main_x2_ps"sv)},
+     _ps_x4{shaders.pixel("late_backbuffer_resolve"sv).entrypoint("main_x4_ps"sv)},
+     _ps_x8{shaders.pixel("late_backbuffer_resolve"sv).entrypoint("main_x8_ps"sv)},
+     _ps_linear{shaders.pixel("late_backbuffer_resolve"sv).entrypoint("main_linear_ps"sv)},
+     _ps_linear_x2{
+        shaders.pixel("late_backbuffer_resolve"sv).entrypoint("main_linear_x2_ps"sv)},
+     _ps_linear_x4{
+        shaders.pixel("late_backbuffer_resolve"sv).entrypoint("main_linear_x4_ps"sv)},
+     _ps_linear_x8{
+        shaders.pixel("late_backbuffer_resolve"sv).entrypoint("main_linear_x8_ps"sv)},
      _cb{create_dynamic_constant_buffer(device, sizeof(std::array<std::uint32_t, 4>))}
 {
 }

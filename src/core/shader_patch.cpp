@@ -158,7 +158,7 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
    _current_game_rendertarget = _game_backbuffer_index;
    _primitive_topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
    _game_input_layout = {};
-   _game_shader = {};
+   _game_shader = nullptr;
    _game_textures = {};
    _game_stencil_ref = 0xff;
    _game_index_buffer_offset = 0;
@@ -184,6 +184,7 @@ void Shader_patch::present() noexcept
 {
    _effects.profiler.end_frame(*_device_context);
    _game_postprocessing.end_frame();
+   _shader_database.cache_update();
 
    if (_game_rendertargets[0].type != Game_rt_type::presentation)
       patch_backbuffer_resolve();
@@ -703,46 +704,6 @@ auto Shader_patch::create_game_input_layout(
            particle_texture_scale};
 }
 
-auto Shader_patch::create_game_shader(const Shader_metadata metadata) noexcept
-   -> std::shared_ptr<Game_shader>
-{
-   auto& state =
-      _shader_database->rendertypes.at(metadata.rendertype_name).at(metadata.shader_name);
-
-   auto vertex_shader = state.vertex.at_if(metadata.vertex_shader_flags);
-
-   auto [vs, vs_bytecode, vs_inputlayout] =
-      vertex_shader.value_or(decltype(vertex_shader)::value_type{});
-
-   auto vertex_shader_compressed = state.vertex.at_if(
-      metadata.vertex_shader_flags | Vertex_shader_flags::compressed);
-
-   auto [vs_compressed, vs_bytecode_compressed, vs_inputlayout_compressed] =
-      vertex_shader_compressed.value_or(decltype(vertex_shader)::value_type{});
-
-   auto game_shader = std::make_shared<Game_shader>(
-      Game_shader{std::move(vs),
-                  std::move(vs_compressed),
-                  state.pixel,
-                  state.pixel_oit,
-                  metadata.light_active,
-                  metadata.light_active_point_count,
-                  metadata.light_active_spot,
-                  metadata.rendertype,
-                  metadata.srgb_state,
-                  metadata.shader_name,
-                  metadata.vertex_shader_flags,
-                  {std::move(vs_inputlayout), std::move(vs_bytecode)},
-                  {std::move(vs_inputlayout_compressed),
-                   std::move(vs_bytecode_compressed)}});
-
-   if (!game_shader->vs && !game_shader->vs_compressed)
-      log_and_terminate("Game_shader has no vertex shader!");
-   if (!game_shader->ps) log_and_terminate("Game_shader has no pixel shader!");
-
-   return game_shader;
-}
-
 auto Shader_patch::create_ia_buffer(const UINT size, const bool vertex_buffer,
                                     const bool index_buffer, const bool dynamic) noexcept
    -> Com_ptr<ID3D11Buffer>
@@ -907,9 +868,9 @@ void Shader_patch::set_input_layout(const Game_input_layout& input_layout) noexc
    }
 }
 
-void Shader_patch::set_game_shader(std::shared_ptr<Game_shader> shader) noexcept
+void Shader_patch::set_game_shader(const std::uint32_t shader_index) noexcept
 {
-   _game_shader = shader;
+   _game_shader = &_game_shaders[shader_index];
    _shader_dirty = true;
 
    const auto rendertype = _game_shader->rendertype;
@@ -918,9 +879,9 @@ void Shader_patch::set_game_shader(std::shared_ptr<Game_shader> shader) noexcept
    _shader_rendertype_changed =
       std::exchange(_shader_rendertype, rendertype) != rendertype;
 
-   const std::uint32_t light_active = shader->light_active;
-   const std::uint32_t light_active_point_count = shader->light_active_point_count;
-   const std::uint32_t light_active_spot = shader->light_active_spot;
+   const std::uint32_t light_active = _game_shader->light_active;
+   const std::uint32_t light_active_point_count = _game_shader->light_active_point_count;
+   const std::uint32_t light_active_spot = _game_shader->light_active_spot;
 
    _cb_draw_ps_dirty |=
       ((std::exchange(_cb_draw_ps.light_active, light_active) != light_active) |
@@ -1153,6 +1114,11 @@ auto Shader_patch::get_query_data(ID3D11Query& query, const bool flush,
    if (result == S_FALSE) return Query_result::notready;
 
    return Query_result::error;
+}
+
+void Shader_patch::force_shader_cache_save_to_disk() noexcept
+{
+   _shader_database.force_cache_save_to_disk();
 }
 
 auto Shader_patch::current_depthstencil(const bool readonly) const noexcept
@@ -1642,7 +1608,7 @@ void Shader_patch::update_shader() noexcept
       auto vs_flags = _game_shader->vertex_shader_flags;
 
       if (_game_input_layout.compressed)
-         vs_flags |= Vertex_shader_flags::compressed;
+         vs_flags |= shader::Vertex_shader_flags::compressed;
 
       if (_shader_rendertype == _patch_material->overridden_rendertype) {
          _patch_material->shader->update(*_device_context, _input_layout_descriptions,

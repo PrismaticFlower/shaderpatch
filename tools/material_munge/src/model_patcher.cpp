@@ -338,7 +338,7 @@ void patch_model(const std::filesystem::path& model_path,
 
       // Output new file.
       std::ofstream output{output_model_path, std::ios::binary};
-      ucfb::Writer writer{output};
+      ucfb::File_writer writer{"ucfb"_mn, output};
       editor.assemble(writer);
    }
    catch (std::exception& e) {

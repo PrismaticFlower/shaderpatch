@@ -7,6 +7,8 @@
 
 #include "../imgui/imgui.h"
 
+using namespace std::literals;
+
 namespace sp::core {
 
 namespace {

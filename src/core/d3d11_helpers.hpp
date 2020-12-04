@@ -3,6 +3,7 @@
 #include "com_ptr.hpp"
 #include "utility.hpp"
 
+#include <cassert>
 #include <span>
 #include <utility>
 

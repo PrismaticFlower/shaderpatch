@@ -37,10 +37,10 @@
 #ifndef __CMAA2_HLSL__
 #define __CMAA2_HLSL__
 
-// this line is VA framework specific (ignore/remove when using outside of VA)
-#ifdef VA_COMPILED_AS_SHADER_CODE
-#include "MagicMacrosMagicFile.h"
-#endif
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Shader Patch change. There once was an #include here that was skipped by the
+// preprocessor, it has now been removed outright.
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Constants that C++/API side needs to know!
 #define CMAA_PACK_SINGLE_SAMPLE_EDGE_TO_HALF_WIDTH                             \

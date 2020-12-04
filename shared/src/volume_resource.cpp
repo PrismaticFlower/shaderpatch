@@ -38,7 +38,7 @@ auto pack_size(const std::uint32_t size) noexcept
 
 }
 
-void write_volume_resource(ucfb::Writer& writer, const std::string_view name,
+void write_volume_resource(ucfb::File_writer& writer, const std::string_view name,
                            const Volume_resource_type type,
                            std::span<const std::byte> data)
 {
@@ -129,7 +129,7 @@ void save_volume_resource(const std::filesystem::path& output_path,
 
    auto file = ucfb::open_file_for_output(output_path);
 
-   ucfb::Writer writer{file};
+   ucfb::File_writer writer{"ucfb"_mn, file};
 
    write_volume_resource(writer, name, type, data);
 }

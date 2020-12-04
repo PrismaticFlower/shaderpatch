@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../../effects/rendertarget_allocator.hpp"
+#include "../../shader/database.hpp"
 #include "../game_rendertarget.hpp"
-#include "../shader_database.hpp"
 #include "com_ptr.hpp"
 
 #include <cstdint>
@@ -15,7 +15,7 @@ namespace sp::core::postprocessing {
 
 class Scope_blur {
 public:
-   Scope_blur(ID3D11Device5& device, const Shader_database& shader_database) noexcept;
+   Scope_blur(ID3D11Device5& device, shader::Database& shaders) noexcept;
 
    ~Scope_blur() = default;
    Scope_blur(const Scope_blur&) = default;
@@ -34,8 +34,6 @@ private:
    const Com_ptr<ID3D11PixelShader> _ps_overlay;
    const Com_ptr<ID3D11SamplerState> _sampler;
    const Com_ptr<ID3D11BlendState> _overlay_blend;
-
-   float _blur_factor = 1.0f;
 };
 
 }

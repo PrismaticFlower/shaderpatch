@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../core/shader_patch.hpp"
 #include "../logger.hpp"
 #include "com_ptr.hpp"
-#include "shader_metadata.hpp"
+
+#include <cstddef>
 
 #include <d3d9.h>
 
@@ -11,8 +11,7 @@ namespace sp::d3d9 {
 
 class Vertex_shader final : public IDirect3DVertexShader9 {
 public:
-   static Com_ptr<Vertex_shader> create(core::Shader_patch& shader_patch,
-                                        const Shader_metadata metadata) noexcept;
+   static Com_ptr<Vertex_shader> create(const std::uint32_t game_shader_index) noexcept;
 
    Vertex_shader(const Vertex_shader&) = delete;
    Vertex_shader& operator=(const Vertex_shader&) = delete;
@@ -37,16 +36,16 @@ public:
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
 
-   auto game_shader() const noexcept -> const std::shared_ptr<core::Game_shader>&
+   auto game_shader() const noexcept -> std::uint32_t
    {
-      return _game_shader;
+      return _game_shader_index;
    }
 
 private:
-   Vertex_shader(core::Shader_patch& shader_patch, const Shader_metadata metadata) noexcept;
+   Vertex_shader(const std::uint32_t game_shader_index) noexcept;
    ~Vertex_shader() = default;
 
-   const std::shared_ptr<core::Game_shader> _game_shader;
+   const std::uint32_t _game_shader_index;
 
    ULONG _ref_count = 1;
 };
