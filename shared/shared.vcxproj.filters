@@ -57,9 +57,6 @@
     <ClInclude Include="include\shader_flags.hpp">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="include\shader_input_type.hpp">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="include\small_function.hpp">
       <Filter>include</Filter>
     </ClInclude>
