@@ -37,19 +37,13 @@ copy '.\assets\core\definitions\' .\packages\shaderpatch\data\shaderpatch\shader
 copy '.\assets\core\src\' .\packages\shaderpatch\data\shaderpatch\shaders\src\ -Recurse
 
 # Package tools.
-md .\packages\shaderpatch-x86-tools
-md .\packages\shaderpatch-x64-tools
+md .\packages\shaderpatch-tools
 
-copy '.\assets\rendertype_descriptions\' '.\packages\shaderpatch-x86-tools\rendertype_descriptions\' -Recurse
-copy '.\assets\rendertype_descriptions\' '.\packages\shaderpatch-x64-tools\rendertype_descriptions\' -Recurse
+copy '.\assets\rendertype_descriptions\' '.\packages\shaderpatch-tools\rendertype_descriptions\' -Recurse
 
-copy .\third_party.md ".\packages\shaderpatch-x86-tools\shader patch acknowledgements.txt"
-copy .\tools\bin\Win32\Release\*.dll .\packages\shaderpatch-x86-tools\
-copy .\tools\bin\Win32\Release\*.exe .\packages\shaderpatch-x86-tools\
-
-copy .\third_party.md ".\packages\shaderpatch-x64-tools\shader patch acknowledgements.txt"
-copy .\tools\bin\x64\Release\*.dll .\packages\shaderpatch-x64-tools\
-copy .\tools\bin\x64\Release\*.exe .\packages\shaderpatch-x64-tools\
+copy .\third_party.md ".\packages\shaderpatch-tools\shader patch acknowledgements.txt"
+copy .\tools\bin\x64\Release\*.dll .\packages\shaderpatch-tools\
+copy .\tools\bin\x64\Release\*.exe .\packages\shaderpatch-tools\
 
 # Create Shader Cache
 Write-Host "Creating shader cache..."
