@@ -1,42 +1,44 @@
 Shader Patch Enabled: yes
 
-Display:
+Display: 
+
    Screen Percent: 100
 
    Allow Tearing: yes
-   
+
    Centred: yes
 
    Treat 800x600 As Interface: yes
 
-   Windowed Interface: no
+   Windowed Interface: yes
 
    Display Scaling Aware: yes
-   
+
    Display Scaling: yes
 
    Scalable Fonts: yes
 
    Enable Game Perceived Resolution Override: no
-   
+
    Game Perceived Resolution Override: [1920, 1080]
 
-Graphics:
-   GPU Selection Method: Highest Performance
+Graphics: 
 
-   Anti-Aliasing Method: CMAA2
+   GPU Selection Method: Highest Feature Level
+
+   Anti-Aliasing Method: MSAAx8
 
    Anisotropic Filtering: x16
-   
+
    Enable 16-Bit Color Channel Rendering: yes
 
-   Enable Order-Independent Transparency: no
+   Enable Order-Independent Transparency: yes
 
    Enable Alternative Post Processing: yes
 
-   Enable Scene Blur: yes
-   
-   Refraction Quality: Medium
+   Enable Scene Blur: no
+
+   Refraction Quality: Ultra
 
    Disable Light Brightness Rescaling: no
 
@@ -44,32 +46,35 @@ Graphics:
 
    User Effects Config: user.spfx
 
-Effects:
+Effects: 
+
    Bloom: yes
-   
+
    Vignette: yes
-   
+
    Film Grain: yes
-   
-   Allow Colored Film Grain: yes 
-   
+
+   Allow Colored Film Grain: yes
+
    SSAO: yes
-   
+
    SSAO Quality: Medium
-   
-Developer:
+
+Developer: 
+
    Screen Toggle: 0xDC
-   
+
    Monitor BFront2.log: no
-   
+
    Allow Event Queries: no
-   
+
    Use D3D11 Debug Layer: no
 
    Use DXGI 1.2 Factory: no
-   
+
    Shader Cache Path: .\data\shaderpatch\.shader_dxbc_cache
 
    Shader Definitions Path: .\data\shaderpatch\shaders\definitions
 
    Shader Source Path: .\data\shaderpatch\shaders\src
+
