@@ -18,7 +18,7 @@ auto make_config_ui(std::shared_ptr<user_config> config) -> config::ui_root;
 
 class app_mode_configurator final : public app_ui_mode {
 public:
-   void switch_to(winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource xaml_source) noexcept override
+   app_mode_configurator(winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource xaml_source) noexcept
    {
       xaml_source.Content(config::create_xaml_ui_element(config_ui, config_changed));
    }
@@ -38,9 +38,10 @@ private:
    user_config_saver user_config_saver;
 };
 
-auto make_app_mode_configurator() -> std::unique_ptr<app_ui_mode>
+auto make_app_mode_configurator(winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource xaml_source)
+   -> std::unique_ptr<app_ui_mode>
 {
-   return std::make_unique<app_mode_configurator>();
+   return std::make_unique<app_mode_configurator>(xaml_source);
 }
 
 namespace {

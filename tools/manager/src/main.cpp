@@ -42,8 +42,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
    xaml_interop->get_WindowHandle(&xaml_island_hwnd);
 
-   auto active_mode = make_app_mode_installer();
-   active_mode->switch_to(xaml_desktop_source);
+   auto active_mode = make_app_mode_installer(xaml_desktop_source);
 
    set_xaml_island_window_pos();
 

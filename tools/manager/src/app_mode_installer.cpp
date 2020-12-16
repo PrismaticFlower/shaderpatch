@@ -14,17 +14,14 @@ namespace {
 
 class app_mode_installer : public app_ui_mode {
 public:
-   app_mode_installer()
+   app_mode_installer(Windows::UI::Xaml::Hosting::DesktopWindowXamlSource xaml_source)
    {
       create_controls();
 
       for (auto path : search_registry_locations_for_game_installs()) {
          install_locations.Append(winrt::box_value(path.native()));
       }
-   }
 
-   void switch_to(Windows::UI::Xaml::Hosting::DesktopWindowXamlSource xaml_source) noexcept override
-   {
       xaml_source.as<IDesktopWindowXamlSourceNative2>()->get_WindowHandle(&window);
       xaml_source.Content(ui_root);
    }
@@ -466,7 +463,8 @@ private:
 
 }
 
-auto make_app_mode_installer() -> std::unique_ptr<app_ui_mode>
+auto make_app_mode_installer(Windows::UI::Xaml::Hosting::DesktopWindowXamlSource xaml_source)
+   -> std::unique_ptr<app_ui_mode>
 {
-   return std::make_unique<app_mode_installer>();
+   return std::make_unique<app_mode_installer>(xaml_source);
 }
