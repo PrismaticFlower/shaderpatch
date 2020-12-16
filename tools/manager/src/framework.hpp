@@ -5,7 +5,9 @@
 #include <windows.h>
 
 #include <windows.ui.xaml.hosting.desktopwindowxamlsource.h>
+#include <winrt/Windows.Data.Xml.Dom.h>
 #include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.Storage.h>
 #include <winrt/Windows.UI.Text.h>
 #include <winrt/Windows.UI.Xaml.controls.Primitives.h>
 #include <winrt/Windows.UI.Xaml.h>
@@ -20,10 +22,13 @@
 #include <atomic>
 #include <cstdint>
 #include <cwctype>
+#include <execution>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <future>
 #include <memory>
+#include <mutex>
 #include <unordered_map>
 #include <variant>
 #include <vector>

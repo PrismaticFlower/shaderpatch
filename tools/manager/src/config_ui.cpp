@@ -1,6 +1,7 @@
 #include "framework.hpp"
 
 #include "config_ui.hpp"
+#include "xaml_ui_helpers.hpp"
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
@@ -9,57 +10,6 @@ using namespace winrt::Windows::UI;
 namespace config {
 
 namespace {
-
-enum class text_style {
-   header,
-   subheader,
-   title,
-   subtitle,
-   base,
-   body,
-   caption
-};
-
-void apply_text_style(Xaml::Controls::TextBlock& text, const text_style style)
-{
-   switch (style) {
-   case text_style::header:
-      text.FontWeight(Text::FontWeights::Light());
-      text.FontSize(46.0);
-      text.LineHeight(56.0);
-      break;
-   case text_style::subheader:
-      text.FontWeight(Text::FontWeights::Light());
-      text.FontSize(34.0);
-      text.LineHeight(40.0);
-      break;
-   case text_style::title:
-      text.FontWeight(Text::FontWeights::SemiLight());
-      text.FontSize(24.0);
-      text.LineHeight(28.0);
-      break;
-   case text_style::subtitle:
-      text.FontWeight(Text::FontWeights::Normal());
-      text.FontSize(20.0);
-      text.LineHeight(24.0);
-      break;
-   case text_style::base:
-      text.FontWeight(Text::FontWeights::SemiBold());
-      text.FontSize(14.0);
-      text.LineHeight(20.0);
-      break;
-   case text_style::body:
-      text.FontWeight(Text::FontWeights::Normal());
-      text.FontSize(14.0);
-      text.LineHeight(20.0);
-      break;
-   case text_style::caption:
-      text.FontWeight(Text::FontWeights::Normal());
-      text.FontSize(12.0);
-      text.LineHeight(14.0);
-      break;
-   }
-}
 
 constexpr double description_opacity = 0.85;
 constexpr double description_top_padding = 8.0;

@@ -23,11 +23,6 @@ public:
       xaml_source.Content(config::create_xaml_ui_element(config_ui, config_changed));
    }
 
-   void switched_from() noexcept override
-   {
-      // ...
-   }
-
    void update([[maybe_unused]] MSG& msg) noexcept override
    {
       if (std::exchange(*config_changed, false)) {

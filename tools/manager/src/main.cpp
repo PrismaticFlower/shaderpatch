@@ -2,6 +2,7 @@
 
 #include "../resource.h"
 #include "app_mode_configurator.hpp"
+#include "app_mode_installer.hpp"
 
 constexpr auto window_title = L"Shader Patch Configurator";
 constexpr auto window_class = window_title;
@@ -21,7 +22,7 @@ using namespace winrt::Windows::UI::Xaml::Hosting;
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
                       _In_ LPWSTR lpCmdLine, _In_ int nCmdShow)
 {
-   winrt::init_apartment(winrt::apartment_type::single_threaded);
+   winrt::init_apartment(winrt::apartment_type::multi_threaded);
    current_instance = hInstance;
 
    UNREFERENCED_PARAMETER(hPrevInstance);
@@ -41,7 +42,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
    xaml_interop->get_WindowHandle(&xaml_island_hwnd);
 
-   auto active_mode = make_app_mode_configurator();
+   auto active_mode = make_app_mode_installer();
    active_mode->switch_to(xaml_desktop_source);
 
    set_xaml_island_window_pos();

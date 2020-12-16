@@ -56,6 +56,27 @@
     <ClInclude Include="src\app_mode_configurator.hpp">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="src\xml_install_manifest.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\app_mode_installer.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\xaml_ui_helpers.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_locator.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\open_file_dialog.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\installer.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\install_manifest.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\framework.cpp">
@@ -77,6 +98,21 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\app_mode_configurator.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\xml_install_manifest.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\app_mode_installer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_locator.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\installer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\install_manifest.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

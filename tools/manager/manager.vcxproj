@@ -102,7 +102,12 @@
   <ItemGroup>
     <ClInclude Include="Resource.h" />
     <ClInclude Include="src\app_mode_configurator.hpp" />
+    <ClInclude Include="src\app_mode_installer.hpp" />
     <ClInclude Include="src\framework.hpp" />
+    <ClInclude Include="src\game_locator.hpp" />
+    <ClInclude Include="src\installer.hpp" />
+    <ClInclude Include="src\install_manifest.hpp" />
+    <ClInclude Include="src\open_file_dialog.hpp" />
     <ClInclude Include="src\overloaded.hpp" />
     <ClInclude Include="src\targetver.h" />
     <ClInclude Include="src\config_ui.hpp" />
@@ -111,6 +116,8 @@
     <ClInclude Include="src\user_config_descriptions.hpp" />
     <ClInclude Include="src\user_config_loader.hpp" />
     <ClInclude Include="src\user_config_saver.hpp" />
+    <ClInclude Include="src\xaml_ui_helpers.hpp" />
+    <ClInclude Include="src\xml_install_manifest.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="manager.rc" />
@@ -121,15 +128,20 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\app_mode_configurator.cpp" />
+    <ClCompile Include="src\app_mode_installer.cpp" />
     <ClCompile Include="src\config_ui.cpp" />
     <ClCompile Include="src\framework.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\game_locator.cpp" />
+    <ClCompile Include="src\installer.cpp" />
+    <ClCompile Include="src\install_manifest.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\user_config_descriptions.cpp" />
     <ClCompile Include="src\user_config_loader.cpp" />
     <ClCompile Include="src\user_config_saver.cpp" />
+    <ClCompile Include="src\xml_install_manifest.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="manager.exe.manifest" />
