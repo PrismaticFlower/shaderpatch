@@ -26,10 +26,8 @@ public:
       xaml_source.Content(ui_root);
    }
 
-   void update([[maybe_unused]] MSG& msg) noexcept override
+   auto update([[maybe_unused]] MSG& msg) noexcept -> app_update_result override
    {
-      (void)msg;
-
       if (game_disk_searcher) {
          game_disk_searcher->get_discovered([this](std::filesystem::path path) {
             if (std::find_if(begin(install_locations), end(install_locations),
@@ -59,9 +57,9 @@ public:
          case installer_status::completed: {
             installer = std::nullopt;
 
-            // TODO: Handle completion here!
+            std::filesystem::current_path(install_path);
 
-            break;
+            return app_update_result::switch_to_configurator;
          }
          case installer_status::permission_denied: {
             installer = std::nullopt;
@@ -81,6 +79,8 @@ public:
          }
          }
       }
+
+      return app_update_result::none;
    }
 
 private:

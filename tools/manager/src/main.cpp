@@ -50,7 +50,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
    // Main message loop:
    while (GetMessageW(&msg, nullptr, 0, 0)) {
-      active_mode->update(msg);
+      if (const auto result = active_mode->update(msg);
+          result == app_update_result::switch_to_configurator) {
+         active_mode = make_app_mode_configurator(xaml_desktop_source, true);
+      }
 
       TranslateMessage(&msg);
       DispatchMessageW(&msg);

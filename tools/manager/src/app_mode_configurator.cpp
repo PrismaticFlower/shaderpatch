@@ -9,6 +9,7 @@
 #include "user_config_saver.hpp"
 
 using namespace std::literals;
+using namespace winrt::Windows::UI;
 
 namespace {
 
@@ -18,16 +19,35 @@ auto make_config_ui(std::shared_ptr<user_config> config) -> config::ui_root;
 
 class app_mode_configurator final : public app_ui_mode {
 public:
-   app_mode_configurator(winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource xaml_source) noexcept
+   app_mode_configurator(Xaml::Hosting::DesktopWindowXamlSource xaml_source,
+                         const bool display_installed_dialog) noexcept
    {
-      xaml_source.Content(config::create_xaml_ui_element(config_ui, config_changed));
+      root_xaml_element.Children().Append(
+         config::create_xaml_ui_element(config_ui, config_changed));
+
+      xaml_source.Content(root_xaml_element);
+
+      if (display_installed_dialog) {
+         Xaml::Controls::ContentDialog installed_dialog;
+         installed_dialog.Title(winrt::box_value(L"Shader Patch Installed"sv));
+         installed_dialog.PrimaryButtonText(L"Okay"sv);
+         installed_dialog.DefaultButton(Xaml::Controls::ContentDialogButton::Primary);
+         installed_dialog.Content(winrt::box_value(
+            L"Installation successful! To uninstall go into the About section in the configurator."sv));
+
+         root_xaml_element.Children().Append(installed_dialog);
+
+         installed_dialog.ShowAsync();
+      }
    }
 
-   void update([[maybe_unused]] MSG& msg) noexcept override
+   auto update([[maybe_unused]] MSG& msg) noexcept -> app_update_result override
    {
       if (std::exchange(*config_changed, false)) {
          user_config_saver.enqueue_async_save(*config);
       }
+
+      return app_update_result::none;
    }
 
 private:
@@ -36,12 +56,15 @@ private:
    config::ui_root config_ui = make_config_ui(config);
    std::shared_ptr<bool> config_changed = std::make_shared<bool>();
    user_config_saver user_config_saver;
+
+   Xaml::Controls::Grid root_xaml_element;
 };
 
-auto make_app_mode_configurator(winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource xaml_source)
+auto make_app_mode_configurator(Xaml::Hosting::DesktopWindowXamlSource xaml_source,
+                                const bool display_installed_dialog)
    -> std::unique_ptr<app_ui_mode>
 {
-   return std::make_unique<app_mode_configurator>(xaml_source);
+   return std::make_unique<app_mode_configurator>(xaml_source, display_installed_dialog);
 }
 
 namespace {
