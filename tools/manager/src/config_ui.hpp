@@ -50,6 +50,6 @@ struct ui_root {
 };
 
 auto create_xaml_ui_element(const ui_root& root, std::shared_ptr<bool> value_changed)
-   -> winrt::Windows::UI::Xaml::UIElement;
+   -> winrt::Windows::UI::Xaml::Controls::NavigationView;
 
 }

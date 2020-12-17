@@ -226,6 +226,7 @@ auto create_page(const ui_page& ui_page, std::shared_ptr<bool> value_changed)
 
    scroll_viewer.Content(stack_panel);
    scroll_viewer.Visibility(Xaml::Visibility::Collapsed);
+   scroll_viewer.Name(ui_page.name);
 
    return scroll_viewer;
 }
@@ -233,7 +234,7 @@ auto create_page(const ui_page& ui_page, std::shared_ptr<bool> value_changed)
 }
 
 auto create_xaml_ui_element(const ui_root& root, std::shared_ptr<bool> value_changed)
-   -> Xaml::UIElement
+   -> Xaml::Controls::NavigationView
 {
    Xaml::Controls::NavigationView nav_view;
    nav_view.IsSettingsVisible(false);
@@ -264,34 +265,33 @@ auto create_xaml_ui_element(const ui_root& root, std::shared_ptr<bool> value_cha
 
    nav_view.PaneFooter(toggle);
 
-   // Menu Items
-   IVector<IInspectable> menu_items{winrt::single_threaded_vector<IInspectable>()};
-   IMap<winrt::hstring, Xaml::UIElement> ui_items{
-      winrt::single_threaded_map<winrt::hstring, Xaml::UIElement>()};
+   Xaml::Controls::Grid pages;
 
    for (const auto& page : root.pages) {
-      menu_items.Append(winrt::box_value(page.name));
-      ui_items.Insert(page.name, create_page(page, value_changed));
+      nav_view.MenuItems().Append(winrt::box_value(page.name));
+      pages.Children().Append(create_page(page, value_changed));
    }
 
-   nav_view.MenuItemsSource(menu_items);
+   nav_view.Content(pages);
    nav_view.SelectionChanged(
-      [ui_items](Xaml::Controls::NavigationView nav_view,
-                 [[maybe_unused]] Xaml::Controls::NavigationViewSelectionChangedEventArgs args) {
-         if (auto content = nav_view.Content(); content) {
-            content.as<Xaml::UIElement>().Visibility(Xaml::Visibility::Collapsed);
-         }
-
+      [pages](Xaml::Controls::NavigationView nav_view,
+              [[maybe_unused]] Xaml::Controls::NavigationViewSelectionChangedEventArgs args) {
          auto selected = winrt::unbox_value<winrt::hstring>(args.SelectedItem());
 
-         nav_view.Header(args.SelectedItem());
-         nav_view.Content(ui_items.Lookup(selected));
-         nav_view.Content().as<Xaml::UIElement>().Visibility(Xaml::Visibility::Visible);
+         for (auto page : pages.Children()) {
+            if (page.as<Xaml::Controls::Control>().Name() == selected) {
+               nav_view.Header(args.SelectedItem());
+               page.Visibility(Xaml::Visibility::Visible);
+            }
+            else {
+               page.Visibility(Xaml::Visibility::Collapsed);
+            }
+         }
       });
 
-   if (menu_items.Size() > 0) {
-      nav_view.Header(menu_items.GetAt(0));
-      nav_view.SelectedItem(menu_items.GetAt(0));
+   if (nav_view.MenuItems().Size() > 0) {
+      nav_view.Header(nav_view.MenuItems().GetAt(0));
+      nav_view.SelectedItem(nav_view.MenuItems().GetAt(0));
    }
 
    return nav_view;
