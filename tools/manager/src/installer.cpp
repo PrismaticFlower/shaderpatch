@@ -2,6 +2,8 @@
 
 #include "install_manifest.hpp"
 #include "installer.hpp"
+#include "user_config_loader.hpp"
+#include "user_config_saver.hpp"
 #include "xml_install_manifest.hpp"
 
 using namespace std::literals;
@@ -46,6 +48,7 @@ void installer::install(std::filesystem::path install_path) noexcept
    for (const auto& entry : std::filesystem::recursive_directory_iterator{
            std::filesystem::current_path()}) {
       if (!entry.is_regular_file()) continue;
+      if (entry.path().filename() == L"shader patch.yml"sv) continue;
 
       paths_to_copy.push_back(
          entry.path().lexically_relative(std::filesystem::current_path()));
@@ -77,6 +80,8 @@ void installer::install(std::filesystem::path install_path) noexcept
       }
    };
 
+   const auto user_config = load_user_config(install_path / L"shader patch.yml"sv);
+
    remove_existing(v1_3_files);
    remove_existing(existing_files);
 
@@ -107,6 +112,9 @@ void installer::install(std::filesystem::path install_path) noexcept
          return;
       }
    }
+
+   save_user_config(install_path / L"shader patch.yml"sv, user_config);
+   installed_files.emplace_back(L"shader patch.yml"sv);
 
    save_install_manifest(install_path, installed_files);
 

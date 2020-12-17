@@ -11,12 +11,12 @@
 
 using namespace std::literals;
 
-auto load_user_config() -> user_config
+auto load_user_config(const std::filesystem::path& path) -> user_config
 {
    user_config config;
 
    try {
-      const auto yaml = YAML::LoadFile("./shader patch.yml"s);
+      const auto yaml = YAML::LoadFile(path.string());
 
       if (yaml["Shader Patch Enabled"s]) {
          config.enabled.value =

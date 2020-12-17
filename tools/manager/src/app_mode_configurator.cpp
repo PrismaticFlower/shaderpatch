@@ -52,7 +52,7 @@ public:
 
 private:
    std::shared_ptr<user_config> config =
-      std::make_shared<user_config>(load_user_config());
+      std::make_shared<user_config>(load_user_config(L"shader patch.yml"sv));
    config::ui_root config_ui = make_config_ui(config);
    std::shared_ptr<bool> config_changed = std::make_shared<bool>();
    user_config_saver user_config_saver;

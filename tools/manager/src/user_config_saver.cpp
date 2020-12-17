@@ -5,8 +5,8 @@
 
 using namespace std::literals;
 
-constexpr auto temp_save_path = L"./~TMP.shader patch.yml"sv;
-constexpr auto save_path = L"./shader patch.yml"sv;
+constexpr auto temp_save_path = L"~TMP.shader patch.yml"sv;
+constexpr auto save_path = L"shader patch.yml"sv;
 
 void user_config_saver::enqueue_async_save(const user_config& config)
 {
@@ -38,7 +38,14 @@ void user_config_saver::enqueue_async_save(const user_config& config)
 
 void user_config_saver::save(const user_config& config) noexcept
 {
-   std::ofstream out{temp_save_path};
+   save_user_config(temp_save_path, config);
+
+   std::filesystem::rename(temp_save_path, save_path);
+}
+
+void save_user_config(const std::filesystem::path& path, const user_config& config) noexcept
+{
+   std::ofstream out{path};
 
    constexpr static auto to_utf8 = winrt::to_string;
    constexpr static auto printify =
@@ -79,6 +86,4 @@ void user_config_saver::save(const user_config& config) noexcept
    }
 
    out.close();
-
-   std::filesystem::rename(temp_save_path, save_path);
 }

@@ -13,3 +13,6 @@ private:
    std::shared_ptr<std::atomic_bool> _cancel_current_save;
    std::future<void> _future;
 };
+
+void save_user_config(const std::filesystem::path& path,
+                      const user_config& config) noexcept;
