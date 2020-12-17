@@ -49,13 +49,14 @@ void installer::install(std::filesystem::path install_path) noexcept
            std::filesystem::current_path()}) {
       if (!entry.is_regular_file()) continue;
       if (entry.path().filename() == L"shader patch.yml"sv) continue;
+      if (entry.path().filename() == L"Shader Patch Installer.exe"sv) continue;
 
       paths_to_copy.push_back(
          entry.path().lexically_relative(std::filesystem::current_path()));
    }
 
    const double total_work_items =
-      v1_3_files.size() + existing_files.size() + +paths_to_copy.size();
+      v1_3_files.size() + existing_files.size() + paths_to_copy.size() + 3;
    double completed_work_items = 0;
 
    std::vector<std::filesystem::path> installed_files;
@@ -85,12 +86,12 @@ void installer::install(std::filesystem::path install_path) noexcept
    remove_existing(v1_3_files);
    remove_existing(existing_files);
 
-   for (auto& path : paths_to_copy) {
-      progress_percent.store((++completed_work_items / total_work_items) * 100.0);
+   try {
+      for (auto& path : paths_to_copy) {
+         progress_percent.store((++completed_work_items / total_work_items) * 100.0);
 
-      set_message(L"Copying "s + path.native());
+         set_message(L"Copying "s + path.native());
 
-      try {
          auto dest_path = install_path / path;
 
          std::filesystem::create_directories(dest_path.parent_path());
@@ -99,26 +100,47 @@ void installer::install(std::filesystem::path install_path) noexcept
 
          installed_files.emplace_back(path);
       }
-      catch (std::filesystem::filesystem_error& e) {
-         if (e.code().value() == ERROR_ACCESS_DENIED) {
-            current_status = installer_status::permission_denied;
-         }
-         else {
-            current_status = installer_status::failure;
-         }
 
-         failed_install_cleanup(install_path, installed_files);
+      progress_percent.store((++completed_work_items / total_work_items) * 100.0);
 
-         return;
+      set_message(L"Copying "s + L"shader patch.yml"s);
+
+      save_user_config(install_path / L"shader patch.yml"sv, user_config);
+      installed_files.emplace_back(L"shader patch.yml"sv);
+
+      progress_percent.store((++completed_work_items / total_work_items) * 100.0);
+
+      set_message(L"Copying "s + L"Shader Patch Settings.exe"s);
+
+      progress_percent.store((++completed_work_items / total_work_items) * 100.0);
+
+      std::filesystem::copy_file(L"Shader Patch Installer.exe"sv,
+                                 install_path / L"Shader Patch Settings.exe"sv,
+                                 std::filesystem::copy_options::overwrite_existing);
+      installed_files.emplace_back(L"Shader Patch Settings.exe"sv);
+
+      set_message(L"Saving install manifest"s);
+
+      progress_percent.store((++completed_work_items / total_work_items) * 100.0);
+
+      save_install_manifest(install_path, installed_files);
+   }
+   catch (std::filesystem::filesystem_error& e) {
+      if (e.code().value() == ERROR_ACCESS_DENIED) {
+         current_status = installer_status::permission_denied;
       }
+      else {
+         current_status = installer_status::failure;
+      }
+
+      set_message(L"Failure! Attempting to cleanup install..."s);
+
+      failed_install_cleanup(install_path, installed_files);
+
+      return;
    }
 
-   save_user_config(install_path / L"shader patch.yml"sv, user_config);
-   installed_files.emplace_back(L"shader patch.yml"sv);
-
-   save_install_manifest(install_path, installed_files);
-
-   set_message(L"Complete");
+   set_message(L"Complete"s);
    current_status = installer_status::completed;
 }
 
