@@ -26,6 +26,17 @@ public:
       xaml_source.Content(ui_root);
    }
 
+   app_mode_installer(Windows::UI::Xaml::Hosting::DesktopWindowXamlSource xaml_source,
+                      std::filesystem::path install_path)
+      : app_mode_installer{xaml_source}
+   {
+      this->install_path = install_path;
+
+      change_active_page(installing_page);
+
+      installer.emplace(install_path);
+   }
+
    auto update([[maybe_unused]] MSG& msg) noexcept -> app_update_result override
    {
       if (game_disk_searcher) {
@@ -467,4 +478,12 @@ auto make_app_mode_installer(Windows::UI::Xaml::Hosting::DesktopWindowXamlSource
    -> std::unique_ptr<app_ui_mode>
 {
    return std::make_unique<app_mode_installer>(xaml_source);
+}
+
+auto make_app_mode_installer_with_selected_path(
+   winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource xaml_source,
+   std::filesystem::path path) -> std::unique_ptr<app_ui_mode>
+{
+
+   return std::make_unique<app_mode_installer>(xaml_source, path);
 }

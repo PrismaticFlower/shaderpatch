@@ -3,6 +3,7 @@
 #include "../resource.h"
 #include "app_mode_configurator.hpp"
 #include "app_mode_installer.hpp"
+#include "string_utilities.hpp"
 
 constexpr auto window_title = L"Shader Patch Configurator";
 constexpr auto window_class = window_title;
@@ -26,7 +27,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
    current_instance = hInstance;
 
    UNREFERENCED_PARAMETER(hPrevInstance);
-   UNREFERENCED_PARAMETER(lpCmdLine);
 
    main_hwnd = init_instance(hInstance, nCmdShow);
 
@@ -42,9 +42,23 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
    xaml_interop->get_WindowHandle(&xaml_island_hwnd);
 
-   auto active_mode = make_app_mode_installer(xaml_desktop_source);
-
    set_xaml_island_window_pos();
+
+   std::unique_ptr<app_ui_mode> active_mode;
+
+   if (std::wstring_view command_line{lpCmdLine};
+       begins_with(command_line, L"install"sv)) {
+      const auto install_path = command_line.substr(L"install"sv.size() + 1);
+
+      active_mode = make_app_mode_installer_with_selected_path(xaml_desktop_source,
+                                                               install_path);
+   }
+   else if (std::filesystem::exists(L"BattlefrontII.exe"sv)) {
+      active_mode = make_app_mode_configurator(xaml_desktop_source);
+   }
+   else {
+      active_mode = make_app_mode_installer(xaml_desktop_source);
+   }
 
    MSG msg;
 

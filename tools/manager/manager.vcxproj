@@ -109,6 +109,7 @@
     <ClInclude Include="src\install_manifest.hpp" />
     <ClInclude Include="src\open_file_dialog.hpp" />
     <ClInclude Include="src\overloaded.hpp" />
+    <ClInclude Include="src\string_utilities.hpp" />
     <ClInclude Include="src\targetver.h" />
     <ClInclude Include="src\config_ui.hpp" />
     <ClInclude Include="src\app_ui_mode.hpp" />
