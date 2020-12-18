@@ -1,0 +1,125 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{04a87b7e-326e-4450-abcd-f66c6a4d01e7}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="manager.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="small.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="manager.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Resource.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\targetver.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\framework.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\config_ui.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\user_config.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\user_config_descriptions.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\user_config_saver.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\overloaded.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\user_config_loader.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\app_ui_mode.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\app_mode_configurator.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\xml_install_manifest.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\app_mode_installer.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\xaml_ui_helpers.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_locator.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\open_file_dialog.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\installer.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\install_manifest.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\string_utilities.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\framework.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\config_ui.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\user_config_descriptions.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\user_config_saver.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\user_config_loader.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\app_mode_configurator.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\xml_install_manifest.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\app_mode_installer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_locator.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\installer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\install_manifest.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="manager.exe.manifest" />
+  </ItemGroup>
+</Project>

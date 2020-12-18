@@ -17,17 +17,12 @@ md .\packages\shaderpatch\data\shaderpatch\bin\
 copy .\LICENSE ".\packages\shaderpatch\shader patch license.txt"
 copy .\third_party.md ".\packages\shaderpatch\shader patch acknowledgements.txt"
 
-# Copy over redistributable
-$installationPath = vswhere.exe -prerelease -latest -property installationPath
-
-copy "${installationPath}\VC\Redist\MSVC\14.*\VCRedist_x86.exe" ".\packages\shaderpatch\data\shaderpatch\bin\VCRedist_x86.exe"
-
 # Build
 msbuild /t:Build /p:Configuration=Release /p:Platform=x86
 msbuild /t:Build /p:Configuration=Release /p:Platform=x64
 
 copy .\bin\Release\*.dll .\packages\shaderpatch\
-copy ".\bin\Release\shader patch installer.exe" ".\packages\shaderpatch\Shader Patch Installer.exe"
+copy ".\tools\manager\bin\Release\Shader Patch Installer.exe" ".\packages\shaderpatch\Shader Patch Installer.exe"
 
 # Copy Assets
 copy '.\assets\shader patch.yml' .\packages\shaderpatch\
@@ -49,3 +44,7 @@ copy .\tools\bin\x64\Release\*.exe .\packages\shaderpatch-tools\
 Write-Host "Creating shader cache..."
 Start-Process -FilePath ".\bin\Release\shader_cache_primer.exe" -WorkingDirectory ".\packages\shaderpatch" -NoNewWindow -Wait
 del ".\packages\shaderpatch\shader patch.log"
+
+# Create Archives
+Compress-Archive -Path ".\packages\shaderpatch\*" -DestinationPath ".\packages\shaderpatch.zip" -CompressionLevel Optimal -Force
+Compress-Archive -Path ".\packages\shaderpatch-tools\*" -DestinationPath ".\packages\shaderpatch-tools.zip" -CompressionLevel Optimal -Force
