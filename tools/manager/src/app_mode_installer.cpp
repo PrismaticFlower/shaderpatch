@@ -6,15 +6,15 @@
 #include "open_file_dialog.hpp"
 #include "xaml_ui_helpers.hpp"
 
-using namespace winrt;
-using namespace Windows::Foundation;
-using namespace Windows::UI;
+using winrt::Windows::Foundation::IInspectable;
+using namespace winrt::Windows::Foundation::Collections;
+using namespace winrt::Windows::UI;
 
 namespace {
 
 class app_mode_installer : public app_ui_mode {
 public:
-   app_mode_installer(Windows::UI::Xaml::Hosting::DesktopWindowXamlSource xaml_source)
+   app_mode_installer(Xaml::Hosting::DesktopWindowXamlSource xaml_source)
    {
       create_controls();
 
@@ -26,7 +26,7 @@ public:
       xaml_source.Content(ui_root);
    }
 
-   app_mode_installer(Windows::UI::Xaml::Hosting::DesktopWindowXamlSource xaml_source,
+   app_mode_installer(Xaml::Hosting::DesktopWindowXamlSource xaml_source,
                       std::filesystem::path install_path)
       : app_mode_installer{xaml_source}
    {
@@ -44,12 +44,13 @@ public:
             if (std::find_if(begin(install_locations), end(install_locations),
                              [&](const IInspectable& entry) {
                                 return std::filesystem::equivalent(
-                                   std::wstring{unbox_value<hstring>(entry)}, path);
+                                   std::wstring{winrt::unbox_value<winrt::hstring>(entry)},
+                                   path);
                              }) != end(install_locations)) {
                return;
             }
 
-            install_locations.Append(box_value(path.native()));
+            install_locations.Append(winrt::box_value(path.native()));
          });
 
          if (game_disk_searcher->completed()) {
@@ -80,7 +81,8 @@ public:
          }
          case installer_status::failure: {
             for (const auto& path : installer->failed_to_remove_files()) {
-               installation_failed_remaining_files.Append(box_value(path.native()));
+               installation_failed_remaining_files.Append(
+                  winrt::box_value(path.native()));
             }
 
             installer = std::nullopt;
@@ -411,7 +413,7 @@ private:
       if (auto path =
              open_file_dialog({L"SWBFII Executable", L"BattlefrontII.exe"});
           path) {
-         install_locations.Append(box_value(path->native()));
+         install_locations.Append(winrt::box_value(path->native()));
       }
    }
 
@@ -431,7 +433,7 @@ private:
       change_active_page(installing_page);
 
       std::filesystem::path selected_exe_path =
-         std::wstring{unbox_value<hstring>(args.ClickedItem())};
+         std::wstring{winrt::unbox_value<winrt::hstring>(args.ClickedItem())};
       install_path = selected_exe_path.parent_path();
 
       installer.emplace(install_path);
@@ -454,7 +456,7 @@ private:
    Xaml::Controls::Grid ui_root;
 
    Xaml::Controls::StackPanel selection_page;
-   Collections::IVector<IInspectable> install_locations;
+   IVector<IInspectable> install_locations;
    Xaml::Controls::StackPanel searching_for_installs_status;
 
    Xaml::Controls::Grid installing_page;
@@ -464,7 +466,7 @@ private:
    Xaml::Controls::Grid permission_required_page;
 
    Xaml::Controls::Grid installation_failed_page;
-   Collections::IVector<IInspectable> installation_failed_remaining_files;
+   IVector<IInspectable> installation_failed_remaining_files;
 
    std::optional<game_disk_searcher> game_disk_searcher;
    std::optional<installer> installer;
@@ -474,15 +476,15 @@ private:
 
 }
 
-auto make_app_mode_installer(Windows::UI::Xaml::Hosting::DesktopWindowXamlSource xaml_source)
+auto make_app_mode_installer(Xaml::Hosting::DesktopWindowXamlSource xaml_source)
    -> std::unique_ptr<app_ui_mode>
 {
    return std::make_unique<app_mode_installer>(xaml_source);
 }
 
-auto make_app_mode_installer_with_selected_path(
-   winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource xaml_source,
-   std::filesystem::path path) -> std::unique_ptr<app_ui_mode>
+auto make_app_mode_installer_with_selected_path(Xaml::Hosting::DesktopWindowXamlSource xaml_source,
+                                                std::filesystem::path path)
+   -> std::unique_ptr<app_ui_mode>
 {
 
    return std::make_unique<app_mode_installer>(xaml_source, path);

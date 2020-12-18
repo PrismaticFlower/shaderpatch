@@ -122,7 +122,4 @@
   <ItemGroup>
     <Manifest Include="manager.exe.manifest" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
 </Project>
