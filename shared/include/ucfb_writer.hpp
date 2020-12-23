@@ -195,6 +195,8 @@ public:
                     "Type must be standard layout!");
       static_assert(std::is_trivially_destructible_v<Type>,
                     "Type must be trivially destructible!");
+      static_assert(!std::is_same_v<std::remove_cvref_t<Type>, Alignment>,
+                    "Type must not be the Alignment type!");
 
       write(std::span{&value, 1}, alignment);
    }
@@ -211,14 +213,14 @@ public:
    }
 
    template<typename... Args>
-   auto write(Args&&... args)
+   auto write(const Args&... args)
       -> std::enable_if_t<!std::disjunction_v<std::is_same<Alignment, Args>...>>
    {
       (this->write(args, Alignment::aligned), ...);
    }
 
    template<typename... Args>
-   auto write_unaligned(Args&&... args)
+   auto write_unaligned(const Args&... args)
       -> std::enable_if_t<!std::disjunction_v<std::is_same<Alignment, Args>...>>
    {
       (this->write(args, Alignment::unaligned), ...);
@@ -272,7 +274,7 @@ private:
 
       if (alignment_bytes == 0) return;
 
-      write(std::span{data}.subspan(alignment_bytes), Alignment::unaligned);
+      write(std::span{data}.subspan(0, alignment_bytes), Alignment::unaligned);
    }
 
    Output _out;
