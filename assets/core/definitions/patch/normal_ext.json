@@ -368,11 +368,11 @@
 
         "static_flags": {
           "NORMAL_EXT_USE_TRANSPARENCY": true
-        },
-
-        "oit_pixel_shader": {
-          "entrypoint": "oit_main_ps"
         }
+      },
+
+      "oit_pixel_shader": {
+        "entrypoint": "oit_main_ps"
       }
     },
 
