@@ -203,60 +203,6 @@ auto read_cb_stages(const YAML::Node& node) -> Material_cb_shader_stages
    return stages;
 }
 
-auto read_topology(const YAML::Node& node) -> D3D_PRIMITIVE_TOPOLOGY
-{
-   if (!node) return D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
-
-   const auto topology = node.as<std::string>();
-
-   // clang-format off
-   if (topology == "pointlist"sv) return D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
-   if (topology == "linelist"sv) return D3D_PRIMITIVE_TOPOLOGY_LINELIST;
-   if (topology == "linestrip"sv) return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
-   if (topology == "trianglelist"sv) return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-   if (topology == "trianglestrip"sv) return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
-   if (topology == "linelist_adj"sv) return D3D_PRIMITIVE_TOPOLOGY_LINELIST_ADJ;
-   if (topology == "linestrip_adj"sv) return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ;
-   if (topology == "trianglelist_adj"sv) return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST_ADJ;
-   if (topology == "trianglestrip_adj"sv) return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP_ADJ;
-   if (topology == "1_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST;
-   if (topology == "2_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_2_CONTROL_POINT_PATCHLIST;
-   if (topology == "3_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST;
-   if (topology == "4_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST;
-   if (topology == "5_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_5_CONTROL_POINT_PATCHLIST;
-   if (topology == "6_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_6_CONTROL_POINT_PATCHLIST;
-   if (topology == "7_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_7_CONTROL_POINT_PATCHLIST;
-   if (topology == "8_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_8_CONTROL_POINT_PATCHLIST;
-   if (topology == "9_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_9_CONTROL_POINT_PATCHLIST;
-   if (topology == "10_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_10_CONTROL_POINT_PATCHLIST;
-   if (topology == "11_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_11_CONTROL_POINT_PATCHLIST;
-   if (topology == "12_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_12_CONTROL_POINT_PATCHLIST;
-   if (topology == "13_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_13_CONTROL_POINT_PATCHLIST;
-   if (topology == "14_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_14_CONTROL_POINT_PATCHLIST;
-   if (topology == "15_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_15_CONTROL_POINT_PATCHLIST;
-   if (topology == "16_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_16_CONTROL_POINT_PATCHLIST;
-   if (topology == "17_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_17_CONTROL_POINT_PATCHLIST;
-   if (topology == "18_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_18_CONTROL_POINT_PATCHLIST;
-   if (topology == "19_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_19_CONTROL_POINT_PATCHLIST;
-   if (topology == "20_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_20_CONTROL_POINT_PATCHLIST;
-   if (topology == "21_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_21_CONTROL_POINT_PATCHLIST;
-   if (topology == "22_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_22_CONTROL_POINT_PATCHLIST;
-   if (topology == "23_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_23_CONTROL_POINT_PATCHLIST;
-   if (topology == "24_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_24_CONTROL_POINT_PATCHLIST;
-   if (topology == "25_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_25_CONTROL_POINT_PATCHLIST;
-   if (topology == "26_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_26_CONTROL_POINT_PATCHLIST;
-   if (topology == "27_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_27_CONTROL_POINT_PATCHLIST;
-   if (topology == "28_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_28_CONTROL_POINT_PATCHLIST;
-   if (topology == "29_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_29_CONTROL_POINT_PATCHLIST;
-   if (topology == "30_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_30_CONTROL_POINT_PATCHLIST;
-   if (topology == "31_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_31_CONTROL_POINT_PATCHLIST;
-   if (topology == "32_control_point_patchlist"sv) return D3D_PRIMITIVE_TOPOLOGY_32_CONTROL_POINT_PATCHLIST;
-   // clang-format on
-
-   throw compose_exception<std::runtime_error>("Invalid primitive topology in rendertype description "sv,
-                                               std::quoted(topology), "."sv);
-}
-
 auto read_desc_material_options(const YAML::Node& node, Material_options& material_options)
 {
    for (const auto& opt : node) {
