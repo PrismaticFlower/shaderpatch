@@ -28,6 +28,16 @@ namespace sp::d3d9 {
 namespace {
 
 constexpr auto projtex_slot = 2;
+
+auto text_dpi_from_resolution(const double actual_width, const double actual_height,
+                              const double perceived_width, const double perceived_height,
+                              const double base_dpi) -> std::uint32_t
+{
+   return static_cast<std::uint32_t>(std::ceil(
+      std::max(actual_width / perceived_width, actual_height / perceived_height) *
+      base_dpi));
+}
+
 }
 
 Com_ptr<Device> Device::create(IDirect3D9& parent, IDXGIAdapter4& adapter,
@@ -189,6 +199,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
 
    const UINT dpi = GetDpiForWindow(_window);
    const UINT base_dpi = 96;
+   std::uint32_t text_dpi = dpi;
 
    _actual_width = window_width;
    _actual_height = window_height;
@@ -208,12 +219,21 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
             _actual_height = 600;
          }
       }
+      else {
+         text_dpi = text_dpi_from_resolution(_actual_width, _actual_height,
+                                             _perceived_width,
+                                             _perceived_height, base_dpi);
+      }
    }
    else {
       if (user_config.display.enable_game_perceived_resolution_override) {
          _perceived_width = user_config.display.game_perceived_resolution_override_width;
          _perceived_height =
             user_config.display.game_perceived_resolution_override_height;
+
+         text_dpi = text_dpi_from_resolution(_actual_width, _actual_height,
+                                             _perceived_width,
+                                             _perceived_height, base_dpi);
       }
       else if (user_config.display.dpi_aware && user_config.display.dpi_scaling) {
          _perceived_width = _actual_width * base_dpi / dpi;
@@ -222,6 +242,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
       else {
          _perceived_width = _actual_width;
          _perceived_height = _actual_height;
+         text_dpi = base_dpi;
       }
    }
 
@@ -242,6 +263,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
    _render_state_manager.reset();
    _texture_stage_manager.reset();
    _shader_patch.reset(_actual_width, _actual_height);
+   _shader_patch.set_text_dpi(text_dpi);
    _fixed_func_active = true;
 
    _backbuffer = Surface_backbuffer::create(_shader_patch.get_back_buffer(),

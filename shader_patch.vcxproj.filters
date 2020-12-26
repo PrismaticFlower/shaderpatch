@@ -31,6 +31,9 @@
     <Filter Include="src\game_support\declarations">
       <UniqueIdentifier>{ad6c4cf8-c1c6-497e-973e-5d0351e73880}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\core\text">
+      <UniqueIdentifier>{ec6facfb-6de5-494e-a6b0-d8ba9de07dd2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -257,6 +260,15 @@
     </ClCompile>
     <ClCompile Include="src\shader_cache_primer.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\text\font_atlas_builder.cpp">
+      <Filter>src\core\text</Filter>
+    </ClCompile>
+    <ClCompile Include="src\windows_fonts_folder.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_support\font_declarations.cpp">
+      <Filter>src\game_support</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -658,6 +670,21 @@
     </ClInclude>
     <ClInclude Include="src\shader\source_file_dependency_index.hpp">
       <Filter>src\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\text\font_atlas_builder.hpp">
+      <Filter>src\core\text</Filter>
+    </ClInclude>
+    <ClInclude Include="src\windows_fonts_folder.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\font_declarations.hpp">
+      <Filter>src\game_support</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\font_info.hpp">
+      <Filter>src\game_support</Filter>
+    </ClInclude>
+    <ClInclude Include="src\freetype_helpers.hpp">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

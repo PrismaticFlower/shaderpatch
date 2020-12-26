@@ -30,8 +30,6 @@ SOFTWARE.
 Dear ImGui uses public domain headers from Sean Barrett and others.
 
 ### [JSON for Modern C++](https://github.com/nlohmann/json) 
-This is used to read the shader meta data embedded by the compiler using the same library. The meta data is used to 
-identify and make sense of the game's render process. It is stored in the [MessagePack](https://msgpack.org) format.
 ```
 MIT License 
 
@@ -576,7 +574,7 @@ THE SOFTWARE.
 ```
 
 ### [FreeType](https://www.freetype.org)
-Used in font_packer to easily load and render fonts.
+Used to load and render fonts.
 ```
 Portions of this software are copyright © 2020 The FreeType
 Project (www.freetype.org).  All rights reserved.

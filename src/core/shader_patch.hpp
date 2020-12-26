@@ -26,6 +26,7 @@
 #include "sampler_states.hpp"
 #include "small_function.hpp"
 #include "swapchain.hpp"
+#include "text/font_atlas_builder.hpp"
 #include "texture_database.hpp"
 #include "texture_loader.hpp"
 
@@ -79,6 +80,8 @@ public:
    Shader_patch& operator=(Shader_patch&&) = delete;
 
    void reset(const UINT width, const UINT height) noexcept;
+
+   void set_text_dpi(const std::uint32_t dpi) noexcept;
 
    void present() noexcept;
 
@@ -448,6 +451,8 @@ private:
    UINT _rt_sample_count = 1;
    Antialiasing_method _aa_method = Antialiasing_method::none;
    Refraction_quality _refraction_quality = Refraction_quality::medium;
+
+   text::Font_atlas_builder _font_atlas_builder{_device};
 
    std::unique_ptr<BF2_log_monitor> _bf2_log_monitor;
 };

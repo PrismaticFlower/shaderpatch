@@ -1,7 +1,5 @@
 ﻿
-#include "atlas_description.hpp"
 #include "patch_material_io.hpp"
-#include "patch_texture_io.hpp"
 #include "synced_io.hpp"
 #include "ucfb_writer.hpp"
 #include "utility.hpp"
@@ -9,12 +7,9 @@
 #include <array>
 #include <filesystem>
 #include <limits>
-#include <memory>
 #include <string>
 
-#include <DirectXTex.h>
 #include <clara.hpp>
-#include <glm/glm.hpp>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -31,17 +26,6 @@ struct Glyph {
    unsigned int height;
    unsigned int pitch;
    std::vector<std::uint8_t> bitmap;
-};
-
-struct Packed_glyph {
-   char16_t codepoint;
-   unsigned int advance;
-   int bearing_x;
-   int bearing_y;
-   unsigned int width;
-   unsigned int height;
-   Atlas_location bitmap_location;
-   Atlas_location msdf_location;
 };
 
 constexpr std::array exported_glyphs{
@@ -80,28 +64,17 @@ constexpr std::array exported_glyphs{
    u'\u00fe', u'\u00ff'};
 
 constexpr auto glyph_count = exported_glyphs.size();
-constexpr auto render_scale = 32;
-
-struct alignas(16) Font_cb {
-   glm::vec2 bitmap_atlas_size;
-   glm::vec2 padding{};
-   std::array<glm::vec4, glyph_count> bitmap;
-   std::array<glm::vec4, glyph_count> msdf;
-};
-
-static_assert(sizeof(Font_cb) == 7248);
 
 struct Packed_font {
-   unsigned int size = 0;
+   std::uint32_t size = 0;
    int height = 0;
-   std::array<Packed_glyph, glyph_count> glyphs;
-   DirectX::ScratchImage atlas;
+   std::array<Glyph, glyph_count> glyphs;
+   std::string atlas_index;
+   std::string atlas_texture;
 };
 
 void save_shader_patch_font(const std::string& output_dir,
                             const std::string& name, const Packed_font& packed);
-
-auto pack_font_cb(const Packed_font& packed) -> Aligned_vector<std::byte, 16>;
 
 int main(int arg_count, char* args[])
 {
@@ -110,8 +83,9 @@ int main(int arg_count, char* args[])
    bool help = false;
    auto output_dir = "./"s;
    std::string font_path = R"(C:/Windows/Fonts/ariblk.ttf)"s;
-   std::string atlas_desc_path;
    std::string name = "gamefont_large"s;
+   std::string atlas_index = "_SP_ATLAS_INDEX_large"s;
+   std::string atlas_texture = "_SP_ATLAS_large"s;
    FT_UInt font_size = 14;
 
    // clang-format off
@@ -126,12 +100,15 @@ int main(int arg_count, char* args[])
       | Opt{font_path, "font path"s}
       ["--fontpath"s]
       ("Path to the input font file."s)
-      | Opt{atlas_desc_path, "atlas description path"s}
-      ["--atlasdescpath"s]
-      ("Path to the atlas description file."s)
       | Opt{name, "name"s}
       ["--name"s]
-      ("Name of the output font i.e gamefont_large"s);
+      ("Name of the output font i.e gamefont_large"s)
+      | Opt{atlas_index, "atlas index"s}
+      ["--atlasindex"s]
+      ("Name of the atlas index shader resource."s)
+      | Opt{atlas_texture, "atlas texture"s}
+      ["--atlastexture"s]
+      ("Name of the atlas texture shader resource."s);
 
    // clang-format on
 
@@ -173,11 +150,11 @@ int main(int arg_count, char* args[])
    for (std::size_t i = 0; i < glyph_count; ++i) {
       auto glyph_index = FT_Get_Char_Index(face, exported_glyphs[i]);
 
-      FT_Load_Glyph(face, glyph_index, FT_LOAD_NO_BITMAP);
+      error = FT_Load_Glyph(face, glyph_index, FT_LOAD_NO_BITMAP);
 
       if (error) throw std::runtime_error{"FreeType Error"s};
 
-      FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL);
+      error = FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL);
 
       if (error) throw std::runtime_error{"FreeType Error"s};
 
@@ -188,76 +165,14 @@ int main(int arg_count, char* args[])
       rendered_glyphs[i].width = face->glyph->bitmap.width;
       rendered_glyphs[i].height = face->glyph->bitmap.rows;
       rendered_glyphs[i].pitch = face->glyph->bitmap.pitch;
-      rendered_glyphs[i].bitmap.resize(rendered_glyphs[i].pitch *
-                                       rendered_glyphs[i].height);
-
-      std::memcpy(rendered_glyphs[i].bitmap.data(), face->glyph->bitmap.buffer,
-                  rendered_glyphs[i].pitch * rendered_glyphs[i].height);
-   }
-
-   unsigned int packed_width = 1;
-   unsigned int packed_height = 0;
-
-   for (auto& glyph : rendered_glyphs) {
-      packed_width += glyph.width + 1;
-      packed_height = std::max(packed_height, glyph.height);
-   }
-
-   packed_height += 2;
-
-   DirectX::ScratchImage packed_image;
-   packed_image.Initialize2D(DXGI_FORMAT_R8_UNORM, packed_width, packed_height, 1, 1);
-
-   synced_print("packed width: ", packed_width, " packed height: ", packed_height);
-
-   std::array<Packed_glyph, glyph_count> packed_glyphs;
-
-   auto mdsf_atlas_desc = read_atlas_description(atlas_desc_path);
-
-   const glm::vec2 texture_size{packed_width, packed_height};
-
-   unsigned int pack_head = 1;
-
-   for (std::size_t i = 0; i < glyph_count; ++i) {
-      auto& glyph = rendered_glyphs[i];
-
-      DirectX::Image image{.width = glyph.width,
-                           .height = glyph.height,
-                           .format = DXGI_FORMAT_R8_UNORM,
-                           .rowPitch = glyph.pitch,
-                           .slicePitch =
-                              static_cast<std::size_t>(glyph.pitch * glyph.height),
-                           .pixels = (std::uint8_t*)glyph.bitmap.data()};
-
-      DirectX::CopyRectangle(image, {0, 0, glyph.width, glyph.height},
-                             *packed_image.GetImage(0, 0, 0),
-                             DirectX::TEX_FILTER_DEFAULT, pack_head, 1);
-
-      const glm::vec2 atlas_top_left{pack_head + 0.5f, 1.0f + 0.5f};
-      const glm::vec2 atlas_bottom_right =
-         atlas_top_left + glm::vec2{glyph.width, glyph.height};
-
-      packed_glyphs[i] =
-         {.codepoint = glyph.codepoint,
-          .advance = glyph.advance,
-          .bearing_x = glyph.bearing_x,
-          .bearing_y = glyph.bearing_y,
-          .width = glyph.width,
-          .height = glyph.height,
-          .bitmap_location = {.left = atlas_top_left.x / texture_size.x,
-                              .right = atlas_bottom_right.x / texture_size.x,
-                              .top = atlas_top_left.y / texture_size.y,
-                              .bottom = atlas_bottom_right.y / texture_size.y},
-          .msdf_location = mdsf_atlas_desc[glyph.codepoint]};
-
-      pack_head += (glyph.width + 1);
    }
 
    save_shader_patch_font(output_dir, name,
                           {.size = font_size,
                            .height = face->size->metrics.height >> 6,
-                           .glyphs = packed_glyphs,
-                           .atlas = std::move(packed_image)});
+                           .glyphs = rendered_glyphs,
+                           .atlas_index = atlas_index,
+                           .atlas_texture = atlas_texture});
 }
 
 void save_shader_patch_font(const std::string& output_dir,
@@ -267,27 +182,6 @@ void save_shader_patch_font(const std::string& output_dir,
       (std::filesystem::path{output_dir} /= name) += L".font"s);
 
    ucfb::File_writer out{"ucfb"_mn, file};
-
-   const auto bitmap_atlas_name = "_SP_BUILTIN_"s + name + "_atlas"s;
-
-   {
-      auto image = *packed.atlas.GetImage(0, 0, 0);
-
-      write_patch_texture(out, bitmap_atlas_name,
-                          {.type = Texture_type::texture2d,
-                           .width = static_cast<std::uint32_t>(image.width),
-                           .height = static_cast<std::uint32_t>(image.height),
-                           .depth = 1,
-                           .array_size = 1,
-                           .mip_count = 1,
-                           .format = image.format},
-                          {Texture_data{.pitch = static_cast<UINT>(image.rowPitch),
-                                        .slice_pitch = static_cast<UINT>(image.slicePitch),
-                                        .data = {reinterpret_cast<const std::byte*>(
-                                                    image.pixels),
-                                                 image.slicePitch}}},
-                          Texture_file_type::volume_resource);
-   }
 
    {
       auto font = out.emplace_child("font"_mn);
@@ -309,16 +203,11 @@ void save_shader_patch_font(const std::string& output_dir,
 
          ftex.emplace_child("NAME"_mn).write(name + "_tex0"s);
 
-         write_patch_material(ftex,
-                              {.name = name + "_tex0"s,
-                               .rendertype = "text"s,
-                               .overridden_rendertype = Rendertype::_interface,
-                               .cb_type = Material_cb_type::binary,
-                               .cb_shader_stages = Material_cb_shader_stages::vs |
-                                                   Material_cb_shader_stages::gs,
-                               .cb_data = pack_font_cb(packed),
-                               .ps_resources = {bitmap_atlas_name,
-                                                "_SP_BUILTIN_font_atlas"s}});
+         write_patch_material(ftex, {.name = name + "_tex0"s,
+                                     .rendertype = "text"s,
+                                     .overridden_rendertype = Rendertype::_interface,
+                                     .vs_resources = {packed.atlas_index},
+                                     .ps_resources = {packed.atlas_texture}});
       }
 
       {
@@ -354,28 +243,4 @@ void save_shader_patch_font(const std::string& output_dir,
          }
       }
    }
-}
-
-auto pack_font_cb(const Packed_font& packed) -> Aligned_vector<std::byte, 16>
-{
-   Font_cb cb;
-
-   cb.bitmap_atlas_size = glm::vec2{packed.atlas.GetMetadata().width,
-                                    packed.atlas.GetMetadata().height};
-
-   for (auto i = 0; i < packed.glyphs.size(); ++i) {
-      auto& glyph = packed.glyphs[i];
-
-      cb.bitmap[i] = {glyph.bitmap_location.left, glyph.bitmap_location.right,
-                      glyph.bitmap_location.top, glyph.bitmap_location.bottom};
-      cb.msdf[i] = {glyph.msdf_location.left, glyph.msdf_location.right,
-                    glyph.msdf_location.top, glyph.msdf_location.bottom};
-   }
-
-   Aligned_vector<std::byte, 16> vec;
-   vec.resize(sizeof(cb));
-
-   std::memcpy(vec.data(), &cb, sizeof(cb));
-
-   return vec;
 }

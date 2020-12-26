@@ -12,12 +12,6 @@ namespace {
 
 auto init_constant_buffer(ID3D11Device5& device, const Material_config& material_config)
 {
-   if (material_config.cb_type == Material_cb_type::binary) {
-      const std::span<const std::byte> data{material_config.cb_data};
-
-      return create_immutable_constant_buffer(device, data);
-   }
-
    return create_material_constant_buffer(device, material_config.cb_name,
                                           material_config.properties);
 }
@@ -75,7 +69,6 @@ Patch_material::Patch_material(Material_config material_config,
      name{std::move(material_config.name)},
      rendertype{material_config.rendertype},
      cb_name{material_config.cb_name},
-     cb_type{material_config.cb_type},
      properties{material_config.properties},
      vs_shader_resources_names{material_config.vs_resources},
      ps_shader_resources_names{material_config.ps_resources}

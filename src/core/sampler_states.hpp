@@ -16,6 +16,7 @@ struct Sampler_states {
    const Com_ptr<ID3D11SamplerState> linear_mirror_sampler;
    const Com_ptr<ID3D11SamplerState> point_clamp_sampler;
    const Com_ptr<ID3D11SamplerState> point_wrap_sampler;
+   const Com_ptr<ID3D11SamplerState> text_sampler;
 
    void update_ansio_samplers(ID3D11Device1& device) noexcept;
 
