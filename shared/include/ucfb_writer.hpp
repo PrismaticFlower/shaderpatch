@@ -23,6 +23,11 @@
 
 namespace sp::ucfb {
 
+struct Writer_headerless_t {
+};
+
+inline constexpr Writer_headerless_t writer_headerless{};
+
 // clang-format off
 template<typename T>
 concept Writer_target_position = requires(const T& target) {
@@ -145,8 +150,17 @@ public:
       _out.write(std::as_bytes(std::span{&size_place_hold, 1}));
    }
 
+   template<typename... Output_args>
+   Writer(const Writer_headerless_t,
+          Output_args&&... output) requires std::constructible_from<Output, Output_args...>
+      : _out{std::forward<Output_args>(output)...}, _headerless{true}
+   {
+   }
+
    ~Writer()
    {
+      if (_headerless) return;
+
       const auto chunk_size = static_cast<std::int32_t>(_size);
 
       _out.write_at_position(std::as_bytes(std::span{&chunk_size, 1}), _size_pos);
@@ -280,6 +294,7 @@ private:
    Output _out;
    Position _size_pos;
    std::int64_t _size{};
+   const bool _headerless = false;
 };
 
 using File_writer = Writer<Writer_target_ostream>;
@@ -291,6 +306,9 @@ struct Memory_writer : Writer<Writer_target_container<T>> {
 
 template<typename T>
 Memory_writer(const Magic_number, T&) -> Memory_writer<T>;
+
+template<typename T>
+Memory_writer(const Writer_headerless_t, T&) -> Memory_writer<T>;
 
 //! \brief Helping for writing _from_ an alignment in a chunk.
 //!

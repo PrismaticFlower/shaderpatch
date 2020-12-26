@@ -180,11 +180,15 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
    restore_all_game_state();
 }
 
+void Shader_patch::set_text_dpi(const std::uint32_t dpi) noexcept
+{
+   _font_atlas_builder.set_dpi(dpi);
+}
+
 void Shader_patch::present() noexcept
 {
    _effects.profiler.end_frame(*_device_context);
    _game_postprocessing.end_frame();
-   _shader_database.cache_update();
 
    if (_game_rendertargets[0].type != Game_rt_type::presentation)
       patch_backbuffer_resolve();
@@ -196,6 +200,12 @@ void Shader_patch::present() noexcept
 
    _swapchain.present();
    _om_targets_dirty = true;
+
+   _shader_database.cache_update();
+
+   if (_font_atlas_builder.update_srv_database(_shader_resource_database)) {
+      update_material_resources();
+   }
 
    update_frame_state();
    update_effects();
@@ -964,11 +974,11 @@ void Shader_patch::set_projtex_mode(const Projtex_mode mode) noexcept
 {
    if (mode == Projtex_mode::clamp) {
       auto* const sampler = _sampler_states.linear_clamp_sampler.get();
-      _device_context->PSSetSamplers(4, 1, &sampler);
+      _device_context->PSSetSamplers(5, 1, &sampler);
    }
    else if (mode == Projtex_mode::wrap) {
       auto* const sampler = _sampler_states.linear_wrap_sampler.get();
-      _device_context->PSSetSamplers(4, 1, &sampler);
+      _device_context->PSSetSamplers(5, 1, &sampler);
    }
 }
 
@@ -1170,6 +1180,7 @@ void Shader_patch::bind_static_resources() noexcept
                                        _sampler_states.linear_clamp_sampler.get(),
                                        _sampler_states.linear_wrap_sampler.get(),
                                        _sampler_states.linear_mirror_sampler.get(),
+                                       _sampler_states.text_sampler.get(),
                                        _sampler_states.linear_clamp_sampler.get()};
 
    _device_context->PSSetSamplers(0, ps_samplers.size(), ps_samplers.data());

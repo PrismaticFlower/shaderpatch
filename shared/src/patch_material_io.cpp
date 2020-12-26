@@ -47,7 +47,7 @@ void write_patch_material(ucfb::File_writer& writer, const Material_config& conf
       matl.emplace_child("VER_"_mn).write(Material_version::current);
 
       matl.emplace_child("INFO"_mn).write(config.name, config.rendertype,
-                                          config.overridden_rendertype, config.cb_type,
+                                          config.overridden_rendertype,
                                           config.cb_shader_stages, config.cb_name,
                                           config.fail_safe_texture_index);
 
@@ -65,10 +65,6 @@ void write_patch_material(ucfb::File_writer& writer, const Material_config& conf
             prps.write(static_cast<std::uint32_t>(prop.value.index()));
             std::visit([&](const auto& v) { prps.write(v); }, prop.value);
          }
-      }
-
-      if (config.cb_type == Material_cb_type::binary) {
-         matl.emplace_child("CBDT"_mn).write(std::span{config.cb_data});
       }
 
       const auto write_resources = [&](const Magic_number mn,
@@ -202,7 +198,6 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
       config.name = info.read_string();
       config.rendertype = info.read_string();
       config.overridden_rendertype = info.read<Rendertype>();
-      config.cb_type = info.read<Material_cb_type>();
       config.cb_shader_stages = info.read<Material_cb_shader_stages>();
       config.cb_name = info.read_string();
       config.fail_safe_texture_index = info.read<std::uint32_t>();
@@ -222,12 +217,6 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
          config.properties.emplace_back(std::string{name},
                                         read_material_prop_var(prps, type_index));
       }
-   }
-
-   if (auto cbdt = reader.read_child_strict_optional<"CBDT"_mn>(); cbdt) {
-      auto data = cbdt->read_array<std::byte>(cbdt->size());
-
-      config.cb_data = {data.begin(), data.end()};
    }
 
    const auto read_resources = [&](auto texs, std::vector<std::string>& textures) {
@@ -271,7 +260,7 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
       config.fail_safe_texture_index = info.read<std::uint32_t>();
 
       [[maybe_unused]] auto [tessellation, tessellation_primitive_topology] =
-         info.read_multi<bool, D3D11_PRIMITIVE_TOPOLOGY>();
+         info.read_multi<bool, std::uint32_t>();
    }
 
    {
@@ -324,8 +313,7 @@ struct Material_info {
    std::vector<std::string> ps_textures{};
    std::uint32_t fail_safe_texture_index{};
    bool tessellation = false;
-   D3D11_PRIMITIVE_TOPOLOGY tessellation_primitive_topology =
-      D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
+   std::uint32_t tessellation_primitive_topology = 0;
 };
 
 auto convert_material_info_to_material_config(const Material_info& info) -> Material_config
@@ -505,7 +493,7 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
       reader.read_child_strict<"FSTX"_mn>().read<std::uint32_t>();
 
    std::tie(info.tessellation, info.tessellation_primitive_topology) =
-      reader.read_child_strict<"TESS"_mn>().read_multi<bool, D3D11_PRIMITIVE_TOPOLOGY>();
+      reader.read_child_strict<"TESS"_mn>().read_multi<bool, std::uint32_t>();
 
    try {
       return convert_material_info_to_material_config(info);

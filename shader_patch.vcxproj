@@ -165,6 +165,7 @@
     <ClCompile Include="src\core\swapchain.cpp" />
     <ClCompile Include="src\core\texture_database.cpp" />
     <ClCompile Include="src\core\texture_loader.cpp" />
+    <ClCompile Include="src\core\text\font_atlas_builder.cpp" />
     <ClCompile Include="src\direct3d\device.cpp" />
     <ClCompile Include="src\direct3d\format_patcher.cpp" />
     <ClCompile Include="src\direct3d\helpers.cpp" />
@@ -201,6 +202,7 @@
     <ClCompile Include="src\effects\profiler.cpp" />
     <ClCompile Include="src\effects\ssao.cpp" />
     <ClCompile Include="src\file_hooks.cpp" />
+    <ClCompile Include="src\game_support\font_declarations.cpp" />
     <ClCompile Include="src\game_support\munged_shader_declarations.cpp" />
     <ClCompile Include="src\imgui\imgui.cpp">
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5054;4275;4251;4127;4018</DisableSpecificWarnings>
@@ -234,6 +236,7 @@
     <ClCompile Include="src\shader\vertex_input_layout.cpp" />
     <ClCompile Include="src\shader_cache_primer.cpp" />
     <ClCompile Include="src\user_config.cpp" />
+    <ClCompile Include="src\windows_fonts_folder.cpp" />
     <ClCompile Include="src\window_hooks.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -270,6 +273,7 @@
     <ClInclude Include="src\core\swapchain.hpp" />
     <ClInclude Include="src\core\texture_database.hpp" />
     <ClInclude Include="src\core\texture_loader.hpp" />
+    <ClInclude Include="src\core\text\font_atlas_builder.hpp" />
     <ClInclude Include="src\direct3d\format_patcher.hpp" />
     <ClInclude Include="src\direct3d\upload_texture.hpp" />
     <ClInclude Include="src\direct3d\upload_scratch_buffer.hpp" />
@@ -310,6 +314,7 @@
     <ClInclude Include="src\effects\ssao.hpp" />
     <ClInclude Include="src\effects\tonemappers.hpp" />
     <ClInclude Include="src\file_hooks.hpp" />
+    <ClInclude Include="src\freetype_helpers.hpp" />
     <ClInclude Include="src\game_support\declarations\bloom_stock.hpp" />
     <ClInclude Include="src\game_support\declarations\decal.hpp" />
     <ClInclude Include="src\game_support\declarations\filtercopy.hpp" />
@@ -334,6 +339,8 @@
     <ClInclude Include="src\game_support\declarations\water.hpp" />
     <ClInclude Include="src\game_support\declarations\zprepass.hpp" />
     <ClInclude Include="src\game_support\fixedfunc_shader_metadata.hpp" />
+    <ClInclude Include="src\game_support\font_declarations.hpp" />
+    <ClInclude Include="src\game_support\font_info.hpp" />
     <ClInclude Include="src\game_support\munged_shader_declarations.hpp" />
     <ClInclude Include="src\game_support\shader_declaration.hpp" />
     <ClInclude Include="src\game_support\shader_declarations.hpp" />
@@ -368,6 +375,7 @@
     <ClInclude Include="src\shader_constants.hpp" />
     <ClInclude Include="src\unlock_memory.hpp" />
     <ClInclude Include="src\user_config.hpp" />
+    <ClInclude Include="src\windows_fonts_folder.hpp" />
     <ClInclude Include="src\window_helpers.hpp" />
     <ClInclude Include="src\window_hooks.hpp" />
   </ItemGroup>

@@ -49,7 +49,6 @@ struct Patch_material {
    const std::string name;
    const std::string rendertype;
    const std::string cb_name;
-   const Material_cb_type cb_type;
    std::vector<Material_property> properties;
    std::vector<std::string> vs_shader_resources_names;
    std::vector<std::string> ps_shader_resources_names;

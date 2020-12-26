@@ -193,6 +193,9 @@ void User_config::parse_file(const std::string& path)
 
    developer.shader_source_path =
       config["Developer"s]["Shader Source Path"s].as<std::string>();
+
+   developer.scalable_font_name =
+      config["Developer"s]["Scalable Font Name"s].as<std::string>();
 }
 
 }

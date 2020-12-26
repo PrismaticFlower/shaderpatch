@@ -1,4 +1,5 @@
 
+#include "game_support/font_declarations.hpp"
 #include "game_support/munged_shader_declarations.hpp"
 #include "logger.hpp"
 #include "memory_mapped_file.hpp"
@@ -8,14 +9,18 @@
 #include "ucfb_editor.hpp"
 #include "ucfb_writer.hpp"
 #include "user_config.hpp"
+#include "windows_fonts_folder.hpp"
 
 #include <algorithm>
 #include <array>
 #include <filesystem>
+#include <future>
 #include <iomanip>
 #include <ranges>
 #include <sstream>
 #include <string_view>
+
+#include <absl/container/inlined_vector.h>
 
 #include <Windows.h>
 #include <detours/detours.h>
@@ -69,14 +74,14 @@ auto create_tmp_file() -> std::pair<std::ofstream, win32::Unique_handle>
    return {std::move(stream), std::move(file)};
 }
 
-auto edit_core_lvl_fonts(ucfb::Editor& core_editor)
+auto edit_core_lvl_fonts(ucfb::Editor& core_editor,
+                         game_support::Font_declarations replacement_fonts)
 {
    constexpr std::array replaced_fonts{"gamefont_large"_svci, "gamefont_medium"_svci,
                                        "gamefont_small"_svci, "gamefont_tiny"_svci,
                                        "gamefont_super_tiny"_svci};
 
-   std::vector<Ci_string> found_fonts;
-   found_fonts.reserve(replaced_fonts.size());
+   absl::InlinedVector<Ci_string, 5> found_fonts;
 
    for (auto it = ucfb::find(core_editor, "font"_mn); it != core_editor.end();
         it = ucfb::find(it, core_editor.end(), "font"_mn)) {
@@ -96,36 +101,26 @@ auto edit_core_lvl_fonts(ucfb::Editor& core_editor)
       }
    }
 
-   auto fonts_editor = [] {
-      win32::Memeory_mapped_file file{"data/shaderpatch/fonts.lvl"sv};
-
-      return ucfb::Editor{ucfb::Reader_strict<"ucfb"_mn>{file.bytes()},
-                          [](const Magic_number mn) noexcept {
-                             return mn == "font"_mn;
-                          }};
-   }();
-
-   for (auto& child : fonts_editor) {
-      if (child.first == "font"_mn) {
-         if (std::find(found_fonts.cbegin(), found_fonts.cend(),
-                       ucfb::make_reader(
-                          ucfb::find(std::get<ucfb::Editor_parent_chunk>(child.second), "NAME"_mn))
-                          .read_string_unaligned()) == found_fonts.cend()) {
-            continue;
-         }
+   for (auto& [name, font] : replacement_fonts) {
+      if (std::find(found_fonts.cbegin(), found_fonts.cend(), name) ==
+          found_fonts.cend()) {
+         continue;
       }
 
-      core_editor.emplace_back(std::move(child));
+      core_editor.emplace_back("font"_mn, std::move(font));
    }
 }
 
 auto edit_core_lvl() noexcept -> win32::Unique_handle
 {
+   auto replacement_fonts_future = std::async(std::launch::async, [] {
+      return game_support::create_font_declarations(
+         windows_fonts_folder() / user_config.developer.scalable_font_name);
+   });
+
    constexpr static auto is_parent = [](const Magic_number mn) noexcept {
       return mn == "font"_mn;
    };
-
-   win32::Memeory_mapped_file file{"data/_lvl_pc/core.lvl"sv};
 
    auto core_editor = [] {
       win32::Memeory_mapped_file file{"data/_lvl_pc/core.lvl"sv};
@@ -148,7 +143,9 @@ auto edit_core_lvl() noexcept -> win32::Unique_handle
    core_editor.insert(core_editor.end(), shader_declarations.begin(),
                       shader_declarations.end());
 
-   if (user_config.display.scalable_fonts) edit_core_lvl_fonts(core_editor);
+   if (user_config.display.scalable_fonts) {
+      edit_core_lvl_fonts(core_editor, replacement_fonts_future.get());
+   }
 
    auto [ostream, file_handle] = create_tmp_file();
 

@@ -4,7 +4,6 @@
 #include "game_rendertypes.hpp"
 #include "ucfb_reader.hpp"
 #include "ucfb_writer.hpp"
-#include "utility.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -14,13 +13,9 @@
 #include <variant>
 #include <vector>
 
-#include <d3d11_1.h>
-
 #include <glm/glm.hpp>
 
 namespace sp {
-
-enum class Material_cb_type : std::uint8_t { named, binary };
 
 enum class Material_cb_shader_stages : std::uint32_t {
    none = 0b0u,
@@ -101,10 +96,8 @@ struct Material_config {
 
    std::vector<Material_property> properties;
 
-   Material_cb_type cb_type = Material_cb_type::named;
    Material_cb_shader_stages cb_shader_stages = Material_cb_shader_stages::none;
-   std::string cb_name{};
-   Aligned_vector<std::byte, 16> cb_data{};
+   std::string cb_name = "none";
 
    std::vector<std::string> vs_resources{};
    std::vector<std::string> hs_resources{};
