@@ -32,8 +32,6 @@ using namespace std::literals;
 
 namespace {
 
-constexpr auto TEMP_font_name = L"ariblk.ttf"sv;
-
 auto create_tmp_file() -> std::pair<std::ofstream, win32::Unique_handle>
 {
    const auto temp_directory = std::filesystem::temp_directory_path();
@@ -116,8 +114,8 @@ auto edit_core_lvl_fonts(ucfb::Editor& core_editor,
 auto edit_core_lvl() noexcept -> win32::Unique_handle
 {
    auto replacement_fonts_future = std::async(std::launch::async, [] {
-      return game_support::create_font_declarations(windows_fonts_folder() /
-                                                    TEMP_font_name);
+      return game_support::create_font_declarations(
+         windows_fonts_folder() / user_config.developer.scalable_font_name);
    });
 
    constexpr static auto is_parent = [](const Magic_number mn) noexcept {

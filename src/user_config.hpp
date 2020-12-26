@@ -96,6 +96,8 @@ struct User_config {
       std::filesystem::path shader_definitions_path =
          LR"(.\data\shaderpatch\shaders\definitions)";
       std::filesystem::path shader_source_path = LR"(.\data\shaderpatch\shaders\src)";
+
+      std::filesystem::path scalable_font_name = L"ariblk.ttf";
    } developer;
 
    void show_imgui() noexcept;

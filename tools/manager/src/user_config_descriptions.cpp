@@ -233,6 +233,11 @@ LR"(Path to shader definitions. (.json files describing shader entrypoints and v
 L"Shader Source Path"sv,      
 LR"(Path to shader HLSL source files.)"sv
 },
+
+{
+L"Scalable Font Name"sv,      
+LR"(Name of the font to use when Scalable Fonts are enabled.)"sv
+},
       // clang-format on
    };
 }

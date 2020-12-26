@@ -3,6 +3,7 @@
 #include "../../freetype_helpers.hpp"
 #include "../../game_support/font_info.hpp"
 #include "../../logger.hpp"
+#include "../../user_config.hpp"
 #include "../../windows_fonts_folder.hpp"
 #include "utility.hpp"
 
@@ -29,8 +30,6 @@ using game_support::atlas_index_names;
 using game_support::atlas_names;
 using game_support::game_glyphs;
 using game_support::glyph_count;
-
-constexpr auto TEMP_font_name = L"ariblk.ttf"sv;
 
 constexpr std::uint32_t base_dpi = 96;
 
@@ -155,8 +154,8 @@ struct Freetype_state {
 Font_atlas_builder::Font_atlas_builder(Com_ptr<ID3D11Device5> device) noexcept
    : _device{device}
 {
-   _freetype_state =
-      std::make_unique<Freetype_state>(windows_fonts_folder() / TEMP_font_name);
+   _freetype_state = std::make_unique<Freetype_state>(
+      windows_fonts_folder() / user_config.developer.scalable_font_name);
 }
 
 Font_atlas_builder::~Font_atlas_builder()
