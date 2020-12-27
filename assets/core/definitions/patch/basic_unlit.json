@@ -33,10 +33,6 @@
     "main_ps": {
       "stage": "pixel",
 
-      "pixel_state": {
-        "lighting": false
-      },
-
       "static_flags": [
         "BASIC_UNLIT_USE_TRANSPARENCY",
         "BASIC_UNLIT_USE_HARDEDGED_TEST"

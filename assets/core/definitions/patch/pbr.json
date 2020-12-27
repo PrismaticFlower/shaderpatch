@@ -37,10 +37,6 @@
     "main_ps": {
       "stage": "pixel",
 
-      "pixel_state": {
-        "lighting": true
-      },
-
       "static_flags": [
         "PBR_USE_METALLIC_ROUGHNESS_MAP",
         "PBR_USE_EMISSIVE_MAP",
@@ -53,10 +49,6 @@
 
     "oit_main_ps": {
       "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": true
-      },
 
       "static_flags": [
         "PBR_USE_METALLIC_ROUGHNESS_MAP",

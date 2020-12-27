@@ -66,19 +66,11 @@
     },
 
     "diffuse_blendmap_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": true
-      }
+      "stage": "pixel"
     },
 
     "detailing_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": true
-      }
+      "stage": "pixel"
     }
   },
 

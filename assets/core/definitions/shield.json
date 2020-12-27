@@ -22,19 +22,11 @@
     },
 
     "shield_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     },
 
     "oit_shield_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     }
   },
 

@@ -52,11 +52,7 @@
 
       "defines": [
         [ "SPECULAR_LIGHT_COUNT", "0" ]
-      ],
-
-      "pixel_state": {
-        "lighting": false
-      }
+      ]
     },
 
     "blinn_phong_3lights_ps": {
@@ -65,11 +61,7 @@
 
       "defines": [
         [ "SPECULAR_LIGHT_COUNT", "3" ]
-      ],
-
-      "pixel_state": {
-        "lighting": false
-      }
+      ]
     },
 
     "blinn_phong_2lights_ps": {
@@ -78,11 +70,7 @@
 
       "defines": [
         [ "SPECULAR_LIGHT_COUNT", "2" ]
-      ],
-
-      "pixel_state": {
-        "lighting": false
-      }
+      ]
     },
 
     "blinn_phong_1lights_ps": {
@@ -91,11 +79,7 @@
 
       "defines": [
         [ "SPECULAR_LIGHT_COUNT", "1" ]
-      ],
-
-      "pixel_state": {
-        "lighting": false
-      }
+      ]
     },
 
     "normalmapped_ps": {
@@ -103,11 +87,7 @@
 
       "defines": [
         [ "SPECULAR_LIGHT_COUNT", "0" ]
-      ],
-
-      "pixel_state": {
-        "lighting": false
-      }
+      ]
     },
 
     "normalmapped_envmap_ps": {
@@ -115,11 +95,7 @@
 
       "defines": [
         [ "SPECULAR_LIGHT_COUNT", "0" ]
-      ],
-
-      "pixel_state": {
-        "lighting": false
-      }
+      ]
     }
   },
 

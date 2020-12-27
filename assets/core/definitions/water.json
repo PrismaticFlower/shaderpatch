@@ -76,123 +76,63 @@
     },
 
     "discard_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     },
 
     "normal_map_distorted_reflection_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     },
 
     "normal_map_distorted_reflection_specular_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     },
 
     "normal_map_specular_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     },
 
     "normal_map_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     },
 
     "transmissive_pass_fade_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     },
 
     "lowquality_specular_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     },
 
     "lowquality_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     },
 
     "oit_normal_map_distorted_reflection_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     },
 
     "oit_normal_map_distorted_reflection_specular_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     },
 
     "oit_normal_map_specular_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     },
 
     "oit_normal_map_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     },
 
     "oit_transmissive_pass_fade_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     },
 
     "oit_lowquality_specular_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     },
 
     "oit_lowquality_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     }
   },
 

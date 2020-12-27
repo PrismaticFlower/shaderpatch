@@ -41,35 +41,19 @@
     },
 
     "glowthreshold_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     },
 
     "luminance_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     },
 
     "bloomfilter_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     },
 
     "screenspace_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     }
   },
 

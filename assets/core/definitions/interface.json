@@ -146,35 +146,19 @@
     },
 
     "masked_bitmap_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     },
 
     "vector_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     },
 
     "bitmap_untextured_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     },
 
     "bitmap_textured_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     }
   },
 

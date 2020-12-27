@@ -22,19 +22,11 @@
     },
 
     "rain_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     },
 
     "oit_rain_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     }
   },
 

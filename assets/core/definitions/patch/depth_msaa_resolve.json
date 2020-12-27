@@ -19,8 +19,6 @@
       "stage": "pixel",
       "function_name": "main_ps",
 
-      "pixel_state": { "lighting": false },
-
       "defines": [
         [ "SAMPLE_COUNT", "2" ]
       ]
@@ -30,8 +28,6 @@
       "stage": "pixel",
       "function_name": "main_ps",
 
-      "pixel_state": { "lighting": false },
-
       "defines": [
         [ "SAMPLE_COUNT", "4" ]
       ]
@@ -40,8 +36,6 @@
     "main_x8_ps": {
       "stage": "pixel",
       "function_name": "main_ps",
-
-      "pixel_state": { "lighting": false },
 
       "defines": [
         [ "SAMPLE_COUNT", "8" ]

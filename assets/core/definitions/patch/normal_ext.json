@@ -39,10 +39,6 @@
     "main_ps": {
       "stage": "pixel",
 
-      "pixel_state": {
-        "lighting": true
-      },
-
       "static_flags": [
         "NORMAL_EXT_USE_SPECULAR",
         "NORMAL_EXT_USE_PARALLAX_OCCLUSION_MAPPING",
@@ -60,10 +56,6 @@
 
     "oit_main_ps": {
       "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": true
-      },
 
       "static_flags": [
         "NORMAL_EXT_USE_SPECULAR",

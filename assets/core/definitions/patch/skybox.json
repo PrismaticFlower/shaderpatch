@@ -29,10 +29,6 @@
     "main_ps": {
       "stage": "pixel",
 
-      "pixel_state": {
-        "lighting": false
-      },
-
       "static_flags": [
         "SKYBOX_USE_EMISSIVE_MAP"
       ]

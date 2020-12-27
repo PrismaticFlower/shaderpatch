@@ -63,10 +63,6 @@
     "main_ps": {
       "stage": "pixel",
 
-      "pixel_state": {
-        "lighting": true
-      },
-
       "static_flags": [
         "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING",
         "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING",

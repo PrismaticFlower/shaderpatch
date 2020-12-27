@@ -58,83 +58,43 @@
     },
 
     "nodistortion_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": true
-      }
+      "stage": "pixel"
     },
 
     "near_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": true
-      }
+      "stage": "pixel"
     },
 
     "near_bump_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": true
-      }
+      "stage": "pixel"
     },
 
     "near_diffuse_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": true
-      }
+      "stage": "pixel"
     },
 
     "near_diffuse_bump_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": true
-      }
+      "stage": "pixel"
     },
 
     "oit_nodistortion_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": true
-      }
+      "stage": "pixel"
     },
 
     "oit_near_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": true
-      }
+      "stage": "pixel"
     },
 
     "oit_near_bump_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": true
-      }
+      "stage": "pixel"
     },
 
     "oit_near_diffuse_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": true
-      }
+      "stage": "pixel"
     },
 
     "oit_near_diffuse_bump_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": true
-      }
+      "stage": "pixel"
     }
   },
 

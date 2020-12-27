@@ -29,10 +29,6 @@
     "main_ps": {
       "stage": "pixel",
 
-      "pixel_state": {
-        "lighting": true
-      },
-
       "static_flags": [
         "STATIC_WATER_USE_SPECULAR"
       ]
@@ -40,10 +36,6 @@
 
     "oit_main_ps": {
       "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": true
-      },
 
       "static_flags": [
         "STATIC_WATER_USE_SPECULAR"

@@ -6,10 +6,6 @@
     "downsample_ps": {
       "stage": "pixel",
 
-      "pixel_state": {
-        "lighting": false
-      },
-
       "defines": [
         [ "BLOOM_ACTIVE", "false" ],
         [ "BLOOM_USE_DIRT", "false" ],
@@ -22,10 +18,6 @@
     "upsample_ps": {
       "stage": "pixel",
 
-      "pixel_state": {
-        "lighting": false
-      },
-
       "defines": [
         [ "BLOOM_ACTIVE", "false" ],
         [ "BLOOM_USE_DIRT", "false" ],
@@ -37,10 +29,6 @@
 
     "threshold_ps": {
       "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      },
 
       "defines": [
         [ "BLOOM_ACTIVE", "false" ],

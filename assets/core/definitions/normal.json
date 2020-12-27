@@ -34,10 +34,6 @@
     "unlit_main_ps": {
       "stage": "pixel",
 
-      "pixel_state": {
-        "lighting": false
-      },
-
       "static_flags": [
         "NORMAL_USE_TRANSPARENCY",
         "NORMAL_USE_HARDEDGED_TEST"
@@ -51,10 +47,6 @@
 
     "oit_unlit_main_ps": {
       "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      },
 
       "defines": [
         [ "NORMAL_USE_TRANSPARENCY", "1" ],
@@ -98,10 +90,6 @@
     "main_ps": {
       "stage": "pixel",
 
-      "pixel_state": {
-        "lighting": true
-      },
-
       "static_flags": [
         "NORMAL_USE_TRANSPARENCY",
         "NORMAL_USE_HARDEDGED_TEST",
@@ -112,10 +100,6 @@
 
     "oit_main_ps": {
       "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": true
-      },
 
       "defines": [
         [ "NORMAL_USE_TRANSPARENCY", "1" ]
