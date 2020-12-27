@@ -130,6 +130,87 @@
   },
 
   "states": {
+    "unlit opaque": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      }
+    },
+
+    "unlit opaque hardedged": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "PBR_USE_HARDEDGED_TEST": true
+        }
+      }
+    },
+
+    "unlit transparent": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "PBR_USE_TRANSPARENCY": true
+        }
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "PBR_USE_TRANSPARENCY": true
+        }
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_main_ps"
+      }
+    },
+
+    "unlit transparent hardedged": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "PBR_USE_TRANSPARENCY": true
+        }
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "PBR_USE_TRANSPARENCY": true,
+          "PBR_USE_HARDEDGED_TEST": true
+        }
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_main_ps",
+
+        "static_flags": {
+          "PBR_USE_HARDEDGED_TEST": true
+        }
+      }
+    },
+
     "near opaque": {
       "type": "standard",
 

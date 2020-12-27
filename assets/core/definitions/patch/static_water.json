@@ -65,6 +65,18 @@
   },
 
   "states": {
+    "unlit opaque": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      }
+    },
+
     "unlit transparent": {
       "type": "standard",
 
@@ -76,7 +88,7 @@
         "entrypoint": "main_ps"
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_main_ps"
       }
     },
@@ -92,7 +104,7 @@
         "entrypoint": "main_ps"
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_main_ps"
       }
     },
