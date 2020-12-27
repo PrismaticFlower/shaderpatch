@@ -152,7 +152,7 @@
         "entrypoint": "nodistortion_ps"
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_nodistortion_ps"
       }
     },
@@ -168,7 +168,7 @@
         "entrypoint": "nodistortion_ps"
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_nodistortion_ps"
       }
     },
@@ -184,7 +184,7 @@
         "entrypoint": "near_ps"
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_near_ps"
       }
     },
@@ -200,7 +200,7 @@
         "entrypoint": "near_bump_ps"
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_near_bump_ps"
       }
     },
@@ -216,7 +216,7 @@
         "entrypoint": "near_diffuse_ps"
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_near_diffuse_ps"
       }
     },
@@ -232,7 +232,7 @@
         "entrypoint": "near_diffuse_bump_ps"
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_near_diffuse_bump_ps"
       }
     }

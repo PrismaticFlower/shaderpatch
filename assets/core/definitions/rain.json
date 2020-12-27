@@ -52,7 +52,7 @@
         "entrypoint": "rain_ps"
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_rain_ps"
       }
     }

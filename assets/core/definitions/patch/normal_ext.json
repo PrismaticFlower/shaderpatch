@@ -452,7 +452,7 @@
         }
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_main_ps"
       }
     },
@@ -477,7 +477,7 @@
         }
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_main_ps",
 
         "static_flags": {
@@ -539,7 +539,7 @@
         }
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_main_ps",
 
         "static_flags": {
@@ -569,7 +569,7 @@
         }
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_main_ps",
 
         "static_flags": {
@@ -667,7 +667,7 @@
         }
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_main_ps",
 
         "static_flags": {
@@ -697,7 +697,7 @@
         }
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_main_ps",
 
         "static_flags": {
@@ -728,7 +728,7 @@
         }
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_main_ps",
 
         "static_flags": {
@@ -760,7 +760,7 @@
         }
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_main_ps",
 
         "static_flags": {

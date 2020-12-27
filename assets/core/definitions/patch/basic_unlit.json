@@ -73,7 +73,7 @@
           "BASIC_UNLIT_USE_HARDEDGED_TEST": false
         },
 
-        "oit_pixel_shader": {
+        "pixel_oit_shader": {
           "entrypoint": "oit_main_ps"
         }
       }
@@ -98,7 +98,7 @@
           "BASIC_UNLIT_USE_HARDEDGED_TEST": true
         },
 
-        "oit_pixel_shader": {
+        "pixel_oit_shader": {
           "entrypoint": "oit_main_ps"
         }
       }
@@ -123,7 +123,7 @@
           "BASIC_UNLIT_USE_HARDEDGED_TEST": false
         },
 
-        "oit_pixel_shader": {
+        "pixel_oit_shader": {
           "entrypoint": "oit_main_ps"
         }
       }
@@ -148,7 +148,7 @@
           "BASIC_UNLIT_USE_HARDEDGED_TEST": true
         },
 
-        "oit_pixel_shader": {
+        "pixel_oit_shader": {
           "entrypoint": "oit_main_ps"
         }
       }
@@ -173,7 +173,7 @@
           "BASIC_UNLIT_USE_HARDEDGED_TEST": false
         },
 
-        "oit_pixel_shader": {
+        "pixel_oit_shader": {
           "entrypoint": "oit_main_ps"
         }
       }
@@ -198,7 +198,7 @@
           "BASIC_UNLIT_USE_HARDEDGED_TEST": true
         },
 
-        "oit_pixel_shader": {
+        "pixel_oit_shader": {
           "entrypoint": "oit_main_ps"
         }
       }
@@ -223,7 +223,7 @@
           "BASIC_UNLIT_USE_HARDEDGED_TEST": false
         },
 
-        "oit_pixel_shader": {
+        "pixel_oit_shader": {
           "entrypoint": "oit_main_ps"
         }
       }
@@ -248,7 +248,7 @@
           "BASIC_UNLIT_USE_HARDEDGED_TEST": true
         },
 
-        "oit_pixel_shader": {
+        "pixel_oit_shader": {
           "entrypoint": "oit_main_ps"
         }
       }
@@ -273,7 +273,7 @@
           "BASIC_UNLIT_USE_HARDEDGED_TEST": false
         },
 
-        "oit_pixel_shader": {
+        "pixel_oit_shader": {
           "entrypoint": "oit_main_ps"
         }
       }
@@ -298,7 +298,7 @@
           "BASIC_UNLIT_USE_HARDEDGED_TEST": true
         },
 
-        "oit_pixel_shader": {
+        "pixel_oit_shader": {
           "entrypoint": "oit_main_ps"
         }
       }
@@ -323,7 +323,7 @@
           "BASIC_UNLIT_USE_HARDEDGED_TEST": false
         },
 
-        "oit_pixel_shader": {
+        "pixel_oit_shader": {
           "entrypoint": "oit_main_ps"
         }
       }
@@ -348,7 +348,7 @@
           "BASIC_UNLIT_USE_HARDEDGED_TEST": true
         },
 
-        "oit_pixel_shader": {
+        "pixel_oit_shader": {
           "entrypoint": "oit_main_ps"
         }
       }
@@ -373,7 +373,7 @@
           "BASIC_UNLIT_USE_HARDEDGED_TEST": false
         },
 
-        "oit_pixel_shader": {
+        "pixel_oit_shader": {
           "entrypoint": "oit_main_ps"
         }
       }
@@ -398,7 +398,7 @@
           "BASIC_UNLIT_USE_HARDEDGED_TEST": true
         },
 
-        "oit_pixel_shader": {
+        "pixel_oit_shader": {
           "entrypoint": "oit_main_ps"
         }
       }
@@ -423,7 +423,7 @@
           "BASIC_UNLIT_USE_HARDEDGED_TEST": false
         },
 
-        "oit_pixel_shader": {
+        "pixel_oit_shader": {
           "entrypoint": "oit_main_ps"
         }
       }
@@ -448,7 +448,7 @@
           "BASIC_UNLIT_USE_HARDEDGED_TEST": true
         },
 
-        "oit_pixel_shader": {
+        "pixel_oit_shader": {
           "entrypoint": "oit_main_ps"
         }
       }
@@ -473,7 +473,7 @@
           "BASIC_UNLIT_USE_HARDEDGED_TEST": false
         },
 
-        "oit_pixel_shader": {
+        "pixel_oit_shader": {
           "entrypoint": "oit_main_ps"
         }
       }
@@ -498,7 +498,7 @@
           "BASIC_UNLIT_USE_HARDEDGED_TEST": true
         },
 
-        "oit_pixel_shader": {
+        "pixel_oit_shader": {
           "entrypoint": "oit_main_ps"
         }
       }
@@ -523,7 +523,7 @@
           "BASIC_UNLIT_USE_HARDEDGED_TEST": false
         },
 
-        "oit_pixel_shader": {
+        "pixel_oit_shader": {
           "entrypoint": "oit_main_ps"
         }
       }
@@ -548,7 +548,7 @@
           "BASIC_UNLIT_USE_HARDEDGED_TEST": true
         },
 
-        "oit_pixel_shader": {
+        "pixel_oit_shader": {
           "entrypoint": "oit_main_ps"
         }
       }

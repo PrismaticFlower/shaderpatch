@@ -120,7 +120,7 @@
         "entrypoint": "main_ps"
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_main_ps"
       }
     },
@@ -136,7 +136,7 @@
         "entrypoint": "main_ps"
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_main_ps"
       }
     },
@@ -152,7 +152,7 @@
         "entrypoint": "main_ps"
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_main_ps"
       }
     }
