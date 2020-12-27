@@ -78,8 +78,8 @@ void save_materials_index(const fs::path& output_dir,
 }
 
 auto munge_material(const fs::path& material_path, const fs::path& output_file_path,
-                    const std::unordered_map<Ci_string, YAML::Node>& descriptions)
-   -> Material_options
+                    const std::unordered_map<Ci_string, YAML::Node>& descriptions,
+                    const bool patch_material_flags) -> Material_options
 {
    auto root_node = YAML::LoadFile(material_path.string());
 
@@ -95,24 +95,28 @@ auto munge_material(const fs::path& material_path, const fs::path& output_file_p
       throw std::runtime_error{"Null Textures YAML node."s};
    }
 
-   if (!root_node["Flags"s]) {
-      throw std::runtime_error{"Null Flags YAML node."s};
-   }
-
-   auto flags_node = root_node["Flags"s];
-
    Material_options options;
 
-   options.transparent = flags_node["Transparent"s].as<bool>(false);
-   options.hard_edged = flags_node["HardEdged"s].as<bool>(false);
-   options.double_sided = flags_node["DoubleSided"s].as<bool>(false);
-   options.unlit = flags_node["Unlit"s].as<bool>(false);
+   if (patch_material_flags && root_node["Flags"s]) {
+      auto flags = root_node["Flags"s];
 
-   if (flags_node["StaticallyLit"s].as<bool>(false)) {
-      synced_print(
-         "Warning material \""sv, material_path.filename().string(),
-         "\" has StaticallyLit set. This flag interferes the .msh.option "
-         "-verterlighting and has been removed."sv);
+      options.transparent = flags["Transparent"s].as<bool>(false);
+      options.hard_edged = flags["HardEdged"s].as<bool>(false);
+      options.double_sided = flags["DoubleSided"s].as<bool>(false);
+      options.unlit = flags["Unlit"s].as<bool>(false);
+
+      if (flags["StaticallyLit"s].as<bool>(false)) {
+         synced_print(
+            "Warning material \""sv, material_path.filename().string(),
+            "\" has StaticallyLit set. This flag interferes the .msh.option "
+            "-verterlighting and has been removed."sv);
+      }
+   }
+   else if (!patch_material_flags && root_node["Flags"s]) {
+      synced_print("Material "sv, material_path.filename().string(),
+                   " has a Flags section but \"--usemtrlflags\" is not set."
+                   " If you do not wish to use the deprecated Flags section"
+                   " it can be safely removed."sv);
    }
 
    const auto rendertype = root_node["RenderType"s].as<std::string>();
@@ -129,7 +133,7 @@ auto munge_material(const fs::path& material_path, const fs::path& output_file_p
    std::vector<std::pair<std::string, std::vector<std::string>>> required_files;
 
    const auto require_textures =
-      [& required_sp_textures =
+      [&required_sp_textures =
           required_files.emplace_back("sptex"s, std::vector<std::string>{}).second](
          const std::vector<std::string>& textures) {
          for (const auto& texture : textures) {
@@ -214,7 +218,6 @@ void fixup_munged_models(
                     }
                  });
 }
-
 }
 
 void munge_materials(const fs::path& output_dir,
@@ -241,8 +244,8 @@ void munge_materials(const fs::path& output_dir,
 
          synced_print("Munging "sv, file.first, "..."sv);
 
-         const auto options =
-            munge_material(file.second, output_file_path, descriptions);
+         const auto options = munge_material(file.second, output_file_path,
+                                             descriptions, patch_material_flags);
 
          index[make_ci_string(file.second.stem().string())] = options;
          changed_materials.emplace(make_ci_string(file.second.stem().string()));
