@@ -9,6 +9,7 @@
 // clang-format off
 
 // Textures
+Texture2D<float3> blur_buffer : register(t1);
 Texture2D<float4> color_map : register(t7);
 
 // Game Custom Constants
@@ -93,6 +94,30 @@ float4 main_ps(Ps_input input) : SV_Target0
 void oit_main_ps(Ps_input input, float4 positionSS : SV_Position)
 {
    const float4 color = main_ps(input);
+
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, color);
+}
+
+float4 blur_ps(Ps_input input, float4 positionSS : SV_Position) : SV_Target0
+{
+   const float2 scene_texcoords = positionSS.xy * rt_resolution.zw;
+   const float3 scene_color = blur_buffer.SampleLevel(linear_clamp_sampler,
+                                                      scene_texcoords,
+                                                      0);
+   
+   const float alpha = color_map.Sample(linear_clamp_sampler, input.texcoords).a;
+
+   float3 color = scene_color * input.color.rgb;
+
+   color = apply_fog(color, input.fog);
+
+   return float4(color, saturate(alpha * input.color.a));
+}
+
+[earlydepthstencil]
+void oit_blur_ps(Ps_input input, float4 positionSS : SV_Position)
+{
+   const float4 color = blur_ps(input, positionSS);
 
    aoit::write_pixel((uint2)positionSS.xy, positionSS.z, color);
 }

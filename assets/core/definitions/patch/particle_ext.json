@@ -35,6 +35,41 @@
       "pixel_state": {
         "lighting": false
       }
+    },
+
+    "blur_vs": {
+      "stage": "vertex",
+      "function_name": "main_vs",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": false,
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "blur_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
+    },
+
+    "oit_blur_ps": {
+      "stage": "pixel",
+
+      "pixel_state": {
+        "lighting": false
+      }
     }
   },
 
@@ -61,15 +96,15 @@
       "type": "standard",
 
       "vertex_shader": {
-        "entrypoint": "main_vs"
+        "entrypoint": "blur_vs"
       },
 
       "pixel_shader": {
-        "entrypoint": "main_ps"
+        "entrypoint": "blur_ps"
       },
 
       "pixel_oit_shader": {
-        "entrypoint": "oit_main_ps"
+        "entrypoint": "oit_blur_ps"
       }
     }
   }
