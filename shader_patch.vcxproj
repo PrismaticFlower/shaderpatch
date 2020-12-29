@@ -49,7 +49,6 @@
     <TargetExt>.dll</TargetExt>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <CodeAnalysisRuleSet>NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>bin\$(Configuration)\</OutDir>
@@ -229,6 +228,7 @@
     </ClCompile>
     <ClCompile Include="src\input_hooker.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\material\constant_buffer_builder.cpp" />
     <ClCompile Include="src\shader\cache.cpp" />
     <ClCompile Include="src\shader\compiler.cpp" />
     <ClCompile Include="src\shader\database.cpp" />
@@ -359,6 +359,7 @@
     <ClInclude Include="src\imgui\imstb_truetype.h" />
     <ClInclude Include="src\input_hooker.hpp" />
     <ClInclude Include="src\logger.hpp" />
+    <ClInclude Include="src\material\constant_buffer_builder.hpp" />
     <ClInclude Include="src\shader\bytecode_blob.hpp" />
     <ClInclude Include="src\shader\cache.hpp" />
     <ClInclude Include="src\shader\common.hpp" />

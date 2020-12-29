@@ -114,6 +114,9 @@
     <ClInclude Include="include\retry_dialog.hpp">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\overloaded.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\patch_texture_io.cpp">

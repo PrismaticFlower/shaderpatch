@@ -1,9 +1,12 @@
 
 #include "material_constant_buffers.hpp"
+#include "../material/constant_buffer_builder.hpp"
 #include "compose_exception.hpp"
 #include "d3d11_helpers.hpp"
 
 #include <iomanip>
+
+#include <fmt/format.h>
 
 using namespace std::literals;
 
@@ -11,131 +14,7 @@ namespace sp::core {
 
 namespace {
 
-struct PBR_cb {
-   glm::vec3 base_color = {1.0f, 1.0f, 1.0f};
-   float base_metallicness = 1.0f;
-   float base_roughness = 1.0f;
-   float ao_strength = 1.0f;
-   float emissive_power = 1.0f;
-   std::uint32_t _padding{};
-};
-
-static_assert(sizeof(PBR_cb) == 32);
-
-struct Terrain_texture_transform {
-   glm::vec3 x = {1.0f / 16.0f, 0.0f, 0.0f};
-   std::uint32_t _padding0{};
-   glm::vec3 y = {0.0f, 0.0f, 1.0f / 16.0f};
-   std::uint32_t _padding1{};
-};
-
-static_assert(sizeof(Terrain_texture_transform) == 32);
-
-struct PBR_terrain_cb {
-   glm::vec3 base_color = {1.0f, 1.0f, 1.0f};
-   float base_metallicness = 1.0f;
-
-   float base_roughness = 1.0f;
-   std::array<std::uint32_t, 3> padding{};
-
-   std::array<Terrain_texture_transform, 16> texture_transforms{};
-
-   std::array<glm::vec4, 16> texture_height_scales{};
-};
-
-static_assert(sizeof(PBR_terrain_cb) == 800);
-
-struct Normal_ext_cb {
-   glm::vec3 diffuse_color = {1.0f, 1.0f, 1.0f};
-   float gloss_map_weight = 1.0f;
-
-   glm::vec3 specular_color = {1.0f, 1.0f, 1.0f};
-   float specular_exponent = 64.0f;
-
-   float height_scale = 0.1f;
-
-   std::uint32_t use_detail_textures = false;
-   float detail_texture_scale = 1.0f;
-
-   std::uint32_t use_overlay_textures = false;
-   float overlay_texture_scale = 1.0f;
-
-   std::uint32_t use_ao_texture = false;
-
-   std::uint32_t use_emissive_texture = false;
-   float emissive_texture_scale = 1.0f;
-   float emissive_power;
-
-   std::uint32_t use_env_map = false;
-   float env_map_vis = 1.0f;
-
-   float dynamic_normal_sign = 1.0f;
-};
-
-static_assert(sizeof(Normal_ext_cb) == 80);
-
-struct Normal_ext_texture_vars {
-   float height_scale = 0.05f;
-   float specular_exponent = 64.0f;
-   std::array<std::uint32_t, 2> padding{};
-};
-
-static_assert(sizeof(Normal_ext_texture_vars) == 16);
-
-struct Normal_ext_terrain {
-   glm::vec3 diffuse_color = {1.0f, 1.0f, 1.0f};
-   std::uint32_t _padding{};
-   glm::vec3 specular_color = {1.0f, 1.0f, 1.0f};
-   std::uint32_t use_envmap = false;
-
-   std::array<Terrain_texture_transform, 16> texture_transforms{};
-
-   std::array<Normal_ext_texture_vars, 16> texture_vars{};
-};
-
-static_assert(sizeof(Normal_ext_terrain) == 800);
-
-struct Skybox_cb {
-   float emissive_power = 1.0f;
-   std::array<std::uint32_t, 3> _padding{};
-};
-
-static_assert(sizeof(Skybox_cb) == 16);
-
-struct Basic_unlit_cb {
-   std::uint32_t use_emissive_map = false;
-   float emissive_power = 1.0f;
-   std::array<std::uint32_t, 2> _padding{};
-};
-
-static_assert(sizeof(Basic_unlit_cb) == 16);
-
-struct Static_water_cb {
-   glm::vec3 refraction_color = {0.25f, 0.50f, 0.75f};
-   float refraction_scale = 1.333f;
-   glm::vec3 reflection_color = {0.25f, 0.50f, 0.75f};
-   float small_bump_scale = 1.0f;
-   glm::vec2 small_scroll = {0.2f, 0.2f};
-   glm::vec2 medium_scroll = {0.2f, 0.2f};
-   glm::vec2 large_scroll = {0.2f, 0.2f};
-   float medium_bump_scale = 1.0f;
-   float large_bump_scale = 1.0f;
-   glm::vec2 fresnel_min_max;
-   float specular_exponent_dir_lights = 64.0f;
-   float specular_strength_dir_lights = 1.0f;
-   glm::vec3 back_refraction_color = {0.25f, 0.50f, 0.75f};
-   float specular_exponent = 64.0f;
-};
-
-static_assert(sizeof(Static_water_cb) == 96);
-
-struct Particle_ext_cb {
-   std::uint32_t use_aniso_wrap_sampler = false;
-   float emissive_power = 1.0f;
-   std::array<std::uint32_t, 2> _padding{};
-};
-
-static_assert(sizeof(Particle_ext_cb) == 16);
+constexpr std::size_t terrain_texture_count = 16;
 
 template<typename Type>
 auto apply_op(const Type value, [[maybe_unused]] const Material_property_var_op op) noexcept
@@ -209,161 +88,234 @@ private:
    const std::vector<Material_property>& _properties;
 };
 
-auto create_terrain_transforms(const Material_properties_view& props)
-   -> std::array<Terrain_texture_transform, 16>
+void fill_terrain_transforms(material::Constant_buffer_builder& cb,
+                             const Material_properties_view& props)
 {
-   std::array<Terrain_texture_transform, 16> transforms{};
+   for (std::size_t i = 0; i < terrain_texture_count; ++i) {
+      cb.set(fmt::format("texture_transforms[{}]"sv, i * 2),
+             props.value<glm::vec3>(fmt::format("TextureTransformsX{}"sv, i),
+                                    {1.0f / 16.0f, 0.0f, 0.0f}));
+      cb.set(fmt::format("texture_transforms[{}]"sv, i * 2 + 1),
+             props.value<glm::vec3>(fmt::format("TextureTransformsY{}"sv, i),
+                                    {0.0f, 0.0f, 1.0f / 16.0f}));
+   }
+}
 
-   for (auto i = 0; i < transforms.size(); ++i) {
-      transforms[i].x =
-         props.value<glm::vec3>("TextureTransformsX"s + std::to_string(i),
-                                {1.0f / 16.0f, 0.0f, 0.0f});
-      transforms[i].y =
-         props.value<glm::vec3>("TextureTransformsY"s + std::to_string(i),
-                                {0.0f, 0.0f, 1.0f / 16.0f});
+auto create_pbr_constant_buffer(const Material_properties_view& props)
+   -> std::vector<std::byte>
+{
+   material::Constant_buffer_builder cb{R"(
+   float3 base_color;
+   float base_metallicness;
+   float base_roughness;
+   float ao_strength;
+   float emissive_power;)"sv};
+
+   cb.set("base_color"sv, props.value<glm::vec3>("BaseColor"sv, {1.0f, 1.0f, 1.0f}));
+   cb.set("base_metallicness"sv, props.value<float>("Metallicness"sv, 1.0f));
+   cb.set("base_roughness"sv, props.value<float>("Roughness"sv, 1.0f));
+   cb.set("ao_strength"sv, props.value<float>("AOStrength"sv, 1.0f));
+   cb.set("emissive_power"sv, props.value<float>("AOStrength"sv, 1.0f));
+
+   return cb.complete();
+}
+
+auto create_pbr_terrain_constant_buffer(const Material_properties_view& props)
+   -> std::vector<std::byte>
+{
+   material::Constant_buffer_builder cb{R"(
+   float3 base_color;
+   float base_metallicness;
+   float base_roughness;
+
+   float3 texture_transforms[32];
+
+   float texture_height_scales[16];)"sv};
+
+   cb.set("base_color"sv, props.value<glm::vec3>("BaseColor"sv, {1.0f, 1.0f, 1.0f}));
+   cb.set("base_metallicness"sv, props.value<float>("BaseMetallicness"sv, 1.0f));
+   cb.set("base_roughness"sv, props.value<float>("BaseRoughness"sv, 1.0f));
+
+   fill_terrain_transforms(cb, props);
+
+   for (std::size_t i = 0; i < terrain_texture_count; ++i) {
+      cb.set(fmt::format("texture_height_scales[{}]"sv, i),
+             props.value<float>(fmt::format("HeightScale{}"sv, i), 0.025f));
    }
 
-   return transforms;
+   return cb.complete();
 }
 
-auto create_pbr_constant_buffer(const Material_properties_view& props) -> PBR_cb
+auto create_normal_ext_constant_buffer(const Material_properties_view& props)
+   -> std::vector<std::byte>
 {
-   PBR_cb cb{};
+   material::Constant_buffer_builder cb{R"(
+   float3 base_diffuse_color;
+   float  gloss_map_weight;
+   float3 base_specular_color;
+   float  specular_exponent;
+   float  height_scale;
+   bool   use_detail_textures;
+   float  detail_texture_scale;
+   bool   use_overlay_textures;
+   float  overlay_texture_scale;
+   bool   use_ao_texture;
+   bool   use_emissive_texture;
+   float  emissive_texture_scale;
+   float  emissive_power;
+   bool   use_env_map;
+   float  env_map_vis;
+   float  dynamic_normal_sign;)"sv};
 
-   cb.base_color = props.value<glm::vec3>("BaseColor"sv, cb.base_color);
-   cb.base_metallicness = props.value<float>("Metallicness"sv, cb.base_metallicness);
-   cb.base_roughness = props.value<float>("Roughness"sv, cb.base_roughness);
-   cb.ao_strength = props.value<float>("AOStrength"sv, cb.ao_strength);
-   cb.emissive_power = props.value<float>("EmissivePower"sv, cb.emissive_power);
+   cb.set("base_diffuse_color"sv,
+          props.value<glm::vec3>("DiffuseColor"sv, {1.0f, 1.0f, 1.0f}));
 
-   return cb;
-}
+   cb.set("gloss_map_weight"sv, props.value<float>("GlossMapWeight"sv, 1.0f));
 
-auto create_pbr_terrain_constant_buffer(const Material_properties_view& props) -> PBR_terrain_cb
-{
-   PBR_terrain_cb cb{};
+   cb.set("base_specular_color"sv,
+          props.value<glm::vec3>("SpecularColor"sv, {1.0f, 1.0f, 1.0f}));
 
-   cb.base_color = props.value<glm::vec3>("BaseColor"sv, cb.base_color);
-   cb.base_metallicness =
-      props.value<float>("BaseMetallicness"sv, cb.base_metallicness);
-   cb.base_roughness = props.value<float>("BaseRoughness"sv, cb.base_roughness);
+   cb.set("specular_exponent"sv, props.value<float>("SpecularExponent"sv, 64.0f));
 
-   cb.texture_transforms = create_terrain_transforms(props);
+   cb.set("height_scale"sv, props.value<float>("HeightScale"sv, 0.1f));
 
-   for (auto i = 0; i < cb.texture_height_scales.size(); ++i) {
-      cb.texture_height_scales[i].x =
-         props.value<float>("HeightScale"s + std::to_string(i), 0.025f);
-   }
+   cb.set("use_detail_textures"sv, props.value<bool>("UseDetailMaps"sv, false));
 
-   return cb;
-}
+   cb.set("detail_texture_scale"sv, props.value<float>("DetailTextureScale"sv, 1.0f));
 
-auto create_normal_ext_constant_buffer(const Material_properties_view& props) -> Normal_ext_cb
-{
-   Normal_ext_cb cb{};
+   cb.set("use_overlay_textures"sv, props.value<bool>("UseOverlayMaps"sv, false));
 
-   cb.diffuse_color = props.value<glm::vec3>("DiffuseColor"sv, cb.diffuse_color);
-   cb.gloss_map_weight = props.value<float>("GlossMapWeight"sv, cb.gloss_map_weight);
-   cb.specular_color = props.value<glm::vec3>("SpecularColor"sv, cb.specular_color);
-   cb.specular_exponent =
-      props.value<float>("SpecularExponent"sv, cb.specular_exponent);
-   cb.height_scale = props.value<float>("HeightScale"sv, cb.height_scale);
-   cb.use_detail_textures =
-      props.value<bool>("UseDetailMaps"sv, cb.use_detail_textures);
-   cb.detail_texture_scale =
-      props.value<float>("DetailTextureScale"sv, cb.detail_texture_scale);
-   cb.use_overlay_textures =
-      props.value<bool>("UseOverlayMaps"sv, cb.use_overlay_textures);
-   cb.overlay_texture_scale =
-      props.value<float>("OverlayTextureScale"sv, cb.overlay_texture_scale);
-   cb.use_ao_texture = props.value<bool>("UseAOMap"sv, cb.use_ao_texture);
-   cb.use_emissive_texture =
-      props.value<bool>("UseEmissiveMap"sv, cb.use_emissive_texture);
-   cb.emissive_texture_scale =
-      props.value<float>("EmissiveTextureScale"sv, cb.emissive_texture_scale);
-   cb.emissive_power = props.value<float>("EmissivePower"sv, cb.emissive_power);
-   cb.use_env_map = props.value<bool>("UseEnvMap"sv, cb.use_env_map);
-   cb.env_map_vis = props.value<float>("EnvMapVisibility"sv, cb.env_map_vis);
-   cb.dynamic_normal_sign =
-      props.value<float>("DynamicNormalSign"sv, cb.dynamic_normal_sign);
+   cb.set("overlay_texture_scale"sv, props.value<float>("OverlayTextureScale"sv, 1.0f));
 
-   return cb;
+   cb.set("use_ao_texture"sv, props.value<bool>("UseAOMap"sv, false));
+
+   cb.set("use_emissive_texture"sv, props.value<bool>("UseEmissiveMap"sv, false));
+
+   cb.set("emissive_texture_scale"sv,
+          props.value<float>("EmissiveTextureScale"sv, 1.0f));
+
+   cb.set("emissive_power"sv, props.value<float>("EmissivePower"sv, 1.0f));
+
+   cb.set("use_env_map"sv, props.value<bool>("UseEnvMap"sv, false));
+
+   cb.set("env_map_vis"sv, props.value<float>("EnvMapVisibility"sv, 1.0f));
+
+   cb.set("dynamic_normal_sign"sv, props.value<float>("DynamicNormalSign"sv, 1.0f));
+
+   return cb.complete();
 }
 
 auto create_normal_ext_terrain_constant_buffer(const Material_properties_view& props)
-   -> Normal_ext_terrain
+   -> std::vector<std::byte>
 {
-   Normal_ext_terrain cb{};
+   material::Constant_buffer_builder cb{R"(   
+   float3 diffuse_color;
+   float3 specular_color;
+   bool use_envmap;
 
-   cb.diffuse_color = props.value<glm::vec3>("DiffuseColor"sv, cb.diffuse_color);
-   cb.specular_color = props.value<glm::vec3>("SpecularColor"sv, cb.specular_color);
-   cb.use_envmap = props.value<bool>("UseEnvmap"sv, cb.use_envmap);
+   float3 texture_transforms[32];
 
-   cb.texture_transforms = create_terrain_transforms(props);
+   float2 texture_vars[16];)"sv};
 
-   for (auto i = 0; i < cb.texture_vars.size(); ++i) {
-      cb.texture_vars[i].height_scale =
-         props.value<float>("HeightScale"s + std::to_string(i), 0.025f);
-      cb.texture_vars[i].specular_exponent =
-         props.value<float>("SpecularExponent"s + std::to_string(i), 64.0f);
+   cb.set("diffuse_color"sv,
+          props.value<glm::vec3>("DiffuseColor"sv, {1.0f, 1.0f, 1.0f}));
+   cb.set("specular_color"sv,
+          props.value<glm::vec3>("SpecularColor"sv, {1.0f, 1.0f, 1.0f}));
+   cb.set("use_envmap"sv, props.value<bool>("UseEnvmap"sv, false));
+
+   fill_terrain_transforms(cb, props);
+
+   for (std::size_t i = 0; i < terrain_texture_count; ++i) {
+      cb.set(fmt::format("texture_vars[{}]"sv, i),
+             glm::vec2{props.value<float>(fmt::format("HeightScale{}"sv, i), 0.05f),
+                       props.value<float>(fmt::format("SpecularExponent{}"sv, i), 64.0f)});
    }
 
-   return cb;
+   return cb.complete();
 }
 
-auto create_skybox_constant_buffer(const Material_properties_view& props) -> Skybox_cb
+auto create_skybox_constant_buffer(const Material_properties_view& props)
+   -> std::vector<std::byte>
 {
-   Skybox_cb cb{};
+   material::Constant_buffer_builder cb{R"(
+   float emissive_power;)"sv};
 
-   cb.emissive_power = props.value<float>("EmissivePower"sv, cb.emissive_power);
+   cb.set("emissive_power"sv, props.value<float>("EmissivePower"sv, 1.0f));
 
-   return cb;
+   return cb.complete();
 }
 
-auto create_basic_unlit_buffer(const Material_properties_view& props) -> Basic_unlit_cb
+auto create_basic_unlit_buffer(const Material_properties_view& props)
+   -> std::vector<std::byte>
 {
-   Basic_unlit_cb cb{};
+   material::Constant_buffer_builder cb{R"(
+   bool use_emissive_map;
+   float emissive_power;)"sv};
 
-   cb.use_emissive_map = props.value<bool>("UseEmissiveMap"sv, cb.use_emissive_map);
-   cb.emissive_power = props.value<float>("EmissivePower"sv, cb.emissive_power);
+   cb.set("use_emissive_map"sv, props.value<bool>("UseEmissiveMap"sv, false));
+   cb.set("emissive_power"sv, props.value<float>("EmissivePower"sv, 1.0f));
 
-   return cb;
+   return cb.complete();
 }
 
-auto create_static_water_buffer(const Material_properties_view& props) -> Static_water_cb
+auto create_static_water_buffer(const Material_properties_view& props)
+   -> std::vector<std::byte>
 {
-   Static_water_cb cb{};
+   material::Constant_buffer_builder cb{R"(   
+   float3 refraction_color;
+   float  refraction_scale;
+   float3 reflection_color;
+   float  small_bump_scale;
+   float2 small_scroll;
+   float2 medium_scroll;
+   float2 large_scroll;
+   float  medium_bump_scale;
+   float  large_bump_scale;
+   float  fresnel_min;
+   float  fresnel_max;
+   float  specular_exponent_dir_lights;
+   float  specular_strength_dir_lights;
+   float3 back_refraction_color;
+   float  specular_exponent;)"sv};
 
-   cb.refraction_color = props.value("RefractionColor"sv, cb.refraction_color);
-   cb.refraction_scale = props.value("RefractionScale"sv, cb.refraction_scale);
-   cb.reflection_color = props.value("ReflectionColor"sv, cb.reflection_color);
-   cb.small_bump_scale = props.value("SmallBumpScale"sv, cb.small_bump_scale);
-   cb.small_scroll = props.value("SmallScroll"sv, cb.small_scroll);
-   cb.medium_scroll = props.value("MediumScroll"sv, cb.medium_scroll);
-   cb.large_scroll = props.value("LargeScroll"sv, cb.large_scroll);
-   cb.medium_bump_scale = props.value("MediumBumpScale"sv, cb.medium_bump_scale);
-   cb.large_bump_scale = props.value("LargeBumpScale"sv, cb.large_bump_scale);
-   cb.fresnel_min_max = props.value("FresnelMinMax"sv, cb.fresnel_min_max);
-   cb.specular_exponent_dir_lights =
-      props.value("SpecularExponentDirLights"sv, cb.specular_exponent_dir_lights);
-   cb.specular_strength_dir_lights =
-      props.value("SpecularStrengthDirLights"sv, cb.specular_strength_dir_lights);
-   cb.back_refraction_color =
-      props.value("BackRefractionColor"sv, cb.back_refraction_color);
-   cb.specular_exponent = props.value("SpecularExponent"sv, cb.specular_exponent);
+   cb.set("refraction_color"sv,
+          props.value<glm::vec3>("RefractionColor"sv, {0.25f, 0.50f, 0.75f}));
+   cb.set("refraction_scale"sv, props.value<float>("RefractionScale"sv, 1.333f));
+   cb.set("reflection_color"sv,
+          props.value<glm::vec3>("ReflectionColor"sv, {1.0f, 1.0f, 1.0f}));
+   cb.set("small_bump_scale"sv, props.value<float>("SmallBumpScale"sv, 1.0f));
+   cb.set("small_scroll"sv, props.value<glm::vec2>("SmallScroll"sv, {0.2f, 0.2f}));
+   cb.set("medium_scroll"sv, props.value<glm::vec2>("MediumScroll"sv, {0.2f, 0.2f}));
+   cb.set("large_scroll"sv, props.value<glm::vec2>("LargeScroll"sv, {0.2f, 0.2f}));
+   cb.set("medium_bump_scale"sv, props.value<float>("MediumBumpScale"sv, 1.0f));
+   cb.set("large_bump_scale"sv, props.value<float>("LargeBumpScale"sv, 1.0f));
+   cb.set("fresnel_min"sv,
+          props.value<glm::vec2>("FresnelMinMax"sv, {0.0f, 1.0f}).x);
+   cb.set("fresnel_max"sv,
+          props.value<glm::vec2>("FresnelMinMax"sv, {0.0f, 1.0f}).y);
+   cb.set("specular_exponent_dir_lights"sv,
+          props.value<float>("SpecularExponentDirLights"sv, 128.0f));
+   cb.set("specular_strength_dir_lights"sv,
+          props.value<float>("SpecularStrengthDirLights"sv, 1.0f));
+   cb.set("back_refraction_color"sv,
+          props.value<glm::vec3>("BackRefractionColor"sv, {0.25f, 0.50f, 0.75f}));
+   cb.set("specular_exponent"sv, props.value<float>("SpecularExponent"sv, 64.0f));
 
-   return cb;
+   return cb.complete();
 }
 
-auto create_particle_ext_buffer(const Material_properties_view& props) -> Particle_ext_cb
+auto create_particle_ext_buffer(const Material_properties_view& props)
+   -> std::vector<std::byte>
 {
-   Particle_ext_cb cb{};
+   material::Constant_buffer_builder cb{R"(
+   bool   use_aniso_wrap_sampler;
+   float  brightness_scale;)"sv};
 
-   cb.use_aniso_wrap_sampler =
-      props.value<bool>("UseAnisotropicFiltering"sv, cb.use_aniso_wrap_sampler);
-   cb.emissive_power = props.value<float>("EmissivePower"sv, cb.emissive_power);
+   cb.set("use_aniso_wrap_sampler"sv,
+          props.value<bool>("UseAnisotropicFiltering"sv, false));
+   cb.set("brightness_scale"sv, props.value<float>("EmissivePower"sv, 1.0f));
 
-   return cb;
+   return cb.complete();
 }
 
 }
@@ -376,36 +328,44 @@ auto create_material_constant_buffer(ID3D11Device5& device,
    if (cb_name == "none"sv) return nullptr;
 
    if (Material_properties_view properties_view{properties}; cb_name == "pbr"sv) {
-      return create_immutable_constant_buffer(device, create_pbr_constant_buffer(
-                                                         properties_view));
+      const auto buffer = create_pbr_constant_buffer(properties_view);
+
+      return create_immutable_constant_buffer(device, std::span{buffer});
    }
    else if (cb_name == "pbr_terrain"sv) {
-      return create_immutable_constant_buffer(device, create_pbr_terrain_constant_buffer(
-                                                         properties_view));
+      const auto buffer = create_pbr_terrain_constant_buffer(properties_view);
+
+      return create_immutable_constant_buffer(device, std::span{buffer});
    }
    else if (cb_name == "normal_ext"sv) {
-      return create_immutable_constant_buffer(device, create_normal_ext_constant_buffer(
-                                                         properties_view));
+      const auto buffer = create_normal_ext_constant_buffer(properties_view);
+
+      return create_immutable_constant_buffer(device, std::span{buffer});
    }
    else if (cb_name == "normal_ext_terrain"sv) {
-      return create_immutable_constant_buffer(device, create_normal_ext_terrain_constant_buffer(
-                                                         properties_view));
+      const auto buffer = create_normal_ext_terrain_constant_buffer(properties_view);
+
+      return create_immutable_constant_buffer(device, std::span{buffer});
    }
    else if (cb_name == "skybox"sv) {
-      return create_immutable_constant_buffer(device, create_skybox_constant_buffer(
-                                                         properties_view));
+      const auto buffer = create_skybox_constant_buffer(properties_view);
+
+      return create_immutable_constant_buffer(device, std::span{buffer});
    }
    else if (cb_name == "basic_unlit"sv) {
-      return create_immutable_constant_buffer(device, create_basic_unlit_buffer(
-                                                         properties_view));
+      const auto buffer = create_basic_unlit_buffer(properties_view);
+
+      return create_immutable_constant_buffer(device, std::span{buffer});
    }
    else if (cb_name == "static_water"sv) {
-      return create_immutable_constant_buffer(device, create_static_water_buffer(
-                                                         properties_view));
+      const auto buffer = create_static_water_buffer(properties_view);
+
+      return create_immutable_constant_buffer(device, std::span{buffer});
    }
    else if (cb_name == "particle_ext"sv) {
-      return create_immutable_constant_buffer(device, create_particle_ext_buffer(
-                                                         properties_view));
+      const auto buffer = create_particle_ext_buffer(properties_view);
+
+      return create_immutable_constant_buffer(device, std::span{buffer});
    }
 
    throw compose_exception<std::runtime_error>("Unknown material constant buffer name "sv,

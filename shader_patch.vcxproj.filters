@@ -34,6 +34,9 @@
     <Filter Include="src\core\text">
       <UniqueIdentifier>{ec6facfb-6de5-494e-a6b0-d8ba9de07dd2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\material">
+      <UniqueIdentifier>{aba5cc74-592c-4568-8d86-4e22cdeef95e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -269,6 +272,9 @@
     </ClCompile>
     <ClCompile Include="src\game_support\font_declarations.cpp">
       <Filter>src\game_support</Filter>
+    </ClCompile>
+    <ClCompile Include="src\material\constant_buffer_builder.cpp">
+      <Filter>src\material</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -685,6 +691,9 @@
     </ClInclude>
     <ClInclude Include="src\freetype_helpers.hpp">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\material\constant_buffer_builder.hpp">
+      <Filter>src\material</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

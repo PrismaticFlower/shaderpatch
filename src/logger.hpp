@@ -95,12 +95,36 @@ inline void log_debug([[maybe_unused]] std::string_view format_str,
 }
 
 template<typename... Args>
+inline void log_fmt(const Log_level level, std::string_view format_str,
+                    const Args&... args) noexcept
+{
+   auto& stream = get_log_stream();
+
+   const auto time = std::time(nullptr);
+   const auto local_time = std::localtime(&time);
+
+   stream << level << ' ' << std::put_time(local_time, "%T") << ' ';
+   stream << fmt::format(format_str, args...);
+   stream << std::endl;
+}
+
+template<typename... Args>
 [[noreturn]] inline void log_and_terminate(Args&&... args)
 {
    log(Log_level::error, std::forward<Args>(args)...);
 
    std::terminate();
 }
+
+template<typename... Args>
+[[noreturn]] inline void log_and_terminate_fmt(std::string_view format_str,
+                                               const Args&... args)
+{
+   log_fmt(Log_level::error, format_str, args...);
+
+   std::terminate();
+}
+
 }
 
 #pragma warning(pop)
