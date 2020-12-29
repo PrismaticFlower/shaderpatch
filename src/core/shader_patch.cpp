@@ -647,14 +647,14 @@ auto Shader_patch::create_patch_material(const std::span<const std::byte> materi
    try {
       auto material =
          _materials
-            .emplace_back(std::make_unique<Patch_material>(
+            .emplace_back(std::make_unique<material::Material>(
                read_patch_material(ucfb::Reader_strict<"matl"_mn>{material_data}),
                _material_shader_factory, _shader_resource_database, *_device))
             .get();
 
       log(Log_level::info, "Loaded material "sv, std::quoted(material->name));
 
-      const auto material_deleter = [&](Patch_material* material) noexcept {
+      const auto material_deleter = [&](material::Material* material) noexcept {
          if (_patch_material == material) set_patch_material(nullptr);
 
          for (auto it = _materials.begin(); it != _materials.end(); ++it) {
@@ -1002,13 +1002,14 @@ void Shader_patch::set_projtex_cube(const Game_texture& texture) noexcept
    _ps_textures_dirty = true;
 }
 
-void Shader_patch::set_patch_material(Patch_material* material) noexcept
+void Shader_patch::set_patch_material(material::Material* material) noexcept
 {
    _patch_material = material;
    _shader_dirty = true;
 
    if (_patch_material) {
-      _game_textures[0] = _patch_material->fail_safe_game_texture;
+      _game_textures[0] = {_patch_material->fail_safe_game_texture,
+                           _patch_material->fail_safe_game_texture};
       _ps_textures_dirty = true;
 
       _patch_material->bind_constant_buffers(*_device_context);

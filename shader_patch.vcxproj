@@ -150,7 +150,6 @@
     <ClCompile Include="src\core\late_backbuffer_resolver.cpp" />
     <ClCompile Include="src\core\materials_editor.cpp" />
     <ClCompile Include="src\core\oit_provider.cpp" />
-    <ClCompile Include="src\core\patch_material.cpp" />
     <ClCompile Include="src\core\postprocessing\bloom.cpp" />
     <ClCompile Include="src\core\postprocessing\scene_blur.cpp" />
     <ClCompile Include="src\core\postprocessing\scope_blur.cpp" />
@@ -227,6 +226,7 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\material\constant_buffers.cpp" />
     <ClCompile Include="src\material\constant_buffer_builder.cpp" />
+    <ClCompile Include="src\material\material.cpp" />
     <ClCompile Include="src\material\shader_factory.cpp" />
     <ClCompile Include="src\material\shader_set.cpp" />
     <ClCompile Include="src\shader\cache.cpp" />
@@ -258,7 +258,6 @@
     <ClInclude Include="src\core\image_stretcher.hpp" />
     <ClInclude Include="src\core\input_layout_element.hpp" />
     <ClInclude Include="src\core\input_layout_descriptions.hpp" />
-    <ClInclude Include="src\core\patch_material.hpp" />
     <ClInclude Include="src\core\postprocessing\bloom.hpp" />
     <ClInclude Include="src\core\postprocessing\scene_blur.hpp" />
     <ClInclude Include="src\core\postprocessing\scope_blur.hpp" />
@@ -358,6 +357,7 @@
     <ClInclude Include="src\logger.hpp" />
     <ClInclude Include="src\material\constant_buffers.hpp" />
     <ClInclude Include="src\material\constant_buffer_builder.hpp" />
+    <ClInclude Include="src\material\material.hpp" />
     <ClInclude Include="src\material\shader_factory.hpp" />
     <ClInclude Include="src\material\shader_set.hpp" />
     <ClInclude Include="src\shader\bytecode_blob.hpp" />

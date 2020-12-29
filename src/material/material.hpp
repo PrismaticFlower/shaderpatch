@@ -1,28 +1,26 @@
 #pragma once
 
+#include "../core/texture_database.hpp"
 #include "../material/shader_factory.hpp"
 #include "com_ptr.hpp"
 #include "game_rendertypes.hpp"
-#include "game_texture.hpp"
 #include "patch_material_io.hpp"
-#include "texture_database.hpp"
 
 #include <memory>
 #include <vector>
 
 #include <d3d11_4.h>
 
-namespace sp::core {
+namespace sp::material {
 
-struct Patch_material {
-   Patch_material() = default;
+struct Material {
+   Material() = default;
 
-   Patch_material(Material_config material_config,
-                  material::Shader_factory& shader_factory,
-                  const Shader_resource_database& texture_database,
-                  ID3D11Device5& device);
+   Material(Material_config material_config, material::Shader_factory& shader_factory,
+            const core::Shader_resource_database& texture_database,
+            ID3D11Device5& device);
 
-   void update_resources(const Shader_resource_database& resource_database) noexcept;
+   void update_resources(const core::Shader_resource_database& resource_database) noexcept;
 
    void bind_constant_buffers(ID3D11DeviceContext1& dc) noexcept;
 
@@ -44,7 +42,7 @@ struct Patch_material {
    std::vector<Com_ptr<ID3D11ShaderResourceView>> vs_shader_resources;
    std::vector<Com_ptr<ID3D11ShaderResourceView>> ps_shader_resources;
 
-   Game_texture fail_safe_game_texture;
+   Com_ptr<ID3D11ShaderResourceView> fail_safe_game_texture;
 
    const std::string name;
    const std::string rendertype;

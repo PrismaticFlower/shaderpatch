@@ -1,12 +1,11 @@
 
-#include "patch_material.hpp"
+#include "material.hpp"
 #include "../logger.hpp"
 #include "../material/constant_buffers.hpp"
-#include "d3d11_helpers.hpp"
 
 #include <iomanip>
 
-namespace sp::core {
+namespace sp::material {
 
 namespace {
 
@@ -17,7 +16,7 @@ auto init_constant_buffer(ID3D11Device5& device, const Material_config& material
 }
 
 auto init_resources(const std::vector<std::string>& resource_names,
-                    const Shader_resource_database& resource_database) noexcept
+                    const core::Shader_resource_database& resource_database) noexcept
    -> std::vector<Com_ptr<ID3D11ShaderResourceView>>
 {
    std::vector<Com_ptr<ID3D11ShaderResourceView>> resources;
@@ -40,23 +39,23 @@ auto init_resources(const std::vector<std::string>& resource_names,
 }
 
 auto init_fail_safe_texture(const std::vector<Com_ptr<ID3D11ShaderResourceView>>& shader_resources,
-                            const std::int32_t fail_safe_texture_index) noexcept -> Game_texture
+                            const std::int32_t fail_safe_texture_index) noexcept
+   -> Com_ptr<ID3D11ShaderResourceView>
 {
    Expects(fail_safe_texture_index == -1 ||
            fail_safe_texture_index < shader_resources.size());
 
-   if (fail_safe_texture_index == -1) return {};
+   if (fail_safe_texture_index == -1) return nullptr;
 
-   return {shader_resources[fail_safe_texture_index],
-           shader_resources[fail_safe_texture_index]};
+   return shader_resources[fail_safe_texture_index];
 }
 
 }
 
-Patch_material::Patch_material(Material_config material_config,
-                               material::Shader_factory& shader_factory,
-                               const Shader_resource_database& resource_database,
-                               ID3D11Device5& device)
+Material::Material(Material_config material_config,
+                   material::Shader_factory& shader_factory,
+                   const core::Shader_resource_database& resource_database,
+                   ID3D11Device5& device)
    : overridden_rendertype{material_config.overridden_rendertype},
      shader{shader_factory.create(material_config.rendertype)},
      cb_shader_stages{material_config.cb_shader_stages},
@@ -75,13 +74,13 @@ Patch_material::Patch_material(Material_config material_config,
 {
 }
 
-void Patch_material::update_resources(const Shader_resource_database& resource_database) noexcept
+void Material::update_resources(const core::Shader_resource_database& resource_database) noexcept
 {
    vs_shader_resources = init_resources(vs_shader_resources_names, resource_database);
    ps_shader_resources = init_resources(ps_shader_resources_names, resource_database);
 }
 
-void Patch_material::bind_constant_buffers(ID3D11DeviceContext1& dc) noexcept
+void Material::bind_constant_buffers(ID3D11DeviceContext1& dc) noexcept
 {
    auto* const cb = constant_buffer.get();
 
@@ -98,7 +97,7 @@ void Patch_material::bind_constant_buffers(ID3D11DeviceContext1& dc) noexcept
       dc.PSSetConstantBuffers(ps_cb_offset, 1, &cb);
 }
 
-void Patch_material::bind_shader_resources(ID3D11DeviceContext1& dc) noexcept
+void Material::bind_shader_resources(ID3D11DeviceContext1& dc) noexcept
 {
    static_assert(sizeof(Com_ptr<ID3D11ShaderResourceView>) ==
                  sizeof(ID3D11ShaderResourceView*));

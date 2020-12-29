@@ -3,6 +3,7 @@
 #include "../effects/control.hpp"
 #include "../effects/profiler.hpp"
 #include "../effects/rendertarget_allocator.hpp"
+#include "../material/material.hpp"
 #include "../material/shader_factory.hpp"
 #include "../shader/database.hpp"
 #include "backbuffer_cmaa2_views.hpp"
@@ -22,7 +23,6 @@
 #include "late_backbuffer_resolver.hpp"
 #include "oit_provider.hpp"
 #include "patch_effects_config_handle.hpp"
-#include "patch_material.hpp"
 #include "sampler_states.hpp"
 #include "small_function.hpp"
 #include "swapchain.hpp"
@@ -61,7 +61,7 @@ struct Mapped_texture {
 };
 
 using Material_handle =
-   std::unique_ptr<Patch_material, Small_function<void(Patch_material*) noexcept>>;
+   std::unique_ptr<material::Material, Small_function<void(material::Material*) noexcept>>;
 
 using Texture_handle =
    std::unique_ptr<ID3D11ShaderResourceView, Small_function<void(ID3D11ShaderResourceView*) noexcept>>;
@@ -200,7 +200,7 @@ public:
 
    void set_projtex_cube(const Game_texture& texture) noexcept;
 
-   void set_patch_material(Patch_material* material) noexcept;
+   void set_patch_material(material::Material* material) noexcept;
 
    void set_constants(const cb::Scene_tag, const UINT offset,
                       const std::span<const std::array<float, 4>> constants) noexcept;
@@ -337,7 +337,7 @@ private:
    Rendertype _shader_rendertype = Rendertype::invalid;
 
    std::array<Game_texture, 7> _game_textures;
-   Patch_material* _patch_material = nullptr;
+   material::Material* _patch_material = nullptr;
 
    Com_ptr<ID3D11Buffer> _game_index_buffer;
    UINT _game_index_buffer_offset = 0;
@@ -438,7 +438,7 @@ private:
    effects::Rendertarget_allocator _rendertarget_allocator{_device};
 
    material::Shader_factory _material_shader_factory{_device, _shader_rendertypes_database};
-   std::vector<std::unique_ptr<Patch_material>> _materials;
+   std::vector<std::unique_ptr<material::Material>> _materials;
 
    glm::mat4 _informal_projection_matrix;
 

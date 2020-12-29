@@ -11,6 +11,8 @@ using namespace std::literals;
 
 namespace sp::core {
 
+using material::Material;
+
 namespace {
 
 template<typename Type>
@@ -98,7 +100,7 @@ void resources_editor(Shader_resource_database& resources,
 }
 
 void material_editor(ID3D11Device5& device, Shader_resource_database& resources,
-                     Patch_material& material) noexcept
+                     Material& material) noexcept
 {
    if (!material.properties.empty() && ImGui::TreeNode("Properties")) {
       for (auto& prop : material.properties) {
@@ -136,7 +138,7 @@ void material_editor(ID3D11Device5& device, Shader_resource_database& resources,
 
       if (ImGui::TreeNode("Fail Safe Game Texture")) {
 
-         if (ImGui::ImageButton(material.fail_safe_game_texture.srv.get(), {64, 64})) {
+         if (ImGui::ImageButton(material.fail_safe_game_texture.get(), {64, 64})) {
             ImGui::OpenPopup("Texture Picker");
          }
 
@@ -144,13 +146,10 @@ void material_editor(ID3D11Device5& device, Shader_resource_database& resources,
             auto [new_srv, name] = resources.imgui_resource_picker();
 
             if (new_srv)
-               material.fail_safe_game_texture.srv = copy_raw_com_ptr(new_srv);
+               material.fail_safe_game_texture = copy_raw_com_ptr(new_srv);
 
             ImGui::EndPopup();
          }
-
-         material.fail_safe_game_texture.srgb_srv =
-            material.fail_safe_game_texture.srv;
 
          ImGui::TreePop();
       }
@@ -161,7 +160,7 @@ void material_editor(ID3D11Device5& device, Shader_resource_database& resources,
 }
 
 void show_materials_editor(ID3D11Device5& device, Shader_resource_database& resources,
-                           const std::vector<std::unique_ptr<Patch_material>>& materials) noexcept
+                           const std::vector<std::unique_ptr<Material>>& materials) noexcept
 {
    if (ImGui::Begin("Materials")) {
       for (auto& material : materials) {

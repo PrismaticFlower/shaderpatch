@@ -123,9 +123,6 @@
     <ClCompile Include="src\core\texture_database.cpp">
       <Filter>src\core</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\patch_material.cpp">
-      <Filter>src\core</Filter>
-    </ClCompile>
     <ClCompile Include="src\core\swapchain.cpp">
       <Filter>src\core</Filter>
     </ClCompile>
@@ -276,6 +273,9 @@
     <ClCompile Include="src\material\constant_buffers.cpp">
       <Filter>src\material</Filter>
     </ClCompile>
+    <ClCompile Include="src\material\material.cpp">
+      <Filter>src\material</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -423,9 +423,6 @@
       <Filter>src\direct3d</Filter>
     </ClInclude>
     <ClInclude Include="src\core\texture_database.hpp">
-      <Filter>src\core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\patch_material.hpp">
       <Filter>src\core</Filter>
     </ClInclude>
     <ClInclude Include="src\direct3d\texture3d_resource.hpp">
@@ -693,6 +690,9 @@
       <Filter>src\material</Filter>
     </ClInclude>
     <ClInclude Include="src\material\constant_buffers.hpp">
+      <Filter>src\material</Filter>
+    </ClInclude>
+    <ClInclude Include="src\material\material.hpp">
       <Filter>src\material</Filter>
     </ClInclude>
   </ItemGroup>
