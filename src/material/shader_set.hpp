@@ -1,28 +1,23 @@
 #pragma once
 
+#include "../core/input_layout_descriptions.hpp"
+#include "../core/shader_input_layouts.hpp"
 #include "../shader/database.hpp"
 #include "com_ptr.hpp"
-#include "game_shader.hpp"
-#include "shader_input_layouts.hpp"
 
 #include <unordered_map>
 
 #include <d3d11_1.h>
 
-namespace sp::core {
+namespace sp::material {
 
-template<typename T>
-class Material_shader_index {
+class Shader_set {
 public:
-};
-
-class Material_shader {
-public:
-   Material_shader(Com_ptr<ID3D11Device1> device,
-                   shader::Rendertype& rendertype, std::string name) noexcept;
+   Shader_set(Com_ptr<ID3D11Device1> device, shader::Rendertype& rendertype,
+              std::string name) noexcept;
 
    void update(ID3D11DeviceContext1& dc,
-               const Input_layout_descriptions& layout_descriptions,
+               const core::Input_layout_descriptions& layout_descriptions,
                const std::uint16_t layout_index, const std::string& state_name,
                const shader::Vertex_shader_flags vertex_shader_flags,
                const bool oit_active) noexcept;
@@ -31,7 +26,7 @@ private:
    struct Material_vertex_shader {
       Com_ptr<ID3D11VertexShader> vs;
 
-      Shader_input_layouts input_layouts;
+      core::Shader_input_layouts input_layouts;
    };
 
    struct Material_shader_state {

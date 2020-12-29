@@ -54,7 +54,7 @@ auto init_fail_safe_texture(const std::vector<Com_ptr<ID3D11ShaderResourceView>>
 }
 
 Patch_material::Patch_material(Material_config material_config,
-                               Material_shader_factory& shader_factory,
+                               material::Shader_factory& shader_factory,
                                const Shader_resource_database& resource_database,
                                ID3D11Device5& device)
    : overridden_rendertype{material_config.overridden_rendertype},

@@ -1,5 +1,5 @@
 
-#include "material_shader.hpp"
+#include "shader_set.hpp"
 #include "../logger.hpp"
 #include "../user_config.hpp"
 
@@ -7,7 +7,7 @@
 
 using namespace std::literals;
 
-namespace sp::core {
+namespace sp::material {
 
 namespace {
 
@@ -19,18 +19,17 @@ auto flags_to_bitstring(const Enum flags) -> std::string
 
 }
 
-Material_shader::Material_shader(Com_ptr<ID3D11Device1> device,
-                                 shader::Rendertype& rendertype, std::string name) noexcept
+Shader_set::Shader_set(Com_ptr<ID3D11Device1> device,
+                       shader::Rendertype& rendertype, std::string name) noexcept
    : _device{std::move(device)}, _shaders{init_shaders(rendertype)}, _name{std::move(name)}
 {
 }
 
-void Material_shader::update(ID3D11DeviceContext1& dc,
-                             const Input_layout_descriptions& layout_descriptions,
-                             const std::uint16_t layout_index,
-                             const std::string& state_name,
-                             const shader::Vertex_shader_flags vertex_shader_flags,
-                             const bool oit_active) noexcept
+void Shader_set::update(ID3D11DeviceContext1& dc,
+                        const core::Input_layout_descriptions& layout_descriptions,
+                        const std::uint16_t layout_index, const std::string& state_name,
+                        const shader::Vertex_shader_flags vertex_shader_flags,
+                        const bool oit_active) noexcept
 {
    auto& state = get_state(state_name);
 
@@ -47,9 +46,10 @@ void Material_shader::update(ID3D11DeviceContext1& dc,
    dc.PSSetShader((oit_active ? state.pixel_oit : state.pixel).get(), nullptr, 0);
 }
 
-auto Material_shader::Material_shader_state::get_vs(
-   const shader::Vertex_shader_flags flags, const std::string& state_name,
-   const std::string& shader_name) noexcept -> Material_vertex_shader&
+auto Shader_set::Material_shader_state::get_vs(const shader::Vertex_shader_flags flags,
+                                               const std::string& state_name,
+                                               const std::string& shader_name) noexcept
+   -> Material_vertex_shader&
 {
    if (auto shader = vertex.find(flags); shader != vertex.cend()) {
       return shader->second;
@@ -61,7 +61,7 @@ auto Material_shader::Material_shader_state::get_vs(
                      ") '"sv, to_string(flags), "'"sv);
 }
 
-auto Material_shader::get_state(const std::string& state_name) noexcept
+auto Shader_set::get_state(const std::string& state_name) noexcept
    -> Material_shader_state&
 {
    if (auto state = _shaders.find(state_name); state != _shaders.cend()) {
@@ -72,7 +72,7 @@ auto Material_shader::get_state(const std::string& state_name) noexcept
                      "' for material shader '"sv, _name, "'!"sv);
 }
 
-auto Material_shader::init_shaders(shader::Rendertype& rendertype) noexcept -> Shaders
+auto Shader_set::init_shaders(shader::Rendertype& rendertype) noexcept -> Shaders
 {
    Shaders shaders;
 
@@ -83,13 +83,13 @@ auto Material_shader::init_shaders(shader::Rendertype& rendertype) noexcept -> S
    return shaders;
 }
 
-auto Material_shader::init_state(shader::Rendertype_state& state) noexcept -> Material_shader_state
+auto Shader_set::init_state(shader::Rendertype_state& state) noexcept -> Material_shader_state
 {
    return {init_vs_entrypoint(state), state.geometry(), state.pixel(),
            state.pixel_oit()};
 }
 
-auto Material_shader::init_vs_entrypoint(shader::Rendertype_state& state) noexcept
+auto Shader_set::init_vs_entrypoint(shader::Rendertype_state& state) noexcept
    -> std::unordered_map<shader::Vertex_shader_flags, Material_vertex_shader>
 {
    std::unordered_map<shader::Vertex_shader_flags, Material_vertex_shader> shaders;

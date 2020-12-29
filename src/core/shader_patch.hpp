@@ -3,6 +3,7 @@
 #include "../effects/control.hpp"
 #include "../effects/profiler.hpp"
 #include "../effects/rendertarget_allocator.hpp"
+#include "../material/shader_factory.hpp"
 #include "../shader/database.hpp"
 #include "backbuffer_cmaa2_views.hpp"
 #include "com_ptr.hpp"
@@ -19,7 +20,6 @@
 #include "input_layout_descriptions.hpp"
 #include "input_layout_element.hpp"
 #include "late_backbuffer_resolver.hpp"
-#include "material_shader_factory.hpp"
 #include "oit_provider.hpp"
 #include "patch_effects_config_handle.hpp"
 #include "patch_material.hpp"
@@ -437,7 +437,7 @@ private:
    effects::Control _effects{_device, _shader_database};
    effects::Rendertarget_allocator _rendertarget_allocator{_device};
 
-   Material_shader_factory _material_shader_factory{_device, _shader_rendertypes_database};
+   material::Shader_factory _material_shader_factory{_device, _shader_rendertypes_database};
    std::vector<std::unique_ptr<Patch_material>> _materials;
 
    glm::mat4 _informal_projection_matrix;
