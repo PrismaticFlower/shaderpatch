@@ -1,6 +1,6 @@
 
-#include "materials_editor.hpp"
-#include "../material/constant_buffers.hpp"
+#include "editor.hpp"
+#include "constant_buffers.hpp"
 
 #include <algorithm>
 #include <type_traits>
@@ -9,9 +9,7 @@
 
 using namespace std::literals;
 
-namespace sp::core {
-
-using material::Material;
+namespace sp::material {
 
 namespace {
 
@@ -58,7 +56,7 @@ void property_editor(const std::string& name, Material_var<bool>& var) noexcept
    ImGui::Checkbox(name.c_str(), &var.value);
 }
 
-void resources_editor(Shader_resource_database& resources,
+void resources_editor(core::Shader_resource_database& resources,
                       std::vector<Com_ptr<ID3D11ShaderResourceView>>& srvs,
                       std::vector<std::string>& srv_names)
 {
@@ -99,7 +97,7 @@ void resources_editor(Shader_resource_database& resources,
    }
 }
 
-void material_editor(ID3D11Device5& device, Shader_resource_database& resources,
+void material_editor(ID3D11Device5& device, core::Shader_resource_database& resources,
                      Material& material) noexcept
 {
    if (!material.properties.empty() && ImGui::TreeNode("Properties")) {
@@ -109,7 +107,7 @@ void material_editor(ID3D11Device5& device, Shader_resource_database& resources,
       }
 
       material.constant_buffer =
-         material::create_constant_buffer(device, material.cb_name, material.properties);
+         create_constant_buffer(device, material.cb_name, material.properties);
 
       ImGui::TreePop();
    }
@@ -159,8 +157,8 @@ void material_editor(ID3D11Device5& device, Shader_resource_database& resources,
 }
 }
 
-void show_materials_editor(ID3D11Device5& device, Shader_resource_database& resources,
-                           const std::vector<std::unique_ptr<Material>>& materials) noexcept
+void show_editor(ID3D11Device5& device, core::Shader_resource_database& resources,
+                 const std::vector<std::unique_ptr<Material>>& materials) noexcept
 {
    if (ImGui::Begin("Materials")) {
       for (auto& material : materials) {

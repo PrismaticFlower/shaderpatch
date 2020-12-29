@@ -148,7 +148,6 @@
     <ClCompile Include="src\core\image_stretcher.cpp" />
     <ClCompile Include="src\core\input_layout_descriptions.cpp" />
     <ClCompile Include="src\core\late_backbuffer_resolver.cpp" />
-    <ClCompile Include="src\core\materials_editor.cpp" />
     <ClCompile Include="src\core\oit_provider.cpp" />
     <ClCompile Include="src\core\postprocessing\bloom.cpp" />
     <ClCompile Include="src\core\postprocessing\scene_blur.cpp" />
@@ -226,6 +225,7 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\material\constant_buffers.cpp" />
     <ClCompile Include="src\material\constant_buffer_builder.cpp" />
+    <ClCompile Include="src\material\editor.cpp" />
     <ClCompile Include="src\material\material.cpp" />
     <ClCompile Include="src\material\shader_factory.cpp" />
     <ClCompile Include="src\material\shader_set.cpp" />
@@ -248,7 +248,6 @@
     <ClInclude Include="src\core\depth_msaa_resolver.hpp" />
     <ClInclude Include="src\core\game_alt_postprocessing.hpp" />
     <ClInclude Include="src\core\late_backbuffer_resolver.hpp" />
-    <ClInclude Include="src\core\materials_editor.hpp" />
     <ClInclude Include="src\core\oit_provider.hpp" />
     <ClInclude Include="src\core\patch_effects_config_handle.hpp" />
     <ClInclude Include="src\core\game_input_layout.hpp" />
@@ -357,6 +356,7 @@
     <ClInclude Include="src\logger.hpp" />
     <ClInclude Include="src\material\constant_buffers.hpp" />
     <ClInclude Include="src\material\constant_buffer_builder.hpp" />
+    <ClInclude Include="src\material\editor.hpp" />
     <ClInclude Include="src\material\material.hpp" />
     <ClInclude Include="src\material\shader_factory.hpp" />
     <ClInclude Include="src\material\shader_set.hpp" />

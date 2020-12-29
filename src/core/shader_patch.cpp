@@ -3,9 +3,9 @@
 #include "../bf2_log_monitor.hpp"
 #include "../input_hooker.hpp"
 #include "../logger.hpp"
+#include "../material/editor.hpp"
 #include "../user_config.hpp"
 #include "basic_builtin_textures.hpp"
-#include "materials_editor.hpp"
 #include "patch_material_io.hpp"
 #include "patch_texture_io.hpp"
 #include "screenshot.hpp"
@@ -1684,7 +1684,7 @@ void Shader_patch::update_imgui() noexcept
       user_config.show_imgui();
       _effects.show_imgui(_window);
 
-      show_materials_editor(*_device, _shader_resource_database, _materials);
+      material::show_editor(*_device, _shader_resource_database, _materials);
 
       if (_bf2_log_monitor) _bf2_log_monitor->show_imgui(true);
    }
