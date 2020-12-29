@@ -1,8 +1,8 @@
 
 #include "patch_material.hpp"
 #include "../logger.hpp"
+#include "../material/constant_buffers.hpp"
 #include "d3d11_helpers.hpp"
-#include "material_constant_buffers.hpp"
 
 #include <iomanip>
 
@@ -12,8 +12,8 @@ namespace {
 
 auto init_constant_buffer(ID3D11Device5& device, const Material_config& material_config)
 {
-   return create_material_constant_buffer(device, material_config.cb_name,
-                                          material_config.properties);
+   return material::create_constant_buffer(device, material_config.cb_name,
+                                           material_config.properties);
 }
 
 auto init_resources(const std::vector<std::string>& resource_names,

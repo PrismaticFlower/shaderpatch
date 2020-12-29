@@ -1,6 +1,6 @@
 
 #include "materials_editor.hpp"
-#include "material_constant_buffers.hpp"
+#include "../material/constant_buffers.hpp"
 
 #include <algorithm>
 #include <type_traits>
@@ -107,7 +107,7 @@ void material_editor(ID3D11Device5& device, Shader_resource_database& resources,
       }
 
       material.constant_buffer =
-         create_material_constant_buffer(device, material.cb_name, material.properties);
+         material::create_constant_buffer(device, material.cb_name, material.properties);
 
       ImGui::TreePop();
    }

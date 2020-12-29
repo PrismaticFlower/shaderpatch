@@ -1,8 +1,8 @@
 
-#include "material_constant_buffers.hpp"
-#include "../material/constant_buffer_builder.hpp"
+#include "constant_buffers.hpp"
+#include "../core/d3d11_helpers.hpp"
 #include "compose_exception.hpp"
-#include "d3d11_helpers.hpp"
+#include "constant_buffer_builder.hpp"
 
 #include <iomanip>
 
@@ -10,7 +10,7 @@
 
 using namespace std::literals;
 
-namespace sp::core {
+namespace sp::material {
 
 namespace {
 
@@ -320,12 +320,13 @@ auto create_particle_ext_buffer(const Material_properties_view& props)
 
 }
 
-auto create_material_constant_buffer(ID3D11Device5& device,
-                                     const std::string_view cb_name,
-                                     const std::vector<Material_property>& properties)
+auto create_constant_buffer(ID3D11Device5& device, const std::string_view cb_name,
+                            const std::vector<Material_property>& properties)
    -> Com_ptr<ID3D11Buffer>
 {
    if (cb_name == "none"sv) return nullptr;
+
+   using core::create_immutable_constant_buffer;
 
    if (Material_properties_view properties_view{properties}; cb_name == "pbr"sv) {
       const auto buffer = create_pbr_constant_buffer(properties_view);
