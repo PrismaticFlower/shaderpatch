@@ -3,16 +3,14 @@
 #include "../logger.hpp"
 #include "../material/constant_buffers.hpp"
 
-#include <iomanip>
-
 namespace sp::material {
 
 namespace {
 
 auto init_constant_buffer(ID3D11Device5& device, const Material_config& material_config)
 {
-   return material::create_constant_buffer(device, material_config.cb_name,
-                                           material_config.properties);
+   return create_constant_buffer(device, material_config.cb_name,
+                                 material_config.properties);
 }
 
 auto init_resources(const std::vector<std::string>& resource_names,
@@ -30,8 +28,7 @@ auto init_resources(const std::vector<std::string>& resource_names,
       resources.emplace_back(resource_database.at_if(name));
 
       if (!resources.back()) {
-         log(Log_level::warning, "Shader resource "sv, std::quoted(name),
-             " does not exist."sv);
+         log_fmt(Log_level::warning, "Shader resource '{}' does not exist."sv, name);
       }
    }
 
@@ -52,8 +49,7 @@ auto init_fail_safe_texture(const std::vector<Com_ptr<ID3D11ShaderResourceView>>
 
 }
 
-Material::Material(Material_config material_config,
-                   material::Shader_factory& shader_factory,
+Material::Material(Material_config material_config, Shader_factory& shader_factory,
                    const core::Shader_resource_database& resource_database,
                    ID3D11Device5& device)
    : overridden_rendertype{material_config.overridden_rendertype},

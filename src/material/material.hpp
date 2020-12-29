@@ -1,10 +1,10 @@
 #pragma once
 
 #include "../core/texture_database.hpp"
-#include "../material/shader_factory.hpp"
 #include "com_ptr.hpp"
 #include "game_rendertypes.hpp"
 #include "patch_material_io.hpp"
+#include "shader_factory.hpp"
 
 #include <memory>
 #include <vector>
@@ -16,7 +16,7 @@ namespace sp::material {
 struct Material {
    Material() = default;
 
-   Material(Material_config material_config, material::Shader_factory& shader_factory,
+   Material(Material_config material_config, Shader_factory& shader_factory,
             const core::Shader_resource_database& texture_database,
             ID3D11Device5& device);
 
@@ -34,7 +34,7 @@ struct Material {
    static constexpr auto ps_cb_offset = 2;
 
    Rendertype overridden_rendertype;
-   std::shared_ptr<material::Shader_set> shader;
+   std::shared_ptr<Shader_set> shader;
 
    Material_cb_shader_stages cb_shader_stages;
    Com_ptr<ID3D11Buffer> constant_buffer;
