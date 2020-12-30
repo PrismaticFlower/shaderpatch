@@ -276,6 +276,9 @@
     <ClCompile Include="src\material\editor.cpp">
       <Filter>src\material</Filter>
     </ClCompile>
+    <ClCompile Include="src\material\factory.cpp">
+      <Filter>src\material</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -693,6 +696,9 @@
       <Filter>src\material</Filter>
     </ClInclude>
     <ClInclude Include="src\material\editor.hpp">
+      <Filter>src\material</Filter>
+    </ClInclude>
+    <ClInclude Include="src\material\factory.hpp">
       <Filter>src\material</Filter>
     </ClInclude>
   </ItemGroup>

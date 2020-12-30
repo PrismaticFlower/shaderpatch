@@ -3,6 +3,7 @@
 #include "../effects/control.hpp"
 #include "../effects/profiler.hpp"
 #include "../effects/rendertarget_allocator.hpp"
+#include "../material/factory.hpp"
 #include "../material/material.hpp"
 #include "../material/shader_factory.hpp"
 #include "../shader/database.hpp"
@@ -437,7 +438,8 @@ private:
    effects::Control _effects{_device, _shader_database};
    effects::Rendertarget_allocator _rendertarget_allocator{_device};
 
-   material::Shader_factory _material_shader_factory{_device, _shader_rendertypes_database};
+   material::Factory _material_factory{_device, _shader_rendertypes_database,
+                                       _shader_resource_database};
    std::vector<std::unique_ptr<material::Material>> _materials;
 
    glm::mat4 _informal_projection_matrix;

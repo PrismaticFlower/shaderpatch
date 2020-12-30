@@ -229,6 +229,7 @@
     <ClCompile Include="src\material\constant_buffer_builder.cpp" />
     <ClCompile Include="src\material\editor.cpp" />
     <ClCompile Include="src\material\material.cpp" />
+    <ClCompile Include="src\material\factory.cpp" />
     <ClCompile Include="src\material\shader_factory.cpp" />
     <ClCompile Include="src\material\shader_set.cpp" />
     <ClCompile Include="src\shader\cache.cpp" />
@@ -359,6 +360,7 @@
     <ClInclude Include="src\material\constant_buffers.hpp" />
     <ClInclude Include="src\material\constant_buffer_builder.hpp" />
     <ClInclude Include="src\material\editor.hpp" />
+    <ClInclude Include="src\material\factory.hpp" />
     <ClInclude Include="src\material\material.hpp" />
     <ClInclude Include="src\material\shader_factory.hpp" />
     <ClInclude Include="src\material\shader_set.hpp" />

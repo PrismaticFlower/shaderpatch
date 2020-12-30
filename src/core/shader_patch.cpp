@@ -645,16 +645,17 @@ auto Shader_patch::create_patch_material(const std::span<const std::byte> materi
    -> Material_handle
 {
    try {
-      auto material =
-         _materials
-            .emplace_back(std::make_unique<material::Material>(
-               read_patch_material(ucfb::Reader_strict<"matl"_mn>{material_data}),
-               _material_shader_factory, _shader_resource_database, *_device))
-            .get();
+      const auto config =
+         read_patch_material(ucfb::Reader_strict<"matl"_mn>{material_data});
+
+      auto material = _materials
+                         .emplace_back(std::make_unique<material::Material>(
+                            _material_factory.create_material(config)))
+                         .get();
 
       log(Log_level::info, "Loaded material "sv, std::quoted(material->name));
 
-      const auto material_deleter = [&](material::Material* material) noexcept {
+      const auto material_deleter = [this](material::Material* material) noexcept {
          if (_patch_material == material) set_patch_material(nullptr);
 
          for (auto it = _materials.begin(); it != _materials.end(); ++it) {
