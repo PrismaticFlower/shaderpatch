@@ -14,12 +14,6 @@
 namespace sp::material {
 
 struct Material {
-   Material() = default;
-
-   Material(Material_config material_config, Shader_factory& shader_factory,
-            const core::Shader_resource_database& texture_database,
-            ID3D11Device5& device);
-
    void update_resources(const core::Shader_resource_database& resource_database) noexcept;
 
    void bind_constant_buffers(ID3D11DeviceContext1& dc) noexcept;

@@ -7,12 +7,6 @@ namespace sp::material {
 
 namespace {
 
-auto init_constant_buffer(ID3D11Device5& device, const Material_config& material_config)
-{
-   return create_constant_buffer(device, material_config.cb_name,
-                                 material_config.properties);
-}
-
 auto init_resources(const std::vector<std::string>& resource_names,
                     const core::Shader_resource_database& resource_database) noexcept
    -> std::vector<Com_ptr<ID3D11ShaderResourceView>>
@@ -35,39 +29,6 @@ auto init_resources(const std::vector<std::string>& resource_names,
    return resources;
 }
 
-auto init_fail_safe_texture(const std::vector<Com_ptr<ID3D11ShaderResourceView>>& shader_resources,
-                            const std::int32_t fail_safe_texture_index) noexcept
-   -> Com_ptr<ID3D11ShaderResourceView>
-{
-   Expects(fail_safe_texture_index == -1 ||
-           fail_safe_texture_index < shader_resources.size());
-
-   if (fail_safe_texture_index == -1) return nullptr;
-
-   return shader_resources[fail_safe_texture_index];
-}
-
-}
-
-Material::Material(Material_config material_config, Shader_factory& shader_factory,
-                   const core::Shader_resource_database& resource_database,
-                   ID3D11Device5& device)
-   : overridden_rendertype{material_config.overridden_rendertype},
-     shader{shader_factory.create(material_config.rendertype)},
-     cb_shader_stages{material_config.cb_shader_stages},
-     constant_buffer{init_constant_buffer(device, material_config)},
-     vs_shader_resources{init_resources(material_config.vs_resources, resource_database)},
-     ps_shader_resources{init_resources(material_config.ps_resources, resource_database)},
-     fail_safe_game_texture{
-        init_fail_safe_texture(ps_shader_resources,
-                               material_config.fail_safe_texture_index)},
-     name{std::move(material_config.name)},
-     rendertype{material_config.rendertype},
-     cb_name{material_config.cb_name},
-     properties{material_config.properties},
-     vs_shader_resources_names{material_config.vs_resources},
-     ps_shader_resources_names{material_config.ps_resources}
-{
 }
 
 void Material::update_resources(const core::Shader_resource_database& resource_database) noexcept
