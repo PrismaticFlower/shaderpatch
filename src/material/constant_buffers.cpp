@@ -115,7 +115,7 @@ auto create_pbr_constant_buffer(const Material_properties_view& props)
    cb.set("base_metallicness"sv, props.value<float>("Metallicness"sv, 1.0f));
    cb.set("base_roughness"sv, props.value<float>("Roughness"sv, 1.0f));
    cb.set("ao_strength"sv, props.value<float>("AOStrength"sv, 1.0f));
-   cb.set("emissive_power"sv, props.value<float>("AOStrength"sv, 1.0f));
+   cb.set("emissive_power"sv, props.value<float>("EmissivePower"sv, 1.0f));
 
    return cb.complete();
 }
