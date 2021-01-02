@@ -1,6 +1,7 @@
 
 #include "factory.hpp"
 #include "../logger.hpp"
+#include "../user_config.hpp"
 #include "material_type.hpp"
 #include "sol_create_usertypes.hpp"
 
@@ -15,8 +16,6 @@ using namespace std::literals;
 namespace sp::material {
 
 namespace {
-
-const auto TEMP_scripts_path = LR"(.\data\shaderpatch\scripts\material)"sv;
 
 auto make_resources(const std::vector<std::string>& resource_names,
                     const core::Shader_resource_database& resource_database) noexcept
@@ -82,7 +81,8 @@ Factory::Factory(Com_ptr<ID3D11Device5> device,
    sol_create_usertypes(lua);
 
    // TODO: Make this async.
-   for (auto script_entry : std::filesystem::directory_iterator{TEMP_scripts_path}) {
+   for (auto script_entry : std::filesystem::directory_iterator{
+           user_config.developer.material_scripts_path}) {
       if (!script_entry.is_regular_file()) continue;
 
       auto script_path = script_entry.path();

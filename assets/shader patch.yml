@@ -74,4 +74,6 @@ Developer:
 
    Shader Source Path: .\data\shaderpatch\shaders\src
 
+   Material Scripts Path: .\data\shaderpatch\scripts\material
+
    Scalable Font Name: ariblk.ttf
