@@ -75,8 +75,7 @@ Factory::Factory(Com_ptr<ID3D11Device5> device,
 {
    auto& lua = _lua_state_owner->lua;
 
-   lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::math,
-                      sol::lib::table, sol::lib::utf8);
+   lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::math, sol::lib::table);
 
    sol_create_usertypes(lua);
 
