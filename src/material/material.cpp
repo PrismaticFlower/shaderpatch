@@ -1,7 +1,6 @@
 
 #include "material.hpp"
 #include "../logger.hpp"
-#include "../material/constant_buffers.hpp"
 
 namespace sp::material {
 

@@ -1685,7 +1685,7 @@ void Shader_patch::update_imgui() noexcept
       user_config.show_imgui();
       _effects.show_imgui(_window);
 
-      material::show_editor(*_device, _shader_resource_database, _materials);
+      material::show_editor(_material_factory, _shader_resource_database, _materials);
 
       if (_bf2_log_monitor) _bf2_log_monitor->show_imgui(true);
    }

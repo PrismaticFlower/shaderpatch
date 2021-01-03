@@ -225,7 +225,6 @@
     </ClCompile>
     <ClCompile Include="src\input_hooker.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\material\constant_buffers.cpp" />
     <ClCompile Include="src\material\constant_buffer_builder.cpp" />
     <ClCompile Include="src\material\editor.cpp" />
     <ClCompile Include="src\material\material.cpp" />
@@ -358,7 +357,6 @@
     <ClInclude Include="src\imgui\imstb_truetype.h" />
     <ClInclude Include="src\input_hooker.hpp" />
     <ClInclude Include="src\logger.hpp" />
-    <ClInclude Include="src\material\constant_buffers.hpp" />
     <ClInclude Include="src\material\constant_buffer_builder.hpp" />
     <ClInclude Include="src\material\editor.hpp" />
     <ClInclude Include="src\material\factory.hpp" />

@@ -1,6 +1,5 @@
 
 #include "editor.hpp"
-#include "constant_buffers.hpp"
 
 #include <algorithm>
 #include <type_traits>
@@ -97,7 +96,7 @@ void resources_editor(core::Shader_resource_database& resources,
    }
 }
 
-void material_editor(ID3D11Device5& device, core::Shader_resource_database& resources,
+void material_editor(Factory& factory, core::Shader_resource_database& resources,
                      Material& material) noexcept
 {
    if (!material.properties.empty() && ImGui::TreeNode("Properties")) {
@@ -105,9 +104,6 @@ void material_editor(ID3D11Device5& device, core::Shader_resource_database& reso
          std::visit([&](auto& value) { property_editor(prop.name, value); },
                     prop.value);
       }
-
-      material.constant_buffer =
-         create_constant_buffer(device, material.cb_name, material.properties);
 
       ImGui::TreePop();
    }
@@ -154,16 +150,18 @@ void material_editor(ID3D11Device5& device, core::Shader_resource_database& reso
 
       ImGui::TreePop();
    }
+
+   factory.update_material(material);
 }
 }
 
-void show_editor(ID3D11Device5& device, core::Shader_resource_database& resources,
+void show_editor(Factory& factory, core::Shader_resource_database& resources,
                  const std::vector<std::unique_ptr<Material>>& materials) noexcept
 {
    if (ImGui::Begin("Materials")) {
       for (auto& material : materials) {
          if (ImGui::TreeNode(material->name.c_str())) {
-            material_editor(device, resources, *material);
+            material_editor(factory, resources, *material);
             ImGui::TreePop();
          }
       }

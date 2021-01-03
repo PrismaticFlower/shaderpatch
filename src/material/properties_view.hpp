@@ -13,8 +13,8 @@ public:
    {
    }
 
-   Properties_view(const Properties_view&) = delete;
-   Properties_view& operator=(const Properties_view&) = delete;
+   Properties_view(const Properties_view&) = default;
+   Properties_view& operator=(const Properties_view&) = default;
 
    Properties_view(Properties_view&&) = delete;
    Properties_view& operator=(Properties_view&&) = delete;

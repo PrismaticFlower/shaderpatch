@@ -32,6 +32,8 @@ public:
 
    auto create_material(const Material_config& config) noexcept -> material::Material;
 
+   void update_material(material::Material& material) noexcept;
+
 private:
    Com_ptr<ID3D11Device5> _device;
    Shader_factory _shader_factory;

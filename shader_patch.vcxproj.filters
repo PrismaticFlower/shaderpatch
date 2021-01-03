@@ -267,9 +267,6 @@
     <ClCompile Include="src\material\shader_set.cpp">
       <Filter>src\material</Filter>
     </ClCompile>
-    <ClCompile Include="src\material\constant_buffers.cpp">
-      <Filter>src\material</Filter>
-    </ClCompile>
     <ClCompile Include="src\material\material.cpp">
       <Filter>src\material</Filter>
     </ClCompile>
@@ -690,9 +687,6 @@
       <Filter>src\material</Filter>
     </ClInclude>
     <ClInclude Include="src\material\shader_set.hpp">
-      <Filter>src\material</Filter>
-    </ClInclude>
-    <ClInclude Include="src\material\constant_buffers.hpp">
       <Filter>src\material</Filter>
     </ClInclude>
     <ClInclude Include="src\material\material.hpp">
