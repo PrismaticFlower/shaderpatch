@@ -25,7 +25,7 @@ auto make_constant_buffer(ID3D11Device5& device, Material_type& material_type,
    return core::create_immutable_constant_buffer(device, std::span{buffer});
 }
 
-auto make_resources(const std::vector<std::string>& resource_names,
+auto make_resources(std::span<const std::string> resource_names,
                     const core::Shader_resource_database& resource_database) noexcept
    -> std::vector<Com_ptr<ID3D11ShaderResourceView>>
 {
@@ -48,23 +48,14 @@ auto make_resources(const std::vector<std::string>& resource_names,
 }
 
 auto make_fail_safe_texture(const std::int32_t fail_safe_texture_index,
-                            const std::vector<std::string>& resource_names,
-                            const core::Shader_resource_database& resource_database) noexcept
+                            const std::vector<Com_ptr<ID3D11ShaderResourceView>>& resources) noexcept
    -> Com_ptr<ID3D11ShaderResourceView>
 {
-   if (fail_safe_texture_index == -1 ||
-       fail_safe_texture_index >= resource_names.size()) {
+   if (fail_safe_texture_index == -1 || fail_safe_texture_index >= resources.size()) {
       return nullptr;
    }
 
-   const auto& name = resource_names[fail_safe_texture_index];
-   auto resource = resource_database.at_if(name);
-
-   if (!resource) {
-      log_fmt(Log_level::warning, "Shader resource '{}' does not exist."sv, name);
-   }
-
-   return resource;
+   return resources[fail_safe_texture_index];
 }
 
 }
@@ -109,22 +100,18 @@ auto Factory::create_material(const Material_config& config) noexcept -> Materia
                                .shader = _shader_factory.create(config.rendertype),
                                .cb_shader_stages = config.cb_shader_stages,
 
-                               .fail_safe_game_texture =
-                                  make_fail_safe_texture(config.fail_safe_texture_index,
-                                                         config.ps_resources,
-                                                         _shader_resource_database),
-
                                .name = config.name,
                                .rendertype = config.rendertype,
                                .cb_name = config.cb_name,
 
                                .properties = config.properties,
-
-                               .vs_shader_resources_names = config.vs_resources,
-                               .ps_shader_resources_names = config.ps_resources};
+                               .resource_properties = config.resources};
 
    update_material(material);
 
+   material.fail_safe_game_texture =
+      make_fail_safe_texture(config.fail_safe_texture_index,
+                             material.ps_shader_resources);
    return material;
 }
 
@@ -133,9 +120,24 @@ void Factory::update_material(material::Material& material) noexcept
    if (auto it = _material_types.find(material.cb_name); it != _material_types.end()) {
       auto& material_type = it->second;
 
-      material.constant_buffer =
-         make_constant_buffer(*_device, *material_type,
-                              Properties_view{material.properties});
+      Properties_view properties_view{material.properties};
+
+      if (material_type->has_constant_buffer()) {
+         material.constant_buffer =
+            make_constant_buffer(*_device, *material_type, properties_view);
+      }
+
+      if (material_type->has_resources()) {
+         material.ps_shader_resources_names =
+            material_type->make_resources_vec(properties_view,
+                                              material.resource_properties);
+      }
+
+      if (material_type->has_vs_resources()) {
+         material.vs_shader_resources_names =
+            material_type->make_vs_resources_vec(properties_view,
+                                                 material.resource_properties);
+      }
    }
 
    material.vs_shader_resources =

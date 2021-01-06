@@ -87,11 +87,14 @@ auto make_font_declaration(std::string name, std::string_view atlas_index,
             ucfb::File_writer tex{ucfb::writer_headerless, tex_ostream};
 
             write_patch_material(tex,
-                                 {.name = name + "_tex0"s,
-                                  .rendertype = "text"s,
-                                  .overridden_rendertype = Rendertype::_interface,
-                                  .vs_resources = {std::string{atlas_index}},
-                                  .ps_resources = {std::string{atlas_texture}}});
+                                 {
+                                    .name = name + "_tex0"s,
+                                    .rendertype = "text"s,
+                                    .overridden_rendertype = Rendertype::_interface,
+                                    .cb_name = "text"s,
+                                    .resources = {{"atlas_index"s, std::string{atlas_index}},
+                                                  {"atlas"s, std::string{atlas_texture}}},
+                                 });
          }
 
          // Like, really, really come back to haunt me...

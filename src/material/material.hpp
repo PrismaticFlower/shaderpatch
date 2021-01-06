@@ -9,6 +9,8 @@
 #include <memory>
 #include <vector>
 
+#include <absl/container/inlined_vector.h>
+
 #include <d3d11_4.h>
 
 namespace sp::material {
@@ -27,6 +29,8 @@ struct Material {
    static constexpr auto gs_cb_offset = 0;
    static constexpr auto ps_cb_offset = 2;
 
+   using Resource_names = absl::InlinedVector<std::string, 16>;
+
    Rendertype overridden_rendertype;
    std::shared_ptr<Shader_set> shader;
 
@@ -42,8 +46,9 @@ struct Material {
    std::string rendertype;
    std::string cb_name;
    std::vector<Material_property> properties;
-   std::vector<std::string> vs_shader_resources_names;
-   std::vector<std::string> ps_shader_resources_names;
+   absl::flat_hash_map<std::string, std::string> resource_properties;
+   Resource_names vs_shader_resources_names;
+   Resource_names ps_shader_resources_names;
 };
 
 }

@@ -43,3 +43,12 @@ function make_constant_buffer(props)
 
    return cb:complete()
 end
+
+function fill_resource_vec(props, resource_props, resources)
+
+   resources:add(resource_props["NormalMap"] or "$null_normalmap")
+   resources:add(resource_props["ReflectionMap"] or "")
+   resources:add(resource_props["DepthBuffer"] or "$depth")
+   resources:add(resource_props["RefractionMap"] or "$refraction")
+   
+end

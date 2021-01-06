@@ -11,3 +11,10 @@ function make_constant_buffer(props)
 
    return cb:complete()
 end
+
+function fill_resource_vec(props, resource_props, resources)
+
+   resources:add(resource_props["ColorMap"] or "$white")
+   resources:add(resource_props["EmissiveMap"] or "")
+
+end

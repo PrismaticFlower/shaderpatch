@@ -6,7 +6,7 @@ namespace sp::material {
 
 namespace {
 
-auto init_resources(const std::vector<std::string>& resource_names,
+auto init_resources(const std::span<const std::string> resource_names,
                     const core::Shader_resource_database& resource_database) noexcept
    -> std::vector<Com_ptr<ID3D11ShaderResourceView>>
 {

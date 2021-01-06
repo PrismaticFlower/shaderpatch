@@ -32,3 +32,11 @@ function make_constant_buffer(props)
 
    return cb:complete()
 end
+
+function fill_resource_vec(props, resource_props, resources)
+
+   resources:add(resource_props["height_textures"] or "")
+   resources:add(resource_props["albedo_ao_textures"] or "")
+   resources:add(resource_props["normal_mr_textures"] or "")
+   
+end

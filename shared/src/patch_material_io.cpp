@@ -67,19 +67,17 @@ void write_patch_material(ucfb::File_writer& writer, const Material_config& conf
          }
       }
 
-      const auto write_resources = [&](const Magic_number mn,
-                                       const std::vector<std::string>& textures) {
-         auto texs = matl.emplace_child(mn);
+      const auto write_resources =
+         [&](const Magic_number mn,
+             const absl::flat_hash_map<std::string, std::string>& resources) {
+            auto texs = matl.emplace_child(mn);
 
-         texs.write<std::uint32_t>(gsl::narrow_cast<std::uint32_t>(textures.size()));
-         for (const auto& texture : textures) texs.write(texture);
-      };
+            texs.write<std::uint32_t>(
+               gsl::narrow_cast<std::uint32_t>(resources.size()));
+            for (const auto& [key, value] : resources) texs.write(key, value);
+         };
 
-      write_resources("VSSR"_mn, config.vs_resources);
-      write_resources("HSSR"_mn, config.hs_resources);
-      write_resources("DSSR"_mn, config.ds_resources);
-      write_resources("GSSR"_mn, config.gs_resources);
-      write_resources("PSSR"_mn, config.ps_resources);
+      write_resources("SR__"_mn, config.resources);
    }
 
    const auto matl_data = ostream.str();
@@ -119,6 +117,53 @@ auto read_patch_material(ucfb::Reader_strict<"matl"_mn> reader) -> Material_conf
 }
 
 namespace {
+
+const absl::flat_hash_map<std::string, std::vector<std::string>> resource_names_mappings{
+   {"basic_unlit"s, {"ColorMap"s, "EmissiveMap"s}},
+
+   {"normal_ext_terrain"s,
+    {"height_textures"s, "diffuse_ao_textures"s, "normal_gloss_textures"s, "envmap"s}},
+
+   {"normal_ext"s,
+    {"DiffuseMap"s, "NormalMap"s, "HeightMap"s, "DetailMap"s, "DetailNormalMap"s,
+     "EmissiveMap"s, "OverlayDiffuseMap"s, "OverlayNormalMap"s, "AOMap"s, "EnvMap"s}},
+
+   {"normal_ext-tessellated"s,
+    {"DiffuseMap"s, "NormalMap"s, "HeightMap"s, "DetailMap"s, "DetailNormalMap"s,
+     "EmissiveMap"s, "OverlayDiffuseMap"s, "OverlayNormalMap"s, "AOMap"s, "EnvMap"s}},
+
+   {"particle_ext"s, {"ColorMap"s}},
+
+   {"pbr_terrain"s, {"height_textures"s, "albedo_ao_textures"s, "normal_mr_textures"s}},
+
+   {"pbr"s,
+    {"AlbedoMap"s, "NormalMap"s, "MetallicRoughnessMap"s, "AOMap"s, "EmissiveMap"s,
+     // TODO: Remove these TEMP ones.
+     "TEMP_ibl_dfg"s, "TEMP_ibl_specular"s, "TEMP_ibl_diffuse"}},
+
+   {"skybox"s, {"Skybox"s, "SkyboxEmissive"s}},
+
+   {"static_water"s,
+    {"NormalMap"s, "ReflectionMap"s, "DepthBuffer"s, "RefractionMap"s}}};
+
+template<Magic_number mn>
+auto read_old_resources(ucfb::Reader_strict<mn> texs,
+                        const std::vector<std::string>& resource_mappings)
+   -> absl::flat_hash_map<std::string, std::string>
+{
+   const auto count = texs.read<std::uint32_t>();
+
+   absl::flat_hash_map<std::string, std::string> resources;
+   resources.reserve(count);
+
+   const std::size_t read_count = std::min(count, resource_mappings.size());
+
+   for (auto i = 0; i < read_count; ++i) {
+      resources[resource_mappings[i]] = texs.read_string();
+   }
+
+   return resources;
+}
 
 void fixup_normal_ext_parallax_occlusion_mapping(Material_config& config)
 {
@@ -183,6 +228,7 @@ auto read_material_prop_var(ucfb::Reader_strict<"PRPS"_mn>& prps,
 }
 
 namespace v_3 {
+
 auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
 {
    Material_config config{};
@@ -219,24 +265,23 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
       }
    }
 
-   const auto read_resources = [&](auto texs, std::vector<std::string>& textures) {
-      const auto count = texs.read<std::uint32_t>();
-      textures.reserve(count);
+   const auto read_resources =
+      [&](auto sr, absl::flat_hash_map<std::string, std::string>& resources) {
+         const auto count = sr.read<std::uint32_t>();
+         resources.reserve(count);
 
-      for (auto i = 0; i < count; ++i)
-         textures.emplace_back(texs.read_string());
-   };
+         for (auto i = 0; i < count; ++i) {
+            resources.emplace(std::pair{sr.read_string(), sr.read_string()});
+         }
+      };
 
-   read_resources(reader.read_child_strict<"VSSR"_mn>(), config.vs_resources);
-   read_resources(reader.read_child_strict<"HSSR"_mn>(), config.hs_resources);
-   read_resources(reader.read_child_strict<"DSSR"_mn>(), config.ds_resources);
-   read_resources(reader.read_child_strict<"GSSR"_mn>(), config.gs_resources);
-   read_resources(reader.read_child_strict<"PSSR"_mn>(), config.ps_resources);
+   read_resources(reader.read_child_strict<"SR__"_mn>(), config.resources);
 
    fixup_normal_ext_parallax_occlusion_mapping(config);
 
    return config;
 }
+
 }
 
 namespace v_2 {
@@ -279,19 +324,14 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
       }
    }
 
-   const auto read_resources = [&](auto texs, std::vector<std::string>& textures) {
-      const auto count = texs.read<std::uint32_t>();
-      textures.reserve(count);
+   const auto material_type = split_string_on(config.rendertype, "."sv)[0];
 
-      for (auto i = 0; i < count; ++i)
-         textures.emplace_back(texs.read_string());
-   };
-
-   read_resources(reader.read_child_strict<"VSSR"_mn>(), config.vs_resources);
-   read_resources(reader.read_child_strict<"HSSR"_mn>(), config.hs_resources);
-   read_resources(reader.read_child_strict<"DSSR"_mn>(), config.ds_resources);
-   read_resources(reader.read_child_strict<"GSSR"_mn>(), config.gs_resources);
-   read_resources(reader.read_child_strict<"PSSR"_mn>(), config.ps_resources);
+   reader.read_child_strict<"VSSR"_mn>();
+   reader.read_child_strict<"HSSR"_mn>();
+   reader.read_child_strict<"DSSR"_mn>();
+   reader.read_child_strict<"GSSR"_mn>();
+   config.resources = read_old_resources(reader.read_child_strict<"PSSR"_mn>(),
+                                         resource_names_mappings.at(material_type));
 
    fixup_normal_ext_parallax_occlusion_mapping(config);
 
@@ -300,39 +340,18 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
 }
 
 namespace v_1 {
-struct Material_info {
-   std::string name;
-   std::string rendertype;
-   Rendertype overridden_rendertype;
-   Material_cb_shader_stages cb_shader_stages = Material_cb_shader_stages::none;
-   Aligned_vector<std::byte, 16> constant_buffer{};
-   std::vector<std::string> vs_textures{};
-   std::vector<std::string> hs_textures{};
-   std::vector<std::string> ds_textures{};
-   std::vector<std::string> gs_textures{};
-   std::vector<std::string> ps_textures{};
-   std::uint32_t fail_safe_texture_index{};
-   bool tessellation = false;
-   std::uint32_t tessellation_primitive_topology = 0;
-};
 
-auto convert_material_info_to_material_config(const Material_info& info) -> Material_config
+auto convert_v1_constant_buffer(const std::string_view rendertype,
+                                const std::span<const std::byte> constant_buffer)
+   -> std::pair<std::vector<Material_property>, std::string>
 {
    Material_config config;
 
-   config.name = info.name;
-   config.rendertype = info.rendertype;
-   config.overridden_rendertype = info.overridden_rendertype;
-   config.cb_shader_stages = info.cb_shader_stages;
-   config.vs_resources = info.vs_textures;
-   config.hs_resources = info.hs_textures;
-   config.ds_resources = info.ds_textures;
-   config.gs_resources = info.gs_textures;
-   config.ps_resources = info.ps_textures;
-   config.fail_safe_texture_index = info.fail_safe_texture_index;
+   std::vector<Material_property> properties;
+   std::string cb_name;
 
-   if (begins_with(info.rendertype, "pbr"sv)) {
-      config.cb_name = "pbr"s;
+   if (begins_with(rendertype, "pbr"sv)) {
+      cb_name = "pbr"s;
 
       struct PBR_cb {
          glm::vec3 base_color = {1.0f, 1.0f, 1.0f};
@@ -344,24 +363,24 @@ auto convert_material_info_to_material_config(const Material_info& info) -> Mate
 
       PBR_cb pbr_cb{};
 
-      std::memcpy(&pbr_cb, info.constant_buffer.data(),
-                  safe_min(sizeof(PBR_cb), info.constant_buffer.size()));
+      std::memcpy(&pbr_cb, constant_buffer.data(),
+                  safe_min(sizeof(PBR_cb), constant_buffer.size()));
 
-      config.properties.emplace_back("BaseColor"s, pbr_cb.base_color,
-                                     glm::vec3{0.0f}, glm::vec3{1.0f},
-                                     Material_property_var_op::none);
-      config.properties.emplace_back("Metallicness"s, pbr_cb.base_metallicness,
-                                     0.0f, 1.0f, Material_property_var_op::none);
-      config.properties.emplace_back("Roughness"s, pbr_cb.base_roughness, 0.0f,
-                                     1.0f, Material_property_var_op::none);
-      config.properties.emplace_back("AOStrength"s, 1.0f / pbr_cb.ao_strength,
-                                     0.0f, 2048.0f, Material_property_var_op::rcp);
-      config.properties.emplace_back("EmissivePower"s,
-                                     std::log2(pbr_cb.emissive_power), 0.0f,
-                                     2048.0f, Material_property_var_op::exp2);
+      properties.reserve(5);
+
+      properties.emplace_back("BaseColor"s, pbr_cb.base_color, glm::vec3{0.0f},
+                              glm::vec3{1.0f}, Material_property_var_op::none);
+      properties.emplace_back("Metallicness"s, pbr_cb.base_metallicness, 0.0f,
+                              1.0f, Material_property_var_op::none);
+      properties.emplace_back("Roughness"s, pbr_cb.base_roughness, 0.0f, 1.0f,
+                              Material_property_var_op::none);
+      properties.emplace_back("AOStrength"s, 1.0f / pbr_cb.ao_strength, 0.0f,
+                              2048.0f, Material_property_var_op::rcp);
+      properties.emplace_back("EmissivePower"s, std::log2(pbr_cb.emissive_power),
+                              0.0f, 2048.0f, Material_property_var_op::exp2);
    }
-   else if (begins_with(info.rendertype, "normal_ext"sv)) {
-      config.cb_name = "normal_ext"s;
+   else if (begins_with(rendertype, "normal_ext"sv)) {
+      cb_name = "normal_ext"s;
 
       struct Normal_ext_cb {
          float disp_scale = 1.0f;
@@ -390,117 +409,109 @@ auto convert_material_info_to_material_config(const Material_info& info) -> Mate
 
       Normal_ext_cb normal_ext_cb{};
 
-      std::memcpy(&normal_ext_cb, info.constant_buffer.data(),
-                  safe_min(sizeof(Normal_ext_cb), info.constant_buffer.size()));
+      std::memcpy(&normal_ext_cb, constant_buffer.data(),
+                  safe_min(sizeof(Normal_ext_cb), constant_buffer.size()));
 
-      config.properties.emplace_back("DisplacementScale"s,
-                                     normal_ext_cb.disp_scale, -2048.0f,
-                                     2048.0f, Material_property_var_op::none);
-      config.properties.emplace_back("DisplacementOffset"s,
-                                     normal_ext_cb.disp_offset, -2048.0f,
-                                     2048.0f, Material_property_var_op::none);
-      config.properties.emplace_back("TessellationDetail"s,
-                                     normal_ext_cb.material_tess_detail, 0.0f,
-                                     65536.0f, Material_property_var_op::none);
-      config.properties.emplace_back("TessellationSmoothingAmount"s,
-                                     normal_ext_cb.tess_smoothing_amount, 0.0f,
-                                     1.0f, Material_property_var_op::none);
-      config.properties.emplace_back("DiffuseColor"s, normal_ext_cb.base_diffuse_color,
-                                     glm::vec3{0.0f}, glm::vec3{1.0f},
-                                     Material_property_var_op::none);
-      config.properties.emplace_back("GlossMapWeight"s, normal_ext_cb.gloss_map_weight,
-                                     0.0f, 1.0f, Material_property_var_op::none);
-      config.properties.emplace_back("SpecularColor"s, normal_ext_cb.base_specular_color,
-                                     glm::vec3{0.0f}, glm::vec3{1.0f},
-                                     Material_property_var_op::none);
-      config.properties.emplace_back("SpecularExponent"s,
-                                     normal_ext_cb.specular_exponent, 1.0f,
-                                     2048.0f, Material_property_var_op::none);
-      config.properties.emplace_back("UseParallaxOcclusionMapping"s,
-                                     normal_ext_cb.use_parallax_occlusion_mapping != 0,
-                                     false, true, Material_property_var_op::none);
-      config.properties.emplace_back("HeightScale"s, normal_ext_cb.height_scale,
-                                     0.0f, 2048.0f, Material_property_var_op::none);
-      config.properties.emplace_back("UseDetailMaps"s,
-                                     normal_ext_cb.use_detail_textures != 0,
-                                     false, true, Material_property_var_op::none);
-      config.properties.emplace_back("DetailTextureScale"s,
-                                     normal_ext_cb.detail_texture_scale, 0.0f,
-                                     2048.0f, Material_property_var_op::none);
-      config.properties.emplace_back("UseOverlayMaps"s,
-                                     normal_ext_cb.use_overlay_textures != 0,
-                                     false, true, Material_property_var_op::none);
-      config.properties.emplace_back("OverlayTextureScale"s,
-                                     normal_ext_cb.overlay_texture_scale, 0.0f,
-                                     2048.0f, Material_property_var_op::none);
-      config.properties.emplace_back("UseEmissiveMap"s,
-                                     normal_ext_cb.use_emissive_texture != 0,
-                                     false, true, Material_property_var_op::none);
-      config.properties.emplace_back("EmissiveTextureScale"s,
-                                     normal_ext_cb.emissive_texture_scale, 0.0f,
-                                     2048.0f, Material_property_var_op::none);
-      config.properties.emplace_back("EmissivePower"s,
-                                     std::log2(normal_ext_cb.emissive_power), -2048.0f,
-                                     2048.0f, Material_property_var_op::exp2);
+      properties.reserve(17);
+
+      properties.emplace_back("DisplacementScale"s, normal_ext_cb.disp_scale,
+                              -2048.0f, 2048.0f, Material_property_var_op::none);
+      properties.emplace_back("DisplacementOffset"s, normal_ext_cb.disp_offset,
+                              -2048.0f, 2048.0f, Material_property_var_op::none);
+      properties.emplace_back("TessellationDetail"s, normal_ext_cb.material_tess_detail,
+                              0.0f, 65536.0f, Material_property_var_op::none);
+      properties.emplace_back("TessellationSmoothingAmount"s,
+                              normal_ext_cb.tess_smoothing_amount, 0.0f, 1.0f,
+                              Material_property_var_op::none);
+      properties.emplace_back("DiffuseColor"s, normal_ext_cb.base_diffuse_color,
+                              glm::vec3{0.0f}, glm::vec3{1.0f},
+                              Material_property_var_op::none);
+      properties.emplace_back("GlossMapWeight"s, normal_ext_cb.gloss_map_weight,
+                              0.0f, 1.0f, Material_property_var_op::none);
+      properties.emplace_back("SpecularColor"s,
+                              normal_ext_cb.base_specular_color, glm::vec3{0.0f},
+                              glm::vec3{1.0f}, Material_property_var_op::none);
+      properties.emplace_back("SpecularExponent"s, normal_ext_cb.specular_exponent,
+                              1.0f, 2048.0f, Material_property_var_op::none);
+      properties.emplace_back("UseParallaxOcclusionMapping"s,
+                              normal_ext_cb.use_parallax_occlusion_mapping != 0,
+                              false, true, Material_property_var_op::none);
+      properties.emplace_back("HeightScale"s, normal_ext_cb.height_scale, 0.0f,
+                              2048.0f, Material_property_var_op::none);
+      properties.emplace_back("UseDetailMaps"s, normal_ext_cb.use_detail_textures != 0,
+                              false, true, Material_property_var_op::none);
+      properties.emplace_back("DetailTextureScale"s, normal_ext_cb.detail_texture_scale,
+                              0.0f, 2048.0f, Material_property_var_op::none);
+      properties.emplace_back("UseOverlayMaps"s,
+                              normal_ext_cb.use_overlay_textures != 0, false,
+                              true, Material_property_var_op::none);
+      properties.emplace_back("OverlayTextureScale"s, normal_ext_cb.overlay_texture_scale,
+                              0.0f, 2048.0f, Material_property_var_op::none);
+      properties.emplace_back("UseEmissiveMap"s,
+                              normal_ext_cb.use_emissive_texture != 0, false,
+                              true, Material_property_var_op::none);
+      properties.emplace_back("EmissiveTextureScale"s,
+                              normal_ext_cb.emissive_texture_scale, 0.0f,
+                              2048.0f, Material_property_var_op::none);
+      properties.emplace_back("EmissivePower"s,
+                              std::log2(normal_ext_cb.emissive_power), -2048.0f,
+                              2048.0f, Material_property_var_op::exp2);
    }
    else {
       throw std::runtime_error{"unexpected rendertype"};
    }
 
-   return config;
+   return {std::move(properties), std::move(cb_name)};
 }
 
 auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
 {
-   Material_info info{};
+   Material_config config{};
 
    const auto version =
       reader.read_child_strict<"VER_"_mn>().read<Material_version>();
 
    Ensures(version == Material_version::v_1);
 
-   info.name = reader.read_child_strict<"NAME"_mn>().read_string();
-   info.rendertype = reader.read_child_strict<"RTYP"_mn>().read_string();
-   info.overridden_rendertype =
+   config.name = reader.read_child_strict<"NAME"_mn>().read_string();
+   config.rendertype = reader.read_child_strict<"RTYP"_mn>().read_string();
+   config.overridden_rendertype =
       reader.read_child_strict<"ORTP"_mn>().read<Rendertype>();
 
-   info.cb_shader_stages =
+   config.cb_shader_stages =
       reader.read_child_strict<"CBST"_mn>().read<Material_cb_shader_stages>();
 
    {
       auto cb__ = reader.read_child_strict<"CB__"_mn>();
       const auto constants = cb__.read_array<std::byte>(cb__.size());
 
-      info.constant_buffer.resize(next_multiple_of<std::size_t{16}>(constants.size()));
-      std::memcpy(info.constant_buffer.data(), constants.data(), constants.size());
+      std::tie(config.properties, config.cb_name) =
+         convert_v1_constant_buffer(config.rendertype, constants);
    }
 
-   const auto read_textures = [&](auto texs, std::vector<std::string>& textures) {
-      const auto count = texs.read<std::uint32_t>();
-      textures.reserve(count);
+   const auto material_type = split_string_on(config.rendertype, "."sv)[0];
 
-      for (auto i = 0; i < count; ++i)
-         textures.emplace_back(texs.read_string());
-   };
+   reader.read_child_strict<"VSSR"_mn>();
+   reader.read_child_strict<"HSSR"_mn>();
+   reader.read_child_strict<"DSSR"_mn>();
+   reader.read_child_strict<"GSSR"_mn>();
+   config.resources = read_old_resources(reader.read_child_strict<"PSSR"_mn>(),
+                                         resource_names_mappings.at(material_type));
 
-   read_textures(reader.read_child_strict<"VSSR"_mn>(), info.vs_textures);
-   read_textures(reader.read_child_strict<"HSSR"_mn>(), info.hs_textures);
-   read_textures(reader.read_child_strict<"DSSR"_mn>(), info.ds_textures);
-   read_textures(reader.read_child_strict<"GSSR"_mn>(), info.gs_textures);
-   read_textures(reader.read_child_strict<"PSSR"_mn>(), info.ps_textures);
-
-   info.fail_safe_texture_index =
+   config.fail_safe_texture_index =
       reader.read_child_strict<"FSTX"_mn>().read<std::uint32_t>();
 
-   std::tie(info.tessellation, info.tessellation_primitive_topology) =
+   [[maybe_unused]] const auto [tessellation, tessellation_primitive_topology] =
       reader.read_child_strict<"TESS"_mn>().read_multi<bool, std::uint32_t>();
 
    try {
-      return convert_material_info_to_material_config(info);
+      fixup_normal_ext_parallax_occlusion_mapping(config);
+
+      return config;
    }
    catch (std::exception& e) {
       throw compose_exception<std::runtime_error>(
-         "Failed to read v1.0 material ", std::quoted(info.name),
+         "Failed to read v1.0 material ", std::quoted(config.name),
          " reason: ", e.what());
    }
 }

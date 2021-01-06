@@ -16,3 +16,18 @@ function make_constant_buffer(props)
 
    return cb:complete()
 end
+
+function fill_resource_vec(props, resource_props, resources)
+
+   resources:add(resource_props["AlbedoMap"] or "$grey")
+   resources:add(resource_props["NormalMap"] or "$null_normalmap")
+   resources:add(resource_props["MetallicRoughnessMap"] or "")
+   resources:add(resource_props["AOMap"] or "$null_ao")
+   resources:add(resource_props["EmissiveMap"] or "")
+
+   -- TEMP IBL Stuff
+   resources:add(resource_props["TEMP_ibl_dfg"] or "")
+   resources:add(resource_props["TEMP_ibl_specular"] or "")
+   resources:add(resource_props["TEMP_ibl_diffuse"] or "")
+
+end

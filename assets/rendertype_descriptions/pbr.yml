@@ -34,7 +34,7 @@ Properties:
       Range: [0.0, 2048.0]
       Op: rcp
       
-   EmissiveStrength:
+   EmissiveStrength: # Make true alias for EmissivePower
       Type: float
       Default: 0.0
       Range: [0.0, 2048.0]
@@ -47,7 +47,7 @@ Properties:
       Op: exp2
 
 Texture Mappings:
-   AlbedoMap:
+   AlbedoMap: # Rename to BaseColorMap and alias mapping AlbedoMap to BaseColorMap
       -
          Stage: PS
          Slot: 0
@@ -67,3 +67,17 @@ Texture Mappings:
       -
          Stage: PS
          Slot: 4
+
+   # TEMP IBL Stuff
+   TEMP_ibl_dfg:
+      -
+         Stage: PS
+         Slot: 5
+   TEMP_ibl_specular:
+      -
+         Stage: PS
+         Slot: 6
+   TEMP_ibl_diffuse:
+      -
+         Stage: PS
+         Slot: 7

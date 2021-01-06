@@ -41,3 +41,18 @@ function make_constant_buffer(props)
 
    return cb:complete()
 end
+
+function fill_resource_vec(props, resource_props, resources)
+
+   resources:add(resource_props["DiffuseMap"] or "$grey")
+   resources:add(resource_props["NormalMap"] or "$null_normalmap")
+   resources:add(resource_props["HeightMap"] or "")
+   resources:add(resource_props["DetailMap"] or "$null_detailmap")
+   resources:add(resource_props["DetailNormalMap"] or "$null_normalmap")
+   resources:add(resource_props["EmissiveMap"] or "")
+   resources:add(resource_props["OverlayDiffuseMap"] or "$grey")
+   resources:add(resource_props["OverlayNormalMap"] or "$null_normalmap")
+   resources:add(resource_props["AOMap"] or "$null_ao")
+   resources:add(resource_props["EnvMap"] or "")
+
+end

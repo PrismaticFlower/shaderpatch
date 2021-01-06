@@ -9,6 +9,6 @@
 
 namespace sp::material {
 
-void show_editor(Factory& factory, core::Shader_resource_database& resources,
+void show_editor(Factory& factory,
                  const std::vector<std::unique_ptr<Material>>& materials) noexcept;
 }

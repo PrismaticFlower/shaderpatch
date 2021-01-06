@@ -5,6 +5,7 @@
 #include <type_traits>
 
 #include "../imgui/imgui.h"
+#include "../imgui/imgui_stdlib.h"
 
 using namespace std::literals;
 
@@ -55,49 +56,7 @@ void property_editor(const std::string& name, Material_var<bool>& var) noexcept
    ImGui::Checkbox(name.c_str(), &var.value);
 }
 
-void resources_editor(core::Shader_resource_database& resources,
-                      std::vector<Com_ptr<ID3D11ShaderResourceView>>& srvs,
-                      std::vector<std::string>& srv_names)
-{
-   for (auto i = 0; i < srvs.size(); ++i) {
-      if (!srvs[i]) continue;
-
-      D3D11_SHADER_RESOURCE_VIEW_DESC desc{};
-      srvs[i]->GetDesc(&desc);
-
-      ImGui::PushID(i);
-
-      if (desc.ViewDimension == D3D11_SRV_DIMENSION_TEXTURE2D ||
-          desc.ViewDimension == D3D11_SRV_DIMENSION_TEXTURE2DARRAY) {
-         if (ImGui::ImageButton(srvs[i].get(), {64, 64})) {
-            ImGui::OpenPopup("Resource Picker");
-         }
-      }
-      else {
-         if (ImGui::Button(("Resource "s + std::to_string(i)).c_str())) {
-            ImGui::OpenPopup("Resource Picker");
-         }
-      }
-
-      if (ImGui::IsItemHovered()) ImGui::SetTooltip(srv_names[i].c_str());
-
-      if (ImGui::BeginPopup("Resource Picker")) {
-         auto [new_srv, name] = resources.imgui_resource_picker();
-
-         if (new_srv) {
-            srvs[i] = copy_raw_com_ptr(new_srv);
-            srv_names[i] = name;
-         }
-
-         ImGui::EndPopup();
-      }
-
-      ImGui::PopID();
-   }
-}
-
-void material_editor(Factory& factory, core::Shader_resource_database& resources,
-                     Material& material) noexcept
+void material_editor(Factory& factory, Material& material) noexcept
 {
    if (!material.properties.empty() && ImGui::TreeNode("Properties")) {
       for (auto& prop : material.properties) {
@@ -108,45 +67,19 @@ void material_editor(Factory& factory, core::Shader_resource_database& resources
       ImGui::TreePop();
    }
 
-   const auto create_resource_editor =
-      [&resources](const char* const name,
-                   std::vector<Com_ptr<ID3D11ShaderResourceView>>& srvs,
-                   std::vector<std::string>& srv_names) {
-         if (!srvs.empty() && ImGui::TreeNode(name)) {
-            resources_editor(resources, srvs, srv_names);
+   if (!material.resource_properties.empty() &&
+       ImGui::TreeNode("Shader Resources")) {
+      for (auto& [key, value] : material.resource_properties) {
+         ImGui::InputText(key.c_str(), &value);
+      }
 
-            ImGui::TreePop();
-         }
-      };
-
-   create_resource_editor("VS Shader Resources", material.vs_shader_resources,
-                          material.vs_shader_resources_names);
-   create_resource_editor("PS Shader Resources", material.ps_shader_resources,
-                          material.ps_shader_resources_names);
+      ImGui::TreePop();
+   }
 
    if (ImGui::TreeNode("Advanced")) {
       ImGui::Text("Rendertype: %s", material.rendertype.c_str());
-      ImGui::Text("Constant Buffer Name: %s", material.cb_name.c_str());
       ImGui::Text("Overridden Rendertype: %s",
                   to_string(material.overridden_rendertype).c_str());
-
-      if (ImGui::TreeNode("Fail Safe Game Texture")) {
-
-         if (ImGui::ImageButton(material.fail_safe_game_texture.get(), {64, 64})) {
-            ImGui::OpenPopup("Texture Picker");
-         }
-
-         if (ImGui::BeginPopup("Texture Picker")) {
-            auto [new_srv, name] = resources.imgui_resource_picker();
-
-            if (new_srv)
-               material.fail_safe_game_texture = copy_raw_com_ptr(new_srv);
-
-            ImGui::EndPopup();
-         }
-
-         ImGui::TreePop();
-      }
 
       ImGui::TreePop();
    }
@@ -155,13 +88,13 @@ void material_editor(Factory& factory, core::Shader_resource_database& resources
 }
 }
 
-void show_editor(Factory& factory, core::Shader_resource_database& resources,
+void show_editor(Factory& factory,
                  const std::vector<std::unique_ptr<Material>>& materials) noexcept
 {
    if (ImGui::Begin("Materials")) {
       for (auto& material : materials) {
          if (ImGui::TreeNode(material->name.c_str())) {
-            material_editor(factory, resources, *material);
+            material_editor(factory, *material);
             ImGui::TreePop();
          }
       }

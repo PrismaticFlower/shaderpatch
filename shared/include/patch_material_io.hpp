@@ -13,6 +13,7 @@
 #include <variant>
 #include <vector>
 
+#include <absl/container/flat_hash_map.h>
 #include <glm/glm.hpp>
 
 namespace sp {
@@ -99,11 +100,7 @@ struct Material_config {
    Material_cb_shader_stages cb_shader_stages = Material_cb_shader_stages::none;
    std::string cb_name = "none";
 
-   std::vector<std::string> vs_resources{};
-   std::vector<std::string> hs_resources{};
-   std::vector<std::string> ds_resources{};
-   std::vector<std::string> gs_resources{};
-   std::vector<std::string> ps_resources{};
+   absl::flat_hash_map<std::string, std::string> resources{};
 
    std::uint32_t fail_safe_texture_index{};
 };
