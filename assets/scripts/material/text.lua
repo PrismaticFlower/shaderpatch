@@ -1,4 +1,6 @@
 
+fail_safe_texture_index = 0
+
 function fill_resource_vec(props, resource_props, resources)
 
    resources:add(resource_props["atlas"] or "")

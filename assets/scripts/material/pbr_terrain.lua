@@ -1,4 +1,6 @@
 
+fail_safe_texture_index = 1
+
 local terrain_texture_count <const> = 16
 
 function make_constant_buffer(props)

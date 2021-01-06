@@ -101,8 +101,6 @@ struct Material_config {
    std::string cb_name = "none";
 
    absl::flat_hash_map<std::string, std::string> resources{};
-
-   std::uint32_t fail_safe_texture_index{};
 };
 
 void write_patch_material(ucfb::File_writer& writer, const Material_config& config);

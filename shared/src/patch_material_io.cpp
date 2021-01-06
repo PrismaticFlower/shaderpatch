@@ -48,8 +48,7 @@ void write_patch_material(ucfb::File_writer& writer, const Material_config& conf
 
       matl.emplace_child("INFO"_mn).write(config.name, config.rendertype,
                                           config.overridden_rendertype,
-                                          config.cb_shader_stages, config.cb_name,
-                                          config.fail_safe_texture_index);
+                                          config.cb_shader_stages, config.cb_name);
 
       // write properties
       {
@@ -251,7 +250,6 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
       config.overridden_rendertype = info.read<Rendertype>();
       config.cb_shader_stages = info.read<Material_cb_shader_stages>();
       config.cb_name = info.read_string();
-      config.fail_safe_texture_index = info.read<std::uint32_t>();
    }
 
    {
@@ -307,8 +305,8 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
       config.overridden_rendertype = info.read<Rendertype>();
       config.cb_shader_stages = info.read<Material_cb_shader_stages>();
       config.cb_name = info.read_string();
-      config.fail_safe_texture_index = info.read<std::uint32_t>();
 
+      [[maybe_unused]] auto fail_safe_texture_index = info.read<std::uint32_t>();
       [[maybe_unused]] auto [tessellation, tessellation_primitive_topology] =
          info.read_multi<bool, std::uint32_t>();
    }
@@ -503,8 +501,7 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
    config.resources = read_old_resources(reader.read_child_strict<"PSSR"_mn>(),
                                          resource_names_mappings.at(material_type));
 
-   config.fail_safe_texture_index =
-      reader.read_child_strict<"FSTX"_mn>().read<std::uint32_t>();
+   reader.read_child_strict<"FSTX"_mn>().read<std::uint32_t>();
 
    [[maybe_unused]] const auto [tessellation, tessellation_primitive_topology] =
       reader.read_child_strict<"TESS"_mn>().read_multi<bool, std::uint32_t>();

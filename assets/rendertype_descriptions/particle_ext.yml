@@ -1,5 +1,4 @@
 Overridden RenderType: particle
-Failsafe Texture Index: 0
 Constant Buffer Name: particle_ext
 
 Constant Buffer Stages:

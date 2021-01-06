@@ -109,41 +109,39 @@ auto Factory::create_material(const Material_config& config) noexcept -> Materia
 
    update_material(material);
 
-   material.fail_safe_game_texture =
-      make_fail_safe_texture(config.fail_safe_texture_index,
-                             material.ps_shader_resources);
    return material;
 }
 
 void Factory::update_material(material::Material& material) noexcept
 {
-   if (auto it = _material_types.find(material.cb_name); it != _material_types.end()) {
-      auto& material_type = it->second;
+   auto& material_type = _material_types.at(material.cb_name);
 
-      Properties_view properties_view{material.properties};
+   Properties_view properties_view{material.properties};
 
-      if (material_type->has_constant_buffer()) {
-         material.constant_buffer =
-            make_constant_buffer(*_device, *material_type, properties_view);
-      }
+   if (material_type->has_constant_buffer()) {
+      material.constant_buffer =
+         make_constant_buffer(*_device, *material_type, properties_view);
+   }
 
-      if (material_type->has_resources()) {
-         material.ps_shader_resources_names =
-            material_type->make_resources_vec(properties_view,
+   if (material_type->has_resources()) {
+      material.ps_shader_resources_names =
+         material_type->make_resources_vec(properties_view, material.resource_properties);
+   }
+
+   if (material_type->has_vs_resources()) {
+      material.vs_shader_resources_names =
+         material_type->make_vs_resources_vec(properties_view,
                                               material.resource_properties);
-      }
-
-      if (material_type->has_vs_resources()) {
-         material.vs_shader_resources_names =
-            material_type->make_vs_resources_vec(properties_view,
-                                                 material.resource_properties);
-      }
    }
 
    material.vs_shader_resources =
       make_resources(material.vs_shader_resources_names, _shader_resource_database);
    material.ps_shader_resources =
       make_resources(material.ps_shader_resources_names, _shader_resource_database);
+
+   material.fail_safe_game_texture =
+      make_fail_safe_texture(material_type->fail_safe_texture_index(),
+                             material.ps_shader_resources);
 }
 
 }

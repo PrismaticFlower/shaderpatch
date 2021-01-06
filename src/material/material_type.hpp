@@ -24,6 +24,11 @@ public:
       lua.script_file(script_path.string(), _script_env);
    }
 
+   auto fail_safe_texture_index() const noexcept -> std::uint32_t
+   {
+      return _script_env["fail_safe_texture_index"];
+   }
+
    bool has_constant_buffer() const noexcept
    {
       return _script_env["make_constant_buffer"] != nullptr;

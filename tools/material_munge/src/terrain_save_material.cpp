@@ -193,7 +193,6 @@ void terrain_save_material(const Terrain_materials_config& config,
       Material_cb_shader_stages::vs | Material_cb_shader_stages::ps;
    mtrl.properties = create_properties(config, texture_transforms, textures_order);
    mtrl.resources = select_textures(config, suffix);
-   mtrl.fail_safe_texture_index = 1;
 
    const auto req_contents = get_req_contents(mtrl.resources);
 

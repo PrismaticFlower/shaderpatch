@@ -1,4 +1,6 @@
 
+fail_safe_texture_index = 0
+
 function make_constant_buffer(props)
    local cb = constant_buffer_builder.new([[
       bool use_emissive_map;

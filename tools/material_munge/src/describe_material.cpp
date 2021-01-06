@@ -199,8 +199,6 @@ auto describe_material(const std::string_view name,
       description["Overridden RenderType"s].as<std::string>());
    config.cb_name = description["Constant Buffer Name"s].as<std::string>();
    config.cb_shader_stages = read_cb_stages(description["Constant Buffer Stages"s]);
-   config.fail_safe_texture_index =
-      description["Failsafe Texture Index"s].as<std::uint32_t>();
 
    for (auto& prop : description["Properties"s]) {
       try {
