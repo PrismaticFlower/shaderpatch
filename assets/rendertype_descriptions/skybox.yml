@@ -19,12 +19,6 @@ Properties:
       Range: [-2048.0, 2048.0]
       Op: exp2
 
-Texture Mappings:
+Resource Properties:
    Skybox:
-      -
-         Stage: PS
-         Slot: 0
    SkyboxEmissive:
-      -
-         Stage: PS
-         Slot: 1

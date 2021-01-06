@@ -22,8 +22,6 @@ using namespace std::literals;
 
 namespace {
 
-constexpr auto max_textures = 64;
-
 void error_check_properties(const YAML::Node& description, const YAML::Node& material)
 {
    for (const auto& prop : material["Material"s]) {
@@ -140,54 +138,16 @@ auto read_prop(std::string prop_key, const YAML::Node& desc,
                            desc)};
 }
 
-void read_texture_mapping(const std::string& texture_key, const YAML::Node& value,
-                          const YAML::Node& texture_mappings,
-                          Material_config& material_config)
+auto read_resource_property(const std::string& key, const std::string& value,
+                            const YAML::Node& resource_properties)
+   -> std::pair<std::string, std::string>
 {
-   if (!texture_mappings[texture_key]) {
-      throw compose_exception<std::runtime_error>("Undescribed material texture "sv,
-                                                  std::quoted(texture_key),
-                                                  " encountered."sv);
+   if (!resource_properties[key]) {
+      throw compose_exception<std::runtime_error>("Undescribed material resource "sv,
+                                                  std::quoted(key), " encountered."sv);
    }
 
-   const auto texture_mapping_list = texture_mappings[texture_key];
-
-   for (std::size_t i = 0; i < texture_mapping_list.size(); ++i) {
-      const auto mapping = texture_mapping_list[i];
-
-      const auto index = mapping["Slot"s].as<std::uint32_t>();
-
-      if (index > max_textures) {
-         throw compose_exception<std::runtime_error>("Invalid material texture description"sv,
-                                                     std::quoted(texture_key),
-                                                     " encountered. Texture index is too high!"sv);
-      }
-
-      auto& textures = [&]() -> std::vector<std::string>& {
-         if (const auto stage = mapping["Stage"s].as<std::string>(); stage == "VS"sv)
-            return material_config.vs_resources;
-         else if (stage == "HS"sv)
-            return material_config.hs_resources;
-         else if (stage == "DS"sv)
-            return material_config.ds_resources;
-         else if (stage == "GS"sv)
-            return material_config.gs_resources;
-         else if (stage == "PS"sv)
-            return material_config.ps_resources;
-
-         throw compose_exception<std::runtime_error>("Invalid material texture description"sv,
-                                                     std::quoted(texture_key),
-                                                     " encountered. Texture stage binding is invalid!"sv);
-      }();
-
-      auto texture_name = value.as<std::string>();
-
-      if (texture_name.empty()) return;
-
-      if (index >= textures.size()) textures.resize(index + 1);
-
-      textures.at(index) = value.as<std::string>();
-   }
+   return {key, value};
 }
 
 auto read_cb_stages(const YAML::Node& node) -> Material_cb_shader_stages
@@ -254,22 +214,16 @@ auto describe_material(const std::string_view name,
       }
    }
 
-   for (auto& texture : description["Default Textures"s]) {
-      try {
-         read_texture_mapping(texture.first.as<std::string>(), texture.second,
-                              description["Texture Mappings"s], config);
-      }
-      catch (std::exception& e) {
-         throw compose_exception<std::runtime_error>(
-            "Error occured while processing material default texture "sv,
-            std::quoted(texture.first.as<std::string>()), ": "sv, e.what());
-      }
-   }
-
    for (auto& texture : material["Textures"s]) {
       try {
-         read_texture_mapping(texture.first.as<std::string>(), texture.second,
-                              description["Texture Mappings"s], config);
+         auto texture_property = texture.first.as<std::string>();
+         auto texture_name = texture.second.as<std::string>();
+
+         if (texture_name.empty()) continue;
+
+         config.resources.emplace(
+            read_resource_property(texture_property, texture_name,
+                                   description["Resource Properties"s]));
       }
       catch (std::exception& e) {
          throw compose_exception<std::runtime_error>(
@@ -278,8 +232,9 @@ auto describe_material(const std::string_view name,
       }
    }
 
-   if (description["Material Options"s])
+   if (description["Material Options"s]) {
       read_desc_material_options(description["Material Options"s], material_options);
+   }
 
    return config;
 }

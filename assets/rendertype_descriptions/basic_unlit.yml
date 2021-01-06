@@ -23,12 +23,6 @@ Properties:
       Range: [-2048.0, 2048.0]
       Op: exp2
 
-Texture Mappings:
+Resource Properties:
    ColorMap:
-      -
-         Stage: PS
-         Slot: 0
    EmissiveMap:
-      -
-         Stage: PS
-         Slot: 1

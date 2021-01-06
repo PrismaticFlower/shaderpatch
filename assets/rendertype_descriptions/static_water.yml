@@ -84,24 +84,8 @@ Properties:
       Default: [0.0, 1.0]
       Range: [0.0, 1.0]
       
-Texture Mappings:
+Resource Properties:
    NormalMap:
-      -
-         Stage: PS
-         Slot: 0
    ReflectionMap:
-      -
-         Stage: PS
-         Slot: 1
    DepthBuffer:
-      -
-         Stage: PS
-         Slot: 2
    RefractionMap:
-      -
-         Stage: PS
-         Slot: 3
-
-Default Textures:
-   DepthBuffer: $depth
-   RefractionMap: $refraction

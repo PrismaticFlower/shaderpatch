@@ -135,19 +135,15 @@ auto munge_material(const fs::path& material_path, const fs::path& output_file_p
    const auto require_textures =
       [&required_sp_textures =
           required_files.emplace_back("sptex"s, std::vector<std::string>{}).second](
-         const std::vector<std::string>& textures) {
-         for (const auto& texture : textures) {
-            if (texture.empty() || texture.front() == '$') continue;
+         const absl::flat_hash_map<std::string, std::string>& textures) {
+         for (const auto& [prop, value] : textures) {
+            if (value.empty() || value.front() == '$') continue;
 
-            required_sp_textures.emplace_back(texture);
+            required_sp_textures.emplace_back(value);
          }
       };
 
-   require_textures(material.vs_resources);
-   require_textures(material.hs_resources);
-   require_textures(material.ds_resources);
-   require_textures(material.gs_resources);
-   require_textures(material.ps_resources);
+   require_textures(material.resources);
 
    write_patch_material(output_file_path, material);
 

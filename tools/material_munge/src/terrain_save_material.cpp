@@ -143,21 +143,37 @@ auto select_rendertype_low_detail(const Terrain_materials_config& config) noexce
    return rt;
 }
 
-auto select_textures(const Terrain_materials_config& config,
-                     const std::string_view suffix) -> std::vector<std::string>
+auto select_textures(const Terrain_materials_config& config, const std::string_view suffix)
+   -> absl::flat_hash_map<std::string, std::string>
 {
    if (config.rendertype == Terrain_rendertype::pbr) {
-      return {std::string{terrain_height_texture_name} += suffix,
-              std::string{terrain_albedo_ao_texture_name} += suffix,
-              std::string{terrain_normal_mr_texture_name} += suffix};
+      return {{"height_textures"s, std::string{terrain_height_texture_name} += suffix},
+              {"albedo_ao_textures"s,
+               std::string{terrain_albedo_ao_texture_name} += suffix},
+              {"normal_mr_textures"s,
+               std::string{terrain_normal_mr_texture_name} += suffix}};
    }
    else {
-      return {std::string{terrain_height_texture_name} += suffix,
-              std::string{terrain_diffuse_ao_texture_name} += suffix,
-              std::string{terrain_normal_gloss_texture_name} += suffix,
-              config.use_envmap ? config.envmap_name : ""s};
+      return {{"height_textures"s, std::string{terrain_height_texture_name} += suffix},
+              {"diffuse_ao_textures"s,
+               std::string{terrain_diffuse_ao_texture_name} += suffix},
+              {"normal_gloss_textures"s,
+               std::string{terrain_normal_gloss_texture_name} += suffix},
+              {"envmap"s, config.use_envmap ? config.envmap_name : ""s}};
    }
 }
+
+auto get_req_contents(const absl::flat_hash_map<std::string, std::string>& resources)
+   -> std::vector<std::string>
+{
+   std::vector<std::string> vec;
+   vec.reserve(resources.size());
+
+   for (const auto& [key, value] : resources) vec.push_back(value);
+
+   return vec;
+}
+
 }
 
 void terrain_save_material(const Terrain_materials_config& config,
@@ -176,12 +192,14 @@ void terrain_save_material(const Terrain_materials_config& config,
    mtrl.cb_shader_stages =
       Material_cb_shader_stages::vs | Material_cb_shader_stages::ps;
    mtrl.properties = create_properties(config, texture_transforms, textures_order);
-   mtrl.ps_resources = select_textures(config, suffix);
+   mtrl.resources = select_textures(config, suffix);
    mtrl.fail_safe_texture_index = 1;
+
+   const auto req_contents = get_req_contents(mtrl.resources);
 
    write_patch_material(output_munge_files_dir / mtrl.name += ".material"sv, mtrl);
    emit_req_file(output_munge_files_dir / mtrl.name += ".material.req"sv,
-                 {{"sptex"s, mtrl.ps_resources}});
+                 {{"sptex"s, req_contents}});
 
    // Save low detail material
 
@@ -190,6 +208,6 @@ void terrain_save_material(const Terrain_materials_config& config,
 
    write_patch_material(output_munge_files_dir / mtrl.name += ".material"sv, mtrl);
    emit_req_file(output_munge_files_dir / mtrl.name += ".material.req"sv,
-                 {{"sptex"s, mtrl.ps_resources}});
+                 {{"sptex"s, req_contents}});
 }
 }

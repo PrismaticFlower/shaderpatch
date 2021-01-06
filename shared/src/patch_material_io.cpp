@@ -156,10 +156,15 @@ auto read_old_resources(ucfb::Reader_strict<mn> texs,
    absl::flat_hash_map<std::string, std::string> resources;
    resources.reserve(count);
 
-   const std::size_t read_count = std::min(count, resource_mappings.size());
+   const std::size_t read_count =
+      std::min(std::size_t{count}, resource_mappings.size());
 
    for (auto i = 0; i < read_count; ++i) {
-      resources[resource_mappings[i]] = texs.read_string();
+      auto resource = texs.read_string();
+
+      if (resource.empty()) continue;
+
+      resources[resource_mappings[i]] = resource;
    }
 
    return resources;

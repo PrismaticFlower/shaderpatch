@@ -94,44 +94,14 @@ Properties:
       Range: [-1.0, 1.0]
       Op: sign
 
-Texture Mappings:
-   DiffuseMap: 
-      -
-         Stage: PS
-         Slot: 0
+Resource Properties:
+   DiffuseMap:
    NormalMap: 
-      -
-         Stage: PS
-         Slot: 1
-   HeightMap: 
-      -
-         Stage: PS
-         Slot: 2
-   DetailMap: 
-      -
-         Stage: PS
-         Slot: 3
+   HeightMap:
+   DetailMap:
    DetailNormalMap: 
-      -
-         Stage: PS
-         Slot: 4
-   EmissiveMap: 
-      -
-         Stage: PS
-         Slot: 5
-   OverlayDiffuseMap: 
-      -
-         Stage: PS
-         Slot: 6
-   OverlayNormalMap: 
-      -
-         Stage: PS
-         Slot: 7
+   EmissiveMap:
+   OverlayDiffuseMap:
+   OverlayNormalMap:
    AOMap:
-      -
-         Stage: PS
-         Slot: 8
-   EnvMap:
-      -
-         Stage: PS
-         Slot: 9
+   EnvMap: 
