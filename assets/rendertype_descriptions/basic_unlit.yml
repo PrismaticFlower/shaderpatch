@@ -4,13 +4,6 @@ Constant Buffer Name: basic_unlit
 Material Options:
    Unlit: yes
 
-Constant Buffer Stages:
-   VS: no
-   HS: no
-   DS: no
-   GS: no
-   PS: yes
-
 Properties:
    UseEmissiveMap:
       Type: bool

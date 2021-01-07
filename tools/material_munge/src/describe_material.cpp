@@ -150,19 +150,6 @@ auto read_resource_property(const std::string& key, const std::string& value,
    return {key, value};
 }
 
-auto read_cb_stages(const YAML::Node& node) -> Material_cb_shader_stages
-{
-   Material_cb_shader_stages stages{};
-
-   if (node["VS"s].as<bool>()) stages |= Material_cb_shader_stages::vs;
-   if (node["HS"s].as<bool>()) stages |= Material_cb_shader_stages::hs;
-   if (node["DS"s].as<bool>()) stages |= Material_cb_shader_stages::ds;
-   if (node["GS"s].as<bool>()) stages |= Material_cb_shader_stages::gs;
-   if (node["PS"s].as<bool>()) stages |= Material_cb_shader_stages::ps;
-
-   return stages;
-}
-
 auto read_desc_material_options(const YAML::Node& node, Material_options& material_options)
 {
    for (const auto& opt : node) {
@@ -198,7 +185,6 @@ auto describe_material(const std::string_view name,
    config.overridden_rendertype = rendertype_from_string(
       description["Overridden RenderType"s].as<std::string>());
    config.cb_name = description["Constant Buffer Name"s].as<std::string>();
-   config.cb_shader_stages = read_cb_stages(description["Constant Buffer Stages"s]);
 
    for (auto& prop : description["Properties"s]) {
       try {

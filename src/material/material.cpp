@@ -40,16 +40,10 @@ void Material::bind_constant_buffers(ID3D11DeviceContext1& dc) noexcept
 {
    auto* const cb = constant_buffer.get();
 
-   if ((cb_shader_stages & Material_cb_shader_stages::vs) ==
-       Material_cb_shader_stages::vs)
+   if ((cb_bind & Constant_buffer_bind::vs) == Constant_buffer_bind::vs)
       dc.VSSetConstantBuffers(vs_cb_offset, 1, &cb);
 
-   if ((cb_shader_stages & Material_cb_shader_stages::gs) ==
-       Material_cb_shader_stages::gs)
-      dc.GSSetConstantBuffers(gs_cb_offset, 1, &cb);
-
-   if ((cb_shader_stages & Material_cb_shader_stages::ps) ==
-       Material_cb_shader_stages::ps)
+   if ((cb_bind & Constant_buffer_bind::ps) == Constant_buffer_bind::ps)
       dc.PSSetConstantBuffers(ps_cb_offset, 1, &cb);
 }
 

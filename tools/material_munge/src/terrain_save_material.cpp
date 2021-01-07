@@ -189,8 +189,6 @@ void terrain_save_material(const Terrain_materials_config& config,
    mtrl.rendertype = select_rendertype(config);
    mtrl.overridden_rendertype = Rendertype::normal;
    mtrl.cb_name = select_cb_name(config);
-   mtrl.cb_shader_stages =
-      Material_cb_shader_stages::vs | Material_cb_shader_stages::ps;
    mtrl.properties = create_properties(config, texture_transforms, textures_order);
    mtrl.resources = select_textures(config, suffix);
 

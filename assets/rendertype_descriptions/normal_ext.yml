@@ -4,13 +4,6 @@ Constant Buffer Name: normal_ext
 Material Options:
    Unlit: no
 
-Constant Buffer Stages:
-   VS: no
-   HS: no
-   DS: no
-   GS: no
-   PS: yes
-
 Properties:
    DiffuseColor:
       Type: vec3

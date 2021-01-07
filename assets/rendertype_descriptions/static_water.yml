@@ -5,13 +5,6 @@ Material Options:
    Transparent: yes
    Hard Edged: no
 
-Constant Buffer Stages:
-   VS: no
-   HS: no
-   DS: no
-   GS: no
-   PS: yes
-
 Properties:
    RefractionColor:
       Type: vec3

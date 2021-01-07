@@ -1,4 +1,5 @@
 
+constant_buffer_bind = constant_buffer_bind_flag.vs | constant_buffer_bind_flag.ps
 fail_safe_texture_index = 1
 
 local terrain_texture_count <const> = 16

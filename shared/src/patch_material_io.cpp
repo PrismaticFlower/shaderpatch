@@ -48,7 +48,7 @@ void write_patch_material(ucfb::File_writer& writer, const Material_config& conf
 
       matl.emplace_child("INFO"_mn).write(config.name, config.rendertype,
                                           config.overridden_rendertype,
-                                          config.cb_shader_stages, config.cb_name);
+                                          config.cb_name);
 
       // write properties
       {
@@ -248,7 +248,6 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
       config.name = info.read_string();
       config.rendertype = info.read_string();
       config.overridden_rendertype = info.read<Rendertype>();
-      config.cb_shader_stages = info.read<Material_cb_shader_stages>();
       config.cb_name = info.read_string();
    }
 
@@ -303,7 +302,7 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
       config.name = info.read_string();
       config.rendertype = info.read_string();
       config.overridden_rendertype = info.read<Rendertype>();
-      config.cb_shader_stages = info.read<Material_cb_shader_stages>();
+      [[maybe_unused]] auto cb_shader_stages = info.read<std::uint32_t>();
       config.cb_name = info.read_string();
 
       [[maybe_unused]] auto fail_safe_texture_index = info.read<std::uint32_t>();
@@ -481,8 +480,7 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
    config.overridden_rendertype =
       reader.read_child_strict<"ORTP"_mn>().read<Rendertype>();
 
-   config.cb_shader_stages =
-      reader.read_child_strict<"CBST"_mn>().read<Material_cb_shader_stages>();
+   reader.read_child_strict<"CBST"_mn>();
 
    {
       auto cb__ = reader.read_child_strict<"CB__"_mn>();

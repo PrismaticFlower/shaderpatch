@@ -1,13 +1,6 @@
 Overridden RenderType: particle
 Constant Buffer Name: particle_ext
 
-Constant Buffer Stages:
-   VS: no
-   HS: no
-   DS: no
-   GS: no
-   PS: yes
-
 Properties:
    UseAnisotropicFiltering:
       Type: bool

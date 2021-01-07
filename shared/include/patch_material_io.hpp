@@ -18,20 +18,6 @@
 
 namespace sp {
 
-enum class Material_cb_shader_stages : std::uint32_t {
-   none = 0b0u,
-   vs = 0b10u,
-   hs = 0b100u,
-   ds = 0b1000u,
-   gs = 0b10000u,
-   ps = 0b100000u
-};
-
-constexpr bool marked_as_enum_flag(Material_cb_shader_stages) noexcept
-{
-   return true;
-}
-
 enum class Material_property_var_op : std::uint32_t {
    none,
    sqr,
@@ -97,7 +83,6 @@ struct Material_config {
 
    std::vector<Material_property> properties;
 
-   Material_cb_shader_stages cb_shader_stages = Material_cb_shader_stages::none;
    std::string cb_name = "none";
 
    absl::flat_hash_map<std::string, std::string> resources{};

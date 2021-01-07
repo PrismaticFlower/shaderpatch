@@ -1,4 +1,5 @@
 
+constant_buffer_bind = constant_buffer_bind_flag.ps
 fail_safe_texture_index = 0
 
 function make_constant_buffer(props)

@@ -15,6 +15,17 @@
 
 namespace sp::material {
 
+enum class Constant_buffer_bind : std::uint32_t {
+   none = 0b0u,
+   vs = 0b1u,
+   ps = 0b10u
+};
+
+constexpr bool marked_as_enum_flag(Constant_buffer_bind) noexcept
+{
+   return true;
+}
+
 struct Material {
    void update_resources(const core::Shader_resource_database& resource_database) noexcept;
 
@@ -26,7 +37,6 @@ struct Material {
    static constexpr auto ps_resources_offset = 7;
 
    static constexpr auto vs_cb_offset = 3;
-   static constexpr auto gs_cb_offset = 0;
    static constexpr auto ps_cb_offset = 2;
 
    using Resource_names = absl::InlinedVector<std::string, 16>;
@@ -34,7 +44,7 @@ struct Material {
    Rendertype overridden_rendertype;
    std::shared_ptr<Shader_set> shader;
 
-   Material_cb_shader_stages cb_shader_stages;
+   Constant_buffer_bind cb_bind;
    Com_ptr<ID3D11Buffer> constant_buffer;
 
    std::vector<Com_ptr<ID3D11ShaderResourceView>> vs_shader_resources;

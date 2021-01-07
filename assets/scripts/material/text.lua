@@ -1,4 +1,5 @@
 
+constant_buffer_bind = constant_buffer_bind_flag.none
 fail_safe_texture_index = 0
 
 function fill_resource_vec(props, resource_props, resources)

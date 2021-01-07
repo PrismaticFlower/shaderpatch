@@ -1,6 +1,7 @@
 
 #include "sol_create_usertypes.hpp"
 #include "constant_buffer_builder.hpp"
+#include "material.hpp"
 #include "properties_view.hpp"
 
 #include <glm/glm.hpp>
@@ -106,6 +107,9 @@ void sol_create_usertypes(sol::state& lua) noexcept
    properties_view["get_uint4"sv] = &Properties_view::get<glm::uvec4>;
 
    properties_view["get_bool"sv] = &Properties_view::get<bool>;
+
+   lua.new_enum("constant_buffer_bind_flag"sv, "none"sv, Constant_buffer_bind::none,
+                "vs"sv, Constant_buffer_bind::vs, "ps"sv, Constant_buffer_bind::ps);
 }
 
 }

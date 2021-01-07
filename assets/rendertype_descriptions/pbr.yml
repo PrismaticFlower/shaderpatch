@@ -3,13 +3,6 @@ Constant Buffer Name: pbr
 
 Material Options:
    Unlit: no
-   
-Constant Buffer Stages:
-   VS: no
-   HS: no
-   DS: no
-   GS: no
-   PS: yes
 
 Properties:
    BaseColor:

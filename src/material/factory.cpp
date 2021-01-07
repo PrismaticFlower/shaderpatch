@@ -98,7 +98,6 @@ auto Factory::create_material(const Material_config& config) noexcept -> Materia
 {
    material::Material material{.overridden_rendertype = config.overridden_rendertype,
                                .shader = _shader_factory.create(config.rendertype),
-                               .cb_shader_stages = config.cb_shader_stages,
 
                                .name = config.name,
                                .rendertype = config.rendertype,
@@ -133,6 +132,8 @@ void Factory::update_material(material::Material& material) noexcept
          material_type->make_vs_resources_vec(properties_view,
                                               material.resource_properties);
    }
+
+   material.cb_bind = material_type->constant_buffer_bind();
 
    material.vs_shader_resources =
       make_resources(material.vs_shader_resources_names, _shader_resource_database);

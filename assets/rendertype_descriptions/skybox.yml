@@ -4,13 +4,6 @@ Constant Buffer Name: skybox
 Material Options:
    Unlit: yes
 
-Constant Buffer Stages:
-   VS: no
-   HS: no
-   DS: no
-   GS: no
-   PS: yes
-
 Properties:
    EmissivePower:
       Type: float
