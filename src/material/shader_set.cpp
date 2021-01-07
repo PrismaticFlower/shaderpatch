@@ -41,8 +41,6 @@ void Shader_set::update(ID3D11DeviceContext1& dc,
    dc.IASetInputLayout(&input_layout);
    dc.VSSetShader(vs.vs.get(), nullptr, 0);
 
-   dc.GSSetShader(state.geometry.get(), nullptr, 0);
-
    dc.PSSetShader((oit_active ? state.pixel_oit : state.pixel).get(), nullptr, 0);
 }
 
@@ -85,8 +83,7 @@ auto Shader_set::init_shaders(shader::Rendertype& rendertype) noexcept -> Shader
 
 auto Shader_set::init_state(shader::Rendertype_state& state) noexcept -> Material_shader_state
 {
-   return {init_vs_entrypoint(state), state.geometry(), state.pixel(),
-           state.pixel_oit()};
+   return {init_vs_entrypoint(state), state.pixel(), state.pixel_oit()};
 }
 
 auto Shader_set::init_vs_entrypoint(shader::Rendertype_state& state) noexcept

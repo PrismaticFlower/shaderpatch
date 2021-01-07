@@ -1649,8 +1649,6 @@ void Shader_patch::update_shader() noexcept
       _device_context->VSSetShader(_game_shader->vs.get(), nullptr, 0);
    }
 
-   _device_context->GSSetShader(nullptr, nullptr, 0);
-
    _device_context->PSSetShader(_oit_active ? _game_shader->ps_oit.get()
                                             : _game_shader->ps.get(),
                                 nullptr, 0);

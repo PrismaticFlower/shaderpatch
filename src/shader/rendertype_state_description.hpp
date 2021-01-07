@@ -20,15 +20,6 @@ struct Rendertype_state_description {
 
    std::optional<std::string> ps_oit_entrypoint;
    std::uint64_t ps_oit_static_flags;
-
-   std::optional<std::string> hs_entrypoint;
-   std::uint64_t hs_static_flags;
-
-   std::optional<std::string> ds_entrypoint;
-   std::uint64_t ds_static_flags;
-
-   std::optional<std::string> gs_entrypoint;
-   std::uint64_t gs_static_flags;
 };
 
 }

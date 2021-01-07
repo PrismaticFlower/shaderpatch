@@ -293,12 +293,6 @@ public:
 
    auto pixel_oit() noexcept -> Com_ptr<ID3D11PixelShader>;
 
-   auto hull() noexcept -> Com_ptr<ID3D11HullShader>;
-
-   auto domain() noexcept -> Com_ptr<ID3D11DomainShader>;
-
-   auto geometry() noexcept -> Com_ptr<ID3D11GeometryShader>;
-
 private:
    bool vertex_shader_supported(const Vertex_shader_flags game_flags) const noexcept;
 

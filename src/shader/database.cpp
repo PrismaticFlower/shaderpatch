@@ -204,30 +204,6 @@ auto create_rendertype_state_descs(const Group_definition& definition,
                   ? eval_rendertype_state_static_flags(
                        definition.entrypoints.at(*state.ps_oit_entrypoint).static_flags,
                        rendertype.static_flags, state.ps_oit_static_flags)
-                  : 0,
-
-            .hs_entrypoint = state.hs_entrypoint,
-            .hs_static_flags =
-               state.hs_entrypoint
-                  ? eval_rendertype_state_static_flags(
-                       definition.entrypoints.at(*state.hs_entrypoint).static_flags,
-                       rendertype.static_flags, state.hs_static_flags)
-                  : 0,
-
-            .ds_entrypoint = state.ds_entrypoint,
-            .ds_static_flags =
-               state.ds_entrypoint
-                  ? eval_rendertype_state_static_flags(
-                       definition.entrypoints.at(*state.ds_entrypoint).static_flags,
-                       rendertype.static_flags, state.ds_static_flags)
-                  : 0,
-
-            .gs_entrypoint = state.gs_entrypoint,
-            .gs_static_flags =
-               state.gs_entrypoint
-                  ? eval_rendertype_state_static_flags(
-                       definition.entrypoints.at(*state.gs_entrypoint).static_flags,
-                       rendertype.static_flags, state.gs_static_flags)
                   : 0});
    }
 
@@ -616,30 +592,6 @@ auto Rendertype_state::pixel_oit() noexcept -> Com_ptr<ID3D11PixelShader>
 
    return _database.get<ID3D11PixelShader>(_desc.group_name, *_desc.ps_oit_entrypoint,
                                            _desc.ps_oit_static_flags);
-}
-
-auto Rendertype_state::hull() noexcept -> Com_ptr<ID3D11HullShader>
-{
-   if (!_desc.hs_entrypoint) return nullptr;
-
-   return _database.get<ID3D11HullShader>(_desc.group_name, *_desc.hs_entrypoint,
-                                          _desc.hs_static_flags);
-}
-
-auto Rendertype_state::domain() noexcept -> Com_ptr<ID3D11DomainShader>
-{
-   if (!_desc.ds_entrypoint) return nullptr;
-
-   return _database.get<ID3D11DomainShader>(_desc.group_name, *_desc.ds_entrypoint,
-                                            _desc.ds_static_flags);
-}
-
-auto Rendertype_state::geometry() noexcept -> Com_ptr<ID3D11GeometryShader>
-{
-   if (!_desc.gs_entrypoint) return nullptr;
-
-   return _database.get<ID3D11GeometryShader>(_desc.group_name, *_desc.gs_entrypoint,
-                                              _desc.gs_static_flags);
 }
 
 bool Rendertype_state::vertex_shader_supported(const Vertex_shader_flags game_flags) const noexcept

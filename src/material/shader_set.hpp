@@ -31,7 +31,6 @@ private:
 
    struct Material_shader_state {
       std::unordered_map<shader::Vertex_shader_flags, Material_vertex_shader> vertex;
-      Com_ptr<ID3D11GeometryShader> geometry;
       Com_ptr<ID3D11PixelShader> pixel;
       Com_ptr<ID3D11PixelShader> pixel_oit;
 
