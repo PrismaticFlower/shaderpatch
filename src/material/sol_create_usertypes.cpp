@@ -1,5 +1,6 @@
 
 #include "sol_create_usertypes.hpp"
+#include "../logger.hpp"
 #include "constant_buffer_builder.hpp"
 #include "material.hpp"
 #include "properties_view.hpp"
@@ -110,6 +111,24 @@ void sol_create_usertypes(sol::state& lua) noexcept
 
    lua.new_enum("constant_buffer_bind_flag"sv, "none"sv, Constant_buffer_bind::none,
                 "vs"sv, Constant_buffer_bind::vs, "ps"sv, Constant_buffer_bind::ps);
+
+   auto log = lua["log"sv].get_or_create<sol::table>();
+
+   log["str_info"sv] = [](const std::string_view str) noexcept {
+      log_fmt(Log_level::info, str);
+   };
+   log["str_warning"sv] = [](const std::string_view str) noexcept {
+      log_fmt(Log_level::warning, str);
+   };
+   log["str_error"sv] = [](const std::string_view str) noexcept {
+      log_fmt(Log_level::error, str);
+   };
+
+   lua.do_string(R"(
+      log.info = function(...) log.str_info(string.format(...)) end
+      log.warning = function(...) log.str_warning(string.format(...)) end
+      log.error = function(...) log.str_error(string.format(...)) end
+   )"sv);
 }
 
 }
