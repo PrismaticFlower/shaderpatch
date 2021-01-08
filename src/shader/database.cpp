@@ -169,18 +169,6 @@ auto create_rendertype_state_descs(const Group_definition& definition,
          verify_entrypoint_exists(*state.ps_oit_entrypoint);
       }
 
-      if (state.hs_entrypoint) {
-         verify_entrypoint_exists(*state.hs_entrypoint);
-      }
-
-      if (state.ds_entrypoint) {
-         verify_entrypoint_exists(*state.ds_entrypoint);
-      }
-
-      if (state.gs_entrypoint) {
-         verify_entrypoint_exists(*state.gs_entrypoint);
-      }
-
       states.emplace(
          state_name,
          Rendertype_state_description{
@@ -192,11 +180,15 @@ auto create_rendertype_state_descs(const Group_definition& definition,
                rendertype.static_flags, state.vs_static_flags),
             .vs_input_state =
                definition.entrypoints.at(state.vs_entrypoint).vertex_state.generic_input,
+            .vs_static_flag_names =
+               Static_flags{definition.entrypoints.at(state.vs_entrypoint).static_flags},
 
             .ps_entrypoint = state.ps_entrypoint,
             .ps_static_flags = eval_rendertype_state_static_flags(
                definition.entrypoints.at(state.ps_entrypoint).static_flags,
                rendertype.static_flags, state.ps_static_flags),
+            .ps_static_flag_names =
+               Static_flags{definition.entrypoints.at(state.ps_entrypoint).static_flags},
 
             .ps_oit_entrypoint = state.ps_oit_entrypoint,
             .ps_oit_static_flags =
@@ -204,7 +196,13 @@ auto create_rendertype_state_descs(const Group_definition& definition,
                   ? eval_rendertype_state_static_flags(
                        definition.entrypoints.at(*state.ps_oit_entrypoint).static_flags,
                        rendertype.static_flags, state.ps_oit_static_flags)
-                  : 0});
+                  : 0,
+            .ps_oit_static_flag_names =
+               state.ps_oit_entrypoint ? Static_flags{definition.entrypoints
+                                                         .at(*state.ps_oit_entrypoint)
+                                                         .static_flags}
+                                       : Static_flags{},
+         });
    }
 
    return states;
