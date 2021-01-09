@@ -592,6 +592,41 @@ auto Rendertype_state::pixel_oit() noexcept -> Com_ptr<ID3D11PixelShader>
                                            _desc.ps_oit_static_flags);
 }
 
+auto Rendertype_state::vertex(const Vertex_shader_flags game_flags,
+                              std::span<const std::string> extra_flags) noexcept
+   -> std::tuple<Com_ptr<ID3D11VertexShader>, Bytecode_blob, Vertex_input_layout>
+{
+   if (!vertex_shader_supported(game_flags)) return {nullptr, {}, {}};
+
+   const auto extra_static_flags =
+      eval_static_flags(_desc.vs_static_flag_names.as_span(), extra_flags);
+
+   return _database.get_vs(_desc.group_name, _desc.vs_entrypoint,
+                           _desc.vs_static_flags | extra_static_flags, game_flags);
+}
+
+auto Rendertype_state::pixel(std::span<const std::string> extra_flags) noexcept
+   -> Com_ptr<ID3D11PixelShader>
+{
+   const auto extra_static_flags =
+      eval_static_flags(_desc.ps_static_flag_names.as_span(), extra_flags);
+
+   return _database.get<ID3D11PixelShader>(_desc.group_name, _desc.ps_entrypoint,
+                                           _desc.ps_static_flags | extra_static_flags);
+}
+
+auto Rendertype_state::pixel_oit(std::span<const std::string> extra_flags) noexcept
+   -> Com_ptr<ID3D11PixelShader>
+{
+   if (!_oit_capable || !_desc.ps_oit_entrypoint) return nullptr;
+
+   const auto extra_static_flags =
+      eval_static_flags(_desc.ps_oit_static_flag_names.as_span(), extra_flags);
+
+   return _database.get<ID3D11PixelShader>(_desc.group_name, *_desc.ps_oit_entrypoint,
+                                           _desc.ps_oit_static_flags | extra_static_flags);
+}
+
 bool Rendertype_state::vertex_shader_supported(const Vertex_shader_flags game_flags) const noexcept
 {
    const auto input_state = _desc.vs_input_state;
@@ -633,4 +668,20 @@ bool Rendertype_state::vertex_shader_supported(const Vertex_shader_flags game_fl
 
    return true;
 }
+
+auto Rendertype_state::eval_static_flags(const std::span<const std::string> flag_names,
+                                         const std::span<const std::string> set_flags) noexcept
+   -> std::uint64_t
+{
+   std::bitset<Static_flags::max_flags> flags{};
+
+   const std::size_t flag_count = flag_names.size();
+
+   for (std::size_t i = 0u; i < flag_count; ++i) {
+      flags[i] = std::ranges::count(set_flags, flag_names[i]) != 0;
+   }
+
+   return flags.to_ullong();
+}
+
 }

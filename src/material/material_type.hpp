@@ -2,6 +2,7 @@
 
 #include "material.hpp"
 #include "properties_view.hpp"
+#include "shader_factory.hpp"
 
 #include <cstddef>
 #include <filesystem>
@@ -74,6 +75,20 @@ public:
       _script_env["fill_vs_resource_vec"](properties_view, resource_props, resources);
 
       return resources;
+   }
+
+   bool has_shader_flags() const noexcept
+   {
+      return _script_env["get_shader_flags"] != nullptr;
+   }
+
+   auto get_shader_flags(Properties_view properties_view) -> Shader_factory::Flags
+   {
+      Shader_factory::Flags flags;
+
+      _script_env["get_shader_flags"](properties_view, flags);
+
+      return flags;
    }
 
 private:

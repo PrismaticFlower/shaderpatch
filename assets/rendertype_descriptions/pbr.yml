@@ -5,6 +5,10 @@ Material Options:
    Unlit: no
 
 Properties:
+   NoMetallicRoughnessMap:
+      Type: bool
+      Default: false
+
    BaseColor:
       Type: vec3
       Default: [1.0, 1.0, 1.0]
@@ -25,7 +29,11 @@ Properties:
       Default: 1.0
       Range: [0.0, 2048.0]
       Op: rcp
-      
+
+   UseEmissiveMap:
+      Type: bool
+      Default: false
+
    EmissiveStrength: # Make true alias for EmissivePower
       Type: float
       Default: 0.0
@@ -37,6 +45,10 @@ Properties:
       Default: 0.0
       Range: [-2048.0, 2048.0]
       Op: exp2
+
+   TEMP_UseIBL:
+      Type: bool
+      Default: false
 
 Resource Properties:
    AlbedoMap: # Rename to BaseColorMap and alias mapping AlbedoMap to BaseColorMap

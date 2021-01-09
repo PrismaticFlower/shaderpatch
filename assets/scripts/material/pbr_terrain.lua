@@ -3,6 +3,8 @@ constant_buffer_bind = constant_buffer_bind_flag.vs | constant_buffer_bind_flag.
 fail_safe_texture_index = 1
 
 local terrain_texture_count <const> = 16
+local displacement_modes <const> = { none = 0, parallax_offset = 1, occlusion_mapping = 2 }
+local blend_modes <const> = { height = 0, basic = 1 }
 
 function make_constant_buffer(props)
    local cb = constant_buffer_builder.new([[
@@ -42,4 +44,26 @@ function fill_resource_vec(props, resource_props, resources)
    resources:add(resource_props["albedo_ao_textures"] or "")
    resources:add(resource_props["normal_mr_textures"] or "")
    
+end
+
+function get_shader_flags(props, flags)
+
+   local displacement_mode = props:get_int("DisplacementMode", 0)
+
+   if displacement_mode == displacement_modes.parallax_offset then
+      flags:add("TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING")
+   elseif displacement_mode == displacement_modes.occlusion_mapping then
+      flags:add("TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING")
+   end
+
+   local blend_mode = props:get_int("BlendMode", 0)
+
+   if blend_mode == blend_modes.basic then
+      flags:add("TERRAIN_COMMON_BASIC_BLENDING")
+   end
+
+   if props:get_bool("LowDetail", false) then
+      flags:add("TERRAIN_COMMON_LOW_DETAIL")
+   end
+
 end

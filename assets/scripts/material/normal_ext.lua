@@ -59,3 +59,19 @@ function fill_resource_vec(props, resource_props, resources)
    resources:add(resource_props["EnvMap"] or "")
 
 end
+
+function get_shader_flags(props, flags)
+
+   if props:get_bool("UseSpecularLighting", false) then
+      flags:add("NORMAL_EXT_USE_SPECULAR")
+   end
+
+   if props:get_bool("UseParallaxOcclusionMapping", false) then
+      flags:add("NORMAL_EXT_USE_PARALLAX_OCCLUSION_MAPPING")
+   end
+
+   if props:get_bool("IsDynamic", false) then
+      flags:add("NORMAL_EXT_USE_DYNAMIC_TANGENTS")
+   end
+   
+end

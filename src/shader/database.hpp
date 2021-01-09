@@ -278,20 +278,30 @@ public:
    auto vertex(const Vertex_shader_flags game_flags) noexcept
       -> std::tuple<Com_ptr<ID3D11VertexShader>, Bytecode_blob, Vertex_input_layout>;
 
+   auto pixel() noexcept -> Com_ptr<ID3D11PixelShader>;
+
+   auto pixel_oit() noexcept -> Com_ptr<ID3D11PixelShader>;
+
+   auto vertex(const Vertex_shader_flags game_flags,
+               std::span<const std::string> extra_flags) noexcept
+      -> std::tuple<Com_ptr<ID3D11VertexShader>, Bytecode_blob, Vertex_input_layout>;
+
    template<State_vertex_callback Callback>
-   void vertex_copy_all(Callback&& callback) noexcept
+   void vertex_copy_all(Callback&& callback, std::span<const std::string> extra_flags) noexcept
    {
       eval_vertex_shader_variations([&](const Vertex_shader_flags flags) {
-         auto [shader, bytecode, input_layout] = vertex(flags);
+         auto [shader, bytecode, input_layout] = vertex(flags, extra_flags);
 
          callback(flags, std::move(shader), std::move(bytecode),
                   std::move(input_layout));
       });
    }
 
-   auto pixel() noexcept -> Com_ptr<ID3D11PixelShader>;
+   auto pixel(std::span<const std::string> extra_flags) noexcept
+      -> Com_ptr<ID3D11PixelShader>;
 
-   auto pixel_oit() noexcept -> Com_ptr<ID3D11PixelShader>;
+   auto pixel_oit(std::span<const std::string> extra_flags) noexcept
+      -> Com_ptr<ID3D11PixelShader>;
 
 private:
    bool vertex_shader_supported(const Vertex_shader_flags game_flags) const noexcept;
@@ -355,6 +365,10 @@ private:
          }
       }
    }
+
+   static auto eval_static_flags(const std::span<const std::string> flag_names,
+                                 const std::span<const std::string> set_flags) noexcept
+      -> std::uint64_t;
 
    Database_internal& _database;
 

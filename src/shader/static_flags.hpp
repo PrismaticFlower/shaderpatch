@@ -42,7 +42,7 @@ public:
       }
    }
 
-   auto as_span() -> std::span<const std::string>
+   auto as_span() const noexcept -> std::span<const std::string>
    {
       return std::span{_flags.data(), _flag_count};
    }

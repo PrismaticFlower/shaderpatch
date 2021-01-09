@@ -19,9 +19,9 @@ auto flags_to_bitstring(const Enum flags) -> std::string
 
 }
 
-Shader_set::Shader_set(Com_ptr<ID3D11Device1> device,
-                       shader::Rendertype& rendertype, std::string name) noexcept
-   : _device{std::move(device)}, _shaders{init_shaders(rendertype)}, _name{std::move(name)}
+Shader_set::Shader_set(Com_ptr<ID3D11Device1> device, shader::Rendertype& rendertype,
+                       std::span<const std::string> extra_flags, std::string name) noexcept
+   : _device{std::move(device)}, _shaders{init_shaders(rendertype, extra_flags)}, _name{std::move(name)}
 {
 }
 
@@ -70,36 +70,42 @@ auto Shader_set::get_state(const std::string& state_name) noexcept
                      "' for material shader '"sv, _name, "'!"sv);
 }
 
-auto Shader_set::init_shaders(shader::Rendertype& rendertype) noexcept -> Shaders
+auto Shader_set::init_shaders(shader::Rendertype& rendertype,
+                              std::span<const std::string> extra_flags) noexcept -> Shaders
 {
    Shaders shaders;
 
    for (const auto& [name, state] : rendertype) {
-      shaders[name] = init_state(*state);
+      shaders[name] = init_state(*state, extra_flags);
    }
 
    return shaders;
 }
 
-auto Shader_set::init_state(shader::Rendertype_state& state) noexcept -> Material_shader_state
+auto Shader_set::init_state(shader::Rendertype_state& state,
+                            std::span<const std::string> extra_flags) noexcept
+   -> Material_shader_state
 {
-   return {init_vs_entrypoint(state), state.pixel(), state.pixel_oit()};
+   return {init_vs_entrypoint(state, extra_flags), state.pixel(extra_flags),
+           state.pixel_oit(extra_flags)};
 }
 
-auto Shader_set::init_vs_entrypoint(shader::Rendertype_state& state) noexcept
-   -> std::unordered_map<shader::Vertex_shader_flags, Material_vertex_shader>
+auto Shader_set::init_vs_entrypoint(shader::Rendertype_state& state,
+                                    std::span<const std::string> extra_flags) noexcept
+   -> absl::flat_hash_map<shader::Vertex_shader_flags, Material_vertex_shader>
 {
-   std::unordered_map<shader::Vertex_shader_flags, Material_vertex_shader> shaders;
+   absl::flat_hash_map<shader::Vertex_shader_flags, Material_vertex_shader> shaders;
 
-   state.vertex_copy_all([&](shader::Vertex_shader_flags flags,
-                             Com_ptr<ID3D11VertexShader> shader,
-                             sp::shader::Bytecode_blob bytecode,
-                             sp::shader::Vertex_input_layout input_sig) noexcept {
-      shaders.emplace(flags,
-                      Material_vertex_shader{.vs = std::move(shader),
-                                             .input_layouts = {std::move(input_sig),
-                                                               std::move(bytecode)}});
-   });
+   state.vertex_copy_all(
+      [&](shader::Vertex_shader_flags flags, Com_ptr<ID3D11VertexShader> shader,
+          sp::shader::Bytecode_blob bytecode,
+          sp::shader::Vertex_input_layout input_sig) noexcept {
+         shaders.emplace(flags,
+                         Material_vertex_shader{.vs = std::move(shader),
+                                                .input_layouts = {std::move(input_sig),
+                                                                  std::move(bytecode)}});
+      },
+      extra_flags);
 
    return shaders;
 }

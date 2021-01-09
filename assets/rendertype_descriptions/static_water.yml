@@ -56,6 +56,10 @@ Properties:
       Default: [0.2, 0.2]
       Range: [-2048.0, 2048.0]
 
+   UseSpecularLighting:
+      Type: bool
+      Default: false
+
    SpecularExponentDirLights:
       Type: float
       Default: 64.0

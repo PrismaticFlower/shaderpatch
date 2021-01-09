@@ -55,3 +55,11 @@ function fill_resource_vec(props, resource_props, resources)
    resources:add(resource_props["RefractionMap"] or "$refraction")
    
 end
+
+function get_shader_flags(props, flags)
+
+   if props:get_bool("UseSpecularLighting", false) then
+      flags:add("STATIC_WATER_USE_SPECULAR")
+   end
+
+end

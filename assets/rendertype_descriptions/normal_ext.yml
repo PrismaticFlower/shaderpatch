@@ -14,7 +14,11 @@ Properties:
       Type: float
       Default: 1.0
       Range: [0.0, 1.0]
-      
+
+   UseSpecularLighting:
+      Type: bool
+      Default: false
+
    SpecularColor:
       Type: vec3
       Default: [1.0, 1.0, 1.0]
@@ -79,7 +83,11 @@ Properties:
       Type: float
       Default: 1.0
       Range: [0.0001, 1.0]
-      
+
+   IsDynamic:
+      Type: bool
+      Default: false
+
    DynamicNormalSign:
       Type: float
       Default: 1.0

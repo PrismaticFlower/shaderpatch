@@ -5,6 +5,10 @@ Material Options:
    Unlit: yes
 
 Properties:
+   UseEmissiveMap:
+      Type: bool
+      Default: false
+
    EmissivePower:
       Type: float
       Default: 0.0

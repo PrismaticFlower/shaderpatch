@@ -9,14 +9,20 @@ Shader_factory::Shader_factory(Com_ptr<ID3D11Device5> device,
 {
 }
 
-auto Shader_factory::create(const std::string& rendertype) noexcept
+auto Shader_factory::create(std::string rendertype, Flags flags) noexcept
    -> std::shared_ptr<Shader_set>
 {
-   if (auto it = _cache.find(rendertype); it != _cache.end()) return it->second;
+   constexpr auto v = absl::container_internal::IsTransparent<Hash>::value;
+
+   if (auto it = _cache.find(std::tie(rendertype, flags)); it != _cache.end()) {
+      return it->second;
+   }
+
+   auto shader_set = std::make_shared<Shader_set>(_device, _shaders[rendertype],
+                                                  flags, rendertype);
 
    return _cache
-      .emplace(rendertype,
-               std::make_shared<Shader_set>(_device, _shaders[rendertype], rendertype))
+      .emplace(std::tuple{std::move(rendertype), std::move(flags)}, std::move(shader_set))
       .first->second;
 }
 
