@@ -38,13 +38,11 @@ Properties:
       Type: float
       Default: 0.0
       Range: [0.0, 2048.0]
-      Op: exp2
       
    EmissivePower:
       Type: float
       Default: 0.0
       Range: [-2048.0, 2048.0]
-      Op: exp2
 
    TEMP_UseIBL:
       Type: bool

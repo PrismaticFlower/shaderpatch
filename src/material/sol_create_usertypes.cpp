@@ -129,6 +129,12 @@ void sol_create_usertypes(sol::state& lua) noexcept
       log.warning = function(...) log.str_warning(string.format(...)) end
       log.error = function(...) log.str_error(string.format(...)) end
    )"sv);
+
+   auto math = lua["math2"sv].get_or_create<sol::table>();
+
+   math["exp2"sv] = sol::resolve<double(double)>(std::exp2);
+   math["rcp"sv] = [](double v) { return 1.0 / v; };
+   math["sign"sv] = [](double v) { return v < 0.0 ? -1.0 : 1.0; };
 }
 
 }

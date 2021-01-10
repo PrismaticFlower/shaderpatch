@@ -37,10 +37,10 @@ function make_constant_buffer(props)
    cb:set("use_emissive_texture", props:get_bool("UseEmissiveMap", false))
    cb:set("emissive_texture_scale",
           props:get_float("EmissiveTextureScale", 1.0))
-   cb:set("emissive_power", props:get_float("EmissivePower", 1.0))
+   cb:set("emissive_power", math2.exp2(props:get_float("EmissivePower", 0.0)))
    cb:set("use_env_map", props:get_bool("UseEnvMap", false))
    cb:set("env_map_vis", props:get_float("EnvMapVisibility", 1.0))
-   cb:set("dynamic_normal_sign", props:get_float("DynamicNormalSign", 1.0))
+   cb:set("dynamic_normal_sign", math2.sign(props:get_float("DynamicNormalSign", 1.0)))
 
    return cb:complete()
 end

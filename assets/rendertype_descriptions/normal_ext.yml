@@ -73,7 +73,6 @@ Properties:
       Type: float
       Default: 0.0
       Range: [-2048.0, 2048.0]
-      Op: exp2
 
    UseEnvMap:
       Type: bool
@@ -92,7 +91,6 @@ Properties:
       Type: float
       Default: 1.0
       Range: [-1.0, 1.0]
-      Op: sign
 
 Resource Properties:
    DiffuseMap:

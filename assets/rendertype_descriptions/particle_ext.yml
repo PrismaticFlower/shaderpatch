@@ -10,7 +10,6 @@ Properties:
       Type: float
       Default: 0.0
       Range: [-2048.0, 2048.0]
-      Op: exp2
 
 Resource Properties:
    ColorMap:

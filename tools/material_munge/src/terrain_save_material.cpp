@@ -23,12 +23,10 @@ auto add_texture_transform_properties(std::vector<Material_property>& properties
 
       properties.emplace_back("TextureTransformsX"s + std::to_string(i), transform[0],
                               glm::vec3{std::numeric_limits<float>::lowest()},
-                              glm::vec3{std::numeric_limits<float>::max()},
-                              Material_property_var_op::none);
+                              glm::vec3{std::numeric_limits<float>::max()});
       properties.emplace_back("TextureTransformsY"s + std::to_string(i), transform[1],
                               glm::vec3{std::numeric_limits<float>::lowest()},
-                              glm::vec3{std::numeric_limits<float>::max()},
-                              Material_property_var_op::none);
+                              glm::vec3{std::numeric_limits<float>::max()});
    }
 }
 
@@ -41,11 +39,9 @@ auto create_pbr_properties(const Terrain_materials_config& config,
    properties.reserve(96);
 
    properties.emplace_back("BaseColor"s, config.base_color, glm::vec3{0.0f},
-                           glm::vec3{1.0f}, Material_property_var_op::none);
-   properties.emplace_back("BaseMetallicness"s, config.base_metallicness, 0.0f,
-                           1.0f, Material_property_var_op::none);
-   properties.emplace_back("BaseRoughness"s, config.base_roughness, 0.0f, 1.0f,
-                           Material_property_var_op::none);
+                           glm::vec3{1.0f});
+   properties.emplace_back("BaseMetallicness"s, config.base_metallicness, 0.0f, 1.0f);
+   properties.emplace_back("BaseRoughness"s, config.base_roughness, 0.0f, 1.0f);
 
    add_texture_transform_properties(properties, texture_transforms);
 
@@ -54,8 +50,8 @@ auto create_pbr_properties(const Terrain_materials_config& config,
 
       if (it == config.materials.cend()) continue;
 
-      properties.emplace_back("HeightScale"s + std::to_string(i), it->second.height_scale,
-                              0.0f, 2048.0f, Material_property_var_op::none);
+      properties.emplace_back("HeightScale"s + std::to_string(i),
+                              it->second.height_scale, 0.0f, 2048.0f);
    }
 
    return properties;
@@ -69,12 +65,11 @@ auto create_normal_ext_properties(const Terrain_materials_config& config,
    std::vector<Material_property> properties;
    properties.reserve(96);
 
-   properties.emplace_back("DiffuseColor"s, config.diffuse_color, glm::vec3{0.0f},
-                           glm::vec3{1.0f}, Material_property_var_op::none);
-   properties.emplace_back("SpecularColor"s, config.specular_color, glm::vec3{0.0f},
-                           glm::vec3{1.0f}, Material_property_var_op::none);
-   properties.emplace_back("UseEnvmap"s, config.use_envmap, false, true,
-                           Material_property_var_op::none);
+   properties.emplace_back("DiffuseColor"s, config.diffuse_color,
+                           glm::vec3{0.0f}, glm::vec3{1.0f});
+   properties.emplace_back("SpecularColor"s, config.specular_color,
+                           glm::vec3{0.0f}, glm::vec3{1.0f});
+   properties.emplace_back("UseEnvmap"s, config.use_envmap, false, true);
 
    add_texture_transform_properties(properties, texture_transforms);
 
@@ -83,12 +78,11 @@ auto create_normal_ext_properties(const Terrain_materials_config& config,
 
       if (it == config.materials.cend()) continue;
 
-      properties.emplace_back("HeightScale"s + std::to_string(i), it->second.height_scale,
-                              0.0f, 2048.0f, Material_property_var_op::none);
+      properties.emplace_back("HeightScale"s + std::to_string(i),
+                              it->second.height_scale, 0.0f, 2048.0f);
 
       properties.emplace_back("SpecularExponent"s + std::to_string(i),
-                              it->second.specular_exponent, 1.0f, 2048.0f,
-                              Material_property_var_op::none);
+                              it->second.specular_exponent, 1.0f, 2048.0f);
    }
 
    return properties;

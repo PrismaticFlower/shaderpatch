@@ -287,6 +287,7 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
 }
 
 namespace v_2 {
+
 auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
 {
    Material_config config{};
@@ -339,6 +340,7 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
 
    return config;
 }
+
 }
 
 namespace v_1 {
@@ -371,15 +373,12 @@ auto convert_v1_constant_buffer(const std::string_view rendertype,
       properties.reserve(5);
 
       properties.emplace_back("BaseColor"s, pbr_cb.base_color, glm::vec3{0.0f},
-                              glm::vec3{1.0f}, Material_property_var_op::none);
-      properties.emplace_back("Metallicness"s, pbr_cb.base_metallicness, 0.0f,
-                              1.0f, Material_property_var_op::none);
-      properties.emplace_back("Roughness"s, pbr_cb.base_roughness, 0.0f, 1.0f,
-                              Material_property_var_op::none);
-      properties.emplace_back("AOStrength"s, 1.0f / pbr_cb.ao_strength, 0.0f,
-                              2048.0f, Material_property_var_op::rcp);
-      properties.emplace_back("EmissivePower"s, std::log2(pbr_cb.emissive_power),
-                              0.0f, 2048.0f, Material_property_var_op::exp2);
+                              glm::vec3{1.0f});
+      properties.emplace_back("Metallicness"s, pbr_cb.base_metallicness, 0.0f, 1.0f);
+      properties.emplace_back("Roughness"s, pbr_cb.base_roughness, 0.0f, 1.0f);
+      properties.emplace_back("AOStrength"s, 1.0f / pbr_cb.ao_strength, 0.0f, 2048.0f);
+      properties.emplace_back("EmissivePower"s,
+                              std::log2(pbr_cb.emissive_power), 0.0f, 2048.0f);
    }
    else if (begins_with(rendertype, "normal_ext"sv)) {
       cb_name = "normal_ext"s;
@@ -416,48 +415,33 @@ auto convert_v1_constant_buffer(const std::string_view rendertype,
 
       properties.reserve(17);
 
-      properties.emplace_back("DisplacementScale"s, normal_ext_cb.disp_scale,
-                              -2048.0f, 2048.0f, Material_property_var_op::none);
-      properties.emplace_back("DisplacementOffset"s, normal_ext_cb.disp_offset,
-                              -2048.0f, 2048.0f, Material_property_var_op::none);
-      properties.emplace_back("TessellationDetail"s, normal_ext_cb.material_tess_detail,
-                              0.0f, 65536.0f, Material_property_var_op::none);
-      properties.emplace_back("TessellationSmoothingAmount"s,
-                              normal_ext_cb.tess_smoothing_amount, 0.0f, 1.0f,
-                              Material_property_var_op::none);
       properties.emplace_back("DiffuseColor"s, normal_ext_cb.base_diffuse_color,
-                              glm::vec3{0.0f}, glm::vec3{1.0f},
-                              Material_property_var_op::none);
+                              glm::vec3{0.0f}, glm::vec3{1.0f});
       properties.emplace_back("GlossMapWeight"s, normal_ext_cb.gloss_map_weight,
-                              0.0f, 1.0f, Material_property_var_op::none);
-      properties.emplace_back("SpecularColor"s,
-                              normal_ext_cb.base_specular_color, glm::vec3{0.0f},
-                              glm::vec3{1.0f}, Material_property_var_op::none);
-      properties.emplace_back("SpecularExponent"s, normal_ext_cb.specular_exponent,
-                              1.0f, 2048.0f, Material_property_var_op::none);
+                              0.0f, 1.0f);
+      properties.emplace_back("SpecularColor"s, normal_ext_cb.base_specular_color,
+                              glm::vec3{0.0f}, glm::vec3{1.0f});
+      properties.emplace_back("SpecularExponent"s,
+                              normal_ext_cb.specular_exponent, 1.0f, 2048.0f);
       properties.emplace_back("UseParallaxOcclusionMapping"s,
                               normal_ext_cb.use_parallax_occlusion_mapping != 0,
-                              false, true, Material_property_var_op::none);
-      properties.emplace_back("HeightScale"s, normal_ext_cb.height_scale, 0.0f,
-                              2048.0f, Material_property_var_op::none);
-      properties.emplace_back("UseDetailMaps"s, normal_ext_cb.use_detail_textures != 0,
-                              false, true, Material_property_var_op::none);
-      properties.emplace_back("DetailTextureScale"s, normal_ext_cb.detail_texture_scale,
-                              0.0f, 2048.0f, Material_property_var_op::none);
+                              false, true);
+      properties.emplace_back("HeightScale"s, normal_ext_cb.height_scale, 0.0f, 2048.0f);
+      properties.emplace_back("UseDetailMaps"s,
+                              normal_ext_cb.use_detail_textures != 0, false, true);
+      properties.emplace_back("DetailTextureScale"s,
+                              normal_ext_cb.detail_texture_scale, 0.0f, 2048.0f);
       properties.emplace_back("UseOverlayMaps"s,
-                              normal_ext_cb.use_overlay_textures != 0, false,
-                              true, Material_property_var_op::none);
-      properties.emplace_back("OverlayTextureScale"s, normal_ext_cb.overlay_texture_scale,
-                              0.0f, 2048.0f, Material_property_var_op::none);
+                              normal_ext_cb.use_overlay_textures != 0, false, true);
+      properties.emplace_back("OverlayTextureScale"s,
+                              normal_ext_cb.overlay_texture_scale, 0.0f, 2048.0f);
       properties.emplace_back("UseEmissiveMap"s,
-                              normal_ext_cb.use_emissive_texture != 0, false,
-                              true, Material_property_var_op::none);
+                              normal_ext_cb.use_emissive_texture != 0, false, true);
       properties.emplace_back("EmissiveTextureScale"s,
-                              normal_ext_cb.emissive_texture_scale, 0.0f,
-                              2048.0f, Material_property_var_op::none);
+                              normal_ext_cb.emissive_texture_scale, 0.0f, 2048.0f);
       properties.emplace_back("EmissivePower"s,
                               std::log2(normal_ext_cb.emissive_power), -2048.0f,
-                              2048.0f, Material_property_var_op::exp2);
+                              2048.0f);
    }
    else {
       throw std::runtime_error{"unexpected rendertype"};

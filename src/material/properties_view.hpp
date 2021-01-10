@@ -43,40 +43,10 @@ public:
 
       using std::clamp;
 
-      return apply_op(clamp(var.value, var.min, var.max), var.op);
+      return clamp(var.value, var.min, var.max);
    }
 
 private:
-   template<typename Type>
-   static auto apply_op(const Type value,
-                        [[maybe_unused]] const Material_property_var_op op) noexcept
-   {
-      if constexpr (std::is_same_v<Type, float> || std::is_same_v<Type, glm::vec2> ||
-                    std::is_same_v<Type, glm::vec3> ||
-                    std::is_same_v<Type, glm::vec4>) {
-         switch (op) {
-         case Material_property_var_op::sqr:
-            return value * value;
-         case Material_property_var_op::sqrt:
-            return glm::sqrt(value);
-         case Material_property_var_op::exp:
-            return glm::exp(value);
-         case Material_property_var_op::exp2:
-            return glm::exp2(value);
-         case Material_property_var_op::log:
-            return glm::log(value);
-         case Material_property_var_op::log2:
-            return glm::log2(value);
-         case Material_property_var_op::sign:
-            return glm::sign(value);
-         case Material_property_var_op::rcp:
-            return 1.0f / value;
-         }
-      }
-
-      return value;
-   }
-
    const std::span<const Material_property> _properties;
 };
 }

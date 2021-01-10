@@ -14,8 +14,8 @@ function make_constant_buffer(props)
    cb:set("base_color", props:get_float3("BaseColor", float3.new(1.0, 1.0, 1.0)))
    cb:set("base_metallicness", props:get_float("Metallicness", 1.0))
    cb:set("base_roughness", props:get_float("Roughness", 1.0))
-   cb:set("ao_strength", props:get_float("AOStrength", 1.0))
-   cb:set("emissive_power", props:get_float("EmissivePower", 1.0))
+   cb:set("ao_strength", math2.rcp(props:get_float("AOStrength", 1.0)))
+   cb:set("emissive_power", math2.exp2(props:get_float("EmissivePower", 0.0)))
 
    return cb:complete()
 end

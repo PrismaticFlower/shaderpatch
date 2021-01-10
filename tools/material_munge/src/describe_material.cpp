@@ -36,38 +36,19 @@ void error_check_properties(const YAML::Node& description, const YAML::Node& mat
    }
 }
 
-auto read_prop_op(const std::string_view op) -> Material_property_var_op
-{
-   // clang-format off
-   if (op == "none"sv) return Material_property_var_op::none;
-   if (op == "sqr"sv)  return Material_property_var_op::sqr;
-   if (op == "sqrt"sv) return Material_property_var_op::sqrt;
-   if (op == "exp"sv)  return Material_property_var_op::exp;
-   if (op == "exp2"sv) return Material_property_var_op::exp2;
-   if (op == "log"sv)  return Material_property_var_op::log;
-   if (op == "log2"sv) return Material_property_var_op::log2;
-   if (op == "rcp"sv)  return Material_property_var_op::rcp;
-   if (op == "sign"sv) return Material_property_var_op::sign;
-   // clang-format on
-
-   throw std::runtime_error{"Invalid property op!"};
-}
-
 template<typename Type>
-auto read_prop_value_scalar(const YAML::Node& value, const YAML::Node& desc,
-                            const Material_property_var_op prop_op)
+auto read_prop_value_scalar(const YAML::Node& value, const YAML::Node& desc)
    -> Material_property::Value
 {
    constexpr auto min = std::numeric_limits<Type>::min();
    constexpr auto max = std::numeric_limits<Type>::max();
 
    return {Material_var{value.as<Type>(), desc["Range"s][0].as<Type>(min),
-                        desc["Range"s][1].as<Type>(max), prop_op}};
+                        desc["Range"s][1].as<Type>(max)}};
 }
 
 template<glm::length_t len, typename Type>
-auto read_prop_value_vec(const YAML::Node& value, const YAML::Node& desc,
-                         const Material_property_var_op prop_op)
+auto read_prop_value_vec(const YAML::Node& value, const YAML::Node& desc)
    -> Material_property::Value
 {
    using Vec = glm::vec<len, Type>;
@@ -76,52 +57,50 @@ auto read_prop_value_vec(const YAML::Node& value, const YAML::Node& desc,
    constexpr auto max = std::numeric_limits<Type>::max();
 
    return {Material_var{value.as<Vec>(), Vec{desc["Range"s][0].as<Type>(min)},
-                        Vec{desc["Range"s][1].as<Type>(max)}, prop_op}};
+                        Vec{desc["Range"s][1].as<Type>(max)}}};
 }
 
 auto read_prop_value(const YAML::Node& value, const YAML::Node& desc)
    -> Material_property::Value
 {
-   const auto prop_op = read_prop_op(desc["Op"s].as<std::string>("none"s));
-
    if (const auto type = desc["Type"s].as<std::string>(); type == "float"sv) {
-      return read_prop_value_scalar<float>(value, desc, prop_op);
+      return read_prop_value_scalar<float>(value, desc);
    }
    else if (begins_with(type, "vec2"sv)) {
-      return read_prop_value_vec<2, float>(value, desc, prop_op);
+      return read_prop_value_vec<2, float>(value, desc);
    }
    else if (begins_with(type, "vec3"sv)) {
-      return read_prop_value_vec<3, float>(value, desc, prop_op);
+      return read_prop_value_vec<3, float>(value, desc);
    }
    else if (begins_with(type, "vec4"sv)) {
-      return read_prop_value_vec<4, float>(value, desc, prop_op);
+      return read_prop_value_vec<4, float>(value, desc);
    }
    else if (type == "bool"sv) {
-      return {Material_var{value.as<bool>(), false, true, prop_op}};
+      return {Material_var{value.as<bool>(), false, true}};
    }
    else if (type == "int"sv) {
-      return read_prop_value_scalar<std::int32_t>(value, desc, prop_op);
+      return read_prop_value_scalar<std::int32_t>(value, desc);
    }
    else if (begins_with(type, "ivec2"sv)) {
-      return read_prop_value_vec<2, glm::int32>(value, desc, prop_op);
+      return read_prop_value_vec<2, glm::int32>(value, desc);
    }
    else if (begins_with(type, "ivec3"sv)) {
-      return read_prop_value_vec<3, glm::int32>(value, desc, prop_op);
+      return read_prop_value_vec<3, glm::int32>(value, desc);
    }
    else if (begins_with(type, "ivec4"sv)) {
-      return read_prop_value_vec<4, glm::int32>(value, desc, prop_op);
+      return read_prop_value_vec<4, glm::int32>(value, desc);
    }
    else if (type == "uint"sv) {
-      return read_prop_value_scalar<std::uint32_t>(value, desc, prop_op);
+      return read_prop_value_scalar<std::uint32_t>(value, desc);
    }
    else if (begins_with(type, "uvec2"sv)) {
-      return read_prop_value_vec<2, glm::uint>(value, desc, prop_op);
+      return read_prop_value_vec<2, glm::uint>(value, desc);
    }
    else if (begins_with(type, "uvec3"sv)) {
-      return read_prop_value_vec<3, glm::uint>(value, desc, prop_op);
+      return read_prop_value_vec<3, glm::uint>(value, desc);
    }
    else if (begins_with(type, "uvec4"sv)) {
-      return read_prop_value_vec<4, glm::uint>(value, desc, prop_op);
+      return read_prop_value_vec<4, glm::uint>(value, desc);
    }
    else {
       throw compose_exception<std::runtime_error>("Unknown material property type "sv,

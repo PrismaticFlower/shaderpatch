@@ -18,32 +18,19 @@
 
 namespace sp {
 
-enum class Material_property_var_op : std::uint32_t {
-   none,
-   sqr,
-   sqrt,
-   exp,
-   exp2,
-   log,
-   log2,
-   rcp,
-   sign
-};
-
 template<typename Type>
 struct Material_var {
    constexpr Material_var() = default;
 
-   constexpr Material_var(const Type value, const Type min, const Type max,
-                          const Material_property_var_op op) noexcept
-      : value{value}, min{min}, max{max}, op{op}
+   constexpr Material_var(const Type value, const Type min, const Type max) noexcept
+      : value{value}, min{min}, max{max}
    {
    }
 
    Type value{};
    Type min{};
    Type max{};
-   Material_property_var_op op = Material_property_var_op::none;
+   std::uint32_t abi_padding = 0;
 };
 
 struct Material_property {
@@ -60,11 +47,10 @@ struct Material_property {
    template<typename Type>
    constexpr Material_property(std::string name, const Type value,
                                std::common_type_t<const Type> min,
-                               std::common_type_t<const Type> max,
-                               const Material_property_var_op op) noexcept
+                               std::common_type_t<const Type> max) noexcept
       : name{std::move(name)}
    {
-      this->value.emplace<Material_var<Type>>(value, min, max, op);
+      this->value.emplace<Material_var<Type>>(value, min, max);
    }
 
    Material_property(std::string name, const Value value) noexcept
