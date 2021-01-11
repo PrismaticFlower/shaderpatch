@@ -145,6 +145,48 @@ const absl::flat_hash_map<std::string, std::vector<std::string>> resource_names_
    {"static_water"s,
     {"NormalMap"s, "ReflectionMap"s, "DepthBuffer"s, "RefractionMap"s}}};
 
+const absl::flat_hash_map<std::string, std::vector<std::pair<std::string, Material_property>>> rendertype_property_mappings{
+   {"normal_ext"s,
+    {
+       {"specular"s, {"UseSpecularLighting"s, true}},
+       {"dynamic"s, {"IsDynamic"s, true}},
+    }},
+
+   {"normal_ext_terrain"s,
+    {
+       {"parallax offset mapping"s, {"DisplacementMode"s, 0}},
+       {"parallax occlusion mapping"s, {"DisplacementMode"s, 1}},
+       {"basic blending"s, {"BlendMode"s, 1}},
+       {"low detail"s, {"LowDetail"s, true}},
+    }},
+
+   {"pbr"s,
+    {
+       {"basic"s, {"NoMetallicRoughnessMap"s, true}},
+       {"emissive"s, {"UseEmissiveMap"s, true}},
+       // TODO: Remove this TEMP one.
+       {"TEMP ibl"s, {"TEMP_UseIBL"s, true}},
+    }},
+
+   {"pbr_terrain"s,
+    {
+       {"parallax offset mapping"s, {"DisplacementMode"s, 1}},
+       {"parallax occlusion mapping"s, {"DisplacementMode"s, 2}},
+       {"basic blending"s, {"BlendMode"s, 1}},
+       {"low detail"s, {"LowDetail"s, true}},
+    }},
+
+   {"skybox"s,
+    {
+       {"emissive"s, {"UseEmissiveMap"s, true}},
+    }},
+
+   {"static_water"s,
+    {
+       {"specular"s, {"UseSpecularLighting"s, true}},
+    }},
+};
+
 template<Magic_number mn>
 auto read_old_resources(ucfb::Reader_strict<mn> texs,
                         const std::vector<std::string>& resource_mappings)
@@ -167,31 +209,6 @@ auto read_old_resources(ucfb::Reader_strict<mn> texs,
    }
 
    return resources;
-}
-
-void fixup_normal_ext_parallax_occlusion_mapping(Material_config& config)
-{
-   // For normal_ext parallax occlusion mapping changed from being toggled via
-   // branching in the shader (lazy, but let the shader permutations compile sometime this century) to
-   // being implemented as distinct rendertypes with distinct shader permutations.
-   //
-   // This function implements a fixup to convert from old-style POM usage (user controlled via properties) to
-   // new style (user controlled via rendertype).
-
-   if (!config.rendertype.starts_with("normal_ext"sv)) return;
-
-   auto prop = std::find_if(config.properties.begin(), config.properties.end(),
-                            [](const auto& prop) {
-                               return prop.name == "UseParallaxOcclusionMapping"sv;
-                            });
-
-   if (prop == config.properties.end()) return;
-
-   if (std::get<Material_var<bool>>(prop->value).value) {
-      config.rendertype += ".parallax occlusion mapped"sv;
-   }
-
-   config.properties.erase(prop);
 }
 
 auto read_material_prop_var(ucfb::Reader_strict<"PRPS"_mn>& prps,
@@ -231,6 +248,31 @@ auto read_material_prop_var(ucfb::Reader_strict<"PRPS"_mn>& prps,
    std::terminate();
 }
 
+auto rename_tessellated_rendertype(std::string_view rendertype_view) -> std::string
+{
+   std::string rendertype{rendertype_view};
+
+   if (rendertype.starts_with("normal_ext-tessellated"sv)) {
+      rendertype.replace(0, "normal_ext-tessellated"sv.size(), "normal_ext"sv);
+   }
+
+   return rendertype;
+}
+
+void parse_rendertype(std::string_view rendertype,
+                      std::vector<Material_property>& properties)
+{
+   const auto root_type = split_string_on(rendertype, "."sv)[0];
+
+   if (!rendertype_property_mappings.contains(root_type)) return;
+
+   for (const auto& [str, prop] : rendertype_property_mappings.at(root_type)) {
+      if (!contains(rendertype, str)) continue;
+
+      properties.push_back(prop);
+   }
+}
+
 namespace v_3 {
 
 auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
@@ -242,11 +284,13 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
 
    Ensures(version == Material_version::v_3);
 
+   std::string rendertype;
+
    {
       auto info = reader.read_child_strict<"INFO"_mn>();
 
       config.name = info.read_string();
-      config.rendertype = info.read_string();
+      rendertype = rename_tessellated_rendertype(info.read_string());
       config.overridden_rendertype = info.read<Rendertype>();
       config.cb_name = info.read_string();
    }
@@ -279,11 +323,11 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
 
    read_resources(reader.read_child_strict<"SR__"_mn>(), config.resources);
 
-   fixup_normal_ext_parallax_occlusion_mapping(config);
+   parse_rendertype(rendertype, config.properties);
+   config.rendertype = split_string_on(rendertype, "."sv)[0];
 
    return config;
 }
-
 }
 
 namespace v_2 {
@@ -297,11 +341,13 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
 
    Ensures(version == Material_version::v_2);
 
+   std::string rendertype;
+
    {
       auto info = reader.read_child_strict<"INFO"_mn>();
 
       config.name = info.read_string();
-      config.rendertype = info.read_string();
+      rendertype = rename_tessellated_rendertype(info.read_string());
       config.overridden_rendertype = info.read<Rendertype>();
       [[maybe_unused]] auto cb_shader_stages = info.read<std::uint32_t>();
       config.cb_name = info.read_string();
@@ -327,7 +373,7 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
       }
    }
 
-   const auto material_type = split_string_on(config.rendertype, "."sv)[0];
+   const auto material_type = split_string_on(rendertype, "."sv)[0];
 
    reader.read_child_strict<"VSSR"_mn>();
    reader.read_child_strict<"HSSR"_mn>();
@@ -336,7 +382,8 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
    config.resources = read_old_resources(reader.read_child_strict<"PSSR"_mn>(),
                                          resource_names_mappings.at(material_type));
 
-   fixup_normal_ext_parallax_occlusion_mapping(config);
+   parse_rendertype(rendertype, config.properties);
+   config.rendertype = material_type;
 
    return config;
 }
@@ -460,7 +507,8 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
    Ensures(version == Material_version::v_1);
 
    config.name = reader.read_child_strict<"NAME"_mn>().read_string();
-   config.rendertype = reader.read_child_strict<"RTYP"_mn>().read_string();
+   const std::string rendertype = rename_tessellated_rendertype(
+      reader.read_child_strict<"RTYP"_mn>().read_string());
    config.overridden_rendertype =
       reader.read_child_strict<"ORTP"_mn>().read<Rendertype>();
 
@@ -471,10 +519,10 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
       const auto constants = cb__.read_array<std::byte>(cb__.size());
 
       std::tie(config.properties, config.cb_name) =
-         convert_v1_constant_buffer(config.rendertype, constants);
+         convert_v1_constant_buffer(rendertype, constants);
    }
 
-   const auto material_type = split_string_on(config.rendertype, "."sv)[0];
+   const auto material_type = split_string_on(rendertype, "."sv)[0];
 
    reader.read_child_strict<"VSSR"_mn>();
    reader.read_child_strict<"HSSR"_mn>();
@@ -488,16 +536,10 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
    [[maybe_unused]] const auto [tessellation, tessellation_primitive_topology] =
       reader.read_child_strict<"TESS"_mn>().read_multi<bool, std::uint32_t>();
 
-   try {
-      fixup_normal_ext_parallax_occlusion_mapping(config);
+   parse_rendertype(rendertype, config.properties);
+   config.rendertype = material_type;
 
-      return config;
-   }
-   catch (std::exception& e) {
-      throw compose_exception<std::runtime_error>(
-         "Failed to read v1.0 material ", std::quoted(config.name),
-         " reason: ", e.what());
-   }
+   return config;
 }
 }
 }

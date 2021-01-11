@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <limits>
 #include <optional>
 #include <string>
 #include <variant>
@@ -51,6 +52,15 @@ struct Material_property {
       : name{std::move(name)}
    {
       this->value.emplace<Material_var<Type>>(value, min, max);
+   }
+
+   template<typename Type>
+   constexpr Material_property(std::string name, const Type value) noexcept
+      : name{std::move(name)}
+   {
+      this->value.emplace<Material_var<Type>>(value,
+                                              Type{std::numeric_limits<Type>::lowest()},
+                                              Type{std::numeric_limits<Type>::max()});
    }
 
    Material_property(std::string name, const Value value) noexcept
