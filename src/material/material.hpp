@@ -53,8 +53,7 @@ struct Material {
    Com_ptr<ID3D11ShaderResourceView> fail_safe_game_texture;
 
    std::string name;
-   std::string rendertype;
-   std::string cb_name;
+   std::string type;
    std::vector<Material_property> properties;
    absl::flat_hash_map<std::string, std::string> resource_properties;
    Resource_names vs_shader_resources_names;

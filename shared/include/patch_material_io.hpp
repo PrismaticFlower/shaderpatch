@@ -74,12 +74,10 @@ struct Material_property {
 
 struct Material_config {
    std::string name;
-   std::string rendertype;
+   std::string type;
    Rendertype overridden_rendertype;
 
    std::vector<Material_property> properties;
-
-   std::string cb_name = "none";
 
    absl::flat_hash_map<std::string, std::string> resources{};
 };

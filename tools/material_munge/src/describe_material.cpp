@@ -2,6 +2,7 @@
 #include "describe_material.hpp"
 #include "compose_exception.hpp"
 #include "glm_yaml_adapters.hpp"
+#include "material_rendertype_property_mappings.hpp"
 #include "string_utilities.hpp"
 #include "utility.hpp"
 
@@ -21,6 +22,28 @@ namespace sp {
 using namespace std::literals;
 
 namespace {
+
+void convert_old_material(YAML::Node material)
+{
+   auto rendertype = material["RenderType"s].as<std::string>();
+   auto root_type = split_string_on(rendertype, "."sv)[0];
+
+   if (root_type == "normal_ext-tessellated"sv) root_type = "normal_ext"sv;
+
+   material["Type"s] = std::string{root_type};
+   material.remove("RenderType"s);
+
+   if (!rendertype_property_mappings.contains(root_type)) return;
+
+   auto properties = material["Material"s];
+
+   for (const auto& [str, prop] : rendertype_property_mappings.at(root_type)) {
+      if (!contains(rendertype, str)) continue;
+
+      std::visit([&](const auto& value) { properties[prop.name] = value.value; },
+                 prop.value);
+   }
+}
 
 void error_check_properties(const YAML::Node& description, const YAML::Node& material)
 {
@@ -149,21 +172,23 @@ auto read_desc_material_options(const YAML::Node& node, Material_options& materi
                                                      std::quoted(key), "."sv);
    }
 }
+
 }
 
 auto describe_material(const std::string_view name,
                        const YAML::Node& description, const YAML::Node& material,
                        Material_options& material_options) -> Material_config
 {
+   if (material["RenderType"s]) convert_old_material(material);
+
    error_check_properties(description, material);
 
    Material_config config{};
 
    config.name = name;
-   config.rendertype = material["RenderType"s].as<std::string>();
+   config.type = material["Type"s].as<std::string>();
    config.overridden_rendertype = rendertype_from_string(
       description["Overridden RenderType"s].as<std::string>());
-   config.cb_name = description["Constant Buffer Name"s].as<std::string>();
 
    for (auto& prop : description["Properties"s]) {
       try {

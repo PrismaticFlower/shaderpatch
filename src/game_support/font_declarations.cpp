@@ -89,9 +89,8 @@ auto make_font_declaration(std::string name, std::string_view atlas_index,
             write_patch_material(tex,
                                  {
                                     .name = name + "_tex0"s,
-                                    .rendertype = "text"s,
+                                    .type = "text"s,
                                     .overridden_rendertype = Rendertype::_interface,
-                                    .cb_name = "text"s,
                                     .resources = {{"atlas_index"s, std::string{atlas_index}},
                                                   {"atlas"s, std::string{atlas_texture}}},
                                  });

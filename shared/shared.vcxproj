@@ -190,6 +190,7 @@
     <ClInclude Include="include\image_span.hpp" />
     <ClInclude Include="include\magic_number.hpp" />
     <ClInclude Include="include\material_flags.hpp" />
+    <ClInclude Include="include\material_rendertype_property_mappings.hpp" />
     <ClInclude Include="include\memory_mapped_file.hpp" />
     <ClInclude Include="include\munge_helpers.hpp" />
     <ClInclude Include="include\overloaded.hpp" />

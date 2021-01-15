@@ -77,7 +77,7 @@ void material_editor(Factory& factory, Material& material) noexcept
    }
 
    if (ImGui::TreeNode("Advanced")) {
-      ImGui::Text("Rendertype: %s", material.rendertype.c_str());
+      ImGui::Text("Type: %s", material.type.c_str());
       ImGui::Text("Overridden Rendertype: %s",
                   to_string(material.overridden_rendertype).c_str());
 

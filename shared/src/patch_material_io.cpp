@@ -2,6 +2,7 @@
 #include "patch_material_io.hpp"
 #include "compose_exception.hpp"
 #include "game_rendertypes.hpp"
+#include "material_rendertype_property_mappings.hpp"
 #include "string_utilities.hpp"
 #include "ucfb_reader.hpp"
 #include "volume_resource.hpp"
@@ -46,9 +47,8 @@ void write_patch_material(ucfb::File_writer& writer, const Material_config& conf
 
       matl.emplace_child("VER_"_mn).write(Material_version::current);
 
-      matl.emplace_child("INFO"_mn).write(config.name, config.rendertype,
-                                          config.overridden_rendertype,
-                                          config.cb_name);
+      matl.emplace_child("INFO"_mn).write(config.name, config.type,
+                                          config.overridden_rendertype);
 
       // write properties
       {
@@ -144,48 +144,6 @@ const absl::flat_hash_map<std::string, std::vector<std::string>> resource_names_
 
    {"static_water"s,
     {"NormalMap"s, "ReflectionMap"s, "DepthBuffer"s, "RefractionMap"s}}};
-
-const absl::flat_hash_map<std::string, std::vector<std::pair<std::string, Material_property>>> rendertype_property_mappings{
-   {"normal_ext"s,
-    {
-       {"specular"s, {"UseSpecularLighting"s, true}},
-       {"dynamic"s, {"IsDynamic"s, true}},
-    }},
-
-   {"normal_ext_terrain"s,
-    {
-       {"parallax offset mapping"s, {"DisplacementMode"s, 0}},
-       {"parallax occlusion mapping"s, {"DisplacementMode"s, 1}},
-       {"basic blending"s, {"BlendMode"s, 1}},
-       {"low detail"s, {"LowDetail"s, true}},
-    }},
-
-   {"pbr"s,
-    {
-       {"basic"s, {"NoMetallicRoughnessMap"s, true}},
-       {"emissive"s, {"UseEmissiveMap"s, true}},
-       // TODO: Remove this TEMP one.
-       {"TEMP ibl"s, {"TEMP_UseIBL"s, true}},
-    }},
-
-   {"pbr_terrain"s,
-    {
-       {"parallax offset mapping"s, {"DisplacementMode"s, 1}},
-       {"parallax occlusion mapping"s, {"DisplacementMode"s, 2}},
-       {"basic blending"s, {"BlendMode"s, 1}},
-       {"low detail"s, {"LowDetail"s, true}},
-    }},
-
-   {"skybox"s,
-    {
-       {"emissive"s, {"UseEmissiveMap"s, true}},
-    }},
-
-   {"static_water"s,
-    {
-       {"specular"s, {"UseSpecularLighting"s, true}},
-    }},
-};
 
 template<Magic_number mn>
 auto read_old_resources(ucfb::Reader_strict<mn> texs,
@@ -284,15 +242,12 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
 
    Ensures(version == Material_version::v_3);
 
-   std::string rendertype;
-
    {
       auto info = reader.read_child_strict<"INFO"_mn>();
 
       config.name = info.read_string();
-      rendertype = rename_tessellated_rendertype(info.read_string());
+      config.type = info.read_string();
       config.overridden_rendertype = info.read<Rendertype>();
-      config.cb_name = info.read_string();
    }
 
    {
@@ -323,11 +278,9 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
 
    read_resources(reader.read_child_strict<"SR__"_mn>(), config.resources);
 
-   parse_rendertype(rendertype, config.properties);
-   config.rendertype = split_string_on(rendertype, "."sv)[0];
-
    return config;
 }
+
 }
 
 namespace v_2 {
@@ -350,7 +303,7 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
       rendertype = rename_tessellated_rendertype(info.read_string());
       config.overridden_rendertype = info.read<Rendertype>();
       [[maybe_unused]] auto cb_shader_stages = info.read<std::uint32_t>();
-      config.cb_name = info.read_string();
+      [[maybe_unused]] auto cb_name = info.read_string();
 
       [[maybe_unused]] auto fail_safe_texture_index = info.read<std::uint32_t>();
       [[maybe_unused]] auto [tessellation, tessellation_primitive_topology] =
@@ -383,7 +336,7 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
                                          resource_names_mappings.at(material_type));
 
    parse_rendertype(rendertype, config.properties);
-   config.rendertype = material_type;
+   config.type = material_type;
 
    return config;
 }
@@ -394,16 +347,13 @@ namespace v_1 {
 
 auto convert_v1_constant_buffer(const std::string_view rendertype,
                                 const std::span<const std::byte> constant_buffer)
-   -> std::pair<std::vector<Material_property>, std::string>
+   -> std::vector<Material_property>
 {
    Material_config config;
 
    std::vector<Material_property> properties;
-   std::string cb_name;
 
    if (begins_with(rendertype, "pbr"sv)) {
-      cb_name = "pbr"s;
-
       struct PBR_cb {
          glm::vec3 base_color = {1.0f, 1.0f, 1.0f};
          float base_metallicness = 1.0f;
@@ -428,8 +378,6 @@ auto convert_v1_constant_buffer(const std::string_view rendertype,
                               std::log2(pbr_cb.emissive_power), 0.0f, 2048.0f);
    }
    else if (begins_with(rendertype, "normal_ext"sv)) {
-      cb_name = "normal_ext"s;
-
       struct Normal_ext_cb {
          float disp_scale = 1.0f;
          float disp_offset = 0.5f;
@@ -494,7 +442,7 @@ auto convert_v1_constant_buffer(const std::string_view rendertype,
       throw std::runtime_error{"unexpected rendertype"};
    }
 
-   return {std::move(properties), std::move(cb_name)};
+   return properties;
 }
 
 auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
@@ -518,8 +466,7 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
       auto cb__ = reader.read_child_strict<"CB__"_mn>();
       const auto constants = cb__.read_array<std::byte>(cb__.size());
 
-      std::tie(config.properties, config.cb_name) =
-         convert_v1_constant_buffer(rendertype, constants);
+      config.properties = convert_v1_constant_buffer(rendertype, constants);
    }
 
    const auto material_type = split_string_on(rendertype, "."sv)[0];
@@ -537,7 +484,7 @@ auto read_patch_material_impl(ucfb::Reader reader) -> Material_config
       reader.read_child_strict<"TESS"_mn>().read_multi<bool, std::uint32_t>();
 
    parse_rendertype(rendertype, config.properties);
-   config.rendertype = material_type;
+   config.type = material_type;
 
    return config;
 }

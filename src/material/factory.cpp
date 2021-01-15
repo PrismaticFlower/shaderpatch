@@ -99,8 +99,7 @@ auto Factory::create_material(const Material_config& config) noexcept -> Materia
    material::Material material{.overridden_rendertype = config.overridden_rendertype,
 
                                .name = config.name,
-                               .rendertype = config.rendertype,
-                               .cb_name = config.cb_name,
+                               .type = config.type,
 
                                .properties = config.properties,
                                .resource_properties = config.resources};
@@ -112,7 +111,7 @@ auto Factory::create_material(const Material_config& config) noexcept -> Materia
 
 void Factory::update_material(material::Material& material) noexcept
 {
-   auto& material_type = _material_types.at(material.cb_name);
+   auto& material_type = _material_types.at(material.type);
 
    Properties_view properties_view{material.properties};
 
@@ -134,9 +133,9 @@ void Factory::update_material(material::Material& material) noexcept
 
    material.shader =
       material_type->has_shader_flags()
-         ? _shader_factory.create(material.rendertype,
+         ? _shader_factory.create(material.type,
                                   material_type->get_shader_flags(properties_view))
-         : _shader_factory.create(material.rendertype, {});
+         : _shader_factory.create(material.type, {});
 
    material.cb_bind = material_type->constant_buffer_bind();
 

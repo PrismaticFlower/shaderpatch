@@ -15,6 +15,14 @@ namespace sp {
 
 namespace {
 
+enum class Displacement_mode : std::int32_t {
+   none = 0,
+   parallax_offset = 1,
+   occlusion_mapping = 2
+};
+
+enum class Blend_modes : std::int32_t { height = 0, basic = 1 };
+
 auto add_texture_transform_properties(std::vector<Material_property>& properties,
                                       const std::array<Terrain_texture_transform, 16>& texture_transforms)
 {
@@ -30,10 +38,40 @@ auto add_texture_transform_properties(std::vector<Material_property>& properties
    }
 }
 
+void add_common_properties(std::vector<Material_property>& properties,
+                           const Terrain_materials_config& config, const bool low_detail)
+{
+   if (!low_detail && config.bumpmapping == Terrain_bumpmapping::parallax_offset_mapping) {
+      properties.emplace_back("DisplacementMode"s,
+                              static_cast<std::int32_t>(Displacement_mode::parallax_offset));
+   }
+   else if (!low_detail && config.bumpmapping ==
+                              Terrain_bumpmapping::parallax_occlusion_mapping) {
+      properties.emplace_back("DisplacementMode"s,
+                              static_cast<std::int32_t>(
+                                 Displacement_mode::occlusion_mapping));
+   }
+   else {
+      properties.emplace_back("DisplacementMode"s,
+                              static_cast<std::int32_t>(Displacement_mode::none));
+   }
+
+   if (!low_detail && config.blending == Terrain_blending::basic) {
+      properties.emplace_back("BlendMode"s,
+                              static_cast<std::int32_t>(Blend_modes::basic));
+   }
+   else {
+      properties.emplace_back("BlendMode"s,
+                              static_cast<std::int32_t>(Blend_modes::height));
+   }
+
+   if (low_detail) properties.emplace_back("LowDetail"s, true);
+}
+
 auto create_pbr_properties(const Terrain_materials_config& config,
                            const std::array<Terrain_texture_transform, 16>& texture_transforms,
-                           const std::vector<std::string>& textures_order)
-   -> std::vector<Material_property>
+                           const std::vector<std::string>& textures_order,
+                           const bool low_detail) -> std::vector<Material_property>
 {
    std::vector<Material_property> properties;
    properties.reserve(96);
@@ -43,6 +81,7 @@ auto create_pbr_properties(const Terrain_materials_config& config,
    properties.emplace_back("BaseMetallicness"s, config.base_metallicness, 0.0f, 1.0f);
    properties.emplace_back("BaseRoughness"s, config.base_roughness, 0.0f, 1.0f);
 
+   add_common_properties(properties, config, low_detail);
    add_texture_transform_properties(properties, texture_transforms);
 
    for (auto i = 0; i < safe_min(textures_order.size(), std::size_t{16}); ++i) {
@@ -59,8 +98,8 @@ auto create_pbr_properties(const Terrain_materials_config& config,
 
 auto create_normal_ext_properties(const Terrain_materials_config& config,
                                   const std::array<Terrain_texture_transform, 16>& texture_transforms,
-                                  const std::vector<std::string>& textures_order)
-   -> std::vector<Material_property>
+                                  const std::vector<std::string>& textures_order,
+                                  const bool low_detail) -> std::vector<Material_property>
 {
    std::vector<Material_property> properties;
    properties.reserve(96);
@@ -71,6 +110,7 @@ auto create_normal_ext_properties(const Terrain_materials_config& config,
                            glm::vec3{0.0f}, glm::vec3{1.0f});
    properties.emplace_back("UseEnvmap"s, config.use_envmap, false, true);
 
+   add_common_properties(properties, config, low_detail);
    add_texture_transform_properties(properties, texture_transforms);
 
    for (auto i = 0; i < safe_min(textures_order.size(), std::size_t{16}); ++i) {
@@ -90,51 +130,23 @@ auto create_normal_ext_properties(const Terrain_materials_config& config,
 
 auto create_properties(const Terrain_materials_config& config,
                        const std::array<Terrain_texture_transform, 16>& texture_transforms,
-                       const std::vector<std::string>& textures_order)
-   -> std::vector<Material_property>
+                       const std::vector<std::string>& textures_order,
+                       const bool low_detail) -> std::vector<Material_property>
 {
    if (config.rendertype == Terrain_rendertype::pbr) {
-      return create_pbr_properties(config, texture_transforms, textures_order);
+      return create_pbr_properties(config, texture_transforms, textures_order,
+                                   low_detail);
    }
    else {
-      return create_normal_ext_properties(config, texture_transforms, textures_order);
+      return create_normal_ext_properties(config, texture_transforms,
+                                          textures_order, low_detail);
    }
 }
 
-auto select_rendertype(const Terrain_materials_config& config) noexcept -> std::string
-{
-   std::string rt = config.rendertype == Terrain_rendertype::pbr
-                       ? "pbr_terrain"s
-                       : "normal_ext_terrain"s;
-
-   if (config.blending == Terrain_blending::basic) {
-      rt += ".basic blending"s;
-   }
-
-   if (config.bumpmapping == Terrain_bumpmapping::parallax_offset_mapping) {
-      rt += ".parallax offset mapping"s;
-   }
-   else if (config.bumpmapping == Terrain_bumpmapping::parallax_occlusion_mapping) {
-      rt += ".parallax occlusion mapping"s;
-   }
-
-   return rt;
-}
-
-auto select_cb_name(const Terrain_materials_config& config) noexcept -> std::string
+auto select_material_type(const Terrain_materials_config& config) noexcept -> std::string
 {
    return config.rendertype == Terrain_rendertype::pbr ? "pbr_terrain"s
                                                        : "normal_ext_terrain"s;
-}
-
-auto select_rendertype_low_detail(const Terrain_materials_config& config) noexcept
-   -> std::string
-{
-   std::string rt = config.rendertype == Terrain_rendertype::pbr
-                       ? "pbr_terrain.low detail"s
-                       : "normal_ext_terrain.low detail"s;
-
-   return rt;
 }
 
 auto select_textures(const Terrain_materials_config& config, const std::string_view suffix)
@@ -180,10 +192,10 @@ void terrain_save_material(const Terrain_materials_config& config,
 
    mtrl.name = terrain_material_name;
    mtrl.name += suffix;
-   mtrl.rendertype = select_rendertype(config);
+   mtrl.type = select_material_type(config);
    mtrl.overridden_rendertype = Rendertype::normal;
-   mtrl.cb_name = select_cb_name(config);
-   mtrl.properties = create_properties(config, texture_transforms, textures_order);
+   mtrl.properties =
+      create_properties(config, texture_transforms, textures_order, false);
    mtrl.resources = select_textures(config, suffix);
 
    const auto req_contents = get_req_contents(mtrl.resources);
@@ -195,7 +207,8 @@ void terrain_save_material(const Terrain_materials_config& config,
    // Save low detail material
 
    mtrl.name += terrain_low_detail_suffix;
-   mtrl.rendertype = select_rendertype_low_detail(config);
+   mtrl.properties =
+      create_properties(config, texture_transforms, textures_order, true);
 
    write_patch_material(output_munge_files_dir / mtrl.name += ".material"sv, mtrl);
    emit_req_file(output_munge_files_dir / mtrl.name += ".material.req"sv,
