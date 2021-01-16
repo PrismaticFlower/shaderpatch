@@ -3,9 +3,9 @@
 #include "../bf2_log_monitor.hpp"
 #include "../input_hooker.hpp"
 #include "../logger.hpp"
+#include "../material/editor.hpp"
 #include "../user_config.hpp"
 #include "basic_builtin_textures.hpp"
-#include "materials_editor.hpp"
 #include "patch_material_io.hpp"
 #include "patch_texture_io.hpp"
 #include "screenshot.hpp"
@@ -645,16 +645,17 @@ auto Shader_patch::create_patch_material(const std::span<const std::byte> materi
    -> Material_handle
 {
    try {
-      auto material =
-         _materials
-            .emplace_back(std::make_unique<Patch_material>(
-               read_patch_material(ucfb::Reader_strict<"matl"_mn>{material_data}),
-               _material_shader_factory, _shader_resource_database, *_device))
-            .get();
+      const auto config =
+         read_patch_material(ucfb::Reader_strict<"matl"_mn>{material_data});
+
+      auto material = _materials
+                         .emplace_back(std::make_unique<material::Material>(
+                            _material_factory.create_material(config)))
+                         .get();
 
       log(Log_level::info, "Loaded material "sv, std::quoted(material->name));
 
-      const auto material_deleter = [&](Patch_material* material) noexcept {
+      const auto material_deleter = [this](material::Material* material) noexcept {
          if (_patch_material == material) set_patch_material(nullptr);
 
          for (auto it = _materials.begin(); it != _materials.end(); ++it) {
@@ -1002,13 +1003,14 @@ void Shader_patch::set_projtex_cube(const Game_texture& texture) noexcept
    _ps_textures_dirty = true;
 }
 
-void Shader_patch::set_patch_material(Patch_material* material) noexcept
+void Shader_patch::set_patch_material(material::Material* material) noexcept
 {
    _patch_material = material;
    _shader_dirty = true;
 
    if (_patch_material) {
-      _game_textures[0] = _patch_material->fail_safe_game_texture;
+      _game_textures[0] = {_patch_material->fail_safe_game_texture,
+                           _patch_material->fail_safe_game_texture};
       _ps_textures_dirty = true;
 
       _patch_material->bind_constant_buffers(*_device_context);
@@ -1647,8 +1649,6 @@ void Shader_patch::update_shader() noexcept
       _device_context->VSSetShader(_game_shader->vs.get(), nullptr, 0);
    }
 
-   _device_context->GSSetShader(nullptr, nullptr, 0);
-
    _device_context->PSSetShader(_oit_active ? _game_shader->ps_oit.get()
                                             : _game_shader->ps.get(),
                                 nullptr, 0);
@@ -1683,7 +1683,7 @@ void Shader_patch::update_imgui() noexcept
       user_config.show_imgui();
       _effects.show_imgui(_window);
 
-      show_materials_editor(*_device, _shader_resource_database, _materials);
+      material::show_editor(_material_factory, _materials);
 
       if (_bf2_log_monitor) _bf2_log_monitor->show_imgui(true);
    }

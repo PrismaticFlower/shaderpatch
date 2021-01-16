@@ -83,8 +83,8 @@ auto munge_material(const fs::path& material_path, const fs::path& output_file_p
 {
    auto root_node = YAML::LoadFile(material_path.string());
 
-   if (!root_node["RenderType"s]) {
-      throw std::runtime_error{"Null RenderType YAML node."s};
+   if (!root_node["RenderType"s] && !root_node["Type"s]) {
+      throw std::runtime_error{"Null RenderType/Type YAML node."s};
    }
 
    if (!root_node["Material"s]) {
@@ -119,35 +119,33 @@ auto munge_material(const fs::path& material_path, const fs::path& output_file_p
                    " it can be safely removed."sv);
    }
 
-   const auto rendertype = root_node["RenderType"s].as<std::string>();
-   const auto desc_name = make_ci_string(split_string_on(rendertype, "."sv)[0]);
+   const auto material_type = make_ci_string(
+      root_node["RenderType"s]
+         ? split_string_on(root_node["RenderType"s].as<std::string>(), "."sv)[0]
+         : root_node["Type"s].as<std::string>());
 
-   if (!descriptions.count(desc_name)) {
-      throw std::runtime_error{"RenderType has no material description."s};
+   if (!descriptions.count(material_type)) {
+      throw std::runtime_error{"Material type has no description."s};
    }
 
    const auto material =
       describe_material(material_path.stem().string(),
-                        descriptions.at(desc_name), root_node, options);
+                        descriptions.at(material_type), root_node, options);
 
    std::vector<std::pair<std::string, std::vector<std::string>>> required_files;
 
    const auto require_textures =
       [&required_sp_textures =
           required_files.emplace_back("sptex"s, std::vector<std::string>{}).second](
-         const std::vector<std::string>& textures) {
-         for (const auto& texture : textures) {
-            if (texture.empty() || texture.front() == '$') continue;
+         const absl::flat_hash_map<std::string, std::string>& textures) {
+         for (const auto& [prop, value] : textures) {
+            if (value.empty() || value.front() == '$') continue;
 
-            required_sp_textures.emplace_back(texture);
+            required_sp_textures.emplace_back(value);
          }
       };
 
-   require_textures(material.vs_resources);
-   require_textures(material.hs_resources);
-   require_textures(material.ds_resources);
-   require_textures(material.gs_resources);
-   require_textures(material.ps_resources);
+   require_textures(material.resources);
 
    write_patch_material(output_file_path, material);
 

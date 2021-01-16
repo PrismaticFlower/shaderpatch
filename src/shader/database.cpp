@@ -169,18 +169,6 @@ auto create_rendertype_state_descs(const Group_definition& definition,
          verify_entrypoint_exists(*state.ps_oit_entrypoint);
       }
 
-      if (state.hs_entrypoint) {
-         verify_entrypoint_exists(*state.hs_entrypoint);
-      }
-
-      if (state.ds_entrypoint) {
-         verify_entrypoint_exists(*state.ds_entrypoint);
-      }
-
-      if (state.gs_entrypoint) {
-         verify_entrypoint_exists(*state.gs_entrypoint);
-      }
-
       states.emplace(
          state_name,
          Rendertype_state_description{
@@ -192,11 +180,15 @@ auto create_rendertype_state_descs(const Group_definition& definition,
                rendertype.static_flags, state.vs_static_flags),
             .vs_input_state =
                definition.entrypoints.at(state.vs_entrypoint).vertex_state.generic_input,
+            .vs_static_flag_names =
+               Static_flags{definition.entrypoints.at(state.vs_entrypoint).static_flags},
 
             .ps_entrypoint = state.ps_entrypoint,
             .ps_static_flags = eval_rendertype_state_static_flags(
                definition.entrypoints.at(state.ps_entrypoint).static_flags,
                rendertype.static_flags, state.ps_static_flags),
+            .ps_static_flag_names =
+               Static_flags{definition.entrypoints.at(state.ps_entrypoint).static_flags},
 
             .ps_oit_entrypoint = state.ps_oit_entrypoint,
             .ps_oit_static_flags =
@@ -205,30 +197,12 @@ auto create_rendertype_state_descs(const Group_definition& definition,
                        definition.entrypoints.at(*state.ps_oit_entrypoint).static_flags,
                        rendertype.static_flags, state.ps_oit_static_flags)
                   : 0,
-
-            .hs_entrypoint = state.hs_entrypoint,
-            .hs_static_flags =
-               state.hs_entrypoint
-                  ? eval_rendertype_state_static_flags(
-                       definition.entrypoints.at(*state.hs_entrypoint).static_flags,
-                       rendertype.static_flags, state.hs_static_flags)
-                  : 0,
-
-            .ds_entrypoint = state.ds_entrypoint,
-            .ds_static_flags =
-               state.ds_entrypoint
-                  ? eval_rendertype_state_static_flags(
-                       definition.entrypoints.at(*state.ds_entrypoint).static_flags,
-                       rendertype.static_flags, state.ds_static_flags)
-                  : 0,
-
-            .gs_entrypoint = state.gs_entrypoint,
-            .gs_static_flags =
-               state.gs_entrypoint
-                  ? eval_rendertype_state_static_flags(
-                       definition.entrypoints.at(*state.gs_entrypoint).static_flags,
-                       rendertype.static_flags, state.gs_static_flags)
-                  : 0});
+            .ps_oit_static_flag_names =
+               state.ps_oit_entrypoint ? Static_flags{definition.entrypoints
+                                                         .at(*state.ps_oit_entrypoint)
+                                                         .static_flags}
+                                       : Static_flags{},
+         });
    }
 
    return states;
@@ -618,28 +592,39 @@ auto Rendertype_state::pixel_oit() noexcept -> Com_ptr<ID3D11PixelShader>
                                            _desc.ps_oit_static_flags);
 }
 
-auto Rendertype_state::hull() noexcept -> Com_ptr<ID3D11HullShader>
+auto Rendertype_state::vertex(const Vertex_shader_flags game_flags,
+                              std::span<const std::string> extra_flags) noexcept
+   -> std::tuple<Com_ptr<ID3D11VertexShader>, Bytecode_blob, Vertex_input_layout>
 {
-   if (!_desc.hs_entrypoint) return nullptr;
+   if (!vertex_shader_supported(game_flags)) return {nullptr, {}, {}};
 
-   return _database.get<ID3D11HullShader>(_desc.group_name, *_desc.hs_entrypoint,
-                                          _desc.hs_static_flags);
+   const auto extra_static_flags =
+      eval_static_flags(_desc.vs_static_flag_names.as_span(), extra_flags);
+
+   return _database.get_vs(_desc.group_name, _desc.vs_entrypoint,
+                           _desc.vs_static_flags | extra_static_flags, game_flags);
 }
 
-auto Rendertype_state::domain() noexcept -> Com_ptr<ID3D11DomainShader>
+auto Rendertype_state::pixel(std::span<const std::string> extra_flags) noexcept
+   -> Com_ptr<ID3D11PixelShader>
 {
-   if (!_desc.ds_entrypoint) return nullptr;
+   const auto extra_static_flags =
+      eval_static_flags(_desc.ps_static_flag_names.as_span(), extra_flags);
 
-   return _database.get<ID3D11DomainShader>(_desc.group_name, *_desc.ds_entrypoint,
-                                            _desc.ds_static_flags);
+   return _database.get<ID3D11PixelShader>(_desc.group_name, _desc.ps_entrypoint,
+                                           _desc.ps_static_flags | extra_static_flags);
 }
 
-auto Rendertype_state::geometry() noexcept -> Com_ptr<ID3D11GeometryShader>
+auto Rendertype_state::pixel_oit(std::span<const std::string> extra_flags) noexcept
+   -> Com_ptr<ID3D11PixelShader>
 {
-   if (!_desc.gs_entrypoint) return nullptr;
+   if (!_oit_capable || !_desc.ps_oit_entrypoint) return nullptr;
 
-   return _database.get<ID3D11GeometryShader>(_desc.group_name, *_desc.gs_entrypoint,
-                                              _desc.gs_static_flags);
+   const auto extra_static_flags =
+      eval_static_flags(_desc.ps_oit_static_flag_names.as_span(), extra_flags);
+
+   return _database.get<ID3D11PixelShader>(_desc.group_name, *_desc.ps_oit_entrypoint,
+                                           _desc.ps_oit_static_flags | extra_static_flags);
 }
 
 bool Rendertype_state::vertex_shader_supported(const Vertex_shader_flags game_flags) const noexcept
@@ -683,4 +668,20 @@ bool Rendertype_state::vertex_shader_supported(const Vertex_shader_flags game_fl
 
    return true;
 }
+
+auto Rendertype_state::eval_static_flags(const std::span<const std::string> flag_names,
+                                         const std::span<const std::string> set_flags) noexcept
+   -> std::uint64_t
+{
+   std::bitset<Static_flags::max_flags> flags{};
+
+   const std::size_t flag_count = flag_names.size();
+
+   for (std::size_t i = 0u; i < flag_count; ++i) {
+      flags[i] = std::ranges::count(set_flags, flag_names[i]) != 0;
+   }
+
+   return flags.to_ullong();
+}
+
 }

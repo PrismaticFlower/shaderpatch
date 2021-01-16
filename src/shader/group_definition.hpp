@@ -44,15 +44,6 @@ struct Group_definition {
 
       std::optional<std::string> ps_oit_entrypoint;
       absl::flat_hash_map<std::string, bool> ps_oit_static_flags;
-
-      std::optional<std::string> hs_entrypoint;
-      absl::flat_hash_map<std::string, bool> hs_static_flags;
-
-      std::optional<std::string> ds_entrypoint;
-      absl::flat_hash_map<std::string, bool> ds_static_flags;
-
-      std::optional<std::string> gs_entrypoint;
-      absl::flat_hash_map<std::string, bool> gs_static_flags;
    };
 
    std::string group_name;

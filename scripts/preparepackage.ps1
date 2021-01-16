@@ -30,6 +30,7 @@ copy '.\assets\shader patch user readme.txt' '.\packages\shaderpatch\shader patc
 copy '.\assets\core\*.lvl' .\packages\shaderpatch\data\shaderpatch\
 copy '.\assets\core\definitions\' .\packages\shaderpatch\data\shaderpatch\shaders\definitions\ -Recurse
 copy '.\assets\core\src\' .\packages\shaderpatch\data\shaderpatch\shaders\src\ -Recurse
+copy '.\assets\scripts\' .\packages\shaderpatch\data\shaderpatch\scripts\ -Recurse
 
 # Package tools.
 md .\packages\shaderpatch-tools

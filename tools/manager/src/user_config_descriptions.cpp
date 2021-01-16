@@ -235,6 +235,11 @@ LR"(Path to shader HLSL source files.)"sv
 },
 
 {
+L"Material Scripts Path"sv,      
+LR"(Path to material types Lua scripts.)"sv
+},
+
+{
 L"Scalable Font Name"sv,      
 LR"(Name of the font to use when Scalable Fonts are enabled.)"sv
 },

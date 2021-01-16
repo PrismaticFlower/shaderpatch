@@ -27,6 +27,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shader_cache_primer", "tool
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "manager", "tools\manager\manager.vcxproj", "{87C16869-1FA0-4995-B731-365D230D72F3}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "material_updater", "tools\material_updater\material_updater.vcxproj", "{7517AA92-58FE-4981-8370-2CD881BEE9FC}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		submodules\imgui\imgui.vcxitems*{77065f00-e7e4-4edf-8c98-6eb87bc49c4d}*SharedItemsImports = 4
@@ -96,6 +98,13 @@ Global
 		{87C16869-1FA0-4995-B731-365D230D72F3}.Release|x64.ActiveCfg = Release|Win32
 		{87C16869-1FA0-4995-B731-365D230D72F3}.Release|x86.ActiveCfg = Release|Win32
 		{87C16869-1FA0-4995-B731-365D230D72F3}.Release|x86.Build.0 = Release|Win32
+		{7517AA92-58FE-4981-8370-2CD881BEE9FC}.Debug|x64.ActiveCfg = Debug|x64
+		{7517AA92-58FE-4981-8370-2CD881BEE9FC}.Debug|x64.Build.0 = Debug|x64
+		{7517AA92-58FE-4981-8370-2CD881BEE9FC}.Debug|x86.ActiveCfg = Debug|x64
+		{7517AA92-58FE-4981-8370-2CD881BEE9FC}.Release|x64.ActiveCfg = Release|x64
+		{7517AA92-58FE-4981-8370-2CD881BEE9FC}.Release|x64.Build.0 = Release|x64
+		{7517AA92-58FE-4981-8370-2CD881BEE9FC}.Release|x86.ActiveCfg = Release|x64
+		{7517AA92-58FE-4981-8370-2CD881BEE9FC}.Release|x86.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -107,6 +116,7 @@ Global
 		{3E809000-E8D9-4C1B-8A1A-738587477265} = {69E77B09-01C8-4B00-929C-69F81C130C74}
 		{77099BDD-CB40-4C78-85BB-04F6E07F98D9} = {69E77B09-01C8-4B00-929C-69F81C130C74}
 		{87C16869-1FA0-4995-B731-365D230D72F3} = {69E77B09-01C8-4B00-929C-69F81C130C74}
+		{7517AA92-58FE-4981-8370-2CD881BEE9FC} = {69E77B09-01C8-4B00-929C-69F81C130C74}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E60021EE-5B9E-4C2E-B6AB-83302F205408}

@@ -131,6 +131,9 @@ struct user_config {
 
       string_user_config_value{L"Shader Source Path", LR"(.\data\shaderpatch\shaders\src)"},
 
+      string_user_config_value{L"Material Scripts Path",
+                               LR"(.\data\shaderpatch\scripts\material)"},
+
       string_user_config_value{L"Scalable Font Name", L"ariblk.ttf"},
    };
 };

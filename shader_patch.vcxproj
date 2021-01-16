@@ -49,7 +49,6 @@
     <TargetExt>.dll</TargetExt>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <CodeAnalysisRuleSet>NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>bin\$(Configuration)\</OutDir>
@@ -68,7 +67,7 @@
       <SDLCheck>true</SDLCheck>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <PreprocessorDefinitions>GLM_FORCE_SILENT_WARNINGS;GLM_FORCE_CXX17;_ENABLE_EXTENDED_ALIGNED_STORAGE=1;NOMINMAX;_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING;_CRT_SECURE_NO_WARNINGS;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SOL_USING_CXX_LUA;GLM_FORCE_SILENT_WARNINGS;GLM_FORCE_CXX17;_ENABLE_EXTENDED_ALIGNED_STORAGE=1;NOMINMAX;_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING;_CRT_SECURE_NO_WARNINGS;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>4324;4275;4251;4127;4018</DisableSpecificWarnings>
       <ConformanceMode>true</ConformanceMode>
@@ -79,6 +78,7 @@
       <DiagnosticsFormat>Caret</DiagnosticsFormat>
       <AdditionalIncludeDirectories>$(SolutionDir)/shared/include;%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
       <FloatingPointModel>Fast</FloatingPointModel>
+      <ObjectFileName>$(IntDir)\%(RelativeDir)\%(Filename).obj</ObjectFileName>
     </ClCompile>
     <Link>
       <AdditionalDependencies>d3d11.lib;DXGI.lib;dinput8.lib;Bcrypt.lib;dxguid.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -107,7 +107,7 @@
       <SDLCheck>true</SDLCheck>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <PreprocessorDefinitions>GLM_FORCE_SILENT_WARNINGS;GLM_FORCE_CXX17;_ENABLE_EXTENDED_ALIGNED_STORAGE=1;NOMINMAX;_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING;_CRT_SECURE_NO_WARNINGS;NDEBUG;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SOL_USING_CXX_LUA;GLM_FORCE_SILENT_WARNINGS;GLM_FORCE_CXX17;_ENABLE_EXTENDED_ALIGNED_STORAGE=1;NOMINMAX;_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING;_CRT_SECURE_NO_WARNINGS;NDEBUG;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>true</TreatWarningAsError>
       <AdditionalIncludeDirectories>$(SolutionDir)/shared/include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4324;4275;4251;4127;4018</DisableSpecificWarnings>
@@ -117,6 +117,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DiagnosticsFormat>Caret</DiagnosticsFormat>
       <FloatingPointModel>Fast</FloatingPointModel>
+      <ObjectFileName>$(IntDir)\%(RelativeDir)\%(Filename).obj</ObjectFileName>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -149,12 +150,7 @@
     <ClCompile Include="src\core\image_stretcher.cpp" />
     <ClCompile Include="src\core\input_layout_descriptions.cpp" />
     <ClCompile Include="src\core\late_backbuffer_resolver.cpp" />
-    <ClCompile Include="src\core\materials_editor.cpp" />
-    <ClCompile Include="src\core\material_constant_buffers.cpp" />
-    <ClCompile Include="src\core\material_shader.cpp" />
-    <ClCompile Include="src\core\material_shader_factory.cpp" />
     <ClCompile Include="src\core\oit_provider.cpp" />
-    <ClCompile Include="src\core\patch_material.cpp" />
     <ClCompile Include="src\core\postprocessing\bloom.cpp" />
     <ClCompile Include="src\core\postprocessing\scene_blur.cpp" />
     <ClCompile Include="src\core\postprocessing\scope_blur.cpp" />
@@ -229,6 +225,13 @@
     </ClCompile>
     <ClCompile Include="src\input_hooker.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\material\constant_buffer_builder.cpp" />
+    <ClCompile Include="src\material\editor.cpp" />
+    <ClCompile Include="src\material\material.cpp" />
+    <ClCompile Include="src\material\factory.cpp" />
+    <ClCompile Include="src\material\shader_factory.cpp" />
+    <ClCompile Include="src\material\shader_set.cpp" />
+    <ClCompile Include="src\material\sol_create_usertypes.cpp" />
     <ClCompile Include="src\shader\cache.cpp" />
     <ClCompile Include="src\shader\compiler.cpp" />
     <ClCompile Include="src\shader\database.cpp" />
@@ -248,10 +251,6 @@
     <ClInclude Include="src\core\depth_msaa_resolver.hpp" />
     <ClInclude Include="src\core\game_alt_postprocessing.hpp" />
     <ClInclude Include="src\core\late_backbuffer_resolver.hpp" />
-    <ClInclude Include="src\core\materials_editor.hpp" />
-    <ClInclude Include="src\core\material_constant_buffers.hpp" />
-    <ClInclude Include="src\core\material_shader.hpp" />
-    <ClInclude Include="src\core\material_shader_factory.hpp" />
     <ClInclude Include="src\core\oit_provider.hpp" />
     <ClInclude Include="src\core\patch_effects_config_handle.hpp" />
     <ClInclude Include="src\core\game_input_layout.hpp" />
@@ -261,7 +260,6 @@
     <ClInclude Include="src\core\image_stretcher.hpp" />
     <ClInclude Include="src\core\input_layout_element.hpp" />
     <ClInclude Include="src\core\input_layout_descriptions.hpp" />
-    <ClInclude Include="src\core\patch_material.hpp" />
     <ClInclude Include="src\core\postprocessing\bloom.hpp" />
     <ClInclude Include="src\core\postprocessing\scene_blur.hpp" />
     <ClInclude Include="src\core\postprocessing\scope_blur.hpp" />
@@ -359,6 +357,15 @@
     <ClInclude Include="src\imgui\imstb_truetype.h" />
     <ClInclude Include="src\input_hooker.hpp" />
     <ClInclude Include="src\logger.hpp" />
+    <ClInclude Include="src\material\constant_buffer_builder.hpp" />
+    <ClInclude Include="src\material\editor.hpp" />
+    <ClInclude Include="src\material\factory.hpp" />
+    <ClInclude Include="src\material\material.hpp" />
+    <ClInclude Include="src\material\material_type.hpp" />
+    <ClInclude Include="src\material\properties_view.hpp" />
+    <ClInclude Include="src\material\shader_factory.hpp" />
+    <ClInclude Include="src\material\shader_set.hpp" />
+    <ClInclude Include="src\material\sol_create_usertypes.hpp" />
     <ClInclude Include="src\shader\bytecode_blob.hpp" />
     <ClInclude Include="src\shader\cache.hpp" />
     <ClInclude Include="src\shader\common.hpp" />

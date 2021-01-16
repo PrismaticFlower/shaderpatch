@@ -7,17 +7,18 @@
 #include <bitset>
 #include <cstdint>
 #include <limits>
+#include <span>
 #include <string>
 
 namespace sp::shader {
-
-enum class Static_flag_op : std::uint8_t { set, clear };
 
 class Static_flags {
 public:
    using flags_type = std::uint64_t;
 
    constexpr static auto max_flags = std::numeric_limits<flags_type>::digits;
+
+   Static_flags() = default;
 
    template<typename T>
    explicit Static_flags(const T& t) noexcept
@@ -39,6 +40,11 @@ public:
       for (std::size_t i = 0; i < _flag_count; ++i) {
          output.emplace_back(_flags[i].data(), bits[i] ? "1" : "0");
       }
+   }
+
+   auto as_span() const noexcept -> std::span<const std::string>
+   {
+      return std::span{_flags.data(), _flag_count};
    }
 
 private:
