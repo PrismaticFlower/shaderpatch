@@ -4,6 +4,7 @@
 #include "glm_yaml_adapters.hpp"
 #include "material_rendertype_property_mappings.hpp"
 #include "string_utilities.hpp"
+#include "synced_io.hpp"
 #include "utility.hpp"
 
 #include <algorithm>
@@ -51,10 +52,9 @@ void error_check_properties(const YAML::Node& description, const YAML::Node& mat
       auto desc = description["Properties"s][prop.first.as<std::string>()];
 
       if (!desc) {
-         throw compose_exception<std::runtime_error>("Undescribed material property "sv,
-                                                     std::quoted(
-                                                        prop.first.as<std::string>()),
-                                                     " encountered."sv);
+         synced_error_print("Warning undescribed material property "sv,
+                            std::quoted(prop.first.as<std::string>()),
+                            " encountered!"sv);
       }
    }
 }
