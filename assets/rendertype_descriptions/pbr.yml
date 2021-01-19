@@ -28,17 +28,11 @@ Properties:
       Type: float
       Default: 1.0
       Range: [0.0, 2048.0]
-      Op: rcp
 
    UseEmissiveMap:
       Type: bool
       Default: false
 
-   EmissiveStrength: # Make true alias for EmissivePower
-      Type: float
-      Default: 0.0
-      Range: [0.0, 2048.0]
-      
    EmissivePower:
       Type: float
       Default: 0.0
@@ -49,7 +43,7 @@ Properties:
       Default: false
 
 Resource Properties:
-   AlbedoMap: # Rename to BaseColorMap and alias mapping AlbedoMap to BaseColorMap
+   BaseColorMap:
    NormalMap:
    MetallicRoughnessMap:
    AOMap:
@@ -59,3 +53,7 @@ Resource Properties:
    TEMP_ibl_dfg:
    TEMP_ibl_specular:
    TEMP_ibl_diffuse:
+
+Aliases:
+   AlbedoMap: BaseColorMap
+   EmissiveStrength: EmissivePower

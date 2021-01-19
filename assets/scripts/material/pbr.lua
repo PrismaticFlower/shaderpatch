@@ -22,7 +22,7 @@ end
 
 function fill_resource_vec(props, resource_props, resources)
 
-   resources:add(resource_props["AlbedoMap"] or "$grey")
+   resources:add(resource_props["BaseColorMap"] or resource_props["AlbedoMap"] or "$grey")
    resources:add(resource_props["NormalMap"] or "$null_normalmap")
    resources:add(resource_props["MetallicRoughnessMap"] or "")
    resources:add(resource_props["AOMap"] or "$null_ao")

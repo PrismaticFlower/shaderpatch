@@ -46,6 +46,24 @@ void convert_old_material(YAML::Node material)
    }
 }
 
+void apply_aliases(YAML::Node aliases, YAML::Node material)
+{
+   for (const auto& alias_name : aliases) {
+      const auto alias = alias_name.first.as<std::string>();
+      const auto name = alias_name.second.as<std::string>();
+
+      if (material["Material"s][alias]) {
+         material["Material"s][name] = material["Material"s][alias];
+         material["Material"s].remove(alias);
+      }
+
+      if (material["Textures"s][alias]) {
+         material["Textures"s][name] = material["Textures"s][alias];
+         material["Textures"s].remove(alias);
+      }
+   }
+}
+
 void error_check_properties(const YAML::Node& description, const YAML::Node& material)
 {
    for (const auto& prop : material["Material"s]) {
@@ -180,6 +198,10 @@ auto describe_material(const std::string_view name,
                        Material_options& material_options) -> Material_config
 {
    if (material["RenderType"s]) convert_old_material(material);
+
+   if (description["Aliases"s]) {
+      apply_aliases(description["Aliases"s], material);
+   }
 
    error_check_properties(description, material);
 
