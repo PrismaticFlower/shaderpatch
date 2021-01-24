@@ -35,19 +35,7 @@
     }
   },
 
-  "rendertypes": {
-    "skybox": {
-      "static_flags": {
-        "SKYBOX_USE_EMISSIVE_MAP": false
-      }
-    },
-
-    "skybox.emissive": {
-      "static_flags": {
-        "SKYBOX_USE_EMISSIVE_MAP": true
-      }
-    }
-  },
+  "rendertypes": { "skybox": {} },
 
   "states": {
     "unlit opaque": {

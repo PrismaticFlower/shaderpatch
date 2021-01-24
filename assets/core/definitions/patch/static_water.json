@@ -43,18 +43,7 @@
     }
   },
 
-  "rendertypes": {
-    "static_water": {
-      "static_flags": {
-        "STATIC_WATER_USE_SPECULAR": false
-      }
-    },
-    "static_water.specular": {
-      "static_flags": {
-        "STATIC_WATER_USE_SPECULAR": true
-      }
-    }
-  },
+  "rendertypes": { "static_water": {} },
 
   "states": {
     "unlit opaque": {

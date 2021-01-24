@@ -40,14 +40,7 @@
     }
   },
 
-  "rendertypes": {
-    "basic_unlit": {
-      "static_flags": {
-        "BASIC_UNLIT_USE_TRANSPARENCY": false,
-        "BASIC_UNLIT_USE_HARDEDGED_TEST": false
-      }
-    }
-  },
+  "rendertypes": { "basic_unlit": {} },
 
   "states": {
     "unlit opaque": {

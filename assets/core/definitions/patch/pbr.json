@@ -64,62 +64,7 @@
     }
   },
 
-  "rendertypes": {
-    "pbr": {
-      "static_flags": {
-        "PBR_USE_METALLIC_ROUGHNESS_MAP": true,
-        "PBR_USE_EMISSIVE_MAP": false,
-        "PBR_USE_IBL": false,
-        "PBR_USE_TRANSPARENCY": false,
-        "PBR_USE_HARDEDGED_TEST": false,
-        "PBR_USE_SHADOW_MAP": false
-      }
-    },
-
-    "pbr.basic": {
-      "static_flags": {
-        "PBR_USE_METALLIC_ROUGHNESS_MAP": false,
-        "PBR_USE_EMISSIVE_MAP": false,
-        "PBR_USE_IBL": false,
-        "PBR_USE_TRANSPARENCY": false,
-        "PBR_USE_HARDEDGED_TEST": false,
-        "PBR_USE_SHADOW_MAP": false
-      }
-    },
-
-    "pbr.emissive": {
-      "static_flags": {
-        "PBR_USE_METALLIC_ROUGHNESS_MAP": true,
-        "PBR_USE_EMISSIVE_MAP": true,
-        "PBR_USE_IBL": false,
-        "PBR_USE_TRANSPARENCY": false,
-        "PBR_USE_HARDEDGED_TEST": false,
-        "PBR_USE_SHADOW_MAP": false
-      }
-    },
-
-    "pbr.TEMP ibl": {
-      "static_flags": {
-        "PBR_USE_METALLIC_ROUGHNESS_MAP": true,
-        "PBR_USE_EMISSIVE_MAP": false,
-        "PBR_USE_IBL": true,
-        "PBR_USE_TRANSPARENCY": false,
-        "PBR_USE_HARDEDGED_TEST": false,
-        "PBR_USE_SHADOW_MAP": false
-      }
-    },
-
-    "pbr.emissive.TEMP ibl": {
-      "static_flags": {
-        "PBR_USE_METALLIC_ROUGHNESS_MAP": true,
-        "PBR_USE_EMISSIVE_MAP": true,
-        "PBR_USE_IBL": true,
-        "PBR_USE_TRANSPARENCY": false,
-        "PBR_USE_HARDEDGED_TEST": false,
-        "PBR_USE_SHADOW_MAP": false
-      }
-    }
-  },
+  "rendertypes": { "pbr": {} },
 
   "states": {
     "unlit opaque": {
