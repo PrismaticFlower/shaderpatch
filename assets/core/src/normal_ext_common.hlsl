@@ -112,9 +112,10 @@ float3 do_lighting(float3 normalWS, float3 positionWS, float3 view_normalWS,
          }
       }
 
+      [branch]
       if (light_active_spot) {
          light::blinnphong::calculate_spot(diffuse_lighting, specular_lighting, normalWS,
-                                           view_normalWS, positionWS, specular_exponent,
+                                           positionWS, view_normalWS, specular_exponent,
                                            proj_intensities_diffuse[2], proj_intensities_specular[2]);
       }
 
