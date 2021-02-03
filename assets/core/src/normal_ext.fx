@@ -289,8 +289,9 @@ float4 main_ps(Ps_input input) : SV_Target0
       const float2 emissive_texcoords = input.texcoords * emissive_texture_scale;
       const float3 emissive_vertex_color = 
          use_vertex_color_for_emissive ? input.material_color_fade.rgb : float3(1.0, 1.0, 1.0);
+      const float3 emissive_base_color = emissive_vertex_color * emissive_power * lighting_scale;
 
-      color += emissive_map.Sample(aniso_wrap_sampler, emissive_texcoords) * (emissive_power * lighting_scale);
+      color += emissive_map.Sample(aniso_wrap_sampler, emissive_texcoords) * emissive_base_color;
    }
 
    // Apply env map, if using.

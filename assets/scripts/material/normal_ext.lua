@@ -74,7 +74,7 @@ function get_shader_flags(props, flags)
       flags:add("NORMAL_EXT_USE_DYNAMIC_TANGENTS")
    end
 
-   if props:get_bool("MultiplyEmissiveByVertexColor", false) then
+   if props:get_bool("UseEnvMap", false) and props:get_bool("MultiplyEmissiveByVertexColor", false) then
       flags:add("NORMAL_EXT_USE_VERTEX_COLOR_FOR_EMISSIVE")
    end
    
