@@ -57,6 +57,7 @@ cbuffer MaterialConstants : register(MATERIAL_CB_INDEX)
 const static bool use_texcoords_transform = NORMAL_EXT_USE_TEXCOORDS_TRANSFORM;
 const static bool use_specular = NORMAL_EXT_USE_SPECULAR;
 const static bool use_parallax_occlusion_mapping = NORMAL_EXT_USE_PARALLAX_OCCLUSION_MAPPING;
+const static bool use_vertex_color_for_emissive = NORMAL_EXT_USE_VERTEX_COLOR_FOR_EMISSIVE;
 const static bool use_transparency = NORMAL_EXT_USE_TRANSPARENCY;
 const static bool use_hardedged_test = NORMAL_EXT_USE_HARDEDGED_TEST;
 
@@ -222,7 +223,10 @@ float4 main_ps(Ps_input input) : SV_Target0
 
    // Get Diffuse Color
    float3 diffuse_color = diffuse_map_color.rgb * base_diffuse_color;
-   diffuse_color *= input.material_color_fade.rgb;
+
+   if (!use_vertex_color_for_emissive) {
+      diffuse_color *= input.material_color_fade.rgb;
+   }
 
    const float2 detail_texcoords = input.texcoords * detail_texture_scale;
 
@@ -283,6 +287,8 @@ float4 main_ps(Ps_input input) : SV_Target0
    // Apply emissive map, if using.
    if (use_emissive_texture) {
       const float2 emissive_texcoords = input.texcoords * emissive_texture_scale;
+      const float3 emissive_vertex_color = 
+         use_vertex_color_for_emissive ? input.material_color_fade.rgb : float3(1.0, 1.0, 1.0);
 
       color += emissive_map.Sample(aniso_wrap_sampler, emissive_texcoords) * (emissive_power * lighting_scale);
    }

@@ -74,6 +74,10 @@ Properties:
       Default: 0.0
       Range: [-2048.0, 2048.0]
 
+   MultiplyEmissiveByVertexColor:
+      Type: bool
+      Default: false
+      
    UseEnvMap:
       Type: bool
       Default: false
