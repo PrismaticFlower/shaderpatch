@@ -286,7 +286,10 @@ float4 main_ps(Ps_input input) : SV_Target0
 
    // Apply emissive map, if using.
    if (use_emissive_texture) {
-      const float2 emissive_texcoords = input.texcoords * emissive_texture_scale;
+      const float2 emissive_texcoords =
+         (use_parallax_occlusion_mapping && emissive_texture_scale == 1.0)
+            ? texcoords
+            : input.texcoords * emissive_texture_scale;
       const float3 emissive_vertex_color = 
          use_vertex_color_for_emissive ? input.material_color_fade.rgb : float3(1.0, 1.0, 1.0);
       const float3 emissive_base_color = emissive_vertex_color * emissive_power * lighting_scale;
