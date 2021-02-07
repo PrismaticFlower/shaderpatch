@@ -12,7 +12,7 @@ auto load_user_config_descriptions()
 
 {
 L"Display"sv,      
-LR"(TODO: Display description.)"sv
+LR"(Settings for controlling the display of the game.)"sv
 },
 
 {
@@ -52,7 +52,7 @@ LR"(When `Display Scaling Aware` is `yes` controls if the game's perceived resol
 
 {
 L"Scalable Fonts"sv,      
-LR"(Whether to replace the game's core bitmap fonts with ones that can be scaled while preserving sharp edges. If you have any mods installed that also replace the game's fonts when this setting is enabled then they will be superseded by Shader Patch's fonts.)"sv
+LR"(Whether to replace the game's core fonts with ones that can be scaled. If you have any mods installed that also replace the game's fonts when this setting is enabled then they will be superseded by Shader Patch's fonts.)"sv
 },
 
 {
@@ -72,7 +72,7 @@ LR"(The override for the game's perceived resolution, for use with `Enable Game 
 
 {
 L"Graphics"sv,      
-LR"(TODO: Graphics description.)"sv
+LR"(Settings directly affecting the rendering of the game.)"sv
 },
 
 {
