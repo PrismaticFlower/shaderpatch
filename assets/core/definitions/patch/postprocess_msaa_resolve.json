@@ -7,8 +7,6 @@
       "stage": "pixel",
       "function_name": "main_hdr_ps",
 
-      "pixel_state": { "lighting": false },
-
       "defines": [
         [ "RESOLVE_SAMPLE_COUNT", "2" ]
       ]
@@ -17,8 +15,6 @@
     "main_x4_ps": {
       "stage": "pixel",
       "function_name": "main_hdr_ps",
-
-      "pixel_state": { "lighting": false },
 
       "defines": [
         [ "RESOLVE_SAMPLE_COUNT", "4" ]
@@ -29,8 +25,6 @@
       "stage": "pixel",
       "function_name": "main_hdr_ps",
 
-      "pixel_state": { "lighting": false },
-
       "defines": [
         [ "RESOLVE_SAMPLE_COUNT", "8" ]
       ]
@@ -39,8 +33,6 @@
     "main_stock_hdr_x2_ps": {
       "stage": "pixel",
       "function_name": "main_stock_hdr_ps",
-
-      "pixel_state": { "lighting": false },
 
       "defines": [
         [ "RESOLVE_SAMPLE_COUNT", "2" ]
@@ -51,8 +43,6 @@
       "stage": "pixel",
       "function_name": "main_stock_hdr_ps",
 
-      "pixel_state": { "lighting": false },
-
       "defines": [
         [ "RESOLVE_SAMPLE_COUNT", "4" ]
       ]
@@ -61,8 +51,6 @@
     "main_stock_hdr_x8_ps": {
       "stage": "pixel",
       "function_name": "main_stock_hdr_ps",
-
-      "pixel_state": { "lighting": false },
 
       "defines": [
         [ "RESOLVE_SAMPLE_COUNT", "8" ]

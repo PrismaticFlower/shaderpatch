@@ -4,14 +4,13 @@
 
 namespace sp::d3d9 {
 
-Com_ptr<Vertex_shader> Vertex_shader::create(core::Shader_patch& shader_patch,
-                                             const Shader_metadata metadata) noexcept
+Com_ptr<Vertex_shader> Vertex_shader::create(const std::uint32_t game_shader_index) noexcept
 {
-   return Com_ptr{new Vertex_shader{shader_patch, metadata}};
+   return Com_ptr{new Vertex_shader{game_shader_index}};
 }
-Vertex_shader::Vertex_shader(core::Shader_patch& shader_patch,
-                             const Shader_metadata metadata) noexcept
-   : _game_shader{shader_patch.create_game_shader(metadata)}
+
+Vertex_shader::Vertex_shader(const std::uint32_t game_shader_index) noexcept
+   : _game_shader_index{game_shader_index}
 {
 }
 

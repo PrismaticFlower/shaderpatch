@@ -25,23 +25,6 @@ constexpr bool marked_as_enum_flag(cmaa2_flags) noexcept
    return true;
 }
 
-bool uav_store_supported(ID3D11Device1& device, const DXGI_FORMAT format)
-{
-   D3D11_FEATURE_DATA_FORMAT_SUPPORT support{format};
-   D3D11_FEATURE_DATA_FORMAT_SUPPORT2 support2{format};
-
-   device.CheckFeatureSupport(D3D11_FEATURE_FORMAT_SUPPORT, &support, sizeof(support));
-   device.CheckFeatureSupport(D3D11_FEATURE_FORMAT_SUPPORT2, &support2,
-                              sizeof(support2));
-
-   const bool typed_uav = (support.OutFormatSupport &
-                           D3D11_FORMAT_SUPPORT_TYPED_UNORDERED_ACCESS_VIEW) != 0;
-   const bool typed_uav_store =
-      (support2.OutFormatSupport2 & D3D11_FORMAT_SUPPORT2_UAV_TYPED_STORE) != 0;
-
-   return typed_uav && typed_uav_store;
-}
-
 auto create_texture_uav(ID3D11Device1& device, const DXGI_FORMAT format,
                         const UINT width, const UINT height) noexcept
    -> Com_ptr<ID3D11UnorderedAccessView>
@@ -83,8 +66,7 @@ auto create_structured_buffer_uav(ID3D11Device1& device, const UINT size,
 }
 }
 
-CMAA2::CMAA2(Com_ptr<ID3D11Device1> device,
-             const core::Shader_group_collection& shader_groups) noexcept
+CMAA2::CMAA2(Com_ptr<ID3D11Device1> device, shader::Database& shaders) noexcept
    : _point_sampler{[&] {
         CD3D11_SAMPLER_DESC desc{CD3D11_DEFAULT{}};
 
@@ -97,26 +79,32 @@ CMAA2::CMAA2(Com_ptr<ID3D11Device1> device,
         return sampler;
      }()},
      _device{device},
-     _shader_entrypoints{shader_groups.at("CMAA2"s).compute}
+     _shaders{shaders.compute("CMAA2"sv)}
 {
 }
 
 void CMAA2::apply(ID3D11DeviceContext1& dc, Profiler& profiler,
-                  ID3D11Texture2D& input_output) noexcept
+                  CMAA2_input_output input_output) noexcept
 {
-   apply_impl(dc, profiler, input_output, nullptr);
-}
+   dc.ClearState();
 
-void CMAA2::apply(ID3D11DeviceContext1& dc, Profiler& profiler,
-                  ID3D11Texture2D& input_output, ID3D11ShaderResourceView& luma_srv) noexcept
-{
-   apply_impl(dc, profiler, input_output, &luma_srv);
+   const bool luma_input = input_output.luma_srv != nullptr;
+   bool shaders_changed =
+      std::exchange(_luma_separate_texture, luma_input) != luma_input;
+
+   if (std::exchange(_size, glm::uvec2{input_output.width, input_output.height}) !=
+       glm::uvec2{input_output.width, input_output.height}) {
+      update_resources();
+      shaders_changed = true;
+   }
+
+   if (shaders_changed) update_shaders();
+
+   execute(dc, profiler, input_output);
 }
 
 void CMAA2::clear_resources() noexcept
 {
-   _uav_store_typed = false;
-   _uav_store_convert_to_srgb = false;
    _luma_separate_texture = false;
 
    _size = {0, 0};
@@ -125,10 +113,6 @@ void CMAA2::clear_resources() noexcept
    _compute_dispatch_args = nullptr;
    _process_candidates = nullptr;
    _deferred_color_apply2x2 = nullptr;
-
-   _input_output_texture = nullptr;
-   _input_srv = nullptr;
-   _output_uav = nullptr;
 
    _working_edges_uav = nullptr;
    _working_shape_candidates_uav = nullptr;
@@ -140,28 +124,8 @@ void CMAA2::clear_resources() noexcept
    _working_control_uav = nullptr;
 }
 
-void CMAA2::apply_impl(ID3D11DeviceContext1& dc, Profiler& profiler,
-                       ID3D11Texture2D& input_output,
-                       ID3D11ShaderResourceView* luma_srv) noexcept
-{
-   dc.ClearState();
-
-   const bool luma_input = luma_srv != nullptr;
-   bool shaders_changed =
-      std::exchange(_luma_separate_texture, luma_input) != luma_input;
-
-   if (_input_output_texture != &input_output) {
-      update_resources(input_output);
-      shaders_changed = true;
-   }
-
-   if (shaders_changed) update_shaders();
-
-   execute(dc, profiler, luma_srv);
-}
-
 void CMAA2::execute(ID3D11DeviceContext1& dc, Profiler& profiler,
-                    ID3D11ShaderResourceView* luma_srv) noexcept
+                    CMAA2_input_output input_output) noexcept
 {
    Profile full_profile{profiler, dc, "CMAA2"sv};
 
@@ -177,8 +141,8 @@ void CMAA2::execute(ID3D11DeviceContext1& dc, Profiler& profiler,
            _working_deferred_blend_item_list_heads_uav.get(),
            _working_control_uav.get()};
 
-   std::array<ID3D11ShaderResourceView*, 4> srvs{_input_srv.get(), nullptr,
-                                                 nullptr, luma_srv};
+   std::array<ID3D11ShaderResourceView*, 4> srvs{&input_output.input, nullptr,
+                                                 nullptr, input_output.luma_srv};
 
    dc.CSSetUnorderedAccessViews(0, uavs.size(), uavs.data(), nullptr);
    dc.CSSetShaderResources(0, srvs.size(), srvs.data());
@@ -216,7 +180,7 @@ void CMAA2::execute(ID3D11DeviceContext1& dc, Profiler& profiler,
    }
 
    srvs[0] = nullptr;
-   uavs[0] = _output_uav.get();
+   uavs[0] = &input_output.output;
 
    dc.CSSetShaderResources(0, srvs.size(), srvs.data());
    dc.CSSetUnorderedAccessViews(0, uavs.size(), uavs.data(), nullptr);
@@ -238,53 +202,8 @@ void CMAA2::execute(ID3D11DeviceContext1& dc, Profiler& profiler,
    dc.CSSetShader(nullptr, nullptr, 0);
 }
 
-void CMAA2::update_resources(ID3D11Texture2D& input_output) noexcept
+void CMAA2::update_resources() noexcept
 {
-   input_output.AddRef();
-   _input_output_texture.reset(&input_output);
-
-   _size = [&] {
-      D3D11_TEXTURE2D_DESC desc;
-      _input_output_texture->GetDesc(&desc);
-
-      return glm::uvec2{desc.Width, desc.Height};
-   }();
-
-   // Create input SRV
-   {
-      const CD3D11_SHADER_RESOURCE_VIEW_DESC desc{D3D11_SRV_DIMENSION_TEXTURE2D,
-                                                  DXGI_FORMAT_R8G8B8A8_UNORM_SRGB};
-
-      _device->CreateShaderResourceView(_input_output_texture.get(), &desc,
-                                        _input_srv.clear_and_assign());
-   }
-
-   // Create output UAV
-   {
-      DXGI_FORMAT uav_format{};
-
-      if (uav_store_supported(*_device, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB)) {
-         uav_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-         _uav_store_typed = true;
-      }
-      else if (uav_store_supported(*_device, DXGI_FORMAT_R8G8B8A8_UNORM)) {
-         uav_format = DXGI_FORMAT_R8G8B8A8_UNORM;
-         _uav_store_typed = true;
-         _uav_store_convert_to_srgb = true;
-      }
-      else if (uav_store_supported(*_device, DXGI_FORMAT_R32_UINT)) {
-         uav_format = DXGI_FORMAT_R32_UINT;
-         _uav_store_typed = false;
-         _uav_store_convert_to_srgb = true;
-      }
-
-      const CD3D11_UNORDERED_ACCESS_VIEW_DESC desc{D3D11_UAV_DIMENSION_TEXTURE2D,
-                                                   uav_format};
-
-      _device->CreateUnorderedAccessView(_input_output_texture.get(), &desc,
-                                         _output_uav.clear_and_assign());
-   }
-
    // Create working buffers
    {
       // Create edges buffer
@@ -360,14 +279,9 @@ void CMAA2::update_shaders() noexcept
    if (_luma_separate_texture)
       flags |= cmaa2_flags::edge_detection_luma_separate_texture;
 
-   const auto uint_flags = static_cast<std::uint32_t>(flags);
-
-   _edges_color2x2 = _shader_entrypoints.at("EdgesColor2x2CS"s).copy(uint_flags);
-   _compute_dispatch_args =
-      _shader_entrypoints.at("ComputeDispatchArgsCS"s).copy(uint_flags);
-   _process_candidates =
-      _shader_entrypoints.at("ProcessCandidatesCS"s).copy(uint_flags);
-   _deferred_color_apply2x2 =
-      _shader_entrypoints.at("DeferredColorApply2x2CS"s).copy(uint_flags);
+   _edges_color2x2 = _shaders.entrypoint("EdgesColor2x2CS"sv, flags);
+   _compute_dispatch_args = _shaders.entrypoint("ComputeDispatchArgsCS"sv, flags);
+   _process_candidates = _shaders.entrypoint("ProcessCandidatesCS"sv, flags);
+   _deferred_color_apply2x2 = _shaders.entrypoint("DeferredColorApply2x2CS"sv, flags);
 }
 }

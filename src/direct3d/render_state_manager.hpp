@@ -8,9 +8,6 @@
 
 #include <d3d9.h>
 
-#pragma warning(push)
-#pragma warning(disable : 4324)
-
 namespace sp::d3d9 {
 
 class Render_state_manager {
@@ -32,14 +29,14 @@ private:
 
    void update_fog_state(core::Shader_patch& shader_patch) noexcept;
 
-   auto create_current_blend_state(core::Shader_patch& shader_patch) const
-      noexcept -> Com_ptr<ID3D11BlendState1>;
+   auto create_current_blend_state(core::Shader_patch& shader_patch) const noexcept
+      -> Com_ptr<ID3D11BlendState1>;
 
-   auto create_current_depthstencil_state(core::Shader_patch& shader_patch) const
-      noexcept -> Com_ptr<ID3D11DepthStencilState>;
+   auto create_current_depthstencil_state(core::Shader_patch& shader_patch) const noexcept
+      -> Com_ptr<ID3D11DepthStencilState>;
 
-   auto create_current_rasterizer_state(core::Shader_patch& shader_patch) const
-      noexcept -> Com_ptr<ID3D11RasterizerState>;
+   auto create_current_rasterizer_state(core::Shader_patch& shader_patch) const noexcept
+      -> Com_ptr<ID3D11RasterizerState>;
 
    struct alignas(std::int32_t) Blend_state {
       unsigned int src_blend : 4;
@@ -143,5 +140,3 @@ private:
 };
 
 }
-
-#pragma warning(pop)

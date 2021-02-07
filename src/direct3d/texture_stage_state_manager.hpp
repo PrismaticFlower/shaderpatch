@@ -10,15 +10,13 @@ namespace sp::d3d9 {
 
 class Texture_stage_state_manager {
 public:
-   explicit Texture_stage_state_manager(core::Shader_patch& shader_patch) noexcept;
-
    void set(const UINT stage, const D3DTEXTURESTAGESTATETYPE state,
             const DWORD value) noexcept;
 
    DWORD get(const UINT stage, const D3DTEXTURESTAGESTATETYPE state) const noexcept;
 
-   void update(core::Shader_patch& shader_patch, const DWORD texture_factor) const
-      noexcept;
+   void update(core::Shader_patch& shader_patch, const DWORD texture_factor,
+               const D3DVIEWPORT9& viewport) const noexcept;
 
    void reset() noexcept;
 
@@ -32,6 +30,10 @@ private:
    bool is_plain_texture_state(const DWORD texture_factor) const noexcept;
 
    bool is_color_fill_state() const noexcept;
+
+   static auto get_game_shader_index(Rendertype rendertype,
+                                     const std::string_view shader_name)
+      -> std::uint32_t;
 
    struct Stage_state {
       DWORD colorop;
@@ -103,11 +105,22 @@ private:
 
    std::array<Stage_state, 4> _stages = default_stages_state();
 
-   const std::shared_ptr<core::Game_shader> _color_fill_shader;
-   const std::shared_ptr<core::Game_shader> _damage_overlay_shader;
-   const std::shared_ptr<core::Game_shader> _plain_texture_shader;
-   const std::shared_ptr<core::Game_shader> _scene_blur_shader;
-   const std::shared_ptr<core::Game_shader> _zoom_blur_shader;
+   const std::uint32_t _color_fill_shader =
+      get_game_shader_index(Rendertype::fixedfunc_color_fill, "color fill");
+
+   const std::uint32_t _damage_overlay_shader =
+      get_game_shader_index(Rendertype::fixedfunc_damage_overlay,
+                            "damage overlay");
+
+   const std::uint32_t _plain_texture_shader =
+      get_game_shader_index(Rendertype::fixedfunc_plain_texture,
+                            "plain texture");
+
+   const std::uint32_t _scene_blur_shader =
+      get_game_shader_index(Rendertype::fixedfunc_scene_blur, "scene blur");
+
+   const std::uint32_t _zoom_blur_shader =
+      get_game_shader_index(Rendertype::fixedfunc_zoom_blur, "zoom blur");
 };
 
 }

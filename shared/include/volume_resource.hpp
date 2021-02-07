@@ -1,6 +1,7 @@
 #pragma once
 
 #include "magic_number.hpp"
+#include "ucfb_writer.hpp"
 
 #include <array>
 #include <cstddef>
@@ -30,6 +31,10 @@ struct Volume_resource_header {
 };
 
 static_assert(sizeof(Volume_resource_header) == 16);
+
+void write_volume_resource(ucfb::File_writer& writer, const std::string_view name,
+                           const Volume_resource_type type,
+                           std::span<const std::byte> data);
 
 void save_volume_resource(const std::filesystem::path& output_path,
                           const std::string_view name, const Volume_resource_type type,

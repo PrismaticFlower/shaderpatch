@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../effects/cmaa2.hpp"
+#include "../effects/ffx_cas.hpp"
 #include "../effects/postprocess.hpp"
 #include "../effects/profiler.hpp"
 #include "../effects/ssao.hpp"
@@ -26,12 +27,12 @@ struct Effects_control_config {
    bool hdr_rendering = false;
    bool oit_requested = false;
    bool disable_light_brightness_rescaling = false;
+   bool fp_rendertargets = false;
 };
 
 class Control {
 public:
-   Control(Com_ptr<ID3D11Device4> device,
-           const core::Shader_group_collection& shader_groups) noexcept;
+   Control(Com_ptr<ID3D11Device4> device, shader::Database& shaders) noexcept;
 
    bool enabled(const bool enabled) noexcept;
 
@@ -56,6 +57,7 @@ public:
    effects::Postprocess postprocess;
    effects::CMAA2 cmaa2;
    effects::SSAO ssao;
+   effects::FFX_cas ffx_cas;
    effects::Profiler profiler;
 
 private:
@@ -94,6 +96,7 @@ struct convert<sp::effects::Effects_control_config> {
       node["RequestOIT"s] = config.oit_requested;
       node["DisableLightBrightnessRescaling"s] =
          config.disable_light_brightness_rescaling;
+      node["FPRenderTargets"s] = config.fp_rendertargets;
 
       return node;
    }
@@ -109,6 +112,8 @@ struct convert<sp::effects::Effects_control_config> {
       config.disable_light_brightness_rescaling =
          node["DisableLightBrightnessRescaling"s].as<bool>(
             config.disable_light_brightness_rescaling);
+      config.fp_rendertargets =
+         node["FPRenderTargets"s].as<bool>(config.fp_rendertargets);
 
       return true;
    }

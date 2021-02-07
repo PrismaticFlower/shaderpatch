@@ -1,66 +1,38 @@
 {
-   "group_name": "gaussian blur",
-   "source_name": "gaussian_blur.fx",
+  "group_name": "gaussian blur",
+  "source_name": "gaussian_blur.fx",
 
-   "entrypoints": {
-      "gaussian_blur_199_ps": {
-         "stage": "pixel",
+  "entrypoints": {
+    "gaussian_blur_199_ps": {
+      "stage": "pixel"
+    },
 
-         "pixel_state": {
-            "lighting": false
-         }
-      },
+    "gaussian_blur_151_ps": {
+      "stage": "pixel"
+    },
 
-      "gaussian_blur_151_ps": {
-         "stage": "pixel",
+    "gaussian_blur_99_ps": {
+      "stage": "pixel"
+    },
 
-         "pixel_state": {
-            "lighting": false
-         }
-      },
+    "gaussian_blur_75_ps": {
+      "stage": "pixel"
+    },
 
-      "gaussian_blur_99_ps": {
-         "stage": "pixel",
+    "gaussian_blur_51_ps": {
+      "stage": "pixel"
+    },
 
-         "pixel_state": {
-            "lighting": false
-         }
-      },
+    "gaussian_blur_39_ps": {
+      "stage": "pixel"
+    },
 
-      "gaussian_blur_75_ps": {
-         "stage": "pixel",
+    "gaussian_blur_23_ps": {
+      "stage": "pixel"
+    }
+  },
 
-         "pixel_state": {
-            "lighting": false
-         }
-      },
+  "rendertypes": {},
 
-      "gaussian_blur_51_ps": {
-         "stage": "pixel",
-
-         "pixel_state": {
-            "lighting": false
-         }
-      },
-
-      "gaussian_blur_39_ps": {
-         "stage": "pixel",
-
-         "pixel_state": {
-            "lighting": false
-         }
-      },
-
-      "gaussian_blur_23_ps": {
-         "stage": "pixel",
-
-         "pixel_state": {
-            "lighting": false
-         }
-      }
-   },
-
-   "rendertypes": {},
-
-   "states": {}
+  "states": {}
 }

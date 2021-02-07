@@ -5,6 +5,8 @@
 #include "lighting_utilities.hlsl"
 #include "pixel_utilities.hlsl"
 
+// clang-format off
+
 const static bool normal_ext_use_shadow_map = NORMAL_EXT_USE_SHADOW_MAP;
 const static bool normal_ext_use_projected_texture = NORMAL_EXT_USE_PROJECTED_TEXTURE;
 
@@ -14,38 +16,30 @@ float3 do_lighting_diffuse(float3 normalWS, float3 positionWS, float3 diffuse_co
 {
    float4 diffuse_lighting = 0.0;
    diffuse_lighting.rgb = (light::ambient(normalWS) + static_diffuse_lighting) * ao;
-
-   if (ps_light_active_directional) {
+   
+   [branch]
+   if (light_active) {
       float3 proj_intensities = 0.0;
       float intensity;
+      
+      [loop]
+      for (uint i = 0; i < 2; ++i) {
+         intensity = light::intensity_directional(normalWS, light_directional_dir(i));
+         diffuse_lighting += intensity * light_directional_color(i);
 
-      intensity = light::intensity_directional(normalWS, light_directional_0_dir);
-      diffuse_lighting += intensity * light_directional_0_color;
+         if (i == 0) proj_intensities[0] = intensity;
+      }
+      
+      [loop]
+      for (uint i = 0; i < light_active_point_count; ++i) {
+         intensity = light::intensity_point(normalWS, positionWS, light_point_pos(i), light_point_inv_range_sqr(i));
+         diffuse_lighting += intensity * light_point_color(i);
 
-      proj_intensities[0] = intensity;
-
-      diffuse_lighting += light::intensity_directional(normalWS, light_directional_1_dir) * light_directional_1_color;
-
-      if (ps_light_active_point_0) {
-         intensity = light::intensity_point(normalWS, positionWS, light_point_0_pos, light_point_0_inv_range_sqr);
-         diffuse_lighting += intensity * light_point_0_color;
-
-         proj_intensities[1] = intensity;
+         if (i == 0) proj_intensities[1] = intensity;
       }
 
-      if (ps_light_active_point_1) {
-         diffuse_lighting += 
-            light::intensity_point(normalWS, positionWS, light_point_1_pos, light_point_1_inv_range_sqr) * light_point_1_color;
-      }
-
-      if (ps_light_active_point_23) {
-         diffuse_lighting += 
-            light::intensity_point(normalWS, positionWS, light_point_2_pos, light_point_2_inv_range_sqr) * light_point_2_color;
-
-         diffuse_lighting += 
-            light::intensity_point(normalWS, positionWS, light_point_3_pos, light_point_3_inv_range_sqr) * light_point_3_color;
-      }
-      else if (ps_light_active_spot_light) {
+      [branch]
+      if (light_active_spot) {
          intensity = light::intensity_spot(normalWS, positionWS);
          diffuse_lighting += intensity * light_spot_color;
 
@@ -86,45 +80,42 @@ float3 do_lighting(float3 normalWS, float3 positionWS, float3 view_normalWS,
    float4 diffuse_lighting = {(light::ambient(normalWS) + static_diffuse_lighting) * ao, 0.0};
    float4 specular_lighting = 0.0;
 
-   if (ps_light_active_directional) {
+   [branch]
+   if (light_active) {
       float3 proj_intensities_diffuse = 0.0;
       float3 proj_intensities_specular = 0.0;
+      float proj_diffuse_intensity;
+      float proj_specular_intensity;
 
-      light::blinnphong::calculate(diffuse_lighting, specular_lighting, normalWS, view_normalWS,
-                                   -light_directional_0_dir.xyz, 1.0, light_directional_0_color, specular_exponent,
-                                   proj_intensities_diffuse[0], proj_intensities_specular[0]);
+      [loop]
+      for (uint i = 0; i < 2; ++i) {
+         light::blinnphong::calculate(diffuse_lighting, specular_lighting, normalWS, view_normalWS,
+                                      -light_directional_dir(i).xyz, 1.0, light_directional_color(i), specular_exponent,
+                                      proj_diffuse_intensity, proj_specular_intensity);
 
-      light::blinnphong::calculate(diffuse_lighting, specular_lighting, normalWS, view_normalWS, 
-                                   -light_directional_1_dir.xyz, 1.0, light_directional_1_color, specular_exponent);
+         if (i == 0) {
+            proj_intensities_diffuse[0] = proj_diffuse_intensity;
+            proj_intensities_specular[0] = proj_specular_intensity;
+         }
+      }
 
-      if (ps_light_active_point_0) {
+      [loop]
+      for (uint i = 0; i < light_active_point_count; ++i) {
          light::blinnphong::calculate_point(diffuse_lighting, specular_lighting, normalWS,
-                                            positionWS, view_normalWS, light_point_0_pos, 
-                                            light_point_0_inv_range_sqr, light_point_0_color, specular_exponent,
+                                            positionWS, view_normalWS, light_point_pos(i), 
+                                            light_point_inv_range_sqr(i), light_point_color(i), specular_exponent,
                                             proj_intensities_diffuse[1], proj_intensities_specular[1]);
+
+         if (i == 0) {
+            proj_intensities_diffuse[1] = proj_diffuse_intensity;
+            proj_intensities_specular[1] = proj_specular_intensity;
+         }
       }
 
-      if (ps_light_active_point_1) {
-         light::blinnphong::calculate_point(diffuse_lighting, specular_lighting, normalWS,
-                                            positionWS, view_normalWS, light_point_1_pos, 
-                                            light_point_1_inv_range_sqr, light_point_1_color,
-                                            specular_exponent);
-      }
-
-      if (ps_light_active_point_23) {
-         light::blinnphong::calculate_point(diffuse_lighting, specular_lighting, normalWS,
-                                            positionWS, view_normalWS, light_point_2_pos, 
-                                            light_point_2_inv_range_sqr, light_point_2_color,
-                                            specular_exponent);
-         
-         light::blinnphong::calculate_point(diffuse_lighting, specular_lighting, normalWS,
-                                            positionWS, view_normalWS, light_point_3_pos, 
-                                            light_point_3_inv_range_sqr, light_point_3_color,
-                                            specular_exponent);
-      }
-      else if (ps_light_active_spot_light) {
+      [branch]
+      if (light_active_spot) {
          light::blinnphong::calculate_spot(diffuse_lighting, specular_lighting, normalWS,
-                                           view_normalWS, positionWS, specular_exponent,
+                                           positionWS, view_normalWS, specular_exponent,
                                            proj_intensities_diffuse[2], proj_intensities_specular[2]);
       }
 

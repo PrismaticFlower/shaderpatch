@@ -86,45 +86,50 @@ inline Rendertype rendertype_from_string(std::string_view string)
                                                   "\" is not a valid Rendertype"sv);
 }
 
-inline std::string to_string(const Rendertype rendertype) noexcept
+inline auto to_string_view(const Rendertype rendertype) noexcept -> std::string_view
 {
    using namespace std::literals;
 
    // clang-format off
    switch (rendertype) {
-      case Rendertype::decal: return "decal"s;
-      case Rendertype::filtercopy: return "filtercopy"s;
-      case Rendertype::flare: return "flare"s;
-      case Rendertype::hdr: return "hdr"s;
-      case Rendertype::_interface: return "interface"s;
-      case Rendertype::normal: return "normal"s;
-      case Rendertype::normalmapadder: return "normalmapadder"s;
-      case Rendertype::lightbeam: return "lightbeam"s;
-      case Rendertype::ocean: return "ocean"s;
-      case Rendertype::particle: return "particle"s;
-      case Rendertype::perpixeldiffuselighting: return "perpixeldiffuselighting"s;
-      case Rendertype::prereflection: return "prereflection"s;
-      case Rendertype::rain: return "rain"s;
-      case Rendertype::refraction: return "refraction"s;
-      case Rendertype::sample: return "sample"s;
-      case Rendertype::shadowquad: return "shadowquad"s;
-      case Rendertype::shield: return "shield"s;
-      case Rendertype::skyfog: return "skyfog"s;
-      case Rendertype::specularlighting: return "specularlighting"s;
-      case Rendertype::sprite: return "sprite"s;
-      case Rendertype::stencilshadow: return "stencilshadow"s;
-      case Rendertype::Terrain2: return "Terrain2"s;
-      case Rendertype::water: return "water"s;
-      case Rendertype::zprepass: return "zprepass"s;
-      case Rendertype::fixedfunc_color_fill: return "fixedfunc_color_fill"s;
-      case Rendertype::fixedfunc_damage_overlay: return "fixedfunc_damage_overlay"s;
-      case Rendertype::fixedfunc_plain_texture: return "fixedfunc_plain_texture"s;
-      case Rendertype::fixedfunc_scene_blur: return "fixedfunc_scene_blur"s;
-      case Rendertype::fixedfunc_zoom_blur: return "fixedfunc_zoom_blur"s;
+      case Rendertype::decal: return "decal"sv;
+      case Rendertype::filtercopy: return "filtercopy"sv;
+      case Rendertype::flare: return "flare"sv;
+      case Rendertype::hdr: return "hdr"sv;
+      case Rendertype::_interface: return "interface"sv;
+      case Rendertype::normal: return "normal"sv;
+      case Rendertype::normalmapadder: return "normalmapadder"sv;
+      case Rendertype::lightbeam: return "lightbeam"sv;
+      case Rendertype::ocean: return "ocean"sv;
+      case Rendertype::particle: return "particle"sv;
+      case Rendertype::perpixeldiffuselighting: return "perpixeldiffuselighting"sv;
+      case Rendertype::prereflection: return "prereflection"sv;
+      case Rendertype::rain: return "rain"sv;
+      case Rendertype::refraction: return "refraction"sv;
+      case Rendertype::sample: return "sample"sv;
+      case Rendertype::shadowquad: return "shadowquad"sv;
+      case Rendertype::shield: return "shield"sv;
+      case Rendertype::skyfog: return "skyfog"sv;
+      case Rendertype::specularlighting: return "specularlighting"sv;
+      case Rendertype::sprite: return "sprite"sv;
+      case Rendertype::stencilshadow: return "stencilshadow"sv;
+      case Rendertype::Terrain2: return "Terrain2"sv;
+      case Rendertype::water: return "water"sv;
+      case Rendertype::zprepass: return "zprepass"sv;
+      case Rendertype::fixedfunc_color_fill: return "fixedfunc_color_fill"sv;
+      case Rendertype::fixedfunc_damage_overlay: return "fixedfunc_damage_overlay"sv;
+      case Rendertype::fixedfunc_plain_texture: return "fixedfunc_plain_texture"sv;
+      case Rendertype::fixedfunc_scene_blur: return "fixedfunc_scene_blur"sv;
+      case Rendertype::fixedfunc_zoom_blur: return "fixedfunc_zoom_blur"sv;
    }
    // clang-format on
 
    std::terminate();
+}
+
+inline auto to_string(const Rendertype rendertype) noexcept -> std::string
+{
+   return std::string{to_string_view(rendertype)};
 }
 
 }

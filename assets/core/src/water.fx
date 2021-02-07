@@ -361,69 +361,65 @@ void discard_ps()
 // OIT Entrypoints
 
 [earlydepthstencil]
-void oit_transmissive_pass_fade_ps(Ps_fade_input input, float4 positionSS : SV_Position, uint coverage : SV_Coverage)
+void oit_transmissive_pass_fade_ps(Ps_fade_input input, float4 positionSS : SV_Position)
 {
    const float4 color = transmissive_pass_fade_ps(input);
 
-   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, coverage, color);
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z,  color);
 }
 
 [earlydepthstencil]
 void oit_normal_map_distorted_reflection_ps(Ps_normal_map_input input,
-                                            uint coverage : SV_Coverage,
                                             Texture2D<float3> reflection_buffer : register(t3))
 {
    const float4 color = 
       normal_map_distorted_reflection_ps(input, reflection_buffer);
 
-   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, coverage, color);
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, color);
 }
 
 [earlydepthstencil]
 void oit_normal_map_distorted_reflection_specular_ps(Ps_normal_map_input input,
-                                                     uint coverage : SV_Coverage,
                                                      Texture2D<float3> reflection_buffer : register(t3)) 
 {
    const float4 color = 
       normal_map_distorted_reflection_specular_ps(input, reflection_buffer);
 
-   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, coverage, color);
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, color);
 }
 
 [earlydepthstencil]
-void oit_normal_map_ps(Ps_normal_map_input input, uint coverage : SV_Coverage)
+void oit_normal_map_ps(Ps_normal_map_input input)
 {
    const float4 color = normal_map_ps(input);
 
-   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, coverage, color);
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, color);
 }
 
 [earlydepthstencil]
-void oit_normal_map_specular_ps(Ps_normal_map_input input, uint coverage : SV_Coverage)
+void oit_normal_map_specular_ps(Ps_normal_map_input input)
 {
    const float4 color = normal_map_specular_ps(input);
 
-   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, coverage, color);
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, color);
 }
 
 [earlydepthstencil]
 void oit_lowquality_ps(Ps_lowquality_input input, float4 positionSS : SV_Position,
-                       uint coverage : SV_Coverage,
                        Texture2D<float4> diffuse_map_texture : register(t1))
 {
    const float4 color = lowquality_ps(input, diffuse_map_texture);
 
-   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, coverage, color);
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, color);
 }
 
 [earlydepthstencil]
 void oit_lowquality_specular_ps(Ps_lowquality_input input, float4 positionSS : SV_Position,
-                                uint coverage : SV_Coverage,
                                 Texture2D<float4> diffuse_map_texture : register(t1),
                                 Texture2D<float3> specular_mask_textures[2] : register(t2))
 {
    const float4 color =
       lowquality_specular_ps(input, diffuse_map_texture, specular_mask_textures);
 
-   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, coverage, color);
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, color);
 }

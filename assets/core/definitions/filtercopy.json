@@ -111,44 +111,28 @@
       "stage": "pixel",
       "function_name": "filtercopy_ps",
 
-      "defines": [ [ "TEXTURE_COUNT", "4" ] ],
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "defines": [ [ "TEXTURE_COUNT", "4" ] ]
     },
 
     "filtercopy_3tex_ps": {
       "stage": "pixel",
       "function_name": "filtercopy_ps",
 
-      "defines": [ [ "TEXTURE_COUNT", "3" ] ],
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "defines": [ [ "TEXTURE_COUNT", "3" ] ]
     },
 
     "filtercopy_2tex_ps": {
       "stage": "pixel",
       "function_name": "filtercopy_ps",
 
-      "defines": [ [ "TEXTURE_COUNT", "2" ] ],
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "defines": [ [ "TEXTURE_COUNT", "2" ] ]
     },
 
     "filtercopy_1tex_ps": {
       "stage": "pixel",
       "function_name": "filtercopy_ps",
 
-      "defines": [ [ "TEXTURE_COUNT", "1" ] ],
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "defines": [ [ "TEXTURE_COUNT", "1" ] ]
     }
   },
 

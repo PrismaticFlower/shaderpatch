@@ -82,8 +82,8 @@ void save_screenshot(const std::filesystem::path& save_file, const Swapchain& sw
 
    make_opaque(image);
 
-   if (FAILED(DirectX::SaveToWICFile(image, 0, GUID_ContainerFormatPng,
-                                     save_file.c_str())))
+   if (FAILED(DirectX::SaveToWICFile(image, DirectX::WIC_FLAGS_NONE,
+                                     GUID_ContainerFormatPng, save_file.c_str())))
       log(Log_level::error, "Failed to save screenshot ", save_file, ".");
    else
       log(Log_level::info, "Saved screenshot ", save_file, ".");

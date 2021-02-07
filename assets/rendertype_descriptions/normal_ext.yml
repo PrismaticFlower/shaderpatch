@@ -1,16 +1,8 @@
 Overridden RenderType: normal
-Failsafe Texture Index: 0
 Constant Buffer Name: normal_ext
 
 Material Options:
    Unlit: no
-
-Constant Buffer Stages:
-   VS: no
-   HS: no
-   DS: no
-   GS: no
-   PS: yes
 
 Properties:
    DiffuseColor:
@@ -22,7 +14,11 @@ Properties:
       Type: float
       Default: 1.0
       Range: [0.0, 1.0]
-      
+
+   UseSpecularLighting:
+      Type: bool
+      Default: false
+
    SpecularColor:
       Type: vec3
       Default: [1.0, 1.0, 1.0]
@@ -77,8 +73,11 @@ Properties:
       Type: float
       Default: 0.0
       Range: [-2048.0, 2048.0]
-      Op: exp2
 
+   MultiplyEmissiveByVertexColor:
+      Type: bool
+      Default: false
+      
    UseEnvMap:
       Type: bool
       Default: false
@@ -87,51 +86,24 @@ Properties:
       Type: float
       Default: 1.0
       Range: [0.0001, 1.0]
-      
+
+   IsDynamic:
+      Type: bool
+      Default: false
+
    DynamicNormalSign:
       Type: float
       Default: 1.0
       Range: [-1.0, 1.0]
-      Op: sign
 
-Texture Mappings:
-   DiffuseMap: 
-      -
-         Stage: PS
-         Slot: 0
+Resource Properties:
+   DiffuseMap:
    NormalMap: 
-      -
-         Stage: PS
-         Slot: 1
-   HeightMap: 
-      -
-         Stage: PS
-         Slot: 2
-   DetailMap: 
-      -
-         Stage: PS
-         Slot: 3
+   HeightMap:
+   DetailMap:
    DetailNormalMap: 
-      -
-         Stage: PS
-         Slot: 4
-   EmissiveMap: 
-      -
-         Stage: PS
-         Slot: 5
-   OverlayDiffuseMap: 
-      -
-         Stage: PS
-         Slot: 6
-   OverlayNormalMap: 
-      -
-         Stage: PS
-         Slot: 7
+   EmissiveMap:
+   OverlayDiffuseMap:
+   OverlayNormalMap:
    AOMap:
-      -
-         Stage: PS
-         Slot: 8
-   EnvMap:
-      -
-         Stage: PS
-         Slot: 9
+   EnvMap: 

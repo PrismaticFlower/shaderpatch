@@ -32,12 +32,13 @@ Film_grain_params show_film_grain_imgui(Film_grain_params params) noexcept;
 
 SSAO_params show_ssao_imgui(SSAO_params params) noexcept;
 
+FFX_cas_params show_ffx_cas_imgui(FFX_cas_params params) noexcept;
+
 void show_tonemapping_curve(std::function<float(float)> tonemapper) noexcept;
 }
 
-Control::Control(Com_ptr<ID3D11Device4> device,
-                 const core::Shader_group_collection& shader_groups) noexcept
-   : postprocess{device, shader_groups}, cmaa2{device, shader_groups}, ssao{device}, profiler{device}
+Control::Control(Com_ptr<ID3D11Device4> device, shader::Database& shaders) noexcept
+   : postprocess{device, shaders}, cmaa2{device, shaders}, ssao{device}, ffx_cas{device, shaders}, profiler{device}
 {
    if (user_config.graphics.enable_user_effects_config)
       load_params_from_yaml_file(user_config.graphics.user_effects_config);
@@ -87,6 +88,16 @@ void Control::show_imgui(HWND game_window) noexcept
             }
 
             if (!_config.hdr_rendering) {
+               ImGui::Checkbox("Floating-point Render Targets",
+                               &_config.fp_rendertargets);
+
+               if (ImGui::IsItemHovered()) {
+                  ImGui::SetTooltip("Controls usage of floating-point "
+                                    "rendertargets, which can preserve more "
+                                    "color detail in the bright areas of the "
+                                    "scene for when Bloom is applied.");
+               }
+
                ImGui::Checkbox("Disable Light Brightness Rescaling",
                                &_config.disable_light_brightness_rescaling);
 
@@ -148,6 +159,8 @@ void Control::read_config(YAML::Node config)
    postprocess.film_grain_params(
       config["FilmGrain"s].as<Film_grain_params>(Film_grain_params{}));
    ssao.params(config["SSAO"s].as<SSAO_params>(SSAO_params{false}));
+   ffx_cas.params(config["ContrastAdaptiveSharpening"s].as<FFX_cas_params>(
+      FFX_cas_params{false}));
 }
 
 auto Control::output_params_to_yaml_string() noexcept -> std::string
@@ -160,6 +173,7 @@ auto Control::output_params_to_yaml_string() noexcept -> std::string
    config["Vignette"s] = postprocess.vignette_params();
    config["FilmGrain"s] = postprocess.film_grain_params();
    config["SSAO"s] = ssao.params();
+   config["ContrastAdaptiveSharpening"s] = ffx_cas.params();
 
    std::stringstream stream;
 
@@ -336,6 +350,12 @@ void Control::show_post_processing_imgui() noexcept
 
       if (ImGui::BeginTabItem("SSAO")) {
          ssao.params(show_ssao_imgui(ssao.params()));
+
+         ImGui::EndTabItem();
+      }
+
+      if (ImGui::BeginTabItem("Contrast Adaptive Sharpening")) {
+         ffx_cas.params(show_ffx_cas_imgui(ffx_cas.params()));
 
          ImGui::EndTabItem();
       }
@@ -564,6 +584,30 @@ SSAO_params show_ssao_imgui(SSAO_params params) noexcept
                     0.05f, 0.0f, 5.0f);
    ImGui::DragInt("Blur Amount", &params.blur_pass_count, 0.25f, 0, 6);
    ImGui::DragFloat("Sharpness", &params.sharpness, 0.01f, 0.0f, 1.0f);
+
+   return params;
+}
+
+FFX_cas_params show_ffx_cas_imgui(FFX_cas_params params) noexcept
+{
+   ImGui::Checkbox("Enabled", &params.enabled);
+
+   // Out of corcern of people just seeing "sharpness" and  thinking "of course I want sharpness" then
+   // setting the value to the max without paying too much attention to the ringing that introduces
+   // the sharpness param is flipped and renamed to "Fidelity" in the UI.
+   //
+   // The hope is this has the effect of making people observe and consider the trade off of increased
+   // sharpness vs ringing when configuring CAS. Or maybe it won't and this is a waste of time.
+
+   constexpr float max_sharpness = 0.4f;
+
+   float fidelity =
+      1.0f - (std::clamp(params.sharpness, 0.0f, max_sharpness) / max_sharpness);
+
+   ImGui::DragFloat("Fidelity", &fidelity, 0.01f, 0.0f, 1.0f);
+
+   params.sharpness =
+      std::lerp(0.0f, max_sharpness, std::clamp(1.0f - fidelity, 0.0f, 1.0f));
 
    return params;
 }

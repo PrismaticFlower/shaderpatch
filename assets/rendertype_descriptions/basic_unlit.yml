@@ -1,16 +1,8 @@
 Overridden RenderType: normal
-Failsafe Texture Index: 0
 Constant Buffer Name: basic_unlit
 
 Material Options:
    Unlit: yes
-
-Constant Buffer Stages:
-   VS: no
-   HS: no
-   DS: no
-   GS: no
-   PS: yes
 
 Properties:
    UseEmissiveMap:
@@ -21,14 +13,7 @@ Properties:
       Type: float
       Default: 0.0
       Range: [-2048.0, 2048.0]
-      Op: exp2
 
-Texture Mappings:
+Resource Properties:
    ColorMap:
-      -
-         Stage: PS
-         Slot: 0
    EmissiveMap:
-      -
-         Stage: PS
-         Slot: 1

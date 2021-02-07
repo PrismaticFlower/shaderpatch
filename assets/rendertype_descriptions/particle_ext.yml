@@ -1,0 +1,15 @@
+Overridden RenderType: particle
+Constant Buffer Name: particle_ext
+
+Properties:
+   UseAnisotropicFiltering:
+      Type: bool
+      Default: false
+
+   EmissivePower:
+      Type: float
+      Default: 0.0
+      Range: [-2048.0, 2048.0]
+
+Resource Properties:
+   ColorMap:

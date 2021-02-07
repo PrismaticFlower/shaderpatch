@@ -9,12 +9,11 @@ namespace sp::core {
 
 using namespace std::literals;
 
-OIT_provider::OIT_provider(Com_ptr<ID3D11Device5> device,
-                           const Shader_group_collection& shaders) noexcept
+OIT_provider::OIT_provider(Com_ptr<ID3D11Device5> device, shader::Database& shaders) noexcept
    : _device{device},
      _vs{std::get<Com_ptr<ID3D11VertexShader>>(
-        shaders.at("adaptive oit resolve"s).vertex.at("main_vs").copy())},
-     _ps{shaders.at("adaptive oit resolve"s).pixel.at("main_ps").copy()}
+        shaders.vertex("adaptive oit resolve"sv).entrypoint("main_vs"))},
+     _ps{shaders.pixel("adaptive oit resolve"sv).entrypoint("main_ps")}
 {
    if (_usable) {
       log(Log_level::info,
@@ -79,6 +78,15 @@ auto OIT_provider::uavs() const noexcept -> std::array<ID3D11UnorderedAccessView
 bool OIT_provider::enabled() const noexcept
 {
    return _usable && user_config.graphics.enable_oit;
+}
+
+bool OIT_provider::usable(ID3D11Device5& device) noexcept
+{
+   D3D11_FEATURE_DATA_D3D11_OPTIONS2 data{};
+
+   device.CheckFeatureSupport(D3D11_FEATURE_D3D11_OPTIONS2, &data, sizeof(data));
+
+   return data.TypedUAVLoadAdditionalFormats && data.ROVsSupported;
 }
 
 void OIT_provider::update_resources(ID3D11Texture2D& opaque_texture,

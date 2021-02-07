@@ -45,7 +45,7 @@ void load_patch_texture_impl(
    std::function<void(const std::uint32_t item, const std::uint32_t mip, const Texture_data data)> data_callback);
 }
 
-void write_sptx(ucfb::Writer& writer, const std::string_view name,
+void write_sptx(ucfb::File_writer& writer, const std::string_view name,
                 const Texture_info& texture_info,
                 const std::vector<Texture_data>& texture_data);
 
@@ -86,6 +86,32 @@ void load_patch_texture(
    }
 }
 
+void write_patch_texture(ucfb::File_writer& writer, const std::string_view name,
+                         const Texture_info& texture_info,
+                         const std::vector<Texture_data>& texture_data,
+                         const Texture_file_type file_type)
+{
+   if (file_type == Texture_file_type::volume_resource) {
+      std::ostringstream string_stream;
+
+      {
+         ucfb::File_writer sptx{"sptx"_mn, string_stream};
+
+         write_sptx(sptx, name, texture_info, texture_data);
+      }
+
+      const auto sptx_data = string_stream.str();
+      const auto sptx_span = std::as_bytes(std::span{sptx_data});
+
+      write_volume_resource(writer, name, Volume_resource_type::texture, sptx_span);
+   }
+   else {
+      auto sptx = writer.emplace_child("sptx"_mn);
+
+      write_sptx(sptx, name, texture_info, texture_data);
+   }
+}
+
 void write_patch_texture(const std::filesystem::path& save_path,
                          const Texture_info& texture_info,
                          const std::vector<Texture_data>& texture_data,
@@ -95,7 +121,7 @@ void write_patch_texture(const std::filesystem::path& save_path,
       std::ostringstream string_stream;
 
       {
-         ucfb::Writer writer{string_stream, "sptx"_mn};
+         ucfb::File_writer writer{"sptx"_mn, string_stream};
 
          write_sptx(writer, save_path.stem().string(), texture_info, texture_data);
       }
@@ -109,7 +135,7 @@ void write_patch_texture(const std::filesystem::path& save_path,
    else {
       auto output_file = ucfb::open_file_for_output(save_path);
 
-      ucfb::Writer writer{output_file};
+      ucfb::File_writer writer{"ucfb"_mn, output_file};
 
       {
          auto sptx_writer = writer.emplace_child("sptx"_mn);
@@ -344,7 +370,7 @@ void load_patch_texture_impl(
 }
 }
 
-void write_sptx(ucfb::Writer& writer, const std::string_view name,
+void write_sptx(ucfb::File_writer& writer, const std::string_view name,
                 const Texture_info& texture_info,
                 const std::vector<Texture_data>& texture_data)
 {

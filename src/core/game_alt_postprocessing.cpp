@@ -37,11 +37,11 @@ auto select_mip_level(const Game_rendertarget& dest) -> int
 }
 
 Game_alt_postprocessing::Game_alt_postprocessing(ID3D11Device5& device,
-                                                 const Shader_database& shader_database) noexcept
+                                                 shader::Database& shaders) noexcept
    : _device{copy_raw_com_ptr(device)},
-     _scene_blur{device, shader_database},
-     _scope_blur{device, shader_database},
-     _bloom{device, shader_database}
+     _scene_blur{device, shaders},
+     _scope_blur{device, shaders},
+     _bloom{device, shaders}
 {
 }
 

@@ -22,6 +22,21 @@
     <Filter Include="src\core\postprocessing">
       <UniqueIdentifier>{ff8b3a06-0d9a-4998-bf6f-08ec760c426d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\shader">
+      <UniqueIdentifier>{4e3a658b-0076-4ec8-b981-52b71cc90224}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\game_support">
+      <UniqueIdentifier>{368939a8-58ec-4d33-b4dd-cbc4157e4ad9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\game_support\declarations">
+      <UniqueIdentifier>{ad6c4cf8-c1c6-497e-973e-5d0351e73880}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\text">
+      <UniqueIdentifier>{ec6facfb-6de5-494e-a6b0-d8ba9de07dd2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\material">
+      <UniqueIdentifier>{aba5cc74-592c-4568-8d86-4e22cdeef95e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -81,9 +96,6 @@
     <ClCompile Include="src\direct3d\query.cpp">
       <Filter>src\direct3d</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\shader_loader.cpp">
-      <Filter>src\core</Filter>
-    </ClCompile>
     <ClCompile Include="src\core\shader_patch.cpp">
       <Filter>src\core</Filter>
     </ClCompile>
@@ -111,16 +123,7 @@
     <ClCompile Include="src\core\texture_database.cpp">
       <Filter>src\core</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\patch_material.cpp">
-      <Filter>src\core</Filter>
-    </ClCompile>
     <ClCompile Include="src\core\swapchain.cpp">
-      <Filter>src\core</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\material_shader.cpp">
-      <Filter>src\core</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\material_shader_factory.cpp">
       <Filter>src\core</Filter>
     </ClCompile>
     <ClCompile Include="src\file_hooks.cpp">
@@ -171,12 +174,6 @@
     <ClCompile Include="src\core\depth_msaa_resolver.cpp">
       <Filter>src\core</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\material_constant_buffers.cpp">
-      <Filter>src\core</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\materials_editor.cpp">
-      <Filter>src\core</Filter>
-    </ClCompile>
     <ClCompile Include="src\effects\color_grading_regions_blender.cpp">
       <Filter>src\effects</Filter>
     </ClCompile>
@@ -218,6 +215,69 @@
     </ClCompile>
     <ClCompile Include="src\imgui\imgui_widgets.cpp">
       <Filter>src\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\effects\ffx_cas.cpp">
+      <Filter>src\effects</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\backbuffer_cmaa2_views.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\window_hooks.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\shader\database.cpp">
+      <Filter>src\shader</Filter>
+    </ClCompile>
+    <ClCompile Include="src\shader\vertex_input_layout.cpp">
+      <Filter>src\shader</Filter>
+    </ClCompile>
+    <ClCompile Include="src\shader\compiler.cpp">
+      <Filter>src\shader</Filter>
+    </ClCompile>
+    <ClCompile Include="src\shader\group_definition.cpp">
+      <Filter>src\shader</Filter>
+    </ClCompile>
+    <ClCompile Include="src\shader\cache.cpp">
+      <Filter>src\shader</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_support\munged_shader_declarations.cpp">
+      <Filter>src\game_support</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\game_shader.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\shader_cache_primer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\text\font_atlas_builder.cpp">
+      <Filter>src\core\text</Filter>
+    </ClCompile>
+    <ClCompile Include="src\windows_fonts_folder.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_support\font_declarations.cpp">
+      <Filter>src\game_support</Filter>
+    </ClCompile>
+    <ClCompile Include="src\material\constant_buffer_builder.cpp">
+      <Filter>src\material</Filter>
+    </ClCompile>
+    <ClCompile Include="src\material\shader_factory.cpp">
+      <Filter>src\material</Filter>
+    </ClCompile>
+    <ClCompile Include="src\material\shader_set.cpp">
+      <Filter>src\material</Filter>
+    </ClCompile>
+    <ClCompile Include="src\material\material.cpp">
+      <Filter>src\material</Filter>
+    </ClCompile>
+    <ClCompile Include="src\material\editor.cpp">
+      <Filter>src\material</Filter>
+    </ClCompile>
+    <ClCompile Include="src\material\factory.cpp">
+      <Filter>src\material</Filter>
+    </ClCompile>
+    <ClCompile Include="src\material\sol_create_usertypes.cpp">
+      <Filter>src\material</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -332,12 +392,6 @@
     <ClInclude Include="src\direct3d\query.hpp">
       <Filter>src\direct3d</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\shader_database.hpp">
-      <Filter>src\core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\shader_loader.hpp">
-      <Filter>src\core</Filter>
-    </ClInclude>
     <ClInclude Include="src\core\game_rendertarget.hpp">
       <Filter>src\core</Filter>
     </ClInclude>
@@ -365,9 +419,6 @@
     <ClInclude Include="src\core\shader_input_layouts.hpp">
       <Filter>src\core</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\shader_input_element.hpp">
-      <Filter>src\core</Filter>
-    </ClInclude>
     <ClInclude Include="src\core\image_stretcher.hpp">
       <Filter>src\core</Filter>
     </ClInclude>
@@ -377,9 +428,6 @@
     <ClInclude Include="src\core\texture_database.hpp">
       <Filter>src\core</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\patch_material.hpp">
-      <Filter>src\core</Filter>
-    </ClInclude>
     <ClInclude Include="src\direct3d\texture3d_resource.hpp">
       <Filter>src\direct3d</Filter>
     </ClInclude>
@@ -387,12 +435,6 @@
       <Filter>src\core</Filter>
     </ClInclude>
     <ClInclude Include="src\core\patch_effects_config_handle.hpp">
-      <Filter>src\core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\material_shader.hpp">
-      <Filter>src\core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\material_shader_factory.hpp">
       <Filter>src\core</Filter>
     </ClInclude>
     <ClInclude Include="src\file_hooks.hpp">
@@ -435,12 +477,6 @@
       <Filter>src\effects</Filter>
     </ClInclude>
     <ClInclude Include="src\core\depth_msaa_resolver.hpp">
-      <Filter>src\core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\material_constant_buffers.hpp">
-      <Filter>src\core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\materials_editor.hpp">
       <Filter>src\core</Filter>
     </ClInclude>
     <ClInclude Include="src\effects\color_grading_regions_blender.hpp">
@@ -496,6 +532,180 @@
     </ClInclude>
     <ClInclude Include="src\imgui\imstb_truetype.h">
       <Filter>src\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="src\effects\ffx_cas.hpp">
+      <Filter>src\effects</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\backbuffer_cmaa2_views.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\window_hooks.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader\database.hpp">
+      <Filter>src\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader\common.hpp">
+      <Filter>src\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader\static_flags.hpp">
+      <Filter>src\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader\preprocessor_defines.hpp">
+      <Filter>src\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader\cache.hpp">
+      <Filter>src\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader\entrypoint_description.hpp">
+      <Filter>src\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader\bytecode_blob.hpp">
+      <Filter>src\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader\compiler.hpp">
+      <Filter>src\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader\vertex_input_layout.hpp">
+      <Filter>src\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader\group_definition.hpp">
+      <Filter>src\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader\rendertype_state_description.hpp">
+      <Filter>src\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader\source_file_store.hpp">
+      <Filter>src\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\shader_declaration.hpp">
+      <Filter>src\game_support</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\bloom_stock.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\decal.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\filtercopy.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\flare.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\interface.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\lightbeam.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\normal.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\normal_terrain.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\normalmapadder.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\ocean.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\particle.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\perpixeldiffuselighting.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\prereflection.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\rain.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\refraction.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\sample.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\shadowquad.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\shield.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\skyfog.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\specularlighting.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\stencilshadow.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\water.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\declarations\zprepass.hpp">
+      <Filter>src\game_support\declarations</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\shader_declarations.hpp">
+      <Filter>src\game_support</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\munged_shader_declarations.hpp">
+      <Filter>src\game_support</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\shader_metadata.hpp">
+      <Filter>src\game_support</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\fixedfunc_shader_metadata.hpp">
+      <Filter>src\game_support</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shader\source_file_dependency_index.hpp">
+      <Filter>src\shader</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\text\font_atlas_builder.hpp">
+      <Filter>src\core\text</Filter>
+    </ClInclude>
+    <ClInclude Include="src\windows_fonts_folder.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\font_declarations.hpp">
+      <Filter>src\game_support</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_support\font_info.hpp">
+      <Filter>src\game_support</Filter>
+    </ClInclude>
+    <ClInclude Include="src\freetype_helpers.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\material\constant_buffer_builder.hpp">
+      <Filter>src\material</Filter>
+    </ClInclude>
+    <ClInclude Include="src\material\shader_factory.hpp">
+      <Filter>src\material</Filter>
+    </ClInclude>
+    <ClInclude Include="src\material\shader_set.hpp">
+      <Filter>src\material</Filter>
+    </ClInclude>
+    <ClInclude Include="src\material\material.hpp">
+      <Filter>src\material</Filter>
+    </ClInclude>
+    <ClInclude Include="src\material\editor.hpp">
+      <Filter>src\material</Filter>
+    </ClInclude>
+    <ClInclude Include="src\material\factory.hpp">
+      <Filter>src\material</Filter>
+    </ClInclude>
+    <ClInclude Include="src\material\sol_create_usertypes.hpp">
+      <Filter>src\material</Filter>
+    </ClInclude>
+    <ClInclude Include="src\material\properties_view.hpp">
+      <Filter>src\material</Filter>
+    </ClInclude>
+    <ClInclude Include="src\material\material_type.hpp">
+      <Filter>src\material</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

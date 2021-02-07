@@ -15,12 +15,9 @@
           "skinned": true,
           "normal": true,
           "tangents": true,
+          "tangents_unflagged": true,
           "color": true,
           "texture_coords": true
-        },
-
-        "flags_mask": {
-          "tangents": false
         }
       },
 
@@ -32,10 +29,6 @@
     "main_ps": {
       "stage": "pixel",
 
-      "pixel_state": {
-        "lighting": true
-      },
-
       "static_flags": [
         "STATIC_WATER_USE_SPECULAR"
       ]
@@ -44,30 +37,27 @@
     "oit_main_ps": {
       "stage": "pixel",
 
-      "pixel_state": {
-        "lighting": true
-      },
-
       "static_flags": [
         "STATIC_WATER_USE_SPECULAR"
       ]
     }
   },
 
-  "rendertypes": {
-    "static_water": {
-      "static_flags": {
-        "STATIC_WATER_USE_SPECULAR": false
-      }
-    },
-    "static_water.specular": {
-      "static_flags": {
-        "STATIC_WATER_USE_SPECULAR": true
-      }
-    }
-  },
+  "rendertypes": { "static_water": {} },
 
   "states": {
+    "unlit opaque": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      }
+    },
+
     "unlit transparent": {
       "type": "standard",
 
@@ -79,7 +69,7 @@
         "entrypoint": "main_ps"
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_main_ps"
       }
     },
@@ -95,7 +85,7 @@
         "entrypoint": "main_ps"
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_main_ps"
       }
     },
@@ -111,7 +101,7 @@
         "entrypoint": "main_ps"
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_main_ps"
       }
     },
@@ -127,7 +117,7 @@
         "entrypoint": "main_ps"
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_main_ps"
       }
     },
@@ -143,9 +133,9 @@
         "entrypoint": "main_ps"
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_main_ps"
       }
     }
   }
-} }
+}

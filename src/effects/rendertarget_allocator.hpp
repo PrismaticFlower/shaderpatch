@@ -2,6 +2,7 @@
 
 #include "../logger.hpp"
 #include "com_ptr.hpp"
+#include "enum_flags.hpp"
 
 #include <tuple>
 #include <vector>
@@ -11,18 +12,42 @@
 
 namespace sp::effects {
 
-class Rendertarget_allocator {
-public:
-   Rendertarget_allocator(Com_ptr<ID3D11Device1> device) : _device{device} {}
+constexpr static UINT rendertarget_bind_srv_rtv =
+   D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
 
+constexpr static UINT rendertarget_bind_srv_rtv_uav =
+   D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET | D3D11_BIND_UNORDERED_ACCESS;
+
+struct Rendertarget_desc {
+   DXGI_FORMAT format = DXGI_FORMAT_UNKNOWN;
+   UINT width = 0;
+   UINT height = 0;
+   UINT bind_flags = 0;
+   DXGI_FORMAT srv_format = format;
+   DXGI_FORMAT rtv_format = format;
+   DXGI_FORMAT uav_format = format;
+
+   bool operator==(const Rendertarget_desc&) const noexcept = default;
+};
+
+class Rendertarget_allocator {
+private:
    struct Rendertarget {
-      UINT width = 0;
-      UINT height = 0;
-      DXGI_FORMAT format = DXGI_FORMAT_UNKNOWN;
+      Rendertarget_desc desc;
 
       Com_ptr<ID3D11ShaderResourceView> srv;
       Com_ptr<ID3D11RenderTargetView> rtv;
+      Com_ptr<ID3D11UnorderedAccessView> uav;
+      Com_ptr<ID3D11Texture2D> texture;
+
+      explicit operator bool() const noexcept
+      {
+         return texture != nullptr;
+      }
    };
+
+public:
+   Rendertarget_allocator(Com_ptr<ID3D11Device1> device) : _device{device} {}
 
    class Handle {
    public:
@@ -38,7 +63,9 @@ public:
 
       ~Handle()
       {
-         _allocator.return_rendertarget(std::move(_rendertarget));
+         if (_rendertarget) {
+            _allocator.return_rendertarget(std::move(_rendertarget));
+         }
       }
 
       auto srv() const noexcept -> ID3D11ShaderResourceView&
@@ -51,9 +78,14 @@ public:
          return *_rendertarget.rtv;
       }
 
-      auto rendertarget() const noexcept -> const Rendertarget&
+      auto uav() const noexcept -> ID3D11UnorderedAccessView&
       {
-         return _rendertarget;
+         return *_rendertarget.uav;
+      }
+
+      auto texture() const noexcept -> ID3D11Texture2D&
+      {
+         return *_rendertarget.texture;
       }
 
    private:
@@ -61,11 +93,9 @@ public:
       Rendertarget_allocator& _allocator;
    };
 
-   auto allocate(const DXGI_FORMAT format, const UINT width, const UINT height) noexcept
-      -> Handle
+   auto allocate(const Rendertarget_desc& desc) noexcept -> Handle
    {
-      if (auto cached = find(format, width, height);
-          cached != std::cend(_rendertargets)) {
+      if (auto cached = find(desc); cached != std::end(_rendertargets)) {
 
          auto rendertarget = std::move(*cached);
          _rendertargets.erase(cached);
@@ -73,7 +103,7 @@ public:
          return {*this, rendertarget};
       }
 
-      return create(format, width, height);
+      return create(desc);
    }
 
    void return_rendertarget(Rendertarget rendertarget) noexcept
@@ -87,58 +117,73 @@ public:
    }
 
 private:
-   auto find(const DXGI_FORMAT format, const UINT width, const UINT height)
-      -> std::vector<Rendertarget>::const_iterator
+   auto find(const Rendertarget_desc& desc) noexcept -> std::vector<Rendertarget>::iterator
    {
-      return std::find_if(
-         _rendertargets.cbegin(),
-         _rendertargets.cend(), [&](const Rendertarget& target) noexcept {
-            return std::tie(width, height, format) ==
-                   std::tie(target.width, target.height, target.format);
-         });
+      return std::find_if(_rendertargets.begin(), _rendertargets.end(),
+                          [&](const Rendertarget& target) noexcept {
+                             return target.desc == desc;
+                          });
    }
 
-   auto create(const DXGI_FORMAT format, const UINT width, const UINT height) noexcept
-      -> Handle
+   auto create(const Rendertarget_desc& desc) noexcept -> Handle
    {
+      Rendertarget rendertarget;
+
       const auto texture_desc =
-         CD3D11_TEXTURE2D_DESC{format,
-                               width,
-                               height,
-                               1,
-                               1,
-                               D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET};
+         CD3D11_TEXTURE2D_DESC{desc.format, desc.width, desc.height,
+                               1,           1,          desc.bind_flags};
 
-      Com_ptr<ID3D11Texture2D> texture;
-
-      if (const auto result = _device->CreateTexture2D(&texture_desc, nullptr,
-                                                       texture.clear_and_assign());
+      if (const auto result =
+             _device->CreateTexture2D(&texture_desc, nullptr,
+                                      rendertarget.texture.clear_and_assign());
           FAILED(result)) {
          log_and_terminate("Failed to create rendertarget texture! reason: ",
                            _com_error{result}.ErrorMessage());
       }
 
-      Rendertarget rendertarget;
+      if (desc.bind_flags & D3D11_BIND_SHADER_RESOURCE) {
+         const auto srv_desc =
+            CD3D11_SHADER_RESOURCE_VIEW_DESC{D3D11_SRV_DIMENSION_TEXTURE2D,
+                                             desc.srv_format};
 
-      if (const auto result =
-             _device->CreateShaderResourceView(texture.get(), nullptr,
-                                               rendertarget.srv.clear_and_assign());
-          FAILED(result)) {
-         log_and_terminate("Failed to create rendertarget SRV! reason: ",
-                           _com_error{result}.ErrorMessage());
+         if (const auto result =
+                _device->CreateShaderResourceView(rendertarget.texture.get(), &srv_desc,
+                                                  rendertarget.srv.clear_and_assign());
+             FAILED(result)) {
+            log_and_terminate("Failed to create rendertarget SRV! reason: ",
+                              _com_error{result}.ErrorMessage());
+         }
       }
 
-      if (const auto result =
-             _device->CreateRenderTargetView(texture.get(), nullptr,
-                                             rendertarget.rtv.clear_and_assign());
-          FAILED(result)) {
-         log_and_terminate("Failed to create rendertarget RTV! reason: ",
-                           _com_error{result}.ErrorMessage());
+      if (desc.bind_flags & D3D11_BIND_RENDER_TARGET) {
+         const auto rtv_desc =
+            CD3D11_RENDER_TARGET_VIEW_DESC{D3D11_RTV_DIMENSION_TEXTURE2D,
+                                           desc.rtv_format};
+
+         if (const auto result =
+                _device->CreateRenderTargetView(rendertarget.texture.get(), &rtv_desc,
+                                                rendertarget.rtv.clear_and_assign());
+             FAILED(result)) {
+            log_and_terminate("Failed to create rendertarget RTV! reason: ",
+                              _com_error{result}.ErrorMessage());
+         }
       }
 
-      rendertarget.width = width;
-      rendertarget.height = height;
-      rendertarget.format = format;
+      if (desc.bind_flags & D3D11_BIND_UNORDERED_ACCESS) {
+         const auto uav_desc =
+            CD3D11_UNORDERED_ACCESS_VIEW_DESC{D3D11_UAV_DIMENSION_TEXTURE2D,
+                                              desc.uav_format};
+
+         if (const auto result =
+                _device->CreateUnorderedAccessView(rendertarget.texture.get(), &uav_desc,
+                                                   rendertarget.uav.clear_and_assign());
+             FAILED(result)) {
+            log_and_terminate("Failed to create rendertarget UAV! reason: ",
+                              _com_error{result}.ErrorMessage());
+         }
+      }
+
+      rendertarget.desc = desc;
 
       return {*this, std::move(rendertarget)};
    }

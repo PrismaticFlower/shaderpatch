@@ -26,10 +26,6 @@
     "main_ps": {
       "stage": "pixel",
 
-      "pixel_state": {
-        "lighting": false
-      },
-
       "defines": [
         [ "CONVERT_TO_SRGB", "1" ],
         [ "COLOR_GRADING_ACTIVE", "1" ],
@@ -60,12 +56,8 @@
       "stage": "pixel",
       "function_name": "main_ps",
 
-      "pixel_state": {
-        "lighting": false
-      },
-
       "defines": [
-        [ "CONVERT_TO_SRGB", "1" ],
+        [ "CONVERT_TO_SRGB", "0" ],
         [ "COLOR_GRADING_ACTIVE", "1" ],
         [ "FILM_GRAIN_ACTIVE", "0" ],
         [ "FILM_GRAIN_COLORED", "0" ],
@@ -90,15 +82,11 @@
       "stage": "pixel",
       "function_name": "main_ps",
 
-      "pixel_state": {
-        "lighting": false
-      },
-
       "defines": [
         [ "BLOOM_ACTIVE", "0" ],
         [ "BLOOM_USE_DIRT", "0" ],
         [ "VIGNETTE_ACTIVE", "0" ],
-        [ "CONVERT_TO_SRGB", "0" ],
+        [ "CONVERT_TO_SRGB", "1" ],
         [ "COLOR_GRADING_ACTIVE", "0" ],
         [ "DITHERING_ACTIVE", "1" ],
         [ "OUTPUT_CMAA2_LUMA", "0" ]
@@ -118,10 +106,6 @@
 
     "stock_hdr_to_linear_ps": {
       "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      },
 
       "defines": [
         [ "BLOOM_ACTIVE", "0" ],

@@ -34,11 +34,7 @@
     },
 
     "shadowquad_ps": {
-      "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": false
-      }
+      "stage": "pixel"
     }
   },
 

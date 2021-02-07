@@ -3,6 +3,7 @@
 #include "com_ptr.hpp"
 #include "utility.hpp"
 
+#include <cassert>
 #include <span>
 #include <utility>
 
@@ -33,7 +34,7 @@ constexpr bool boxes_same_size(const D3D11_BOX& test_box,
    return true;
 }
 
-auto create_immutable_constant_buffer(ID3D11Device1& device,
+auto create_immutable_constant_buffer(ID3D11Device5& device,
                                       const std::span<const std::byte> data) noexcept
    -> Com_ptr<ID3D11Buffer>;
 

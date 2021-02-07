@@ -1,30 +1,7 @@
 
 #include "ucfb_editor.hpp"
-#include "ucfb_writer.hpp"
 
 namespace sp::ucfb {
-
-namespace {
-
-void assemble_impl(Writer& writer, const Editor_data_chunk& data) noexcept
-{
-   writer.write(data.span());
-}
-
-void assemble_impl(Writer& writer, const Editor_parent_chunk& parent) noexcept
-{
-   for (const auto& child : parent) {
-      std::visit(
-         [&](const auto& chunk) mutable noexcept {
-            auto child_writer = writer.emplace_child(child.first);
-
-            assemble_impl(child_writer, chunk);
-         },
-         child.second);
-   }
-}
-
-}
 
 Editor_data_writer::Editor_data_writer(Editor_data_chunk& data_chunk) noexcept
    : _data{data_chunk}
@@ -62,11 +39,6 @@ void Editor_data_writer::align() noexcept
 
       write(std::span{nulls.data(), (4 - remainder)}, Alignment::unaligned);
    }
-}
-
-void Editor::assemble(Writer& output) const noexcept
-{
-   assemble_impl(output, *this);
 }
 
 }

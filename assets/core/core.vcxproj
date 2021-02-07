@@ -88,6 +88,12 @@
     <IntDir>build\$(Platform)\$(Configuration)\</IntDir>
     <OutDir>build\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <VcpkgUseStatic>true</VcpkgUseStatic>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <VcpkgUseStatic>true</VcpkgUseStatic>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -159,10 +165,11 @@
     <None Include="definitions\patch\cmaa2.json" />
     <None Include="definitions\patch\color_grading_lut_baker.json" />
     <None Include="definitions\patch\depth_msaa_resolve.json" />
+    <None Include="definitions\patch\ffx_cas.json" />
     <None Include="definitions\patch\gaussian_blur.json" />
     <None Include="definitions\patch\late_backbuffer_resolve.json" />
-    <None Include="definitions\patch\normal_ext-tessellated.json" />
     <None Include="definitions\patch\normal_ext_terrain.json" />
+    <None Include="definitions\patch\particle_ext.json" />
     <None Include="definitions\patch\pbr_terrain.json" />
     <None Include="definitions\patch\postprocess_bloom.json" />
     <None Include="definitions\patch\postprocess_msaa_resolve.json" />
@@ -170,15 +177,13 @@
     <None Include="definitions\patch\scope_blur.json" />
     <None Include="definitions\patch\skybox.json" />
     <None Include="definitions\patch\static_water.json" />
-    <None Include="shader_declarations.req">
-      <FileType>Document</FileType>
-    </None>
+    <None Include="definitions\patch\text.json" />
     <CustomBuild Include="build_lvls.ps1">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">powershell -Command  "./build_lvls.ps1"  -BinPath $(SolutionDir)\tools\bin\$(Platform)\Release\ -CompilerArgs:'-o:1 -f:true -d:true'</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">powershell -Command  "./build_lvls.ps1"  -BinPath $(SolutionDir)\tools\bin\$(Platform)\Release\ -CompilerArgs:'-o:1 -f:true'</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">powershell -Command  "./build_lvls.ps1"  -BinPath $(SolutionDir)\tools\bin\$(Platform)\Release\ -CompilerArgs:'-o:1 -f:true -d:true'</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">powershell -Command  "./build_lvls.ps1"  -BinPath $(SolutionDir)\tools\bin\$(Platform)\Release\ -CompilerArgs:'-o:1 -f:true'</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">powershell -Command  "./build_lvls.ps1"  -BinPath $(SolutionDir)\tools\bin\$(Platform)\Release\ </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">powershell -Command  "./build_lvls.ps1"  -BinPath $(SolutionDir)\tools\bin\$(Platform)\Release\</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">powershell -Command  "./build_lvls.ps1"  -BinPath $(SolutionDir)\tools\bin\$(Platform)\Release\ </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">powershell -Command  "./build_lvls.ps1"  -BinPath $(SolutionDir)\tools\bin\$(Platform)\Release\</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">handledbytools.ignore</Outputs>
@@ -192,29 +197,6 @@
       </Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">handledbytools.ignore</Outputs>
     </CustomBuild>
-    <None Include="declarations\bloom_stock.json" />
-    <None Include="declarations\decal.json" />
-    <None Include="declarations\filtercopy.json" />
-    <None Include="declarations\flare.json" />
-    <None Include="declarations\interface.json" />
-    <None Include="declarations\lightbeam.json" />
-    <None Include="declarations\normal.json" />
-    <None Include="declarations\normalmapadder.json" />
-    <None Include="declarations\normal_terrain.json" />
-    <None Include="declarations\ocean.json" />
-    <None Include="declarations\particle.json" />
-    <None Include="declarations\perpixeldiffuselighting.json" />
-    <None Include="declarations\prereflection.json" />
-    <None Include="declarations\rain.json" />
-    <None Include="declarations\refraction.json" />
-    <None Include="declarations\sample.json" />
-    <None Include="declarations\shadowquad.json" />
-    <None Include="declarations\shield.json" />
-    <None Include="declarations\skyfog.json" />
-    <None Include="declarations\specularlighting.json" />
-    <None Include="declarations\stencilshadow.json" />
-    <None Include="declarations\water.json" />
-    <None Include="declarations\zprepass.json" />
     <None Include="definitions\decal.json" />
     <None Include="definitions\filtercopy.json" />
     <None Include="definitions\flare.json" />
@@ -250,12 +232,16 @@
     <None Include="definitions\water.json" />
     <None Include="definitions\zprepass.json" />
     <None Include="src\color_grading.hlsl" />
+    <None Include="src\ffx_cas.hlsl" />
+    <None Include="src\lighting_brdf.hlsl" />
+    <None Include="src\lighting_ibl.hlsl" />
+    <None Include="src\lighting_occlusion.hlsl" />
+    <None Include="src\lighting_pbr.hlsl" />
     <None Include="src\scene_blur.fx" />
     <None Include="src\scope_blur_common.hlsl" />
     <None Include="textures.req" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders.req" />
     <None Include="src\constants_list.hlsl">
       <FileType>Document</FileType>
     </None>
@@ -514,6 +500,20 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\pixel_sampler_states.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\ffx_a.h" />
+    <ClInclude Include="src\ffx_cas.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\particle_ext.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\text.fx">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

@@ -1,6 +1,8 @@
 #include "adaptive_oit.hlsl"
 #include "constants_list.hlsl"
 #include "generic_vertex_input.hlsl"
+#include "lighting_brdf.hlsl"
+#include "lighting_pbr.hlsl"
 #include "lighting_utilities.hlsl"
 #include "pixel_sampler_states.hlsl"
 #include "pixel_utilities.hlsl"
@@ -168,8 +170,7 @@ float4 main_ps(Ps_input input) : SV_Target0
    const float3 viewWS = normalize(view_positionWS - input.positionWS);
    const float3 reflectWS = normalize(reflect(-viewWS, normalWS));
 
-   const float fresnel = 
-      clamp(light::pbr::fresnel(0.05, normalWS, viewWS).x, fresnel_min, fresnel_max);
+   const float fresnel = clamp(pbr::F_schlick(0.05, normalWS, viewWS).x, fresnel_min, fresnel_max);
 
    const float3 reflection = sample_reflection_map(reflectWS);
    float3 refraction, back_refraction;
@@ -194,55 +195,43 @@ float4 main_ps(Ps_input input) : SV_Target0
 }
 
 [earlydepthstencil] 
-void oit_main_ps(Ps_input input, uint coverage : SV_Coverage) {
+void oit_main_ps(Ps_input input) {
    const float4 color = main_ps(input);
 
-   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, coverage, color);
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, color);
 }
 
 float3 get_specular(float3 normalWS, float3 viewWS, float3 positionWS)
 {
    float4 specular = 0.0;
    float4 throwaway_diffuse = 0.0;
-
-   if (ps_light_active_directional) {
-      light::blinnphong::calculate(throwaway_diffuse, specular, normalWS, viewWS, -light_directional_0_dir.xyz, 
-                                   specular_strength_dir_lights, light_directional_0_color, 
-                                   specular_exponent_dir_lights);
-      
-      light::blinnphong::calculate(throwaway_diffuse, specular, normalWS, viewWS, -light_directional_1_dir.xyz, 
-                                   specular_strength_dir_lights, light_directional_1_color, 
-                                   specular_exponent_dir_lights);
-      float3 light_dirWS;
-      float attenuation;
-
-      if (ps_light_active_point_0) {
-         light::pbr::point_params(positionWS, light_point_0_pos, light_point_0_inv_range_sqr, light_dirWS, attenuation);
-
-         light::blinnphong::calculate(throwaway_diffuse, specular, normalWS, viewWS, light_dirWS, 
-                                      attenuation, light_point_0_color, specular_exponent);
+   
+   [branch]
+   if (light_active) {
+      [loop]
+      for (uint i = 0; i < 2; ++i) {
+         light::blinnphong::calculate(throwaway_diffuse, specular, normalWS, viewWS, -light_directional_dir(i), 
+                                      specular_strength_dir_lights, light_directional_color(i), 
+                                      specular_exponent_dir_lights);
       }
+
+      [loop]
+      for (uint i = 0; i < light_active_point_count; ++i) {
+         float3 light_dirWS;
+         float attenuation;
       
-      if (ps_light_active_point_1) {
-         light::pbr::point_params(positionWS, light_point_1_pos, light_point_1_inv_range_sqr, light_dirWS, attenuation);
+         pbr::point_params(positionWS, light_point_pos(i), light_point_inv_range_sqr(i), light_dirWS, attenuation);
 
          light::blinnphong::calculate(throwaway_diffuse, specular, normalWS, viewWS, light_dirWS, 
-                                      attenuation, light_point_1_color, specular_exponent);
+                                      attenuation, light_point_color(i), specular_exponent);
       }
-      
-      if (ps_light_active_point_23) {
-         light::pbr::point_params(positionWS, light_point_2_pos, light_point_2_inv_range_sqr, light_dirWS, attenuation);
-         
-         light::blinnphong::calculate(throwaway_diffuse, specular, normalWS, viewWS, light_dirWS, 
-                                      attenuation, light_point_2_color, specular_exponent);
-         
-         light::pbr::point_params(positionWS, light_point_3_pos, light_point_3_inv_range_sqr, light_dirWS, attenuation);
-         
-         light::blinnphong::calculate(throwaway_diffuse, specular, normalWS, viewWS, light_dirWS, 
-                                      attenuation, light_point_3_color, specular_exponent);
-      }
-      else if (ps_light_active_spot_light) {
-         light::pbr::spot_params(positionWS, attenuation, light_dirWS);
+
+      [branch]
+      if (light_active_spot) {
+         float3 light_dirWS;
+         float attenuation;
+
+         pbr::spot_params(positionWS, attenuation, light_dirWS);
          
          light::blinnphong::calculate(throwaway_diffuse, specular, normalWS, viewWS, light_dirWS, 
                                       attenuation, light_spot_color, specular_exponent);

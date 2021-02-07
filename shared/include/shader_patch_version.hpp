@@ -19,9 +19,11 @@ struct Shader_patch_version {
    std::uint16_t patch{};
    Shader_patch_prerelease_stage prerelease_stage{};
    std::uint16_t prerelease{};
+
+   constexpr bool operator==(const Shader_patch_version&) const noexcept = default;
 };
 
-inline const Shader_patch_version current_shader_patch_version{1, 3, 5};
+inline const Shader_patch_version current_shader_patch_version{1, 4, 0};
 
 extern const std::string current_shader_patch_version_string;
 

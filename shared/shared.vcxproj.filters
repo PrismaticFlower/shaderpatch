@@ -54,15 +54,6 @@
     <ClInclude Include="include\req_file_helpers.hpp">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="include\shader_flags.hpp">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="include\shader_input_type.hpp">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="include\shader_metadata.hpp">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="include\small_function.hpp">
       <Filter>include</Filter>
     </ClInclude>
@@ -115,6 +106,18 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\srgb_conversion.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\binary_io_winapi.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\retry_dialog.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\overloaded.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\material_rendertype_property_mappings.hpp">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>

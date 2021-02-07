@@ -207,11 +207,7 @@
         [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
         [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
         [ "PERPIXEL_LIGHT_COUNT", "3" ]
-      ],
-
-      "pixel_state": {
-        "lighting": false
-      }
+      ]
     },
 
     "perpixel_2lights_ps": {
@@ -222,11 +218,7 @@
         [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
         [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
         [ "PERPIXEL_LIGHT_COUNT", "2" ]
-      ],
-
-      "pixel_state": {
-        "lighting": false
-      }
+      ]
     },
 
     "perpixel_1lights_ps": {
@@ -237,11 +229,7 @@
         [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
         [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
         [ "PERPIXEL_LIGHT_COUNT", "1" ]
-      ],
-
-      "pixel_state": {
-        "lighting": false
-      }
+      ]
     },
 
     "normalmapped_3lights_ps": {
@@ -252,11 +240,7 @@
         [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
         [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
         [ "PERPIXEL_LIGHT_COUNT", "3" ]
-      ],
-
-      "pixel_state": {
-        "lighting": false
-      }
+      ]
     },
 
     "normalmapped_2lights_ps": {
@@ -267,11 +251,7 @@
         [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
         [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
         [ "PERPIXEL_LIGHT_COUNT", "2" ]
-      ],
-
-      "pixel_state": {
-        "lighting": false
-      }
+      ]
     },
 
     "normalmapped_1lights_ps": {
@@ -282,11 +262,7 @@
         [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
         [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
         [ "PERPIXEL_LIGHT_COUNT", "1" ]
-      ],
-
-      "pixel_state": {
-        "lighting": false
-      }
+      ]
     },
 
     "perpixel_spotlight_ps": {
@@ -296,11 +272,7 @@
         [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
         [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
         [ "PERPIXEL_LIGHT_COUNT", "0" ]
-      ],
-
-      "pixel_state": {
-        "lighting": false
-      }
+      ]
     },
 
     "normalmapped_spotlight_ps": {
@@ -310,11 +282,7 @@
         [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
         [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
         [ "PERPIXEL_LIGHT_COUNT", "0" ]
-      ],
-
-      "pixel_state": {
-        "lighting": false
-      }
+      ]
     }
   },
 

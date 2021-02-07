@@ -9,12 +9,10 @@
 
 namespace sp::core::postprocessing {
 
-Scope_blur::Scope_blur(ID3D11Device5& device, const Shader_database& shader_database) noexcept
-   : _vs{std::get<0>(
-        shader_database.groups.at("postprocess"s).vertex.at("main_vs"s).copy())},
-     _ps_blur{shader_database.groups.at("scope blur"s).pixel.at("blur_ps"s).copy()},
-     _ps_overlay{
-        shader_database.groups.at("scope blur"s).pixel.at("overlay_ps"s).copy()},
+Scope_blur::Scope_blur(ID3D11Device5& device, shader::Database& shaders) noexcept
+   : _vs{std::get<0>(shaders.vertex("postprocess"sv).entrypoint("main_vs"sv))},
+     _ps_blur{shaders.pixel("scope blur"sv).entrypoint("blur_ps"sv)},
+     _ps_overlay{shaders.pixel("scope blur"sv).entrypoint("overlay_ps"sv)},
      _sampler{[&] {
         Com_ptr<ID3D11SamplerState> sampler;
 
@@ -61,7 +59,11 @@ void Scope_blur::apply(ID3D11DeviceContext4& dc, const Game_rendertarget& dest,
    auto* const samp = _sampler.get();
    dc.PSSetSamplers(0, 1, &samp);
 
-   const auto blur_rt = rt_allocator.allocate(dest.format, input_width, input_height);
+   const auto blur_rt =
+      rt_allocator.allocate({.format = dest.format,
+                             .width = input_width,
+                             .height = input_height,
+                             .bind_flags = effects::rendertarget_bind_srv_rtv});
 
    const CD3D11_VIEWPORT blur_viewport{0.0f, 0.0f, static_cast<float>(input_width),
                                        static_cast<float>(input_height)};

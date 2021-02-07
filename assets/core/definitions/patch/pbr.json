@@ -15,12 +15,9 @@
           "skinned": true,
           "normal": true,
           "tangents": true,
+          "tangents_unflagged": true,
           "color": true,
           "texture_coords": true
-        },
-
-        "flags_mask": {
-          "tangents": false
         }
       },
 
@@ -31,6 +28,7 @@
       "defines": [
         [ "PBR_USE_METALLIC_ROUGHNESS_MAP", "0" ],
         [ "PBR_USE_EMISSIVE_MAP", "0" ],
+        [ "PBR_USE_IBL", "0" ],
         [ "PBR_USE_HARDEDGED_TEST", "0" ],
         [ "PBR_USE_SHADOW_MAP", "0" ]
       ]
@@ -39,13 +37,10 @@
     "main_ps": {
       "stage": "pixel",
 
-      "pixel_state": {
-        "lighting": true
-      },
-
       "static_flags": [
         "PBR_USE_METALLIC_ROUGHNESS_MAP",
         "PBR_USE_EMISSIVE_MAP",
+        "PBR_USE_IBL",
         "PBR_USE_TRANSPARENCY",
         "PBR_USE_HARDEDGED_TEST",
         "PBR_USE_SHADOW_MAP"
@@ -55,13 +50,10 @@
     "oit_main_ps": {
       "stage": "pixel",
 
-      "pixel_state": {
-        "lighting": true
-      },
-
       "static_flags": [
         "PBR_USE_METALLIC_ROUGHNESS_MAP",
         "PBR_USE_EMISSIVE_MAP",
+        "PBR_USE_IBL",
         "PBR_USE_HARDEDGED_TEST",
         "PBR_USE_SHADOW_MAP"
       ],
@@ -72,39 +64,90 @@
     }
   },
 
-  "rendertypes": {
-    "pbr": {
-      "static_flags": {
-        "PBR_USE_METALLIC_ROUGHNESS_MAP": true,
-        "PBR_USE_EMISSIVE_MAP": false,
-        "PBR_USE_TRANSPARENCY": false,
-        "PBR_USE_HARDEDGED_TEST": false,
-        "PBR_USE_SHADOW_MAP": false
-      }
-    },
-
-    "pbr.basic": {
-      "static_flags": {
-        "PBR_USE_METALLIC_ROUGHNESS_MAP": false,
-        "PBR_USE_EMISSIVE_MAP": false,
-        "PBR_USE_TRANSPARENCY": false,
-        "PBR_USE_HARDEDGED_TEST": false,
-        "PBR_USE_SHADOW_MAP": false
-      }
-    },
-
-    "pbr.emissive": {
-      "static_flags": {
-        "PBR_USE_METALLIC_ROUGHNESS_MAP": true,
-        "PBR_USE_EMISSIVE_MAP": true,
-        "PBR_USE_TRANSPARENCY": false,
-        "PBR_USE_HARDEDGED_TEST": false,
-        "PBR_USE_SHADOW_MAP": false
-      }
-    }
-  },
+  "rendertypes": { "pbr": {} },
 
   "states": {
+    "unlit opaque": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      }
+    },
+
+    "unlit opaque hardedged": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "PBR_USE_HARDEDGED_TEST": true
+        }
+      }
+    },
+
+    "unlit transparent": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "PBR_USE_TRANSPARENCY": true
+        }
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "PBR_USE_TRANSPARENCY": true
+        }
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_main_ps"
+      }
+    },
+
+    "unlit transparent hardedged": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "PBR_USE_TRANSPARENCY": true
+        }
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "PBR_USE_TRANSPARENCY": true,
+          "PBR_USE_HARDEDGED_TEST": true
+        }
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_main_ps",
+
+        "static_flags": {
+          "PBR_USE_HARDEDGED_TEST": true
+        }
+      }
+    },
+
     "near opaque": {
       "type": "standard",
 
@@ -152,7 +195,7 @@
         }
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_main_ps"
       }
     },
@@ -177,7 +220,7 @@
         }
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_main_ps",
 
         "static_flags": {
@@ -233,7 +276,7 @@
         }
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_main_ps"
       }
     },
@@ -258,7 +301,7 @@
         }
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_main_ps",
 
         "static_flags": {
@@ -353,7 +396,7 @@
         }
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_main_ps",
 
         "static_flags": {
@@ -383,7 +426,7 @@
         }
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_main_ps",
 
         "static_flags": {
@@ -413,7 +456,7 @@
         }
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_main_ps",
 
         "static_flags": {
@@ -443,7 +486,7 @@
         }
       },
 
-      "oit_pixel_shader": {
+      "pixel_oit_shader": {
         "entrypoint": "oit_main_ps",
 
         "static_flags": {

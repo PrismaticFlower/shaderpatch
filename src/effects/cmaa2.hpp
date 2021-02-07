@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../core/shader_database.hpp"
+#include "../shader/database.hpp"
 #include "com_ptr.hpp"
 #include "profiler.hpp"
 
@@ -10,40 +10,37 @@
 
 namespace sp::effects {
 
+struct CMAA2_input_output {
+   ID3D11ShaderResourceView& input;
+   ID3D11UnorderedAccessView& output;
+   ID3D11ShaderResourceView* luma_srv = nullptr;
+
+   UINT width;
+   UINT height;
+};
+
 class CMAA2 {
 public:
-   CMAA2(Com_ptr<ID3D11Device1> device, const core::Shader_group_collection& shader_groups)
-   noexcept;
+   CMAA2(Com_ptr<ID3D11Device1> device, shader::Database& shaders) noexcept;
 
    void apply(ID3D11DeviceContext1& dc, Profiler& profiler,
-              ID3D11Texture2D& input_output) noexcept;
-
-   void apply(ID3D11DeviceContext1& dc, Profiler& profiler,
-              ID3D11Texture2D& input_output, ID3D11ShaderResourceView& luma_srv) noexcept;
+              CMAA2_input_output input_output) noexcept;
 
    void clear_resources() noexcept;
 
 private:
-   void apply_impl(ID3D11DeviceContext1& dc, Profiler& profiler,
-                   ID3D11Texture2D& input_output,
-                   ID3D11ShaderResourceView* luma_srv) noexcept;
-
    void execute(ID3D11DeviceContext1& dc, Profiler& profiler,
-                ID3D11ShaderResourceView* luma_srv) noexcept;
+                CMAA2_input_output input_output) noexcept;
 
-   void update_resources(ID3D11Texture2D& input_output) noexcept;
+   void update_resources() noexcept;
 
    void update_shaders() noexcept;
 
-   bool _uav_store_typed = false;
-   bool _uav_store_convert_to_srgb = false;
+   const static bool _uav_store_typed = true;
+   const static bool _uav_store_convert_to_srgb = true;
    bool _luma_separate_texture = false;
 
    glm::uvec2 _size{};
-
-   Com_ptr<ID3D11Texture2D> _input_output_texture;
-   Com_ptr<ID3D11ShaderResourceView> _input_srv;
-   Com_ptr<ID3D11UnorderedAccessView> _output_uav;
 
    Com_ptr<ID3D11UnorderedAccessView> _working_edges_uav;
    Com_ptr<ID3D11UnorderedAccessView> _working_shape_candidates_uav;
@@ -61,7 +58,7 @@ private:
 
    const Com_ptr<ID3D11SamplerState> _point_sampler;
    const Com_ptr<ID3D11Device1> _device;
-   const core::Shader_entrypoints<core::Compute_shader_entrypoint> _shader_entrypoints;
+   shader::Group_compute& _shaders;
 };
 
 }

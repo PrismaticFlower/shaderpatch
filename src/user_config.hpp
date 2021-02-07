@@ -4,6 +4,7 @@
 #include "logger.hpp"
 
 #include <cstdint>
+#include <filesystem>
 #include <iomanip>
 #include <string>
 #include <string_view>
@@ -54,8 +55,15 @@ struct User_config {
    struct {
       std::uint32_t screen_percent = 100;
       bool allow_tearing = true;
-      bool centred = false;
+      bool centred = true;
+      bool dpi_aware = true;
+      bool dpi_scaling = true;
       bool treat_800x600_as_interface = true;
+      bool windowed_interface = false;
+      bool scalable_fonts = true;
+      bool enable_game_perceived_resolution_override = false;
+      std::uint32_t game_perceived_resolution_override_width = 1920;
+      std::uint32_t game_perceived_resolution_override_height = 1080;
    } display;
 
    struct {
@@ -66,8 +74,8 @@ struct User_config {
       Refraction_quality refraction_quality = Refraction_quality::medium;
       bool enable_oit = false;
       bool enable_alternative_postprocessing = true;
+      bool enable_scene_blur = true;
       bool enable_16bit_color_rendering = true;
-      bool enable_tessellation = true;
       bool disable_light_brightness_rescaling = false;
       bool enable_user_effects_config = false;
       std::string user_effects_config;
@@ -82,6 +90,17 @@ struct User_config {
       bool allow_event_queries = false;
       bool use_d3d11_debug_layer = false;
       bool use_dxgi_1_2_factory = false;
+
+      std::filesystem::path shader_cache_path =
+         LR"(.\data\shaderpatch\.shader_dxbc_cache)";
+      std::filesystem::path shader_definitions_path =
+         LR"(.\data\shaderpatch\shaders\definitions)";
+      std::filesystem::path shader_source_path = LR"(.\data\shaderpatch\shaders\src)";
+
+      std::filesystem::path material_scripts_path =
+         LR"(.\data\shaderpatch\scripts\material)";
+
+      std::filesystem::path scalable_font_name = L"ariblk.ttf";
    } developer;
 
    void show_imgui() noexcept;

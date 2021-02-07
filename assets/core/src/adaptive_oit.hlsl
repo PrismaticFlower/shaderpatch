@@ -3,6 +3,8 @@
 
 #include "constants_list.hlsl"
 
+// clang-format off
+
 namespace aoit
 {
 
@@ -223,10 +225,9 @@ void insert_fragment(const float3 frag_color, const float frag_depth,
 
 // Main interface functions.
 
-void write_pixel(const uint2 index, const float depth, const uint sample_coverage, const float4 color)
+void write_pixel(const uint2 index, const float depth, const float4 color)
 {
-   const float coverage_alpha = countbits(sample_coverage) * rcp_sample_count;
-   const float clamped_alpha = saturate(color.a * coverage_alpha);
+   const float clamped_alpha = saturate(color.a);
    const float clamped_depth = saturate(depth);
 
    const float3 premultiplied_color = color.rgb * clamped_alpha;
@@ -234,7 +235,6 @@ void write_pixel(const uint2 index, const float depth, const uint sample_coverag
 
    [branch]
    if (clamped_alpha <= write_cutoff_alpha) {
-      discard;
       return;
    }
 

@@ -1,17 +1,9 @@
 Overridden RenderType: normal
-Failsafe Texture Index: 0
 Constant Buffer Name: static_water
 
 Material Options:
    Transparent: yes
    Hard Edged: no
-
-Constant Buffer Stages:
-   VS: no
-   HS: no
-   DS: no
-   GS: no
-   PS: yes
 
 Properties:
    RefractionColor:
@@ -64,6 +56,10 @@ Properties:
       Default: [0.2, 0.2]
       Range: [-2048.0, 2048.0]
 
+   UseSpecularLighting:
+      Type: bool
+      Default: false
+
    SpecularExponentDirLights:
       Type: float
       Default: 64.0
@@ -84,24 +80,8 @@ Properties:
       Default: [0.0, 1.0]
       Range: [0.0, 1.0]
       
-Texture Mappings:
+Resource Properties:
    NormalMap:
-      -
-         Stage: PS
-         Slot: 0
    ReflectionMap:
-      -
-         Stage: PS
-         Slot: 1
    DepthBuffer:
-      -
-         Stage: PS
-         Slot: 2
    RefractionMap:
-      -
-         Stage: PS
-         Slot: 3
-
-Default Textures:
-   DepthBuffer: $depth
-   RefractionMap: $refraction

@@ -28,7 +28,7 @@ void write_colorgrading_regions(const std::filesystem::path& save_path,
 
    // write colorgrading regions chunk
    {
-      ucfb::Writer writer{ostream, "clrg"_mn};
+      ucfb::File_writer writer{"clrg"_mn, ostream};
 
       writer.write(Colorgrading_version::current);
 

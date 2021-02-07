@@ -2,14 +2,15 @@
 
 #include "../core/d3d11_helpers.hpp"
 #include "../core/game_rendertarget.hpp"
-#include "../core/shader_database.hpp"
 #include "../core/texture_database.hpp"
+#include "../shader/database.hpp"
 #include "../user_config.hpp"
 #include "cmaa2.hpp"
 #include "color_grading_lut_baker.hpp"
 #include "color_grading_regions_blender.hpp"
 #include "color_grading_regions_io.hpp"
 #include "com_ptr.hpp"
+#include "ffx_cas.hpp"
 #include "helpers.hpp"
 #include "postprocess_params.hpp"
 #include "profiler.hpp"
@@ -36,15 +37,6 @@ struct Postprocess_input {
    UINT sample_count;
 };
 
-struct Postprocess_cmaa2_temp_target {
-   ID3D11Texture2D& texture;
-   ID3D11RenderTargetView& rtv;
-   ID3D11ShaderResourceView& srv;
-
-   UINT width;
-   UINT height;
-};
-
 struct Postprocess_output {
    ID3D11RenderTargetView& rtv;
 
@@ -54,8 +46,7 @@ struct Postprocess_output {
 
 class Postprocess {
 public:
-   Postprocess(Com_ptr<ID3D11Device1> device,
-               const core::Shader_group_collection& shader_groups);
+   Postprocess(Com_ptr<ID3D11Device1> device, shader::Database& shaders);
 
    void bloom_params(const Bloom_params& params) noexcept;
 
@@ -99,13 +90,12 @@ public:
 
    void apply(ID3D11DeviceContext1& dc, Rendertarget_allocator& rt_allocator,
               Profiler& profiler, const core::Shader_resource_database& textures,
-              const glm::vec3 camera_position, const Postprocess_input input,
-              const Postprocess_output output) noexcept;
+              const glm::vec3 camera_position, FFX_cas& ffx_cas,
+              const Postprocess_input input, const Postprocess_output output) noexcept;
 
    void apply(ID3D11DeviceContext1& dc, Rendertarget_allocator& rt_allocator,
               Profiler& profiler, const core::Shader_resource_database& textures,
-              const glm::vec3 camera_position, CMAA2& cmaa2,
-              const Postprocess_cmaa2_temp_target cmaa2_target,
+              const glm::vec3 camera_position, FFX_cas& ffx_cas, CMAA2& cmaa2,
               const Postprocess_input input, const Postprocess_output output) noexcept;
 
    void hdr_state(Hdr_state state) noexcept;
@@ -134,8 +124,8 @@ private:
                          ID3D11PixelShader& postprocess_shader,
                          ID3D11RenderTargetView* luma_rtv = nullptr) noexcept;
 
-   auto select_msaa_resolve_shader(const Postprocess_input& input) const
-      noexcept -> ID3D11PixelShader*;
+   auto select_msaa_resolve_shader(const Postprocess_input& input) const noexcept
+      -> ID3D11PixelShader*;
 
    void update_and_bind_cb(ID3D11DeviceContext1& dc, const UINT width,
                            const UINT height) noexcept;
@@ -232,9 +222,7 @@ private:
       core::create_dynamic_constant_buffer(*_device, sizeof(Bloom_constants)),
       core::create_dynamic_constant_buffer(*_device, sizeof(Bloom_constants))};
 
-   const core::Pixel_shader_entrypoint _postprocess_ps_ep;
-   const core::Pixel_shader_entrypoint _postprocess_cmaa2_pre_ps_ep;
-   const core::Pixel_shader_entrypoint _postprocess_cmaa2_post_ps_ep;
+   shader::Group_pixel& _shaders;
 
    const Com_ptr<ID3D11VertexShader> _fullscreen_vs;
    const Com_ptr<ID3D11PixelShader> _stock_hdr_to_linear_ps;

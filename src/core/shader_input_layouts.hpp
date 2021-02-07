@@ -1,8 +1,9 @@
 #pragma once
 
+#include "../shader/bytecode_blob.hpp"
+#include "../shader/vertex_input_layout.hpp"
 #include "com_ptr.hpp"
 #include "input_layout_descriptions.hpp"
-#include "shader_input_element.hpp"
 
 #include <cstddef>
 #include <span>
@@ -14,8 +15,8 @@ namespace sp::core {
 
 class Shader_input_layouts {
 public:
-   Shader_input_layouts(std::vector<Shader_input_element> input_signature,
-                        std::vector<std::byte> bytecode) noexcept;
+   Shader_input_layouts(shader::Vertex_input_layout input_signature,
+                        shader::Bytecode_blob bytecode) noexcept;
 
    Shader_input_layouts(const Shader_input_layouts&) = default;
    Shader_input_layouts(Shader_input_layouts&&) = default;
@@ -38,8 +39,8 @@ private:
       -> Com_ptr<ID3D11InputLayout>;
 
    std::vector<std::pair<std::int32_t, Com_ptr<ID3D11InputLayout>>> _layouts;
-   const std::vector<Shader_input_element> _input_signature;
-   const std::vector<std::byte> _bytecode;
+   const shader::Vertex_input_layout _input_signature;
+   const shader::Bytecode_blob _bytecode;
 };
 
 }

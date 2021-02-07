@@ -41,12 +41,9 @@
           "skinned": false,
           "normal": true,
           "tangents": true,
+          "tangents_unflagged": true,
           "color": false,
           "texture_coords": true
-        },
-
-        "flags_mask": {
-          "tangents": false
         }
       },
 
@@ -65,10 +62,6 @@
 
     "main_ps": {
       "stage": "pixel",
-
-      "pixel_state": {
-        "lighting": true
-      },
 
       "static_flags": [
         "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING",
@@ -97,86 +90,33 @@
     }
   },
 
-  "rendertypes": {
-    "normal_ext_terrain": {
-      "static_flags": {
-        "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": false,
-        "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": false,
-        "TERRAIN_COMMON_BASIC_BLENDING": false,
-        "TERRAIN_COMMON_LOW_DETAIL": false,
-        "NORMAL_EXT_USE_SHADOW_MAP": false,
-        "NORMAL_EXT_USE_PROJECTED_TEXTURE": false
-      }
-    },
-
-    "normal_ext_terrain.parallax offset mapping": {
-      "static_flags": {
-        "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": true,
-        "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": false,
-        "TERRAIN_COMMON_BASIC_BLENDING": false,
-        "TERRAIN_COMMON_LOW_DETAIL": false,
-        "NORMAL_EXT_USE_SHADOW_MAP": false,
-        "NORMAL_EXT_USE_PROJECTED_TEXTURE": false
-      }
-    },
-
-    "normal_ext_terrain.parallax occlusion mapping": {
-      "static_flags": {
-        "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": false,
-        "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": true,
-        "TERRAIN_COMMON_BASIC_BLENDING": false,
-        "TERRAIN_COMMON_LOW_DETAIL": false,
-        "NORMAL_EXT_USE_SHADOW_MAP": false,
-        "NORMAL_EXT_USE_PROJECTED_TEXTURE": false
-      }
-    },
-
-    "normal_ext_terrain.basic blending": {
-      "static_flags": {
-        "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": false,
-        "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": false,
-        "TERRAIN_COMMON_BASIC_BLENDING": true,
-        "TERRAIN_COMMON_LOW_DETAIL": false,
-        "NORMAL_EXT_USE_SHADOW_MAP": false,
-        "NORMAL_EXT_USE_PROJECTED_TEXTURE": false
-      }
-    },
-
-    "normal_ext_terrain.basic blending.parallax offset mapping": {
-      "static_flags": {
-        "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": true,
-        "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": false,
-        "TERRAIN_COMMON_BASIC_BLENDING": true,
-        "TERRAIN_COMMON_LOW_DETAIL": false,
-        "NORMAL_EXT_USE_SHADOW_MAP": false,
-        "NORMAL_EXT_USE_PROJECTED_TEXTURE": false
-      }
-    },
-
-    "normal_ext_terrain.basic blending.parallax occlusion mapping": {
-      "static_flags": {
-        "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": false,
-        "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": true,
-        "TERRAIN_COMMON_BASIC_BLENDING": true,
-        "TERRAIN_COMMON_LOW_DETAIL": false,
-        "NORMAL_EXT_USE_SHADOW_MAP": false,
-        "NORMAL_EXT_USE_PROJECTED_TEXTURE": false
-      }
-    },
-
-    "normal_ext_terrain.low detail": {
-      "static_flags": {
-        "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": false,
-        "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": false,
-        "TERRAIN_COMMON_BASIC_BLENDING": true,
-        "TERRAIN_COMMON_LOW_DETAIL": true,
-        "NORMAL_EXT_USE_SHADOW_MAP": false,
-        "NORMAL_EXT_USE_PROJECTED_TEXTURE": false
-      }
-    }
-  },
+  "rendertypes": { "normal_ext_terrain": {} },
 
   "states": {
+    "unlit opaque": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      }
+    },
+
+    "unlit transparent": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      }
+    },
+
     "near opaque": {
       "type": "standard",
 

@@ -1,78 +1,14 @@
-#include "texture_stage_state_manager.hpp"
+#include "../game_support/munged_shader_declarations.hpp"
 #include "helpers.hpp"
+#include "texture_stage_state_manager.hpp"
 
+#include <algorithm>
 #include <gsl/gsl>
-
-#include <VersionHelpers.h>
+#include <iterator>
+#include <ranges>
+#include <tuple>
 
 namespace sp::d3d9 {
-
-using namespace std::literals;
-
-namespace {
-
-const Shader_metadata color_fill_shader_metadata = [] {
-   Shader_metadata meta{};
-
-   meta.rendertype = Rendertype::fixedfunc_color_fill;
-   meta.rendertype_name = to_string(meta.rendertype);
-   meta.shader_name = "color fill"s;
-
-   return meta;
-}();
-
-const Shader_metadata damage_overlay_shader_metadata = [] {
-   Shader_metadata meta{};
-
-   meta.rendertype = Rendertype::fixedfunc_damage_overlay;
-   meta.rendertype_name = to_string(meta.rendertype);
-   meta.shader_name = "damage overlay"s;
-
-   return meta;
-}();
-
-const Shader_metadata plain_texture_shader_metadata = [] {
-   Shader_metadata meta{};
-
-   meta.rendertype = Rendertype::fixedfunc_plain_texture;
-   meta.rendertype_name = to_string(meta.rendertype);
-   meta.shader_name = "plain texture"s;
-
-   return meta;
-}();
-
-const Shader_metadata scene_blur_shader_metadata = [] {
-   Shader_metadata meta{};
-
-   meta.rendertype = Rendertype::fixedfunc_scene_blur;
-   meta.rendertype_name = to_string(meta.rendertype);
-   meta.shader_name = "scene blur"s;
-
-   return meta;
-}();
-
-const Shader_metadata zoom_blur_shader_metadata = [] {
-   Shader_metadata meta{};
-
-   meta.rendertype = Rendertype::fixedfunc_zoom_blur;
-   meta.rendertype_name = to_string(meta.rendertype);
-   meta.shader_name = "zoom blur"s;
-
-   return meta;
-}();
-
-}
-
-Texture_stage_state_manager::Texture_stage_state_manager(core::Shader_patch& shader_patch) noexcept
-   : _color_fill_shader{shader_patch.create_game_shader(color_fill_shader_metadata)},
-     _damage_overlay_shader{
-        shader_patch.create_game_shader(damage_overlay_shader_metadata)},
-     _plain_texture_shader{
-        shader_patch.create_game_shader(plain_texture_shader_metadata)},
-     _scene_blur_shader{shader_patch.create_game_shader(scene_blur_shader_metadata)},
-     _zoom_blur_shader{shader_patch.create_game_shader(zoom_blur_shader_metadata)}
-{
-}
 
 void Texture_stage_state_manager::set(const UINT stage,
                                       const D3DTEXTURESTAGESTATETYPE state,
@@ -186,7 +122,8 @@ DWORD Texture_stage_state_manager::get(const UINT stage,
 }
 
 void Texture_stage_state_manager::update(core::Shader_patch& shader_patch,
-                                         const DWORD texture_factor) const noexcept
+                                         const DWORD texture_factor,
+                                         const D3DVIEWPORT9& viewport) const noexcept
 {
    if (is_color_fill_state()) {
       shader_patch.set_game_shader(_color_fill_shader);
@@ -207,7 +144,10 @@ void Texture_stage_state_manager::update(core::Shader_patch& shader_patch,
       log_and_terminate("Unexpected fixed function texture state!");
    }
 
-   shader_patch.set_constants(core::cb::fixedfunction, unpack_d3dcolor(texture_factor));
+   shader_patch.set_constants(core::cb::fixedfunction,
+                              {.texture_factor = unpack_d3dcolor(texture_factor),
+                               .inv_resolution = {1.0f / viewport.Width,
+                                                  1.0f / viewport.Height}});
 }
 
 void Texture_stage_state_manager::reset() noexcept
@@ -249,8 +189,7 @@ bool Texture_stage_state_manager::is_zoom_blur_state() const noexcept
    return true;
 }
 
-bool Texture_stage_state_manager::is_damage_overlay_state(const DWORD texture_factor) const
-   noexcept
+bool Texture_stage_state_manager::is_damage_overlay_state(const DWORD texture_factor) const noexcept
 {
    constexpr auto damage_color = 0xdf2020u;
 
@@ -294,6 +233,27 @@ bool Texture_stage_state_manager::is_color_fill_state() const noexcept
    if (_stages[0].alphaarg2 != D3DTA_TEXTURE) return false;
 
    return true;
+}
+
+auto Texture_stage_state_manager::get_game_shader_index(Rendertype rendertype,
+                                                        const std::string_view shader_name)
+   -> std::uint32_t
+{
+   auto shader_pool =
+      game_support::munged_shader_declarations().shader_pool | std::views::reverse |
+      std::views::transform([](const game_support::Shader_metadata& metadata) {
+         return std::tie(metadata.rendertype, metadata.shader_name);
+      });
+
+   if (auto it = std::ranges::find(shader_pool, std::tie(rendertype, shader_name));
+       it != shader_pool.end()) {
+      const auto reverse_index =
+         static_cast<std::uint32_t>(std::distance(shader_pool.begin(), it));
+
+      return shader_pool.size() - 1 - reverse_index;
+   }
+
+   std::terminate();
 }
 
 }

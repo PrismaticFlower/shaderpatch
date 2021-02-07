@@ -3,6 +3,11 @@
 #include "../effects/control.hpp"
 #include "../effects/profiler.hpp"
 #include "../effects/rendertarget_allocator.hpp"
+#include "../material/factory.hpp"
+#include "../material/material.hpp"
+#include "../material/shader_factory.hpp"
+#include "../shader/database.hpp"
+#include "backbuffer_cmaa2_views.hpp"
 #include "com_ptr.hpp"
 #include "constant_buffers.hpp"
 #include "d3d11_helpers.hpp"
@@ -17,16 +22,12 @@
 #include "input_layout_descriptions.hpp"
 #include "input_layout_element.hpp"
 #include "late_backbuffer_resolver.hpp"
-#include "material_shader_factory.hpp"
 #include "oit_provider.hpp"
 #include "patch_effects_config_handle.hpp"
-#include "patch_material.hpp"
 #include "sampler_states.hpp"
-#include "shader_database.hpp"
-#include "shader_loader.hpp"
-#include "shader_metadata.hpp"
 #include "small_function.hpp"
 #include "swapchain.hpp"
+#include "text/font_atlas_builder.hpp"
 #include "texture_database.hpp"
 #include "texture_loader.hpp"
 
@@ -38,8 +39,6 @@
 #include <DirectXTex.h>
 #include <d3d11_4.h>
 #include <dxgi1_6.h>
-
-#pragma warning(disable : 4324)
 
 namespace sp {
 class BF2_log_monitor;
@@ -63,7 +62,7 @@ struct Mapped_texture {
 };
 
 using Material_handle =
-   std::unique_ptr<Patch_material, Small_function<void(Patch_material*) noexcept>>;
+   std::unique_ptr<material::Material, Small_function<void(material::Material*) noexcept>>;
 
 using Texture_handle =
    std::unique_ptr<ID3D11ShaderResourceView, Small_function<void(ID3D11ShaderResourceView*) noexcept>>;
@@ -82,6 +81,8 @@ public:
    Shader_patch& operator=(Shader_patch&&) = delete;
 
    void reset(const UINT width, const UINT height) noexcept;
+
+   void set_text_dpi(const std::uint32_t dpi) noexcept;
 
    void present() noexcept;
 
@@ -135,9 +136,6 @@ public:
                                  const bool particle_texture_scale) noexcept
       -> Game_input_layout;
 
-   auto create_game_shader(const Shader_metadata metadata) noexcept
-      -> std::shared_ptr<Game_shader>;
-
    auto create_ia_buffer(const UINT size, const bool vertex_buffer,
                          const bool index_buffer, const bool dynamic) noexcept
       -> Com_ptr<ID3D11Buffer>;
@@ -177,7 +175,7 @@ public:
 
    void set_input_layout(const Game_input_layout& input_layout) noexcept;
 
-   void set_game_shader(std::shared_ptr<Game_shader> shader) noexcept;
+   void set_game_shader(const std::uint32_t game_shader_index) noexcept;
 
    void set_rendertarget(const Game_rendertarget_id rendertarget) noexcept;
 
@@ -203,7 +201,7 @@ public:
 
    void set_projtex_cube(const Game_texture& texture) noexcept;
 
-   void set_patch_material(Patch_material* material) noexcept;
+   void set_patch_material(material::Material* material) noexcept;
 
    void set_constants(const cb::Scene_tag, const UINT offset,
                       const std::span<const std::array<float, 4>> constants) noexcept;
@@ -211,7 +209,8 @@ public:
    void set_constants(const cb::Draw_tag, const UINT offset,
                       const std::span<const std::array<float, 4>> constants) noexcept;
 
-   void set_constants(const cb::Fixedfunction_tag, const glm::vec4 texture_factor) noexcept;
+   void set_constants(const cb::Fixedfunction_tag,
+                      const cb::Fixedfunction constants) noexcept;
 
    void set_constants(const cb::Skin_tag, const UINT offset,
                       const std::span<const std::array<float, 4>> constants) noexcept;
@@ -233,6 +232,8 @@ public:
 
    auto get_query_data(ID3D11Query& query, const bool flush,
                        std::span<std::byte> data) noexcept -> Query_result;
+
+   void force_shader_cache_save_to_disk() noexcept;
 
 private:
    auto current_depthstencil(const bool readonly) const noexcept
@@ -304,17 +305,26 @@ private:
    Swapchain _swapchain;
 
    Input_layout_descriptions _input_layout_descriptions;
-   const std::shared_ptr<Shader_database> _shader_database =
-      std::make_shared<Shader_database>(
-         load_shader_lvl(L"data/shaderpatch/shaders.lvl", *_device));
+   shader::Database _shader_database{_device,
+                                     {.shader_cache = user_config.developer.shader_cache_path,
+                                      .shader_definitions =
+                                         user_config.developer.shader_definitions_path,
+                                      .shader_source_files =
+                                         user_config.developer.shader_source_path}};
+   shader::Rendertypes_database _shader_rendertypes_database{_shader_database,
+                                                             OIT_provider::usable(
+                                                                *_device)};
+
+   Game_shader_store _game_shaders{_shader_rendertypes_database};
 
    std::vector<Game_rendertarget> _game_rendertargets = {_swapchain.game_rendertarget()};
    Game_rendertarget_id _current_game_rendertarget = _game_backbuffer_index;
    Game_rendertarget _patch_backbuffer;
-   Game_rendertarget _cmaa2_scratch_texture;
    Game_rendertarget _shadow_msaa_rt;
    Game_rendertarget _refraction_rt;
    Game_rendertarget _farscene_refraction_rt;
+
+   Backbuffer_cmaa2_views _backbuffer_cmaa2_views;
 
    Depthstencil _nearscene_depthstencil;
    Depthstencil _farscene_depthstencil;
@@ -323,14 +333,12 @@ private:
 
    Game_input_layout _game_input_layout{};
    D3D11_PRIMITIVE_TOPOLOGY _primitive_topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
-   D3D11_PRIMITIVE_TOPOLOGY _patch_material_topology =
-      D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
-   std::shared_ptr<Game_shader> _game_shader{};
+   Game_shader* _game_shader = nullptr;
    Rendertype _previous_shader_rendertype = Rendertype::invalid;
    Rendertype _shader_rendertype = Rendertype::invalid;
 
    std::array<Game_texture, 7> _game_textures;
-   Patch_material* _patch_material = nullptr;
+   material::Material* _patch_material = nullptr;
 
    Com_ptr<ID3D11Buffer> _game_index_buffer;
    UINT _game_index_buffer_offset = 0;
@@ -343,7 +351,6 @@ private:
 
    bool _discard_draw_calls = false;
    bool _shader_rendertype_changed = false;
-   bool _use_patch_material_topology = false;
    bool _shader_dirty = true;
    bool _ia_index_buffer_dirty = true;
    bool _ia_vertex_buffer_dirty = true;
@@ -418,21 +425,22 @@ private:
       return buffer;
    }();
 
-   OIT_provider _oit_provider{_device, _shader_database->groups};
+   OIT_provider _oit_provider{_device, _shader_database};
 
-   const Image_stretcher _image_stretcher{*_device, *_shader_database};
-   Late_backbuffer_resolver _late_backbuffer_resolver{*_device, *_shader_database};
-   const Depth_msaa_resolver _depth_msaa_resolver{*_device, *_shader_database};
+   const Image_stretcher _image_stretcher{*_device, _shader_database};
+   Late_backbuffer_resolver _late_backbuffer_resolver{*_device, _shader_database};
+   const Depth_msaa_resolver _depth_msaa_resolver{*_device, _shader_database};
    Sampler_states _sampler_states{*_device};
    Shader_resource_database _shader_resource_database{
       load_texture_lvl(L"data/shaderpatch/textures.lvl", *_device)};
-   Game_alt_postprocessing _game_postprocessing{*_device, *_shader_database};
+   Game_alt_postprocessing _game_postprocessing{*_device, _shader_database};
 
-   effects::Control _effects{_device, _shader_database->groups};
+   effects::Control _effects{_device, _shader_database};
    effects::Rendertarget_allocator _rendertarget_allocator{_device};
 
-   Material_shader_factory _material_shader_factory{_device, _shader_database};
-   std::vector<std::unique_ptr<Patch_material>> _materials;
+   material::Factory _material_factory{_device, _shader_rendertypes_database,
+                                       _shader_resource_database};
+   std::vector<std::unique_ptr<material::Material>> _materials;
 
    glm::mat4 _informal_projection_matrix;
 
@@ -446,9 +454,9 @@ private:
    Antialiasing_method _aa_method = Antialiasing_method::none;
    Refraction_quality _refraction_quality = Refraction_quality::medium;
 
+   text::Font_atlas_builder _font_atlas_builder{_device};
+
    std::unique_ptr<BF2_log_monitor> _bf2_log_monitor;
 };
 }
 }
-
-#pragma warning(default : 4324)

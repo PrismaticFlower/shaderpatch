@@ -13,8 +13,7 @@ namespace sp::core {
 
 class Game_alt_postprocessing {
 public:
-   Game_alt_postprocessing(ID3D11Device5& device,
-                           const Shader_database& shader_database) noexcept;
+   Game_alt_postprocessing(ID3D11Device5& device, shader::Database& shaders) noexcept;
 
    ~Game_alt_postprocessing() = default;
    Game_alt_postprocessing(const Game_alt_postprocessing&) = default;

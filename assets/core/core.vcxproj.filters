@@ -184,75 +184,6 @@
     <None Include="src\stencilshadow_transform_utilities.hlsl">
       <Filter>src</Filter>
     </None>
-    <None Include="declarations\normal.json">
-      <Filter>declarations</Filter>
-    </None>
-    <None Include="declarations\bloom_stock.json">
-      <Filter>declarations</Filter>
-    </None>
-    <None Include="declarations\decal.json">
-      <Filter>declarations</Filter>
-    </None>
-    <None Include="declarations\filtercopy.json">
-      <Filter>declarations</Filter>
-    </None>
-    <None Include="declarations\flare.json">
-      <Filter>declarations</Filter>
-    </None>
-    <None Include="declarations\interface.json">
-      <Filter>declarations</Filter>
-    </None>
-    <None Include="declarations\lightbeam.json">
-      <Filter>declarations</Filter>
-    </None>
-    <None Include="declarations\normal_terrain.json">
-      <Filter>declarations</Filter>
-    </None>
-    <None Include="declarations\ocean.json">
-      <Filter>declarations</Filter>
-    </None>
-    <None Include="declarations\particle.json">
-      <Filter>declarations</Filter>
-    </None>
-    <None Include="declarations\perpixeldiffuselighting.json">
-      <Filter>declarations</Filter>
-    </None>
-    <None Include="declarations\prereflection.json">
-      <Filter>declarations</Filter>
-    </None>
-    <None Include="declarations\rain.json">
-      <Filter>declarations</Filter>
-    </None>
-    <None Include="declarations\refraction.json">
-      <Filter>declarations</Filter>
-    </None>
-    <None Include="declarations\sample.json">
-      <Filter>declarations</Filter>
-    </None>
-    <None Include="declarations\shadowquad.json">
-      <Filter>declarations</Filter>
-    </None>
-    <None Include="declarations\shield.json">
-      <Filter>declarations</Filter>
-    </None>
-    <None Include="declarations\skyfog.json">
-      <Filter>declarations</Filter>
-    </None>
-    <None Include="declarations\specularlighting.json">
-      <Filter>declarations</Filter>
-    </None>
-    <None Include="declarations\stencilshadow.json">
-      <Filter>declarations</Filter>
-    </None>
-    <None Include="declarations\water.json">
-      <Filter>declarations</Filter>
-    </None>
-    <None Include="declarations\zprepass.json">
-      <Filter>declarations</Filter>
-    </None>
-    <None Include="declarations\normalmapadder.json">
-      <Filter>declarations</Filter>
-    </None>
     <None Include="definitions\patch\damage_overlay.json.ignore">
       <Filter>definitions\patch</Filter>
     </None>
@@ -262,7 +193,6 @@
     <None Include="definitions\water.json">
       <Filter>definitions</Filter>
     </None>
-    <None Include="shaders.req" />
     <None Include="definitions\normalmapadder.json">
       <Filter>definitions</Filter>
     </None>
@@ -306,7 +236,6 @@
       <Filter>definitions\patch</Filter>
     </None>
     <None Include="textures.req" />
-    <None Include="shader_declarations.req" />
     <None Include="src\color_utilities.hlsl">
       <Filter>src</Filter>
     </None>
@@ -331,9 +260,6 @@
     <None Include="src\postprocess_bloom.fx">
       <Filter>src</Filter>
     </None>
-    <None Include="definitions\patch\normal_ext-tessellated.json">
-      <Filter>definitions\patch</Filter>
-    </None>
     <None Include="definitions\patch\cmaa2.json">
       <Filter>definitions\patch</Filter>
     </None>
@@ -354,9 +280,6 @@
     </None>
     <None Include="src\CMAA2.hlsl">
       <Filter>src</Filter>
-    </None>
-    <None Include="definitions\patch\normal_ext_terrain.json">
-      <Filter>definitions\patch</Filter>
     </None>
     <None Include="definitions\patch\skybox.json">
       <Filter>definitions\patch</Filter>
@@ -430,7 +353,42 @@
     <None Include="src\static_water.fx">
       <Filter>src</Filter>
     </None>
-    <None Include="src\pixel_sampler_states.hlsl" />
+    <None Include="src\ffx_cas.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="definitions\patch\ffx_cas.json">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\lighting_pbr.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="definitions\patch\normal_ext_terrain.json">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\particle_ext.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="definitions\patch\particle_ext.json">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\pixel_sampler_states.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\text.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="definitions\patch\text.json">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="src\lighting_ibl.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\lighting_brdf.hlsl">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\lighting_occlusion.hlsl">
+      <Filter>src</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">
@@ -442,11 +400,16 @@
     <Filter Include="definitions\patch">
       <UniqueIdentifier>{d3186a52-bf6a-47d1-90d2-ad874b6b82dd}</UniqueIdentifier>
     </Filter>
-    <Filter Include="declarations">
-      <UniqueIdentifier>{2ae5cb42-618b-4f6e-a3b4-ba73d8aa3967}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="build_lvls.ps1" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\ffx_a.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ffx_cas.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

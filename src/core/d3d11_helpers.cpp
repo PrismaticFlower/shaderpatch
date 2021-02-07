@@ -4,7 +4,7 @@
 
 namespace sp::core {
 
-auto create_immutable_constant_buffer(ID3D11Device1& device,
+auto create_immutable_constant_buffer(ID3D11Device5& device,
                                       const std::span<const std::byte> data) noexcept
    -> Com_ptr<ID3D11Buffer>
 {

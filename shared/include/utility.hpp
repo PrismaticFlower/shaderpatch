@@ -56,22 +56,14 @@ template<auto multiple>
 constexpr auto next_multiple_of(const decltype(multiple) value) noexcept
    -> decltype(multiple)
 {
-   const auto remainder = value % multiple;
-
-   if (remainder != 0) return value + (multiple - remainder);
-
-   return value;
+   return ((value + multiple - decltype(multiple){1}) / multiple) * multiple;
 }
 
 template<typename Type>
 constexpr auto next_multiple_of(const Type multiple, const Type value) noexcept
    -> decltype(multiple)
 {
-   const auto remainder = value % multiple;
-
-   if (remainder != 0) return value + (multiple - remainder);
-
-   return value;
+   return ((value + multiple - Type{1}) / multiple) * multiple;
 }
 
 template<auto multiple>

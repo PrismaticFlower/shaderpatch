@@ -1,18 +1,14 @@
 Overridden RenderType: normal
-Failsafe Texture Index: 0
 Constant Buffer Name: pbr
 
 Material Options:
    Unlit: no
-   
-Constant Buffer Stages:
-   VS: no
-   HS: no
-   DS: no
-   GS: no
-   PS: yes
 
 Properties:
+   NoMetallicRoughnessMap:
+      Type: bool
+      Default: false
+
    BaseColor:
       Type: vec3
       Default: [1.0, 1.0, 1.0]
@@ -32,38 +28,32 @@ Properties:
       Type: float
       Default: 1.0
       Range: [0.0, 2048.0]
-      Op: rcp
-      
-   EmissiveStrength:
-      Type: float
-      Default: 0.0
-      Range: [0.0, 2048.0]
-      Op: exp2
-      
+
+   UseEmissiveMap:
+      Type: bool
+      Default: false
+
    EmissivePower:
       Type: float
       Default: 0.0
       Range: [-2048.0, 2048.0]
-      Op: exp2
 
-Texture Mappings:
-   AlbedoMap:
-      -
-         Stage: PS
-         Slot: 0
+   TEMP_UseIBL:
+      Type: bool
+      Default: false
+
+Resource Properties:
+   BaseColorMap:
    NormalMap:
-      -
-         Stage: PS
-         Slot: 1
    MetallicRoughnessMap:
-      -
-         Stage: PS
-         Slot: 2
    AOMap:
-      -
-         Stage: PS
-         Slot: 3
    EmissiveMap:
-      -
-         Stage: PS
-         Slot: 4
+
+   # TEMP IBL Stuff
+   TEMP_ibl_dfg:
+   TEMP_ibl_specular:
+   TEMP_ibl_diffuse:
+
+Aliases:
+   AlbedoMap: BaseColorMap
+   EmissiveStrength: EmissivePower

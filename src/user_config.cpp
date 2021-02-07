@@ -55,10 +55,10 @@ void User_config::show_imgui() noexcept
       ImGui::Checkbox("Enable Alternative Post Processing",
                       &graphics.enable_alternative_postprocessing);
 
+      ImGui::Checkbox("Enable Scene Blur", &graphics.enable_scene_blur);
+
       ImGui::Checkbox("Enable 16-Bit Color Channel Rendering",
                       &graphics.enable_16bit_color_rendering);
-
-      ImGui::Checkbox("Enable Tessellation", &graphics.enable_tessellation);
 
       ImGui::Checkbox("Disable Light Brightness Rescaling",
                       &graphics.disable_light_brightness_rescaling);
@@ -108,6 +108,23 @@ void User_config::parse_file(const std::string& path)
    display.treat_800x600_as_interface =
       config["Display"s]["Treat 800x600 As Interface"s].as<bool>();
 
+   display.windowed_interface = config["Display"s]["Windowed Interface"s].as<bool>();
+
+   display.dpi_aware = config["Display"s]["Display Scaling Aware"s].as<bool>();
+
+   display.dpi_scaling = config["Display"s]["Display Scaling"s].as<bool>();
+
+   display.scalable_fonts = config["Display"s]["Scalable Fonts"s].as<bool>();
+
+   display.enable_game_perceived_resolution_override =
+      config["Display"s]["Enable Game Perceived Resolution Override"s].as<bool>();
+
+   display.game_perceived_resolution_override_width =
+      config["Display"s]["Game Perceived Resolution Override"s][0].as<std::uint32_t>();
+
+   display.game_perceived_resolution_override_height =
+      config["Display"s]["Game Perceived Resolution Override"s][1].as<std::uint32_t>();
+
    graphics.gpu_selection_method = gpu_selection_method_from_string(
       config["Graphics"s]["GPU Selection Method"s].as<std::string>());
 
@@ -126,11 +143,10 @@ void User_config::parse_file(const std::string& path)
    graphics.enable_alternative_postprocessing =
       config["Graphics"s]["Enable Alternative Post Processing"s].as<bool>();
 
+   graphics.enable_scene_blur = config["Graphics"s]["Enable Scene Blur"s].as<bool>();
+
    graphics.enable_16bit_color_rendering =
       config["Graphics"s]["Enable 16-Bit Color Channel Rendering"s].as<bool>();
-
-   graphics.enable_tessellation =
-      config["Graphics"s]["Enable Tessellation"s].as<bool>();
 
    graphics.disable_light_brightness_rescaling =
       config["Graphics"s]["Disable Light Brightness Rescaling"s].as<bool>();
@@ -168,6 +184,21 @@ void User_config::parse_file(const std::string& path)
 
    developer.use_dxgi_1_2_factory =
       config["Developer"s]["Use DXGI 1.2 Factory"s].as<bool>();
+
+   developer.shader_cache_path =
+      config["Developer"s]["Shader Cache Path"s].as<std::string>();
+
+   developer.shader_definitions_path =
+      config["Developer"s]["Shader Definitions Path"s].as<std::string>();
+
+   developer.shader_source_path =
+      config["Developer"s]["Shader Source Path"s].as<std::string>();
+
+   developer.material_scripts_path =
+      config["Developer"s]["Material Scripts Path"s].as<std::string>();
+
+   developer.scalable_font_name =
+      config["Developer"s]["Scalable Font Name"s].as<std::string>();
 }
 
 }

@@ -15,12 +15,9 @@
           "skinned": true,
           "normal": true,
           "tangents": true,
+          "tangents_unflagged": true,
           "color": true,
           "texture_coords": true
-        },
-
-        "flags_mask": {
-          "tangents": false
         }
       },
 
@@ -36,10 +33,6 @@
     "main_ps": {
       "stage": "pixel",
 
-      "pixel_state": {
-        "lighting": false
-      },
-
       "static_flags": [
         "BASIC_UNLIT_USE_TRANSPARENCY",
         "BASIC_UNLIT_USE_HARDEDGED_TEST"
@@ -47,14 +40,7 @@
     }
   },
 
-  "rendertypes": {
-    "basic_unlit": {
-      "static_flags": {
-        "BASIC_UNLIT_USE_TRANSPARENCY": false,
-        "BASIC_UNLIT_USE_HARDEDGED_TEST": false
-      }
-    }
-  },
+  "rendertypes": { "basic_unlit": {} },
 
   "states": {
     "unlit opaque": {
@@ -76,7 +62,7 @@
           "BASIC_UNLIT_USE_HARDEDGED_TEST": false
         },
 
-        "oit_pixel_shader": {
+        "pixel_oit_shader": {
           "entrypoint": "oit_main_ps"
         }
       }
@@ -101,7 +87,7 @@
           "BASIC_UNLIT_USE_HARDEDGED_TEST": true
         },
 
-        "oit_pixel_shader": {
+        "pixel_oit_shader": {
           "entrypoint": "oit_main_ps"
         }
       }
@@ -126,7 +112,7 @@
           "BASIC_UNLIT_USE_HARDEDGED_TEST": false
         },
 
-        "oit_pixel_shader": {
+        "pixel_oit_shader": {
           "entrypoint": "oit_main_ps"
         }
       }
@@ -151,7 +137,407 @@
           "BASIC_UNLIT_USE_HARDEDGED_TEST": true
         },
 
-        "oit_pixel_shader": {
+        "pixel_oit_shader": {
+          "entrypoint": "oit_main_ps"
+        }
+      }
+    },
+
+    "near opaque": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": false
+        }
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": false,
+          "BASIC_UNLIT_USE_HARDEDGED_TEST": false
+        },
+
+        "pixel_oit_shader": {
+          "entrypoint": "oit_main_ps"
+        }
+      }
+    },
+
+    "near opaque hardedged": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": false
+        }
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": false,
+          "BASIC_UNLIT_USE_HARDEDGED_TEST": true
+        },
+
+        "pixel_oit_shader": {
+          "entrypoint": "oit_main_ps"
+        }
+      }
+    },
+
+    "near transparent": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": true
+        }
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": true,
+          "BASIC_UNLIT_USE_HARDEDGED_TEST": false
+        },
+
+        "pixel_oit_shader": {
+          "entrypoint": "oit_main_ps"
+        }
+      }
+    },
+
+    "near transparent hardedged": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": true
+        }
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": true,
+          "BASIC_UNLIT_USE_HARDEDGED_TEST": true
+        },
+
+        "pixel_oit_shader": {
+          "entrypoint": "oit_main_ps"
+        }
+      }
+    },
+
+    "near opaque projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": false
+        }
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": false,
+          "BASIC_UNLIT_USE_HARDEDGED_TEST": false
+        },
+
+        "pixel_oit_shader": {
+          "entrypoint": "oit_main_ps"
+        }
+      }
+    },
+
+    "near opaque hardedged projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": false
+        }
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": false,
+          "BASIC_UNLIT_USE_HARDEDGED_TEST": true
+        },
+
+        "pixel_oit_shader": {
+          "entrypoint": "oit_main_ps"
+        }
+      }
+    },
+
+    "near transparent projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": true
+        }
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": true,
+          "BASIC_UNLIT_USE_HARDEDGED_TEST": false
+        },
+
+        "pixel_oit_shader": {
+          "entrypoint": "oit_main_ps"
+        }
+      }
+    },
+
+    "near transparent hardedged projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": true
+        }
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": true,
+          "BASIC_UNLIT_USE_HARDEDGED_TEST": true
+        },
+
+        "pixel_oit_shader": {
+          "entrypoint": "oit_main_ps"
+        }
+      }
+    },
+
+    "near opaque shadow": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": false
+        }
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": false,
+          "BASIC_UNLIT_USE_HARDEDGED_TEST": false
+        },
+
+        "pixel_oit_shader": {
+          "entrypoint": "oit_main_ps"
+        }
+      }
+    },
+
+    "near opaque hardedged shadow": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": false
+        }
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": false,
+          "BASIC_UNLIT_USE_HARDEDGED_TEST": true
+        },
+
+        "pixel_oit_shader": {
+          "entrypoint": "oit_main_ps"
+        }
+      }
+    },
+
+    "near opaque shadow projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": false
+        }
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": false,
+          "BASIC_UNLIT_USE_HARDEDGED_TEST": false
+        },
+
+        "pixel_oit_shader": {
+          "entrypoint": "oit_main_ps"
+        }
+      }
+    },
+
+    "near opaque hardedged shadow projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": false
+        }
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": false,
+          "BASIC_UNLIT_USE_HARDEDGED_TEST": true
+        },
+
+        "pixel_oit_shader": {
+          "entrypoint": "oit_main_ps"
+        }
+      }
+    },
+
+    "near transparent shadow": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": true
+        }
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": true,
+          "BASIC_UNLIT_USE_HARDEDGED_TEST": false
+        },
+
+        "pixel_oit_shader": {
+          "entrypoint": "oit_main_ps"
+        }
+      }
+    },
+
+    "near transparent hardedged shadow": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": true
+        }
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": true,
+          "BASIC_UNLIT_USE_HARDEDGED_TEST": true
+        },
+
+        "pixel_oit_shader": {
+          "entrypoint": "oit_main_ps"
+        }
+      }
+    },
+
+    "near transparent shadow projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": true
+        }
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": true,
+          "BASIC_UNLIT_USE_HARDEDGED_TEST": false
+        },
+
+        "pixel_oit_shader": {
+          "entrypoint": "oit_main_ps"
+        }
+      }
+    },
+
+    "near transparent hardedged shadow projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": true
+        }
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "BASIC_UNLIT_USE_TRANSPARENCY": true,
+          "BASIC_UNLIT_USE_HARDEDGED_TEST": true
+        },
+
+        "pixel_oit_shader": {
           "entrypoint": "oit_main_ps"
         }
       }

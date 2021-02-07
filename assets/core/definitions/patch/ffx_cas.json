@@ -1,0 +1,19 @@
+{
+	"group_name": "ffx_cas",
+	"source_name": "ffx_cas.hlsl",
+
+	"entrypoints": {
+		"main_cs": {
+			"stage": "compute",
+
+			"static_flags": [
+				"SP_FFX_CAS_FP16",
+				"SP_FFX_CAS_SHARPEN_ONLY"
+			]
+		}
+	},
+
+	"rendertypes": {},
+
+	"states": {}
+}
