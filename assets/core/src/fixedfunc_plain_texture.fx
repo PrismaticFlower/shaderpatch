@@ -2,6 +2,8 @@
 #include "constants_list.hlsl"
 #include "pixel_sampler_states.hlsl"
 
+const static bool use_gog_1_2_load_screen_fix = true;
+
 Texture2D<float4> source_texture : register(t0);
 
 struct Vs_input {
@@ -22,9 +24,16 @@ Vs_output main_vs(Vs_input input)
       ((input.position.xy * ff_inv_resolution) - 0.5) * float2(2.0, -2.0);
 
    output.positionPS = float4(position, 0.0, 1.0);
-   output.texcoords = input.texcoords;
 
-   
+   if (use_gog_1_2_load_screen_fix)
+   {
+      output.texcoords = position * float2(0.5, -0.5) + 0.5;
+   }
+   else
+   {
+      output.texcoords = input.texcoords;
+   }
+
    return output;
 }
 
