@@ -910,14 +910,6 @@ void Shader_patch::set_rendertarget(const Game_rendertarget_id rendertarget) noe
 
 void Shader_patch::set_depthstencil(const Game_depthstencil depthstencil) noexcept
 {
-   if (depthstencil == Game_depthstencil::farscene) {
-      auto& rt = _game_rendertargets[static_cast<int>(_current_game_rendertarget)];
-
-      if (rt.type != Game_rt_type::farscene && rt.type != Game_rt_type::farscene_shadow) {
-         rt.type = Game_rt_type::farscene;
-      }
-   }
-
    _om_targets_dirty = true;
    _current_depthstencil_id = depthstencil;
 }
@@ -970,22 +962,9 @@ void Shader_patch::set_texture(const UINT slot,
 {
    Expects(slot < 4);
 
-   const auto& rt = _game_rendertargets[static_cast<int>(rendertarget)];
+   const auto& srv = _game_rendertargets[static_cast<int>(rendertarget)].srv;
 
-   if (rt.type == Game_rt_type::farscene_shadow) {
-      auto shadow_rt =
-         std::ranges::find_if(_game_rendertargets, [](const Game_rendertarget& rt) {
-            return rt.type == Game_rt_type::shadow;
-         });
-
-      _game_textures[slot] = (shadow_rt != _game_rendertargets.end())
-                                ? Game_texture{shadow_rt->srv, shadow_rt->srv}
-                                : Game_texture{nullptr, nullptr};
-   }
-   else {
-      _game_textures[slot] = {rt.srv, rt.srv};
-   }
-
+   _game_textures[slot] = {srv, srv};
    _ps_textures_dirty = true;
    _om_targets_dirty = true;
 
@@ -1222,104 +1201,50 @@ void Shader_patch::game_rendertype_changed() noexcept
    else if (_shader_rendertype == Rendertype::shadowquad) {
       _discard_draw_calls = false;
 
-      if (auto type =
-             _game_rendertargets[static_cast<int>(_current_game_rendertarget)].type;
-          type == Game_rt_type::farscene || type == Game_rt_type::farscene_shadow) {
-         auto& farscene_rt =
-            _game_rendertargets[static_cast<int>(_current_game_rendertarget)];
+      const bool multisampled = _rt_sample_count > 1;
+      auto* const shadow_rt = [&]() -> Game_rendertarget* {
+         auto it =
+            std::find_if(_game_rendertargets.begin(), _game_rendertargets.end(),
+                         [&](const Game_rendertarget& rt) {
+                            return (rt.type == Game_rt_type::shadow);
+                         });
 
-         auto* shadow_rt = [&]() -> Game_rendertarget* {
-            auto it = std::ranges::find_if(_game_rendertargets,
-                                           [&](const Game_rendertarget& rt) {
-                                              return (rt.type == Game_rt_type::shadow);
-                                           });
+         return it != _game_rendertargets.end() ? &(*it) : nullptr;
+      }();
+      auto* const rt = multisampled ? &_shadow_msaa_rt : shadow_rt;
 
-            return it != _game_rendertargets.end() ? &(*it) : nullptr;
-         }();
+      auto backup_rt = _game_rendertargets[0];
 
-         if (!shadow_rt) {
-            shadow_rt =
-               &_game_rendertargets.emplace_back(*_device, shadow_texture_format,
-                                                 farscene_rt.width, farscene_rt.height,
-                                                 1, Game_rt_type::shadow);
-         }
-
-         farscene_rt.type = Game_rt_type::farscene_shadow;
-
-         auto backup_rt = farscene_rt;
-
+      if (rt) {
          _device_context
-            ->ClearRenderTargetView(shadow_rt->rtv.get(),
+            ->ClearRenderTargetView(rt->rtv.get(),
                                     std::array{1.0f, 1.0f, 1.0f, 1.0f}.data());
 
-         std::swap(farscene_rt, *shadow_rt);
+         _game_rendertargets[0] = *rt;
+      }
 
-         _on_rendertype_changed = [this]() noexcept {
+      _on_stretch_rendertarget =
+         [this, backup_rt = std::move(backup_rt)](Game_rendertarget&, const RECT,
+                                                  Game_rendertarget& dest,
+                                                  const RECT) noexcept {
+            _game_rendertargets[0] = std::move(backup_rt);
             _on_stretch_rendertarget = nullptr;
             _om_targets_dirty = true;
 
-            auto shadow_rt =
-               std::ranges::find_if(_game_rendertargets,
-                                    [&](const Game_rendertarget& rt) {
-                                       return (rt.type == Game_rt_type::shadow);
-                                    });
-            auto farscene_rt =
-               std::ranges::find_if(_game_rendertargets, [&](const Game_rendertarget& rt) {
-                  return (rt.type == Game_rt_type::farscene_shadow);
-               });
-
-            if (shadow_rt != _game_rendertargets.end() &&
-                farscene_rt != _game_rendertargets.end()) {
-               std::swap(*farscene_rt, *shadow_rt);
+            if (dest.type != Game_rt_type::shadow) {
+               dest = Game_rendertarget{*_device,
+                                        shadow_texture_format,
+                                        _swapchain.width(),
+                                        _swapchain.height(),
+                                        1,
+                                        Game_rt_type::shadow};
             }
+
+            if (_rt_sample_count > 1)
+               _device_context->ResolveSubresource(dest.texture.get(), 0,
+                                                   _shadow_msaa_rt.texture.get(),
+                                                   0, shadow_texture_format);
          };
-      }
-      else {
-         const bool multisampled = _rt_sample_count > 1;
-
-         auto* const shadow_rt = [&]() -> Game_rendertarget* {
-            auto it = std::ranges::find_if(_game_rendertargets,
-                                           [&](const Game_rendertarget& rt) {
-                                              return (rt.type == Game_rt_type::shadow);
-                                           });
-
-            return it != _game_rendertargets.end() ? &(*it) : nullptr;
-         }();
-         auto* const rt = multisampled ? &_shadow_msaa_rt : shadow_rt;
-
-         auto backup_rt = _game_rendertargets[0];
-
-         if (rt) {
-            _device_context
-               ->ClearRenderTargetView(rt->rtv.get(),
-                                       std::array{1.0f, 1.0f, 1.0f, 1.0f}.data());
-
-            _game_rendertargets[0] = *rt;
-         }
-
-         _on_stretch_rendertarget =
-            [this, backup_rt = std::move(backup_rt)](Game_rendertarget&, const RECT,
-                                                     Game_rendertarget& dest,
-                                                     const RECT) noexcept {
-               _game_rendertargets[0] = std::move(backup_rt);
-               _on_stretch_rendertarget = nullptr;
-               _om_targets_dirty = true;
-
-               if (dest.type != Game_rt_type::shadow) {
-                  dest = Game_rendertarget{*_device,
-                                           shadow_texture_format,
-                                           _swapchain.width(),
-                                           _swapchain.height(),
-                                           1,
-                                           Game_rt_type::shadow};
-               }
-
-               if (_rt_sample_count > 1)
-                  _device_context->ResolveSubresource(dest.texture.get(), 0,
-                                                      _shadow_msaa_rt.texture.get(),
-                                                      0, shadow_texture_format);
-            };
-      }
    }
    else if (_shader_rendertype == Rendertype::refraction) {
       resolve_refraction_texture();
@@ -1413,16 +1338,6 @@ void Shader_patch::game_rendertype_changed() noexcept
    else if (_shader_rendertype == Rendertype::skyfog) {
       _cb_scene.prev_near_scene_fade_scale = _cb_scene.near_scene_fade_scale;
       _cb_scene.prev_near_scene_fade_offset = _cb_scene.near_scene_fade_offset;
-
-      if (auto it = std::ranges::find_if(_game_rendertargets,
-                                         [&](const Game_rendertarget& rt) {
-                                            return (rt.type ==
-                                                    Game_rt_type::farscene_shadow);
-                                         });
-          it != _game_rendertargets.end()) {
-         _ps_textures_dirty = true;
-         _game_textures[0] = {it->srv, it->srv};
-      }
 
       if (use_depth_refraction_mask(_refraction_quality)) {
          resolve_msaa_depthstencil<true>();
