@@ -10,6 +10,8 @@ namespace sp::core {
 enum class Game_rt_type : std::uint16_t {
    untyped,
    presentation,
+   farscene,
+   farscene_shadow,
    shadow,
    flares
 };
