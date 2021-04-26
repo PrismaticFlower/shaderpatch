@@ -10,7 +10,6 @@ constexpr std::string_view terrain_low_detail_suffix = "LOWD";
 constexpr std::string_view terrain_material_name =
    "_SP_MATERIAL_terrain_geometry";
 constexpr std::string_view terrain_model_name = "_SP_MODEL_terrain_geometry";
-constexpr std::string_view terrain_object_name = "_SP_OBJECT_terrain_geometry";
 constexpr std::string_view terrain_world_name = "_SP_WORLD_terrain_geometry";
 constexpr std::string_view terrain_height_texture_name =
    "_SP_TERRAIN_height_maps";

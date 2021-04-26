@@ -391,30 +391,6 @@ void add_terrain_model_chunks(ucfb::Editor& editor, const std::string_view mater
                               high_res_far_terrain, keep_static_lighting);
    }
 
-   // entc
-   {
-      auto& entc = std::get<1>(
-         editor.emplace_back("entc"_mn, ucfb::Editor_parent_chunk{}).second);
-
-      // BASE
-      {
-         auto base =
-            std::get<0>(entc.emplace_back("BASE"_mn, ucfb::Editor_data_chunk{}).second)
-               .writer();
-
-         base.write_unaligned("prop"sv);
-      }
-
-      // TYPE
-      {
-         auto type =
-            std::get<0>(entc.emplace_back("TYPE"_mn, ucfb::Editor_data_chunk{}).second)
-               .writer();
-
-         type.write_unaligned(terrain_object_name);
-      }
-   }
-
    // wrld
    {
       auto& wrld = std::get<1>(
@@ -492,6 +468,16 @@ void add_terrain_model_chunks(ucfb::Editor& editor, const std::string_view mater
                std::string{terrain_model_name} + std::to_string(i);
 
             prop.write_unaligned("GeometryName"_fnv, model_name);
+         }
+
+         // PROP
+         {
+            auto prop =
+               std::get<0>(
+                  inst.emplace_back("PROP"_mn, ucfb::Editor_data_chunk{}).second)
+                  .writer();
+
+            prop.write_unaligned("IsCollidable"_fnv, "0"sv);
          }
       }
    }
