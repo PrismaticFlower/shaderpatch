@@ -62,8 +62,6 @@ Developer:
    
    Monitor BFront2.log: no
    
-   Allow Event Queries: no
-   
    Use D3D11 Debug Layer: no
 
    Use DXGI 1.2 Factory: no

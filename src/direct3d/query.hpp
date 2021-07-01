@@ -8,7 +8,6 @@
 
 namespace sp::d3d9 {
 
-Com_ptr<IDirect3DQuery9> make_query(core::Shader_patch& shader_patch,
-                                    const D3DQUERYTYPE type) noexcept;
+Com_ptr<IDirect3DQuery9> make_query(const D3DQUERYTYPE type) noexcept;
 
 }

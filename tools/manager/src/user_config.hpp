@@ -117,8 +117,6 @@ struct user_config {
 
       bool_user_config_value{L"Monitor BFront2.log", false, L"Yes", L"No"},
 
-      bool_user_config_value{L"Allow Event Queries", false, L"Yes", L"No"},
-
       bool_user_config_value{L"Use D3D11 Debug Layer", false, L"Yes", L"No"},
 
       bool_user_config_value{L"Use DXGI 1.2 Factory", false, L"Yes", L"No"},

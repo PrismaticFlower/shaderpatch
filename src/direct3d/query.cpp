@@ -1,6 +1,5 @@
 
 #include "query.hpp"
-#include "../user_config.hpp"
 #include "debug_trace.hpp"
 
 #include <algorithm>
@@ -12,12 +11,15 @@ namespace sp::d3d9 {
 
 namespace {
 
-template<typename Type>
-class Basic_query final : public IDirect3DQuery9, private Type {
+template<D3DQUERYTYPE query_type>
+class Basic_query final : public IDirect3DQuery9 {
 public:
-   static Com_ptr<Basic_query> create(core::Shader_patch& shader_patch) noexcept
+   static_assert(query_type == D3DQUERYTYPE_EVENT ||
+                 query_type == D3DQUERYTYPE_OCCLUSION);
+
+   static Com_ptr<Basic_query> create() noexcept
    {
-      return Com_ptr{new Basic_query{shader_patch}};
+      return Com_ptr{new Basic_query{}};
    }
 
    Basic_query(const Basic_query&) = delete;
@@ -76,197 +78,85 @@ public:
    {
       Debug_trace::func(__FUNCSIG__);
 
-      return Type::d3d9_type;
+      return query_type;
    }
 
    DWORD __stdcall GetDataSize() noexcept override
    {
       Debug_trace::func(__FUNCSIG__);
 
-      switch (Type::d3d9_type) {
-      case D3DQUERYTYPE_VCACHE:
-         return sizeof(D3DDEVINFO_VCACHE);
-      case D3DQUERYTYPE_VERTEXSTATS:
-         return sizeof(D3DDEVINFO_D3DVERTEXSTATS);
-      case D3DQUERYTYPE_EVENT:
+      if constexpr (query_type == D3DQUERYTYPE_EVENT) {
          return sizeof(BOOL);
-      case D3DQUERYTYPE_OCCLUSION:
+      }
+      else if constexpr (query_type == D3DQUERYTYPE_OCCLUSION) {
          return sizeof(DWORD);
-      case D3DQUERYTYPE_TIMESTAMP:
-         return sizeof(UINT64);
-      case D3DQUERYTYPE_TIMESTAMPDISJOINT:
-         return sizeof(BOOL);
-      case D3DQUERYTYPE_TIMESTAMPFREQ:
-         return sizeof(UINT64);
-      case D3DQUERYTYPE_PIPELINETIMINGS:
-         return sizeof(D3DDEVINFO_D3D9PIPELINETIMINGS);
-      case D3DQUERYTYPE_INTERFACETIMINGS:
-         return sizeof(D3DDEVINFO_D3D9INTERFACETIMINGS);
-      case D3DQUERYTYPE_VERTEXTIMINGS:
-         return sizeof(D3DDEVINFO_D3D9STAGETIMINGS);
-      case D3DQUERYTYPE_PIXELTIMINGS:
-         return sizeof(D3DDEVINFO_D3D9STAGETIMINGS);
-      case D3DQUERYTYPE_BANDWIDTHTIMINGS:
-         return sizeof(D3DDEVINFO_D3D9BANDWIDTHTIMINGS);
-      case D3DQUERYTYPE_CACHEUTILIZATION:
-         return sizeof(D3DDEVINFO_D3D9CACHEUTILIZATION);
-      default:
-         log_and_terminate("Unexpected query type in " __FUNCSIG__);
       }
    }
 
-   HRESULT __stdcall Issue(DWORD issue_flags) noexcept override
+   HRESULT __stdcall Issue([[maybe_unused]] DWORD issue_flags) noexcept override
    {
       Debug_trace::func(__FUNCSIG__);
 
-      if (issue_flags == D3DISSUE_BEGIN) {
-         Type::begin();
-
-         return S_OK;
-      }
-
-      if (issue_flags == D3DISSUE_END) {
-         Type::end();
-
-         return S_OK;
-      }
-
-      return D3DERR_INVALIDCALL;
+      return S_OK;
    }
 
-   HRESULT __stdcall GetData(void* data, DWORD size, DWORD flags) noexcept override
+   HRESULT __stdcall GetData(void* data, DWORD size,
+                             [[maybe_unused]] DWORD flags) noexcept override
    {
       Debug_trace::func(__FUNCSIG__);
 
       if (!data) return D3DERR_INVALIDCALL;
       if (size != GetDataSize()) return D3DERR_INVALIDCALL;
 
-      const bool flush = flags == D3DGETDATA_FLUSH;
+      if constexpr (query_type == D3DQUERYTYPE_EVENT) {
+         // The game can spin on event queries, waiting for previous GPU work to
+         // complete before continuing. Presumably there was a good reason for
+         // this on some HW configuration when the game came out.
+         //
+         // It also however could cause the GPU and CPU to become synchronous,
+         // as a result we simply always report the event as having completed.
 
-      const auto result =
-         Type::get_data(flush, std::span{static_cast<std::byte*>(data), size});
+         constexpr BOOL truth_bool = true;
 
-      switch (result) {
-      case core::Query_result::success:
+         std::memcpy(data, &truth_bool, sizeof(BOOL));
+
          return S_OK;
-      case core::Query_result::notready:
+      }
+      else if constexpr (query_type == D3DQUERYTYPE_OCCLUSION) {
+         // The game (at least it seems to) attempts to use occlusion queries from the Z-prepass
+         // to cull meshes from the main pass. It however does this on the CPU timeline.
+         // Meaning that in practise these days the queries are never ready by the time the game uses them,
+         // this isn't harmful to performance but it does mean there is no point in us
+         // implementing occlusion queries for the game.
+
+         constexpr DWORD zero_dword = 0;
+
+         std::memcpy(data, &zero_dword, sizeof(DWORD));
+
          return S_FALSE;
-      case core::Query_result::error:
-      default:
-         return D3DERR_INVALIDCALL;
       }
    }
 
 private:
-   Basic_query(core::Shader_patch& shader_patch) noexcept : Type{shader_patch}
-   {
-   }
+   Basic_query() noexcept = default;
 
    ~Basic_query() = default;
 
    ULONG _ref_count = 1;
 };
 
-class Event_query {
-public:
-   constexpr static auto d3d9_type = D3DQUERYTYPE_EVENT;
-
-   Event_query(core::Shader_patch& shader_patch) noexcept
-      : _shader_patch{shader_patch}
-   {
-   }
-
-   void begin() noexcept {}
-
-   void end() noexcept
-   {
-      if (user_config.developer.allow_event_queries)
-         _shader_patch.end_query(*_query);
-   }
-
-   auto get_data(const bool flush, std::span<std::byte> data) noexcept -> core::Query_result
-   {
-      Expects(data.size() == sizeof(BOOL));
-
-      if (user_config.developer.allow_event_queries) {
-         return _shader_patch.get_query_data(*_query, flush, data);
-      }
-      else {
-         constexpr BOOL v = true;
-         std::memcpy(data.data(), &v, sizeof(BOOL));
-
-         return core::Query_result::success;
-      }
-   }
-
-private:
-   core::Shader_patch& _shader_patch;
-   const Com_ptr<ID3D11Query> _query{
-      _shader_patch.create_query(CD3D11_QUERY_DESC{D3D11_QUERY_EVENT})};
-};
-
-class Occlusion_query {
-public:
-   constexpr static auto d3d9_type = D3DQUERYTYPE_OCCLUSION;
-
-   Occlusion_query(core::Shader_patch& shader_patch) noexcept
-      : _shader_patch{shader_patch}
-   {
-   }
-
-   void begin() noexcept
-   {
-      _shader_patch.begin_query(*_query);
-   }
-
-   void end() noexcept
-   {
-      _shader_patch.end_query(*_query);
-   }
-
-   auto get_data(const bool flush, std::span<std::byte> data) noexcept -> core::Query_result
-   {
-      Expects(data.size() == sizeof(DWORD));
-
-      UINT64 sample_count;
-
-      const auto result =
-         _shader_patch.get_query_data(*_query, flush,
-                                      std::span{reinterpret_cast<std::byte*>(&sample_count),
-                                                sizeof(sample_count)});
-
-      if (result != core::Query_result::success) return result;
-
-      const DWORD dword_sample_count = static_cast<DWORD>(
-         std::clamp(sample_count, UINT64{std::numeric_limits<DWORD>::min()},
-                    UINT64{std::numeric_limits<DWORD>::max()}));
-
-      std::memcpy(data.data(), &dword_sample_count, sizeof(DWORD));
-
-      return result;
-   }
-
-private:
-   core::Shader_patch& _shader_patch;
-   const Com_ptr<ID3D11Query> _query{
-      _shader_patch.create_query(CD3D11_QUERY_DESC{D3D11_QUERY_OCCLUSION})};
-};
-
 }
 
-Com_ptr<IDirect3DQuery9> make_query(core::Shader_patch& shader_patch,
-                                    const D3DQUERYTYPE type) noexcept
+Com_ptr<IDirect3DQuery9> make_query(const D3DQUERYTYPE type) noexcept
 {
-   Expects(type == D3DQUERYTYPE_EVENT || type == D3DQUERYTYPE_OCCLUSION);
-
    if (type == D3DQUERYTYPE_EVENT) {
-      return Basic_query<Event_query>::create(shader_patch);
+      return Basic_query<D3DQUERYTYPE_EVENT>::create();
    }
    else if (type == D3DQUERYTYPE_OCCLUSION) {
-      return Basic_query<Occlusion_query>::create(shader_patch);
+      return Basic_query<D3DQUERYTYPE_OCCLUSION>::create();
    }
 
-   std::terminate();
+   log_and_terminate("Unexpected query type.");
 }
 
 }

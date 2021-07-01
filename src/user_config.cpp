@@ -83,10 +83,6 @@ void User_config::show_imgui() noexcept
                                             to_string(SSAO_quality::highest)}));
    }
 
-   if (ImGui::CollapsingHeader("Developer")) {
-      ImGui::Checkbox("Allow Event Queries", &developer.allow_event_queries);
-   }
-
    ImGui::End();
 }
 
@@ -175,9 +171,6 @@ void User_config::parse_file(const std::string& path)
 
    developer.monitor_bfront2_log =
       config["Developer"s]["Monitor BFront2.log"s].as<bool>();
-
-   developer.allow_event_queries =
-      config["Developer"s]["Allow Event Queries"s].as<bool>();
 
    developer.use_d3d11_debug_layer =
       config["Developer"s]["Use D3D11 Debug Layer"s].as<bool>();

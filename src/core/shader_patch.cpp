@@ -77,8 +77,7 @@ auto create_device(IDXGIAdapter4& adapater) noexcept -> Com_ptr<ID3D11Device5>
             infoqueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
             infoqueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
 
-            std::array hide{D3D11_MESSAGE_ID_DEVICE_DRAW_VIEW_DIMENSION_MISMATCH,
-                            D3D11_MESSAGE_ID_QUERY_BEGIN_ABANDONING_PREVIOUS_RESULTS};
+            std::array hide{D3D11_MESSAGE_ID_DEVICE_DRAW_VIEW_DIMENSION_MISMATCH};
 
             D3D11_INFO_QUEUE_FILTER filter{};
             filter.DenyList.NumIDs = hide.size();
@@ -249,16 +248,6 @@ auto Shader_patch::create_blend_state(const D3D11_BLEND_DESC1 blend_state_desc) 
    _device->CreateBlendState1(&blend_state_desc, state.clear_and_assign());
 
    return state;
-}
-
-auto Shader_patch::create_query(const D3D11_QUERY_DESC desc) noexcept
-   -> Com_ptr<ID3D11Query>
-{
-   Com_ptr<ID3D11Query> query;
-
-   _device->CreateQuery(&desc, query.clear_and_assign());
-
-   return query;
 }
 
 auto Shader_patch::create_game_rendertarget(const UINT width, const UINT height) noexcept
@@ -1104,29 +1093,6 @@ void Shader_patch::draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
    if (_discard_draw_calls) return;
 
    _device_context->DrawIndexed(index_count, start_index, start_vertex);
-}
-
-void Shader_patch::begin_query(ID3D11Query& query) noexcept
-{
-   _device_context->Begin(&query);
-}
-
-void Shader_patch::end_query(ID3D11Query& query) noexcept
-{
-   _device_context->End(&query);
-}
-
-auto Shader_patch::get_query_data(ID3D11Query& query, const bool flush,
-                                  std::span<std::byte> data) noexcept -> Query_result
-{
-   const auto result =
-      _device_context->GetData(&query, data.data(), data.size(),
-                               flush ? 0 : D3D11_ASYNC_GETDATA_DONOTFLUSH);
-
-   if (result == S_OK) return Query_result::success;
-   if (result == S_FALSE) return Query_result::notready;
-
-   return Query_result::error;
 }
 
 void Shader_patch::force_shader_cache_save_to_disk() noexcept

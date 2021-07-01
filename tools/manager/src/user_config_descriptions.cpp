@@ -203,11 +203,6 @@ LR"(Enables the monitoring, filtering and display of "BFront2.log" ingame. Can n
 },
 
 {
-L"Allow Event Queries"sv,      
-LR"(Controls whether or not Shader Patch will allow the game to use GPU event queries.)"sv
-},
-
-{
 L"Use D3D11 Debug Layer"sv,      
 LR"(Enable the D3D11 debug layer, typically requires the Windows SDK to be installed to work.
 

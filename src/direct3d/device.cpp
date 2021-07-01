@@ -1235,7 +1235,7 @@ HRESULT Device::CreateQuery(D3DQUERYTYPE type, IDirect3DQuery9** query) noexcept
    case D3DQUERYTYPE_OCCLUSION:
       if (!query) return S_OK;
 
-      *query = make_query(_shader_patch, type).release();
+      *query = make_query(type).release();
 
       return S_OK;
    case D3DQUERYTYPE_VCACHE:

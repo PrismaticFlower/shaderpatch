@@ -87,7 +87,6 @@ struct User_config {
       std::uintptr_t toggle_key{0};
 
       bool monitor_bfront2_log = false;
-      bool allow_event_queries = false;
       bool use_d3d11_debug_layer = false;
       bool use_dxgi_1_2_factory = false;
 

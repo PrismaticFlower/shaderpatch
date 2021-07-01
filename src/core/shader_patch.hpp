@@ -52,8 +52,6 @@ enum class Projtex_mode { clamp, wrap };
 
 enum class Projtex_type { tex2d, texcube };
 
-enum class Query_result { success, notready, error };
-
 struct Mapped_texture {
    UINT row_pitch;
    UINT depth_pitch;
@@ -95,8 +93,6 @@ public:
 
    auto create_blend_state(const D3D11_BLEND_DESC1 blend_state_desc) noexcept
       -> Com_ptr<ID3D11BlendState1>;
-
-   auto create_query(const D3D11_QUERY_DESC desc) noexcept -> Com_ptr<ID3D11Query>;
 
    auto create_game_rendertarget(const UINT width, const UINT height) noexcept
       -> Game_rendertarget_id;
@@ -230,13 +226,6 @@ public:
 
    void draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology, const UINT index_count,
                      const UINT start_index, const UINT start_vertex) noexcept;
-
-   void begin_query(ID3D11Query& query) noexcept;
-
-   void end_query(ID3D11Query& query) noexcept;
-
-   auto get_query_data(ID3D11Query& query, const bool flush,
-                       std::span<std::byte> data) noexcept -> Query_result;
 
    void force_shader_cache_save_to_disk() noexcept;
 
