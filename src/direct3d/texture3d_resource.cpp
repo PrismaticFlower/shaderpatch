@@ -23,6 +23,20 @@ Texture3d_resource::Texture3d_resource(core::Shader_patch& patch, const UINT wid
    Expects(_resource_size >= sizeof(Volume_resource_header));
 }
 
+Texture3d_resource::~Texture3d_resource()
+{
+   if (std::holds_alternative<core::Texture_handle>(resource)) {
+      _patch.destroy_patch_texture(std::get<core::Texture_handle>(resource));
+   }
+   else if (std::holds_alternative<core::Material_handle>(resource)) {
+      _patch.destroy_patch_material(std::get<core::Material_handle>(resource));
+   }
+   else if (std::holds_alternative<core::Patch_effects_config_handle>(resource)) {
+      _patch.destroy_patch_effects_config(
+         std::get<core::Patch_effects_config_handle>(resource));
+   }
+}
+
 HRESULT
 Texture3d_resource::QueryInterface(const IID& iid, void** object) noexcept
 {

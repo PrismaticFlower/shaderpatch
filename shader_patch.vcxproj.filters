@@ -434,9 +434,6 @@
     <ClInclude Include="src\core\swapchain.hpp">
       <Filter>src\core</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\patch_effects_config_handle.hpp">
-      <Filter>src\core</Filter>
-    </ClInclude>
     <ClInclude Include="src\file_hooks.hpp">
       <Filter>src</Filter>
     </ClInclude>

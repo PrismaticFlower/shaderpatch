@@ -60,8 +60,7 @@ public:
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
 
-   [[deprecated(
-      "unimplemented")]] DWORD __stdcall GetPriority() noexcept override
+   [[deprecated("unimplemented")]] DWORD __stdcall GetPriority() noexcept override
    {
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
@@ -125,7 +124,7 @@ private:
    Texture3d_resource(core::Shader_patch& patch, const UINT width,
                       const UINT height, const UINT depth) noexcept;
 
-   ~Texture3d_resource() = default;
+   ~Texture3d_resource();
 
    void create_resource() noexcept;
 

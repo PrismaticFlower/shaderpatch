@@ -622,23 +622,24 @@ auto Shader_patch::create_patch_texture(const std::span<const std::byte> texture
 
       _shader_resource_database.insert(std::move(srv), name);
 
-      const auto texture_deleter = [this](ID3D11ShaderResourceView* srv) noexcept {
-         const auto [exists, name] = _shader_resource_database.reverse_lookup(srv);
-
-         if (!exists) return; // Texture has already been replaced.
-
-         log(Log_level::info, "Destroying texture "sv, std::quoted(name));
-
-         _shader_resource_database.erase(srv);
-      };
-
-      return {raw_srv, texture_deleter};
+      return raw_srv;
    }
    catch (std::exception& e) {
       log(Log_level::error, "Failed to create unknown texture! reason: "sv, e.what());
 
-      return {nullptr, [](auto) noexcept {}};
+      return nullptr;
    }
+}
+
+void Shader_patch::destroy_patch_texture(const Texture_handle texture) noexcept
+{
+   const auto [exists, name] = _shader_resource_database.reverse_lookup(texture);
+
+   if (!exists) return; // Texture has already been replaced.
+
+   log(Log_level::info, "Destroying texture "sv, std::quoted(name));
+
+   _shader_resource_database.erase(texture);
 }
 
 auto Shader_patch::create_patch_material(const std::span<const std::byte> material_data) noexcept
@@ -655,29 +656,30 @@ auto Shader_patch::create_patch_material(const std::span<const std::byte> materi
 
       log(Log_level::info, "Loaded material "sv, std::quoted(material->name));
 
-      const auto material_deleter = [this](material::Material* material) noexcept {
-         if (_patch_material == material) set_patch_material(nullptr);
-
-         for (auto it = _materials.begin(); it != _materials.end(); ++it) {
-            if (it->get() != material) continue;
-
-            log(Log_level::info, "Destroying material "sv, std::quoted(material->name));
-
-            _materials.erase(it);
-
-            return;
-         }
-
-         log_and_terminate("Attempt to destroy nonexistant material!");
-      };
-
-      return {material, material_deleter};
+      return material;
    }
    catch (std::exception& e) {
       log(Log_level::error, "Failed to create unknown material! reason: "sv, e.what());
 
-      return {nullptr, [](auto) noexcept {}};
+      return nullptr;
    }
+}
+
+void Shader_patch::destroy_patch_material(const Material_handle material) noexcept
+{
+   if (_patch_material == material) set_patch_material(nullptr);
+
+   for (auto it = _materials.begin(); it != _materials.end(); ++it) {
+      if (it->get() != material) continue;
+
+      log(Log_level::info, "Destroying material "sv, std::quoted(material->name));
+
+      _materials.erase(it);
+
+      return;
+   }
+
+   log_and_terminate("Attempt to destroy nonexistant material!");
 }
 
 auto Shader_patch::create_patch_effects_config(const std::span<const std::byte> effects_config) noexcept
@@ -692,19 +694,18 @@ auto Shader_patch::create_patch_effects_config(const std::span<const std::byte> 
       _effects.read_config(YAML::Load(config_str));
       _effects.enabled(true);
 
-      const auto fx_id = _current_effects_id += 1;
-
-      const auto on_destruction = [fx_id, this]() noexcept {
-         if (fx_id != _current_effects_id) return;
-
-         _effects.enabled(false);
-      };
-
-      return {on_destruction};
+      return _current_effects_id += 1;
    }
    catch (std::exception& e) {
       log_and_terminate("Failed to load effects config! reason: "sv, e.what());
    }
+}
+
+void Shader_patch::destroy_patch_effects_config(const Patch_effects_config_handle effects_config) noexcept
+{
+   if (effects_config != _current_effects_id) return;
+
+   _effects.enabled(false);
 }
 
 auto Shader_patch::create_game_input_layout(

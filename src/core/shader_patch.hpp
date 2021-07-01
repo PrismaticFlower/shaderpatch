@@ -23,7 +23,6 @@
 #include "input_layout_element.hpp"
 #include "late_backbuffer_resolver.hpp"
 #include "oit_provider.hpp"
-#include "patch_effects_config_handle.hpp"
 #include "sampler_states.hpp"
 #include "small_function.hpp"
 #include "swapchain.hpp"
@@ -61,11 +60,11 @@ struct Mapped_texture {
    std::byte* data;
 };
 
-using Material_handle =
-   std::unique_ptr<material::Material, Small_function<void(material::Material*) noexcept>>;
+using Material_handle = material::Material*;
 
-using Texture_handle =
-   std::unique_ptr<ID3D11ShaderResourceView, Small_function<void(ID3D11ShaderResourceView*) noexcept>>;
+using Texture_handle = ID3D11ShaderResourceView*;
+
+using Patch_effects_config_handle = int;
 
 class Shader_patch {
 public:
@@ -125,11 +124,17 @@ public:
    auto create_patch_texture(const std::span<const std::byte> texture_data) noexcept
       -> Texture_handle;
 
+   void destroy_patch_texture(const Texture_handle texture) noexcept;
+
    auto create_patch_material(const std::span<const std::byte> material_data) noexcept
       -> Material_handle;
 
+   void destroy_patch_material(const Material_handle material) noexcept;
+
    auto create_patch_effects_config(const std::span<const std::byte> effects_config) noexcept
       -> Patch_effects_config_handle;
+
+   void destroy_patch_effects_config(const Patch_effects_config_handle effects_config) noexcept;
 
    auto create_game_input_layout(const std::span<const Input_layout_element> layout,
                                  const bool compressed,
