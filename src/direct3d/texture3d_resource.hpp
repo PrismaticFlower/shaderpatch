@@ -125,7 +125,7 @@ public:
 
    auto dimension() const noexcept -> Texture_accessor_dimension override;
 
-   auto material() const noexcept -> material::Material* override;
+   auto material() const noexcept -> core::Material_handle override;
 
 private:
    Texture3d_resource(core::Shader_patch& patch, const UINT width,
@@ -137,7 +137,9 @@ private:
 
    core::Shader_patch& _patch;
 
-   std::variant<std::monostate, core::Texture_handle, core::Material_handle, core::Patch_effects_config_handle> _resource;
+   core::Material_handle _material_handle;
+   core::Texture_handle _texture_handle;
+   core::Patch_effects_config_handle _patch_effects_config_handle;
 
    const UINT _width;
    const UINT _height;

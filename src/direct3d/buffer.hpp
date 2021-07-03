@@ -162,9 +162,9 @@ public:
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
 
-   auto buffer() const noexcept -> ID3D11Buffer&
+   auto buffer() const noexcept -> core::Buffer_handle
    {
-      return *_buffer;
+      return _buffer;
    }
 
 private:
@@ -174,7 +174,10 @@ private:
    {
    }
 
-   ~Basic_buffer() = default;
+   ~Basic_buffer()
+   {
+      _shader_patch.destroy_ia_buffer(_buffer);
+   }
 
    auto lock_default(UINT lock_offset, UINT lock_size, void** data, DWORD flags) noexcept
       -> HRESULT
@@ -214,7 +217,7 @@ private:
          log_and_terminate("Unexpected buffer unlock!");
       }
 
-      _shader_patch.update_ia_buffer(*_buffer, std::exchange(_lock_offset, 0),
+      _shader_patch.update_ia_buffer(_buffer, std::exchange(_lock_offset, 0),
                                      std::exchange(_lock_size, 0),
                                      std::exchange(_lock_data, nullptr));
 
@@ -238,7 +241,7 @@ private:
 
       if (_lock_count == 0) {
          _lock_data =
-            _shader_patch.map_ia_buffer(*_buffer, lock_flags_to_map_type(flags));
+            _shader_patch.map_ia_buffer(_buffer, lock_flags_to_map_type(flags));
 
          if (!_lock_data) return D3DERR_INVALIDCALL;
       }
@@ -255,7 +258,7 @@ private:
       assert(_dynamic);
 
       if (--_lock_count == 0 && std::exchange(_lock_data, nullptr)) {
-         _shader_patch.unmap_ia_buffer(*_buffer);
+         _shader_patch.unmap_ia_buffer(_buffer);
       }
       else if (_lock_count == -1) {
          log_and_terminate("Unexpected buffer unlock!");
@@ -282,7 +285,7 @@ private:
    const UINT _size;
    const bool _dynamic;
    const bool _dynamic_readable = false;
-   const Com_ptr<ID3D11Buffer> _buffer{
+   const core::Buffer_handle _buffer{
       _shader_patch.create_ia_buffer(_size, buffer_type == Buffer_type::vertex_buffer,
                                      buffer_type == Buffer_type::index_buffer,
                                      _dynamic)};

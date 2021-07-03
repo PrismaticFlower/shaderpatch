@@ -41,10 +41,10 @@ public:
    }
 
    /// @brief Gets the material for binding.
-   /// @return The material or nullptr.
-   virtual auto material() const noexcept -> material::Material*
+   /// @return The material or core::null_handle.
+   virtual auto material() const noexcept -> core::Material_handle
    {
-      return nullptr;
+      return core::null_handle;
    }
 };
 

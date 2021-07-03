@@ -888,7 +888,7 @@ HRESULT Device::SetTexture(DWORD stage, IDirect3DBaseTexture9* texture) noexcept
    if (stage >= 4) return D3DERR_INVALIDCALL;
 
    if (!texture) {
-      if (stage == 0) _shader_patch.set_patch_material(nullptr);
+      if (stage == 0) _shader_patch.set_patch_material(core::null_handle);
 
       _shader_patch.set_texture(stage, core::nullgametex);
 
@@ -917,12 +917,12 @@ HRESULT Device::SetTexture(DWORD stage, IDirect3DBaseTexture9* texture) noexcept
    }
 
    if (bindable_type == Texture_accessor_type::texture) {
-      if (stage == 0) _shader_patch.set_patch_material(nullptr);
+      if (stage == 0) _shader_patch.set_patch_material(core::null_handle);
 
       _shader_patch.set_texture(stage, bindable->texture());
    }
    else if (bindable_type == Texture_accessor_type::texture_rendertarget) {
-      if (stage == 0) _shader_patch.set_patch_material(nullptr);
+      if (stage == 0) _shader_patch.set_patch_material(core::null_handle);
 
       _shader_patch.set_texture(stage, bindable->texture_rendertarget());
    }

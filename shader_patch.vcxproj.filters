@@ -699,6 +699,7 @@
       <Filter>src\material</Filter>
     </ClInclude>
     <ClInclude Include="src\direct3d\resource_access.hpp" />
+    <ClInclude Include="src\core\handles.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />

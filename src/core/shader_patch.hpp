@@ -18,6 +18,7 @@
 #include "game_rendertarget.hpp"
 #include "game_shader.hpp"
 #include "game_texture.hpp"
+#include "handles.hpp"
 #include "image_stretcher.hpp"
 #include "input_layout_descriptions.hpp"
 #include "input_layout_element.hpp"
@@ -30,6 +31,7 @@
 #include "texture_database.hpp"
 #include "texture_loader.hpp"
 
+#include <bit>
 #include <span>
 #include <vector>
 
@@ -57,12 +59,6 @@ struct Mapped_texture {
    UINT depth_pitch;
    std::byte* data;
 };
-
-using Material_handle = material::Material*;
-
-using Texture_handle = ID3D11ShaderResourceView*;
-
-using Patch_effects_config_handle = int;
 
 class Shader_patch {
 public:
@@ -120,12 +116,12 @@ public:
    auto create_patch_texture(const std::span<const std::byte> texture_data) noexcept
       -> Texture_handle;
 
-   void destroy_patch_texture(const Texture_handle texture) noexcept;
+   void destroy_patch_texture(const Texture_handle texture_handle) noexcept;
 
    auto create_patch_material(const std::span<const std::byte> material_data) noexcept
       -> Material_handle;
 
-   void destroy_patch_material(const Material_handle material) noexcept;
+   void destroy_patch_material(const Material_handle material_handle) noexcept;
 
    auto create_patch_effects_config(const std::span<const std::byte> effects_config) noexcept
       -> Patch_effects_config_handle;
@@ -139,17 +135,19 @@ public:
 
    auto create_ia_buffer(const UINT size, const bool vertex_buffer,
                          const bool index_buffer, const bool dynamic) noexcept
-      -> Com_ptr<ID3D11Buffer>;
+      -> Buffer_handle;
+
+   void destroy_ia_buffer(const Buffer_handle buffer_handle) noexcept;
 
    void load_colorgrading_regions(const std::span<const std::byte> regions_data) noexcept;
 
-   void update_ia_buffer(ID3D11Buffer& buffer, const UINT offset,
+   void update_ia_buffer(const Buffer_handle Buffer, const UINT offset,
                          const UINT size, const std::byte* data) noexcept;
 
-   auto map_ia_buffer(ID3D11Buffer& buffer, const D3D11_MAP map_type) noexcept
+   auto map_ia_buffer(const Buffer_handle Buffer, const D3D11_MAP map_type) noexcept
       -> std::byte*;
 
-   void unmap_ia_buffer(ID3D11Buffer& buffer) noexcept;
+   void unmap_ia_buffer(const Buffer_handle Buffer) noexcept;
 
    auto map_dynamic_texture(const Game_texture& texture, const UINT mip_level,
                             const D3D11_MAP map_type) noexcept -> Mapped_texture;
@@ -169,9 +167,9 @@ public:
    void clear_depthstencil(const float z, const UINT8 stencil,
                            const bool clear_depth, const bool clear_stencil) noexcept;
 
-   void set_index_buffer(ID3D11Buffer& buffer, const UINT offset) noexcept;
+   void set_index_buffer(const Buffer_handle buffer_handle, const UINT offset) noexcept;
 
-   void set_vertex_buffer(ID3D11Buffer& buffer, const UINT offset,
+   void set_vertex_buffer(const Buffer_handle buffer_handle, const UINT offset,
                           const UINT stride) noexcept;
 
    void set_input_layout(const Game_input_layout& input_layout) noexcept;
@@ -202,7 +200,7 @@ public:
 
    void set_projtex_cube(const Game_texture& texture) noexcept;
 
-   void set_patch_material(material::Material* material) noexcept;
+   void set_patch_material(const Material_handle material_handle) noexcept;
 
    void set_constants(const cb::Scene_tag, const UINT offset,
                       const std::span<const std::array<float, 4>> constants) noexcept;
@@ -442,7 +440,7 @@ private:
 
    bool _effects_active = false;
    DXGI_FORMAT _current_rt_format = Swapchain::format;
-   int _current_effects_id = 0;
+   Patch_effects_config_handle _current_effects_id = 0;
 
    UINT _rt_sample_count = 1;
    Antialiasing_method _aa_method = Antialiasing_method::none;

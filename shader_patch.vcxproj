@@ -259,6 +259,7 @@
     <ClInclude Include="src\core\depthstencil.hpp" />
     <ClInclude Include="src\core\depth_msaa_resolver.hpp" />
     <ClInclude Include="src\core\game_alt_postprocessing.hpp" />
+    <ClInclude Include="src\core\handles.hpp" />
     <ClInclude Include="src\core\late_backbuffer_resolver.hpp" />
     <ClInclude Include="src\core\oit_provider.hpp" />
     <ClInclude Include="src\core\game_input_layout.hpp" />

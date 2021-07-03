@@ -25,15 +25,10 @@ Texture3d_resource::Texture3d_resource(core::Shader_patch& patch, const UINT wid
 
 Texture3d_resource::~Texture3d_resource()
 {
-   if (std::holds_alternative<core::Texture_handle>(_resource)) {
-      _patch.destroy_patch_texture(std::get<core::Texture_handle>(_resource));
-   }
-   else if (std::holds_alternative<core::Material_handle>(_resource)) {
-      _patch.destroy_patch_material(std::get<core::Material_handle>(_resource));
-   }
-   else if (std::holds_alternative<core::Patch_effects_config_handle>(_resource)) {
-      _patch.destroy_patch_effects_config(
-         std::get<core::Patch_effects_config_handle>(_resource));
+   if (_material_handle) _patch.destroy_patch_material(_material_handle);
+   if (_texture_handle) _patch.destroy_patch_texture(_texture_handle);
+   if (_patch_effects_config_handle) {
+      _patch.destroy_patch_effects_config(_patch_effects_config_handle);
    }
 }
 
@@ -159,9 +154,7 @@ HRESULT Texture3d_resource::UnlockBox(UINT level) noexcept
 
 auto Texture3d_resource::type() const noexcept -> Texture_accessor_type
 {
-   if (std::holds_alternative<core::Material_handle>(_resource)) {
-      return Texture_accessor_type::material;
-   }
+   if (_material_handle) return Texture_accessor_type::material;
 
    return Texture_accessor_type::none;
 }
@@ -171,13 +164,9 @@ auto Texture3d_resource::dimension() const noexcept -> Texture_accessor_dimensio
    return Texture_accessor_dimension::nonapplicable;
 }
 
-auto Texture3d_resource::material() const noexcept -> material::Material*
+auto Texture3d_resource::material() const noexcept -> core::Material_handle
 {
-   if (std::holds_alternative<core::Material_handle>(_resource)) {
-      return std::get<core::Material_handle>(_resource);
-   }
-
-   return nullptr;
+   return _material_handle;
 }
 
 void Texture3d_resource::create_resource() noexcept
@@ -194,13 +183,13 @@ void Texture3d_resource::create_resource() noexcept
 
    switch (volume_res_header.type) {
    case Volume_resource_type::material:
-      _resource.emplace<core::Material_handle>(_patch.create_patch_material(payload));
+      _material_handle = _patch.create_patch_material(payload);
       break;
    case Volume_resource_type::texture:
-      _resource = _patch.create_patch_texture(payload);
+      _texture_handle = _patch.create_patch_texture(payload);
       break;
    case Volume_resource_type::fx_config:
-      _resource = _patch.create_patch_effects_config(payload);
+      _patch_effects_config_handle = _patch.create_patch_effects_config(payload);
       break;
    case Volume_resource_type::colorgrading_regions:
       _patch.load_colorgrading_regions(payload);

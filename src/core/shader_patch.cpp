@@ -605,23 +605,25 @@ auto Shader_patch::create_patch_texture(const std::span<const std::byte> texture
       auto [srv, name] =
          load_patch_texture(ucfb::Reader_strict<"sptx"_mn>{texture_data}, *_device);
 
-      auto* raw_srv = srv.get();
+      auto* const raw_srv = srv.get();
 
       log(Log_level::info, "Loaded texture "sv, std::quoted(name));
 
       _shader_resource_database.insert(std::move(srv), name);
 
-      return raw_srv;
+      return ptr_to_handle(raw_srv);
    }
    catch (std::exception& e) {
       log(Log_level::error, "Failed to create unknown texture! reason: "sv, e.what());
 
-      return nullptr;
+      return null_handle;
    }
 }
 
-void Shader_patch::destroy_patch_texture(const Texture_handle texture) noexcept
+void Shader_patch::destroy_patch_texture(const Texture_handle texture_handle) noexcept
 {
+   auto* const texture = handle_to_ptr<ID3D11ShaderResourceView>(texture_handle);
+
    const auto [exists, name] = _shader_resource_database.reverse_lookup(texture);
 
    if (!exists) return; // Texture has already been replaced.
@@ -645,18 +647,20 @@ auto Shader_patch::create_patch_material(const std::span<const std::byte> materi
 
       log(Log_level::info, "Loaded material "sv, std::quoted(material->name));
 
-      return material;
+      return ptr_to_handle(material);
    }
    catch (std::exception& e) {
       log(Log_level::error, "Failed to create unknown material! reason: "sv, e.what());
 
-      return nullptr;
+      return null_handle;
    }
 }
 
-void Shader_patch::destroy_patch_material(const Material_handle material) noexcept
+void Shader_patch::destroy_patch_material(const Material_handle material_handle) noexcept
 {
-   if (_patch_material == material) set_patch_material(nullptr);
+   auto* const material = handle_to_ptr<material::Material>(material_handle);
+
+   if (_patch_material == material) set_patch_material(null_handle);
 
    for (auto it = _materials.begin(); it != _materials.end(); ++it) {
       if (it->get() != material) continue;
@@ -706,8 +710,8 @@ auto Shader_patch::create_game_input_layout(
 }
 
 auto Shader_patch::create_ia_buffer(const UINT size, const bool vertex_buffer,
-                                    const bool index_buffer, const bool dynamic) noexcept
-   -> Com_ptr<ID3D11Buffer>
+                                    const bool index_buffer,
+                                    const bool dynamic) noexcept -> Buffer_handle
 {
    Com_ptr<ID3D11Buffer> buffer;
 
@@ -725,7 +729,14 @@ auto Shader_patch::create_ia_buffer(const UINT size, const bool vertex_buffer,
                         _com_error{result}.ErrorMessage());
    }
 
-   return buffer;
+   return ptr_to_handle(buffer.release());
+}
+
+void __declspec(noinline) Shader_patch::destroy_ia_buffer(const Buffer_handle buffer_handle) noexcept
+{
+   auto* const buffer = handle_to_ptr<ID3D11Buffer>(buffer_handle);
+
+   buffer->Release();
 }
 
 void Shader_patch::load_colorgrading_regions(const std::span<const std::byte> regions_data) noexcept
@@ -740,27 +751,34 @@ void Shader_patch::load_colorgrading_regions(const std::span<const std::byte> re
    }
 }
 
-void Shader_patch::update_ia_buffer(ID3D11Buffer& buffer, const UINT offset,
-                                    const UINT size, const std::byte* data) noexcept
+void Shader_patch::update_ia_buffer(const Buffer_handle buffer_handle,
+                                    const UINT offset, const UINT size,
+                                    const std::byte* data) noexcept
 {
+   auto* buffer = handle_to_ptr<ID3D11Buffer>(buffer_handle);
+
    const D3D11_BOX box{offset, 0, 0, offset + size, 1, 1};
 
-   _device_context->UpdateSubresource(&buffer, 0, &box, data, 0, 0);
+   _device_context->UpdateSubresource(buffer, 0, &box, data, 0, 0);
 }
 
-auto Shader_patch::map_ia_buffer(ID3D11Buffer& buffer, const D3D11_MAP map_type) noexcept
-   -> std::byte*
+auto Shader_patch::map_ia_buffer(const Buffer_handle buffer_handle,
+                                 const D3D11_MAP map_type) noexcept -> std::byte*
 {
+   auto* buffer = handle_to_ptr<ID3D11Buffer>(buffer_handle);
+
    D3D11_MAPPED_SUBRESOURCE mapped;
 
-   _device_context->Map(&buffer, 0, map_type, 0, &mapped);
+   _device_context->Map(buffer, 0, map_type, 0, &mapped);
 
    return static_cast<std::byte*>(mapped.pData);
 }
 
-void Shader_patch::unmap_ia_buffer(ID3D11Buffer& buffer) noexcept
+void Shader_patch::unmap_ia_buffer(const Buffer_handle buffer_handle) noexcept
 {
-   _device_context->Unmap(&buffer, 0);
+   auto* buffer = handle_to_ptr<ID3D11Buffer>(buffer_handle);
+
+   _device_context->Unmap(buffer, 0);
 }
 
 auto Shader_patch::map_dynamic_texture(const Game_texture& texture, const UINT mip_level,
@@ -841,16 +859,21 @@ void Shader_patch::clear_depthstencil(const float depth, const UINT8 stencil,
    _device_context->ClearDepthStencilView(dsv, clear_flags, depth, stencil);
 }
 
-void Shader_patch::set_index_buffer(ID3D11Buffer& buffer, const UINT offset) noexcept
+void Shader_patch::set_index_buffer(const Buffer_handle buffer_handle,
+                                    const UINT offset) noexcept
 {
+   auto* buffer = handle_to_ptr<ID3D11Buffer>(buffer_handle);
+
    _game_index_buffer = copy_raw_com_ptr(buffer);
    _game_index_buffer_offset = offset;
    _ia_index_buffer_dirty = true;
 }
 
-void Shader_patch::set_vertex_buffer(ID3D11Buffer& buffer, const UINT offset,
-                                     const UINT stride) noexcept
+void Shader_patch::set_vertex_buffer(const Buffer_handle buffer_handle,
+                                     const UINT offset, const UINT stride) noexcept
 {
+   auto* buffer = handle_to_ptr<ID3D11Buffer>(buffer_handle);
+
    _game_vertex_buffer = copy_raw_com_ptr(buffer);
    _game_vertex_buffer_offset = offset;
    _game_vertex_buffer_stride = stride;
@@ -993,8 +1016,10 @@ void Shader_patch::set_projtex_cube(const Game_texture& texture) noexcept
    _ps_textures_dirty = true;
 }
 
-void Shader_patch::set_patch_material(material::Material* material) noexcept
+void Shader_patch::set_patch_material(const Material_handle material_handle) noexcept
 {
+   auto* const material = handle_to_ptr<material::Material>(material_handle);
+
    _patch_material = material;
    _shader_dirty = true;
 
