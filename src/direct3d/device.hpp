@@ -599,17 +599,17 @@ private:
    UINT _perceived_width;
    UINT _perceived_height;
 
-   Com_ptr<IUnknown> _backbuffer{
+   Com_ptr<IDirect3DSurface9> _backbuffer{
       Surface_backbuffer::create(_shader_patch.get_back_buffer(),
                                  _perceived_width, _perceived_height)};
 
-   Com_ptr<IUnknown> _rendertarget{_backbuffer};
+   Com_ptr<IDirect3DSurface9> _rendertarget{_backbuffer};
 
-   Com_ptr<IUnknown> _depthstencil{
+   Com_ptr<IDirect3DSurface9> _depthstencil{
       Surface_depthstencil::create(core::Game_depthstencil::nearscene,
                                    _perceived_width, _perceived_height)};
 
-   const Com_ptr<IUnknown> _triangle_fan_quad_ibuf{
+   const Com_ptr<IDirect3DIndexBuffer9> _triangle_fan_quad_ibuf{
       create_triangle_fan_quad_ibuf(_shader_patch)};
 
    D3DVIEWPORT9 _viewport{0,    0,   _perceived_width, _perceived_height,

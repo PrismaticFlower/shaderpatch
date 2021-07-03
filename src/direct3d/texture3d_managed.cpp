@@ -22,8 +22,7 @@ Texture3d_managed::Texture3d_managed(core::Shader_patch& shader_patch,
                                      const UINT depth, const UINT mip_levels,
                                      const DXGI_FORMAT format,
                                      const D3DFORMAT reported_format) noexcept
-   : Base_texture{Texture_type::texture3d},
-     _shader_patch{shader_patch},
+   : _shader_patch{shader_patch},
      _width{width},
      _height{height},
      _depth{depth},
@@ -44,19 +43,22 @@ HRESULT Texture3d_managed::QueryInterface(const IID& iid, void** object) noexcep
 
    if (!object) return E_INVALIDARG;
 
-   if (iid == IID_IUnknown) {
-      *object = static_cast<IUnknown*>(this);
+   if (iid == IID_Texture_accessor) [[likely]] {
+      *object = static_cast<Texture_accessor*>(this);
+   }
+   else if (iid == IID_IUnknown) {
+      *object = static_cast<IUnknown*>(static_cast<IDirect3DVolumeTexture9*>(this));
    }
    else if (iid == IID_IDirect3DResource9) {
-      *object = static_cast<Resource*>(this);
+      *object = static_cast<IDirect3DResource9*>(this);
    }
    else if (iid == IID_IDirect3DBaseTexture9) {
-      *object = static_cast<Base_texture*>(this);
+      *object = static_cast<IDirect3DBaseTexture9*>(this);
    }
    else if (iid == IID_IDirect3DVolumeTexture9) {
-      *object = this;
+      *object = static_cast<IDirect3DVolumeTexture9*>(this);
    }
-   else {
+   else [[unlikely]] {
       *object = nullptr;
 
       return E_NOINTERFACE;
@@ -146,7 +148,7 @@ HRESULT Texture3d_managed::UnlockBox(UINT level) noexcept
    if (!_upload_texture) return D3DERR_INVALIDCALL;
 
    if (level == _last_level) {
-      this->resource =
+      _game_texture =
          _shader_patch.create_game_texture3d(_width, _height, _depth,
                                              _mip_levels, _format,
                                              _upload_texture->subresources());
@@ -155,4 +157,20 @@ HRESULT Texture3d_managed::UnlockBox(UINT level) noexcept
 
    return S_OK;
 }
+
+auto Texture3d_managed::type() const noexcept -> Texture_accessor_type
+{
+   return Texture_accessor_type::texture;
+}
+
+auto Texture3d_managed::dimension() const noexcept -> Texture_accessor_dimension
+{
+   return Texture_accessor_dimension::_3d;
+}
+
+auto Texture3d_managed::texture() const noexcept -> core::Game_texture
+{
+   return _game_texture;
+}
+
 }

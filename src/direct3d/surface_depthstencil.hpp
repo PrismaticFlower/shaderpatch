@@ -2,13 +2,14 @@
 
 #include "../core/shader_patch.hpp"
 #include "../logger.hpp"
-#include "resource.hpp"
+#include "resource_access.hpp"
 
 #include <d3d9.h>
 
 namespace sp::d3d9 {
 
-class Surface_depthstencil final : public Resource {
+class Surface_depthstencil final : public IDirect3DSurface9,
+                                   public Depthstencil_accessor {
 public:
    static constexpr auto reported_format = D3DFMT_D24S8;
 
@@ -99,20 +100,18 @@ public:
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
 
+   auto depthstencil() const noexcept -> core::Game_depthstencil override;
+
 private:
    Surface_depthstencil(const core::Game_depthstencil depthstencil,
                         const UINT width, const UINT height) noexcept;
 
    ~Surface_depthstencil() = default;
 
+   const core::Game_depthstencil _depthstencil;
    const UINT _width;
    const UINT _height;
    ULONG _ref_count = 1;
 };
-
-static_assert(
-   !std::has_virtual_destructor_v<Surface_depthstencil>,
-   "Surface_depthstencil must not have a virtual destructor as it will cause "
-   "an ABI break.");
 
 }

@@ -12,9 +12,8 @@ Com_ptr<Surface_depthstencil> Surface_depthstencil::create(
 
 Surface_depthstencil::Surface_depthstencil(const core::Game_depthstencil depthstencil,
                                            const UINT width, const UINT height) noexcept
-   : _width{width}, _height{height}
+   : _depthstencil{depthstencil}, _width{width}, _height{height}
 {
-   this->resource = depthstencil;
 }
 
 HRESULT Surface_depthstencil::QueryInterface(const IID& iid, void** object) noexcept
@@ -23,16 +22,19 @@ HRESULT Surface_depthstencil::QueryInterface(const IID& iid, void** object) noex
 
    if (!object) return E_INVALIDARG;
 
-   if (iid == IID_IUnknown) {
-      *object = static_cast<IUnknown*>(this);
+   if (iid == IID_Depthstencil_accessor) [[likely]] {
+      *object = static_cast<Depthstencil_accessor*>(this);
+   }
+   else if (iid == IID_IUnknown) {
+      *object = static_cast<IUnknown*>(static_cast<IDirect3DSurface9*>(this));
    }
    else if (iid == IID_IDirect3DResource9) {
-      *object = static_cast<Resource*>(this);
+      *object = static_cast<IDirect3DResource9*>(this);
    }
    else if (iid == IID_IDirect3DSurface9) {
-      *object = this;
+      *object = static_cast<IDirect3DSurface9*>(this);
    }
-   else {
+   else [[unlikely]] {
       *object = nullptr;
 
       return E_NOINTERFACE;
@@ -84,6 +86,11 @@ HRESULT __stdcall Surface_depthstencil::GetDesc(D3DSURFACE_DESC* desc) noexcept
    desc->Height = _height;
 
    return S_OK;
+}
+
+auto Surface_depthstencil::depthstencil() const noexcept -> core::Game_depthstencil
+{
+   return _depthstencil;
 }
 
 }

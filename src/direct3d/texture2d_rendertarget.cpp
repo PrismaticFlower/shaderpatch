@@ -9,13 +9,11 @@ Texture2d_rendertarget::Texture2d_rendertarget(core::Shader_patch& shader_patch,
                                                const UINT actual_height,
                                                const UINT perceived_width,
                                                const UINT perceived_height) noexcept
-   : Base_texture{Texture_type::rendertarget},
-     _rendertarget_id{shader_patch.create_game_rendertarget(actual_width, actual_height),
+   : _rendertarget_id{shader_patch.create_game_rendertarget(actual_width, actual_height),
                       shader_patch},
      _perceived_width{perceived_width},
      _perceived_height{perceived_height}
 {
-   this->resource = _rendertarget_id.id;
 }
 
 Com_ptr<Texture2d_rendertarget> Texture2d_rendertarget::create(
@@ -33,20 +31,23 @@ HRESULT Texture2d_rendertarget::QueryInterface(const IID& iid, void** object) no
    if (!object) return E_INVALIDARG;
 
    if (iid == IID_IUnknown) {
-      *object = static_cast<IUnknown*>(this);
+      *object = static_cast<IUnknown*>(static_cast<IDirect3DTexture9*>(this));
    }
    else if (iid == IID_IDirect3DResource9) {
-      *object = static_cast<Resource*>(this);
+      *object = static_cast<IDirect3DResource9*>(this);
    }
    else if (iid == IID_IDirect3DBaseTexture9) {
-      *object = static_cast<Base_texture*>(this);
+      *object = static_cast<IDirect3DBaseTexture9*>(this);
    }
    else if (iid == IID_IDirect3DTexture9) {
-      *object = nullptr;
-
-      *object = this;
+      *object = static_cast<IDirect3DTexture9*>(this);
+   }
+   else if (iid == IID_Texture_accessor) {
+      *object = static_cast<Texture_accessor*>(this);
    }
    else {
+      *object = nullptr;
+
       return E_NOINTERFACE;
    }
 
@@ -115,17 +116,30 @@ HRESULT Texture2d_rendertarget::GetSurfaceLevel(UINT level, IDirect3DSurface9** 
 
    AddRef();
 
-   *surface = reinterpret_cast<IDirect3DSurface9*>(&_surface);
+   *surface = &_surface;
 
    return S_OK;
+}
+
+auto Texture2d_rendertarget::dimension() const noexcept -> Texture_accessor_dimension
+{
+   return Texture_accessor_dimension::_2d;
+}
+
+auto Texture2d_rendertarget::type() const noexcept -> Texture_accessor_type
+{
+   return Texture_accessor_type::texture_rendertarget;
+}
+
+auto Texture2d_rendertarget::texture_rendertarget() const noexcept -> core::Game_rendertarget_id
+{
+   return _rendertarget_id.id;
 }
 
 Texture2d_rendertarget::Surface::Surface(Texture2d_rendertarget& owning_texture) noexcept
    : owning_texture{owning_texture}
 {
    Debug_trace::func(__FUNCSIG__);
-
-   this->resource = owning_texture._rendertarget_id.id;
 }
 
 HRESULT Texture2d_rendertarget::Surface::QueryInterface(const IID& iid, void** object) noexcept
@@ -135,17 +149,20 @@ HRESULT Texture2d_rendertarget::Surface::QueryInterface(const IID& iid, void** o
    if (!object) return E_INVALIDARG;
 
    if (iid == IID_IUnknown) {
-      *object = static_cast<IUnknown*>(this);
+      *object = static_cast<IUnknown*>(static_cast<IDirect3DSurface9*>(this));
    }
    else if (iid == IID_IDirect3DResource9) {
-      *object = static_cast<Resource*>(this);
+      *object = static_cast<IDirect3DResource9*>(this);
    }
    else if (iid == IID_IDirect3DSurface9) {
-      *object = nullptr;
-
-      *object = this;
+      *object = static_cast<IDirect3DSurface9*>(this);
+   }
+   else if (iid == IID_Rendertarget_accessor) {
+      *object = static_cast<Rendertarget_accessor*>(this);
    }
    else {
+      *object = nullptr;
+
       return E_NOINTERFACE;
    }
 
@@ -180,6 +197,11 @@ HRESULT Texture2d_rendertarget::Surface::GetDesc(D3DSURFACE_DESC* desc) noexcept
    Debug_trace::func(__FUNCSIG__);
 
    return owning_texture.GetLevelDesc(0, desc);
+}
+
+auto Texture2d_rendertarget::Surface::rendertarget() const noexcept -> core::Game_rendertarget_id
+{
+   return owning_texture._rendertarget_id.id;
 }
 
 Texture2d_rendertarget::Rendertarget_id::~Rendertarget_id()

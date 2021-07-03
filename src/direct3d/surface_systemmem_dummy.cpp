@@ -27,10 +27,10 @@ HRESULT Surface_systemmem_dummy::QueryInterface(const IID& iid, void** object) n
       *object = static_cast<IUnknown*>(this);
    }
    else if (iid == IID_IDirect3DResource9) {
-      *object = static_cast<Resource*>(this);
+      *object = static_cast<IDirect3DResource9*>(this);
    }
    else if (iid == IID_IDirect3DSurface9) {
-      *object = this;
+      *object = static_cast<IDirect3DSurface9*>(this);
    }
    else {
       *object = nullptr;

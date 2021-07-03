@@ -83,7 +83,7 @@ public:
 
    void present() noexcept;
 
-   auto get_back_buffer() noexcept -> Game_rendertarget_id;
+   static auto get_back_buffer() noexcept -> Game_rendertarget_id;
 
    auto create_rasterizer_state(const D3D11_RASTERIZER_DESC d3d11_rasterizer_desc) noexcept
       -> Com_ptr<ID3D11RasterizerState>;

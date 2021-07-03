@@ -2,9 +2,9 @@
 
 #include "../core/shader_patch.hpp"
 #include "../logger.hpp"
-#include "base_texture.hpp"
 #include "com_ptr.hpp"
 #include "format_patcher.hpp"
+#include "resource_access.hpp"
 #include "upload_texture.hpp"
 
 #include <memory>
@@ -14,7 +14,7 @@
 
 namespace sp::d3d9 {
 
-class Texture2d_managed final : public Base_texture {
+class Texture2d_managed final : public IDirect3DTexture9, public Texture_accessor {
 public:
    static Com_ptr<Texture2d_managed> create(
       core::Shader_patch& shader_patch, const UINT width, const UINT height,
@@ -62,8 +62,7 @@ public:
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
 
-   [[deprecated(
-      "unimplemented")]] DWORD __stdcall GetPriority() noexcept override
+   [[deprecated("unimplemented")]] DWORD __stdcall GetPriority() noexcept override
    {
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
@@ -120,6 +119,12 @@ public:
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
 
+   auto type() const noexcept -> Texture_accessor_type override;
+
+   auto dimension() const noexcept -> Texture_accessor_dimension override;
+
+   auto texture() const noexcept -> core::Game_texture override;
+
 private:
    struct Surface;
 
@@ -130,9 +135,11 @@ private:
 
    ~Texture2d_managed() = default;
 
+   core::Shader_patch& _shader_patch;
+   core::Game_texture _game_texture = core::nullgametex;
+
    std::unique_ptr<Format_patcher> _format_patcher;
    std::unique_ptr<Upload_texture> _upload_texture;
-   core::Shader_patch& _shader_patch;
 
    bool _first_lock = true;
    bool _dynamic_texture = false;
@@ -147,7 +154,7 @@ private:
 
    ULONG _ref_count = 1;
 
-   struct Surface final : public Resource {
+   struct Surface final : public IDirect3DSurface9 {
       Texture2d_managed& owning_texture;
       const UINT level;
 
@@ -199,8 +206,7 @@ private:
             "Unimplemented function \"" __FUNCSIG__ "\" called.");
       }
 
-      [[deprecated(
-         "unimplemented")]] DWORD __stdcall GetPriority() noexcept override
+      [[deprecated("unimplemented")]] DWORD __stdcall GetPriority() noexcept override
       {
          log_and_terminate(
             "Unimplemented function \"" __FUNCSIG__ "\" called.");
@@ -240,16 +246,6 @@ private:
             "Unimplemented function \"" __FUNCSIG__ "\" called.");
       }
    };
-
-   static_assert(!std::has_virtual_destructor_v<Surface>,
-                 "Texture2d_managed::Surface must not have a virtual "
-                 "destructor as it will cause "
-                 "an ABI break.");
 };
-
-static_assert(
-   !std::has_virtual_destructor_v<Texture2d_managed>,
-   "Texture2d_managed must not have a virtual destructor as it will cause "
-   "an ABI break.");
 
 }

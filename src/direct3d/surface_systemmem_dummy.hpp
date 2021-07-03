@@ -3,7 +3,6 @@
 #include "../core/shader_patch.hpp"
 #include "../logger.hpp"
 #include "com_ptr.hpp"
-#include "resource.hpp"
 
 #include <memory>
 
@@ -11,7 +10,7 @@
 
 namespace sp::d3d9 {
 
-struct Surface_systemmem_dummy final : public Resource {
+struct Surface_systemmem_dummy final : public IDirect3DSurface9 {
 public:
    constexpr static auto dummy_format = D3DFMT_A8R8G8B8;
 
@@ -58,8 +57,7 @@ public:
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
 
-   [[deprecated(
-      "unimplemented")]] DWORD __stdcall GetPriority() noexcept override
+   [[deprecated("unimplemented")]] DWORD __stdcall GetPriority() noexcept override
    {
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
@@ -105,9 +103,5 @@ private:
 
    ULONG _ref_count = 1;
 };
-static_assert(
-   !std::has_virtual_destructor_v<Surface_systemmem_dummy>,
-   "Texture2d_systemmem must not have a virtual destructor as it will cause "
-   "an ABI break.");
 
 }

@@ -20,9 +20,8 @@ Texturecube_managed::Texturecube_managed(core::Shader_patch& shader_patch,
                                          const DXGI_FORMAT format,
                                          const D3DFORMAT reported_format,
                                          std::unique_ptr<Format_patcher> format_patcher) noexcept
-   : Base_texture{Texture_type::texturecube},
+   : _shader_patch{shader_patch},
      _format_patcher{std::move(format_patcher)},
-     _shader_patch{shader_patch},
      _width{width},
      _mip_levels{mip_levels},
      _format{format},
@@ -41,19 +40,22 @@ HRESULT Texturecube_managed::QueryInterface(const IID& iid, void** object) noexc
 
    if (!object) return E_INVALIDARG;
 
-   if (iid == IID_IUnknown) {
-      *object = static_cast<IUnknown*>(this);
+   if (iid == IID_Texture_accessor) [[likely]] {
+      *object = static_cast<Texture_accessor*>(this);
+   }
+   else if (iid == IID_IUnknown) {
+      *object = static_cast<IUnknown*>(static_cast<IDirect3DCubeTexture9*>(this));
    }
    else if (iid == IID_IDirect3DResource9) {
-      *object = static_cast<Resource*>(this);
+      *object = static_cast<IDirect3DResource9*>(this);
    }
    else if (iid == IID_IDirect3DBaseTexture9) {
-      *object = static_cast<Base_texture*>(this);
+      *object = static_cast<IDirect3DBaseTexture9*>(this);
    }
    else if (iid == IID_IDirect3DCubeTexture9) {
-      *object = this;
+      *object = static_cast<IDirect3DCubeTexture9*>(this);
    }
-   else {
+   else [[unlikely]] {
       *object = nullptr;
 
       return E_NOINTERFACE;
@@ -153,13 +155,13 @@ HRESULT Texturecube_managed::UnlockRect(D3DCUBEMAP_FACES face, UINT level) noexc
             _format_patcher->patch_texture(_format, _width, _width, _mip_levels,
                                            6, *_upload_texture);
 
-         this->resource =
+         _game_texture =
             _shader_patch.create_game_texture_cube(_width, _width, _mip_levels,
                                                    patched_format,
                                                    patched_texture->subresources());
       }
       else {
-         this->resource =
+         _game_texture =
             _shader_patch.create_game_texture_cube(_width, _width, _mip_levels, _format,
                                                    _upload_texture->subresources());
       }
@@ -169,6 +171,21 @@ HRESULT Texturecube_managed::UnlockRect(D3DCUBEMAP_FACES face, UINT level) noexc
    }
 
    return S_OK;
+}
+
+auto Texturecube_managed::type() const noexcept -> Texture_accessor_type
+{
+   return Texture_accessor_type::texture;
+}
+
+auto Texturecube_managed::dimension() const noexcept -> Texture_accessor_dimension
+{
+   return Texture_accessor_dimension::cube;
+}
+
+auto Texturecube_managed::texture() const noexcept -> core::Game_texture
+{
+   return _game_texture;
 }
 
 }

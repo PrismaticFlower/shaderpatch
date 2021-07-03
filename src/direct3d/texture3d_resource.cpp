@@ -18,22 +18,22 @@ Com_ptr<Texture3d_resource> Texture3d_resource::create(core::Shader_patch& patch
 
 Texture3d_resource::Texture3d_resource(core::Shader_patch& patch, const UINT width,
                                        const UINT height, const UINT depth) noexcept
-   : Base_texture{Texture_type::resource}, _patch{patch}, _width{width}, _height{height}, _depth{depth}
+   : _patch{patch}, _width{width}, _height{height}, _depth{depth}
 {
    Expects(_resource_size >= sizeof(Volume_resource_header));
 }
 
 Texture3d_resource::~Texture3d_resource()
 {
-   if (std::holds_alternative<core::Texture_handle>(resource)) {
-      _patch.destroy_patch_texture(std::get<core::Texture_handle>(resource));
+   if (std::holds_alternative<core::Texture_handle>(_resource)) {
+      _patch.destroy_patch_texture(std::get<core::Texture_handle>(_resource));
    }
-   else if (std::holds_alternative<core::Material_handle>(resource)) {
-      _patch.destroy_patch_material(std::get<core::Material_handle>(resource));
+   else if (std::holds_alternative<core::Material_handle>(_resource)) {
+      _patch.destroy_patch_material(std::get<core::Material_handle>(_resource));
    }
-   else if (std::holds_alternative<core::Patch_effects_config_handle>(resource)) {
+   else if (std::holds_alternative<core::Patch_effects_config_handle>(_resource)) {
       _patch.destroy_patch_effects_config(
-         std::get<core::Patch_effects_config_handle>(resource));
+         std::get<core::Patch_effects_config_handle>(_resource));
    }
 }
 
@@ -44,19 +44,22 @@ Texture3d_resource::QueryInterface(const IID& iid, void** object) noexcept
 
    if (!object) return E_INVALIDARG;
 
-   if (iid == IID_IUnknown) {
-      *object = static_cast<IUnknown*>(this);
+   if (iid == IID_Texture_accessor) [[likely]] {
+      *object = static_cast<Texture_accessor*>(this);
+   }
+   else if (iid == IID_IUnknown) {
+      *object = static_cast<IUnknown*>(static_cast<IDirect3DVolumeTexture9*>(this));
    }
    else if (iid == IID_IDirect3DResource9) {
-      *object = static_cast<Resource*>(this);
+      *object = static_cast<IDirect3DResource9*>(this);
    }
    else if (iid == IID_IDirect3DBaseTexture9) {
-      *object = static_cast<Base_texture*>(this);
+      *object = static_cast<IDirect3DBaseTexture9*>(this);
    }
    else if (iid == IID_IDirect3DVolumeTexture9) {
-      *object = this;
+      *object = static_cast<IDirect3DVolumeTexture9*>(this);
    }
-   else {
+   else [[unlikely]] {
       *object = nullptr;
 
       return E_NOINTERFACE;
@@ -154,6 +157,29 @@ HRESULT Texture3d_resource::UnlockBox(UINT level) noexcept
    return S_OK;
 }
 
+auto Texture3d_resource::type() const noexcept -> Texture_accessor_type
+{
+   if (std::holds_alternative<core::Material_handle>(_resource)) {
+      return Texture_accessor_type::material;
+   }
+
+   return Texture_accessor_type::none;
+}
+
+auto Texture3d_resource::dimension() const noexcept -> Texture_accessor_dimension
+{
+   return Texture_accessor_dimension::nonapplicable;
+}
+
+auto Texture3d_resource::material() const noexcept -> material::Material*
+{
+   if (std::holds_alternative<core::Material_handle>(_resource)) {
+      return std::get<core::Material_handle>(_resource);
+   }
+
+   return nullptr;
+}
+
 void Texture3d_resource::create_resource() noexcept
 {
    const auto volume_res_header = bit_cast<Volume_resource_header>(
@@ -168,14 +194,13 @@ void Texture3d_resource::create_resource() noexcept
 
    switch (volume_res_header.type) {
    case Volume_resource_type::material:
-      this->resource.emplace<core::Material_handle>(
-         _patch.create_patch_material(payload));
+      _resource.emplace<core::Material_handle>(_patch.create_patch_material(payload));
       break;
    case Volume_resource_type::texture:
-      this->resource = _patch.create_patch_texture(payload);
+      _resource = _patch.create_patch_texture(payload);
       break;
    case Volume_resource_type::fx_config:
-      this->resource = _patch.create_patch_effects_config(payload);
+      _resource = _patch.create_patch_effects_config(payload);
       break;
    case Volume_resource_type::colorgrading_regions:
       _patch.load_colorgrading_regions(payload);

@@ -2,13 +2,13 @@
 
 #include "../core/shader_patch.hpp"
 #include "../logger.hpp"
-#include "base_texture.hpp"
+#include "resource_access.hpp"
 
 #include <d3d9.h>
 
 namespace sp::d3d9 {
 
-class Texture2d_rendertarget final : public Base_texture {
+class Texture2d_rendertarget final : public IDirect3DTexture9, public Texture_accessor {
 public:
    static constexpr auto reported_format = D3DFMT_A8R8G8B8;
 
@@ -121,6 +121,12 @@ public:
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
 
+   auto type() const noexcept -> Texture_accessor_type override;
+
+   auto dimension() const noexcept -> Texture_accessor_dimension override;
+
+   auto texture_rendertarget() const noexcept -> core::Game_rendertarget_id override;
+
 private:
    Texture2d_rendertarget(core::Shader_patch& shader_patch, const UINT actual_width,
                           const UINT actual_height, const UINT perceived_width,
@@ -128,7 +134,7 @@ private:
 
    ~Texture2d_rendertarget() = default;
 
-   struct Surface final : public Resource {
+   struct Surface final : public IDirect3DSurface9, public Rendertarget_accessor {
       Texture2d_rendertarget& owning_texture;
 
       Surface(Texture2d_rendertarget& owning_texture) noexcept;
@@ -227,6 +233,8 @@ private:
          log_and_terminate(
             "Unimplemented function \"" __FUNCSIG__ "\" called.");
       }
+
+      auto rendertarget() const noexcept -> core::Game_rendertarget_id override;
    };
 
    struct Rendertarget_id {

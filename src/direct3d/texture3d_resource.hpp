@@ -2,10 +2,11 @@
 
 #include "../core/shader_patch.hpp"
 #include "../logger.hpp"
-#include "base_texture.hpp"
 #include "com_ptr.hpp"
+#include "resource_access.hpp"
 
 #include <memory>
+#include <variant>
 
 #include <d3d9.h>
 
@@ -13,7 +14,7 @@
 
 namespace sp::d3d9 {
 
-class Texture3d_resource final : public Base_texture {
+class Texture3d_resource final : public IDirect3DVolumeTexture9, public Texture_accessor {
 public:
    static Com_ptr<Texture3d_resource> create(core::Shader_patch& patch,
                                              const UINT width, const UINT height,
@@ -120,6 +121,12 @@ public:
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
 
+   auto type() const noexcept -> Texture_accessor_type override;
+
+   auto dimension() const noexcept -> Texture_accessor_dimension override;
+
+   auto material() const noexcept -> material::Material* override;
+
 private:
    Texture3d_resource(core::Shader_patch& patch, const UINT width,
                       const UINT height, const UINT depth) noexcept;
@@ -129,6 +136,8 @@ private:
    void create_resource() noexcept;
 
    core::Shader_patch& _patch;
+
+   std::variant<std::monostate, core::Texture_handle, core::Material_handle, core::Patch_effects_config_handle> _resource;
 
    const UINT _width;
    const UINT _height;

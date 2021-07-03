@@ -13,9 +13,8 @@ Com_ptr<Surface_backbuffer> Surface_backbuffer::create(const core::Game_renderta
 
 Surface_backbuffer::Surface_backbuffer(const core::Game_rendertarget_id rendertarget_id,
                                        const UINT width, const UINT height) noexcept
-   : _width{width}, _height{height}
+   : _rendertarget_id{rendertarget_id}, _width{width}, _height{height}
 {
-   this->resource = rendertarget_id;
 }
 
 HRESULT Surface_backbuffer::QueryInterface(const IID& iid, void** object) noexcept
@@ -24,16 +23,19 @@ HRESULT Surface_backbuffer::QueryInterface(const IID& iid, void** object) noexce
 
    if (!object) return E_INVALIDARG;
 
-   if (iid == IID_IUnknown) {
-      *object = static_cast<IUnknown*>(this);
+   if (iid == IID_Rendertarget_accessor) [[likely]] {
+      *object = static_cast<Rendertarget_accessor*>(this);
+   }
+   else if (iid == IID_IUnknown) {
+      *object = static_cast<IUnknown*>(static_cast<IDirect3DSurface9*>(this));
    }
    else if (iid == IID_IDirect3DResource9) {
-      *object = static_cast<Resource*>(this);
+      *object = static_cast<IDirect3DResource9*>(this);
    }
    else if (iid == IID_IDirect3DSurface9) {
-      *object = this;
+      *object = static_cast<IDirect3DSurface9*>(this);
    }
-   else {
+   else [[unlikely]] {
       *object = nullptr;
 
       return E_NOINTERFACE;
@@ -85,6 +87,11 @@ HRESULT Surface_backbuffer::GetDesc(D3DSURFACE_DESC* desc) noexcept
    desc->Height = _height;
 
    return S_OK;
+}
+
+auto Surface_backbuffer::rendertarget() const noexcept -> core::Game_rendertarget_id
+{
+   return _rendertarget_id;
 }
 
 }

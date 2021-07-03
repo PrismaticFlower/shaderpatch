@@ -2,9 +2,9 @@
 
 #include "../core/shader_patch.hpp"
 #include "../logger.hpp"
-#include "base_texture.hpp"
 #include "com_ptr.hpp"
 #include "format_patcher.hpp"
+#include "resource_access.hpp"
 #include "upload_texture.hpp"
 
 #include <memory>
@@ -14,7 +14,7 @@
 
 namespace sp::d3d9 {
 
-class Texturecube_managed final : public Base_texture {
+class Texturecube_managed final : public IDirect3DCubeTexture9, public Texture_accessor {
 public:
    static Com_ptr<Texturecube_managed> create(
       core::Shader_patch& shader_patch, const UINT width, const UINT mip_levels,
@@ -62,8 +62,7 @@ public:
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
 
-   [[deprecated(
-      "unimplemented")]] DWORD __stdcall GetPriority() noexcept override
+   [[deprecated("unimplemented")]] DWORD __stdcall GetPriority() noexcept override
    {
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
@@ -125,6 +124,12 @@ public:
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
 
+   auto type() const noexcept -> Texture_accessor_type override;
+
+   auto dimension() const noexcept -> Texture_accessor_dimension override;
+
+   auto texture() const noexcept -> core::Game_texture override;
+
 private:
    Texturecube_managed(core::Shader_patch& shader_patch, const UINT width,
                        const UINT mip_levels, const DXGI_FORMAT format,
@@ -133,9 +138,11 @@ private:
 
    ~Texturecube_managed() = default;
 
+   core::Shader_patch& _shader_patch;
+   core::Game_texture _game_texture = core::nullgametex;
+
    std::unique_ptr<Format_patcher> _format_patcher;
    std::optional<Upload_texture> _upload_texture;
-   core::Shader_patch& _shader_patch;
 
    const UINT _width;
    const UINT _mip_levels;

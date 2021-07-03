@@ -2,13 +2,13 @@
 
 #include "../core/shader_patch.hpp"
 #include "../logger.hpp"
-#include "resource.hpp"
+#include "resource_access.hpp"
 
 #include <d3d9.h>
 
 namespace sp::d3d9 {
 
-class Surface_backbuffer final : public Resource {
+class Surface_backbuffer final : public IDirect3DSurface9, public Rendertarget_accessor {
 public:
    static constexpr auto reported_format = D3DFMT_A8R8G8B8;
 
@@ -56,8 +56,7 @@ public:
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
 
-   [[deprecated(
-      "unimplemented")]] DWORD __stdcall GetPriority() noexcept override
+   [[deprecated("unimplemented")]] DWORD __stdcall GetPriority() noexcept override
    {
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
@@ -100,12 +99,15 @@ public:
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
 
+   auto rendertarget() const noexcept -> core::Game_rendertarget_id override;
+
 private:
    Surface_backbuffer(const core::Game_rendertarget_id rendertarget_id,
                       const UINT width, const UINT height) noexcept;
 
    ~Surface_backbuffer() = default;
 
+   const core::Game_rendertarget_id _rendertarget_id;
    const UINT _width;
    const UINT _height;
    ULONG _ref_count = 1;

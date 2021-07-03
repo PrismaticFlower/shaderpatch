@@ -2,8 +2,8 @@
 
 #include "../core/shader_patch.hpp"
 #include "../logger.hpp"
-#include "base_texture.hpp"
 #include "com_ptr.hpp"
+#include "resource_access.hpp"
 #include "upload_texture.hpp"
 
 #include <optional>
@@ -12,7 +12,7 @@
 
 namespace sp::d3d9 {
 
-class Texture3d_managed final : public Base_texture {
+class Texture3d_managed final : public IDirect3DVolumeTexture9, public Texture_accessor {
 public:
    static Com_ptr<Texture3d_managed> create(core::Shader_patch& shader_patch,
                                             const UINT width, const UINT height,
@@ -61,8 +61,7 @@ public:
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
 
-   [[deprecated(
-      "unimplemented")]] DWORD __stdcall GetPriority() noexcept override
+   [[deprecated("unimplemented")]] DWORD __stdcall GetPriority() noexcept override
    {
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
@@ -122,6 +121,12 @@ public:
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
 
+   auto type() const noexcept -> Texture_accessor_type override;
+
+   auto dimension() const noexcept -> Texture_accessor_dimension override;
+
+   auto texture() const noexcept -> core::Game_texture override;
+
 private:
    Texture3d_managed(core::Shader_patch& shader_patch, const UINT width,
                      const UINT height, const UINT depth, const UINT mip_levels,
@@ -129,8 +134,10 @@ private:
 
    ~Texture3d_managed() = default;
 
-   std::optional<Upload_texture> _upload_texture;
    core::Shader_patch& _shader_patch;
+   core::Game_texture _game_texture = core::nullgametex;
+
+   std::optional<Upload_texture> _upload_texture;
 
    const UINT _width;
    const UINT _height;
@@ -142,10 +149,5 @@ private:
 
    ULONG _ref_count = 1;
 };
-
-static_assert(
-   !std::has_virtual_destructor_v<Texture3d_managed>,
-   "Texture3d_managed must not have a virtual destructor as it will cause "
-   "an ABI break.");
 
 }

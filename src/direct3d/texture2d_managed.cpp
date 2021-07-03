@@ -11,9 +11,8 @@ Texture2d_managed::Texture2d_managed(core::Shader_patch& shader_patch,
                                      const UINT mip_levels, const DXGI_FORMAT format,
                                      const D3DFORMAT reported_format,
                                      std::unique_ptr<Format_patcher> format_patcher) noexcept
-   : Base_texture{Texture_type::texture2d},
+   : _shader_patch{shader_patch},
      _format_patcher{std::move(format_patcher)},
-     _shader_patch{shader_patch},
      _width{width},
      _height{height},
      _mip_levels{mip_levels},
@@ -49,19 +48,22 @@ HRESULT Texture2d_managed::QueryInterface(const IID& iid, void** object) noexcep
 
    if (!object) return E_INVALIDARG;
 
-   if (iid == IID_IUnknown) {
-      *object = static_cast<IUnknown*>(this);
+   if (iid == IID_Texture_accessor) [[likely]] {
+      *object = static_cast<Texture_accessor*>(this);
+   }
+   else if (iid == IID_IUnknown) {
+      *object = static_cast<IUnknown*>(static_cast<IDirect3DTexture9*>(this));
    }
    else if (iid == IID_IDirect3DResource9) {
-      *object = static_cast<Resource*>(this);
+      *object = static_cast<IDirect3DResource9*>(this);
    }
    else if (iid == IID_IDirect3DBaseTexture9) {
-      *object = static_cast<Base_texture*>(this);
+      *object = static_cast<IDirect3DBaseTexture9*>(this);
    }
    else if (iid == IID_IDirect3DTexture9) {
-      *object = this;
+      *object = static_cast<IDirect3DTexture9*>(this);
    }
-   else {
+   else [[unlikely]] {
       *object = nullptr;
 
       return E_NOINTERFACE;
@@ -132,7 +134,7 @@ HRESULT Texture2d_managed::GetSurfaceLevel(UINT level, IDirect3DSurface9** surfa
 
    AddRef();
 
-   *surface = reinterpret_cast<IDirect3DSurface9*>(_surfaces[level].get());
+   *surface = _surfaces[level].get();
 
    return S_OK;
 }
@@ -155,8 +157,7 @@ HRESULT Texture2d_managed::LockRect(UINT level, D3DLOCKED_RECT* locked_rect,
                                           _width, _height, 1, _mip_levels, 1);
    }
    else if (!_upload_texture && !std::exchange(_dynamic_texture, true)) {
-      this->resource = _shader_patch.create_game_dynamic_texture2d(
-         std::get<core::Game_texture>(this->resource));
+      _game_texture = _shader_patch.create_game_dynamic_texture2d(_game_texture);
       _dynamic_texture = true;
    }
 
@@ -164,9 +165,8 @@ HRESULT Texture2d_managed::LockRect(UINT level, D3DLOCKED_RECT* locked_rect,
       auto mapped_texture =
          _format_patcher
             ? _format_patcher->map_dynamic_texture(_format, _width, _height, level)
-            : _shader_patch.map_dynamic_texture(std::get<core::Game_texture>(
-                                                   this->resource),
-                                                level, D3D11_MAP_WRITE_DISCARD);
+            : _shader_patch.map_dynamic_texture(_game_texture, level,
+                                                D3D11_MAP_WRITE_DISCARD);
 
       locked_rect->Pitch = mapped_texture.row_pitch;
       locked_rect->pBits = mapped_texture.data;
@@ -189,14 +189,10 @@ HRESULT Texture2d_managed::UnlockRect(UINT level) noexcept
 
    if (_dynamic_texture) {
       if (_format_patcher) {
-         _format_patcher->unmap_dynamic_texture(_shader_patch,
-                                                std::get<core::Game_texture>(
-                                                   this->resource),
-                                                level);
+         _format_patcher->unmap_dynamic_texture(_shader_patch, _game_texture, level);
       }
       else {
-         _shader_patch.unmap_dynamic_texture(std::get<core::Game_texture>(this->resource),
-                                             level);
+         _shader_patch.unmap_dynamic_texture(_game_texture, level);
       }
    }
    else {
@@ -208,13 +204,13 @@ HRESULT Texture2d_managed::UnlockRect(UINT level) noexcept
                _format_patcher->patch_texture(_format, _width, _height,
                                               _mip_levels, 1, *_upload_texture);
 
-            this->resource =
+            _game_texture =
                _shader_patch.create_game_texture2d(_width, _height, _mip_levels,
                                                    patched_format,
                                                    patched_texture->subresources());
          }
          else {
-            this->resource =
+            _game_texture =
                _shader_patch.create_game_texture2d(_width, _height, _mip_levels, _format,
                                                    _upload_texture->subresources());
          }
@@ -224,6 +220,21 @@ HRESULT Texture2d_managed::UnlockRect(UINT level) noexcept
    }
 
    return S_OK;
+}
+
+auto Texture2d_managed::type() const noexcept -> Texture_accessor_type
+{
+   return Texture_accessor_type::texture;
+}
+
+auto Texture2d_managed::dimension() const noexcept -> Texture_accessor_dimension
+{
+   return Texture_accessor_dimension::_2d;
+}
+
+auto Texture2d_managed::texture() const noexcept -> core::Game_texture
+{
+   return _game_texture;
 }
 
 Texture2d_managed::Surface::Surface(Texture2d_managed& owning_texture,
@@ -242,10 +253,10 @@ HRESULT Texture2d_managed::Surface::QueryInterface(const IID& iid, void** object
       *object = static_cast<IUnknown*>(this);
    }
    else if (iid == IID_IDirect3DResource9) {
-      *object = static_cast<Resource*>(this);
+      *object = static_cast<IDirect3DResource9*>(this);
    }
    else if (iid == IID_IDirect3DSurface9) {
-      *object = this;
+      *object = static_cast<IDirect3DSurface9*>(this);
    }
    else {
       *object = nullptr;

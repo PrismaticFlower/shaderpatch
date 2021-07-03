@@ -19,6 +19,7 @@
 #include "volume_resource.hpp"
 
 #include <algorithm>
+#include <bit>
 #include <cassert>
 
 using namespace std::literals;
@@ -298,7 +299,7 @@ HRESULT Device::GetBackBuffer(UINT swap_chain, UINT back_buffer_index,
    if (back_buffer_index != 0) return D3DERR_INVALIDCALL;
    if (type != D3DBACKBUFFER_TYPE_MONO) return D3DERR_INVALIDCALL;
 
-   *back_buffer = static_cast<IDirect3DSurface9*>(_backbuffer.unmanaged_copy());
+   *back_buffer = _backbuffer.unmanaged_copy();
 
    return S_OK;
 }
@@ -349,8 +350,8 @@ HRESULT Device::CreateVolumeTexture(UINT width, UINT height, UINT depth, UINT le
    }
 
    if (format == volume_resource_format) {
-      *volume_texture = reinterpret_cast<IDirect3DVolumeTexture9*>(
-         Texture3d_resource::create(_shader_patch, width, height, depth).release());
+      *volume_texture =
+         Texture3d_resource::create(_shader_patch, width, height, depth).release();
 
       return S_OK;
    }
@@ -444,8 +445,7 @@ HRESULT Device::CreateDepthStencilSurface(UINT width, UINT height, D3DFORMAT,
                                 ? core::Game_depthstencil::reflectionscene
                                 : core::Game_depthstencil::farscene;
 
-   *surface = reinterpret_cast<IDirect3DSurface9*>(
-      Surface_depthstencil::create(surface_name, width, height).release());
+   *surface = Surface_depthstencil::create(surface_name, width, height).release();
 
    return S_OK;
 }
@@ -494,13 +494,19 @@ HRESULT Device::StretchRect(IDirect3DSurface9* source_surface,
    if (!rect_in_surface(*source_rect, src_desc)) return D3DERR_INVALIDCALL;
    if (!rect_in_surface(*dest_rect, dest_desc)) return D3DERR_INVALIDCALL;
 
-   const auto* const source_id =
-      reinterpret_cast<Resource*>(source_surface)->get_if<core::Game_rendertarget_id>();
+   Com_ptr<Rendertarget_accessor> source_rt;
 
-   const auto* const dest_id =
-      reinterpret_cast<Resource*>(dest_surface)->get_if<core::Game_rendertarget_id>();
+   if (FAILED(source_surface->QueryInterface(IID_Rendertarget_accessor,
+                                             source_rt.void_clear_and_assign()))) {
+      return D3DERR_INVALIDCALL;
+   }
 
-   if (!source_id || !dest_id) return D3DERR_INVALIDCALL;
+   Com_ptr<Rendertarget_accessor> dest_rt;
+
+   if (FAILED(dest_surface->QueryInterface(IID_Rendertarget_accessor,
+                                           dest_rt.void_clear_and_assign()))) {
+      return D3DERR_INVALIDCALL;
+   }
 
    const auto perceived_rect_to_actual = [this](const D3DSURFACE_DESC& desc, RECT rect) {
       if (desc.Width == _perceived_width && desc.Height == _perceived_height) {
@@ -513,9 +519,9 @@ HRESULT Device::StretchRect(IDirect3DSurface9* source_surface,
       return rect;
    };
 
-   _shader_patch.stretch_rendertarget(*source_id,
+   _shader_patch.stretch_rendertarget(source_rt->rendertarget(),
                                       perceived_rect_to_actual(src_desc, *source_rect),
-                                      *dest_id,
+                                      dest_rt->rendertarget(),
                                       perceived_rect_to_actual(dest_desc, *dest_rect));
 
    return S_OK;
@@ -528,12 +534,15 @@ HRESULT Device::ColorFill(IDirect3DSurface9* surface, const RECT* rect,
 
    if (!surface) return D3DERR_INVALIDCALL;
 
-   const auto* const rendertarget_id =
-      reinterpret_cast<Resource*>(surface)->get_if<core::Game_rendertarget_id>();
+   Com_ptr<Rendertarget_accessor> rendertarget;
 
-   if (!rendertarget_id) return D3DERR_INVALIDCALL;
+   if (FAILED(surface->QueryInterface(IID_Rendertarget_accessor,
+                                      rendertarget.void_clear_and_assign()))) {
+      return D3DERR_INVALIDCALL;
+   }
 
-   _shader_patch.color_fill_rendertarget(*rendertarget_id, unpack_d3dcolor(color), rect);
+   _shader_patch.color_fill_rendertarget(rendertarget->rendertarget(),
+                                         unpack_d3dcolor(color), rect);
 
    return S_OK;
 }
@@ -556,8 +565,7 @@ HRESULT Device::CreateOffscreenPlainSurface(UINT width, UINT height,
                         "unexpected format.");
    }
 
-   *surface = reinterpret_cast<IDirect3DSurface9*>(
-      Surface_systemmem_dummy::create(width, height).release());
+   *surface = Surface_systemmem_dummy::create(width, height).release();
 
    return S_OK;
 }
@@ -570,10 +578,12 @@ HRESULT Device::SetRenderTarget(DWORD rendertarget_index,
    if (rendertarget_index != 0) return D3DERR_NOTFOUND;
    if (!rendertarget) return D3DERR_INVALIDCALL;
 
-   const auto* const rendertarget_id =
-      reinterpret_cast<Resource*>(rendertarget)->get_if<core::Game_rendertarget_id>();
+   Com_ptr<Rendertarget_accessor> rendertarget_access;
 
-   if (!rendertarget_id) return D3DERR_INVALIDCALL;
+   if (FAILED(rendertarget->QueryInterface(IID_Rendertarget_accessor,
+                                           rendertarget_access.void_clear_and_assign()))) {
+      return D3DERR_INVALIDCALL;
+   }
 
    // update viewport
    {
@@ -584,10 +594,9 @@ HRESULT Device::SetRenderTarget(DWORD rendertarget_index,
       _viewport = {0, 0, desc.Width, desc.Height, 0.0f, 1.0f};
    }
 
-   _shader_patch.set_rendertarget(*rendertarget_id);
+   _shader_patch.set_rendertarget(rendertarget_access->rendertarget());
 
-   rendertarget->AddRef();
-   _rendertarget = Com_ptr{static_cast<IUnknown*>(rendertarget)};
+   _rendertarget = copy_raw_com_ptr(rendertarget);
 
    return S_OK;
 }
@@ -600,7 +609,7 @@ HRESULT Device::GetRenderTarget(DWORD rendertarget_index,
    if (rendertarget_index != 0) return D3DERR_NOTFOUND;
    if (!rendertarget) return D3DERR_INVALIDCALL;
 
-   *rendertarget = static_cast<IDirect3DSurface9*>(_rendertarget.unmanaged_copy());
+   *rendertarget = _rendertarget.unmanaged_copy();
 
    return S_OK;
 }
@@ -616,15 +625,16 @@ HRESULT Device::SetDepthStencilSurface(IDirect3DSurface9* new_z_stencil) noexcep
       return S_OK;
    }
 
-   const auto* const depthstencil =
-      reinterpret_cast<Resource*>(new_z_stencil)->get_if<core::Game_depthstencil>();
+   Com_ptr<Depthstencil_accessor> depthstencil_accessor;
 
-   if (!depthstencil) return D3DERR_INVALIDCALL;
+   if (FAILED(new_z_stencil->QueryInterface(IID_Depthstencil_accessor,
+                                            depthstencil_accessor.void_clear_and_assign()))) {
+      return D3DERR_INVALIDCALL;
+   }
 
-   _shader_patch.set_depthstencil(*depthstencil);
+   _shader_patch.set_depthstencil(depthstencil_accessor->depthstencil());
 
-   new_z_stencil->AddRef();
-   _depthstencil = Com_ptr{static_cast<IUnknown*>(new_z_stencil)};
+   _depthstencil = copy_raw_com_ptr(new_z_stencil);
 
    return S_OK;
 }
@@ -636,8 +646,7 @@ HRESULT Device::GetDepthStencilSurface(IDirect3DSurface9** z_stencil_surface) no
    if (!z_stencil_surface) return D3DERR_INVALIDCALL;
 
    if (_depthstencil) {
-      *z_stencil_surface =
-         static_cast<IDirect3DSurface9*>(_depthstencil.unmanaged_copy());
+      *z_stencil_surface = _depthstencil.unmanaged_copy();
    }
    else {
       *z_stencil_surface = nullptr;
@@ -743,9 +752,6 @@ HRESULT Device::GetRenderState(D3DRENDERSTATETYPE state, DWORD* value) noexcept
 
    if (!value) return D3DERR_INVALIDCALL;
 
-   const auto float_zero = 0.0f;
-   const auto float_one = 1.0f;
-
    const static std::unordered_map<D3DRENDERSTATETYPE, DWORD> values = {
       {D3DRS_ZENABLE, D3DZB_TRUE},
       {D3DRS_FILLMODE, D3DFILL_SOLID},
@@ -765,9 +771,9 @@ HRESULT Device::GetRenderState(D3DRENDERSTATETYPE state, DWORD* value) noexcept
       {D3DRS_SPECULARENABLE, FALSE},
       {D3DRS_FOGCOLOR, 0},
       {D3DRS_FOGTABLEMODE, D3DFOG_NONE},
-      {D3DRS_FOGSTART, reinterpret_cast<const DWORD&>(float_zero)},
-      {D3DRS_FOGEND, reinterpret_cast<const DWORD&>(float_zero)},
-      {D3DRS_FOGDENSITY, reinterpret_cast<const DWORD&>(float_one)},
+      {D3DRS_FOGSTART, std::bit_cast<DWORD>(0.0f)},
+      {D3DRS_FOGEND, std::bit_cast<DWORD>(0.0f)},
+      {D3DRS_FOGDENSITY, std::bit_cast<DWORD>(1.0f)},
       {D3DRS_RANGEFOGENABLE, FALSE},
       {D3DRS_STENCILENABLE, FALSE},
       {D3DRS_STENCILFAIL, D3DSTENCILOP_KEEP},
@@ -802,33 +808,33 @@ HRESULT Device::GetRenderState(D3DRENDERSTATETYPE state, DWORD* value) noexcept
       {D3DRS_EMISSIVEMATERIALSOURCE, D3DMCS_MATERIAL},
       {D3DRS_VERTEXBLEND, D3DVBF_DISABLE},
       {D3DRS_CLIPPLANEENABLE, 0},
-      {D3DRS_POINTSIZE, reinterpret_cast<const DWORD&>(float_one)},
-      {D3DRS_POINTSIZE_MIN, reinterpret_cast<const DWORD&>(float_one)},
+      {D3DRS_POINTSIZE, std::bit_cast<DWORD>(1.0f)},
+      {D3DRS_POINTSIZE_MIN, std::bit_cast<DWORD>(1.0f)},
       {D3DRS_POINTSPRITEENABLE, FALSE},
       {D3DRS_POINTSCALEENABLE, FALSE},
-      {D3DRS_POINTSCALE_A, reinterpret_cast<const DWORD&>(float_one)},
-      {D3DRS_POINTSCALE_B, reinterpret_cast<const DWORD&>(float_one)},
-      {D3DRS_POINTSCALE_C, reinterpret_cast<const DWORD&>(float_one)},
+      {D3DRS_POINTSCALE_A, std::bit_cast<DWORD>(1.0f)},
+      {D3DRS_POINTSCALE_B, std::bit_cast<DWORD>(1.0f)},
+      {D3DRS_POINTSCALE_C, std::bit_cast<DWORD>(1.0f)},
       {D3DRS_MULTISAMPLEANTIALIAS, TRUE},
       {D3DRS_MULTISAMPLEMASK, 0xffffffff},
       {D3DRS_PATCHEDGESTYLE, D3DPATCHEDGE_DISCRETE},
       {D3DRS_DEBUGMONITORTOKEN, D3DDMT_DISABLE},
-      {D3DRS_POINTSIZE_MAX, reinterpret_cast<const DWORD&>(float_one)},
+      {D3DRS_POINTSIZE_MAX, std::bit_cast<DWORD>(1.0f)},
       {D3DRS_INDEXEDVERTEXBLENDENABLE, FALSE},
       {D3DRS_COLORWRITEENABLE, 0xf},
-      {D3DRS_TWEENFACTOR, reinterpret_cast<const DWORD&>(float_zero)},
+      {D3DRS_TWEENFACTOR, std::bit_cast<DWORD>(0.0f)},
       {D3DRS_BLENDOP, D3DBLENDOP_ADD},
       {D3DRS_POSITIONDEGREE, D3DDEGREE_CUBIC},
       {D3DRS_NORMALDEGREE, D3DDEGREE_LINEAR},
       {D3DRS_SCISSORTESTENABLE, FALSE},
       {D3DRS_SLOPESCALEDEPTHBIAS, 0},
       {D3DRS_ANTIALIASEDLINEENABLE, FALSE},
-      {D3DRS_MINTESSELLATIONLEVEL, reinterpret_cast<const DWORD&>(float_one)},
-      {D3DRS_MAXTESSELLATIONLEVEL, reinterpret_cast<const DWORD&>(float_one)},
-      {D3DRS_ADAPTIVETESS_X, reinterpret_cast<const DWORD&>(float_zero)},
-      {D3DRS_ADAPTIVETESS_Y, reinterpret_cast<const DWORD&>(float_zero)},
-      {D3DRS_ADAPTIVETESS_Z, reinterpret_cast<const DWORD&>(float_zero)},
-      {D3DRS_ADAPTIVETESS_W, reinterpret_cast<const DWORD&>(float_zero)},
+      {D3DRS_MINTESSELLATIONLEVEL, std::bit_cast<DWORD>(1.0f)},
+      {D3DRS_MAXTESSELLATIONLEVEL, std::bit_cast<DWORD>(1.0f)},
+      {D3DRS_ADAPTIVETESS_X, std::bit_cast<DWORD>(0.0f)},
+      {D3DRS_ADAPTIVETESS_Y, std::bit_cast<DWORD>(0.0f)},
+      {D3DRS_ADAPTIVETESS_Z, std::bit_cast<DWORD>(0.0f)},
+      {D3DRS_ADAPTIVETESS_W, std::bit_cast<DWORD>(0.0f)},
       {D3DRS_ENABLEADAPTIVETESSELLATION, FALSE},
       {D3DRS_TWOSIDEDSTENCILMODE, FALSE},
       {D3DRS_CCW_STENCILFAIL, D3DSTENCILOP_KEEP},
@@ -840,7 +846,7 @@ HRESULT Device::GetRenderState(D3DRENDERSTATETYPE state, DWORD* value) noexcept
       {D3DRS_COLORWRITEENABLE3, 0xf},
       {D3DRS_BLENDFACTOR, 0xffffffff},
       {D3DRS_SRGBWRITEENABLE, FALSE},
-      {D3DRS_DEPTHBIAS, reinterpret_cast<const DWORD&>(float_zero)},
+      {D3DRS_DEPTHBIAS, std::bit_cast<DWORD>(0.0f)},
       {D3DRS_WRAP8, 0},
       {D3DRS_WRAP9, 0},
       {D3DRS_WRAP10, 0},
@@ -889,37 +895,40 @@ HRESULT Device::SetTexture(DWORD stage, IDirect3DBaseTexture9* texture) noexcept
       return S_OK;
    }
 
-   const auto& base_texture = *reinterpret_cast<Base_texture*>(texture);
+   Com_ptr<Texture_accessor> bindable;
+
+   if (FAILED(texture->QueryInterface(IID_Texture_accessor,
+                                      bindable.void_clear_and_assign()))) {
+      return D3DERR_INVALIDCALL;
+   }
+
+   const auto bindable_type = bindable->type();
+   const auto bindable_dimension = bindable->dimension();
 
    if (stage == projtex_slot) {
-      if (base_texture.texture_type == Texture_type::texturecube) {
+      if (bindable_dimension == Texture_accessor_dimension::cube) {
          _shader_patch.set_projtex_type(core::Projtex_type::texcube);
-
-         base_texture.visit([&](const core::Game_texture& texture) {
-            _shader_patch.set_projtex_cube(texture);
-         });
+         _shader_patch.set_projtex_cube(bindable->texture());
       }
       else {
          _shader_patch.set_projtex_type(core::Projtex_type::tex2d);
+         _shader_patch.set_projtex_cube(core::nullgametex);
       }
    }
 
-   base_texture.visit(
-      [&](const core::Game_texture& texture) {
-         if (stage == 0) _shader_patch.set_patch_material(nullptr);
+   if (bindable_type == Texture_accessor_type::texture) {
+      if (stage == 0) _shader_patch.set_patch_material(nullptr);
 
-         _shader_patch.set_texture(stage, texture);
-      },
-      [&](const core::Game_rendertarget_id& rendertarget) {
-         if (stage == 0) _shader_patch.set_patch_material(nullptr);
+      _shader_patch.set_texture(stage, bindable->texture());
+   }
+   else if (bindable_type == Texture_accessor_type::texture_rendertarget) {
+      if (stage == 0) _shader_patch.set_patch_material(nullptr);
 
-         _shader_patch.set_texture(stage, rendertarget);
-      },
-      [&](const core::Material_handle& material) {
-         if (stage != 0) return;
-
-         _shader_patch.set_patch_material(material);
-      });
+      _shader_patch.set_texture(stage, bindable->texture_rendertarget());
+   }
+   else if (bindable_type == Texture_accessor_type::material && stage == 0) {
+      _shader_patch.set_patch_material(bindable->material());
+   }
 
    return S_OK;
 }
@@ -1028,8 +1037,8 @@ HRESULT Device::DrawPrimitive(D3DPRIMITIVETYPE primitive_type,
    // Emulate a triangle fan for underwater overlay quad. As far as I know this
    // is the only time that the game uses triangle fans, unless some jerk modder
    // sets the primitive topology in a `modl` `segm` to triangle fans.
-   if (primitive_type == D3DPT_TRIANGLEFAN) {
-      SetIndices(static_cast<IDirect3DIndexBuffer9*>(_triangle_fan_quad_ibuf.get()));
+   if (primitive_type == D3DPT_TRIANGLEFAN) [[unlikely]] {
+      SetIndices(_triangle_fan_quad_ibuf.get());
       _shader_patch.draw_indexed(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, 6, 0,
                                  start_vertex);
    }
@@ -1168,11 +1177,9 @@ HRESULT Device::SetStreamSource(UINT stream_number, IDirect3DVertexBuffer9* stre
    if (stream_number != 0) return D3DERR_INVALIDCALL;
    if (!stream_data) return D3DERR_INVALIDCALL;
 
-   const auto& resource = *reinterpret_cast<Resource*>(stream_data);
+   const auto& vertex_buffer = *static_cast<Vertex_buffer*>(stream_data);
 
-   resource.visit([&](ID3D11Buffer* buffer) {
-      _shader_patch.set_vertex_buffer(*buffer, offset_in_bytes, stride);
-   });
+   _shader_patch.set_vertex_buffer(vertex_buffer.buffer(), offset_in_bytes, stride);
 
    return S_OK;
 }
@@ -1183,10 +1190,9 @@ HRESULT Device::SetIndices(IDirect3DIndexBuffer9* index_data) noexcept
 
    if (!index_data) return D3DERR_INVALIDCALL;
 
-   const auto& resource = *reinterpret_cast<Resource*>(index_data);
+   const auto& index_buffer = *static_cast<Index_buffer*>(index_data);
 
-   resource.visit(
-      [&](ID3D11Buffer* buffer) { _shader_patch.set_index_buffer(*buffer, 0); });
+   _shader_patch.set_index_buffer(index_buffer.buffer(), 0);
 
    return S_OK;
 }
@@ -1280,10 +1286,8 @@ auto Device::create_texture2d_managed(const UINT width, const UINT height,
       format_patcher = make_a8l8_format_patcher();
    }
 
-   return Com_ptr{reinterpret_cast<IDirect3DTexture9*>(
-      Texture2d_managed::create(_shader_patch, width, height, mip_levels,
-                                format, d3d_format, std::move(format_patcher))
-         .release())};
+   return Texture2d_managed::create(_shader_patch, width, height, mip_levels,
+                                    format, d3d_format, std::move(format_patcher));
 }
 
 auto Device::create_texture2d_rendertarget(const UINT width, const UINT height) noexcept
@@ -1293,10 +1297,8 @@ auto Device::create_texture2d_rendertarget(const UINT width, const UINT height) 
    const UINT texture_actual_height =
       height == _perceived_height ? _actual_height : height;
 
-   return Com_ptr{reinterpret_cast<IDirect3DTexture9*>(
-      Texture2d_rendertarget::create(_shader_patch, texture_actual_width,
-                                     texture_actual_height, width, height)
-         .release())};
+   return Texture2d_rendertarget::create(_shader_patch, texture_actual_width,
+                                         texture_actual_height, width, height);
 }
 
 auto Device::create_texture3d_managed(const UINT width, const UINT height,
@@ -1311,10 +1313,8 @@ auto Device::create_texture3d_managed(const UINT width, const UINT height,
                         static_cast<int>(d3d_format));
    }
 
-   return Com_ptr{reinterpret_cast<IDirect3DVolumeTexture9*>(
-      Texture3d_managed::create(_shader_patch, width, height, depth, mip_levels,
-                                format, d3d_format)
-         .release())};
+   return Texture3d_managed::create(_shader_patch, width, height, depth,
+                                    mip_levels, format, d3d_format);
 }
 
 auto Device::create_texturecube_managed(const UINT width, const UINT mip_levels,
@@ -1337,36 +1337,20 @@ auto Device::create_texturecube_managed(const UINT width, const UINT mip_levels,
       format_patcher = make_a8l8_format_patcher();
    }
 
-   return Com_ptr{reinterpret_cast<IDirect3DCubeTexture9*>(
-      Texturecube_managed::create(_shader_patch, width, mip_levels, format,
-                                  d3d_format, std::move(format_patcher))
-         .release())};
+   return Texturecube_managed::create(_shader_patch, width, mip_levels, format,
+                                      d3d_format, std::move(format_patcher));
 }
 
 auto Device::create_vertex_buffer(const UINT size, const bool dynamic) noexcept
    -> Com_ptr<IDirect3DVertexBuffer9>
 {
-   if (dynamic) {
-      return Com_ptr{reinterpret_cast<IDirect3DVertexBuffer9*>(
-         Vertex_buffer_dynamic::create(_shader_patch, size, false).release())};
-   }
-   else {
-      return Com_ptr{reinterpret_cast<IDirect3DVertexBuffer9*>(
-         Vertex_buffer_managed::create(_shader_patch, size).release())};
-   }
+   return Vertex_buffer::create(_shader_patch, size, dynamic, false);
 }
 
 auto Device::create_index_buffer(const UINT size, const bool dynamic) noexcept
    -> Com_ptr<IDirect3DIndexBuffer9>
 {
-   if (dynamic) {
-      return Com_ptr{reinterpret_cast<IDirect3DIndexBuffer9*>(
-         Index_buffer_dynamic::create(_shader_patch, size, false).release())};
-   }
-   else {
-      return Com_ptr{reinterpret_cast<IDirect3DIndexBuffer9*>(
-         Index_buffer_managed::create(_shader_patch, size).release())};
-   }
+   return Index_buffer::create(_shader_patch, size, dynamic, false);
 }
 
 auto Device::create_vertex_declaration(const D3DVERTEXELEMENT9* const vertex_elements) noexcept

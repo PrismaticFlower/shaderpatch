@@ -353,12 +353,6 @@
     <ClInclude Include="src\direct3d\texturecube_managed.hpp">
       <Filter>src\direct3d</Filter>
     </ClInclude>
-    <ClInclude Include="src\direct3d\resource.hpp">
-      <Filter>src\direct3d</Filter>
-    </ClInclude>
-    <ClInclude Include="src\direct3d\base_texture.hpp">
-      <Filter>src\direct3d</Filter>
-    </ClInclude>
     <ClInclude Include="src\direct3d\buffer.hpp">
       <Filter>src\direct3d</Filter>
     </ClInclude>
@@ -704,6 +698,7 @@
     <ClInclude Include="src\material\material_type.hpp">
       <Filter>src\material</Filter>
     </ClInclude>
+    <ClInclude Include="src\direct3d\resource_access.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />
