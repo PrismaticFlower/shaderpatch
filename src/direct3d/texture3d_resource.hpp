@@ -138,7 +138,7 @@ private:
    core::Shader_patch& _patch;
 
    core::Material_handle _material_handle;
-   core::Texture_handle _texture_handle;
+   core::Patch_texture_handle _texture_handle;
    core::Patch_effects_config_handle _patch_effects_config_handle;
 
    const UINT _width;

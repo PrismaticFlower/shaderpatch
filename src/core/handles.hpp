@@ -11,7 +11,9 @@ using Handle_type = std::uintptr_t;
 
 using Buffer_handle = Handle_type;
 
-using Texture_handle = Handle_type;
+using Game_texture_handle = Handle_type;
+
+using Patch_texture_handle = Handle_type;
 
 using Material_handle = Handle_type;
 

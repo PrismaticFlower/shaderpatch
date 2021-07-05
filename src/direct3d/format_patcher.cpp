@@ -61,7 +61,7 @@ public:
    }
 
    void unmap_dynamic_texture(core::Shader_patch& shader_patch,
-                              const core::Game_texture& texture,
+                              const core::Game_texture_handle texture,
                               const UINT mip_level) noexcept override
    {
       Expects(is_mapped());
@@ -148,7 +148,7 @@ public:
    }
 
    void unmap_dynamic_texture(core::Shader_patch& shader_patch,
-                              const core::Game_texture& texture,
+                              const core::Game_texture_handle texture,
                               const UINT mip_level) noexcept override
    {
       Expects(is_mapped());

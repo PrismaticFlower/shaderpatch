@@ -37,6 +37,11 @@ Texture3d_managed::Texture3d_managed(core::Shader_patch& shader_patch,
                            _depth, _mip_levels, 1);
 }
 
+Texture3d_managed::~Texture3d_managed()
+{
+   if (_game_texture) _shader_patch.destroy_game_texture(_game_texture);
+}
+
 HRESULT Texture3d_managed::QueryInterface(const IID& iid, void** object) noexcept
 {
    Debug_trace::func(__FUNCSIG__);
@@ -168,7 +173,7 @@ auto Texture3d_managed::dimension() const noexcept -> Texture_accessor_dimension
    return Texture_accessor_dimension::_3d;
 }
 
-auto Texture3d_managed::texture() const noexcept -> core::Game_texture
+auto Texture3d_managed::texture() const noexcept -> core::Game_texture_handle
 {
    return _game_texture;
 }

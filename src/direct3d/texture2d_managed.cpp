@@ -33,6 +33,11 @@ Texture2d_managed::Texture2d_managed(core::Shader_patch& shader_patch,
    Expects(mip_levels != 0);
 }
 
+Texture2d_managed::~Texture2d_managed()
+{
+   if (_game_texture) _shader_patch.destroy_game_texture(_game_texture);
+}
+
 Com_ptr<Texture2d_managed> Texture2d_managed::create(
    core::Shader_patch& shader_patch, const UINT width, const UINT height,
    const UINT mip_levels, const DXGI_FORMAT format, const D3DFORMAT reported_format,
@@ -157,7 +162,7 @@ HRESULT Texture2d_managed::LockRect(UINT level, D3DLOCKED_RECT* locked_rect,
                                           _width, _height, 1, _mip_levels, 1);
    }
    else if (!_upload_texture && !std::exchange(_dynamic_texture, true)) {
-      _game_texture = _shader_patch.create_game_dynamic_texture2d(_game_texture);
+      _shader_patch.convert_game_texture2d_to_dynamic(_game_texture);
       _dynamic_texture = true;
    }
 
@@ -232,7 +237,7 @@ auto Texture2d_managed::dimension() const noexcept -> Texture_accessor_dimension
    return Texture_accessor_dimension::_2d;
 }
 
-auto Texture2d_managed::texture() const noexcept -> core::Game_texture
+auto Texture2d_managed::texture() const noexcept -> core::Game_texture_handle
 {
    return _game_texture;
 }

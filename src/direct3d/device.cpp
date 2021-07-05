@@ -890,7 +890,7 @@ HRESULT Device::SetTexture(DWORD stage, IDirect3DBaseTexture9* texture) noexcept
    if (!texture) {
       if (stage == 0) _shader_patch.set_patch_material(core::null_handle);
 
-      _shader_patch.set_texture(stage, core::nullgametex);
+      _shader_patch.set_texture(stage, core::null_handle);
 
       return S_OK;
    }
@@ -912,7 +912,7 @@ HRESULT Device::SetTexture(DWORD stage, IDirect3DBaseTexture9* texture) noexcept
       }
       else {
          _shader_patch.set_projtex_type(core::Projtex_type::tex2d);
-         _shader_patch.set_projtex_cube(core::nullgametex);
+         _shader_patch.set_projtex_cube(core::null_handle);
       }
    }
 

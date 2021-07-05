@@ -34,6 +34,11 @@ Texturecube_managed::Texturecube_managed(core::Shader_patch& shader_patch,
                            mip_levels, 6);
 }
 
+Texturecube_managed::~Texturecube_managed()
+{
+   if (_game_texture) _shader_patch.destroy_game_texture(_game_texture);
+}
+
 HRESULT Texturecube_managed::QueryInterface(const IID& iid, void** object) noexcept
 {
    Debug_trace::func(__FUNCSIG__);
@@ -183,7 +188,7 @@ auto Texturecube_managed::dimension() const noexcept -> Texture_accessor_dimensi
    return Texture_accessor_dimension::cube;
 }
 
-auto Texturecube_managed::texture() const noexcept -> core::Game_texture
+auto Texturecube_managed::texture() const noexcept -> core::Game_texture_handle
 {
    return _game_texture;
 }

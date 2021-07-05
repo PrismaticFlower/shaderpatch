@@ -104,6 +104,9 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
                          ? std::make_unique<BF2_log_monitor>()
                          : nullptr}
 {
+   _game_texture_pool.reserve(1024);
+   _materials_pool.reserve(1024);
+
    add_builtin_textures(*_device, _shader_resource_database);
    bind_static_resources();
    update_rendertargets();
@@ -271,7 +274,7 @@ void Shader_patch::destroy_game_rendertarget(const Game_rendertarget_id id) noex
 auto Shader_patch::create_game_texture2d(const UINT width, const UINT height,
                                          const UINT mip_levels, const DXGI_FORMAT format,
                                          const std::span<const Mapped_texture> data) noexcept
-   -> Game_texture
+   -> Game_texture_handle
 {
    Expects(width != 0 && height != 0 && mip_levels != 0);
 
@@ -311,128 +314,14 @@ auto Shader_patch::create_game_texture2d(const UINT width, const UINT height,
       return {};
    }
 
-   Com_ptr<ID3D11ShaderResourceView> srv;
-   {
-      const auto srv_desc =
-         CD3D11_SHADER_RESOURCE_VIEW_DESC{D3D11_SRV_DIMENSION_TEXTURE2D, format};
-
-      if (const auto result =
-             _device->CreateShaderResourceView(texture.get(), &srv_desc,
-                                               srv.clear_and_assign());
-          FAILED(result)) {
-         log(Log_level::error, "Failed to create game texture SRV! reason: ",
-             _com_error{result}.ErrorMessage());
-
-         return {};
-      }
-   }
-
-   const auto srgb_format = DirectX::MakeSRGB(format);
-
-   if (format == srgb_format) return Game_texture{srv, srv};
-
-   Com_ptr<ID3D11ShaderResourceView> srgb_srv;
-   {
-      const auto srgb_srv_desc =
-         CD3D11_SHADER_RESOURCE_VIEW_DESC{D3D11_SRV_DIMENSION_TEXTURE2D, srgb_format};
-
-      if (const auto result =
-             _device->CreateShaderResourceView(texture.get(), &srgb_srv_desc,
-                                               srgb_srv.clear_and_assign());
-          FAILED(result)) {
-         log(Log_level::error, "Failed to create game texture SRGB SRV! reason: ",
-             _com_error{result}.ErrorMessage());
-
-         return {};
-      }
-   }
-
-   return Game_texture{std::move(srv), std::move(srgb_srv)};
-}
-
-auto Shader_patch::create_game_dynamic_texture2d(const Game_texture& texture) noexcept
-   -> Game_texture
-{
-   Expects(texture.srv && texture.srgb_srv);
-
-   Com_ptr<ID3D11Resource> source_resource;
-   texture.srv->GetResource(source_resource.clear_and_assign());
-
-   Com_ptr<ID3D11Texture2D> source_texture;
-   if (const auto result =
-          source_resource->QueryInterface(source_texture.clear_and_assign());
-       FAILED(result)) {
-      log_and_terminate(
-         "Attempt to create dynamic 2D texture using non-2D texture.");
-   }
-
-   D3D11_TEXTURE2D_DESC desc;
-   source_texture->GetDesc(&desc);
-
-   desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-   desc.Usage = D3D11_USAGE_DYNAMIC;
-
-   Com_ptr<ID3D11Texture2D> dest_texture;
-   if (const auto result =
-          _device->CreateTexture2D(&desc, nullptr, dest_texture.clear_and_assign());
-       FAILED(result)) {
-      log(Log_level::error, "Failed to create game texture! reason: ",
-          _com_error{result}.ErrorMessage());
-
-      return {};
-   }
-
-   _device_context->CopyResource(dest_texture.get(), source_texture.get());
-
-   const auto view_format = DirectX::MakeTypelessUNORM(desc.Format);
-
-   Com_ptr<ID3D11ShaderResourceView> srv;
-   {
-      const auto srv_desc =
-         CD3D11_SHADER_RESOURCE_VIEW_DESC{D3D11_SRV_DIMENSION_TEXTURE2D, view_format};
-
-      if (const auto result =
-             _device->CreateShaderResourceView(dest_texture.get(), &srv_desc,
-                                               srv.clear_and_assign());
-          FAILED(result)) {
-         log(Log_level::error, "Failed to create game texture SRV! reason: ",
-             _com_error{result}.ErrorMessage());
-
-         return {};
-      }
-   }
-
-   const auto srgb_view_format = DirectX::MakeSRGB(view_format);
-
-   if (view_format == srgb_view_format) {
-      return Game_texture{srv, srv};
-   }
-
-   Com_ptr<ID3D11ShaderResourceView> srgb_srv;
-   {
-      const auto srgb_srv_desc =
-         CD3D11_SHADER_RESOURCE_VIEW_DESC{D3D11_SRV_DIMENSION_TEXTURE2D,
-                                          srgb_view_format};
-
-      if (const auto result =
-             _device->CreateShaderResourceView(dest_texture.get(), &srgb_srv_desc,
-                                               srgb_srv.clear_and_assign());
-          FAILED(result)) {
-         log(Log_level::error, "Failed to create game texture SRGB SRV! reason: ",
-             _com_error{result}.ErrorMessage());
-
-         return {};
-      }
-   }
-
-   return Game_texture{std::move(srv), std::move(srgb_srv)};
+   return create_game_texture(texture, D3D11_SRV_DIMENSION_TEXTURE2D, format);
 }
 
 auto Shader_patch::create_game_texture3d(const UINT width, const UINT height,
                                          const UINT depth, const UINT mip_levels,
                                          const DXGI_FORMAT format,
                                          const std::span<const Mapped_texture> data) noexcept
-   -> Game_texture
+   -> Game_texture_handle
 {
    Expects(width != 0 && height != 0 && depth != 0 && mip_levels != 0);
 
@@ -472,50 +361,14 @@ auto Shader_patch::create_game_texture3d(const UINT width, const UINT height,
       return {};
    }
 
-   Com_ptr<ID3D11ShaderResourceView> srv;
-   {
-      const auto srv_desc =
-         CD3D11_SHADER_RESOURCE_VIEW_DESC{D3D11_SRV_DIMENSION_TEXTURE3D, format};
-
-      if (const auto result =
-             _device->CreateShaderResourceView(texture.get(), &srv_desc,
-                                               srv.clear_and_assign());
-          FAILED(result)) {
-         log(Log_level::error, "Failed to create game texture SRV! reason: ",
-             _com_error{result}.ErrorMessage());
-
-         return {};
-      }
-   }
-
-   const auto srgb_format = DirectX::MakeSRGB(format);
-
-   if (format == srgb_format) return Game_texture{srv, srv};
-
-   Com_ptr<ID3D11ShaderResourceView> srgb_srv;
-   {
-      const auto srgb_srv_desc =
-         CD3D11_SHADER_RESOURCE_VIEW_DESC{D3D11_SRV_DIMENSION_TEXTURE3D, srgb_format};
-
-      if (const auto result =
-             _device->CreateShaderResourceView(texture.get(), &srgb_srv_desc,
-                                               srgb_srv.clear_and_assign());
-          FAILED(result)) {
-         log(Log_level::error, "Failed to create game texture SRGB SRV! reason: ",
-             _com_error{result}.ErrorMessage());
-
-         return {};
-      }
-   }
-
-   return Game_texture{std::move(srv), std::move(srgb_srv)};
+   return create_game_texture(texture, D3D11_SRV_DIMENSION_TEXTURE3D, format);
 }
 
 auto Shader_patch::create_game_texture_cube(const UINT width, const UINT height,
                                             const UINT mip_levels,
                                             const DXGI_FORMAT format,
                                             const std::span<const Mapped_texture> data) noexcept
-   -> Game_texture
+   -> Game_texture_handle
 {
    Expects(width != 0 && height != 0 && mip_levels != 0);
 
@@ -559,47 +412,98 @@ auto Shader_patch::create_game_texture_cube(const UINT width, const UINT height,
       return {};
    }
 
+   return create_game_texture(texture, D3D11_SRV_DIMENSION_TEXTURECUBE, format);
+}
+
+void Shader_patch::convert_game_texture2d_to_dynamic(const Game_texture_handle game_texture_handle) noexcept
+{
+   auto* const game_texture = handle_to_ptr<Game_texture>(game_texture_handle);
+
+   assert(game_texture->srv && game_texture->srgb_srv);
+
+   Com_ptr<ID3D11Resource> source_resource;
+   game_texture->srv->GetResource(source_resource.clear_and_assign());
+
+   Com_ptr<ID3D11Texture2D> source_texture;
+   if (const auto result =
+          source_resource->QueryInterface(source_texture.clear_and_assign());
+       FAILED(result)) {
+      log_and_terminate(
+         "Attempt to create dynamic 2D texture using non-2D texture.");
+   }
+
+   D3D11_TEXTURE2D_DESC desc;
+   source_texture->GetDesc(&desc);
+
+   desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+   desc.Usage = D3D11_USAGE_DYNAMIC;
+
+   Com_ptr<ID3D11Texture2D> dest_texture;
+   if (const auto result =
+          _device->CreateTexture2D(&desc, nullptr, dest_texture.clear_and_assign());
+       FAILED(result)) {
+      log(Log_level::error, "Failed to create game texture! reason: ",
+          _com_error{result}.ErrorMessage());
+
+      return;
+   }
+
+   _device_context->CopyResource(dest_texture.get(), source_texture.get());
+
+   const auto view_format = DirectX::MakeTypelessUNORM(desc.Format);
+
    Com_ptr<ID3D11ShaderResourceView> srv;
    {
       const auto srv_desc =
-         CD3D11_SHADER_RESOURCE_VIEW_DESC{D3D11_SRV_DIMENSION_TEXTURECUBE, format};
+         CD3D11_SHADER_RESOURCE_VIEW_DESC{D3D11_SRV_DIMENSION_TEXTURE2D, view_format};
 
       if (const auto result =
-             _device->CreateShaderResourceView(texture.get(), &srv_desc,
+             _device->CreateShaderResourceView(dest_texture.get(), &srv_desc,
                                                srv.clear_and_assign());
           FAILED(result)) {
          log(Log_level::error, "Failed to create game texture SRV! reason: ",
              _com_error{result}.ErrorMessage());
 
-         return {};
+         return;
       }
    }
 
-   const auto srgb_format = DirectX::MakeSRGB(format);
+   const auto srgb_view_format = DirectX::MakeSRGB(view_format);
 
-   if (format == srgb_format) return Game_texture{srv, srv};
+   if (view_format == srgb_view_format) {
+      *game_texture = Game_texture{srv, srv};
+   }
 
    Com_ptr<ID3D11ShaderResourceView> srgb_srv;
    {
       const auto srgb_srv_desc =
-         CD3D11_SHADER_RESOURCE_VIEW_DESC{D3D11_SRV_DIMENSION_TEXTURECUBE, srgb_format};
+         CD3D11_SHADER_RESOURCE_VIEW_DESC{D3D11_SRV_DIMENSION_TEXTURE2D,
+                                          srgb_view_format};
 
       if (const auto result =
-             _device->CreateShaderResourceView(texture.get(), &srgb_srv_desc,
+             _device->CreateShaderResourceView(dest_texture.get(), &srgb_srv_desc,
                                                srgb_srv.clear_and_assign());
           FAILED(result)) {
          log(Log_level::error, "Failed to create game texture SRGB SRV! reason: ",
              _com_error{result}.ErrorMessage());
 
-         return {};
+         return;
       }
    }
 
-   return Game_texture{std::move(srv), std::move(srgb_srv)};
+   *game_texture = Game_texture{srv, srgb_srv};
+}
+
+void Shader_patch::destroy_game_texture(const Game_texture_handle game_texture_handle) noexcept
+{
+   auto* const game_texture = handle_to_ptr<Game_texture>(game_texture_handle);
+
+   std::erase_if(_game_texture_pool,
+                 [=](auto& other) { return other.get() == game_texture; });
 }
 
 auto Shader_patch::create_patch_texture(const std::span<const std::byte> texture_data) noexcept
-   -> Texture_handle
+   -> Patch_texture_handle
 {
    try {
       auto [srv, name] =
@@ -620,7 +524,7 @@ auto Shader_patch::create_patch_texture(const std::span<const std::byte> texture
    }
 }
 
-void Shader_patch::destroy_patch_texture(const Texture_handle texture_handle) noexcept
+void Shader_patch::destroy_patch_texture(const Patch_texture_handle texture_handle) noexcept
 {
    auto* const texture = handle_to_ptr<ID3D11ShaderResourceView>(texture_handle);
 
@@ -640,7 +544,7 @@ auto Shader_patch::create_patch_material(const std::span<const std::byte> materi
       const auto config =
          read_patch_material(ucfb::Reader_strict<"matl"_mn>{material_data});
 
-      auto material = _materials
+      auto material = _materials_pool
                          .emplace_back(std::make_unique<material::Material>(
                             _material_factory.create_material(config)))
                          .get();
@@ -662,12 +566,12 @@ void Shader_patch::destroy_patch_material(const Material_handle material_handle)
 
    if (_patch_material == material) set_patch_material(null_handle);
 
-   for (auto it = _materials.begin(); it != _materials.end(); ++it) {
+   for (auto it = _materials_pool.begin(); it != _materials_pool.end(); ++it) {
       if (it->get() != material) continue;
 
       log(Log_level::info, "Destroying material "sv, std::quoted(material->name));
 
-      _materials.erase(it);
+      _materials_pool.erase(it);
 
       return;
    }
@@ -781,11 +685,14 @@ void Shader_patch::unmap_ia_buffer(const Buffer_handle buffer_handle) noexcept
    _device_context->Unmap(buffer, 0);
 }
 
-auto Shader_patch::map_dynamic_texture(const Game_texture& texture, const UINT mip_level,
+auto Shader_patch::map_dynamic_texture(const Game_texture_handle game_texture_handle,
+                                       const UINT mip_level,
                                        const D3D11_MAP map_type) noexcept -> Mapped_texture
 {
+   auto* const game_texture = handle_to_ptr<Game_texture>(game_texture_handle);
+
    Com_ptr<ID3D11Resource> resource;
-   texture.srv->GetResource(resource.clear_and_assign());
+   game_texture->srv->GetResource(resource.clear_and_assign());
 
    D3D11_MAPPED_SUBRESOURCE mapped;
    _device_context->Map(resource.get(), mip_level, map_type, 0, &mapped);
@@ -793,11 +700,13 @@ auto Shader_patch::map_dynamic_texture(const Game_texture& texture, const UINT m
    return {mapped.RowPitch, mapped.DepthPitch, static_cast<std::byte*>(mapped.pData)};
 }
 
-void Shader_patch::unmap_dynamic_texture(const Game_texture& texture,
+void Shader_patch::unmap_dynamic_texture(const Game_texture_handle game_texture_handle,
                                          const UINT mip_level) noexcept
 {
+   auto* const game_texture = handle_to_ptr<Game_texture>(game_texture_handle);
+
    Com_ptr<ID3D11Resource> resource;
-   texture.srv->GetResource(resource.clear_and_assign());
+   game_texture->srv->GetResource(resource.clear_and_assign());
 
    _device_context->Unmap(resource.get(), mip_level);
 }
@@ -962,11 +871,14 @@ void Shader_patch::set_fog_state(const bool enabled, const glm::vec4 color) noex
    _cb_draw_ps.fog_color = color;
 }
 
-void Shader_patch::set_texture(const UINT slot, const Game_texture& texture) noexcept
+void Shader_patch::set_texture(const UINT slot,
+                               const Game_texture_handle game_texture_handle) noexcept
 {
    Expects(slot < 4);
 
-   _game_textures[slot] = texture;
+   auto* const game_texture = handle_to_ptr<Game_texture>(game_texture_handle);
+
+   _game_textures[slot] = game_texture ? *game_texture : Game_texture{};
    _ps_textures_dirty = true;
 }
 
@@ -1008,11 +920,13 @@ void Shader_patch::set_projtex_type(const Projtex_type type) noexcept
    _cb_draw_ps_dirty = true;
 }
 
-void Shader_patch::set_projtex_cube(const Game_texture& texture) noexcept
+void Shader_patch::set_projtex_cube(const Game_texture_handle game_texture_handle) noexcept
 {
+   auto* const game_texture = handle_to_ptr<Game_texture>(game_texture_handle);
+
    if (_lock_projtex_cube_slot) return;
 
-   _game_textures[projtex_cube_slot] = texture;
+   _game_textures[projtex_cube_slot] = game_texture ? *game_texture : Game_texture{};
    _ps_textures_dirty = true;
 }
 
@@ -1123,6 +1037,50 @@ void Shader_patch::draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
 void Shader_patch::force_shader_cache_save_to_disk() noexcept
 {
    _shader_database.force_cache_save_to_disk();
+}
+
+auto Shader_patch::create_game_texture(Com_ptr<ID3D11Resource> texture,
+                                       const D3D11_SRV_DIMENSION srv_dimension,
+                                       const DXGI_FORMAT format) noexcept -> Game_texture_handle
+{
+   Com_ptr<ID3D11ShaderResourceView> srv;
+   {
+      const auto srv_desc = CD3D11_SHADER_RESOURCE_VIEW_DESC{srv_dimension, format};
+
+      if (const auto result =
+             _device->CreateShaderResourceView(texture.get(), &srv_desc,
+                                               srv.clear_and_assign());
+          FAILED(result)) {
+         log(Log_level::error, "Failed to create game texture SRV! reason: ",
+             _com_error{result}.ErrorMessage());
+
+         return {};
+      }
+   }
+
+   Com_ptr<ID3D11ShaderResourceView> srgb_srv;
+
+   const auto srgb_format = DirectX::MakeSRGB(format);
+
+   if (format != srgb_format) {
+      const auto srgb_srv_desc =
+         CD3D11_SHADER_RESOURCE_VIEW_DESC{srv_dimension, srgb_format};
+
+      if (const auto result =
+             _device->CreateShaderResourceView(texture.get(), &srgb_srv_desc,
+                                               srgb_srv.clear_and_assign());
+          FAILED(result)) {
+         log(Log_level::error, "Failed to create game texture SRGB SRV! reason: ",
+             _com_error{result}.ErrorMessage());
+
+         return {};
+      }
+   }
+
+   auto& game_texture = _game_texture_pool.emplace_back(
+      std::make_unique<Game_texture>(srv, srgb_srv ? srgb_srv : srv));
+
+   return ptr_to_handle(game_texture.get());
 }
 
 auto Shader_patch::current_depthstencil(const bool readonly) const noexcept
@@ -1675,7 +1633,7 @@ void Shader_patch::update_imgui() noexcept
       user_config.show_imgui();
       _effects.show_imgui(_window);
 
-      material::show_editor(_material_factory, _materials);
+      material::show_editor(_material_factory, _materials_pool);
 
       if (_bf2_log_monitor) _bf2_log_monitor->show_imgui(true);
    }
@@ -1840,7 +1798,7 @@ void Shader_patch::update_samplers() noexcept
 
 void Shader_patch::update_material_resources() noexcept
 {
-   for (auto& mat : _materials) {
+   for (auto& mat : _materials_pool) {
       mat->update_resources(_shader_resource_database);
    }
 }

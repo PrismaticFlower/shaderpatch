@@ -125,17 +125,17 @@ public:
 
    auto dimension() const noexcept -> Texture_accessor_dimension override;
 
-   auto texture() const noexcept -> core::Game_texture override;
+   auto texture() const noexcept -> core::Game_texture_handle override;
 
 private:
    Texture3d_managed(core::Shader_patch& shader_patch, const UINT width,
                      const UINT height, const UINT depth, const UINT mip_levels,
                      const DXGI_FORMAT format, const D3DFORMAT reported_format) noexcept;
 
-   ~Texture3d_managed() = default;
+   ~Texture3d_managed();
 
    core::Shader_patch& _shader_patch;
-   core::Game_texture _game_texture = core::nullgametex;
+   core::Game_texture_handle _game_texture = core::null_handle;
 
    std::optional<Upload_texture> _upload_texture;
 

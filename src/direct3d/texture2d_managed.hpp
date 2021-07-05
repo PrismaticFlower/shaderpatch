@@ -123,7 +123,7 @@ public:
 
    auto dimension() const noexcept -> Texture_accessor_dimension override;
 
-   auto texture() const noexcept -> core::Game_texture override;
+   auto texture() const noexcept -> core::Game_texture_handle override;
 
 private:
    struct Surface;
@@ -133,10 +133,10 @@ private:
                      const DXGI_FORMAT format, const D3DFORMAT reported_format,
                      std::unique_ptr<Format_patcher> format_patcher) noexcept;
 
-   ~Texture2d_managed() = default;
+   ~Texture2d_managed();
 
    core::Shader_patch& _shader_patch;
-   core::Game_texture _game_texture = core::nullgametex;
+   core::Game_texture_handle _game_texture = core::null_handle;
 
    std::unique_ptr<Format_patcher> _format_patcher;
    std::unique_ptr<Upload_texture> _upload_texture;

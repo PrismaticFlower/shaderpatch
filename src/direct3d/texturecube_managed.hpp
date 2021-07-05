@@ -128,7 +128,7 @@ public:
 
    auto dimension() const noexcept -> Texture_accessor_dimension override;
 
-   auto texture() const noexcept -> core::Game_texture override;
+   auto texture() const noexcept -> core::Game_texture_handle override;
 
 private:
    Texturecube_managed(core::Shader_patch& shader_patch, const UINT width,
@@ -136,10 +136,10 @@ private:
                        const D3DFORMAT reported_format,
                        std::unique_ptr<Format_patcher> format_patcher) noexcept;
 
-   ~Texturecube_managed() = default;
+   ~Texturecube_managed();
 
    core::Shader_patch& _shader_patch;
-   core::Game_texture _game_texture = core::nullgametex;
+   core::Game_texture_handle _game_texture = core::null_handle;
 
    std::unique_ptr<Format_patcher> _format_patcher;
    std::optional<Upload_texture> _upload_texture;

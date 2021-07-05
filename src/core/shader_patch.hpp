@@ -98,25 +98,26 @@ public:
    auto create_game_texture2d(const UINT width, const UINT height,
                               const UINT mip_levels, const DXGI_FORMAT format,
                               const std::span<const Mapped_texture> data) noexcept
-      -> Game_texture;
-
-   auto create_game_dynamic_texture2d(const Game_texture& texture) noexcept
-      -> Game_texture;
+      -> Game_texture_handle;
 
    auto create_game_texture3d(const UINT width, const UINT height, const UINT depth,
                               const UINT mip_levels, const DXGI_FORMAT format,
                               const std::span<const Mapped_texture> data) noexcept
-      -> Game_texture;
+      -> Game_texture_handle;
 
    auto create_game_texture_cube(const UINT width, const UINT height,
                                  const UINT mip_levels, const DXGI_FORMAT format,
                                  const std::span<const Mapped_texture> data) noexcept
-      -> Game_texture;
+      -> Game_texture_handle;
+
+   void destroy_game_texture(const Game_texture_handle game_texture_handle) noexcept;
+
+   void convert_game_texture2d_to_dynamic(const Game_texture_handle game_texture_handle) noexcept;
 
    auto create_patch_texture(const std::span<const std::byte> texture_data) noexcept
-      -> Texture_handle;
+      -> Patch_texture_handle;
 
-   void destroy_patch_texture(const Texture_handle texture_handle) noexcept;
+   void destroy_patch_texture(const Patch_texture_handle texture_handle) noexcept;
 
    auto create_patch_material(const std::span<const std::byte> material_data) noexcept
       -> Material_handle;
@@ -149,10 +150,12 @@ public:
 
    void unmap_ia_buffer(const Buffer_handle Buffer) noexcept;
 
-   auto map_dynamic_texture(const Game_texture& texture, const UINT mip_level,
+   auto map_dynamic_texture(const Game_texture_handle game_texture_handle,
+                            const UINT mip_level,
                             const D3D11_MAP map_type) noexcept -> Mapped_texture;
 
-   void unmap_dynamic_texture(const Game_texture& texture, const UINT mip_level) noexcept;
+   void unmap_dynamic_texture(const Game_texture_handle game_texture_handle,
+                              const UINT mip_level) noexcept;
 
    void stretch_rendertarget(const Game_rendertarget_id source,
                              const RECT source_rect, const Game_rendertarget_id dest,
@@ -190,7 +193,8 @@ public:
 
    void set_fog_state(const bool enabled, const glm::vec4 color) noexcept;
 
-   void set_texture(const UINT slot, const Game_texture& texture) noexcept;
+   void set_texture(const UINT slot,
+                    const Game_texture_handle game_texture_handle) noexcept;
 
    void set_texture(const UINT slot, const Game_rendertarget_id rendertarget) noexcept;
 
@@ -198,7 +202,7 @@ public:
 
    void set_projtex_type(const Projtex_type type) noexcept;
 
-   void set_projtex_cube(const Game_texture& texture) noexcept;
+   void set_projtex_cube(const Game_texture_handle game_texture_handle) noexcept;
 
    void set_patch_material(const Material_handle material_handle) noexcept;
 
@@ -228,6 +232,10 @@ public:
    void force_shader_cache_save_to_disk() noexcept;
 
 private:
+   auto create_game_texture(Com_ptr<ID3D11Resource> texture,
+                            const D3D11_SRV_DIMENSION srv_dimension,
+                            const DXGI_FORMAT format) noexcept -> Game_texture_handle;
+
    auto current_depthstencil(const bool readonly) const noexcept
       -> ID3D11DepthStencilView*;
 
@@ -427,12 +435,14 @@ private:
       load_texture_lvl(L"data/shaderpatch/textures.lvl", *_device)};
    Game_alt_postprocessing _game_postprocessing{*_device, _shader_database};
 
+   std::vector<std::unique_ptr<Game_texture>> _game_texture_pool;
+
    effects::Control _effects{_device, _shader_database};
    effects::Rendertarget_allocator _rendertarget_allocator{_device};
 
    material::Factory _material_factory{_device, _shader_rendertypes_database,
                                        _shader_resource_database};
-   std::vector<std::unique_ptr<material::Material>> _materials;
+   std::vector<std::unique_ptr<material::Material>> _materials_pool;
 
    glm::mat4 _informal_projection_matrix;
 

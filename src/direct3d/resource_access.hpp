@@ -27,10 +27,10 @@ public:
    virtual auto dimension() const noexcept -> Texture_accessor_dimension = 0;
 
    /// @brief Gets the texture for binding.
-   /// @return The texture or core::nullgametex.
-   virtual auto texture() const noexcept -> core::Game_texture
+   /// @return The texture or core::null_handle.
+   virtual auto texture() const noexcept -> core::Game_texture_handle
    {
-      return core::nullgametex;
+      return core::null_handle;
    }
 
    /// @brief Gets the rendertarget for binding.
