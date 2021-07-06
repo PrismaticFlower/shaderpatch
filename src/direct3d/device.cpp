@@ -542,7 +542,7 @@ HRESULT Device::ColorFill(IDirect3DSurface9* surface, const RECT* rect,
    }
 
    _shader_patch.color_fill_rendertarget(rendertarget->rendertarget(),
-                                         unpack_d3dcolor(color), rect);
+                                         d3dcolor_to_clear_color(color), rect);
 
    return S_OK;
 }
@@ -672,7 +672,7 @@ HRESULT Device::Clear(DWORD count, const D3DRECT* rects, DWORD flags,
    }
 
    if (flags & D3DCLEAR_TARGET) {
-      _shader_patch.clear_rendertarget(unpack_d3dcolor(color));
+      _shader_patch.clear_rendertarget(d3dcolor_to_clear_color(color));
    }
 
    return S_OK;

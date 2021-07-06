@@ -89,6 +89,14 @@ auto create_device(IDXGIAdapter4& adapater) noexcept -> Com_ptr<ID3D11Device5>
 
    return device5;
 }
+
+auto clear_color_to_array(const Clear_color color) noexcept -> std::array<float, 4>
+{
+   return color == Clear_color::transparent_black
+             ? std::array{0.0f, 0.0f, 0.0f, 0.0f}
+             : std::array{0.0f, 0.0f, 0.0f, 1.0f};
+}
+
 }
 
 Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
@@ -740,18 +748,19 @@ void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
 }
 
 void Shader_patch::color_fill_rendertarget(const Game_rendertarget_id rendertarget,
-                                           const glm::vec4 color, const RECT* rect) noexcept
+                                           const Clear_color color,
+                                           const RECT* rect) noexcept
 {
    _device_context
       ->ClearView(_game_rendertargets[static_cast<int>(rendertarget)].rtv.get(),
-                  &color.x, rect, rect ? 1 : 0);
+                  clear_color_to_array(color).data(), rect, rect ? 1 : 0);
 }
 
-void Shader_patch::clear_rendertarget(const glm::vec4 color) noexcept
+void Shader_patch::clear_rendertarget(const Clear_color color) noexcept
 {
    _device_context->ClearRenderTargetView(
       _game_rendertargets[static_cast<int>(_current_game_rendertarget)].rtv.get(),
-      &color.x);
+      clear_color_to_array(color).data());
 }
 
 void Shader_patch::clear_depthstencil(const float depth, const UINT8 stencil,

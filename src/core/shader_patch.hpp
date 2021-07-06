@@ -54,6 +54,8 @@ enum class Projtex_mode { clamp, wrap };
 
 enum class Projtex_type { tex2d, texcube };
 
+enum class Clear_color { transparent_black, opaque_black };
+
 struct Mapped_texture {
    UINT row_pitch;
    UINT depth_pitch;
@@ -162,10 +164,10 @@ public:
                              const RECT dest_rect) noexcept;
 
    void color_fill_rendertarget(const Game_rendertarget_id rendertarget,
-                                const glm::vec4 color,
+                                const Clear_color color,
                                 const RECT* rect = nullptr) noexcept;
 
-   void clear_rendertarget(const glm::vec4 color) noexcept;
+   void clear_rendertarget(const Clear_color color) noexcept;
 
    void clear_depthstencil(const float z, const UINT8 stencil,
                            const bool clear_depth, const bool clear_stencil) noexcept;

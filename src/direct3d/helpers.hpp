@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../core/shader_patch.hpp"
 #include "com_ptr.hpp"
 
 #include <cstddef>
@@ -317,6 +318,12 @@ inline auto unpack_d3dcolor(const D3DCOLOR d3dcolor) noexcept -> glm::vec4
    const auto color = glm::unpackUnorm4x8(d3dcolor);
 
    return {color.b, color.g, color.r, color.a};
+}
+
+inline auto d3dcolor_to_clear_color(const D3DCOLOR d3dcolor) noexcept -> core::Clear_color
+{
+   return d3dcolor == 0 ? core::Clear_color::transparent_black
+                        : core::Clear_color::opaque_black;
 }
 
 auto create_triangle_fan_quad_ibuf(core::Shader_patch& shader_patch) noexcept
