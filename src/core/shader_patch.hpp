@@ -10,6 +10,7 @@
 #include "backbuffer_cmaa2_views.hpp"
 #include "buffer.hpp"
 #include "com_ptr.hpp"
+#include "common.hpp"
 #include "constant_buffers.hpp"
 #include "d3d11_helpers.hpp"
 #include "depth_msaa_resolver.hpp"
@@ -33,6 +34,7 @@
 #include "texture_loader.hpp"
 
 #include <bit>
+#include <mutex>
 #include <span>
 #include <vector>
 
@@ -46,22 +48,6 @@ namespace sp {
 class BF2_log_monitor;
 
 namespace core {
-
-enum class Game_rendertarget_id : int {};
-
-enum class Game_depthstencil { nearscene, farscene, reflectionscene, none };
-
-enum class Projtex_mode { clamp, wrap };
-
-enum class Projtex_type { tex2d, texcube };
-
-enum class Clear_color { transparent_black, opaque_black };
-
-struct Mapped_texture {
-   UINT row_pitch;
-   UINT depth_pitch;
-   std::byte* data;
-};
 
 class Shader_patch {
 public:
@@ -241,6 +227,8 @@ public:
    void force_shader_cache_save_to_disk() noexcept;
 
 private:
+   void async_command_processor() noexcept;
+
    auto create_game_texture(Com_ptr<ID3D11Resource> texture,
                             const D3D11_SRV_DIMENSION srv_dimension,
                             const DXGI_FORMAT format) noexcept -> Game_texture_handle;
@@ -327,6 +315,7 @@ private:
 
    Game_shader_store _game_shaders{_shader_rendertypes_database};
 
+   std::mutex _game_rendertargets_mutex;
    std::vector<Game_rendertarget> _game_rendertargets = {_swapchain.game_rendertarget()};
    Game_rendertarget_id _current_game_rendertarget = _game_backbuffer_index;
    Game_rendertarget _patch_backbuffer;
@@ -445,7 +434,9 @@ private:
       load_texture_lvl(L"data/shaderpatch/textures.lvl", *_device)};
    Game_alt_postprocessing _game_postprocessing{*_device, _shader_database};
 
+   std::mutex _game_texture_pool_mutex;
    std::vector<std::unique_ptr<Game_texture>> _game_texture_pool;
+   std::mutex _buffer_pool_mutex;
    std::vector<std::unique_ptr<Buffer>> _buffer_pool;
 
    effects::Control _effects{_device, _shader_database};
@@ -453,6 +444,7 @@ private:
 
    material::Factory _material_factory{_device, _shader_rendertypes_database,
                                        _shader_resource_database};
+   std::mutex _materials_pool_mutex;
    std::vector<std::unique_ptr<material::Material>> _materials_pool;
 
    glm::mat4 _informal_projection_matrix;
@@ -471,5 +463,6 @@ private:
 
    std::unique_ptr<BF2_log_monitor> _bf2_log_monitor;
 };
+
 }
 }

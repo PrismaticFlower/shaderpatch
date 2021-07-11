@@ -703,6 +703,7 @@
     <ClInclude Include="src\core\command_queue.hpp" />
     <ClInclude Include="src\direct3d\dynamic_allocator_context.hpp" />
     <ClInclude Include="src\core\buffer.hpp" />
+    <ClInclude Include="src\core\common.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />

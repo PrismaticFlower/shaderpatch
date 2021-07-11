@@ -20,4 +20,7 @@ struct Buffer {
 
    absl::InlinedVector<Dynamic_buffer_instance, 3> dynamic_instances;
 };
+
+constexpr auto value = sizeof absl::InlinedVector<Dynamic_buffer_instance, 3>;
+
 }

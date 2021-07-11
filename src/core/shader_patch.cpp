@@ -113,6 +113,7 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
                          : nullptr}
 {
    _game_texture_pool.reserve(1024);
+   _buffer_pool.reserve(1024);
    _materials_pool.reserve(1024);
 
    add_builtin_textures(*_device, _shader_resource_database);
@@ -153,6 +154,8 @@ Shader_patch::~Shader_patch() = default;
 
 void Shader_patch::reset(const UINT width, const UINT height) noexcept
 {
+   std::scoped_lock lock{_game_rendertargets_mutex};
+
    _device_context->ClearState();
    _game_rendertargets.clear();
    _effects.cmaa2.clear_resources();
@@ -197,6 +200,8 @@ void Shader_patch::set_text_dpi(const std::uint32_t dpi) noexcept
 
 void Shader_patch::present() noexcept
 {
+   std::scoped_lock lock{_game_rendertargets_mutex};
+
    _effects.profiler.end_frame(*_device_context);
    _game_postprocessing.end_frame();
 
@@ -264,6 +269,8 @@ auto Shader_patch::create_blend_state(const D3D11_BLEND_DESC1 blend_state_desc) 
 auto Shader_patch::create_game_rendertarget(const UINT width, const UINT height) noexcept
    -> Game_rendertarget_id
 {
+   std::scoped_lock lock{_game_rendertargets_mutex};
+
    const int index = _game_rendertargets.size();
    _game_rendertargets.emplace_back(*_device, _current_rt_format, width, height);
 
@@ -272,6 +279,8 @@ auto Shader_patch::create_game_rendertarget(const UINT width, const UINT height)
 
 void Shader_patch::destroy_game_rendertarget(const Game_rendertarget_id id) noexcept
 {
+   std::scoped_lock lock{_game_rendertargets_mutex};
+
    _game_rendertargets[static_cast<int>(id)] = {};
 
    if (id == _current_game_rendertarget) {
@@ -504,6 +513,8 @@ void Shader_patch::convert_game_texture2d_to_dynamic(const Game_texture_handle g
 
 void Shader_patch::destroy_game_texture(const Game_texture_handle game_texture_handle) noexcept
 {
+   std::scoped_lock lock{_game_texture_pool_mutex};
+
    auto* const game_texture = handle_to_ptr<Game_texture>(game_texture_handle);
 
    std::erase_if(_game_texture_pool,
@@ -552,6 +563,8 @@ auto Shader_patch::create_patch_material(const std::span<const std::byte> materi
       const auto config =
          read_patch_material(ucfb::Reader_strict<"matl"_mn>{material_data});
 
+      std::scoped_lock lock{_materials_pool_mutex};
+
       auto material = _materials_pool
                          .emplace_back(std::make_unique<material::Material>(
                             _material_factory.create_material(config)))
@@ -573,6 +586,8 @@ void Shader_patch::destroy_patch_material(const Material_handle material_handle)
    auto* const material = handle_to_ptr<material::Material>(material_handle);
 
    if (_patch_material == material) set_patch_material(null_handle);
+
+   std::scoped_lock lock{_materials_pool_mutex};
 
    for (auto it = _materials_pool.begin(); it != _materials_pool.end(); ++it) {
       if (it->get() != material) continue;
@@ -645,6 +660,8 @@ auto Shader_patch::create_ia_buffer(const UINT size, const bool vertex_buffer,
       return buffer;
    };
 
+   std::scoped_lock lock{_buffer_pool_mutex};
+
    auto& buffer = _buffer_pool.emplace_back(std::make_unique<Buffer>());
 
    if (dynamic) {
@@ -665,6 +682,8 @@ auto Shader_patch::create_ia_buffer(const UINT size, const bool vertex_buffer,
 void Shader_patch::destroy_ia_buffer(const Buffer_handle buffer_handle) noexcept
 {
    auto* const buffer = handle_to_ptr<Buffer>(buffer_handle);
+
+   std::scoped_lock lock{_buffer_pool_mutex};
 
    std::erase_if(_buffer_pool, [&](std::unique_ptr<Buffer>& other) {
       return other.get() == buffer;
@@ -790,6 +809,8 @@ void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
                                         const Game_rendertarget_id dest,
                                         const RECT dest_rect) noexcept
 {
+   std::scoped_lock lock{_game_rendertargets_mutex};
+
    auto& src_rt = _game_rendertargets[static_cast<int>(source)];
    auto& dest_rt = _game_rendertargets[static_cast<int>(dest)];
 
@@ -817,6 +838,8 @@ void Shader_patch::color_fill_rendertarget(const Game_rendertarget_id rendertarg
                                            const Clear_color color,
                                            const RECT* rect) noexcept
 {
+   std::scoped_lock lock{_game_rendertargets_mutex};
+
    _device_context
       ->ClearView(_game_rendertargets[static_cast<int>(rendertarget)].rtv.get(),
                   clear_color_to_array(color).data(), rect, rect ? 1 : 0);
@@ -824,6 +847,8 @@ void Shader_patch::color_fill_rendertarget(const Game_rendertarget_id rendertarg
 
 void Shader_patch::clear_rendertarget(const Clear_color color) noexcept
 {
+   std::scoped_lock lock{_game_rendertargets_mutex};
+
    _device_context->ClearRenderTargetView(
       _game_rendertargets[static_cast<int>(_current_game_rendertarget)].rtv.get(),
       clear_color_to_array(color).data());
@@ -961,6 +986,8 @@ void Shader_patch::set_texture(const UINT slot,
                                const Game_rendertarget_id rendertarget) noexcept
 {
    Expects(slot < 4);
+
+   std::scoped_lock lock{_game_rendertargets_mutex};
 
    const auto& srv = _game_rendertargets[static_cast<int>(rendertarget)].srv;
 
@@ -1152,6 +1179,8 @@ auto Shader_patch::create_game_texture(Com_ptr<ID3D11Resource> texture,
       }
    }
 
+   std::scoped_lock lock{_game_texture_pool_mutex};
+
    auto& game_texture = _game_texture_pool.emplace_back(
       std::make_unique<Game_texture>(srv, srgb_srv ? srgb_srv : srv));
 
@@ -1228,6 +1257,8 @@ void Shader_patch::game_rendertype_changed() noexcept
 
       const bool multisampled = _rt_sample_count > 1;
       auto* const shadow_rt = [&]() -> Game_rendertarget* {
+         std::scoped_lock lock{_game_rendertargets_mutex};
+
          auto it =
             std::find_if(_game_rendertargets.begin(), _game_rendertargets.end(),
                          [&](const Game_rendertarget& rt) {
@@ -1241,6 +1272,8 @@ void Shader_patch::game_rendertype_changed() noexcept
       auto backup_rt = _game_rendertargets[0];
 
       if (rt) {
+         std::scoped_lock lock{_game_rendertargets_mutex};
+
          _device_context
             ->ClearRenderTargetView(rt->rtv.get(),
                                     std::array{1.0f, 1.0f, 1.0f, 1.0f}.data());
@@ -1329,6 +1362,8 @@ void Shader_patch::game_rendertype_changed() noexcept
    }
    else if (_shader_rendertype == Rendertype::flare ||
             _shader_rendertype == Rendertype::sample) {
+      std::scoped_lock lock{_game_rendertargets_mutex};
+
       auto* const srv = _game_textures[0].srv.get();
       for (auto& rt : _game_rendertargets) {
          if (rt.srv != srv) continue;
@@ -1347,6 +1382,8 @@ void Shader_patch::game_rendertype_changed() noexcept
    }
    else if (_shader_rendertype == Rendertype::hdr && !_effects_active &&
             !user_config.graphics.enable_alternative_postprocessing) {
+      std::scoped_lock lock{_game_rendertargets_mutex};
+
       if (_game_rendertargets[0].sample_count > 1) {
          Com_ptr<ID3D11Resource> dest;
          _game_textures[0].srv->GetResource(dest.clear_and_assign());
@@ -1370,6 +1407,8 @@ void Shader_patch::game_rendertype_changed() noexcept
 
       _on_rendertype_changed = [&]() noexcept {
          resolve_refraction_texture();
+
+         std::scoped_lock lock{_game_rendertargets_mutex};
 
          if (_oit_provider.enabled() ||
              (_effects_active && _effects.config().oit_requested)) {
@@ -1710,6 +1749,8 @@ void Shader_patch::update_imgui() noexcept
       user_config.show_imgui();
       _effects.show_imgui(_window);
 
+      std::scoped_lock lock{_materials_pool_mutex};
+
       material::show_editor(_material_factory, _materials_pool);
 
       if (_bf2_log_monitor) _bf2_log_monitor->show_imgui(true);
@@ -1875,6 +1916,8 @@ void Shader_patch::update_samplers() noexcept
 
 void Shader_patch::update_material_resources() noexcept
 {
+   std::scoped_lock lock{_materials_pool_mutex};
+
    for (auto& mat : _materials_pool) {
       mat->update_resources(_shader_resource_database);
    }
@@ -1918,6 +1961,8 @@ void Shader_patch::resolve_refraction_texture() noexcept
    else {
       if (std::exchange(_refraction_nearscene_texture_resolve, true)) return;
    }
+
+   std::scoped_lock lock{_game_rendertargets_mutex};
 
    const auto& src_rt =
       far_scene ? _game_rendertargets[static_cast<int>(_current_game_rendertarget)]
