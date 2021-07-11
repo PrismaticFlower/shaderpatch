@@ -209,6 +209,7 @@
     <ClInclude Include="include\game_rendertypes.hpp" />
     <ClInclude Include="include\glm_yaml_adapters.hpp" />
     <ClInclude Include="include\image_span.hpp" />
+    <ClInclude Include="include\linear_allocator.hpp" />
     <ClInclude Include="include\magic_number.hpp" />
     <ClInclude Include="include\material_flags.hpp" />
     <ClInclude Include="include\material_rendertype_property_mappings.hpp" />

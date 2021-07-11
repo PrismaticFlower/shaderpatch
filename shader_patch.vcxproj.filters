@@ -700,6 +700,9 @@
     </ClInclude>
     <ClInclude Include="src\direct3d\resource_access.hpp" />
     <ClInclude Include="src\core\handles.hpp" />
+    <ClInclude Include="src\core\command_queue.hpp" />
+    <ClInclude Include="src\direct3d\dynamic_allocator_context.hpp" />
+    <ClInclude Include="src\core\buffer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />

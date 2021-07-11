@@ -283,6 +283,7 @@ HRESULT Device::Present(const RECT*, const RECT*, HWND, const RGNDATA*) noexcept
    Debug_trace::func(__FUNCSIG__);
 
    _shader_patch.present();
+   _dynamic_allocator_context.reset();
 
    Debug_trace::reset();
 
@@ -1344,13 +1345,13 @@ auto Device::create_texturecube_managed(const UINT width, const UINT mip_levels,
 auto Device::create_vertex_buffer(const UINT size, const bool dynamic) noexcept
    -> Com_ptr<IDirect3DVertexBuffer9>
 {
-   return Vertex_buffer::create(_shader_patch, size, dynamic, false);
+   return Vertex_buffer::create(_shader_patch, size, dynamic);
 }
 
 auto Device::create_index_buffer(const UINT size, const bool dynamic) noexcept
    -> Com_ptr<IDirect3DIndexBuffer9>
 {
-   return Index_buffer::create(_shader_patch, size, dynamic, false);
+   return Index_buffer::create(_shader_patch, size, dynamic);
 }
 
 auto Device::create_vertex_declaration(const D3DVERTEXELEMENT9* const vertex_elements) noexcept

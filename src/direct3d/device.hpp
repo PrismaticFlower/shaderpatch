@@ -3,6 +3,7 @@
 #include "../core/shader_patch.hpp"
 #include "../logger.hpp"
 #include "com_ptr.hpp"
+#include "dynamic_allocator_context.hpp"
 #include "helpers.hpp"
 #include "render_state_manager.hpp"
 #include "surface_backbuffer.hpp"
@@ -591,6 +592,7 @@ private:
 
    core::Shader_patch _shader_patch;
    Render_state_manager _render_state_manager;
+   Dynamic_allocator_context _dynamic_allocator_context;
 
    bool _fixed_func_active = true;
 

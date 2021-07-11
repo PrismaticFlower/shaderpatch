@@ -255,6 +255,8 @@
     <ClInclude Include="src\bf2_log_monitor.hpp" />
     <ClInclude Include="src\core\backbuffer_cmaa2_views.hpp" />
     <ClInclude Include="src\core\basic_builtin_textures.hpp" />
+    <ClInclude Include="src\core\buffer.hpp" />
+    <ClInclude Include="src\core\command_queue.hpp" />
     <ClInclude Include="src\core\constant_buffers.hpp" />
     <ClInclude Include="src\core\depthstencil.hpp" />
     <ClInclude Include="src\core\depth_msaa_resolver.hpp" />
@@ -281,6 +283,7 @@
     <ClInclude Include="src\core\texture_database.hpp" />
     <ClInclude Include="src\core\texture_loader.hpp" />
     <ClInclude Include="src\core\text\font_atlas_builder.hpp" />
+    <ClInclude Include="src\direct3d\dynamic_allocator_context.hpp" />
     <ClInclude Include="src\direct3d\resource_access.hpp" />
     <ClInclude Include="src\direct3d\format_patcher.hpp" />
     <ClInclude Include="src\direct3d\upload_texture.hpp" />

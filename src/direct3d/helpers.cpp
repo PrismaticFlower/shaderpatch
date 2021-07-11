@@ -10,7 +10,7 @@ auto create_triangle_fan_quad_ibuf(core::Shader_patch& shader_patch) noexcept
 {
    constexpr std::array<std::uint16_t, 6> contents{0, 1, 2, 0, 2, 3};
 
-   auto buffer = Index_buffer::create(shader_patch, sizeof(contents), false, false);
+   auto buffer = Index_buffer::create(shader_patch, sizeof(contents), false);
 
    void* buffer_data_ptr;
    buffer->Lock(0, sizeof(contents), &buffer_data_ptr, D3DLOCK_NOSYSLOCK);

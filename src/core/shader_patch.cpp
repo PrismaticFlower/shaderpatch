@@ -625,30 +625,50 @@ auto Shader_patch::create_ia_buffer(const UINT size, const bool vertex_buffer,
                                     const bool index_buffer,
                                     const bool dynamic) noexcept -> Buffer_handle
 {
-   Com_ptr<ID3D11Buffer> buffer;
+   const auto make_d3d11_buffer = [=] {
+      Com_ptr<ID3D11Buffer> buffer;
 
-   const UINT bind_flags = (vertex_buffer ? D3D11_BIND_VERTEX_BUFFER : 0) |
-                           (index_buffer ? D3D11_BIND_INDEX_BUFFER : 0);
-   const auto usage = dynamic ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
-   const UINT cpu_access = dynamic ? D3D11_CPU_ACCESS_WRITE : 0;
+      const UINT bind_flags = (vertex_buffer ? D3D11_BIND_VERTEX_BUFFER : 0) |
+                              (index_buffer ? D3D11_BIND_INDEX_BUFFER : 0);
+      const auto usage = dynamic ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
+      const UINT cpu_access = dynamic ? D3D11_CPU_ACCESS_WRITE : 0;
 
-   const auto desc = CD3D11_BUFFER_DESC{size, bind_flags, usage, cpu_access};
+      const auto desc = CD3D11_BUFFER_DESC{size, bind_flags, usage, cpu_access};
 
-   if (const auto result =
-          _device->CreateBuffer(&desc, nullptr, buffer.clear_and_assign());
-       FAILED(result)) {
-      log_and_terminate("Failed to create game IA buffer! reason: ",
-                        _com_error{result}.ErrorMessage());
+      if (const auto result =
+             _device->CreateBuffer(&desc, nullptr, buffer.clear_and_assign());
+          FAILED(result)) {
+         log_and_terminate_fmt("Failed to create game IA buffer! reason: {}",
+                               _com_error{result}.ErrorMessage());
+      }
+
+      return buffer;
+   };
+
+   auto& buffer = _buffer_pool.emplace_back(std::make_unique<Buffer>());
+
+   if (dynamic) {
+      for (std::size_t i = 0; i < Buffer::initial_dynamic_instances; ++i) {
+         buffer->dynamic_instances.push_back(
+            Dynamic_buffer_instance{.buffer = make_d3d11_buffer(), .last_used = 0});
+      }
+
+      buffer->buffer = buffer->dynamic_instances[0].buffer;
+   }
+   else {
+      buffer->buffer = make_d3d11_buffer();
    }
 
-   return ptr_to_handle(buffer.release());
+   return ptr_to_handle(buffer.get());
 }
 
-void __declspec(noinline) Shader_patch::destroy_ia_buffer(const Buffer_handle buffer_handle) noexcept
+void Shader_patch::destroy_ia_buffer(const Buffer_handle buffer_handle) noexcept
 {
-   auto* const buffer = handle_to_ptr<ID3D11Buffer>(buffer_handle);
+   auto* const buffer = handle_to_ptr<Buffer>(buffer_handle);
 
-   buffer->Release();
+   std::erase_if(_buffer_pool, [&](std::unique_ptr<Buffer>& other) {
+      return other.get() == buffer;
+   });
 }
 
 void Shader_patch::load_colorgrading_regions(const std::span<const std::byte> regions_data) noexcept
@@ -663,34 +683,80 @@ void Shader_patch::load_colorgrading_regions(const std::span<const std::byte> re
    }
 }
 
+auto Shader_patch::discard_ia_buffer_cpu(const Buffer_handle buffer_handle) noexcept
+   -> std::size_t
+{
+   auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
+
+   for (std::size_t i = 0; i < buffer->dynamic_instances.size(); ++i) {
+      auto& instance = buffer->dynamic_instances[i];
+
+      if (instance.last_used < _current_frame) {
+         instance.last_used = _current_frame;
+
+         return i;
+      }
+   }
+
+   D3D11_BUFFER_DESC desc{};
+
+   buffer->buffer->GetDesc(&desc);
+
+   Com_ptr<ID3D11Buffer> new_buffer;
+
+   if (FAILED(_device->CreateBuffer(&desc, nullptr, new_buffer.clear_and_assign()))) {
+      log_and_terminate("Failed to create new buffer for buffer discard operation."sv);
+   }
+
+   const auto index = buffer->dynamic_instances.size();
+
+   buffer->dynamic_instances.push_back(
+      Dynamic_buffer_instance{.buffer = new_buffer, .last_used = _current_frame});
+
+   return index;
+}
+
+void Shader_patch::rename_ia_buffer_cpu(const Buffer_handle buffer_handle,
+                                        const std::size_t index) noexcept
+{
+   auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
+
+   assert(index < buffer->dynamic_instances.size());
+
+   buffer->buffer = buffer->dynamic_instances[index].buffer;
+}
+
 void Shader_patch::update_ia_buffer(const Buffer_handle buffer_handle,
                                     const UINT offset, const UINT size,
                                     const std::byte* data) noexcept
 {
-   auto* buffer = handle_to_ptr<ID3D11Buffer>(buffer_handle);
+   auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
 
    const D3D11_BOX box{offset, 0, 0, offset + size, 1, 1};
 
-   _device_context->UpdateSubresource(buffer, 0, &box, data, 0, 0);
+   _device_context->UpdateSubresource(buffer->buffer.get(), 0, &box, data, 0, 0);
 }
 
 auto Shader_patch::map_ia_buffer(const Buffer_handle buffer_handle,
+                                 const std::size_t dynamic_index,
                                  const D3D11_MAP map_type) noexcept -> std::byte*
 {
-   auto* buffer = handle_to_ptr<ID3D11Buffer>(buffer_handle);
+   auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
 
    D3D11_MAPPED_SUBRESOURCE mapped;
 
-   _device_context->Map(buffer, 0, map_type, 0, &mapped);
+   _device_context->Map(buffer->dynamic_instances[dynamic_index].buffer.get(),
+                        0, map_type, 0, &mapped);
 
    return static_cast<std::byte*>(mapped.pData);
 }
 
-void Shader_patch::unmap_ia_buffer(const Buffer_handle buffer_handle) noexcept
+void Shader_patch::unmap_ia_buffer(const Buffer_handle buffer_handle,
+                                   const std::size_t dynamic_index) noexcept
 {
-   auto* buffer = handle_to_ptr<ID3D11Buffer>(buffer_handle);
+   auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
 
-   _device_context->Unmap(buffer, 0);
+   _device_context->Unmap(buffer->dynamic_instances[dynamic_index].buffer.get(), 0);
 }
 
 auto Shader_patch::map_dynamic_texture(const Game_texture_handle game_texture_handle,
@@ -780,9 +846,9 @@ void Shader_patch::clear_depthstencil(const float depth, const UINT8 stencil,
 void Shader_patch::set_index_buffer(const Buffer_handle buffer_handle,
                                     const UINT offset) noexcept
 {
-   auto* buffer = handle_to_ptr<ID3D11Buffer>(buffer_handle);
+   auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
 
-   _game_index_buffer = copy_raw_com_ptr(buffer);
+   _game_index_buffer = buffer->buffer;
    _game_index_buffer_offset = offset;
    _ia_index_buffer_dirty = true;
 }
@@ -790,9 +856,9 @@ void Shader_patch::set_index_buffer(const Buffer_handle buffer_handle,
 void Shader_patch::set_vertex_buffer(const Buffer_handle buffer_handle,
                                      const UINT offset, const UINT stride) noexcept
 {
-   auto* buffer = handle_to_ptr<ID3D11Buffer>(buffer_handle);
+   auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
 
-   _game_vertex_buffer = copy_raw_com_ptr(buffer);
+   _game_vertex_buffer = buffer->buffer;
    _game_vertex_buffer_offset = offset;
    _game_vertex_buffer_stride = stride;
    _ia_vertex_buffer_dirty = true;
@@ -1628,6 +1694,8 @@ void Shader_patch::update_frame_state() noexcept
    _use_interface_depthstencil = false;
    _lock_projtex_cube_slot = false;
    _oit_active = false;
+
+   ++_current_frame;
 }
 
 void Shader_patch::update_imgui() noexcept

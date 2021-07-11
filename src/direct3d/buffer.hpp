@@ -23,10 +23,9 @@ template<Buffer_type buffer_type>
 class Basic_buffer final : public D3D9_buffer_t<buffer_type> {
 public:
    static Com_ptr<Basic_buffer> create(core::Shader_patch& shader_patch,
-                                       const UINT size, const bool dynamic,
-                                       const bool dynamic_readable) noexcept
+                                       const UINT size, const bool dynamic) noexcept
    {
-      return Com_ptr{new Basic_buffer{shader_patch, size, dynamic, dynamic_readable}};
+      return Com_ptr{new Basic_buffer{shader_patch, size, dynamic}};
    }
 
    static_assert(buffer_type == Buffer_type::vertex_buffer ||
@@ -168,9 +167,8 @@ public:
    }
 
 private:
-   Basic_buffer(core::Shader_patch& shader_patch, const UINT size,
-                const bool dynamic, const bool dynamic_readable) noexcept
-      : _shader_patch{shader_patch}, _size{size}, _dynamic{dynamic}, _dynamic_readable{dynamic_readable}
+   Basic_buffer(core::Shader_patch& shader_patch, const UINT size, const bool dynamic) noexcept
+      : _shader_patch{shader_patch}, _size{size}, _dynamic{dynamic}
    {
    }
 
@@ -240,8 +238,12 @@ private:
       if (lock_offset > (_size - lock_size)) return D3DERR_INVALIDCALL;
 
       if (_lock_count == 0) {
-         _lock_data =
-            _shader_patch.map_ia_buffer(_buffer, lock_flags_to_map_type(flags));
+         if (flags & D3DLOCK_DISCARD) {
+            _dynamic_index = _shader_patch.discard_ia_buffer_cpu(_buffer);
+         }
+
+         _lock_data = _shader_patch.map_ia_buffer(_buffer, _dynamic_index,
+                                                  lock_flags_to_map_type(flags));
 
          if (!_lock_data) return D3DERR_INVALIDCALL;
       }
@@ -258,7 +260,8 @@ private:
       assert(_dynamic);
 
       if (--_lock_count == 0 && std::exchange(_lock_data, nullptr)) {
-         _shader_patch.unmap_ia_buffer(_buffer);
+         _shader_patch.unmap_ia_buffer(_buffer, _dynamic_index);
+         _shader_patch.rename_ia_buffer_cpu(_buffer, _dynamic_index);
       }
       else if (_lock_count == -1) {
          log_and_terminate("Unexpected buffer unlock!");
@@ -273,22 +276,17 @@ private:
       if (flags & D3DLOCK_DISCARD) return D3D11_MAP_WRITE_DISCARD;
       if (flags & D3DLOCK_NOOVERWRITE) return D3D11_MAP_WRITE_NO_OVERWRITE;
 
-      if (_dynamic_readable) {
-         return D3D11_MAP_READ_WRITE;
-      }
-      else {
-         return D3D11_MAP_WRITE;
-      }
+      return D3D11_MAP_WRITE;
    }
 
    core::Shader_patch& _shader_patch;
    const UINT _size;
    const bool _dynamic;
-   const bool _dynamic_readable = false;
    const core::Buffer_handle _buffer{
       _shader_patch.create_ia_buffer(_size, buffer_type == Buffer_type::vertex_buffer,
                                      buffer_type == Buffer_type::index_buffer,
                                      _dynamic)};
+   std::size_t _dynamic_index = 0;
 
    UINT _lock_offset{};
    UINT _lock_size{};

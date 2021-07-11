@@ -8,6 +8,7 @@
 #include "../material/shader_factory.hpp"
 #include "../shader/database.hpp"
 #include "backbuffer_cmaa2_views.hpp"
+#include "buffer.hpp"
 #include "com_ptr.hpp"
 #include "constant_buffers.hpp"
 #include "d3d11_helpers.hpp"
@@ -144,13 +145,19 @@ public:
 
    void load_colorgrading_regions(const std::span<const std::byte> regions_data) noexcept;
 
-   void update_ia_buffer(const Buffer_handle Buffer, const UINT offset,
+   auto discard_ia_buffer_cpu(const Buffer_handle buffer_handle) noexcept -> std::size_t;
+
+   void rename_ia_buffer_cpu(const Buffer_handle buffer_handle,
+                             const std::size_t index) noexcept;
+
+   void update_ia_buffer(const Buffer_handle buffer_handle, const UINT offset,
                          const UINT size, const std::byte* data) noexcept;
 
-   auto map_ia_buffer(const Buffer_handle Buffer, const D3D11_MAP map_type) noexcept
-      -> std::byte*;
+   auto map_ia_buffer(const Buffer_handle buffer_handle, const std::size_t dynamic_index,
+                      const D3D11_MAP map_type) noexcept -> std::byte*;
 
-   void unmap_ia_buffer(const Buffer_handle Buffer) noexcept;
+   void unmap_ia_buffer(const Buffer_handle buffer_handle,
+                        const std::size_t dynamic_index) noexcept;
 
    auto map_dynamic_texture(const Game_texture_handle game_texture_handle,
                             const UINT mip_level,
@@ -305,6 +312,7 @@ private:
       return dc;
    }();
    Swapchain _swapchain;
+   UINT64 _current_frame = 1; // Start at 1 so resources can use 0 as their last use.
 
    Input_layout_descriptions _input_layout_descriptions;
    shader::Database _shader_database{_device,
@@ -438,6 +446,7 @@ private:
    Game_alt_postprocessing _game_postprocessing{*_device, _shader_database};
 
    std::vector<std::unique_ptr<Game_texture>> _game_texture_pool;
+   std::vector<std::unique_ptr<Buffer>> _buffer_pool;
 
    effects::Control _effects{_device, _shader_database};
    effects::Rendertarget_allocator _rendertarget_allocator{_device};
