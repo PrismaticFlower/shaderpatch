@@ -708,6 +708,8 @@ auto Shader_patch::discard_ia_buffer_cpu(const Buffer_handle buffer_handle) noex
 {
    auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
 
+   std::scoped_lock lock{buffer->dynamic_instances_mutex};
+
    for (std::size_t i = 0; i < buffer->dynamic_instances.size(); ++i) {
       auto& instance = buffer->dynamic_instances[i];
 
@@ -741,6 +743,8 @@ void Shader_patch::rename_ia_buffer_cpu_async(const Buffer_handle buffer_handle,
 {
    auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
 
+   std::scoped_lock lock{buffer->dynamic_instances_mutex};
+
    assert(index < buffer->dynamic_instances.size());
 
    buffer->buffer = buffer->dynamic_instances[index].buffer;
@@ -763,6 +767,8 @@ auto Shader_patch::map_ia_buffer(const Buffer_handle buffer_handle,
 {
    auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
 
+   std::scoped_lock lock{buffer->dynamic_instances_mutex};
+
    D3D11_MAPPED_SUBRESOURCE mapped;
 
    _device_context->Map(buffer->dynamic_instances[dynamic_index].buffer.get(),
@@ -775,6 +781,8 @@ void Shader_patch::unmap_ia_buffer(const Buffer_handle buffer_handle,
                                    const std::size_t dynamic_index) noexcept
 {
    auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
+
+   std::scoped_lock lock{buffer->dynamic_instances_mutex};
 
    _device_context->Unmap(buffer->dynamic_instances[dynamic_index].buffer.get(), 0);
 }

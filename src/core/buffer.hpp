@@ -1,6 +1,7 @@
 #pragma once
 
 #include "com_ptr.hpp"
+#include "small_mutex.hpp"
 
 #include <d3d11_4.h>
 
@@ -18,9 +19,8 @@ struct Buffer {
 
    Com_ptr<ID3D11Buffer> buffer;
 
+   small_mutex dynamic_instances_mutex;
    absl::InlinedVector<Dynamic_buffer_instance, 3> dynamic_instances;
 };
-
-constexpr auto value = sizeof absl::InlinedVector<Dynamic_buffer_instance, 3>;
 
 }
