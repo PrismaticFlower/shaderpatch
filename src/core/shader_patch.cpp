@@ -202,6 +202,11 @@ void Shader_patch::present_async() noexcept
 {
    std::scoped_lock lock{_game_rendertargets_mutex};
 
+   ImGui::Text(fmt::format("remaining bytes {}",
+                           _constants_storage_allocator.remaining_bytes())
+                  .c_str());
+
+   _constants_storage_allocator.reset();
    _effects.profiler.end_frame(*_device_context);
    _game_postprocessing.end_frame();
 
@@ -543,7 +548,7 @@ auto Shader_patch::create_patch_texture(const std::span<const std::byte> texture
    }
 }
 
-void Shader_patch::destroy_patch_texture(const Patch_texture_handle texture_handle) noexcept
+void Shader_patch::destroy_patch_texture_async(const Patch_texture_handle texture_handle) noexcept
 {
    auto* const texture = handle_to_ptr<ID3D11ShaderResourceView>(texture_handle);
 
@@ -1059,7 +1064,7 @@ void Shader_patch::set_patch_material_async(const Material_handle material_handl
 }
 
 void Shader_patch::set_constants_async(const cb::Scene_tag, const UINT offset,
-                                       const std::span<const std::array<float, 4>> constants) noexcept
+                                       const std::span<const std::byte> constants) noexcept
 {
    _cb_scene_dirty = true;
 
@@ -1082,7 +1087,7 @@ void Shader_patch::set_constants_async(const cb::Scene_tag, const UINT offset,
 }
 
 void Shader_patch::set_constants_async(const cb::Draw_tag, const UINT offset,
-                                       const std::span<const std::array<float, 4>> constants) noexcept
+                                       const std::span<const std::byte> constants) noexcept
 {
    _cb_draw_dirty = true;
 
@@ -1100,7 +1105,7 @@ void Shader_patch::set_constants_async(const cb::Fixedfunction_tag,
 }
 
 void Shader_patch::set_constants_async(const cb::Skin_tag, const UINT offset,
-                                       const std::span<const std::array<float, 4>> constants) noexcept
+                                       const std::span<const std::byte> constants) noexcept
 {
    _cb_skin_dirty = true;
 
@@ -1110,7 +1115,7 @@ void Shader_patch::set_constants_async(const cb::Skin_tag, const UINT offset,
 }
 
 void Shader_patch::set_constants_async(const cb::Draw_ps_tag, const UINT offset,
-                                       const std::span<const std::array<float, 4>> constants) noexcept
+                                       const std::span<const std::byte> constants) noexcept
 {
    _cb_draw_ps_dirty = true;
 
@@ -1119,7 +1124,7 @@ void Shader_patch::set_constants_async(const cb::Draw_ps_tag, const UINT offset,
                constants.data(), constants.size_bytes());
 }
 
-void Shader_patch::set_informal_projection_matrix_async(const glm::mat4 matrix) noexcept
+void Shader_patch::set_informal_projection_matrix_async(const glm::mat4& matrix) noexcept
 {
    _informal_projection_matrix = matrix;
 }

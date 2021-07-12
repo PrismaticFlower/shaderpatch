@@ -284,7 +284,6 @@
     <ClInclude Include="src\core\texture_database.hpp" />
     <ClInclude Include="src\core\texture_loader.hpp" />
     <ClInclude Include="src\core\text\font_atlas_builder.hpp" />
-    <ClInclude Include="src\direct3d\dynamic_allocator_context.hpp" />
     <ClInclude Include="src\direct3d\resource_access.hpp" />
     <ClInclude Include="src\direct3d\format_patcher.hpp" />
     <ClInclude Include="src\direct3d\upload_texture.hpp" />

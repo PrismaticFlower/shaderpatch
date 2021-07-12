@@ -283,7 +283,6 @@ HRESULT Device::Present(const RECT*, const RECT*, HWND, const RGNDATA*) noexcept
    Debug_trace::func(__FUNCSIG__);
 
    _shader_patch.present_async();
-   _dynamic_allocator_context.reset();
 
    Debug_trace::reset();
 
@@ -699,7 +698,13 @@ HRESULT Device::SetTransform(D3DTRANSFORMSTATETYPE type, const D3DMATRIX* matrix
    Debug_trace::func(__FUNCSIG__);
 
    if (type == D3DTS_PROJECTION) {
-      _shader_patch.set_informal_projection_matrix_async(bit_cast<glm::mat4>(*matrix));
+      auto* async_param_location =
+         _shader_patch.allocate_memory_for_async_data(sizeof(glm::mat4)).data();
+
+      auto& async_matrix =
+         *new (async_param_location) glm::mat4{bit_cast<glm::mat4>(*matrix)};
+
+      _shader_patch.set_informal_projection_matrix_async(async_matrix);
    }
 
    return S_OK;
@@ -1148,28 +1153,34 @@ HRESULT Device::SetVertexShaderConstantF(UINT start_register, const float* const
 
    if (start_register < 2) return S_OK;
 
-   if (const std::span constants{reinterpret_cast<const std::array<float, 4>*>(constant_data),
-                                 vector4f_count};
-       start_register < 12) {
+   const auto constants = _shader_patch.allocate_memory_for_async_data(
+      vector4f_count * sizeof(std::array<float, 4>));
+
+   std::memcpy(constants.data(), constant_data, constants.size());
+
+   if (start_register < 12) {
       const auto start = start_register - 2u;
       const auto count = safe_min(vector4f_count, core::cb::scene_game_count - start);
 
-      _shader_patch.set_constants_async(core::cb::scene, start,
-                                        constants.subspan(0, count));
+      _shader_patch.set_constants_async(
+         core::cb::scene, start,
+         constants.subspan(0, count * sizeof(std::array<float, 4>)));
    }
    else if (start_register < 51) {
       const auto start = start_register - 12u;
       const auto count = safe_min(vector4f_count, core::cb::draw_game_count - start);
 
-      _shader_patch.set_constants_async(core::cb::draw, start,
-                                        constants.subspan(0, count));
+      _shader_patch.set_constants_async(
+         core::cb::draw, start,
+         constants.subspan(0, count * sizeof(std::array<float, 4>)));
    }
    else {
       const auto start = start_register - 51u;
       const auto count = safe_min(vector4f_count, core::cb::skin_game_count - start);
 
-      _shader_patch.set_constants_async(core::cb::skin, start,
-                                        constants.subspan(0, count));
+      _shader_patch.set_constants_async(
+         core::cb::skin, start,
+         constants.subspan(0, count * sizeof(std::array<float, 4>)));
    }
 
    return S_OK;
@@ -1230,8 +1241,10 @@ HRESULT Device::SetPixelShaderConstantF(UINT start_register, const float* consta
 
    const auto count =
       safe_min(vector4f_count, core::cb::draw_ps_game_count - start_register);
-   const auto constants =
-      std::span{reinterpret_cast<const std::array<float, 4>*>(constant_data), count};
+   const auto constants = _shader_patch.allocate_memory_for_async_data(
+      vector4f_count * sizeof(std::array<float, 4>));
+
+   std::memcpy(constants.data(), constant_data, constants.size());
 
    _shader_patch.set_constants_async(core::cb::draw_ps, start_register, constants);
 

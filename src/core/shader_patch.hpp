@@ -25,6 +25,7 @@
 #include "input_layout_descriptions.hpp"
 #include "input_layout_element.hpp"
 #include "late_backbuffer_resolver.hpp"
+#include "linear_allocator.hpp"
 #include "oit_provider.hpp"
 #include "sampler_states.hpp"
 #include "small_function.hpp"
@@ -106,7 +107,7 @@ public:
    auto create_patch_texture(const std::span<const std::byte> texture_data) noexcept
       -> Patch_texture_handle;
 
-   void destroy_patch_texture(const Patch_texture_handle texture_handle) noexcept;
+   void destroy_patch_texture_async(const Patch_texture_handle texture_handle) noexcept;
 
    auto create_patch_material(const std::span<const std::byte> material_data) noexcept
       -> Material_handle;
@@ -206,22 +207,31 @@ public:
 
    void set_patch_material_async(const Material_handle material_handle) noexcept;
 
+   /// @brief Allocate memory that is suitable to be passed to calls such as set_constants_async.
+   /// The memory's lifetime will be managed by Shader_patch and is guaranteed to have it's lifetime be sufficent for this use.
+   /// @param size Size of the memory to allocate.
+   /// @return A span to the allocated memory.
+   auto allocate_memory_for_async_data(const std::size_t size) -> std::span<std::byte>
+   {
+      return std::span{_constants_storage_allocator.allocate(size), size};
+   }
+
    void set_constants_async(const cb::Scene_tag, const UINT offset,
-                            const std::span<const std::array<float, 4>> constants) noexcept;
+                            const std::span<const std::byte> constants) noexcept;
 
    void set_constants_async(const cb::Draw_tag, const UINT offset,
-                            const std::span<const std::array<float, 4>> constants) noexcept;
+                            const std::span<const std::byte> constants) noexcept;
 
    void set_constants_async(const cb::Fixedfunction_tag,
                             const cb::Fixedfunction constants) noexcept;
 
    void set_constants_async(const cb::Skin_tag, const UINT offset,
-                            const std::span<const std::array<float, 4>> constants) noexcept;
+                            const std::span<const std::byte> constants) noexcept;
 
    void set_constants_async(const cb::Draw_ps_tag, const UINT offset,
-                            const std::span<const std::array<float, 4>> constants) noexcept;
+                            const std::span<const std::byte> constants) noexcept;
 
-   void set_informal_projection_matrix_async(const glm::mat4 matrix) noexcept;
+   void set_informal_projection_matrix_async(const glm::mat4& matrix) noexcept;
 
    void draw_async(const D3D11_PRIMITIVE_TOPOLOGY topology,
                    const UINT vertex_count, const UINT start_vertex) noexcept;
@@ -468,6 +478,7 @@ private:
    text::Font_atlas_builder _font_atlas_builder{_device};
 
    std::unique_ptr<BF2_log_monitor> _bf2_log_monitor;
+   Linear_allocator<16> _constants_storage_allocator{4'194'304};
 };
 
 }

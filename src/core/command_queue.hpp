@@ -227,7 +227,7 @@ struct Set_constants_draw_ps {
 };
 
 struct Set_informal_projection_matrix {
-   const glm::mat4 matrix;
+   const glm::mat4& matrix;
 };
 
 struct Draw {

@@ -29,6 +29,11 @@ public:
       return data;
    }
 
+   auto remaining_bytes() const noexcept -> std::size_t
+   {
+      return std::distance(_head, _end);
+   }
+
    void reset() noexcept
    {
       _head = reinterpret_cast<std::byte*>(_storage.get());
