@@ -66,7 +66,7 @@ public:
 
    void set_text_dpi(const std::uint32_t dpi) noexcept;
 
-   void present() noexcept;
+   void present_async() noexcept;
 
    static auto get_back_buffer() noexcept -> Game_rendertarget_id;
 
@@ -82,7 +82,7 @@ public:
    auto create_game_rendertarget(const UINT width, const UINT height) noexcept
       -> Game_rendertarget_id;
 
-   void destroy_game_rendertarget(const Game_rendertarget_id id) noexcept;
+   void destroy_game_rendertarget_async(const Game_rendertarget_id id) noexcept;
 
    auto create_game_texture2d(const UINT width, const UINT height,
                               const UINT mip_levels, const DXGI_FORMAT format,
@@ -99,7 +99,7 @@ public:
                                  const std::span<const Mapped_texture> data) noexcept
       -> Game_texture_handle;
 
-   void destroy_game_texture(const Game_texture_handle game_texture_handle) noexcept;
+   void destroy_game_texture_async(const Game_texture_handle game_texture_handle) noexcept;
 
    void convert_game_texture2d_to_dynamic(const Game_texture_handle game_texture_handle) noexcept;
 
@@ -111,12 +111,12 @@ public:
    auto create_patch_material(const std::span<const std::byte> material_data) noexcept
       -> Material_handle;
 
-   void destroy_patch_material(const Material_handle material_handle) noexcept;
+   void destroy_patch_material_async(const Material_handle material_handle) noexcept;
 
    auto create_patch_effects_config(const std::span<const std::byte> effects_config) noexcept
       -> Patch_effects_config_handle;
 
-   void destroy_patch_effects_config(const Patch_effects_config_handle effects_config) noexcept;
+   void destroy_patch_effects_config_async(const Patch_effects_config_handle effects_config) noexcept;
 
    auto create_game_input_layout(const std::span<const Input_layout_element> layout,
                                  const bool compressed,
@@ -127,14 +127,14 @@ public:
                          const bool index_buffer, const bool dynamic) noexcept
       -> Buffer_handle;
 
-   void destroy_ia_buffer(const Buffer_handle buffer_handle) noexcept;
+   void destroy_ia_buffer_async(const Buffer_handle buffer_handle) noexcept;
 
    void load_colorgrading_regions(const std::span<const std::byte> regions_data) noexcept;
 
    auto discard_ia_buffer_cpu(const Buffer_handle buffer_handle) noexcept -> std::size_t;
 
-   void rename_ia_buffer_cpu(const Buffer_handle buffer_handle,
-                             const std::size_t index) noexcept;
+   void rename_ia_buffer_cpu_async(const Buffer_handle buffer_handle,
+                                   const std::size_t index) noexcept;
 
    void update_ia_buffer(const Buffer_handle buffer_handle, const UINT offset,
                          const UINT size, const std::byte* data) noexcept;
@@ -152,77 +152,83 @@ public:
    void unmap_dynamic_texture(const Game_texture_handle game_texture_handle,
                               const UINT mip_level) noexcept;
 
-   void stretch_rendertarget(const Game_rendertarget_id source,
-                             const RECT source_rect, const Game_rendertarget_id dest,
-                             const RECT dest_rect) noexcept;
+   void stretch_rendertarget_async(const Game_rendertarget_id source,
+                                   const RECT source_rect,
+                                   const Game_rendertarget_id dest,
+                                   const RECT dest_rect) noexcept;
 
-   void color_fill_rendertarget(const Game_rendertarget_id rendertarget,
-                                const Clear_color color,
-                                const RECT* rect = nullptr) noexcept;
+   void color_fill_rendertarget_async(const Game_rendertarget_id rendertarget,
+                                      const Clear_color color,
+                                      const RECT* rect = nullptr) noexcept;
 
-   void clear_rendertarget(const Clear_color color) noexcept;
+   void clear_rendertarget_async(const Clear_color color) noexcept;
 
-   void clear_depthstencil(const float z, const UINT8 stencil,
-                           const bool clear_depth, const bool clear_stencil) noexcept;
+   void clear_depthstencil_async(const float z, const UINT8 stencil,
+                                 const bool clear_depth,
+                                 const bool clear_stencil) noexcept;
 
-   void set_index_buffer(const Buffer_handle buffer_handle, const UINT offset) noexcept;
+   void set_index_buffer_async(const Buffer_handle buffer_handle,
+                               const UINT offset) noexcept;
 
-   void set_vertex_buffer(const Buffer_handle buffer_handle, const UINT offset,
-                          const UINT stride) noexcept;
+   void set_vertex_buffer_async(const Buffer_handle buffer_handle,
+                                const UINT offset, const UINT stride) noexcept;
 
-   void set_input_layout(const Game_input_layout& input_layout) noexcept;
+   void set_input_layout_async(const Game_input_layout& input_layout) noexcept;
 
-   void set_game_shader(const std::uint32_t game_shader_index) noexcept;
+   void set_game_shader_async(const std::uint32_t game_shader_index) noexcept;
 
-   void set_rendertarget(const Game_rendertarget_id rendertarget) noexcept;
+   void set_rendertarget_async(const Game_rendertarget_id rendertarget) noexcept;
 
-   void set_depthstencil(const Game_depthstencil depthstencil) noexcept;
+   void set_depthstencil_async(const Game_depthstencil depthstencil) noexcept;
 
-   void set_rasterizer_state(ID3D11RasterizerState& rasterizer_state) noexcept;
+   void set_rasterizer_state_async(ID3D11RasterizerState& rasterizer_state) noexcept;
 
-   void set_depthstencil_state(ID3D11DepthStencilState& depthstencil_state,
-                               const UINT8 stencil_ref, const bool readonly) noexcept;
+   void set_depthstencil_state_async(ID3D11DepthStencilState& depthstencil_state,
+                                     const UINT8 stencil_ref,
+                                     const bool readonly) noexcept;
 
-   void set_blend_state(ID3D11BlendState1& blend_state,
-                        const bool additive_blending) noexcept;
+   void set_blend_state_async(ID3D11BlendState1& blend_state,
+                              const bool additive_blending) noexcept;
 
-   void set_fog_state(const bool enabled, const glm::vec4 color) noexcept;
+   void set_fog_state_async(const bool enabled, const glm::vec4 color) noexcept;
 
-   void set_texture(const UINT slot,
-                    const Game_texture_handle game_texture_handle) noexcept;
+   void set_texture_async(const UINT slot,
+                          const Game_texture_handle game_texture_handle) noexcept;
 
-   void set_texture(const UINT slot, const Game_rendertarget_id rendertarget) noexcept;
+   void set_texture_async(const UINT slot,
+                          const Game_rendertarget_id rendertarget) noexcept;
 
-   void set_projtex_mode(const Projtex_mode mode) noexcept;
+   void set_projtex_mode_async(const Projtex_mode mode) noexcept;
 
-   void set_projtex_type(const Projtex_type type) noexcept;
+   void set_projtex_type_async(const Projtex_type type) noexcept;
 
-   void set_projtex_cube(const Game_texture_handle game_texture_handle) noexcept;
+   void set_projtex_cube_async(const Game_texture_handle game_texture_handle) noexcept;
 
-   void set_patch_material(const Material_handle material_handle) noexcept;
+   void set_patch_material_async(const Material_handle material_handle) noexcept;
 
-   void set_constants(const cb::Scene_tag, const UINT offset,
-                      const std::span<const std::array<float, 4>> constants) noexcept;
+   void set_constants_async(const cb::Scene_tag, const UINT offset,
+                            const std::span<const std::array<float, 4>> constants) noexcept;
 
-   void set_constants(const cb::Draw_tag, const UINT offset,
-                      const std::span<const std::array<float, 4>> constants) noexcept;
+   void set_constants_async(const cb::Draw_tag, const UINT offset,
+                            const std::span<const std::array<float, 4>> constants) noexcept;
 
-   void set_constants(const cb::Fixedfunction_tag,
-                      const cb::Fixedfunction constants) noexcept;
+   void set_constants_async(const cb::Fixedfunction_tag,
+                            const cb::Fixedfunction constants) noexcept;
 
-   void set_constants(const cb::Skin_tag, const UINT offset,
-                      const std::span<const std::array<float, 4>> constants) noexcept;
+   void set_constants_async(const cb::Skin_tag, const UINT offset,
+                            const std::span<const std::array<float, 4>> constants) noexcept;
 
-   void set_constants(const cb::Draw_ps_tag, const UINT offset,
-                      const std::span<const std::array<float, 4>> constants) noexcept;
+   void set_constants_async(const cb::Draw_ps_tag, const UINT offset,
+                            const std::span<const std::array<float, 4>> constants) noexcept;
 
-   void set_informal_projection_matrix(const glm::mat4 matrix) noexcept;
+   void set_informal_projection_matrix_async(const glm::mat4 matrix) noexcept;
 
-   void draw(const D3D11_PRIMITIVE_TOPOLOGY topology, const UINT vertex_count,
-             const UINT start_vertex) noexcept;
+   void draw_async(const D3D11_PRIMITIVE_TOPOLOGY topology,
+                   const UINT vertex_count, const UINT start_vertex) noexcept;
 
-   void draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology, const UINT index_count,
-                     const UINT start_index, const UINT start_vertex) noexcept;
+   void draw_indexed_async(const D3D11_PRIMITIVE_TOPOLOGY topology,
+                           const UINT index_count, const UINT start_index,
+                           const UINT start_vertex) noexcept;
 
    void force_shader_cache_save_to_disk() noexcept;
 

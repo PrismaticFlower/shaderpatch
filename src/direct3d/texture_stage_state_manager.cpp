@@ -1,6 +1,6 @@
+#include "texture_stage_state_manager.hpp"
 #include "../game_support/munged_shader_declarations.hpp"
 #include "helpers.hpp"
-#include "texture_stage_state_manager.hpp"
 
 #include <algorithm>
 #include <gsl/gsl>
@@ -126,28 +126,28 @@ void Texture_stage_state_manager::update(core::Shader_patch& shader_patch,
                                          const D3DVIEWPORT9& viewport) const noexcept
 {
    if (is_color_fill_state()) {
-      shader_patch.set_game_shader(_color_fill_shader);
+      shader_patch.set_game_shader_async(_color_fill_shader);
    }
    else if (is_damage_overlay_state(texture_factor)) {
-      shader_patch.set_game_shader(_damage_overlay_shader);
+      shader_patch.set_game_shader_async(_damage_overlay_shader);
    }
    else if (is_plain_texture_state(texture_factor)) {
-      shader_patch.set_game_shader(_plain_texture_shader);
+      shader_patch.set_game_shader_async(_plain_texture_shader);
    }
    else if (is_scene_blur_state()) {
-      shader_patch.set_game_shader(_scene_blur_shader);
+      shader_patch.set_game_shader_async(_scene_blur_shader);
    }
    else if (is_zoom_blur_state()) { // This state is also used for the endgame screen fade.
-      shader_patch.set_game_shader(_zoom_blur_shader);
+      shader_patch.set_game_shader_async(_zoom_blur_shader);
    }
    else {
       log_and_terminate("Unexpected fixed function texture state!");
    }
 
-   shader_patch.set_constants(core::cb::fixedfunction,
-                              {.texture_factor = unpack_d3dcolor(texture_factor),
-                               .inv_resolution = {1.0f / viewport.Width,
-                                                  1.0f / viewport.Height}});
+   shader_patch.set_constants_async(core::cb::fixedfunction,
+                                    {.texture_factor = unpack_d3dcolor(texture_factor),
+                                     .inv_resolution = {1.0f / viewport.Width,
+                                                        1.0f / viewport.Height}});
 }
 
 void Texture_stage_state_manager::reset() noexcept

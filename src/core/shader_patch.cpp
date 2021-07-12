@@ -198,7 +198,7 @@ void Shader_patch::set_text_dpi(const std::uint32_t dpi) noexcept
    _font_atlas_builder.set_dpi(dpi);
 }
 
-void Shader_patch::present() noexcept
+void Shader_patch::present_async() noexcept
 {
    std::scoped_lock lock{_game_rendertargets_mutex};
 
@@ -277,14 +277,14 @@ auto Shader_patch::create_game_rendertarget(const UINT width, const UINT height)
    return Game_rendertarget_id{index};
 }
 
-void Shader_patch::destroy_game_rendertarget(const Game_rendertarget_id id) noexcept
+void Shader_patch::destroy_game_rendertarget_async(const Game_rendertarget_id id) noexcept
 {
    std::scoped_lock lock{_game_rendertargets_mutex};
 
    _game_rendertargets[static_cast<int>(id)] = {};
 
    if (id == _current_game_rendertarget) {
-      set_rendertarget(_game_backbuffer_index);
+      set_rendertarget_async(_game_backbuffer_index);
    }
 }
 
@@ -511,7 +511,7 @@ void Shader_patch::convert_game_texture2d_to_dynamic(const Game_texture_handle g
    *game_texture = Game_texture{srv, srgb_srv};
 }
 
-void Shader_patch::destroy_game_texture(const Game_texture_handle game_texture_handle) noexcept
+void Shader_patch::destroy_game_texture_async(const Game_texture_handle game_texture_handle) noexcept
 {
    std::scoped_lock lock{_game_texture_pool_mutex};
 
@@ -581,11 +581,11 @@ auto Shader_patch::create_patch_material(const std::span<const std::byte> materi
    }
 }
 
-void Shader_patch::destroy_patch_material(const Material_handle material_handle) noexcept
+void Shader_patch::destroy_patch_material_async(const Material_handle material_handle) noexcept
 {
    auto* const material = handle_to_ptr<material::Material>(material_handle);
 
-   if (_patch_material == material) set_patch_material(null_handle);
+   if (_patch_material == material) set_patch_material_async(null_handle);
 
    std::scoped_lock lock{_materials_pool_mutex};
 
@@ -621,7 +621,8 @@ auto Shader_patch::create_patch_effects_config(const std::span<const std::byte> 
    }
 }
 
-void Shader_patch::destroy_patch_effects_config(const Patch_effects_config_handle effects_config) noexcept
+void Shader_patch::destroy_patch_effects_config_async(
+   const Patch_effects_config_handle effects_config) noexcept
 {
    if (effects_config != _current_effects_id) return;
 
@@ -679,7 +680,7 @@ auto Shader_patch::create_ia_buffer(const UINT size, const bool vertex_buffer,
    return ptr_to_handle(buffer.get());
 }
 
-void Shader_patch::destroy_ia_buffer(const Buffer_handle buffer_handle) noexcept
+void Shader_patch::destroy_ia_buffer_async(const Buffer_handle buffer_handle) noexcept
 {
    auto* const buffer = handle_to_ptr<Buffer>(buffer_handle);
 
@@ -735,8 +736,8 @@ auto Shader_patch::discard_ia_buffer_cpu(const Buffer_handle buffer_handle) noex
    return index;
 }
 
-void Shader_patch::rename_ia_buffer_cpu(const Buffer_handle buffer_handle,
-                                        const std::size_t index) noexcept
+void Shader_patch::rename_ia_buffer_cpu_async(const Buffer_handle buffer_handle,
+                                              const std::size_t index) noexcept
 {
    auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
 
@@ -804,10 +805,10 @@ void Shader_patch::unmap_dynamic_texture(const Game_texture_handle game_texture_
    _device_context->Unmap(resource.get(), mip_level);
 }
 
-void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
-                                        const RECT source_rect,
-                                        const Game_rendertarget_id dest,
-                                        const RECT dest_rect) noexcept
+void Shader_patch::stretch_rendertarget_async(const Game_rendertarget_id source,
+                                              const RECT source_rect,
+                                              const Game_rendertarget_id dest,
+                                              const RECT dest_rect) noexcept
 {
    std::scoped_lock lock{_game_rendertargets_mutex};
 
@@ -834,9 +835,9 @@ void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
    restore_all_game_state();
 }
 
-void Shader_patch::color_fill_rendertarget(const Game_rendertarget_id rendertarget,
-                                           const Clear_color color,
-                                           const RECT* rect) noexcept
+void Shader_patch::color_fill_rendertarget_async(const Game_rendertarget_id rendertarget,
+                                                 const Clear_color color,
+                                                 const RECT* rect) noexcept
 {
    std::scoped_lock lock{_game_rendertargets_mutex};
 
@@ -845,7 +846,7 @@ void Shader_patch::color_fill_rendertarget(const Game_rendertarget_id rendertarg
                   clear_color_to_array(color).data(), rect, rect ? 1 : 0);
 }
 
-void Shader_patch::clear_rendertarget(const Clear_color color) noexcept
+void Shader_patch::clear_rendertarget_async(const Clear_color color) noexcept
 {
    std::scoped_lock lock{_game_rendertargets_mutex};
 
@@ -854,9 +855,9 @@ void Shader_patch::clear_rendertarget(const Clear_color color) noexcept
       clear_color_to_array(color).data());
 }
 
-void Shader_patch::clear_depthstencil(const float depth, const UINT8 stencil,
-                                      const bool clear_depth,
-                                      const bool clear_stencil) noexcept
+void Shader_patch::clear_depthstencil_async(const float depth, const UINT8 stencil,
+                                            const bool clear_depth,
+                                            const bool clear_stencil) noexcept
 {
    auto* const dsv = current_depthstencil(false);
 
@@ -868,8 +869,8 @@ void Shader_patch::clear_depthstencil(const float depth, const UINT8 stencil,
    _device_context->ClearDepthStencilView(dsv, clear_flags, depth, stencil);
 }
 
-void Shader_patch::set_index_buffer(const Buffer_handle buffer_handle,
-                                    const UINT offset) noexcept
+void Shader_patch::set_index_buffer_async(const Buffer_handle buffer_handle,
+                                          const UINT offset) noexcept
 {
    auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
 
@@ -878,8 +879,8 @@ void Shader_patch::set_index_buffer(const Buffer_handle buffer_handle,
    _ia_index_buffer_dirty = true;
 }
 
-void Shader_patch::set_vertex_buffer(const Buffer_handle buffer_handle,
-                                     const UINT offset, const UINT stride) noexcept
+void Shader_patch::set_vertex_buffer_async(const Buffer_handle buffer_handle,
+                                           const UINT offset, const UINT stride) noexcept
 {
    auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
 
@@ -889,7 +890,7 @@ void Shader_patch::set_vertex_buffer(const Buffer_handle buffer_handle,
    _ia_vertex_buffer_dirty = true;
 }
 
-void Shader_patch::set_input_layout(const Game_input_layout& input_layout) noexcept
+void Shader_patch::set_input_layout_async(const Game_input_layout& input_layout) noexcept
 {
    _game_input_layout = input_layout;
    _shader_dirty = true;
@@ -901,7 +902,7 @@ void Shader_patch::set_input_layout(const Game_input_layout& input_layout) noexc
    }
 }
 
-void Shader_patch::set_game_shader(const std::uint32_t shader_index) noexcept
+void Shader_patch::set_game_shader_async(const std::uint32_t shader_index) noexcept
 {
    _game_shader = &_game_shaders[shader_index];
    _shader_dirty = true;
@@ -924,27 +925,27 @@ void Shader_patch::set_game_shader(const std::uint32_t shader_index) noexcept
         light_active_spot));
 }
 
-void Shader_patch::set_rendertarget(const Game_rendertarget_id rendertarget) noexcept
+void Shader_patch::set_rendertarget_async(const Game_rendertarget_id rendertarget) noexcept
 {
    _om_targets_dirty = true;
    _current_game_rendertarget = rendertarget;
 }
 
-void Shader_patch::set_depthstencil(const Game_depthstencil depthstencil) noexcept
+void Shader_patch::set_depthstencil_async(const Game_depthstencil depthstencil) noexcept
 {
    _om_targets_dirty = true;
    _current_depthstencil_id = depthstencil;
 }
 
-void Shader_patch::set_rasterizer_state(ID3D11RasterizerState& rasterizer_state) noexcept
+void Shader_patch::set_rasterizer_state_async(ID3D11RasterizerState& rasterizer_state) noexcept
 {
    _game_rs_state = copy_raw_com_ptr(rasterizer_state);
    _rs_state_dirty = true;
 }
 
-void Shader_patch::set_depthstencil_state(ID3D11DepthStencilState& depthstencil_state,
-                                          const UINT8 stencil_ref,
-                                          const bool readonly) noexcept
+void Shader_patch::set_depthstencil_state_async(ID3D11DepthStencilState& depthstencil_state,
+                                                const UINT8 stencil_ref,
+                                                const bool readonly) noexcept
 {
    _game_depthstencil_state = copy_raw_com_ptr(depthstencil_state);
    _game_stencil_ref = stencil_ref;
@@ -954,8 +955,8 @@ void Shader_patch::set_depthstencil_state(ID3D11DepthStencilState& depthstencil_
       (std::exchange(_om_depthstencil_readonly, readonly) != readonly);
 }
 
-void Shader_patch::set_blend_state(ID3D11BlendState1& blend_state,
-                                   const bool additive_blending) noexcept
+void Shader_patch::set_blend_state_async(ID3D11BlendState1& blend_state,
+                                         const bool additive_blending) noexcept
 {
    _game_blend_state = copy_raw_com_ptr(blend_state);
    _om_blend_state_dirty = true;
@@ -964,15 +965,15 @@ void Shader_patch::set_blend_state(ID3D11BlendState1& blend_state,
    _cb_draw_ps_dirty = true;
 }
 
-void Shader_patch::set_fog_state(const bool enabled, const glm::vec4 color) noexcept
+void Shader_patch::set_fog_state_async(const bool enabled, const glm::vec4 color) noexcept
 {
    _cb_draw_ps_dirty = true;
    _cb_draw_ps.fog_enabled = enabled;
    _cb_draw_ps.fog_color = color;
 }
 
-void Shader_patch::set_texture(const UINT slot,
-                               const Game_texture_handle game_texture_handle) noexcept
+void Shader_patch::set_texture_async(const UINT slot,
+                                     const Game_texture_handle game_texture_handle) noexcept
 {
    Expects(slot < 4);
 
@@ -982,8 +983,8 @@ void Shader_patch::set_texture(const UINT slot,
    _ps_textures_dirty = true;
 }
 
-void Shader_patch::set_texture(const UINT slot,
-                               const Game_rendertarget_id rendertarget) noexcept
+void Shader_patch::set_texture_async(const UINT slot,
+                                     const Game_rendertarget_id rendertarget) noexcept
 {
    Expects(slot < 4);
 
@@ -998,7 +999,7 @@ void Shader_patch::set_texture(const UINT slot,
    _device_context->OMSetRenderTargets(0, nullptr, nullptr);
 }
 
-void Shader_patch::set_projtex_mode(const Projtex_mode mode) noexcept
+void Shader_patch::set_projtex_mode_async(const Projtex_mode mode) noexcept
 {
    if (mode == Projtex_mode::clamp) {
       auto* const sampler = _sampler_states.linear_clamp_sampler.get();
@@ -1010,7 +1011,7 @@ void Shader_patch::set_projtex_mode(const Projtex_mode mode) noexcept
    }
 }
 
-void Shader_patch::set_projtex_type(const Projtex_type type) noexcept
+void Shader_patch::set_projtex_type_async(const Projtex_type type) noexcept
 {
    if (type == Projtex_type::tex2d) {
       _cb_draw_ps.cube_projtex = false;
@@ -1022,7 +1023,7 @@ void Shader_patch::set_projtex_type(const Projtex_type type) noexcept
    _cb_draw_ps_dirty = true;
 }
 
-void Shader_patch::set_projtex_cube(const Game_texture_handle game_texture_handle) noexcept
+void Shader_patch::set_projtex_cube_async(const Game_texture_handle game_texture_handle) noexcept
 {
    auto* const game_texture = handle_to_ptr<Game_texture>(game_texture_handle);
 
@@ -1032,7 +1033,7 @@ void Shader_patch::set_projtex_cube(const Game_texture_handle game_texture_handl
    _ps_textures_dirty = true;
 }
 
-void Shader_patch::set_patch_material(const Material_handle material_handle) noexcept
+void Shader_patch::set_patch_material_async(const Material_handle material_handle) noexcept
 {
    auto* const material = handle_to_ptr<material::Material>(material_handle);
 
@@ -1049,8 +1050,8 @@ void Shader_patch::set_patch_material(const Material_handle material_handle) noe
    }
 }
 
-void Shader_patch::set_constants(const cb::Scene_tag, const UINT offset,
-                                 const std::span<const std::array<float, 4>> constants) noexcept
+void Shader_patch::set_constants_async(const cb::Scene_tag, const UINT offset,
+                                       const std::span<const std::array<float, 4>> constants) noexcept
 {
    _cb_scene_dirty = true;
 
@@ -1072,8 +1073,8 @@ void Shader_patch::set_constants(const cb::Scene_tag, const UINT offset,
    }
 }
 
-void Shader_patch::set_constants(const cb::Draw_tag, const UINT offset,
-                                 const std::span<const std::array<float, 4>> constants) noexcept
+void Shader_patch::set_constants_async(const cb::Draw_tag, const UINT offset,
+                                       const std::span<const std::array<float, 4>> constants) noexcept
 {
    _cb_draw_dirty = true;
 
@@ -1082,16 +1083,16 @@ void Shader_patch::set_constants(const cb::Draw_tag, const UINT offset,
                constants.data(), constants.size_bytes());
 }
 
-void Shader_patch::set_constants(const cb::Fixedfunction_tag,
-                                 cb::Fixedfunction constants) noexcept
+void Shader_patch::set_constants_async(const cb::Fixedfunction_tag,
+                                       cb::Fixedfunction constants) noexcept
 {
    update_dynamic_buffer(*_device_context, *_cb_fixedfunction_buffer, constants);
 
    _game_postprocessing.blur_factor(constants.texture_factor.a);
 }
 
-void Shader_patch::set_constants(const cb::Skin_tag, const UINT offset,
-                                 const std::span<const std::array<float, 4>> constants) noexcept
+void Shader_patch::set_constants_async(const cb::Skin_tag, const UINT offset,
+                                       const std::span<const std::array<float, 4>> constants) noexcept
 {
    _cb_skin_dirty = true;
 
@@ -1100,8 +1101,8 @@ void Shader_patch::set_constants(const cb::Skin_tag, const UINT offset,
                constants.data(), constants.size_bytes());
 }
 
-void Shader_patch::set_constants(const cb::Draw_ps_tag, const UINT offset,
-                                 const std::span<const std::array<float, 4>> constants) noexcept
+void Shader_patch::set_constants_async(const cb::Draw_ps_tag, const UINT offset,
+                                       const std::span<const std::array<float, 4>> constants) noexcept
 {
    _cb_draw_ps_dirty = true;
 
@@ -1110,13 +1111,13 @@ void Shader_patch::set_constants(const cb::Draw_ps_tag, const UINT offset,
                constants.data(), constants.size_bytes());
 }
 
-void Shader_patch::set_informal_projection_matrix(const glm::mat4 matrix) noexcept
+void Shader_patch::set_informal_projection_matrix_async(const glm::mat4 matrix) noexcept
 {
    _informal_projection_matrix = matrix;
 }
 
-void Shader_patch::draw(const D3D11_PRIMITIVE_TOPOLOGY topology,
-                        const UINT vertex_count, const UINT start_vertex) noexcept
+void Shader_patch::draw_async(const D3D11_PRIMITIVE_TOPOLOGY topology,
+                              const UINT vertex_count, const UINT start_vertex) noexcept
 {
    update_dirty_state(topology);
 
@@ -1125,9 +1126,9 @@ void Shader_patch::draw(const D3D11_PRIMITIVE_TOPOLOGY topology,
    _device_context->Draw(vertex_count, start_vertex);
 }
 
-void Shader_patch::draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
-                                const UINT index_count, const UINT start_index,
-                                const UINT start_vertex) noexcept
+void Shader_patch::draw_indexed_async(const D3D11_PRIMITIVE_TOPOLOGY topology,
+                                      const UINT index_count, const UINT start_index,
+                                      const UINT start_vertex) noexcept
 {
    update_dirty_state(topology);
 

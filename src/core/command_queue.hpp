@@ -31,7 +31,7 @@ enum class Command_type : std::uint8_t {
    set_blend_state,
    set_fog_state,
    set_texture,
-   set_texture,
+   set_texture_rendertarget,
    set_projtex_mode,
    set_projtex_type,
    set_projtex_cube,
@@ -181,7 +181,7 @@ struct Set_texture {
    const Game_texture_handle game_texture_handle;
 };
 
-struct Set_texture {
+struct Set_texture_rendertarget {
    const UINT slot;
    const Game_rendertarget_id rendertarget;
 };
@@ -275,7 +275,7 @@ struct alignas(std::hardware_constructive_interference_size) Command {
       commands::Set_blend_state set_blend_state;
       commands::Set_fog_state set_fog_state;
       commands::Set_texture set_texture;
-      commands::Set_texture set_texture;
+      commands::Set_texture_rendertarget set_texture_rendertarget;
       commands::Set_projtex_mode set_projtex_mode;
       commands::Set_projtex_type set_projtex_type;
       commands::Set_projtex_cube set_projtex_cube;

@@ -282,7 +282,7 @@ HRESULT Device::Present(const RECT*, const RECT*, HWND, const RGNDATA*) noexcept
 {
    Debug_trace::func(__FUNCSIG__);
 
-   _shader_patch.present();
+   _shader_patch.present_async();
    _dynamic_allocator_context.reset();
 
    Debug_trace::reset();
@@ -520,10 +520,11 @@ HRESULT Device::StretchRect(IDirect3DSurface9* source_surface,
       return rect;
    };
 
-   _shader_patch.stretch_rendertarget(source_rt->rendertarget(),
-                                      perceived_rect_to_actual(src_desc, *source_rect),
-                                      dest_rt->rendertarget(),
-                                      perceived_rect_to_actual(dest_desc, *dest_rect));
+   _shader_patch.stretch_rendertarget_async(source_rt->rendertarget(),
+                                            perceived_rect_to_actual(src_desc, *source_rect),
+                                            dest_rt->rendertarget(),
+                                            perceived_rect_to_actual(dest_desc,
+                                                                     *dest_rect));
 
    return S_OK;
 }
@@ -542,8 +543,8 @@ HRESULT Device::ColorFill(IDirect3DSurface9* surface, const RECT* rect,
       return D3DERR_INVALIDCALL;
    }
 
-   _shader_patch.color_fill_rendertarget(rendertarget->rendertarget(),
-                                         d3dcolor_to_clear_color(color), rect);
+   _shader_patch.color_fill_rendertarget_async(rendertarget->rendertarget(),
+                                               d3dcolor_to_clear_color(color), rect);
 
    return S_OK;
 }
@@ -595,7 +596,7 @@ HRESULT Device::SetRenderTarget(DWORD rendertarget_index,
       _viewport = {0, 0, desc.Width, desc.Height, 0.0f, 1.0f};
    }
 
-   _shader_patch.set_rendertarget(rendertarget_access->rendertarget());
+   _shader_patch.set_rendertarget_async(rendertarget_access->rendertarget());
 
    _rendertarget = copy_raw_com_ptr(rendertarget);
 
@@ -620,7 +621,7 @@ HRESULT Device::SetDepthStencilSurface(IDirect3DSurface9* new_z_stencil) noexcep
    Debug_trace::func(__FUNCSIG__);
 
    if (!new_z_stencil) {
-      _shader_patch.set_depthstencil(core::Game_depthstencil::none);
+      _shader_patch.set_depthstencil_async(core::Game_depthstencil::none);
       _depthstencil = nullptr;
 
       return S_OK;
@@ -633,7 +634,7 @@ HRESULT Device::SetDepthStencilSurface(IDirect3DSurface9* new_z_stencil) noexcep
       return D3DERR_INVALIDCALL;
    }
 
-   _shader_patch.set_depthstencil(depthstencil_accessor->depthstencil());
+   _shader_patch.set_depthstencil_async(depthstencil_accessor->depthstencil());
 
    _depthstencil = copy_raw_com_ptr(new_z_stencil);
 
@@ -667,13 +668,13 @@ HRESULT Device::Clear(DWORD count, const D3DRECT* rects, DWORD flags,
    }
 
    if (flags & D3DCLEAR_ZBUFFER || flags & D3DCLEAR_STENCIL) {
-      _shader_patch.clear_depthstencil(z, static_cast<UINT8>(stencil),
-                                       (flags & (D3DCLEAR_ZBUFFER)) != 0,
-                                       (flags & (D3DCLEAR_STENCIL)) != 0);
+      _shader_patch.clear_depthstencil_async(z, static_cast<UINT8>(stencil),
+                                             (flags & (D3DCLEAR_ZBUFFER)) != 0,
+                                             (flags & (D3DCLEAR_STENCIL)) != 0);
    }
 
    if (flags & D3DCLEAR_TARGET) {
-      _shader_patch.clear_rendertarget(d3dcolor_to_clear_color(color));
+      _shader_patch.clear_rendertarget_async(d3dcolor_to_clear_color(color));
    }
 
    return S_OK;
@@ -698,7 +699,7 @@ HRESULT Device::SetTransform(D3DTRANSFORMSTATETYPE type, const D3DMATRIX* matrix
    Debug_trace::func(__FUNCSIG__);
 
    if (type == D3DTS_PROJECTION) {
-      _shader_patch.set_informal_projection_matrix(bit_cast<glm::mat4>(*matrix));
+      _shader_patch.set_informal_projection_matrix_async(bit_cast<glm::mat4>(*matrix));
    }
 
    return S_OK;
@@ -889,9 +890,9 @@ HRESULT Device::SetTexture(DWORD stage, IDirect3DBaseTexture9* texture) noexcept
    if (stage >= 4) return D3DERR_INVALIDCALL;
 
    if (!texture) {
-      if (stage == 0) _shader_patch.set_patch_material(core::null_handle);
+      if (stage == 0) _shader_patch.set_patch_material_async(core::null_handle);
 
-      _shader_patch.set_texture(stage, core::null_handle);
+      _shader_patch.set_texture_async(stage, core::null_handle);
 
       return S_OK;
    }
@@ -908,27 +909,27 @@ HRESULT Device::SetTexture(DWORD stage, IDirect3DBaseTexture9* texture) noexcept
 
    if (stage == projtex_slot) {
       if (bindable_dimension == Texture_accessor_dimension::cube) {
-         _shader_patch.set_projtex_type(core::Projtex_type::texcube);
-         _shader_patch.set_projtex_cube(bindable->texture());
+         _shader_patch.set_projtex_type_async(core::Projtex_type::texcube);
+         _shader_patch.set_projtex_cube_async(bindable->texture());
       }
       else {
-         _shader_patch.set_projtex_type(core::Projtex_type::tex2d);
-         _shader_patch.set_projtex_cube(core::null_handle);
+         _shader_patch.set_projtex_type_async(core::Projtex_type::tex2d);
+         _shader_patch.set_projtex_cube_async(core::null_handle);
       }
    }
 
    if (bindable_type == Texture_accessor_type::texture) {
-      if (stage == 0) _shader_patch.set_patch_material(core::null_handle);
+      if (stage == 0) _shader_patch.set_patch_material_async(core::null_handle);
 
-      _shader_patch.set_texture(stage, bindable->texture());
+      _shader_patch.set_texture_async(stage, bindable->texture());
    }
    else if (bindable_type == Texture_accessor_type::texture_rendertarget) {
-      if (stage == 0) _shader_patch.set_patch_material(core::null_handle);
+      if (stage == 0) _shader_patch.set_patch_material_async(core::null_handle);
 
-      _shader_patch.set_texture(stage, bindable->texture_rendertarget());
+      _shader_patch.set_texture_async(stage, bindable->texture_rendertarget());
    }
    else if (bindable_type == Texture_accessor_type::material && stage == 0) {
-      _shader_patch.set_patch_material(bindable->material());
+      _shader_patch.set_patch_material_async(bindable->material());
    }
 
    return S_OK;
@@ -1017,9 +1018,9 @@ HRESULT Device::SetSamplerState(DWORD sampler, D3DSAMPLERSTATETYPE state, DWORD 
    if (sampler >= 4) return D3DERR_INVALIDCALL;
 
    if (sampler == projtex_slot && state == D3DSAMP_ADDRESSU) {
-      _shader_patch.set_projtex_mode(value == D3DTADDRESS_WRAP
-                                        ? core::Projtex_mode::wrap
-                                        : core::Projtex_mode::clamp);
+      _shader_patch.set_projtex_mode_async(value == D3DTADDRESS_WRAP
+                                              ? core::Projtex_mode::wrap
+                                              : core::Projtex_mode::clamp);
    }
 
    return S_OK;
@@ -1040,12 +1041,12 @@ HRESULT Device::DrawPrimitive(D3DPRIMITIVETYPE primitive_type,
    // sets the primitive topology in a `modl` `segm` to triangle fans.
    if (primitive_type == D3DPT_TRIANGLEFAN) [[unlikely]] {
       SetIndices(_triangle_fan_quad_ibuf.get());
-      _shader_patch.draw_indexed(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, 6, 0,
-                                 start_vertex);
+      _shader_patch.draw_indexed_async(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, 6,
+                                       0, start_vertex);
    }
    else {
-      _shader_patch.draw(d3d_primitive_type_to_d3d11_topology(primitive_type),
-                         vertex_count, start_vertex);
+      _shader_patch.draw_async(d3d_primitive_type_to_d3d11_topology(primitive_type),
+                               vertex_count, start_vertex);
    }
 
    return S_OK;
@@ -1062,8 +1063,8 @@ HRESULT Device::DrawIndexedPrimitive(D3DPRIMITIVETYPE primitive_type,
    const auto vertex_count =
       d3d_primitive_count_to_vertex_count(primitive_type, primitive_count);
 
-   _shader_patch.draw_indexed(d3d_primitive_type_to_d3d11_topology(primitive_type),
-                              vertex_count, start_index, base_vertex_index);
+   _shader_patch.draw_indexed_async(d3d_primitive_type_to_d3d11_topology(primitive_type),
+                                    vertex_count, start_index, base_vertex_index);
 
    return S_OK;
 }
@@ -1087,7 +1088,7 @@ HRESULT Device::SetVertexDeclaration(IDirect3DVertexDeclaration9* decl) noexcept
 
    if (!decl) return D3DERR_INVALIDCALL;
 
-   _shader_patch.set_input_layout(
+   _shader_patch.set_input_layout_async(
       static_cast<Vertex_declaration*>(decl)->input_layout());
 
    return S_OK;
@@ -1133,7 +1134,8 @@ HRESULT Device::SetVertexShader(IDirect3DVertexShader9* shader) noexcept
       return S_OK;
    }
 
-   _shader_patch.set_game_shader(static_cast<Vertex_shader*>(shader)->game_shader());
+   _shader_patch.set_game_shader_async(
+      static_cast<Vertex_shader*>(shader)->game_shader());
    _fixed_func_active = false;
 
    return S_OK;
@@ -1152,19 +1154,22 @@ HRESULT Device::SetVertexShaderConstantF(UINT start_register, const float* const
       const auto start = start_register - 2u;
       const auto count = safe_min(vector4f_count, core::cb::scene_game_count - start);
 
-      _shader_patch.set_constants(core::cb::scene, start, constants.subspan(0, count));
+      _shader_patch.set_constants_async(core::cb::scene, start,
+                                        constants.subspan(0, count));
    }
    else if (start_register < 51) {
       const auto start = start_register - 12u;
       const auto count = safe_min(vector4f_count, core::cb::draw_game_count - start);
 
-      _shader_patch.set_constants(core::cb::draw, start, constants.subspan(0, count));
+      _shader_patch.set_constants_async(core::cb::draw, start,
+                                        constants.subspan(0, count));
    }
    else {
       const auto start = start_register - 51u;
       const auto count = safe_min(vector4f_count, core::cb::skin_game_count - start);
 
-      _shader_patch.set_constants(core::cb::skin, start, constants.subspan(0, count));
+      _shader_patch.set_constants_async(core::cb::skin, start,
+                                        constants.subspan(0, count));
    }
 
    return S_OK;
@@ -1180,7 +1185,7 @@ HRESULT Device::SetStreamSource(UINT stream_number, IDirect3DVertexBuffer9* stre
 
    const auto& vertex_buffer = *static_cast<Vertex_buffer*>(stream_data);
 
-   _shader_patch.set_vertex_buffer(vertex_buffer.buffer(), offset_in_bytes, stride);
+   _shader_patch.set_vertex_buffer_async(vertex_buffer.buffer(), offset_in_bytes, stride);
 
    return S_OK;
 }
@@ -1193,7 +1198,7 @@ HRESULT Device::SetIndices(IDirect3DIndexBuffer9* index_data) noexcept
 
    const auto& index_buffer = *static_cast<Index_buffer*>(index_data);
 
-   _shader_patch.set_index_buffer(index_buffer.buffer(), 0);
+   _shader_patch.set_index_buffer_async(index_buffer.buffer(), 0);
 
    return S_OK;
 }
@@ -1228,7 +1233,7 @@ HRESULT Device::SetPixelShaderConstantF(UINT start_register, const float* consta
    const auto constants =
       std::span{reinterpret_cast<const std::array<float, 4>*>(constant_data), count};
 
-   _shader_patch.set_constants(core::cb::draw_ps, start_register, constants);
+   _shader_patch.set_constants_async(core::cb::draw_ps, start_register, constants);
 
    return S_OK;
 }

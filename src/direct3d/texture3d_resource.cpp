@@ -25,10 +25,10 @@ Texture3d_resource::Texture3d_resource(core::Shader_patch& patch, const UINT wid
 
 Texture3d_resource::~Texture3d_resource()
 {
-   if (_material_handle) _patch.destroy_patch_material(_material_handle);
+   if (_material_handle) _patch.destroy_patch_material_async(_material_handle);
    if (_texture_handle) _patch.destroy_patch_texture(_texture_handle);
    if (_patch_effects_config_handle) {
-      _patch.destroy_patch_effects_config(_patch_effects_config_handle);
+      _patch.destroy_patch_effects_config_async(_patch_effects_config_handle);
    }
 }
 

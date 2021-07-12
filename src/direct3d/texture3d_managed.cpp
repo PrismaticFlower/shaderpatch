@@ -39,7 +39,7 @@ Texture3d_managed::Texture3d_managed(core::Shader_patch& shader_patch,
 
 Texture3d_managed::~Texture3d_managed()
 {
-   if (_game_texture) _shader_patch.destroy_game_texture(_game_texture);
+   if (_game_texture) _shader_patch.destroy_game_texture_async(_game_texture);
 }
 
 HRESULT Texture3d_managed::QueryInterface(const IID& iid, void** object) noexcept

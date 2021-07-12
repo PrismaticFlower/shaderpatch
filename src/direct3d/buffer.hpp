@@ -174,7 +174,7 @@ private:
 
    ~Basic_buffer()
    {
-      _shader_patch.destroy_ia_buffer(_buffer);
+      _shader_patch.destroy_ia_buffer_async(_buffer);
    }
 
    auto lock_default(UINT lock_offset, UINT lock_size, void** data, DWORD flags) noexcept
@@ -261,7 +261,7 @@ private:
 
       if (--_lock_count == 0 && std::exchange(_lock_data, nullptr)) {
          _shader_patch.unmap_ia_buffer(_buffer, _dynamic_index);
-         _shader_patch.rename_ia_buffer_cpu(_buffer, _dynamic_index);
+         _shader_patch.rename_ia_buffer_cpu_async(_buffer, _dynamic_index);
       }
       else if (_lock_count == -1) {
          log_and_terminate("Unexpected buffer unlock!");

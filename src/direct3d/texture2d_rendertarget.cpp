@@ -208,7 +208,7 @@ Texture2d_rendertarget::Rendertarget_id::~Rendertarget_id()
 {
    Debug_trace::func(__FUNCSIG__);
 
-   shader_patch.destroy_game_rendertarget(id);
+   shader_patch.destroy_game_rendertarget_async(id);
 }
 
 }

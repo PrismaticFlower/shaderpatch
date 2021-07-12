@@ -167,7 +167,7 @@ void Render_state_manager::update_blend_state(core::Shader_patch& shader_patch) 
                           return (current_blend_state == pair.first);
                        });
        blend_state != _blend_states.cend()) {
-      shader_patch.set_blend_state(*blend_state->second, additive_blending);
+      shader_patch.set_blend_state_async(*blend_state->second, additive_blending);
 
       return;
    }
@@ -177,7 +177,7 @@ void Render_state_manager::update_blend_state(core::Shader_patch& shader_patch) 
           .emplace_back(_current_blend_state, create_current_blend_state(shader_patch))
           .second;
 
-   shader_patch.set_blend_state(blend_state, additive_blending);
+   shader_patch.set_blend_state_async(blend_state, additive_blending);
 }
 
 void Render_state_manager::update_depthstencil_state(core::Shader_patch& shader_patch) noexcept
@@ -196,9 +196,9 @@ void Render_state_manager::update_depthstencil_state(core::Shader_patch& shader_
                           return (current_depthstencil_state == pair.first);
                        });
        depthstencil_state != _depthstencil_states.cend()) {
-      shader_patch.set_depthstencil_state(*depthstencil_state->second,
-                                          _current_depthstencil_state.stencil_ref,
-                                          readonly_depthstencil);
+      shader_patch.set_depthstencil_state_async(*depthstencil_state->second,
+                                                _current_depthstencil_state.stencil_ref,
+                                                readonly_depthstencil);
 
       return;
    }
@@ -209,9 +209,9 @@ void Render_state_manager::update_depthstencil_state(core::Shader_patch& shader_
                         create_current_depthstencil_state(shader_patch))
           .second;
 
-   shader_patch.set_depthstencil_state(depthstencil_state,
-                                       _current_depthstencil_state.stencil_ref,
-                                       readonly_depthstencil);
+   shader_patch.set_depthstencil_state_async(depthstencil_state,
+                                             _current_depthstencil_state.stencil_ref,
+                                             readonly_depthstencil);
 }
 
 void Render_state_manager::update_rasterizer_state(core::Shader_patch& shader_patch) noexcept
@@ -223,7 +223,7 @@ void Render_state_manager::update_rasterizer_state(core::Shader_patch& shader_pa
                           return (current_rasterizer_state == pair.first);
                        });
        rasterizer_state != _rasterizer_states.cend()) {
-      shader_patch.set_rasterizer_state(*rasterizer_state->second);
+      shader_patch.set_rasterizer_state_async(*rasterizer_state->second);
 
       return;
    }
@@ -234,21 +234,21 @@ void Render_state_manager::update_rasterizer_state(core::Shader_patch& shader_pa
                         create_current_rasterizer_state(shader_patch))
           .second;
 
-   shader_patch.set_rasterizer_state(rasterizer_state);
+   shader_patch.set_rasterizer_state_async(rasterizer_state);
 }
 
 void Render_state_manager::update_fog_state(core::Shader_patch& shader_patch) noexcept
 {
-   shader_patch.set_fog_state(_fog_state.enable, unpack_d3dcolor(_fog_state.color));
+   shader_patch.set_fog_state_async(_fog_state.enable,
+                                    unpack_d3dcolor(_fog_state.color));
 }
 
-auto Render_state_manager::create_current_blend_state(core::Shader_patch& shader_patch) const
-   noexcept -> Com_ptr<ID3D11BlendState1>
+auto Render_state_manager::create_current_blend_state(core::Shader_patch& shader_patch) const noexcept
+   -> Com_ptr<ID3D11BlendState1>
 {
    D3D11_RENDER_TARGET_BLEND_DESC1 desc{true, false};
 
-   const auto map_blend_value = [](const unsigned int d3d9_blend) noexcept
-   {
+   const auto map_blend_value = [](const unsigned int d3d9_blend) noexcept {
       switch (d3d9_blend) {
       case D3DBLEND_ZERO:
          return D3D11_BLEND_ZERO;
@@ -281,8 +281,7 @@ auto Render_state_manager::create_current_blend_state(core::Shader_patch& shader
       }
    };
 
-   const auto map_alpha_blend_value = [](const unsigned int d3d9_blend) noexcept
-   {
+   const auto map_alpha_blend_value = [](const unsigned int d3d9_blend) noexcept {
       switch (d3d9_blend) {
       case D3DBLEND_ZERO:
          return D3D11_BLEND_ZERO;
@@ -311,8 +310,7 @@ auto Render_state_manager::create_current_blend_state(core::Shader_patch& shader
       }
    };
 
-   const auto map_blendop_value = [](const unsigned int d3d9_blendop) noexcept
-   {
+   const auto map_blendop_value = [](const unsigned int d3d9_blendop) noexcept {
       switch (d3d9_blendop) {
       case D3DBLENDOP_ADD:
          return D3D11_BLEND_OP_ADD;
@@ -354,13 +352,12 @@ auto Render_state_manager::create_current_blend_state(core::Shader_patch& shader
    return shader_patch.create_blend_state({false, false, desc});
 }
 
-auto Render_state_manager::create_current_depthstencil_state(core::Shader_patch& shader_patch) const
-   noexcept -> Com_ptr<ID3D11DepthStencilState>
+auto Render_state_manager::create_current_depthstencil_state(
+   core::Shader_patch& shader_patch) const noexcept -> Com_ptr<ID3D11DepthStencilState>
 {
    D3D11_DEPTH_STENCIL_DESC desc{};
 
-   const auto map_cmp_func_value = [](const unsigned int func) noexcept->D3D11_COMPARISON_FUNC
-   {
+   const auto map_cmp_func_value = [](const unsigned int func) noexcept -> D3D11_COMPARISON_FUNC {
       switch (func) {
       case D3DCMP_NEVER:
          return D3D11_COMPARISON_NEVER;
@@ -383,8 +380,7 @@ auto Render_state_manager::create_current_depthstencil_state(core::Shader_patch&
       }
    };
 
-   const auto map_stencil_op_value = [](const unsigned int op) noexcept->D3D11_STENCIL_OP
-   {
+   const auto map_stencil_op_value = [](const unsigned int op) noexcept -> D3D11_STENCIL_OP {
       switch (op) {
       case D3DSTENCILOP_KEEP:
          return D3D11_STENCIL_OP_KEEP;
@@ -443,13 +439,12 @@ auto Render_state_manager::create_current_depthstencil_state(core::Shader_patch&
    return shader_patch.create_depthstencil_state(desc);
 }
 
-auto Render_state_manager::create_current_rasterizer_state(core::Shader_patch& shader_patch) const
-   noexcept -> Com_ptr<ID3D11RasterizerState>
+auto Render_state_manager::create_current_rasterizer_state(
+   core::Shader_patch& shader_patch) const noexcept -> Com_ptr<ID3D11RasterizerState>
 {
    D3D11_RASTERIZER_DESC desc{};
 
-   const auto map_cull_mode = [](const unsigned int mode) noexcept->D3D11_CULL_MODE
-   {
+   const auto map_cull_mode = [](const unsigned int mode) noexcept -> D3D11_CULL_MODE {
       switch (mode) {
       case D3DCULL_NONE:
          return D3D11_CULL_NONE;
