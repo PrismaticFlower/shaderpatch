@@ -691,9 +691,11 @@ void Shader_patch::update_ia_buffer(const Buffer_handle buffer_handle,
    _device_context->UpdateSubresource(buffer->buffer.get(), 0, &box, data, 0, 0);
 }
 
-auto Shader_patch::map_ia_buffer(const Buffer_handle buffer_handle,
-                                 const std::size_t dynamic_index,
-                                 const D3D11_MAP map_type) noexcept -> std::byte*
+void Shader_patch::update_ia_buffer_dynamic(const Buffer_handle buffer_handle,
+                                            const std::size_t dynamic_index,
+                                            const UINT offset, const UINT size,
+                                            const std::byte* data,
+                                            const D3D11_MAP map_type) noexcept
 {
    auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
 
@@ -704,15 +706,7 @@ auto Shader_patch::map_ia_buffer(const Buffer_handle buffer_handle,
    _device_context->Map(buffer->dynamic_instances[dynamic_index].buffer.get(),
                         0, map_type, 0, &mapped);
 
-   return static_cast<std::byte*>(mapped.pData);
-}
-
-void Shader_patch::unmap_ia_buffer(const Buffer_handle buffer_handle,
-                                   const std::size_t dynamic_index) noexcept
-{
-   auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
-
-   std::scoped_lock lock{buffer->dynamic_instances_mutex};
+   std::memcpy(static_cast<std::byte*>(mapped.pData) + offset, data, size);
 
    _device_context->Unmap(buffer->dynamic_instances[dynamic_index].buffer.get(), 0);
 }

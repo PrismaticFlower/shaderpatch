@@ -138,11 +138,10 @@ public:
    void update_ia_buffer(const Buffer_handle buffer_handle, const UINT offset,
                          const UINT size, const std::byte* data) noexcept;
 
-   auto map_ia_buffer(const Buffer_handle buffer_handle, const std::size_t dynamic_index,
-                      const D3D11_MAP map_type) noexcept -> std::byte*;
-
-   void unmap_ia_buffer(const Buffer_handle buffer_handle,
-                        const std::size_t dynamic_index) noexcept;
+   void update_ia_buffer_dynamic(const Buffer_handle buffer_handle,
+                                 const std::size_t dynamic_index, const UINT offset,
+                                 const UINT size, const std::byte* data,
+                                 const D3D11_MAP map_type) noexcept;
 
    void update_texture(const Game_texture_handle game_texture_handle,
                        const std::span<const Mapped_texture> data) noexcept;

@@ -5,6 +5,7 @@
 #include "debug_trace.hpp"
 #include "resource_access.hpp"
 #include "upload_scratch_buffer.hpp"
+#include "utility.hpp"
 
 #include <type_traits>
 #include <utility>
@@ -136,7 +137,7 @@ public:
    {
       Debug_trace::func(__FUNCSIG__);
 
-      if (_dynamic) [[likely]] {
+      if (_dynamic) {
          return lock_dynamic(lock_offset, lock_size, data, flags);
       }
       else {
@@ -148,7 +149,7 @@ public:
    {
       Debug_trace::func(__FUNCSIG__);
 
-      if (_dynamic) [[likely]] {
+      if (_dynamic) {
          return unlock_dynamic();
       }
       else {
@@ -242,10 +243,13 @@ private:
             _dynamic_index = _shader_patch.discard_ia_buffer_cpu(_buffer);
          }
 
-         _lock_data = _shader_patch.map_ia_buffer(_buffer, _dynamic_index,
-                                                  lock_flags_to_map_type(flags));
-
-         if (!_lock_data) return D3DERR_INVALIDCALL;
+         _lock_map_type = lock_flags_to_map_type(flags);
+         _lock_offset = lock_offset;
+         _lock_size = lock_size;
+         _lock_data = reinterpret_cast<std::byte*>(_dynamic_staging_storage.get());
+      }
+      else {
+         _dynamic_multi_lock = true;
       }
 
       _lock_count += 1;
@@ -259,8 +263,21 @@ private:
    {
       assert(_dynamic);
 
-      if (--_lock_count == 0 && std::exchange(_lock_data, nullptr)) {
-         _shader_patch.unmap_ia_buffer(_buffer, _dynamic_index);
+      if (--_lock_count == 0 && _lock_data) {
+         if (!std::exchange(_dynamic_multi_lock, false)) {
+            _shader_patch.update_ia_buffer_dynamic(_buffer, _dynamic_index,
+                                                   _lock_offset, _lock_size,
+                                                   _lock_data + _lock_offset,
+                                                   _lock_map_type);
+         }
+         else {
+            _shader_patch.update_ia_buffer_dynamic(_buffer, _dynamic_index, 0,
+                                                   _size, _lock_data,
+                                                   D3D11_MAP_WRITE_DISCARD);
+         }
+
+         _lock_data = nullptr;
+
          _shader_patch.rename_ia_buffer_cpu_async(_buffer, _dynamic_index);
       }
       else if (_lock_count == -1) {
@@ -290,8 +307,14 @@ private:
 
    UINT _lock_offset{};
    UINT _lock_size{};
+   bool _dynamic_multi_lock = false;
    std::byte* _lock_data = nullptr;
+   D3D11_MAP _lock_map_type = D3D11_MAP_WRITE;
    int _lock_count = 0;
+
+   std::unique_ptr<std::aligned_storage_t<16, 16>[]> _dynamic_staging_storage =
+      std::make_unique<std::aligned_storage_t<16, 16>[]>(
+         next_multiple_of<16>(_size) / 16);
 
    ULONG _ref_count = 1;
 };
