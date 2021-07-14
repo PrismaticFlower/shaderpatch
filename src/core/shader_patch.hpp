@@ -102,8 +102,6 @@ public:
 
    void destroy_game_texture_async(const Game_texture_handle game_texture_handle) noexcept;
 
-   void convert_game_texture2d_to_dynamic(const Game_texture_handle game_texture_handle) noexcept;
-
    auto create_patch_texture(const std::span<const std::byte> texture_data) noexcept
       -> Patch_texture_handle;
 
@@ -146,12 +144,8 @@ public:
    void unmap_ia_buffer(const Buffer_handle buffer_handle,
                         const std::size_t dynamic_index) noexcept;
 
-   auto map_dynamic_texture(const Game_texture_handle game_texture_handle,
-                            const UINT mip_level,
-                            const D3D11_MAP map_type) noexcept -> Mapped_texture;
-
-   void unmap_dynamic_texture(const Game_texture_handle game_texture_handle,
-                              const UINT mip_level) noexcept;
+   void update_texture(const Game_texture_handle game_texture_handle,
+                       const std::span<const Mapped_texture> data) noexcept;
 
    void stretch_rendertarget_async(const Game_rendertarget_id source,
                                    const RECT source_rect,

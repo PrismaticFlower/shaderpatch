@@ -43,44 +43,6 @@ public:
       return {DXGI_FORMAT_R8G8B8A8_UNORM, std::move(patched_texture)};
    }
 
-   auto map_dynamic_texture(const DXGI_FORMAT format, const UINT width,
-                            const UINT height, const UINT mip_level) noexcept
-      -> core::Mapped_texture override
-   {
-      Expects(format == DXGI_FORMAT_R8_UNORM);
-      Expects(!is_mapped());
-
-      _dynamic_width = glm::max(width >> mip_level, 1u);
-      _dynamic_height = glm::max(height >> mip_level, 1u);
-
-      _dynamic_patch_texture =
-         std::make_unique<Upload_texture>(patchup_scratch_buffer, format,
-                                          _dynamic_width, _dynamic_height, 1, 1, 1);
-
-      return _dynamic_patch_texture->subresource(0, 0);
-   }
-
-   void unmap_dynamic_texture(core::Shader_patch& shader_patch,
-                              const core::Game_texture_handle texture,
-                              const UINT mip_level) noexcept override
-   {
-      Expects(is_mapped());
-
-      auto dest = shader_patch.map_dynamic_texture(texture, mip_level,
-                                                   D3D11_MAP_WRITE_DISCARD);
-
-      patch_subimage(_dynamic_width, _dynamic_height,
-                     _dynamic_patch_texture->subresource(0, 0), dest);
-
-      _dynamic_patch_texture = nullptr;
-      shader_patch.unmap_dynamic_texture(texture, mip_level);
-   }
-
-   bool is_mapped() const noexcept override
-   {
-      return _dynamic_patch_texture != nullptr;
-   }
-
 private:
    static void patch_subimage(const UINT width, const UINT height,
                               core::Mapped_texture source,
@@ -99,10 +61,6 @@ private:
          }
       });
    }
-
-   UINT _dynamic_width;
-   UINT _dynamic_height;
-   std::unique_ptr<Upload_texture> _dynamic_patch_texture;
 };
 
 class Format_patcher_a8l8 final : public Format_patcher {
@@ -130,44 +88,6 @@ public:
       return {DXGI_FORMAT_R8G8B8A8_UNORM, std::move(patched_texture)};
    }
 
-   auto map_dynamic_texture(const DXGI_FORMAT format, const UINT width,
-                            const UINT height, const UINT mip_level) noexcept
-      -> core::Mapped_texture override
-   {
-      Expects(format == DXGI_FORMAT_R8G8_UNORM);
-      Expects(!is_mapped());
-
-      _dynamic_width = glm::max(width >> mip_level, 1u);
-      _dynamic_height = glm::max(height >> mip_level, 1u);
-
-      _dynamic_patch_texture =
-         std::make_unique<Upload_texture>(patchup_scratch_buffer, format,
-                                          _dynamic_width, _dynamic_height, 1, 1, 1);
-
-      return _dynamic_patch_texture->subresource(0, 0);
-   }
-
-   void unmap_dynamic_texture(core::Shader_patch& shader_patch,
-                              const core::Game_texture_handle texture,
-                              const UINT mip_level) noexcept override
-   {
-      Expects(is_mapped());
-
-      auto dest = shader_patch.map_dynamic_texture(texture, mip_level,
-                                                   D3D11_MAP_WRITE_DISCARD);
-
-      patch_subimage(_dynamic_width, _dynamic_height,
-                     _dynamic_patch_texture->subresource(0, 0), dest);
-
-      _dynamic_patch_texture = nullptr;
-      shader_patch.unmap_dynamic_texture(texture, mip_level);
-   }
-
-   bool is_mapped() const noexcept override
-   {
-      return _dynamic_patch_texture != nullptr;
-   }
-
 private:
    static void patch_subimage(const UINT width, const UINT height,
                               core::Mapped_texture source,
@@ -186,10 +106,6 @@ private:
          }
       });
    }
-
-   UINT _dynamic_width;
-   UINT _dynamic_height;
-   std::unique_ptr<Upload_texture> _dynamic_patch_texture;
 };
 
 }

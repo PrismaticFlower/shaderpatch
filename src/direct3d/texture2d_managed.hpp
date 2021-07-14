@@ -141,9 +141,6 @@ private:
    std::unique_ptr<Format_patcher> _format_patcher;
    std::unique_ptr<Upload_texture> _upload_texture;
 
-   bool _first_lock = true;
-   bool _dynamic_texture = false;
-
    const UINT _width;
    const UINT _height;
    const UINT _mip_levels;
