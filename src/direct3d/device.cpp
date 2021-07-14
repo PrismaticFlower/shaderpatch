@@ -543,7 +543,9 @@ HRESULT Device::ColorFill(IDirect3DSurface9* surface, const RECT* rect,
    }
 
    _shader_patch.color_fill_rendertarget_async(rendertarget->rendertarget(),
-                                               d3dcolor_to_clear_color(color), rect);
+                                               d3dcolor_to_clear_color(color),
+                                               rect ? std::optional{*rect}
+                                                    : std::nullopt);
 
    return S_OK;
 }

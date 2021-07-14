@@ -11,7 +11,7 @@ namespace sp::core {
 
 struct Dynamic_buffer_instance {
    Com_ptr<ID3D11Buffer> buffer;
-   UINT64 last_used;
+   UINT64 last_used = 0;
 };
 
 struct Buffer {

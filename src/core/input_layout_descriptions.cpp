@@ -12,6 +12,8 @@ namespace sp::core {
 auto Input_layout_descriptions::try_add(const std::span<const Input_layout_element> layout) noexcept
    -> std::uint16_t
 {
+   std::scoped_lock lock{_descriptions_mutex};
+
    if (const auto index = find_layout(layout); index) return *index;
 
    const auto index = _descriptions.size();
@@ -29,6 +31,8 @@ auto Input_layout_descriptions::operator[](const std::uint16_t index) const noex
    -> std::span<const Input_layout_element>
 {
    Expects(index < _descriptions.size());
+
+   std::shared_lock lock{_descriptions_mutex};
 
    return _descriptions[index];
 }

@@ -25,9 +25,15 @@ Texture3d_resource::Texture3d_resource(core::Shader_patch& patch, const UINT wid
 
 Texture3d_resource::~Texture3d_resource()
 {
-   if (_material_handle) _patch.destroy_patch_material_async(_material_handle);
-   if (_texture_handle) _patch.destroy_patch_texture_async(_texture_handle);
-   if (_patch_effects_config_handle) {
+   if (_material_handle != core::null_handle) {
+      _patch.destroy_patch_material_async(_material_handle);
+   }
+
+   if (_texture_handle != core::null_handle) {
+      _patch.destroy_patch_texture_async(_texture_handle);
+   }
+
+   if (_patch_effects_config_handle != core::null_handle) {
       _patch.destroy_patch_effects_config_async(_patch_effects_config_handle);
    }
 }
@@ -154,7 +160,9 @@ HRESULT Texture3d_resource::UnlockBox(UINT level) noexcept
 
 auto Texture3d_resource::type() const noexcept -> Texture_accessor_type
 {
-   if (_material_handle) return Texture_accessor_type::material;
+   if (_material_handle != core::null_handle) {
+      return Texture_accessor_type::material;
+   }
 
    return Texture_accessor_type::none;
 }

@@ -160,7 +160,7 @@ public:
 
    void color_fill_rendertarget_async(const Game_rendertarget_id rendertarget,
                                       const Clear_color color,
-                                      const RECT* rect = nullptr) noexcept;
+                                      const std::optional<RECT> rect = std::nullopt) noexcept;
 
    void clear_rendertarget_async(const Clear_color color) noexcept;
 
@@ -174,7 +174,7 @@ public:
    void set_vertex_buffer_async(const Buffer_handle buffer_handle,
                                 const UINT offset, const UINT stride) noexcept;
 
-   void set_input_layout_async(const Game_input_layout& input_layout) noexcept;
+   void set_input_layout_async(const Game_input_layout input_layout) noexcept;
 
    void set_game_shader_async(const std::uint32_t game_shader_index) noexcept;
 
@@ -469,7 +469,7 @@ private:
 
    bool _effects_active = false;
    DXGI_FORMAT _current_rt_format = Swapchain::format;
-   Patch_effects_config_handle _current_effects_id = 0;
+   std::uintptr_t _current_effects_id = 0;
 
    UINT _rt_sample_count = 1;
    Antialiasing_method _aa_method = Antialiasing_method::none;

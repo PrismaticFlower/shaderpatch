@@ -35,7 +35,9 @@ Texture2d_managed::Texture2d_managed(core::Shader_patch& shader_patch,
 
 Texture2d_managed::~Texture2d_managed()
 {
-   if (_game_texture) _shader_patch.destroy_game_texture_async(_game_texture);
+   if (_game_texture != core::null_handle) {
+      _shader_patch.destroy_game_texture_async(_game_texture);
+   }
 }
 
 Com_ptr<Texture2d_managed> Texture2d_managed::create(

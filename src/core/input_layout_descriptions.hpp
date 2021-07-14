@@ -3,7 +3,9 @@
 #include "input_layout_element.hpp"
 
 #include <cstdint>
+#include <mutex>
 #include <optional>
+#include <shared_mutex>
 #include <span>
 #include <unordered_set>
 #include <vector>
@@ -24,6 +26,7 @@ private:
    auto find_layout(const std::span<const Input_layout_element> layout) const noexcept
       -> std::optional<std::uint16_t>;
 
+   mutable std::shared_mutex _descriptions_mutex;
    std::vector<std::vector<Input_layout_element>> _descriptions;
 };
 

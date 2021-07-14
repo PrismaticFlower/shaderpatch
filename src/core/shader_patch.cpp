@@ -539,7 +539,7 @@ auto Shader_patch::create_patch_texture(const std::span<const std::byte> texture
 
       _shader_resource_database.insert(std::move(srv), name);
 
-      return ptr_to_handle(raw_srv);
+      return ptr_to_handle<Patch_texture_handle>(raw_srv);
    }
    catch (std::exception& e) {
       log(Log_level::error, "Failed to create unknown texture! reason: "sv, e.what());
@@ -577,7 +577,7 @@ auto Shader_patch::create_patch_material(const std::span<const std::byte> materi
 
       log(Log_level::info, "Loaded material "sv, std::quoted(material->name));
 
-      return ptr_to_handle(material);
+      return ptr_to_handle<Material_handle>(material);
    }
    catch (std::exception& e) {
       log(Log_level::error, "Failed to create unknown material! reason: "sv, e.what());
@@ -590,7 +590,9 @@ void Shader_patch::destroy_patch_material_async(const Material_handle material_h
 {
    auto* const material = handle_to_ptr<material::Material>(material_handle);
 
-   if (_patch_material == material) set_patch_material_async(null_handle);
+   if (_patch_material == material) {
+      set_patch_material_async(null_handle);
+   }
 
    std::scoped_lock lock{_materials_pool_mutex};
 
@@ -619,7 +621,7 @@ auto Shader_patch::create_patch_effects_config(const std::span<const std::byte> 
       _effects.read_config(YAML::Load(config_str));
       _effects.enabled(true);
 
-      return _current_effects_id += 1;
+      return Patch_effects_config_handle{_current_effects_id += 1};
    }
    catch (std::exception& e) {
       log_and_terminate("Failed to load effects config! reason: "sv, e.what());
@@ -629,7 +631,9 @@ auto Shader_patch::create_patch_effects_config(const std::span<const std::byte> 
 void Shader_patch::destroy_patch_effects_config_async(
    const Patch_effects_config_handle effects_config) noexcept
 {
-   if (effects_config != _current_effects_id) return;
+   if (effects_config != Patch_effects_config_handle{_current_effects_id}) {
+      return;
+   }
 
    _effects.enabled(false);
 }
@@ -682,7 +686,7 @@ auto Shader_patch::create_ia_buffer(const UINT size, const bool vertex_buffer,
       buffer->buffer = make_d3d11_buffer();
    }
 
-   return ptr_to_handle(buffer.get());
+   return ptr_to_handle<Buffer_handle>(buffer.get());
 }
 
 void Shader_patch::destroy_ia_buffer_async(const Buffer_handle buffer_handle) noexcept
@@ -850,13 +854,14 @@ void Shader_patch::stretch_rendertarget_async(const Game_rendertarget_id source,
 
 void Shader_patch::color_fill_rendertarget_async(const Game_rendertarget_id rendertarget,
                                                  const Clear_color color,
-                                                 const RECT* rect) noexcept
+                                                 const std::optional<RECT> rect) noexcept
 {
    std::scoped_lock lock{_game_rendertargets_mutex};
 
    _device_context
       ->ClearView(_game_rendertargets[static_cast<int>(rendertarget)].rtv.get(),
-                  clear_color_to_array(color).data(), rect, rect ? 1 : 0);
+                  clear_color_to_array(color).data(),
+                  rect ? &rect.value() : nullptr, rect ? 1 : 0);
 }
 
 void Shader_patch::clear_rendertarget_async(const Clear_color color) noexcept
@@ -903,7 +908,7 @@ void Shader_patch::set_vertex_buffer_async(const Buffer_handle buffer_handle,
    _ia_vertex_buffer_dirty = true;
 }
 
-void Shader_patch::set_input_layout_async(const Game_input_layout& input_layout) noexcept
+void Shader_patch::set_input_layout_async(const Game_input_layout input_layout) noexcept
 {
    _game_input_layout = input_layout;
    _shader_dirty = true;
@@ -1198,7 +1203,7 @@ auto Shader_patch::create_game_texture(Com_ptr<ID3D11Resource> texture,
    auto& game_texture = _game_texture_pool.emplace_back(
       std::make_unique<Game_texture>(srv, srgb_srv ? srgb_srv : srv));
 
-   return ptr_to_handle(game_texture.get());
+   return ptr_to_handle<Game_texture_handle>(game_texture.get());
 }
 
 auto Shader_patch::current_depthstencil(const bool readonly) const noexcept
