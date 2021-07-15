@@ -150,90 +150,29 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
    ImGui::NewFrame();
 }
 
-Shader_patch::~Shader_patch() = default;
+Shader_patch::~Shader_patch()
+{
+   _command_processor_thread.request_stop();
+   _command_queue.enqueue({.type = Command::null, .null = {}});
+}
 
 void Shader_patch::reset_async(const UINT width, const UINT height) noexcept
 {
-   std::scoped_lock lock{_game_rendertargets_mutex};
-
-   _device_context->ClearState();
-   _game_rendertargets.clear();
-   _effects.cmaa2.clear_resources();
-   _effects.postprocess.color_grading_regions({});
-   _oit_provider.clear_resources();
-
-   _swapchain.resize(width, height);
-   _game_rendertargets.emplace_back() = _swapchain.game_rendertarget();
-   _nearscene_depthstencil = {*_device, width, height, _rt_sample_count};
-   _farscene_depthstencil = {*_device, width, height, 1};
-   _refraction_rt = {};
-   _farscene_refraction_rt = {};
-   _current_game_rendertarget = _game_backbuffer_index;
-   _primitive_topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
-   _game_input_layout = {};
-   _game_shader = nullptr;
-   _game_textures = {};
-   _game_stencil_ref = 0xff;
-   _game_index_buffer_offset = 0;
-   _game_vertex_buffer_offset = 0;
-   _game_vertex_buffer_stride = 0;
-   _game_index_buffer = nullptr;
-   _game_vertex_buffer = nullptr;
-   _game_blend_state = nullptr;
-   _game_rs_state = nullptr;
-   _game_depthstencil_state = nullptr;
-   _previous_shader_rendertype = Rendertype::invalid;
-   _shader_rendertype = Rendertype::invalid;
-   _aa_method = Antialiasing_method::none;
-   _current_rt_format = Swapchain::format;
-
-   update_rendertargets();
-   update_refraction_target();
-   update_material_resources();
-   restore_all_game_state();
+   _command_queue.enqueue(
+      {.type = Command::reset, .reset = {.width = width, .height = height}});
+   _command_queue.wait_for_empty();
 }
 
 void Shader_patch::set_text_dpi_async(const std::uint32_t dpi) noexcept
 {
-   _font_atlas_builder.set_dpi(dpi);
+   _command_queue.enqueue({.type = Command::set_text_dpi, .set_text_dpi = {.dpi = dpi}});
 }
 
 void Shader_patch::present_async() noexcept
 {
-   std::scoped_lock lock{_game_rendertargets_mutex};
+   _command_queue.enqueue({.type = Command::present, .present = {}});
 
-   ImGui::Text(fmt::format("remaining bytes {}",
-                           _constants_storage_allocator.remaining_bytes())
-                  .c_str());
-
-   _constants_storage_allocator.reset();
-   _effects.profiler.end_frame(*_device_context);
-   _game_postprocessing.end_frame();
-
-   if (_game_rendertargets[0].type != Game_rt_type::presentation)
-      patch_backbuffer_resolve();
-
-   update_imgui();
-
-   if (std::exchange(_screenshot_requested, false))
-      screenshot(*_device, *_device_context, _swapchain, screenshots_folder);
-
-   _swapchain.present();
-   _om_targets_dirty = true;
-
-   _shader_database.cache_update();
-
-   if (_font_atlas_builder.update_srv_database(_shader_resource_database)) {
-      update_material_resources();
-   }
-
-   update_frame_state();
-   update_effects();
-   update_rendertargets();
-   update_refraction_target();
-   update_samplers();
-
-   if (_patch_backbuffer) _game_rendertargets[0] = _patch_backbuffer;
+   _command_queue.wait_for_empty(); // TODO: Remove me once _constants_storage_allocator is multibuffered.
 }
 
 auto Shader_patch::get_back_buffer() noexcept -> Game_rendertarget_id
@@ -284,13 +223,8 @@ auto Shader_patch::create_game_rendertarget(const UINT width, const UINT height)
 
 void Shader_patch::destroy_game_rendertarget_async(const Game_rendertarget_id id) noexcept
 {
-   std::scoped_lock lock{_game_rendertargets_mutex};
-
-   _game_rendertargets[static_cast<int>(id)] = {};
-
-   if (id == _current_game_rendertarget) {
-      set_rendertarget_async(_game_backbuffer_index);
-   }
+   _command_queue.enqueue({.type = Command::destroy_game_rendertarget,
+                           .destroy_game_rendertarget = {.id = id}});
 }
 
 auto Shader_patch::create_game_texture2d(const UINT width, const UINT height,
@@ -439,12 +373,9 @@ auto Shader_patch::create_game_texture_cube(const UINT width, const UINT height,
 
 void Shader_patch::destroy_game_texture_async(const Game_texture_handle game_texture_handle) noexcept
 {
-   std::scoped_lock lock{_game_texture_pool_mutex};
-
-   auto* const game_texture = handle_to_ptr<Game_texture>(game_texture_handle);
-
-   std::erase_if(_game_texture_pool,
-                 [=](auto& other) { return other.get() == game_texture; });
+   _command_queue.enqueue(
+      {.type = Command::destroy_game_texture,
+       .destroy_game_texture = {.game_texture_handle = game_texture_handle}});
 }
 
 auto Shader_patch::create_patch_texture(const std::span<const std::byte> texture_data) noexcept
@@ -471,15 +402,8 @@ auto Shader_patch::create_patch_texture(const std::span<const std::byte> texture
 
 void Shader_patch::destroy_patch_texture_async(const Patch_texture_handle texture_handle) noexcept
 {
-   auto* const texture = handle_to_ptr<ID3D11ShaderResourceView>(texture_handle);
-
-   const auto [exists, name] = _shader_resource_database.reverse_lookup(texture);
-
-   if (!exists) return; // Texture has already been replaced.
-
-   log(Log_level::info, "Destroying texture "sv, std::quoted(name));
-
-   _shader_resource_database.erase(texture);
+   _command_queue.enqueue({.type = Command::destroy_patch_texture,
+                           .destroy_patch_texture = {.texture_handle = texture_handle}});
 }
 
 auto Shader_patch::create_patch_material(const std::span<const std::byte> material_data) noexcept
@@ -509,25 +433,9 @@ auto Shader_patch::create_patch_material(const std::span<const std::byte> materi
 
 void Shader_patch::destroy_patch_material_async(const Material_handle material_handle) noexcept
 {
-   auto* const material = handle_to_ptr<material::Material>(material_handle);
-
-   if (_patch_material == material) {
-      set_patch_material_async(null_handle);
-   }
-
-   std::scoped_lock lock{_materials_pool_mutex};
-
-   for (auto it = _materials_pool.begin(); it != _materials_pool.end(); ++it) {
-      if (it->get() != material) continue;
-
-      log(Log_level::info, "Destroying material "sv, std::quoted(material->name));
-
-      _materials_pool.erase(it);
-
-      return;
-   }
-
-   log_and_terminate("Attempt to destroy nonexistant material!");
+   _command_queue.enqueue(
+      {.type = Command::destroy_patch_material,
+       .destroy_patch_material = {.material_handle = material_handle}});
 }
 
 auto Shader_patch::create_patch_effects_config(const std::span<const std::byte> effects_config) noexcept
@@ -552,11 +460,9 @@ auto Shader_patch::create_patch_effects_config(const std::span<const std::byte> 
 void Shader_patch::destroy_patch_effects_config_async(
    const Patch_effects_config_handle effects_config) noexcept
 {
-   if (effects_config != Patch_effects_config_handle{_current_effects_id}) {
-      return;
-   }
-
-   _effects.enabled(false);
+   _command_queue.enqueue(
+      {.type = Command::destroy_patch_effects_config,
+       .destroy_patch_effects_config = {.effects_config = effects_config}});
 }
 
 auto Shader_patch::create_game_input_layout(
@@ -612,13 +518,8 @@ auto Shader_patch::create_ia_buffer(const UINT size, const bool vertex_buffer,
 
 void Shader_patch::destroy_ia_buffer_async(const Buffer_handle buffer_handle) noexcept
 {
-   auto* const buffer = handle_to_ptr<Buffer>(buffer_handle);
-
-   std::scoped_lock lock{_buffer_pool_mutex};
-
-   std::erase_if(_buffer_pool, [&](std::unique_ptr<Buffer>& other) {
-      return other.get() == buffer;
-   });
+   _command_queue.enqueue({.type = Command::destroy_ia_buffer,
+                           .destroy_ia_buffer = {.buffer_handle = buffer_handle}});
 }
 
 void Shader_patch::load_colorgrading_regions(const std::span<const std::byte> regions_data) noexcept
@@ -780,332 +681,215 @@ void Shader_patch::stretch_rendertarget_async(const Game_rendertarget_id source,
                                               const Game_rendertarget_id dest,
                                               const RECT dest_rect) noexcept
 {
-   std::scoped_lock lock{_game_rendertargets_mutex};
-
-   auto& src_rt = _game_rendertargets[static_cast<int>(source)];
-   auto& dest_rt = _game_rendertargets[static_cast<int>(dest)];
-
-   if (_on_stretch_rendertarget)
-      _on_stretch_rendertarget(src_rt, source_rect, dest_rt, dest_rect);
-
-   const auto src_box = rect_to_box(source_rect);
-   const auto dest_box = rect_to_box(dest_rect);
-
-   // Skip any fullscreen resolve or copy operation, as these will be handled as special cases by the shaders that use them.
-   if (glm::uvec2{src_rt.width, src_rt.height} ==
-          glm::uvec2{dest_rt.width, dest_rt.height} &&
-       glm::uvec2{src_rt.width, src_rt.height} ==
-          glm::uvec2{src_box.right - src_box.left, src_box.bottom - src_box.top} &&
-       glm::uvec2{dest_rt.width, dest_rt.height} ==
-          glm::uvec2{dest_box.right - dest_box.left, dest_box.bottom - dest_box.top}) {
-      return;
-   }
-
-   _image_stretcher.stretch(*_device_context, src_box, src_rt, dest_box, dest_rt);
-   restore_all_game_state();
+   _command_queue.enqueue({.type = Command::stretch_rendertarget,
+                           .stretch_rendertarget = {.source = source,
+                                                    .source_rect = source_rect,
+                                                    .dest = dest,
+                                                    .dest_rect = dest_rect}});
 }
 
 void Shader_patch::color_fill_rendertarget_async(const Game_rendertarget_id rendertarget,
                                                  const Clear_color color,
                                                  const std::optional<RECT> rect) noexcept
 {
-   std::scoped_lock lock{_game_rendertargets_mutex};
-
-   _device_context
-      ->ClearView(_game_rendertargets[static_cast<int>(rendertarget)].rtv.get(),
-                  clear_color_to_array(color).data(),
-                  rect ? &rect.value() : nullptr, rect ? 1 : 0);
+   _command_queue.enqueue({.type = Command::color_fill_rendertarget,
+                           .color_fill_rendertarget = {.rendertarget = rendertarget,
+                                                       .color = color,
+                                                       .rect = rect}});
 }
 
 void Shader_patch::clear_rendertarget_async(const Clear_color color) noexcept
 {
-   std::scoped_lock lock{_game_rendertargets_mutex};
-
-   _device_context->ClearRenderTargetView(
-      _game_rendertargets[static_cast<int>(_current_game_rendertarget)].rtv.get(),
-      clear_color_to_array(color).data());
+   _command_queue.enqueue({.type = Command::clear_rendertarget,
+                           .clear_rendertarget = {.color = color}});
 }
 
 void Shader_patch::clear_depthstencil_async(const float depth, const UINT8 stencil,
                                             const bool clear_depth,
                                             const bool clear_stencil) noexcept
 {
-   auto* const dsv = current_depthstencil(false);
-
-   if (!dsv) return;
-
-   const UINT clear_flags = (clear_depth ? D3D11_CLEAR_DEPTH : 0) |
-                            (clear_stencil ? D3D11_CLEAR_STENCIL : 0);
-
-   _device_context->ClearDepthStencilView(dsv, clear_flags, depth, stencil);
+   _command_queue.enqueue({.type = Command::clear_depthstencil,
+                           .clear_depthstencil = {.z = depth,
+                                                  .stencil = stencil,
+                                                  .clear_depth = clear_depth,
+                                                  .clear_stencil = clear_stencil}});
 }
 
 void Shader_patch::set_index_buffer_async(const Buffer_handle buffer_handle,
                                           const UINT offset) noexcept
 {
-   auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
-
-   _game_index_buffer = buffer->buffer;
-   _game_index_buffer_offset = offset;
-   _ia_index_buffer_dirty = true;
+   _command_queue.enqueue(
+      {.type = Command::set_index_buffer,
+       .set_index_buffer = {.buffer_handle = buffer_handle, .offset = offset}});
 }
 
 void Shader_patch::set_vertex_buffer_async(const Buffer_handle buffer_handle,
                                            const UINT offset, const UINT stride) noexcept
 {
-   auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
-
-   _game_vertex_buffer = buffer->buffer;
-   _game_vertex_buffer_offset = offset;
-   _game_vertex_buffer_stride = stride;
-   _ia_vertex_buffer_dirty = true;
+   _command_queue.enqueue({.type = Command::set_vertex_buffer,
+                           .set_vertex_buffer = {.buffer_handle = buffer_handle,
+                                                 .offset = offset,
+                                                 .stride = stride}});
 }
 
 void Shader_patch::set_input_layout_async(const Game_input_layout input_layout) noexcept
 {
-   _game_input_layout = input_layout;
-   _shader_dirty = true;
-
-   if (std::uint32_t{input_layout.particle_texture_scale} !=
-       _cb_scene.particle_texture_scale) {
-      _cb_scene.particle_texture_scale = input_layout.particle_texture_scale;
-      _cb_scene_dirty = true;
-   }
+   _command_queue.enqueue({.type = Command::set_input_layout,
+                           .set_input_layout = {.input_layout = input_layout}});
 }
 
 void Shader_patch::set_game_shader_async(const std::uint32_t shader_index) noexcept
 {
-   _game_shader = &_game_shaders[shader_index];
-   _shader_dirty = true;
-
-   const auto rendertype = _game_shader->rendertype;
-
-   _previous_shader_rendertype = _shader_rendertype;
-   _shader_rendertype_changed =
-      std::exchange(_shader_rendertype, rendertype) != rendertype;
-
-   const std::uint32_t light_active = _game_shader->light_active;
-   const std::uint32_t light_active_point_count = _game_shader->light_active_point_count;
-   const std::uint32_t light_active_spot = _game_shader->light_active_spot;
-
-   _cb_draw_ps_dirty |=
-      ((std::exchange(_cb_draw_ps.light_active, light_active) != light_active) |
-       (std::exchange(_cb_draw_ps.light_active_point_count,
-                      light_active_point_count) != light_active_point_count) |
-       (std::exchange(_cb_draw_ps.light_active_spot, light_active_spot) !=
-        light_active_spot));
+   _command_queue.enqueue({.type = Command::set_game_shader,
+                           .set_game_shader = {.game_shader_index = shader_index}});
 }
 
 void Shader_patch::set_rendertarget_async(const Game_rendertarget_id rendertarget) noexcept
 {
-   _om_targets_dirty = true;
-   _current_game_rendertarget = rendertarget;
+   _command_queue.enqueue({.type = Command::set_rendertarget,
+                           .set_rendertarget = {.rendertarget = rendertarget}});
 }
 
 void Shader_patch::set_depthstencil_async(const Game_depthstencil depthstencil) noexcept
 {
-   _om_targets_dirty = true;
-   _current_depthstencil_id = depthstencil;
+   _command_queue.enqueue({.type = Command::set_depthstencil,
+                           .set_depthstencil = {.depthstencil = depthstencil}});
 }
 
 void Shader_patch::set_rasterizer_state_async(ID3D11RasterizerState& rasterizer_state) noexcept
 {
-   _game_rs_state = copy_raw_com_ptr(rasterizer_state);
-   _rs_state_dirty = true;
+   _command_queue.enqueue({.type = Command::set_rasterizer_state,
+                           .set_rasterizer_state = rasterizer_state});
 }
 
 void Shader_patch::set_depthstencil_state_async(ID3D11DepthStencilState& depthstencil_state,
                                                 const UINT8 stencil_ref,
                                                 const bool readonly) noexcept
 {
-   _game_depthstencil_state = copy_raw_com_ptr(depthstencil_state);
-   _game_stencil_ref = stencil_ref;
-   _om_depthstencil_state_dirty = true;
-   _om_targets_dirty =
-      _om_targets_dirty |
-      (std::exchange(_om_depthstencil_readonly, readonly) != readonly);
+   _command_queue.enqueue({.type = Command::set_depthstencil_state,
+                           .set_depthstencil_state = {.depthstencil_state = depthstencil_state,
+                                                      .stencil_ref = stencil_ref,
+                                                      .readonly = readonly}});
 }
 
 void Shader_patch::set_blend_state_async(ID3D11BlendState1& blend_state,
                                          const bool additive_blending) noexcept
 {
-   _game_blend_state = copy_raw_com_ptr(blend_state);
-   _om_blend_state_dirty = true;
-
-   _cb_draw_ps.additive_blending = additive_blending;
-   _cb_draw_ps_dirty = true;
+   _command_queue.enqueue({.type = Command::set_blend_state,
+                           .set_blend_state = {.blend_state = blend_state,
+                                               .additive_blending = additive_blending}});
 }
 
 void Shader_patch::set_fog_state_async(const bool enabled, const glm::vec4 color) noexcept
 {
-   _cb_draw_ps_dirty = true;
-   _cb_draw_ps.fog_enabled = enabled;
-   _cb_draw_ps.fog_color = color;
+   _command_queue.enqueue({.type = Command::set_fog_state,
+                           .set_fog_state = {.enabled = enabled, .color = color}});
 }
 
 void Shader_patch::set_texture_async(const UINT slot,
                                      const Game_texture_handle game_texture_handle) noexcept
 {
-   Expects(slot < 4);
-
-   auto* const game_texture = handle_to_ptr<Game_texture>(game_texture_handle);
-
-   _game_textures[slot] = game_texture ? *game_texture : Game_texture{};
-   _ps_textures_dirty = true;
+   _command_queue.enqueue(
+      {.type = Command::set_texture,
+       .set_texture = {.slot = slot, .game_texture_handle = game_texture_handle}});
 }
 
 void Shader_patch::set_texture_async(const UINT slot,
                                      const Game_rendertarget_id rendertarget) noexcept
 {
-   Expects(slot < 4);
-
-   std::scoped_lock lock{_game_rendertargets_mutex};
-
-   const auto& srv = _game_rendertargets[static_cast<int>(rendertarget)].srv;
-
-   _game_textures[slot] = {srv, srv};
-   _ps_textures_dirty = true;
-   _om_targets_dirty = true;
-
-   _device_context->OMSetRenderTargets(0, nullptr, nullptr);
+   _command_queue.enqueue(
+      {.type = Command::set_texture_rendertarget,
+       .set_texture_rendertarget = {.slot = slot, .rendertarget = rendertarget}});
 }
 
 void Shader_patch::set_projtex_mode_async(const Projtex_mode mode) noexcept
 {
-   if (mode == Projtex_mode::clamp) {
-      auto* const sampler = _sampler_states.linear_clamp_sampler.get();
-      _device_context->PSSetSamplers(5, 1, &sampler);
-   }
-   else if (mode == Projtex_mode::wrap) {
-      auto* const sampler = _sampler_states.linear_wrap_sampler.get();
-      _device_context->PSSetSamplers(5, 1, &sampler);
-   }
+   _command_queue.enqueue(
+      {.type = Command::set_projtex_mode, .set_projtex_mode = {.mode = mode}});
 }
 
 void Shader_patch::set_projtex_type_async(const Projtex_type type) noexcept
 {
-   if (type == Projtex_type::tex2d) {
-      _cb_draw_ps.cube_projtex = false;
-   }
-   else if (type == Projtex_type::texcube) {
-      _cb_draw_ps.cube_projtex = true;
-   }
-
-   _cb_draw_ps_dirty = true;
+   _command_queue.enqueue(
+      {.type = Command::set_projtex_type, .set_projtex_type = {.type = type}});
 }
 
 void Shader_patch::set_projtex_cube_async(const Game_texture_handle game_texture_handle) noexcept
 {
-   auto* const game_texture = handle_to_ptr<Game_texture>(game_texture_handle);
-
-   if (_lock_projtex_cube_slot) return;
-
-   _game_textures[projtex_cube_slot] = game_texture ? *game_texture : Game_texture{};
-   _ps_textures_dirty = true;
+   _command_queue.enqueue(
+      {.type = Command::set_projtex_cube,
+       .set_projtex_cube = {.game_texture_handle = game_texture_handle}});
 }
 
 void Shader_patch::set_patch_material_async(const Material_handle material_handle) noexcept
 {
-   auto* const material = handle_to_ptr<material::Material>(material_handle);
-
-   _patch_material = material;
-   _shader_dirty = true;
-
-   if (_patch_material) {
-      _game_textures[0] = {_patch_material->fail_safe_game_texture,
-                           _patch_material->fail_safe_game_texture};
-      _ps_textures_dirty = true;
-
-      _patch_material->bind_constant_buffers(*_device_context);
-      _patch_material->bind_shader_resources(*_device_context);
-   }
+   _command_queue.enqueue({.type = Command::set_patch_material,
+                           .set_patch_material = {.material_handle = material_handle}});
 }
 
 void Shader_patch::set_constants_async(const cb::Scene_tag, const UINT offset,
                                        const std::span<const std::byte> constants) noexcept
 {
-   _cb_scene_dirty = true;
-
-   std::memcpy(bit_cast<std::byte*>(&_cb_scene) +
-                  (offset * sizeof(std::array<float, 4>)),
-               constants.data(), constants.size_bytes());
-
-   if (offset < (offsetof(cb::Scene, near_scene_fade_scale) / sizeof(glm::vec4))) {
-      const float scale = _linear_rendering ? 1.0f : _cb_scene.vs_lighting_scale;
-
-      _cb_draw_ps_dirty = true;
-      _cb_scene.vs_lighting_scale = scale;
-      _cb_draw_ps.ps_lighting_scale = scale;
-   }
-
-   if (offset < (offsetof(cb::Scene, vs_view_positionWS) / sizeof(glm::vec4))) {
-      _cb_draw_ps_dirty = true;
-      _cb_draw_ps.ps_view_positionWS = _cb_scene.vs_view_positionWS;
-   }
+   _command_queue.enqueue(
+      {.type = Command::set_constants_scene,
+       .set_constants_scene = {.offset = offset, .constants = constants}});
 }
 
 void Shader_patch::set_constants_async(const cb::Draw_tag, const UINT offset,
                                        const std::span<const std::byte> constants) noexcept
 {
-   _cb_draw_dirty = true;
-
-   std::memcpy(bit_cast<std::byte*>(&_cb_draw) +
-                  (offset * sizeof(std::array<float, 4>)),
-               constants.data(), constants.size_bytes());
+   _command_queue.enqueue(
+      {.type = Command::set_constants_draw,
+       .set_constants_draw = {.offset = offset, .constants = constants}});
 }
 
 void Shader_patch::set_constants_async(const cb::Fixedfunction_tag,
                                        cb::Fixedfunction constants) noexcept
 {
-   update_dynamic_buffer(*_device_context, *_cb_fixedfunction_buffer, constants);
-
-   _game_postprocessing.blur_factor(constants.texture_factor.a);
+   _command_queue.enqueue({.type = Command::set_constants_fixedfunction,
+                           .set_constants_fixedfunction = {.constants = constants}});
 }
 
 void Shader_patch::set_constants_async(const cb::Skin_tag, const UINT offset,
                                        const std::span<const std::byte> constants) noexcept
 {
-   _cb_skin_dirty = true;
-
-   std::memcpy(bit_cast<std::byte*>(&_cb_skin) +
-                  (offset * sizeof(std::array<float, 4>)),
-               constants.data(), constants.size_bytes());
+   _command_queue.enqueue(
+      {.type = Command::set_constants_skin,
+       .set_constants_skin = {.offset = offset, .constants = constants}});
 }
 
 void Shader_patch::set_constants_async(const cb::Draw_ps_tag, const UINT offset,
                                        const std::span<const std::byte> constants) noexcept
 {
-   _cb_draw_ps_dirty = true;
-
-   std::memcpy(bit_cast<std::byte*>(&_cb_draw_ps) +
-                  (offset * sizeof(std::array<float, 4>)),
-               constants.data(), constants.size_bytes());
+   _command_queue.enqueue(
+      {.type = Command::set_constants_draw_ps,
+       .set_constants_draw_ps = {.offset = offset, .constants = constants}});
 }
 
 void Shader_patch::set_informal_projection_matrix_async(const glm::mat4& matrix) noexcept
 {
-   _informal_projection_matrix = matrix;
+   _command_queue.enqueue({.type = Command::set_informal_projection_matrix,
+                           .set_informal_projection_matrix = {.matrix = matrix}});
 }
 
 void Shader_patch::draw_async(const D3D11_PRIMITIVE_TOPOLOGY topology,
                               const UINT vertex_count, const UINT start_vertex) noexcept
 {
-   update_dirty_state(topology);
-
-   if (_discard_draw_calls) return;
-
-   _device_context->Draw(vertex_count, start_vertex);
+   _command_queue.enqueue({.type = Command::draw,
+                           .draw = {.topology = topology,
+                                    .vertex_count = vertex_count,
+                                    .start_vertex = start_vertex}});
 }
 
 void Shader_patch::draw_indexed_async(const D3D11_PRIMITIVE_TOPOLOGY topology,
                                       const UINT index_count, const UINT start_index,
                                       const UINT start_vertex) noexcept
 {
-   update_dirty_state(topology);
-
-   if (_discard_draw_calls) return;
-
-   _device_context->DrawIndexed(index_count, start_index, start_vertex);
+   _command_queue.enqueue({.type = Command::draw_indexed,
+                           .draw_indexed = {.topology = topology,
+                                            .index_count = index_count,
+                                            .start_index = start_index,
+                                            .start_vertex = start_vertex}});
 }
 
 void Shader_patch::force_shader_cache_save_to_disk() noexcept
@@ -1341,25 +1125,9 @@ auto Shader_patch::discard_ia_buffer_dynamic_cpu(Buffer& buffer) noexcept -> std
 void Shader_patch::rename_ia_buffer_dynamic_cpu_async(const Buffer_handle buffer_handle,
                                                       const std::size_t index) noexcept
 {
-   auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
-
-   std::scoped_lock lock{buffer->dynamic_instances_mutex};
-
-   assert(index < buffer->dynamic_instances.size());
-
-   auto old_buffer = buffer->buffer;
-
-   buffer->buffer = buffer->dynamic_instances[index].buffer;
-
-   if (_game_vertex_buffer == old_buffer) {
-      _game_vertex_buffer = buffer->buffer;
-      _ia_vertex_buffer_dirty = true;
-   }
-
-   if (_game_index_buffer == old_buffer) {
-      _game_index_buffer = buffer->buffer;
-      _ia_index_buffer_dirty = true;
-   }
+   _command_queue.enqueue({.type = Command::rename_ia_buffer_dynamic_cpu,
+                           .rename_ia_buffer_dynamic_cpu = {.buffer_handle = buffer_handle,
+                                                            .index = index}});
 }
 
 auto Shader_patch::create_game_texture(Com_ptr<ID3D11Resource> texture,
@@ -1406,6 +1174,524 @@ auto Shader_patch::create_game_texture(Com_ptr<ID3D11Resource> texture,
       std::make_unique<Game_texture>(srv, srgb_srv ? srgb_srv : srv));
 
    return ptr_to_handle<Game_texture_handle>(game_texture.get());
+}
+
+void Shader_patch::reset(const UINT width, const UINT height) noexcept
+{
+   std::scoped_lock lock{_game_rendertargets_mutex};
+
+   _device_context->ClearState();
+   _game_rendertargets.clear();
+   _effects.cmaa2.clear_resources();
+   _effects.postprocess.color_grading_regions({});
+   _oit_provider.clear_resources();
+
+   _swapchain.resize(width, height);
+   _game_rendertargets.emplace_back() = _swapchain.game_rendertarget();
+   _nearscene_depthstencil = {*_device, width, height, _rt_sample_count};
+   _farscene_depthstencil = {*_device, width, height, 1};
+   _refraction_rt = {};
+   _farscene_refraction_rt = {};
+   _current_game_rendertarget = _game_backbuffer_index;
+   _primitive_topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
+   _game_input_layout = {};
+   _game_shader = nullptr;
+   _game_textures = {};
+   _game_stencil_ref = 0xff;
+   _game_index_buffer_offset = 0;
+   _game_vertex_buffer_offset = 0;
+   _game_vertex_buffer_stride = 0;
+   _game_index_buffer = nullptr;
+   _game_vertex_buffer = nullptr;
+   _game_blend_state = nullptr;
+   _game_rs_state = nullptr;
+   _game_depthstencil_state = nullptr;
+   _previous_shader_rendertype = Rendertype::invalid;
+   _shader_rendertype = Rendertype::invalid;
+   _aa_method = Antialiasing_method::none;
+   _current_rt_format = Swapchain::format;
+
+   update_rendertargets();
+   update_refraction_target();
+   update_material_resources();
+   restore_all_game_state();
+}
+
+void Shader_patch::set_text_dpi(const std::uint32_t dpi) noexcept
+{
+   _font_atlas_builder.set_dpi(dpi);
+}
+
+void Shader_patch::present() noexcept
+{
+   std::scoped_lock lock{_game_rendertargets_mutex};
+
+   ImGui::Text(fmt::format("remaining bytes {}",
+                           _constants_storage_allocator.remaining_bytes())
+                  .c_str());
+
+   _constants_storage_allocator.reset();
+   _effects.profiler.end_frame(*_device_context);
+   _game_postprocessing.end_frame();
+
+   if (_game_rendertargets[0].type != Game_rt_type::presentation)
+      patch_backbuffer_resolve();
+
+   update_imgui();
+
+   if (std::exchange(_screenshot_requested, false))
+      screenshot(*_device, *_device_context, _swapchain, screenshots_folder);
+
+   _swapchain.present();
+   _om_targets_dirty = true;
+
+   _shader_database.cache_update();
+
+   if (_font_atlas_builder.update_srv_database(_shader_resource_database)) {
+      update_material_resources();
+   }
+
+   update_frame_state();
+   update_effects();
+   update_rendertargets();
+   update_refraction_target();
+   update_samplers();
+
+   if (_patch_backbuffer) _game_rendertargets[0] = _patch_backbuffer;
+}
+
+void Shader_patch::destroy_game_rendertarget(const Game_rendertarget_id id) noexcept
+{
+   std::scoped_lock lock{_game_rendertargets_mutex};
+
+   _game_rendertargets[static_cast<int>(id)] = {};
+
+   if (id == _current_game_rendertarget) {
+      set_rendertarget(_game_backbuffer_index);
+   }
+}
+
+void Shader_patch::destroy_game_texture(const Game_texture_handle game_texture_handle) noexcept
+{
+   std::scoped_lock lock{_game_texture_pool_mutex};
+
+   auto* const game_texture = handle_to_ptr<Game_texture>(game_texture_handle);
+
+   std::erase_if(_game_texture_pool,
+                 [=](auto& other) { return other.get() == game_texture; });
+}
+
+void Shader_patch::destroy_patch_texture(const Patch_texture_handle texture_handle) noexcept
+{
+   auto* const texture = handle_to_ptr<ID3D11ShaderResourceView>(texture_handle);
+
+   const auto [exists, name] = _shader_resource_database.reverse_lookup(texture);
+
+   if (!exists) return; // Texture has already been replaced.
+
+   log(Log_level::info, "Destroying texture "sv, std::quoted(name));
+
+   _shader_resource_database.erase(texture);
+}
+
+void Shader_patch::destroy_patch_material(const Material_handle material_handle) noexcept
+{
+   auto* const material = handle_to_ptr<material::Material>(material_handle);
+
+   if (_patch_material == material) {
+      set_patch_material(null_handle);
+   }
+
+   std::scoped_lock lock{_materials_pool_mutex};
+
+   for (auto it = _materials_pool.begin(); it != _materials_pool.end(); ++it) {
+      if (it->get() != material) continue;
+
+      log(Log_level::info, "Destroying material "sv, std::quoted(material->name));
+
+      _materials_pool.erase(it);
+
+      return;
+   }
+
+   log_and_terminate("Attempt to destroy nonexistant material!");
+}
+
+void Shader_patch::destroy_patch_effects_config(const Patch_effects_config_handle effects_config) noexcept
+{
+   if (effects_config != Patch_effects_config_handle{_current_effects_id}) {
+      return;
+   }
+
+   _effects.enabled(false);
+}
+
+void Shader_patch::destroy_ia_buffer(const Buffer_handle buffer_handle) noexcept
+{
+   auto* const buffer = handle_to_ptr<Buffer>(buffer_handle);
+
+   std::scoped_lock lock{_buffer_pool_mutex};
+
+   std::erase_if(_buffer_pool, [&](std::unique_ptr<Buffer>& other) {
+      return other.get() == buffer;
+   });
+}
+
+void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
+                                        const RECT source_rect,
+                                        const Game_rendertarget_id dest,
+                                        const RECT dest_rect) noexcept
+{
+   std::scoped_lock lock{_game_rendertargets_mutex};
+
+   auto& src_rt = _game_rendertargets[static_cast<int>(source)];
+   auto& dest_rt = _game_rendertargets[static_cast<int>(dest)];
+
+   if (_on_stretch_rendertarget)
+      _on_stretch_rendertarget(src_rt, source_rect, dest_rt, dest_rect);
+
+   const auto src_box = rect_to_box(source_rect);
+   const auto dest_box = rect_to_box(dest_rect);
+
+   // Skip any fullscreen resolve or copy operation, as these will be handled as special cases by the shaders that use them.
+   if (glm::uvec2{src_rt.width, src_rt.height} ==
+          glm::uvec2{dest_rt.width, dest_rt.height} &&
+       glm::uvec2{src_rt.width, src_rt.height} ==
+          glm::uvec2{src_box.right - src_box.left, src_box.bottom - src_box.top} &&
+       glm::uvec2{dest_rt.width, dest_rt.height} ==
+          glm::uvec2{dest_box.right - dest_box.left, dest_box.bottom - dest_box.top}) {
+      return;
+   }
+
+   _image_stretcher.stretch(*_device_context, src_box, src_rt, dest_box, dest_rt);
+   restore_all_game_state();
+}
+
+void Shader_patch::color_fill_rendertarget(const Game_rendertarget_id rendertarget,
+                                           const Clear_color color,
+                                           const std::optional<RECT> rect) noexcept
+{
+   std::scoped_lock lock{_game_rendertargets_mutex};
+
+   _device_context
+      ->ClearView(_game_rendertargets[static_cast<int>(rendertarget)].rtv.get(),
+                  clear_color_to_array(color).data(),
+                  rect ? &rect.value() : nullptr, rect ? 1 : 0);
+}
+
+void Shader_patch::clear_rendertarget(const Clear_color color) noexcept
+{
+   std::scoped_lock lock{_game_rendertargets_mutex};
+
+   _device_context->ClearRenderTargetView(
+      _game_rendertargets[static_cast<int>(_current_game_rendertarget)].rtv.get(),
+      clear_color_to_array(color).data());
+}
+
+void Shader_patch::clear_depthstencil(const float depth, const UINT8 stencil,
+                                      const bool clear_depth,
+                                      const bool clear_stencil) noexcept
+{
+   auto* const dsv = current_depthstencil(false);
+
+   if (!dsv) return;
+
+   const UINT clear_flags = (clear_depth ? D3D11_CLEAR_DEPTH : 0) |
+                            (clear_stencil ? D3D11_CLEAR_STENCIL : 0);
+
+   _device_context->ClearDepthStencilView(dsv, clear_flags, depth, stencil);
+}
+
+void Shader_patch::set_index_buffer(const Buffer_handle buffer_handle,
+                                    const UINT offset) noexcept
+{
+   auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
+
+   _game_index_buffer = buffer->buffer;
+   _game_index_buffer_offset = offset;
+   _ia_index_buffer_dirty = true;
+}
+
+void Shader_patch::set_vertex_buffer(const Buffer_handle buffer_handle,
+                                     const UINT offset, const UINT stride) noexcept
+{
+   auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
+
+   _game_vertex_buffer = buffer->buffer;
+   _game_vertex_buffer_offset = offset;
+   _game_vertex_buffer_stride = stride;
+   _ia_vertex_buffer_dirty = true;
+}
+
+void Shader_patch::set_input_layout(const Game_input_layout input_layout) noexcept
+{
+   _game_input_layout = input_layout;
+   _shader_dirty = true;
+
+   if (std::uint32_t{input_layout.particle_texture_scale} !=
+       _cb_scene.particle_texture_scale) {
+      _cb_scene.particle_texture_scale = input_layout.particle_texture_scale;
+      _cb_scene_dirty = true;
+   }
+}
+
+void Shader_patch::set_game_shader(const std::uint32_t shader_index) noexcept
+{
+   _game_shader = &_game_shaders[shader_index];
+   _shader_dirty = true;
+
+   const auto rendertype = _game_shader->rendertype;
+
+   _previous_shader_rendertype = _shader_rendertype;
+   _shader_rendertype_changed =
+      std::exchange(_shader_rendertype, rendertype) != rendertype;
+
+   const std::uint32_t light_active = _game_shader->light_active;
+   const std::uint32_t light_active_point_count = _game_shader->light_active_point_count;
+   const std::uint32_t light_active_spot = _game_shader->light_active_spot;
+
+   _cb_draw_ps_dirty |=
+      ((std::exchange(_cb_draw_ps.light_active, light_active) != light_active) |
+       (std::exchange(_cb_draw_ps.light_active_point_count,
+                      light_active_point_count) != light_active_point_count) |
+       (std::exchange(_cb_draw_ps.light_active_spot, light_active_spot) !=
+        light_active_spot));
+}
+
+void Shader_patch::set_rendertarget(const Game_rendertarget_id rendertarget) noexcept
+{
+   _om_targets_dirty = true;
+   _current_game_rendertarget = rendertarget;
+}
+
+void Shader_patch::set_depthstencil(const Game_depthstencil depthstencil) noexcept
+{
+   _om_targets_dirty = true;
+   _current_depthstencil_id = depthstencil;
+}
+
+void Shader_patch::set_rasterizer_state(ID3D11RasterizerState& rasterizer_state) noexcept
+{
+   _game_rs_state = copy_raw_com_ptr(rasterizer_state);
+   _rs_state_dirty = true;
+}
+
+void Shader_patch::set_depthstencil_state(ID3D11DepthStencilState& depthstencil_state,
+                                          const UINT8 stencil_ref,
+                                          const bool readonly) noexcept
+{
+   _game_depthstencil_state = copy_raw_com_ptr(depthstencil_state);
+   _game_stencil_ref = stencil_ref;
+   _om_depthstencil_state_dirty = true;
+   _om_targets_dirty =
+      _om_targets_dirty |
+      (std::exchange(_om_depthstencil_readonly, readonly) != readonly);
+}
+
+void Shader_patch::set_blend_state(ID3D11BlendState1& blend_state,
+                                   const bool additive_blending) noexcept
+{
+   _game_blend_state = copy_raw_com_ptr(blend_state);
+   _om_blend_state_dirty = true;
+
+   _cb_draw_ps.additive_blending = additive_blending;
+   _cb_draw_ps_dirty = true;
+}
+
+void Shader_patch::set_fog_state(const bool enabled, const glm::vec4 color) noexcept
+{
+   _cb_draw_ps_dirty = true;
+   _cb_draw_ps.fog_enabled = enabled;
+   _cb_draw_ps.fog_color = color;
+}
+
+void Shader_patch::set_texture(const UINT slot,
+                               const Game_texture_handle game_texture_handle) noexcept
+{
+   Expects(slot < 4);
+
+   auto* const game_texture = handle_to_ptr<Game_texture>(game_texture_handle);
+
+   _game_textures[slot] = game_texture ? *game_texture : Game_texture{};
+   _ps_textures_dirty = true;
+}
+
+void Shader_patch::set_texture(const UINT slot,
+                               const Game_rendertarget_id rendertarget) noexcept
+{
+   Expects(slot < 4);
+
+   std::scoped_lock lock{_game_rendertargets_mutex};
+
+   const auto& srv = _game_rendertargets[static_cast<int>(rendertarget)].srv;
+
+   _game_textures[slot] = {srv, srv};
+   _ps_textures_dirty = true;
+   _om_targets_dirty = true;
+
+   _device_context->OMSetRenderTargets(0, nullptr, nullptr);
+}
+
+void Shader_patch::set_projtex_mode(const Projtex_mode mode) noexcept
+{
+   if (mode == Projtex_mode::clamp) {
+      auto* const sampler = _sampler_states.linear_clamp_sampler.get();
+      _device_context->PSSetSamplers(5, 1, &sampler);
+   }
+   else if (mode == Projtex_mode::wrap) {
+      auto* const sampler = _sampler_states.linear_wrap_sampler.get();
+      _device_context->PSSetSamplers(5, 1, &sampler);
+   }
+}
+
+void Shader_patch::set_projtex_type(const Projtex_type type) noexcept
+{
+   if (type == Projtex_type::tex2d) {
+      _cb_draw_ps.cube_projtex = false;
+   }
+   else if (type == Projtex_type::texcube) {
+      _cb_draw_ps.cube_projtex = true;
+   }
+
+   _cb_draw_ps_dirty = true;
+}
+
+void Shader_patch::set_projtex_cube(const Game_texture_handle game_texture_handle) noexcept
+{
+   auto* const game_texture = handle_to_ptr<Game_texture>(game_texture_handle);
+
+   if (_lock_projtex_cube_slot) return;
+
+   _game_textures[projtex_cube_slot] = game_texture ? *game_texture : Game_texture{};
+   _ps_textures_dirty = true;
+}
+
+void Shader_patch::set_patch_material(const Material_handle material_handle) noexcept
+{
+   auto* const material = handle_to_ptr<material::Material>(material_handle);
+
+   _patch_material = material;
+   _shader_dirty = true;
+
+   if (_patch_material) {
+      _game_textures[0] = {_patch_material->fail_safe_game_texture,
+                           _patch_material->fail_safe_game_texture};
+      _ps_textures_dirty = true;
+
+      _patch_material->bind_constant_buffers(*_device_context);
+      _patch_material->bind_shader_resources(*_device_context);
+   }
+}
+
+void Shader_patch::set_constants(const cb::Scene_tag, const UINT offset,
+                                 const std::span<const std::byte> constants) noexcept
+{
+   _cb_scene_dirty = true;
+
+   std::memcpy(bit_cast<std::byte*>(&_cb_scene) +
+                  (offset * sizeof(std::array<float, 4>)),
+               constants.data(), constants.size_bytes());
+
+   if (offset < (offsetof(cb::Scene, near_scene_fade_scale) / sizeof(glm::vec4))) {
+      const float scale = _linear_rendering ? 1.0f : _cb_scene.vs_lighting_scale;
+
+      _cb_draw_ps_dirty = true;
+      _cb_scene.vs_lighting_scale = scale;
+      _cb_draw_ps.ps_lighting_scale = scale;
+   }
+
+   if (offset < (offsetof(cb::Scene, vs_view_positionWS) / sizeof(glm::vec4))) {
+      _cb_draw_ps_dirty = true;
+      _cb_draw_ps.ps_view_positionWS = _cb_scene.vs_view_positionWS;
+   }
+}
+
+void Shader_patch::set_constants(const cb::Draw_tag, const UINT offset,
+                                 const std::span<const std::byte> constants) noexcept
+{
+   _cb_draw_dirty = true;
+
+   std::memcpy(bit_cast<std::byte*>(&_cb_draw) +
+                  (offset * sizeof(std::array<float, 4>)),
+               constants.data(), constants.size_bytes());
+}
+
+void Shader_patch::set_constants(const cb::Fixedfunction_tag,
+                                 cb::Fixedfunction constants) noexcept
+{
+   update_dynamic_buffer(*_device_context, *_cb_fixedfunction_buffer, constants);
+
+   _game_postprocessing.blur_factor(constants.texture_factor.a);
+}
+
+void Shader_patch::set_constants(const cb::Skin_tag, const UINT offset,
+                                 const std::span<const std::byte> constants) noexcept
+{
+   _cb_skin_dirty = true;
+
+   std::memcpy(bit_cast<std::byte*>(&_cb_skin) +
+                  (offset * sizeof(std::array<float, 4>)),
+               constants.data(), constants.size_bytes());
+}
+
+void Shader_patch::set_constants(const cb::Draw_ps_tag, const UINT offset,
+                                 const std::span<const std::byte> constants) noexcept
+{
+   _cb_draw_ps_dirty = true;
+
+   std::memcpy(bit_cast<std::byte*>(&_cb_draw_ps) +
+                  (offset * sizeof(std::array<float, 4>)),
+               constants.data(), constants.size_bytes());
+}
+
+void Shader_patch::set_informal_projection_matrix(const glm::mat4& matrix) noexcept
+{
+   _informal_projection_matrix = matrix;
+}
+
+void Shader_patch::draw(const D3D11_PRIMITIVE_TOPOLOGY topology,
+                        const UINT vertex_count, const UINT start_vertex) noexcept
+{
+   update_dirty_state(topology);
+
+   if (_discard_draw_calls) return;
+
+   _device_context->Draw(vertex_count, start_vertex);
+}
+
+void Shader_patch::draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
+                                const UINT index_count, const UINT start_index,
+                                const UINT start_vertex) noexcept
+{
+   update_dirty_state(topology);
+
+   if (_discard_draw_calls) return;
+
+   _device_context->DrawIndexed(index_count, start_index, start_vertex);
+}
+
+void Shader_patch::rename_ia_buffer_dynamic_cpu(const Buffer_handle buffer_handle,
+                                                const std::size_t index) noexcept
+{
+   auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
+
+   std::scoped_lock lock{buffer->dynamic_instances_mutex};
+
+   assert(index < buffer->dynamic_instances.size());
+
+   auto old_buffer = buffer->buffer;
+
+   buffer->buffer = buffer->dynamic_instances[index].buffer;
+
+   if (_game_vertex_buffer == old_buffer) {
+      _game_vertex_buffer = buffer->buffer;
+      _ia_vertex_buffer_dirty = true;
+   }
+
+   if (_game_index_buffer == old_buffer) {
+      _game_index_buffer = buffer->buffer;
+      _ia_index_buffer_dirty = true;
+   }
 }
 
 auto Shader_patch::current_depthstencil(const bool readonly) const noexcept

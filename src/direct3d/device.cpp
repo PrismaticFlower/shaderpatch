@@ -1244,7 +1244,7 @@ HRESULT Device::SetPixelShaderConstantF(UINT start_register, const float* consta
    const auto count =
       safe_min(vector4f_count, core::cb::draw_ps_game_count - start_register);
    const auto constants = _shader_patch.allocate_memory_for_async_data(
-      vector4f_count * sizeof(std::array<float, 4>));
+      count * sizeof(std::array<float, 4>));
 
    std::memcpy(constants.data(), constant_data, constants.size());
 

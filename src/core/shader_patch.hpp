@@ -38,6 +38,7 @@
 #include <bit>
 #include <mutex>
 #include <span>
+#include <thread>
 #include <vector>
 
 #include <glm/glm.hpp>
@@ -570,6 +571,9 @@ private:
    Linear_allocator<16> _constants_storage_allocator{4'194'304};
 
    Command_queue _command_queue;
+   std::jthread _command_processor_thread{[this](std::stop_token stop_token) {
+      async_command_processor(stop_token);
+   }};
 };
 
 }

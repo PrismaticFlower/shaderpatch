@@ -56,13 +56,6 @@ enum class Command : std::uint8_t {
    null
 };
 
-namespace sync_commands {
-
-void update_ia_buffer(const Buffer_handle buffer_handle, const UINT offset,
-                      const UINT size, const std::byte* data) noexcept;
-
-}
-
 namespace commands {
 struct Reset {
    const UINT width;
@@ -249,7 +242,7 @@ struct Null {
 }
 
 struct alignas(std::hardware_constructive_interference_size) Command_data {
-   Command type;
+   Command type = Command::null;
 
    union {
       commands::Reset reset;
