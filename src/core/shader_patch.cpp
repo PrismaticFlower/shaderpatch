@@ -633,53 +633,6 @@ void Shader_patch::load_colorgrading_regions(const std::span<const std::byte> re
    }
 }
 
-auto Shader_patch::discard_ia_buffer_cpu(const Buffer_handle buffer_handle) noexcept
-   -> std::size_t
-{
-   auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
-
-   std::scoped_lock lock{buffer->dynamic_instances_mutex};
-
-   for (std::size_t i = 0; i < buffer->dynamic_instances.size(); ++i) {
-      auto& instance = buffer->dynamic_instances[i];
-
-      if (instance.last_used < _current_frame) {
-         instance.last_used = _current_frame;
-
-         return i;
-      }
-   }
-
-   D3D11_BUFFER_DESC desc{};
-
-   buffer->buffer->GetDesc(&desc);
-
-   Com_ptr<ID3D11Buffer> new_buffer;
-
-   if (FAILED(_device->CreateBuffer(&desc, nullptr, new_buffer.clear_and_assign()))) {
-      log_and_terminate("Failed to create new buffer for buffer discard operation."sv);
-   }
-
-   const auto index = buffer->dynamic_instances.size();
-
-   buffer->dynamic_instances.push_back(
-      Dynamic_buffer_instance{.buffer = new_buffer, .last_used = _current_frame});
-
-   return index;
-}
-
-void Shader_patch::rename_ia_buffer_cpu_async(const Buffer_handle buffer_handle,
-                                              const std::size_t index) noexcept
-{
-   auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
-
-   std::scoped_lock lock{buffer->dynamic_instances_mutex};
-
-   assert(index < buffer->dynamic_instances.size());
-
-   buffer->buffer = buffer->dynamic_instances[index].buffer;
-}
-
 void Shader_patch::update_ia_buffer(const Buffer_handle buffer_handle,
                                     const UINT offset, const UINT size,
                                     const std::byte* data) noexcept
@@ -692,23 +645,35 @@ void Shader_patch::update_ia_buffer(const Buffer_handle buffer_handle,
 }
 
 void Shader_patch::update_ia_buffer_dynamic(const Buffer_handle buffer_handle,
-                                            const std::size_t dynamic_index,
                                             const UINT offset, const UINT size,
                                             const std::byte* data,
-                                            const D3D11_MAP map_type) noexcept
+                                            const Map map_type) noexcept
 {
    auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
 
-   std::scoped_lock lock{buffer->dynamic_instances_mutex};
+   if (map_type == Map::write_discard) {
+      buffer->cpu_active_dynamic_instance = discard_ia_buffer_dynamic_cpu(*buffer);
+   }
+
+   auto* const d3d_buffer = [&] {
+      std::scoped_lock lock{buffer->dynamic_instances_mutex};
+
+      return buffer->dynamic_instances[buffer->cpu_active_dynamic_instance]
+         .buffer.get();
+   }();
 
    D3D11_MAPPED_SUBRESOURCE mapped;
 
-   _device_context->Map(buffer->dynamic_instances[dynamic_index].buffer.get(),
-                        0, map_type, 0, &mapped);
+   _device_context->Map(d3d_buffer, 0, static_cast<D3D11_MAP>(map_type), 0, &mapped);
 
    std::memcpy(static_cast<std::byte*>(mapped.pData) + offset, data, size);
 
-   _device_context->Unmap(buffer->dynamic_instances[dynamic_index].buffer.get(), 0);
+   _device_context->Unmap(d3d_buffer, 0);
+
+   if (map_type == Map::write_discard) {
+      rename_ia_buffer_dynamic_cpu_async(buffer_handle,
+                                         buffer->cpu_active_dynamic_instance);
+   }
 }
 
 void Shader_patch::update_texture(const Game_texture_handle game_texture_handle,
@@ -1133,6 +1098,62 @@ void Shader_patch::draw_indexed_async(const D3D11_PRIMITIVE_TOPOLOGY topology,
 void Shader_patch::force_shader_cache_save_to_disk() noexcept
 {
    _shader_database.force_cache_save_to_disk();
+}
+
+auto Shader_patch::discard_ia_buffer_dynamic_cpu(Buffer& buffer) noexcept -> std::size_t
+{
+   std::scoped_lock lock{buffer.dynamic_instances_mutex};
+
+   for (std::size_t i = 0; i < buffer.dynamic_instances.size(); ++i) {
+      auto& instance = buffer.dynamic_instances[i];
+
+      if (instance.last_used < _current_frame) {
+         instance.last_used = _current_frame;
+
+         return i;
+      }
+   }
+
+   D3D11_BUFFER_DESC desc{};
+
+   buffer.buffer->GetDesc(&desc);
+
+   Com_ptr<ID3D11Buffer> new_buffer;
+
+   if (FAILED(_device->CreateBuffer(&desc, nullptr, new_buffer.clear_and_assign()))) {
+      log_and_terminate("Failed to create new buffer for buffer discard operation."sv);
+   }
+
+   const auto index = buffer.dynamic_instances.size();
+
+   buffer.dynamic_instances.push_back(
+      Dynamic_buffer_instance{.buffer = new_buffer, .last_used = _current_frame});
+
+   return index;
+}
+
+void Shader_patch::rename_ia_buffer_dynamic_cpu_async(const Buffer_handle buffer_handle,
+                                                      const std::size_t index) noexcept
+{
+   auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
+
+   std::scoped_lock lock{buffer->dynamic_instances_mutex};
+
+   assert(index < buffer->dynamic_instances.size());
+
+   auto old_buffer = buffer->buffer;
+
+   buffer->buffer = buffer->dynamic_instances[index].buffer;
+
+   if (_game_vertex_buffer == old_buffer) {
+      _game_vertex_buffer = buffer->buffer;
+      _ia_vertex_buffer_dirty = true;
+   }
+
+   if (_game_index_buffer == old_buffer) {
+      _game_index_buffer = buffer->buffer;
+      _ia_index_buffer_dirty = true;
+   }
 }
 
 auto Shader_patch::create_game_texture(Com_ptr<ID3D11Resource> texture,

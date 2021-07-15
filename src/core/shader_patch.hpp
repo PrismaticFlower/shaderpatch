@@ -130,18 +130,12 @@ public:
 
    void load_colorgrading_regions(const std::span<const std::byte> regions_data) noexcept;
 
-   auto discard_ia_buffer_cpu(const Buffer_handle buffer_handle) noexcept -> std::size_t;
-
-   void rename_ia_buffer_cpu_async(const Buffer_handle buffer_handle,
-                                   const std::size_t index) noexcept;
-
    void update_ia_buffer(const Buffer_handle buffer_handle, const UINT offset,
                          const UINT size, const std::byte* data) noexcept;
 
    void update_ia_buffer_dynamic(const Buffer_handle buffer_handle,
-                                 const std::size_t dynamic_index, const UINT offset,
-                                 const UINT size, const std::byte* data,
-                                 const D3D11_MAP map_type) noexcept;
+                                 const UINT offset, const UINT size,
+                                 const std::byte* data, const Map map_type) noexcept;
 
    void update_texture(const Game_texture_handle game_texture_handle,
                        const std::span<const Mapped_texture> data) noexcept;
@@ -237,6 +231,11 @@ public:
 
 private:
    void async_command_processor() noexcept;
+
+   auto discard_ia_buffer_dynamic_cpu(Buffer& buffer) noexcept -> std::size_t;
+
+   void rename_ia_buffer_dynamic_cpu_async(const Buffer_handle buffer_handle,
+                                           const std::size_t index) noexcept;
 
    auto create_game_texture(Com_ptr<ID3D11Resource> texture,
                             const D3D11_SRV_DIMENSION srv_dimension,

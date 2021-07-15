@@ -239,10 +239,6 @@ private:
       if (lock_offset > (_size - lock_size)) return D3DERR_INVALIDCALL;
 
       if (_lock_count == 0) {
-         if (flags & D3DLOCK_DISCARD) {
-            _dynamic_index = _shader_patch.discard_ia_buffer_cpu(_buffer);
-         }
-
          _lock_map_type = lock_flags_to_map_type(flags);
          _lock_offset = lock_offset;
          _lock_size = lock_size;
@@ -265,20 +261,16 @@ private:
 
       if (--_lock_count == 0 && _lock_data) {
          if (!std::exchange(_dynamic_multi_lock, false)) {
-            _shader_patch.update_ia_buffer_dynamic(_buffer, _dynamic_index,
-                                                   _lock_offset, _lock_size,
+            _shader_patch.update_ia_buffer_dynamic(_buffer, _lock_offset, _lock_size,
                                                    _lock_data + _lock_offset,
                                                    _lock_map_type);
          }
          else {
-            _shader_patch.update_ia_buffer_dynamic(_buffer, _dynamic_index, 0,
-                                                   _size, _lock_data,
-                                                   D3D11_MAP_WRITE_DISCARD);
+            _shader_patch.update_ia_buffer_dynamic(_buffer, 0, _size, _lock_data,
+                                                   core::Map::write_discard);
          }
 
          _lock_data = nullptr;
-
-         _shader_patch.rename_ia_buffer_cpu_async(_buffer, _dynamic_index);
       }
       else if (_lock_count == -1) {
          log_and_terminate("Unexpected buffer unlock!");
@@ -287,13 +279,16 @@ private:
       return S_OK;
    }
 
-   auto lock_flags_to_map_type(const DWORD flags) const noexcept -> D3D11_MAP
+   auto lock_flags_to_map_type(const DWORD flags) const noexcept -> core::Map
    {
-      if (flags & D3DLOCK_READONLY) return D3D11_MAP_READ;
-      if (flags & D3DLOCK_DISCARD) return D3D11_MAP_WRITE_DISCARD;
-      if (flags & D3DLOCK_NOOVERWRITE) return D3D11_MAP_WRITE_NO_OVERWRITE;
+      if (flags & D3DLOCK_DISCARD) return core::Map::write_discard;
+      if (flags & D3DLOCK_NOOVERWRITE) return core::Map::write_nooverwrite;
 
-      return D3D11_MAP_WRITE;
+      if (flags & D3DLOCK_READONLY) {
+         log_and_terminate("Unexpected buffer lock flag!");
+      }
+
+      return core::Map::write;
    }
 
    core::Shader_patch& _shader_patch;
@@ -303,13 +298,12 @@ private:
       _shader_patch.create_ia_buffer(_size, buffer_type == Buffer_type::vertex_buffer,
                                      buffer_type == Buffer_type::index_buffer,
                                      _dynamic)};
-   std::size_t _dynamic_index = 0;
 
    UINT _lock_offset{};
    UINT _lock_size{};
    bool _dynamic_multi_lock = false;
    std::byte* _lock_data = nullptr;
-   D3D11_MAP _lock_map_type = D3D11_MAP_WRITE;
+   core::Map _lock_map_type = core::Map::write;
    int _lock_count = 0;
 
    std::unique_ptr<std::aligned_storage_t<16, 16>[]> _dynamic_staging_storage =

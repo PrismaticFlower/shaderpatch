@@ -21,6 +21,8 @@ struct Buffer {
 
    small_mutex dynamic_instances_mutex;
    absl::InlinedVector<Dynamic_buffer_instance, 3> dynamic_instances;
+
+   std::size_t cpu_active_dynamic_instance = 0;
 };
 
 }

@@ -14,6 +14,12 @@ enum class Projtex_type { tex2d, texcube };
 
 enum class Clear_color { transparent_black, opaque_black };
 
+enum class Map {
+   write = D3D11_MAP_WRITE,
+   write_discard = D3D11_MAP_WRITE_DISCARD,
+   write_nooverwrite = D3D11_MAP_WRITE_NO_OVERWRITE
+};
+
 struct Mapped_texture {
    UINT row_pitch;
    UINT depth_pitch;
