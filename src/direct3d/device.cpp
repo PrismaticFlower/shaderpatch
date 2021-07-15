@@ -263,8 +263,8 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
 
    _render_state_manager.reset();
    _texture_stage_manager.reset();
-   _shader_patch.reset(_actual_width, _actual_height);
-   _shader_patch.set_text_dpi(text_dpi);
+   _shader_patch.reset_async(_actual_width, _actual_height);
+   _shader_patch.set_text_dpi_async(text_dpi);
    _fixed_func_active = true;
 
    _backbuffer = Surface_backbuffer::create(_shader_patch.get_back_buffer(),

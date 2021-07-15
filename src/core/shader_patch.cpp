@@ -152,7 +152,7 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
 
 Shader_patch::~Shader_patch() = default;
 
-void Shader_patch::reset(const UINT width, const UINT height) noexcept
+void Shader_patch::reset_async(const UINT width, const UINT height) noexcept
 {
    std::scoped_lock lock{_game_rendertargets_mutex};
 
@@ -193,7 +193,7 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
    restore_all_game_state();
 }
 
-void Shader_patch::set_text_dpi(const std::uint32_t dpi) noexcept
+void Shader_patch::set_text_dpi_async(const std::uint32_t dpi) noexcept
 {
    _font_atlas_builder.set_dpi(dpi);
 }
@@ -637,9 +637,13 @@ void Shader_patch::update_ia_buffer(const Buffer_handle buffer_handle,
                                     const UINT offset, const UINT size,
                                     const std::byte* data) noexcept
 {
+   _command_queue.wait_for_empty();
+
    auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
 
    const D3D11_BOX box{offset, 0, 0, offset + size, 1, 1};
+
+   std::scoped_lock lock{_device_context_mutex};
 
    _device_context->UpdateSubresource(buffer->buffer.get(), 0, &box, data, 0, 0);
 }
@@ -662,13 +666,18 @@ void Shader_patch::update_ia_buffer_dynamic(const Buffer_handle buffer_handle,
          .buffer.get();
    }();
 
-   D3D11_MAPPED_SUBRESOURCE mapped;
+   // perform update while holding _device_context_mutex
+   {
+      std::scoped_lock lock{_device_context_mutex};
 
-   _device_context->Map(d3d_buffer, 0, static_cast<D3D11_MAP>(map_type), 0, &mapped);
+      D3D11_MAPPED_SUBRESOURCE mapped;
 
-   std::memcpy(static_cast<std::byte*>(mapped.pData) + offset, data, size);
+      _device_context->Map(d3d_buffer, 0, static_cast<D3D11_MAP>(map_type), 0, &mapped);
 
-   _device_context->Unmap(d3d_buffer, 0);
+      std::memcpy(static_cast<std::byte*>(mapped.pData) + offset, data, size);
+
+      _device_context->Unmap(d3d_buffer, 0);
+   }
 
    if (map_type == Map::write_discard) {
       rename_ia_buffer_dynamic_cpu_async(buffer_handle,
@@ -679,6 +688,8 @@ void Shader_patch::update_ia_buffer_dynamic(const Buffer_handle buffer_handle,
 void Shader_patch::update_texture(const Game_texture_handle game_texture_handle,
                                   const std::span<const Mapped_texture> data) noexcept
 {
+   _command_queue.wait_for_empty();
+
    auto* const game_texture = handle_to_ptr<Game_texture>(game_texture_handle);
 
    assert(game_texture->srv && game_texture->srgb_srv);
@@ -754,6 +765,8 @@ void Shader_patch::update_texture(const Game_texture_handle game_texture_handle,
       texture = dest_texture;
       *game_texture = Game_texture{srv, srgb_srv};
    }
+
+   std::scoped_lock lock{_device_context_mutex};
 
    for (std::size_t i = 0; i < data.size(); ++i) {
       _device_context->UpdateSubresource1(resource.get(), i, nullptr,
@@ -1098,6 +1111,199 @@ void Shader_patch::draw_indexed_async(const D3D11_PRIMITIVE_TOPOLOGY topology,
 void Shader_patch::force_shader_cache_save_to_disk() noexcept
 {
    _shader_database.force_cache_save_to_disk();
+}
+
+void Shader_patch::async_command_processor(std::stop_token stop_token) noexcept
+{
+   while (!stop_token.stop_requested()) {
+      process_command(_command_queue.dequeue());
+   }
+}
+
+void Shader_patch::process_command(const Command_data& command) noexcept
+{
+   std::scoped_lock lock{_device_context_mutex};
+
+   switch (command.type) {
+   case Command::reset:
+      reset(command.reset.width, command.reset.height);
+
+      return;
+   case Command::set_text_dpi:
+      set_text_dpi(command.set_text_dpi.dpi);
+
+      return;
+   case Command::present:
+      present();
+
+      return;
+   case Command::destroy_game_rendertarget:
+      destroy_game_rendertarget(command.destroy_game_rendertarget.id);
+
+      return;
+   case Command::destroy_game_texture:
+      destroy_game_texture(command.destroy_game_texture.game_texture_handle);
+
+      return;
+   case Command::destroy_patch_texture:
+      destroy_patch_texture(command.destroy_patch_texture.texture_handle);
+
+      return;
+   case Command::destroy_patch_material:
+      destroy_patch_material(command.destroy_patch_material.material_handle);
+
+      return;
+   case Command::destroy_patch_effects_config:
+      destroy_patch_effects_config(command.destroy_patch_effects_config.effects_config);
+
+      return;
+   case Command::destroy_ia_buffer:
+      destroy_ia_buffer(command.destroy_ia_buffer.buffer_handle);
+
+      return;
+   case Command::stretch_rendertarget:
+      stretch_rendertarget(command.stretch_rendertarget.source,
+                           command.stretch_rendertarget.source_rect,
+                           command.stretch_rendertarget.dest,
+                           command.stretch_rendertarget.dest_rect);
+
+      return;
+   case Command::color_fill_rendertarget:
+      color_fill_rendertarget(command.color_fill_rendertarget.rendertarget,
+                              command.color_fill_rendertarget.color,
+                              command.color_fill_rendertarget.rect);
+
+      return;
+   case Command::clear_rendertarget:
+      clear_rendertarget(command.clear_rendertarget.color);
+
+      return;
+   case Command::clear_depthstencil:
+      clear_depthstencil(command.clear_depthstencil.z,
+                         command.clear_depthstencil.stencil,
+                         command.clear_depthstencil.clear_depth,
+                         command.clear_depthstencil.clear_stencil);
+
+      return;
+   case Command::set_index_buffer:
+      set_index_buffer(command.set_index_buffer.buffer_handle,
+                       command.set_index_buffer.offset);
+
+      return;
+   case Command::set_vertex_buffer:
+      set_vertex_buffer(command.set_vertex_buffer.buffer_handle,
+                        command.set_vertex_buffer.offset,
+                        command.set_vertex_buffer.stride);
+
+      return;
+   case Command::set_input_layout:
+      set_input_layout(command.set_input_layout.input_layout);
+
+      return;
+   case Command::set_game_shader:
+      set_game_shader(command.set_game_shader.game_shader_index);
+
+      return;
+   case Command::set_rendertarget:
+      set_rendertarget(command.set_rendertarget.rendertarget);
+
+      return;
+   case Command::set_depthstencil:
+      set_depthstencil(command.set_depthstencil.depthstencil);
+
+      return;
+   case Command::set_rasterizer_state:
+      set_rasterizer_state(command.set_rasterizer_state.rasterizer_state);
+
+      return;
+   case Command::set_depthstencil_state:
+      set_depthstencil_state(command.set_depthstencil_state.depthstencil_state,
+                             command.set_depthstencil_state.stencil_ref,
+                             command.set_depthstencil_state.readonly);
+
+      return;
+   case Command::set_blend_state:
+      set_blend_state(command.set_blend_state.blend_state,
+                      command.set_blend_state.additive_blending);
+
+      return;
+   case Command::set_fog_state:
+      set_fog_state(command.set_fog_state.enabled, command.set_fog_state.color);
+
+      return;
+   case Command::set_texture:
+      set_texture(command.set_texture.slot, command.set_texture.game_texture_handle);
+
+      return;
+   case Command::set_texture_rendertarget:
+      set_texture(command.set_texture_rendertarget.slot,
+                  command.set_texture_rendertarget.rendertarget);
+
+      return;
+   case Command::set_projtex_mode:
+      set_projtex_mode(command.set_projtex_mode.mode);
+
+      return;
+   case Command::set_projtex_type:
+      set_projtex_type(command.set_projtex_type.type);
+
+      return;
+   case Command::set_projtex_cube:
+      set_projtex_cube(command.set_projtex_cube.game_texture_handle);
+
+      return;
+   case Command::set_patch_material:
+      set_patch_material(command.set_patch_material.material_handle);
+
+      return;
+   case Command::set_constants_scene:
+      set_constants(cb::scene, command.set_constants_scene.offset,
+                    command.set_constants_scene.constants);
+
+      return;
+   case Command::set_constants_draw:
+      set_constants(cb::draw, command.set_constants_draw.offset,
+                    command.set_constants_draw.constants);
+
+      return;
+   case Command::set_constants_fixedfunction:
+      set_constants(cb::fixedfunction, command.set_constants_fixedfunction.constants);
+
+      return;
+   case Command::set_constants_skin:
+      set_constants(cb::skin, command.set_constants_skin.offset,
+                    command.set_constants_skin.constants);
+
+      return;
+   case Command::set_constants_draw_ps:
+      set_constants(cb::draw_ps, command.set_constants_draw_ps.offset,
+                    command.set_constants_draw_ps.constants);
+
+      return;
+   case Command::set_informal_projection_matrix:
+      set_informal_projection_matrix(command.set_informal_projection_matrix.matrix);
+
+      return;
+   case Command::draw:
+      draw(command.draw.topology, command.draw.vertex_count, command.draw.start_vertex);
+
+      return;
+   case Command::draw_indexed:
+      draw_indexed(command.draw_indexed.topology, command.draw_indexed.index_count,
+                   command.draw_indexed.start_index,
+                   command.draw_indexed.start_vertex);
+
+      return;
+   case Command::rename_ia_buffer_dynamic_cpu:
+      rename_ia_buffer_dynamic_cpu(command.rename_ia_buffer_dynamic_cpu.buffer_handle,
+                                   command.rename_ia_buffer_dynamic_cpu.index);
+
+      return;
+   case Command::null:
+      return;
+   default:
+      __assume(0);
+   }
 }
 
 auto Shader_patch::discard_ia_buffer_dynamic_cpu(Buffer& buffer) noexcept -> std::size_t

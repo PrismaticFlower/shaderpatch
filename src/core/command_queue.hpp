@@ -1,13 +1,21 @@
 #pragma once
 
-#include "shader_patch.hpp"
+#include "common.hpp"
+#include "constant_buffers.hpp"
+#include "game_input_layout.hpp"
+#include "handles.hpp"
+#include "single_producer_single_consumer_queue.hpp"
 
 #include <cstdint>
 #include <new>
+#include <optional>
+#include <span>
 
 namespace sp::core {
 
-enum class Command_type : std::uint8_t {
+enum class Command : std::uint8_t {
+   reset,
+   set_text_dpi,
    present,
    destroy_game_rendertarget,
    destroy_game_texture,
@@ -15,7 +23,6 @@ enum class Command_type : std::uint8_t {
    destroy_patch_material,
    destroy_patch_effects_config,
    destroy_ia_buffer,
-   rename_ia_buffer_cpu,
    stretch_rendertarget,
    color_fill_rendertarget,
    clear_rendertarget,
@@ -44,8 +51,9 @@ enum class Command_type : std::uint8_t {
    set_informal_projection_matrix,
    draw,
    draw_indexed,
+   rename_ia_buffer_dynamic_cpu,
 
-   destruction
+   null
 };
 
 namespace sync_commands {
@@ -53,26 +61,18 @@ namespace sync_commands {
 void update_ia_buffer(const Buffer_handle buffer_handle, const UINT offset,
                       const UINT size, const std::byte* data) noexcept;
 
-auto map_dynamic_texture(const Game_texture_handle game_texture_handle,
-                         const UINT mip_level, const D3D11_MAP map_type) noexcept
-   -> Mapped_texture;
-
-void unmap_dynamic_texture(const Game_texture_handle game_texture_handle,
-                           const UINT mip_level) noexcept;
-}
-
-namespace immediate_commands {
-
-auto discard_ia_buffer_cpu(const Buffer_handle buffer_handle) noexcept -> std::size_t;
-
-auto map_ia_buffer(const Buffer_handle Buffer, const D3D11_MAP map_type) noexcept
-   -> std::byte*;
-
-void unmap_ia_buffer(const Buffer_handle Buffer) noexcept;
-
 }
 
 namespace commands {
+struct Reset {
+   const UINT width;
+   const UINT height;
+};
+
+struct Set_text_dpi {
+   const UINT dpi;
+};
+
 struct Present {
 };
 
@@ -100,11 +100,6 @@ struct Destroy_ia_buffer {
    const Buffer_handle buffer_handle;
 };
 
-struct Rename_ia_buffer_cpu {
-   const Buffer_handle buffer_handle;
-   const std::size_t index
-};
-
 struct Stretch_rendertarget {
    const Game_rendertarget_id source;
    const RECT source_rect;
@@ -115,7 +110,7 @@ struct Stretch_rendertarget {
 struct Color_fill_rendertarget {
    const Game_rendertarget_id rendertarget;
    const Clear_color color;
-   const RECT* rect = nullptr;
+   const std::optional<RECT> rect = std::nullopt;
 };
 
 struct Clear_rendertarget {
@@ -141,7 +136,7 @@ struct Set_vertex_buffer {
 };
 
 struct Set_input_layout {
-   const Game_input_layout& input_layout;
+   const Game_input_layout input_layout;
 };
 
 struct Set_game_shader {
@@ -204,26 +199,26 @@ struct Set_patch_material {
 
 struct Set_constants_scene {
    const UINT offset;
-   const std::span<const std::array<float, 4>> constants;
+   const std::span<const std::byte> constants;
 };
 
 struct Set_constants_draw {
    const UINT offset;
-   const std::span<const std::array<float, 4>> constants;
+   const std::span<const std::byte> constants;
 };
 
 struct Set_constants_fixedfunction {
-   const std::span<float, 8> constants;
+   const cb::Fixedfunction constants;
 };
 
 struct Set_constants_skin {
    const UINT offset;
-   const std::span<const std::array<float, 4>> constants;
+   const std::span<const std::byte> constants;
 };
 
 struct Set_constants_draw_ps {
    const UINT offset;
-   const std::span<const std::array<float, 4>> constants;
+   const std::span<const std::byte> constants;
 };
 
 struct Set_informal_projection_matrix {
@@ -243,15 +238,22 @@ struct Draw_indexed {
    const UINT start_vertex;
 };
 
-struct Destruction {
+struct Rename_ia_buffer_dynamic_cpu {
+   const Buffer_handle buffer_handle;
+   const std::size_t index;
+};
+
+struct Null {
 };
 
 }
 
-struct alignas(std::hardware_constructive_interference_size) Command {
-   Command_type type;
+struct alignas(std::hardware_constructive_interference_size) Command_data {
+   Command type;
 
    union {
+      commands::Reset reset;
+      commands::Set_text_dpi set_text_dpi;
       commands::Present present;
       commands::Destroy_game_rendertarget destroy_game_rendertarget;
       commands::Destroy_game_texture destroy_game_texture;
@@ -259,7 +261,6 @@ struct alignas(std::hardware_constructive_interference_size) Command {
       commands::Destroy_patch_material destroy_patch_material;
       commands::Destroy_patch_effects_config destroy_patch_effects_config;
       commands::Destroy_ia_buffer destroy_ia_buffer;
-      commands::Rename_ia_buffer_cpu rename_ia_buffer_cpu;
       commands::Stretch_rendertarget stretch_rendertarget;
       commands::Color_fill_rendertarget color_fill_rendertarget;
       commands::Clear_rendertarget clear_rendertarget;
@@ -288,19 +289,35 @@ struct alignas(std::hardware_constructive_interference_size) Command {
       commands::Set_informal_projection_matrix set_informal_projection_matrix;
       commands::Draw draw;
       commands::Draw_indexed draw_indexed;
-      commands::Destruction destruction;
+      commands::Rename_ia_buffer_dynamic_cpu rename_ia_buffer_dynamic_cpu;
+      commands::Null null = {};
    };
 };
 
-static_assert(std::is_trivially_destructible_v<Command>);
+static_assert(std::is_default_constructible_v<Command_data>);
+static_assert(std::is_trivially_destructible_v<Command_data>);
 
 class Command_queue {
 public:
-   void push(const Command& command) noexcept;
+   constexpr static std::size_t max_queued_commands = 2048;
 
-   auto pop() noexcept -> Command;
+   void enqueue(const Command_data& command) noexcept
+   {
+      _queue.enqueue(command);
+   }
+
+   [[nodiscard]] auto dequeue() noexcept -> Command_data
+   {
+      return _queue.dequeue();
+   }
+
+   void wait_for_empty()
+   {
+      _queue.wait_for_empty();
+   }
 
 private:
+   single_producer_single_consumer_queue<Command_data, max_queued_commands> _queue;
 };
 
 }

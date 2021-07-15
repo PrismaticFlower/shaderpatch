@@ -222,6 +222,7 @@
     <ClInclude Include="include\req_file_helpers.hpp" />
     <ClInclude Include="include\retry_dialog.hpp" />
     <ClInclude Include="include\shader_patch_version.hpp" />
+    <ClInclude Include="include\single_producer_single_consumer_queue.hpp" />
     <ClInclude Include="include\small_function.hpp" />
     <ClInclude Include="include\small_mutex.hpp" />
     <ClInclude Include="include\smart_win32_handle.hpp" />

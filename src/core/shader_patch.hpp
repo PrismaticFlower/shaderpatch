@@ -10,6 +10,7 @@
 #include "backbuffer_cmaa2_views.hpp"
 #include "buffer.hpp"
 #include "com_ptr.hpp"
+#include "command_queue.hpp"
 #include "common.hpp"
 #include "constant_buffers.hpp"
 #include "d3d11_helpers.hpp"
@@ -63,9 +64,9 @@ public:
    Shader_patch(Shader_patch&&) = delete;
    Shader_patch& operator=(Shader_patch&&) = delete;
 
-   void reset(const UINT width, const UINT height) noexcept;
+   void reset_async(const UINT width, const UINT height) noexcept;
 
-   void set_text_dpi(const std::uint32_t dpi) noexcept;
+   void set_text_dpi_async(const std::uint32_t dpi) noexcept;
 
    void present_async() noexcept;
 
@@ -230,12 +231,107 @@ public:
    void force_shader_cache_save_to_disk() noexcept;
 
 private:
-   void async_command_processor() noexcept;
+   void async_command_processor(std::stop_token stop_token) noexcept;
+
+   void process_command(const Command_data& command) noexcept;
 
    auto discard_ia_buffer_dynamic_cpu(Buffer& buffer) noexcept -> std::size_t;
 
    void rename_ia_buffer_dynamic_cpu_async(const Buffer_handle buffer_handle,
                                            const std::size_t index) noexcept;
+
+   void reset(const UINT width, const UINT height) noexcept;
+
+   void set_text_dpi(const std::uint32_t dpi) noexcept;
+
+   void present() noexcept;
+
+   void destroy_game_rendertarget(const Game_rendertarget_id id) noexcept;
+
+   void destroy_game_texture(const Game_texture_handle game_texture_handle) noexcept;
+
+   void destroy_patch_texture(const Patch_texture_handle texture_handle) noexcept;
+
+   void destroy_patch_material(const Material_handle material_handle) noexcept;
+
+   void destroy_patch_effects_config(const Patch_effects_config_handle effects_config) noexcept;
+
+   void destroy_ia_buffer(const Buffer_handle buffer_handle) noexcept;
+
+   void stretch_rendertarget(const Game_rendertarget_id source,
+                             const RECT source_rect, const Game_rendertarget_id dest,
+                             const RECT dest_rect) noexcept;
+
+   void color_fill_rendertarget(const Game_rendertarget_id rendertarget,
+                                const Clear_color color,
+                                const std::optional<RECT> rect = std::nullopt) noexcept;
+
+   void clear_rendertarget(const Clear_color color) noexcept;
+
+   void clear_depthstencil(const float z, const UINT8 stencil,
+                           const bool clear_depth, const bool clear_stencil) noexcept;
+
+   void set_index_buffer(const Buffer_handle buffer_handle, const UINT offset) noexcept;
+
+   void set_vertex_buffer(const Buffer_handle buffer_handle, const UINT offset,
+                          const UINT stride) noexcept;
+
+   void set_input_layout(const Game_input_layout input_layout) noexcept;
+
+   void set_game_shader(const std::uint32_t game_shader_index) noexcept;
+
+   void set_rendertarget(const Game_rendertarget_id rendertarget) noexcept;
+
+   void set_depthstencil(const Game_depthstencil depthstencil) noexcept;
+
+   void set_rasterizer_state(ID3D11RasterizerState& rasterizer_state) noexcept;
+
+   void set_depthstencil_state(ID3D11DepthStencilState& depthstencil_state,
+                               const UINT8 stencil_ref, const bool readonly) noexcept;
+
+   void set_blend_state(ID3D11BlendState1& blend_state,
+                        const bool additive_blending) noexcept;
+
+   void set_fog_state(const bool enabled, const glm::vec4 color) noexcept;
+
+   void set_texture(const UINT slot,
+                    const Game_texture_handle game_texture_handle) noexcept;
+
+   void set_texture(const UINT slot, const Game_rendertarget_id rendertarget) noexcept;
+
+   void set_projtex_mode(const Projtex_mode mode) noexcept;
+
+   void set_projtex_type(const Projtex_type type) noexcept;
+
+   void set_projtex_cube(const Game_texture_handle game_texture_handle) noexcept;
+
+   void set_patch_material(const Material_handle material_handle) noexcept;
+
+   void set_constants(const cb::Scene_tag, const UINT offset,
+                      const std::span<const std::byte> constants) noexcept;
+
+   void set_constants(const cb::Draw_tag, const UINT offset,
+                      const std::span<const std::byte> constants) noexcept;
+
+   void set_constants(const cb::Fixedfunction_tag,
+                      const cb::Fixedfunction constants) noexcept;
+
+   void set_constants(const cb::Skin_tag, const UINT offset,
+                      const std::span<const std::byte> constants) noexcept;
+
+   void set_constants(const cb::Draw_ps_tag, const UINT offset,
+                      const std::span<const std::byte> constants) noexcept;
+
+   void set_informal_projection_matrix(const glm::mat4& matrix) noexcept;
+
+   void draw(const D3D11_PRIMITIVE_TOPOLOGY topology, const UINT vertex_count,
+             const UINT start_vertex) noexcept;
+
+   void draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology, const UINT index_count,
+                     const UINT start_index, const UINT start_vertex) noexcept;
+
+   void rename_ia_buffer_dynamic_cpu(const Buffer_handle buffer_handle,
+                                     const std::size_t index) noexcept;
 
    auto create_game_texture(Com_ptr<ID3D11Resource> texture,
                             const D3D11_SRV_DIMENSION srv_dimension,
@@ -296,6 +392,7 @@ private:
    constexpr static auto _game_backbuffer_index = Game_rendertarget_id{0};
 
    const Com_ptr<ID3D11Device5> _device;
+   mutable std::mutex _device_context_mutex;
    const Com_ptr<ID3D11DeviceContext4> _device_context = [this] {
       Com_ptr<ID3D11DeviceContext3> dc3;
 
@@ -471,6 +568,8 @@ private:
 
    std::unique_ptr<BF2_log_monitor> _bf2_log_monitor;
    Linear_allocator<16> _constants_storage_allocator{4'194'304};
+
+   Command_queue _command_queue;
 };
 
 }

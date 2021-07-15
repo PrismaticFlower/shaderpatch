@@ -126,6 +126,9 @@
     <ClInclude Include="include\small_mutex.hpp">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\single_producer_single_consumer_queue.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\patch_texture_io.cpp">
