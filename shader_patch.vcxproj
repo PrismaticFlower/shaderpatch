@@ -258,6 +258,7 @@
     <ClInclude Include="src\core\buffer.hpp" />
     <ClInclude Include="src\core\command_queue.hpp" />
     <ClInclude Include="src\core\common.hpp" />
+    <ClInclude Include="src\core\constants_indirect_storage_allocator.hpp" />
     <ClInclude Include="src\core\constant_buffers.hpp" />
     <ClInclude Include="src\core\depthstencil.hpp" />
     <ClInclude Include="src\core\depth_msaa_resolver.hpp" />

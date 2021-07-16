@@ -22,9 +22,9 @@ public:
       return reinterpret_cast<std::byte*>(_storage.get()) + allocation_offset;
    }
 
-   auto remaining_bytes() const noexcept -> std::size_t
+   auto used_bytes() const noexcept -> std::size_t
    {
-      return _size - _head;
+      return _head;
    }
 
    void reset() noexcept

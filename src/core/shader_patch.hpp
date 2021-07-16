@@ -13,6 +13,7 @@
 #include "command_queue.hpp"
 #include "common.hpp"
 #include "constant_buffers.hpp"
+#include "constants_indirect_storage_allocator.hpp"
 #include "d3d11_helpers.hpp"
 #include "depth_msaa_resolver.hpp"
 #include "depthstencil.hpp"
@@ -26,7 +27,6 @@
 #include "input_layout_descriptions.hpp"
 #include "input_layout_element.hpp"
 #include "late_backbuffer_resolver.hpp"
-#include "linear_allocator.hpp"
 #include "oit_provider.hpp"
 #include "sampler_states.hpp"
 #include "small_function.hpp"
@@ -406,7 +406,10 @@ private:
       return dc;
    }();
    Swapchain _swapchain;
-   UINT64 _current_frame = 1; // Start at 1 so resources can use 0 as their last use.
+   std::uint64_t _current_recording_frame =
+      1; // Start at 1 so resources can use 0 as their last use.
+   std::atomic_uint64_t _completed_frame =
+      1; // Start at 1 so resources can use 0 as their last use.
 
    Input_layout_descriptions _input_layout_descriptions;
    shader::Database _shader_database{_device,
@@ -568,7 +571,8 @@ private:
    text::Font_atlas_builder _font_atlas_builder{_device};
 
    std::unique_ptr<BF2_log_monitor> _bf2_log_monitor;
-   Linear_allocator<16> _constants_storage_allocator{4'194'304};
+   Constants_indirect_storage_allocator _constants_storage_allocator{4'194'304};
+   std::atomic_size_t _constants_storage_used = 0;
 
    Command_queue _command_queue;
    std::jthread _command_processor_thread{[this](std::stop_token stop_token) {

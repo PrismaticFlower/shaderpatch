@@ -172,7 +172,10 @@ void Shader_patch::present_async() noexcept
 {
    _command_queue.enqueue({.type = Command::present, .present = {}});
 
-   _command_queue.wait_for_empty(); // TODO: Remove me once _constants_storage_allocator is multibuffered.
+   _constants_storage_used.store(_constants_storage_allocator.used_bytes(),
+                                 std::memory_order_relaxed);
+   _constants_storage_allocator.reset(_current_recording_frame, _completed_frame);
+   _current_recording_frame += 1;
 }
 
 auto Shader_patch::get_back_buffer() noexcept -> Game_rendertarget_id
@@ -1094,11 +1097,13 @@ auto Shader_patch::discard_ia_buffer_dynamic_cpu(Buffer& buffer) noexcept -> std
 {
    std::scoped_lock lock{buffer.dynamic_instances_mutex};
 
+   const auto completed_frame = _completed_frame.load(std::memory_order_relaxed);
+
    for (std::size_t i = 0; i < buffer.dynamic_instances.size(); ++i) {
       auto& instance = buffer.dynamic_instances[i];
 
-      if (instance.last_used < _current_frame) {
-         instance.last_used = _current_frame;
+      if (instance.last_used < completed_frame) {
+         instance.last_used = _current_recording_frame;
 
          return i;
       }
@@ -1117,7 +1122,8 @@ auto Shader_patch::discard_ia_buffer_dynamic_cpu(Buffer& buffer) noexcept -> std
    const auto index = buffer.dynamic_instances.size();
 
    buffer.dynamic_instances.push_back(
-      Dynamic_buffer_instance{.buffer = new_buffer, .last_used = _current_frame});
+      Dynamic_buffer_instance{.buffer = new_buffer,
+                              .last_used = _current_recording_frame});
 
    return index;
 }
@@ -1226,11 +1232,6 @@ void Shader_patch::present() noexcept
 {
    std::scoped_lock lock{_game_rendertargets_mutex};
 
-   ImGui::Text(fmt::format("remaining bytes {}",
-                           _constants_storage_allocator.remaining_bytes())
-                  .c_str());
-
-   _constants_storage_allocator.reset();
    _effects.profiler.end_frame(*_device_context);
    _game_postprocessing.end_frame();
 
@@ -2241,7 +2242,8 @@ void Shader_patch::update_frame_state() noexcept
    _lock_projtex_cube_slot = false;
    _oit_active = false;
 
-   ++_current_frame;
+   _completed_frame.fetch_add(1);
+   _completed_frame.notify_all();
 }
 
 void Shader_patch::update_imgui() noexcept
@@ -2261,6 +2263,18 @@ void Shader_patch::update_imgui() noexcept
       material::show_editor(_material_factory, _materials_pool);
 
       if (_bf2_log_monitor) _bf2_log_monitor->show_imgui(true);
+
+      if (ImGui::Begin("CPU Pipeline Stats")) {
+         ImGui::Text(fmt::format("Command Queue Waits/Stalls: {}"sv,
+                                 _command_queue.wait_count())
+                        .c_str());
+
+         ImGui::Text(fmt::format("Indirect Constant Storage Used: {}"sv,
+                                 _constants_storage_used.load(std::memory_order_relaxed))
+                        .c_str());
+      }
+
+      ImGui::End();
    }
 
    if (_imgui_enabled) {

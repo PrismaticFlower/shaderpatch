@@ -306,11 +306,18 @@ public:
 
    void wait_for_empty()
    {
+      _waits.fetch_add(1, std::memory_order_relaxed);
       _queue.wait_for_empty();
+   }
+
+   auto wait_count() noexcept -> int
+   {
+      return _waits.exchange(0, std::memory_order_relaxed);
    }
 
 private:
    single_producer_single_consumer_queue<Command_data, max_queued_commands> _queue;
+   std::atomic_int _waits = 0;
 };
 
 }
