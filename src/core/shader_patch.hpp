@@ -33,7 +33,6 @@
 #include "swapchain.hpp"
 #include "text/font_atlas_builder.hpp"
 #include "texture_database.hpp"
-#include "texture_loader.hpp"
 
 #include <bit>
 #include <mutex>
@@ -539,8 +538,7 @@ private:
    Late_backbuffer_resolver _late_backbuffer_resolver{*_device, _shader_database};
    const Depth_msaa_resolver _depth_msaa_resolver{*_device, _shader_database};
    Sampler_states _sampler_states{*_device};
-   Shader_resource_database _shader_resource_database{
-      load_texture_lvl(L"data/shaderpatch/textures.lvl", *_device)};
+   Shader_resource_database _shader_resource_database;
    Game_alt_postprocessing _game_postprocessing{*_device, _shader_database};
 
    std::mutex _game_texture_pool_mutex;

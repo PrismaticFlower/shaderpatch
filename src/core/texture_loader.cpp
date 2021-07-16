@@ -6,13 +6,12 @@
 
 namespace sp::core {
 
-auto load_texture_lvl(const std::filesystem::path lvl_path,
-                      ID3D11Device1& device) noexcept -> Shader_resource_database
+void load_texture_lvl(const std::filesystem::path lvl_path, ID3D11Device1& device,
+                      Shader_resource_database& database) noexcept
 {
    try {
       win32::Memeory_mapped_file file{lvl_path};
       ucfb::Reader reader{file.bytes()};
-      Shader_resource_database database;
 
       while (reader) {
          auto [srv, name] =
@@ -20,8 +19,6 @@ auto load_texture_lvl(const std::filesystem::path lvl_path,
 
          database.insert(std::move(srv), std::move(name));
       }
-
-      return database;
    }
    catch (std::exception& e) {
       log_and_terminate("Failed to load builtin textures! reason: ", e.what());

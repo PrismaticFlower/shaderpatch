@@ -9,6 +9,7 @@
 #include "patch_material_io.hpp"
 #include "patch_texture_io.hpp"
 #include "screenshot.hpp"
+#include "texture_loader.hpp"
 #include "utility.hpp"
 
 #include "../imgui/imgui_impl_dx11.h"
@@ -117,6 +118,9 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
    _materials_pool.reserve(1024);
 
    add_builtin_textures(*_device, _shader_resource_database);
+   load_texture_lvl(L"data/shaderpatch/textures.lvl", *_device,
+                    _shader_resource_database);
+
    bind_static_resources();
    update_rendertargets();
    update_refraction_target();

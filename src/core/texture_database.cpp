@@ -66,6 +66,8 @@ auto unknown_resource_name(ID3D11ShaderResourceView& srv) noexcept -> std::strin
 auto Shader_resource_database::at_if(const std::string_view name) const noexcept
    -> Com_ptr<ID3D11ShaderResourceView>
 {
+   std::scoped_lock lock{_resources_mutex};
+
    if (auto srv = lookup(name); srv) {
       return copy_raw_com_ptr(srv);
    }
@@ -76,6 +78,8 @@ auto Shader_resource_database::at_if(const std::string_view name) const noexcept
 auto Shader_resource_database::reverse_lookup(ID3D11ShaderResourceView* srv) noexcept
    -> Reverse_lookup_result
 {
+   std::scoped_lock lock{_resources_mutex};
+
    auto it = std::find_if(_resources.cbegin(), _resources.cend(),
                           [srv](const auto& res) { return res.first == srv; });
 
@@ -89,7 +93,9 @@ auto Shader_resource_database::reverse_lookup(ID3D11ShaderResourceView* srv) noe
 void Shader_resource_database::insert(Com_ptr<ID3D11ShaderResourceView> srv,
                                       const std::string_view name) noexcept
 {
-   std::string name_str{name.empty() ? unknown_resource_name(*srv) : name};
+   std::scoped_lock lock{_resources_mutex};
+
+   std::string name_str{name.empty() ? unknown_resource_name(*srv) : std::string{name}};
 
    if (auto it =
           std::find_if(_resources.begin(), _resources.end(),
@@ -105,6 +111,8 @@ void Shader_resource_database::insert(Com_ptr<ID3D11ShaderResourceView> srv,
 
 void Shader_resource_database::erase(ID3D11ShaderResourceView* srv) noexcept
 {
+   std::scoped_lock lock{_resources_mutex};
+
    auto it = std::find_if(_resources.cbegin(), _resources.cend(),
                           [srv](const auto& res) { return res.first == srv; });
 
@@ -117,6 +125,8 @@ void Shader_resource_database::erase(ID3D11ShaderResourceView* srv) noexcept
 
 auto Shader_resource_database::imgui_resource_picker() noexcept -> Imgui_pick_result
 {
+   std::scoped_lock lock{_resources_mutex};
+
    Imgui_pick_result result{};
 
    ImGui::InputText("Filter", _imgui_filter);
@@ -155,8 +165,8 @@ auto Shader_resource_database::imgui_resource_picker() noexcept -> Imgui_pick_re
    return result;
 }
 
-auto Shader_resource_database::lookup(const std::string_view name) const
-   noexcept -> ID3D11ShaderResourceView*
+auto Shader_resource_database::lookup(const std::string_view name) const noexcept
+   -> ID3D11ShaderResourceView*
 {
    if (name.front() == '$') return builtin_lookup(name);
 
@@ -166,8 +176,8 @@ auto Shader_resource_database::lookup(const std::string_view name) const
    return (it != _resources.cend()) ? it->first.get() : nullptr;
 }
 
-auto Shader_resource_database::builtin_lookup(const std::string_view name) const
-   noexcept -> ID3D11ShaderResourceView*
+auto Shader_resource_database::builtin_lookup(const std::string_view name) const noexcept
+   -> ID3D11ShaderResourceView*
 {
    Expects(!name.empty());
 

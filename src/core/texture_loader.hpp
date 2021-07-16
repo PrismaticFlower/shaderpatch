@@ -9,7 +9,7 @@ struct ID3D11Device1;
 
 namespace sp::core {
 
-auto load_texture_lvl(const std::filesystem::path lvl_path,
-                      ID3D11Device1& device) noexcept -> Shader_resource_database;
+void load_texture_lvl(const std::filesystem::path lvl_path, ID3D11Device1& device,
+                      Shader_resource_database& database) noexcept;
 
 }

@@ -3,6 +3,7 @@
 #include "com_ptr.hpp"
 
 #include <memory>
+#include <mutex>
 #include <string>
 #include <utility>
 #include <vector>
@@ -44,6 +45,7 @@ private:
    auto builtin_lookup(const std::string_view name) const noexcept
       -> ID3D11ShaderResourceView*;
 
+   mutable std::mutex _resources_mutex;
    std::vector<std::pair<Com_ptr<ID3D11ShaderResourceView>, std::string>> _resources = [] {
       std::vector<std::pair<Com_ptr<ID3D11ShaderResourceView>, std::string>> res;
       res.reserve(1024);
