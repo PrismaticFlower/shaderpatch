@@ -2330,7 +2330,7 @@ void Shader_patch::update_rendertargets() noexcept
          return Swapchain::format;
    }();
 
-   const auto new_aa_method = [&] {
+   const auto new_aa_method = [&]() -> Antialiasing_method {
       if (user_config.graphics.antialiasing_method != Antialiasing_method::none &&
           (_oit_provider.enabled() ||
            (_effects.enabled() && _effects.config().oit_requested))) {

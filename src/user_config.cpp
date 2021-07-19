@@ -4,7 +4,27 @@
 
 #include <filesystem>
 
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#pragma warning(disable : 4127)
+
+#include <yaml-cpp/yaml.h>
+#pragma warning(pop)
+
 namespace sp {
+
+namespace {
+
+void make_checkbox(const char* label, User_config_value<bool>& value)
+{
+   bool current = value;
+
+   ImGui::Checkbox(label, &current);
+
+   value = current;
+}
+
+}
 
 using namespace std::literals;
 
@@ -50,29 +70,34 @@ void User_config::show_imgui() noexcept
                                             to_string(Refraction_quality::high),
                                             to_string(Refraction_quality::ultra)}));
 
-      ImGui::Checkbox("Enable Order-Independent Transparency", &graphics.enable_oit);
+      make_checkbox("Enable Order-Independent Transparency", graphics.enable_oit);
 
-      ImGui::Checkbox("Enable Alternative Post Processing",
-                      &graphics.enable_alternative_postprocessing);
+      make_checkbox("Enable Alternative Post Processing",
+                    graphics.enable_alternative_postprocessing);
 
-      ImGui::Checkbox("Enable Scene Blur", &graphics.enable_scene_blur);
+      make_checkbox("Enable Scene Blur", graphics.enable_scene_blur);
 
-      ImGui::Checkbox("Enable 16-Bit Color Channel Rendering",
-                      &graphics.enable_16bit_color_rendering);
+      make_checkbox("Enable 16-Bit Color Channel Rendering",
+                    graphics.enable_16bit_color_rendering);
 
-      ImGui::Checkbox("Disable Light Brightness Rescaling",
-                      &graphics.disable_light_brightness_rescaling);
+      make_checkbox("Disable Light Brightness Rescaling",
+                    graphics.disable_light_brightness_rescaling);
 
-      ImGui::Checkbox("Enable User Effects Config", &graphics.enable_user_effects_config);
-      ImGui::InputText("User Effects Config", graphics.user_effects_config);
+      make_checkbox("Enable User Effects Config", graphics.enable_user_effects_config);
+
+      std::string user_effects_config = graphics.user_effects_config;
+
+      ImGui::InputText("User Effects Config", user_effects_config);
+
+      graphics.user_effects_config = std::move(user_effects_config);
    }
 
    if (ImGui::CollapsingHeader("Effects", ImGuiTreeNodeFlags_DefaultOpen)) {
-      ImGui::Checkbox("Bloom", &effects.bloom);
-      ImGui::Checkbox("Vignette", &effects.vignette);
-      ImGui::Checkbox("Film Grain", &effects.film_grain);
-      ImGui::Checkbox("Allow Colored Film Grain", &effects.colored_film_grain);
-      ImGui::Checkbox("SSAO", &effects.ssao);
+      make_checkbox("Bloom", effects.bloom);
+      make_checkbox("Vignette", effects.vignette);
+      make_checkbox("Film Grain", effects.film_grain);
+      make_checkbox("Allow Colored Film Grain", effects.colored_film_grain);
+      make_checkbox("SSAO", effects.ssao);
 
       effects.ssao_quality = ssao_quality_from_string(ImGui::StringPicker(
          "SSAO Quality", std::string{to_string(effects.ssao_quality)},

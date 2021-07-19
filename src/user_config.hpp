@@ -3,20 +3,15 @@
 #include "imgui/imgui_ext.hpp"
 #include "logger.hpp"
 
+#include <atomic>
 #include <cstdint>
 #include <filesystem>
 #include <iomanip>
+#include <shared_mutex>
 #include <string>
 #include <string_view>
 
 #include "imgui/imgui.h"
-
-#pragma warning(push)
-#pragma warning(disable : 4996)
-#pragma warning(disable : 4127)
-
-#include <yaml-cpp/yaml.h>
-#pragma warning(pop)
 
 namespace sp {
 
@@ -36,13 +31,110 @@ enum class SSAO_quality : std::int8_t { fastest, fast, medium, high, highest };
 
 enum class Refraction_quality : std::int8_t { low, medium, high, ultra };
 
+template<typename T>
+concept Atomic_user_config_value = std::is_trivial_v<T>;
+
+template<typename T>
+struct User_config_value {
+   User_config_value() = default;
+
+   User_config_value(const User_config_value&) = delete;
+   auto operator=(const User_config_value&) -> User_config_value& = delete;
+
+   User_config_value(User_config_value&&) = delete;
+   auto operator=(User_config_value&&) -> User_config_value& = delete;
+
+   template<typename... Args>
+   User_config_value(Args&&... args) noexcept
+      requires std::is_constructible_v<T, Args...>
+      : _value{std::forward<Args>(args)...}
+   {
+   }
+
+   template<typename U>
+   auto operator=(U&& other) noexcept
+      -> User_config_value& requires std::is_assignable_v<T, U>
+   {
+      std::scoped_lock lock{_value_mutex};
+
+      _value = std::forward<U>(other);
+
+      return *this;
+   }
+
+   operator T() const noexcept
+   {
+      std::shared_lock lock{_value_mutex};
+
+      return _value;
+   }
+
+   template<typename... Args>
+   void set(Args&&... args) requires std::is_constructible_v<T, Args...>
+   {
+      std::scoped_lock lock{_value_mutex};
+
+      _value = T{std::forward<Args>(args)...};
+   }
+
+   auto get() const noexcept -> T
+   {
+      return static_cast<T>(*this);
+   }
+
+private:
+   mutable std::shared_mutex _value_mutex;
+   T _value{};
+};
+
+template<Atomic_user_config_value T>
+struct User_config_value<T> {
+   User_config_value() = default;
+
+   User_config_value(const User_config_value&) = delete;
+   auto operator=(const User_config_value&) -> User_config_value& = delete;
+
+   User_config_value(User_config_value&&) = delete;
+   auto operator=(User_config_value&&) -> User_config_value& = delete;
+
+   User_config_value(T value) noexcept : _value{value} {}
+
+   auto operator=(T value) noexcept -> User_config_value&
+   {
+      _value.store(value, std::memory_order_relaxed);
+
+      return *this;
+   }
+
+   operator T() const noexcept
+   {
+      return _value.load(std::memory_order_relaxed);
+   }
+
+   void set(T value) noexcept
+   {
+      _value.store(value, std::memory_order_relaxed);
+   }
+
+   auto get() const noexcept -> T
+   {
+      return static_cast<T>(*this);
+   }
+
+private:
+   std::atomic<T> _value{};
+};
+
 struct Effects_user_config {
-   bool bloom = true;
-   bool vignette = true;
-   bool film_grain = true;
-   bool colored_film_grain = true;
-   bool ssao = true;
-   SSAO_quality ssao_quality = SSAO_quality::medium;
+   template<typename T>
+   using Value = User_config_value<T>;
+
+   Value<bool> bloom = true;
+   Value<bool> vignette = true;
+   Value<bool> film_grain = true;
+   Value<bool> colored_film_grain = true;
+   Value<bool> ssao = true;
+   Value<SSAO_quality> ssao_quality = SSAO_quality::medium;
 };
 
 struct User_config {
@@ -50,56 +142,60 @@ struct User_config {
 
    explicit User_config(const std::string& path) noexcept;
 
-   bool enabled = true;
+   template<typename T>
+   using Value = User_config_value<T>;
+
+   Value<bool> enabled = true;
 
    struct {
-      std::uint32_t screen_percent = 100;
-      bool allow_tearing = true;
-      bool centred = true;
-      bool dpi_aware = true;
-      bool dpi_scaling = true;
-      bool treat_800x600_as_interface = true;
-      bool windowed_interface = false;
-      bool scalable_fonts = true;
-      bool enable_game_perceived_resolution_override = false;
-      std::uint32_t game_perceived_resolution_override_width = 1920;
-      std::uint32_t game_perceived_resolution_override_height = 1080;
+      Value<std::uint32_t> screen_percent = 100;
+      Value<bool> allow_tearing = true;
+      Value<bool> centred = true;
+      Value<bool> dpi_aware = true;
+      Value<bool> dpi_scaling = true;
+      Value<bool> treat_800x600_as_interface = true;
+      Value<bool> windowed_interface = false;
+      Value<bool> scalable_fonts = true;
+      Value<bool> enable_game_perceived_resolution_override = false;
+      Value<std::uint32_t> game_perceived_resolution_override_width = 1920;
+      Value<std::uint32_t> game_perceived_resolution_override_height = 1080;
    } display;
 
    struct {
-      GPU_selection_method gpu_selection_method =
+      Value<GPU_selection_method> gpu_selection_method =
          GPU_selection_method::highest_performance;
-      Antialiasing_method antialiasing_method = Antialiasing_method::cmaa2;
-      Anisotropic_filtering anisotropic_filtering = Anisotropic_filtering::x16;
-      Refraction_quality refraction_quality = Refraction_quality::medium;
-      bool enable_oit = false;
-      bool enable_alternative_postprocessing = true;
-      bool enable_scene_blur = true;
-      bool enable_16bit_color_rendering = true;
-      bool disable_light_brightness_rescaling = false;
-      bool enable_user_effects_config = false;
-      std::string user_effects_config;
+      Value<Antialiasing_method> antialiasing_method = Antialiasing_method::cmaa2;
+      Value<Anisotropic_filtering> anisotropic_filtering = Anisotropic_filtering::x16;
+      Value<Refraction_quality> refraction_quality = Refraction_quality::medium;
+      Value<bool> enable_oit = false;
+      Value<bool> enable_alternative_postprocessing = true;
+      Value<bool> enable_scene_blur = true;
+      Value<bool> enable_16bit_color_rendering = true;
+      Value<bool> disable_light_brightness_rescaling = false;
+      Value<bool> enable_user_effects_config = false;
+      Value<std::string> user_effects_config = "user.spfx";
    } graphics;
 
    Effects_user_config effects{};
 
    struct {
-      std::uintptr_t toggle_key{0};
+      Value<std::uintptr_t> toggle_key{0};
 
-      bool monitor_bfront2_log = false;
-      bool use_d3d11_debug_layer = false;
-      bool use_dxgi_1_2_factory = false;
+      Value<bool> monitor_bfront2_log = false;
+      Value<bool> use_d3d11_debug_layer = false;
+      Value<bool> use_dxgi_1_2_factory = false;
 
-      std::filesystem::path shader_cache_path =
+      Value<std::filesystem::path> shader_cache_path =
          LR"(.\data\shaderpatch\.shader_dxbc_cache)";
-      std::filesystem::path shader_definitions_path =
+      Value<std::filesystem::path> shader_definitions_path =
          LR"(.\data\shaderpatch\shaders\definitions)";
-      std::filesystem::path shader_source_path = LR"(.\data\shaderpatch\shaders\src)";
+      Value<std::filesystem::path> shader_source_path =
+         LR"(.\data\shaderpatch\shaders\src)";
 
-      std::filesystem::path material_scripts_path =
+      Value<std::filesystem::path> material_scripts_path =
          LR"(.\data\shaderpatch\scripts\material)";
 
-      std::filesystem::path scalable_font_name = L"ariblk.ttf";
+      Value<std::filesystem::path> scalable_font_name = L"ariblk.ttf";
    } developer;
 
    void show_imgui() noexcept;

@@ -35,6 +35,7 @@ SSAO_params show_ssao_imgui(SSAO_params params) noexcept;
 FFX_cas_params show_ffx_cas_imgui(FFX_cas_params params) noexcept;
 
 void show_tonemapping_curve(std::function<float(float)> tonemapper) noexcept;
+
 }
 
 Control::Control(Com_ptr<ID3D11Device4> device, shader::Database& shaders,
@@ -46,16 +47,18 @@ Control::Control(Com_ptr<ID3D11Device4> device, shader::Database& shaders,
      profiler{device},
      _game_thread_tasks{game_thread_tasks}
 {
-   if (user_config.graphics.enable_user_effects_config)
-      load_params_from_yaml_file(user_config.graphics.user_effects_config);
+   if (user_config.graphics.enable_user_effects_config) {
+      load_params_from_yaml_file(user_config.graphics.user_effects_config.get());
+   }
 }
 
 bool Control::enabled(const bool enabled) noexcept
 {
    _enabled = enabled;
 
-   if (!_enabled && user_config.graphics.enable_user_effects_config)
-      load_params_from_yaml_file(user_config.graphics.user_effects_config);
+   if (!_enabled && user_config.graphics.enable_user_effects_config) {
+      load_params_from_yaml_file(user_config.graphics.user_effects_config.get());
+   }
 
    return (_enabled || user_config.graphics.enable_user_effects_config);
 }
