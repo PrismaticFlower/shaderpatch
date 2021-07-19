@@ -70,7 +70,8 @@ __declspec(dllexport) void prime_shader_cache() noexcept
    Com_ptr<IDXGIAdapter4> adapter;
    factory->EnumWarpAdapter(__uuidof(IDXGIAdapter4), adapter.void_clear_and_assign());
 
-   core::Shader_patch shader_patch{*adapter, window.get(), 800, 600};
+   core::Shader_patch shader_patch{*adapter, window.get(), 800, 600,
+                                   std::make_shared<Game_thread_tasks>()};
 
    shader_patch.force_shader_cache_save_to_disk();
 }

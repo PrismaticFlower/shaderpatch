@@ -3,6 +3,7 @@
 #include "../effects/control.hpp"
 #include "../effects/profiler.hpp"
 #include "../effects/rendertarget_allocator.hpp"
+#include "../game_thread_tasks.hpp"
 #include "../material/factory.hpp"
 #include "../material/material.hpp"
 #include "../material/shader_factory.hpp"
@@ -54,7 +55,8 @@ namespace core {
 class Shader_patch {
 public:
    Shader_patch(IDXGIAdapter4& adapter, const HWND window, const UINT width,
-                const UINT height) noexcept;
+                const UINT height,
+                std::shared_ptr<Game_thread_tasks> game_thread_tasks) noexcept;
 
    ~Shader_patch();
 
@@ -546,7 +548,7 @@ private:
    std::mutex _buffer_pool_mutex;
    std::vector<std::unique_ptr<Buffer>> _buffer_pool;
 
-   effects::Control _effects{_device, _shader_database};
+   effects::Control _effects;
    effects::Rendertarget_allocator _rendertarget_allocator{_device};
 
    material::Factory _material_factory{_device, _shader_rendertypes_database,

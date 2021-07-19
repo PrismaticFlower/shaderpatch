@@ -37,8 +37,14 @@ FFX_cas_params show_ffx_cas_imgui(FFX_cas_params params) noexcept;
 void show_tonemapping_curve(std::function<float(float)> tonemapper) noexcept;
 }
 
-Control::Control(Com_ptr<ID3D11Device4> device, shader::Database& shaders) noexcept
-   : postprocess{device, shaders}, cmaa2{device, shaders}, ssao{device}, ffx_cas{device, shaders}, profiler{device}
+Control::Control(Com_ptr<ID3D11Device4> device, shader::Database& shaders,
+                 std::shared_ptr<Game_thread_tasks> game_thread_tasks) noexcept
+   : postprocess{device, shaders},
+     cmaa2{device, shaders},
+     ssao{device},
+     ffx_cas{device, shaders},
+     profiler{device},
+     _game_thread_tasks{game_thread_tasks}
 {
    if (user_config.graphics.enable_user_effects_config)
       load_params_from_yaml_file(user_config.graphics.user_effects_config);
@@ -252,13 +258,16 @@ void Control::load_params_from_yaml_file(const fs::path& load_from) noexcept
 
 void Control::imgui_save_widget(const HWND game_window) noexcept
 {
-   if (ImGui::Button("Open Config")) {
-      if (auto path = win32::open_file_dialog({{L"Effects Config", L"*.spfx"}},
-                                              game_window, fs::current_path(),
-                                              L"mod_config.spfx"s);
-          path) {
-         load_params_from_yaml_file(*path);
-      }
+   const bool selection_in_progress = _path_selection_status != Path_selection::none;
+
+   if (selection_in_progress) update_path_selection();
+
+   if (ImGui::Button("Open Config") && !selection_in_progress) {
+      _path_selection_status = Path_selection::open;
+      _path_selection_result = _game_thread_tasks->schedule([=] {
+         return win32::open_file_dialog({{L"Effects Config", L"*.spfx"}}, game_window,
+                                        fs::current_path(), L"mod_config.spfx"s);
+      });
    }
 
    if (ImGui::IsItemHovered()) {
@@ -267,18 +276,17 @@ void Control::imgui_save_widget(const HWND game_window) noexcept
 
    if (_open_failure) {
       ImGui::SameLine();
-      ImGui::TextColored({1.0f, 0.2f, 0.33f, 1.0f}, "Open Failed!");
+      ImGui::Text("Open Failed!");
    }
 
    ImGui::SameLine();
 
-   if (ImGui::Button("Save Config")) {
-      if (auto path = win32::save_file_dialog({{L"Effects Config", L"*.spfx"}},
-                                              game_window, fs::current_path(),
-                                              L"mod_config.spfx"s);
-          path) {
-         save_params_to_yaml_file(*path);
-      }
+   if (ImGui::Button("Save Config") && !selection_in_progress) {
+      _path_selection_status = Path_selection::save;
+      _path_selection_result = _game_thread_tasks->schedule([=] {
+         return win32::save_file_dialog({{L"Effects Config", L"*.spfx"}}, game_window,
+                                        fs::current_path(), L"mod_config.spfx"s);
+      });
    }
 
    if (ImGui::IsItemHovered()) {
@@ -288,13 +296,14 @@ void Control::imgui_save_widget(const HWND game_window) noexcept
 
    ImGui::SameLine();
 
-   if (ImGui::Button("Save Munged Config")) {
-      if (auto path =
-             win32::save_file_dialog({{L"Munged Effects Config", L"*.mspfx"}}, game_window,
-                                     fs::current_path(), L"mod_config.mspfx"s);
-          path) {
-         save_params_to_munged_file(*path);
-      }
+   if (ImGui::Button("Save Munged Config") && !selection_in_progress) {
+      _path_selection_status = Path_selection::save_munged;
+      _path_selection_result = _game_thread_tasks->schedule([=] {
+         return win32::save_file_dialog({{L"Munged Effects Config",
+                                          L"*.mspfx"}},
+                                        game_window, fs::current_path(),
+                                        L"mod_config.mspfx"s);
+      });
    }
 
    if (ImGui::IsItemHovered()) {
@@ -307,7 +316,7 @@ void Control::imgui_save_widget(const HWND game_window) noexcept
 
    if (_save_failure) {
       ImGui::SameLine();
-      ImGui::TextColored({1.0f, 0.2f, 0.33f, 1.0f}, "Save Failed!");
+      ImGui::Text("Save Failed!");
    }
 }
 
@@ -367,6 +376,26 @@ void Control::show_post_processing_imgui() noexcept
 void Control::config_changed() noexcept
 {
    postprocess.hdr_state(_config.hdr_rendering ? Hdr_state::hdr : Hdr_state::stock);
+}
+
+void Control::update_path_selection() noexcept
+{
+   if (!_path_selection_result.ready()) return;
+
+   auto selection_type = std::exchange(_path_selection_status, Path_selection::none);
+   auto path = _path_selection_result.get();
+
+   if (!path) return;
+
+   if (selection_type == Path_selection::open) {
+      load_params_from_yaml_file(*path);
+   }
+   else if (selection_type == Path_selection::save) {
+      save_params_to_yaml_file(*path);
+   }
+   else if (selection_type == Path_selection::save_munged) {
+      save_params_to_munged_file(*path);
+   }
 }
 
 namespace {

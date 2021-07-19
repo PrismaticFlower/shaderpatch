@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../core/shader_patch.hpp"
+#include "../game_thread_tasks.hpp"
 #include "../logger.hpp"
 #include "com_ptr.hpp"
 #include "helpers.hpp"
@@ -588,6 +589,9 @@ private:
    IDirect3D9& _parent;
    const Com_ptr<IDXGIAdapter4> _adapter;
    const HWND _window;
+
+   const std::shared_ptr<Game_thread_tasks> _game_thread_tasks =
+      std::make_shared<Game_thread_tasks>();
 
    core::Shader_patch _shader_patch;
    Render_state_manager _render_state_manager;

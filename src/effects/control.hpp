@@ -5,6 +5,7 @@
 #include "../effects/postprocess.hpp"
 #include "../effects/profiler.hpp"
 #include "../effects/ssao.hpp"
+#include "../game_thread_tasks.hpp"
 #include "com_ptr.hpp"
 
 #include <filesystem>
@@ -32,7 +33,8 @@ struct Effects_control_config {
 
 class Control {
 public:
-   Control(Com_ptr<ID3D11Device4> device, shader::Database& shaders) noexcept;
+   Control(Com_ptr<ID3D11Device4> device, shader::Database& shaders,
+           std::shared_ptr<Game_thread_tasks> game_thread_tasks) noexcept;
 
    bool enabled(const bool enabled) noexcept;
 
@@ -75,11 +77,25 @@ private:
 
    void config_changed() noexcept;
 
+   void update_path_selection() noexcept;
+
    bool _enabled = false;
    bool _open_failure = false;
    bool _save_failure = false;
 
    Effects_control_config _config{};
+
+   const std::shared_ptr<Game_thread_tasks> _game_thread_tasks;
+
+   enum class Path_selection {
+      none,
+      open,
+      save,
+      save_munged,
+   };
+
+   Path_selection _path_selection_status = Path_selection::none;
+   Game_thread_task_result<std::optional<std::filesystem::path>> _path_selection_result;
 };
 }
 

@@ -355,6 +355,7 @@
     <ClInclude Include="src\game_support\shader_declaration.hpp" />
     <ClInclude Include="src\game_support\shader_declarations.hpp" />
     <ClInclude Include="src\game_support\shader_metadata.hpp" />
+    <ClInclude Include="src\game_thread_tasks.hpp" />
     <ClInclude Include="src\hook_vtable.hpp" />
     <ClInclude Include="src\imgui\imconfig.h" />
     <ClInclude Include="src\imgui\imgui.h" />

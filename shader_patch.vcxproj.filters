@@ -704,6 +704,7 @@
     <ClInclude Include="src\core\buffer.hpp" />
     <ClInclude Include="src\core\common.hpp" />
     <ClInclude Include="src\core\constants_indirect_storage_allocator.hpp" />
+    <ClInclude Include="src\game_thread_tasks.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />

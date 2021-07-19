@@ -51,7 +51,7 @@ Com_ptr<Device> Device::create(IDirect3D9& parent, IDXGIAdapter4& adapter,
 Device::Device(IDirect3D9& parent, IDXGIAdapter4& adapter, const HWND window,
                const UINT width, const UINT height) noexcept
    : _parent{parent},
-     _shader_patch{adapter, window, width, height},
+     _shader_patch{adapter, window, width, height, _game_thread_tasks},
      _adapter{copy_raw_com_ptr(adapter)},
      _window{window},
      _actual_width{width},
@@ -283,6 +283,7 @@ HRESULT Device::Present(const RECT*, const RECT*, HWND, const RGNDATA*) noexcept
    Debug_trace::func(__FUNCSIG__);
 
    _shader_patch.present_async();
+   _game_thread_tasks->execute_all();
 
    Debug_trace::reset();
 

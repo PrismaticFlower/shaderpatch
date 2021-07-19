@@ -101,7 +101,8 @@ auto clear_color_to_array(const Clear_color color) noexcept -> std::array<float,
 }
 
 Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
-                           const UINT width, const UINT height) noexcept
+                           const UINT width, const UINT height,
+                           std::shared_ptr<Game_thread_tasks> game_thread_tasks) noexcept
    : _device{create_device(adapter)},
      _swapchain{_device, adapter, window, width, height},
      _window{window},
@@ -109,6 +110,7 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
                              to_sample_count(user_config.graphics.antialiasing_method)},
      _farscene_depthstencil{*_device, width, height, 1},
      _reflectionscene_depthstencil{*_device, 512, 256, 1},
+     _effects{_device, _shader_database, game_thread_tasks},
      _bf2_log_monitor{user_config.developer.monitor_bfront2_log
                          ? std::make_unique<BF2_log_monitor>()
                          : nullptr}
