@@ -199,9 +199,15 @@ void Texture3d_resource::create_resource() noexcept
    case Volume_resource_type::fx_config:
       _patch_effects_config_handle = _patch.create_patch_effects_config(payload);
       break;
-   case Volume_resource_type::colorgrading_regions:
-      _patch.load_colorgrading_regions(payload);
+   case Volume_resource_type::colorgrading_regions: {
+      auto async_payload = _patch.allocate_memory_for_async_data(payload.size());
+
+      std::memcpy(async_payload.data(), payload.data(), payload.size());
+
+      _patch.load_colorgrading_regions_async(async_payload);
+
       break;
+   }
    default:
       log_and_terminate("Unexpected volume resource type!");
    }

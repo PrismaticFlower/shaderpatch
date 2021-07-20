@@ -120,6 +120,8 @@ public:
 
    void destroy_patch_effects_config_async(const Patch_effects_config_handle effects_config) noexcept;
 
+   void load_colorgrading_regions_async(const std::span<const std::byte> regions_data) noexcept;
+
    auto create_game_input_layout(const std::span<const Input_layout_element> layout,
                                  const bool compressed,
                                  const bool particle_texture_scale) noexcept
@@ -130,8 +132,6 @@ public:
       -> Buffer_handle;
 
    void destroy_ia_buffer_async(const Buffer_handle buffer_handle) noexcept;
-
-   void load_colorgrading_regions(const std::span<const std::byte> regions_data) noexcept;
 
    void update_ia_buffer(const Buffer_handle buffer_handle, const UINT offset,
                          const UINT size, const std::byte* data) noexcept;
@@ -237,6 +237,8 @@ private:
 
    void process_command(const Command_data& command) noexcept;
 
+   void load_patch_effects_config_async(const std::string_view effects_config) noexcept;
+
    auto discard_ia_buffer_dynamic_cpu(Buffer& buffer) noexcept -> std::size_t;
 
    void rename_ia_buffer_dynamic_cpu_async(const Buffer_handle buffer_handle,
@@ -256,7 +258,11 @@ private:
 
    void destroy_patch_material(const Material_handle material_handle) noexcept;
 
+   void load_patch_effects_config(const std::string_view effects_config) noexcept;
+
    void destroy_patch_effects_config(const Patch_effects_config_handle effects_config) noexcept;
+
+   void load_colorgrading_regions(const std::span<const std::byte> regions_data) noexcept;
 
    void destroy_ia_buffer(const Buffer_handle buffer_handle) noexcept;
 
@@ -562,7 +568,7 @@ private:
 
    bool _effects_active = false;
    DXGI_FORMAT _current_rt_format = Swapchain::format;
-   std::uintptr_t _current_effects_id = 0;
+   std::atomic_uintptr_t _current_effects_id = 0;
 
    UINT _rt_sample_count = 1;
    Antialiasing_method _aa_method = Antialiasing_method::none;

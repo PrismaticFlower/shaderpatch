@@ -447,23 +447,22 @@ void Shader_patch::destroy_patch_material_async(const Material_handle material_h
        .destroy_patch_material = {.material_handle = material_handle}});
 }
 
-auto Shader_patch::create_patch_effects_config(const std::span<const std::byte> effects_config) noexcept
+auto Shader_patch::create_patch_effects_config(const std::span<const std::byte> effects_config_bytes) noexcept
    -> Patch_effects_config_handle
 {
-   try {
-      std::string config_str{reinterpret_cast<const char*>(effects_config.data()),
-                             static_cast<std::size_t>(effects_config.size())};
+   auto string_memory = allocate_memory_for_async_data(effects_config_bytes.size());
 
-      while (config_str.back() == '\0') config_str.pop_back();
+   std::memcpy(string_memory.data(), effects_config_bytes.data(),
+               effects_config_bytes.size());
 
-      _effects.read_config(YAML::Load(config_str));
-      _effects.enabled(true);
+   std::string_view string{reinterpret_cast<const char*>(string_memory.data()),
+                           string_memory.size()};
 
-      return Patch_effects_config_handle{_current_effects_id += 1};
-   }
-   catch (std::exception& e) {
-      log_and_terminate("Failed to load effects config! reason: "sv, e.what());
-   }
+   while (string.back() == '\0') string.remove_suffix(1);
+
+   load_patch_effects_config_async(string);
+
+   return Patch_effects_config_handle{_current_effects_id += 1};
 }
 
 void Shader_patch::destroy_patch_effects_config_async(
@@ -472,6 +471,12 @@ void Shader_patch::destroy_patch_effects_config_async(
    _command_queue.enqueue(
       {.type = Command::destroy_patch_effects_config,
        .destroy_patch_effects_config = {.effects_config = effects_config}});
+}
+
+void Shader_patch::load_colorgrading_regions_async(const std::span<const std::byte> regions_data) noexcept
+{
+   _command_queue.enqueue({.type = Command::load_colorgrading_regions,
+                           .load_colorgrading_regions = {.regions_data = regions_data}});
 }
 
 auto Shader_patch::create_game_input_layout(
@@ -529,18 +534,6 @@ void Shader_patch::destroy_ia_buffer_async(const Buffer_handle buffer_handle) no
 {
    _command_queue.enqueue({.type = Command::destroy_ia_buffer,
                            .destroy_ia_buffer = {.buffer_handle = buffer_handle}});
-}
-
-void Shader_patch::load_colorgrading_regions(const std::span<const std::byte> regions_data) noexcept
-{
-   try {
-      _effects.postprocess.color_grading_regions(sp::load_colorgrading_regions(
-         ucfb::Reader_strict<"clrg"_mn>{regions_data}));
-   }
-   catch (std::exception& e) {
-      log(Log_level::error, "Failed to load colorgrading regions! reason: "sv,
-          e.what());
-   }
 }
 
 void Shader_patch::update_ia_buffer(const Buffer_handle buffer_handle,
@@ -946,8 +939,16 @@ void Shader_patch::process_command(const Command_data& command) noexcept
       destroy_patch_material(command.destroy_patch_material.material_handle);
 
       return;
+   case Command::load_patch_effects_config:
+      load_patch_effects_config(command.load_patch_effects_config.effects_config);
+
+      return;
    case Command::destroy_patch_effects_config:
       destroy_patch_effects_config(command.destroy_patch_effects_config.effects_config);
+
+      return;
+   case Command::load_colorgrading_regions:
+      load_colorgrading_regions(command.load_colorgrading_regions.regions_data);
 
       return;
    case Command::destroy_ia_buffer:
@@ -1097,6 +1098,13 @@ void Shader_patch::process_command(const Command_data& command) noexcept
    default:
       __assume(0);
    }
+}
+
+void Shader_patch::load_patch_effects_config_async(const std::string_view effects_config) noexcept
+{
+   _command_queue.enqueue(
+      {.type = Command::load_patch_effects_config,
+       .load_patch_effects_config = {.effects_config = effects_config}});
 }
 
 auto Shader_patch::discard_ia_buffer_dynamic_cpu(Buffer& buffer) noexcept -> std::size_t
@@ -1324,13 +1332,37 @@ void Shader_patch::destroy_patch_material(const Material_handle material_handle)
    log_and_terminate("Attempt to destroy nonexistant material!");
 }
 
+void Shader_patch::load_patch_effects_config(const std::string_view effects_config) noexcept
+{
+   try {
+      _effects.read_config(YAML::Load(std::string{effects_config}));
+      _effects.enabled(true);
+   }
+   catch (std::exception& e) {
+      log_and_terminate("Failed to load effects config! reason: "sv, e.what());
+   }
+}
+
 void Shader_patch::destroy_patch_effects_config(const Patch_effects_config_handle effects_config) noexcept
 {
-   if (effects_config != Patch_effects_config_handle{_current_effects_id}) {
+   if (effects_config != Patch_effects_config_handle{
+                            _current_effects_id.load(std::memory_order_relaxed)}) {
       return;
    }
 
    _effects.enabled(false);
+}
+
+void Shader_patch::load_colorgrading_regions(const std::span<const std::byte> regions_data) noexcept
+{
+   try {
+      _effects.postprocess.color_grading_regions(sp::load_colorgrading_regions(
+         ucfb::Reader_strict<"clrg"_mn>{regions_data}));
+   }
+   catch (std::exception& e) {
+      log(Log_level::error, "Failed to load colorgrading regions! reason: "sv,
+          e.what());
+   }
 }
 
 void Shader_patch::destroy_ia_buffer(const Buffer_handle buffer_handle) noexcept

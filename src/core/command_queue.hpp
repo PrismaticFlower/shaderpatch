@@ -21,7 +21,9 @@ enum class Command : std::uint8_t {
    destroy_game_texture,
    destroy_patch_texture,
    destroy_patch_material,
+   load_patch_effects_config,
    destroy_patch_effects_config,
+   load_colorgrading_regions,
    destroy_ia_buffer,
    stretch_rendertarget,
    color_fill_rendertarget,
@@ -85,8 +87,16 @@ struct Destroy_patch_material {
    const Material_handle material_handle;
 };
 
+struct Load_patch_effects_config {
+   const std::string_view effects_config;
+};
+
 struct Destroy_patch_effects_config {
    const Patch_effects_config_handle effects_config;
+};
+
+struct Load_colorgrading_regions {
+   const std::span<const std::byte> regions_data;
 };
 
 struct Destroy_ia_buffer {
@@ -251,7 +261,9 @@ struct alignas(std::hardware_constructive_interference_size) Command_data {
       commands::Destroy_game_rendertarget destroy_game_rendertarget;
       commands::Destroy_game_texture destroy_game_texture;
       commands::Destroy_patch_texture destroy_patch_texture;
+      commands::Load_patch_effects_config load_patch_effects_config;
       commands::Destroy_patch_material destroy_patch_material;
+      commands::Load_colorgrading_regions load_colorgrading_regions;
       commands::Destroy_patch_effects_config destroy_patch_effects_config;
       commands::Destroy_ia_buffer destroy_ia_buffer;
       commands::Stretch_rendertarget stretch_rendertarget;
