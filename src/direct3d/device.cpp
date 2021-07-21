@@ -1197,9 +1197,13 @@ HRESULT Device::SetStreamSource(UINT stream_number, IDirect3DVertexBuffer9* stre
    if (stream_number != 0) return D3DERR_INVALIDCALL;
    if (!stream_data) return D3DERR_INVALIDCALL;
 
+   if (offset_in_bytes != 0) {
+      log_and_terminate("Unexpected vertex buffer offset!"sv);
+   }
+
    const auto& vertex_buffer = *static_cast<Vertex_buffer*>(stream_data);
 
-   _shader_patch.set_vertex_buffer_async(vertex_buffer.buffer(), offset_in_bytes, stride);
+   _shader_patch.set_vertex_buffer_async(vertex_buffer.buffer(), stride);
 
    return S_OK;
 }
@@ -1212,7 +1216,7 @@ HRESULT Device::SetIndices(IDirect3DIndexBuffer9* index_data) noexcept
 
    const auto& index_buffer = *static_cast<Index_buffer*>(index_data);
 
-   _shader_patch.set_index_buffer_async(index_buffer.buffer(), 0);
+   _shader_patch.set_index_buffer_async(index_buffer.buffer());
 
    return S_OK;
 }

@@ -158,11 +158,10 @@ public:
                                  const bool clear_depth,
                                  const bool clear_stencil) noexcept;
 
-   void set_index_buffer_async(const Buffer_handle buffer_handle,
-                               const UINT offset) noexcept;
+   void set_index_buffer_async(const Buffer_handle buffer_handle) noexcept;
 
    void set_vertex_buffer_async(const Buffer_handle buffer_handle,
-                                const UINT offset, const UINT stride) noexcept;
+                                const UINT stride) noexcept;
 
    void set_input_layout_async(const Game_input_layout input_layout) noexcept;
 
@@ -279,10 +278,9 @@ private:
    void clear_depthstencil(const float z, const UINT8 stencil,
                            const bool clear_depth, const bool clear_stencil) noexcept;
 
-   void set_index_buffer(const Buffer_handle buffer_handle, const UINT offset) noexcept;
+   void set_index_buffer(const Buffer_handle buffer_handle) noexcept;
 
-   void set_vertex_buffer(const Buffer_handle buffer_handle, const UINT offset,
-                          const UINT stride) noexcept;
+   void set_vertex_buffer(const Buffer_handle buffer_handle, const UINT stride) noexcept;
 
    void set_input_layout(const Game_input_layout input_layout) noexcept;
 
@@ -456,9 +454,7 @@ private:
    material::Material* _patch_material = nullptr;
 
    Com_ptr<ID3D11Buffer> _game_index_buffer;
-   UINT _game_index_buffer_offset = 0;
    Com_ptr<ID3D11Buffer> _game_vertex_buffer;
-   UINT _game_vertex_buffer_offset = 0;
    UINT _game_vertex_buffer_stride = 0;
    Com_ptr<ID3D11RasterizerState> _game_rs_state;
    Com_ptr<ID3D11DepthStencilState> _game_depthstencil_state;

@@ -129,12 +129,10 @@ struct Clear_depthstencil {
 
 struct Set_index_buffer {
    const Buffer_handle buffer_handle;
-   const UINT offset;
 };
 
 struct Set_vertex_buffer {
    const Buffer_handle buffer_handle;
-   const UINT offset;
    const UINT stride;
 };
 

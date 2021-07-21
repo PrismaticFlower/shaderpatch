@@ -717,21 +717,18 @@ void Shader_patch::clear_depthstencil_async(const float depth, const UINT8 stenc
                                                   .clear_stencil = clear_stencil}});
 }
 
-void Shader_patch::set_index_buffer_async(const Buffer_handle buffer_handle,
-                                          const UINT offset) noexcept
+void Shader_patch::set_index_buffer_async(const Buffer_handle buffer_handle) noexcept
 {
-   _command_queue.enqueue(
-      {.type = Command::set_index_buffer,
-       .set_index_buffer = {.buffer_handle = buffer_handle, .offset = offset}});
+   _command_queue.enqueue({.type = Command::set_index_buffer,
+                           .set_index_buffer = {.buffer_handle = buffer_handle}});
 }
 
 void Shader_patch::set_vertex_buffer_async(const Buffer_handle buffer_handle,
-                                           const UINT offset, const UINT stride) noexcept
+                                           const UINT stride) noexcept
 {
-   _command_queue.enqueue({.type = Command::set_vertex_buffer,
-                           .set_vertex_buffer = {.buffer_handle = buffer_handle,
-                                                 .offset = offset,
-                                                 .stride = stride}});
+   _command_queue.enqueue(
+      {.type = Command::set_vertex_buffer,
+       .set_vertex_buffer = {.buffer_handle = buffer_handle, .stride = stride}});
 }
 
 void Shader_patch::set_input_layout_async(const Game_input_layout input_layout) noexcept
@@ -980,13 +977,11 @@ void Shader_patch::process_command(const Command_data& command) noexcept
 
       return;
    case Command::set_index_buffer:
-      set_index_buffer(command.set_index_buffer.buffer_handle,
-                       command.set_index_buffer.offset);
+      set_index_buffer(command.set_index_buffer.buffer_handle);
 
       return;
    case Command::set_vertex_buffer:
       set_vertex_buffer(command.set_vertex_buffer.buffer_handle,
-                        command.set_vertex_buffer.offset,
                         command.set_vertex_buffer.stride);
 
       return;
@@ -1218,8 +1213,6 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
    _game_shader = nullptr;
    _game_textures = {};
    _game_stencil_ref = 0xff;
-   _game_index_buffer_offset = 0;
-   _game_vertex_buffer_offset = 0;
    _game_vertex_buffer_stride = 0;
    _game_index_buffer = nullptr;
    _game_vertex_buffer = nullptr;
@@ -1441,23 +1434,20 @@ void Shader_patch::clear_depthstencil(const float depth, const UINT8 stencil,
    _device_context->ClearDepthStencilView(dsv, clear_flags, depth, stencil);
 }
 
-void Shader_patch::set_index_buffer(const Buffer_handle buffer_handle,
-                                    const UINT offset) noexcept
+void Shader_patch::set_index_buffer(const Buffer_handle buffer_handle) noexcept
 {
    auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
 
    _game_index_buffer = buffer->buffer;
-   _game_index_buffer_offset = offset;
    _ia_index_buffer_dirty = true;
 }
 
 void Shader_patch::set_vertex_buffer(const Buffer_handle buffer_handle,
-                                     const UINT offset, const UINT stride) noexcept
+                                     const UINT stride) noexcept
 {
    auto* buffer = handle_to_ptr<Buffer>(buffer_handle);
 
    _game_vertex_buffer = buffer->buffer;
-   _game_vertex_buffer_offset = offset;
    _game_vertex_buffer_stride = stride;
    _ia_vertex_buffer_dirty = true;
 }
@@ -2122,15 +2112,16 @@ void Shader_patch::update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primit
       _device_context->IASetPrimitiveTopology(_primitive_topology);
 
    if (std::exchange(_ia_index_buffer_dirty, false)) {
-      _device_context->IASetIndexBuffer(_game_index_buffer.get(), DXGI_FORMAT_R16_UINT,
-                                        _game_index_buffer_offset);
+      _device_context->IASetIndexBuffer(_game_index_buffer.get(),
+                                        DXGI_FORMAT_R16_UINT, 0);
    }
 
    if (std::exchange(_ia_vertex_buffer_dirty, false)) {
       auto* const buffer = _game_vertex_buffer.get();
+      const UINT vertex_buffer_offset = 0;
 
       _device_context->IASetVertexBuffers(0, 1, &buffer, &_game_vertex_buffer_stride,
-                                          &_game_vertex_buffer_offset);
+                                          &vertex_buffer_offset);
    }
 
    if (std::exchange(_rs_state_dirty, false)) {
