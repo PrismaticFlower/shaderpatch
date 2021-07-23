@@ -144,6 +144,22 @@ LR"(The name of the Effects Config to load when `Enable User Effects Config` is 
 },
 
 {
+L"Generate Missing Mip Maps"sv,      
+LR"(Some mod maps were munged (built) with mip maps for their textures disabled. This can create both bad performance and unpleasant aliasing when rendering with the textures.
+
+Turning on this option causes Shader Patch to attempt to identify such textures and generate mip maps for them at runtime. Effectively resolving the issue.
+
+For the sake of purity and because there are technically a couple (expected to be extremely rare) cases with transparent textures where the auto generated mip maps may introduce undesireable artifacts this option is off by default. However if you encounter performance issues on a map without mip maps you're strongly encouraged to try playing with this on.)"sv
+},
+
+{
+L"Generate Missing Mip Maps for Compressed Textures"sv,      
+LR"(Like "Generate Missing Mip Maps" only for textures that are compressed. Generating mip maps for these textures requires decompressing them, very slightly increasing load times and memory consumption.
+
+For large textures it is likely you'll still see a net benefit in performance when enabling this.)"sv
+},
+
+{
 L"Effects"sv,      
 LR"(Settings for the Effects system, which allows modders to apply various effects to their mods at their discretion and configuration. Below are options provided to tweak the performance of this system for low-end/older GPUs.)"sv
 },

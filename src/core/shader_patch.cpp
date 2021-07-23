@@ -243,6 +243,28 @@ auto Shader_patch::create_game_texture2d(const UINT width, const UINT height,
 {
    Expects(width != 0 && height != 0 && mip_levels != 0);
 
+   UINT format_support = 0;
+   _device->CheckFormatSupport(format, &format_support);
+
+   if (mip_levels == 1 && width >= 4 &&
+       (format_support & D3D11_FORMAT_SUPPORT_MIP_AUTOGEN) &&
+       user_config.graphics.enable_gen_mip_maps) {
+      if (auto texture =
+             create_game_texture2d_gen_mips(width, height, format, data[0]);
+          texture) {
+         return *texture;
+      }
+   }
+   else if (mip_levels == 1 && width >= 16 && DirectX::IsCompressed(format) &&
+            user_config.graphics.enable_gen_mip_maps_for_compressed) {
+
+      if (auto texture = create_game_texture2d_gen_mips_decompressed(width, height,
+                                                                     format, data[0]);
+          texture) {
+         return *texture;
+      }
+   }
+
    const auto typeless_format = DirectX::MakeTypeless(format);
 
    const auto desc = CD3D11_TEXTURE2D_DESC{typeless_format,
@@ -278,6 +300,8 @@ auto Shader_patch::create_game_texture2d(const UINT width, const UINT height,
 
       return {};
    }
+
+   _tex2d_preexisting_mips.fetch_add(1, std::memory_order_relaxed);
 
    return create_game_texture(texture, D3D11_SRV_DIMENSION_TEXTURE2D, format);
 }
@@ -608,6 +632,8 @@ void Shader_patch::update_texture(const Game_texture_handle game_texture_handle,
 
    D3D11_TEXTURE2D_DESC desc;
    texture->GetDesc(&desc);
+
+   desc.MipLevels = data.size();
 
    if (desc.Usage != D3D11_USAGE_DEFAULT) {
       desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -1145,6 +1171,179 @@ void Shader_patch::rename_ia_buffer_dynamic_cpu_async(const Buffer_handle buffer
                                                             .index = index}});
 }
 
+auto Shader_patch::create_game_texture2d_gen_mips(const UINT width, const UINT height,
+                                                  const DXGI_FORMAT format,
+                                                  const Mapped_texture& init_data) noexcept
+   -> std::optional<Game_texture_handle>
+{
+   const D3D11_TEXTURE2D_DESC mip_gen_desc{.Width = width,
+                                           .Height = height,
+                                           .MipLevels = 0,
+                                           .ArraySize = 1,
+                                           .Format = format,
+                                           .SampleDesc = {1, 0},
+                                           .Usage = D3D11_USAGE_DEFAULT,
+                                           .BindFlags = D3D11_BIND_SHADER_RESOURCE |
+                                                        D3D11_BIND_RENDER_TARGET,
+                                           .MiscFlags =
+                                              D3D11_RESOURCE_MISC_GENERATE_MIPS};
+
+   Com_ptr<ID3D11Texture2D> mip_gen_texture;
+
+   if (const auto result =
+          _device->CreateTexture2D(&mip_gen_desc, nullptr,
+                                   mip_gen_texture.clear_and_assign());
+       FAILED(result)) {
+      log(Log_level::error, "Failed to create game texture! reason: ",
+          _com_error{result}.ErrorMessage());
+
+      return std::nullopt;
+   }
+
+   Com_ptr<ID3D11ShaderResourceView> mip_gen_srv;
+
+   if (const auto result =
+          _device->CreateShaderResourceView(mip_gen_texture.get(), nullptr,
+                                            mip_gen_srv.clear_and_assign());
+       FAILED(result)) {
+      log(Log_level::error, "Failed to create game texture! reason: ",
+          _com_error{result}.ErrorMessage());
+
+      return std::nullopt;
+   }
+
+   const auto typeless_format = DirectX::MakeTypeless(format);
+
+   const D3D11_TEXTURE2D_DESC desc{.Width = width,
+                                   .Height = height,
+                                   .MipLevels = 0,
+                                   .ArraySize = 1,
+                                   .Format = typeless_format,
+                                   .SampleDesc = {1, 0},
+                                   .Usage = D3D11_USAGE_DEFAULT,
+                                   .BindFlags = D3D11_BIND_SHADER_RESOURCE};
+
+   Com_ptr<ID3D11Texture2D> texture;
+
+   if (const auto result =
+          _device->CreateTexture2D(&desc, nullptr, texture.clear_and_assign());
+       FAILED(result)) {
+      log(Log_level::error, "Failed to create game texture! reason: ",
+          _com_error{result}.ErrorMessage());
+
+      return std::nullopt;
+   }
+
+   // generate the mip maps
+   {
+      std::scoped_lock lock{_device_context_mutex};
+
+      _device_context->UpdateSubresource(mip_gen_texture.get(), 0, nullptr,
+                                         init_data.data, init_data.row_pitch,
+                                         init_data.depth_pitch);
+      _device_context->GenerateMips(mip_gen_srv.get());
+      _device_context->CopyResource(texture.get(), mip_gen_texture.get());
+
+      _tex2d_generated_mips.fetch_add(1, std::memory_order_relaxed);
+   }
+
+   return create_game_texture(texture, D3D11_SRV_DIMENSION_TEXTURE2D, format);
+}
+
+auto Shader_patch::create_game_texture2d_gen_mips_decompressed(
+   const UINT width, const UINT height, const DXGI_FORMAT format,
+   const Mapped_texture& init_data) noexcept -> std::optional<Game_texture_handle>
+{
+   DirectX::ScratchImage image;
+
+   if (FAILED(DirectX::Decompress(DirectX::Image{.width = width,
+                                                 .height = height,
+                                                 .format = format,
+                                                 .rowPitch = init_data.row_pitch,
+                                                 .slicePitch = init_data.depth_pitch,
+                                                 .pixels = reinterpret_cast<std::uint8_t*>(
+                                                    init_data.data)},
+                                  DXGI_FORMAT_R8G8B8A8_UNORM, image))) {
+      log(Log_level::error, "Failed to create game texture! reason: unable to "
+                            "decompress texture for mip map creation");
+
+      return std::nullopt;
+   }
+
+   const D3D11_TEXTURE2D_DESC mip_gen_desc{.Width = width,
+                                           .Height = height,
+                                           .MipLevels = 0,
+                                           .ArraySize = 1,
+                                           .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+                                           .SampleDesc = {1, 0},
+                                           .Usage = D3D11_USAGE_DEFAULT,
+                                           .BindFlags = D3D11_BIND_SHADER_RESOURCE |
+                                                        D3D11_BIND_RENDER_TARGET,
+                                           .MiscFlags =
+                                              D3D11_RESOURCE_MISC_GENERATE_MIPS};
+
+   Com_ptr<ID3D11Texture2D> mip_gen_texture;
+
+   if (const auto result =
+          _device->CreateTexture2D(&mip_gen_desc, nullptr,
+                                   mip_gen_texture.clear_and_assign());
+       FAILED(result)) {
+      log(Log_level::error, "Failed to create game texture! reason: ",
+          _com_error{result}.ErrorMessage());
+
+      return std::nullopt;
+   }
+
+   Com_ptr<ID3D11ShaderResourceView> mip_gen_srv;
+
+   if (const auto result =
+          _device->CreateShaderResourceView(mip_gen_texture.get(), nullptr,
+                                            mip_gen_srv.clear_and_assign());
+       FAILED(result)) {
+      log(Log_level::error, "Failed to create game texture! reason: ",
+          _com_error{result}.ErrorMessage());
+
+      return std::nullopt;
+   }
+
+   const D3D11_TEXTURE2D_DESC desc{.Width = width,
+                                   .Height = height,
+                                   .MipLevels = 0,
+                                   .ArraySize = 1,
+                                   .Format = DXGI_FORMAT_R8G8B8A8_TYPELESS,
+                                   .SampleDesc = {1, 0},
+                                   .Usage = D3D11_USAGE_DEFAULT,
+                                   .BindFlags = D3D11_BIND_SHADER_RESOURCE};
+
+   Com_ptr<ID3D11Texture2D> texture;
+
+   if (const auto result =
+          _device->CreateTexture2D(&desc, nullptr, texture.clear_and_assign());
+       FAILED(result)) {
+      log(Log_level::error, "Failed to create game texture! reason: ",
+          _com_error{result}.ErrorMessage());
+
+      return std::nullopt;
+   }
+
+   // generate the mip maps
+   {
+      std::scoped_lock lock{_device_context_mutex};
+
+      _device_context->UpdateSubresource(mip_gen_texture.get(), 0, nullptr,
+                                         image.GetImage(0, 0, 0)->pixels,
+                                         image.GetImage(0, 0, 0)->rowPitch,
+                                         image.GetImage(0, 0, 0)->slicePitch);
+      _device_context->GenerateMips(mip_gen_srv.get());
+      _device_context->CopyResource(texture.get(), mip_gen_texture.get());
+
+      _tex2d_compressed_generated_mips.fetch_add(1, std::memory_order_relaxed);
+   }
+
+   return create_game_texture(texture, D3D11_SRV_DIMENSION_TEXTURE2D,
+                              DXGI_FORMAT_R8G8B8A8_UNORM);
+}
+
 auto Shader_patch::create_game_texture(Com_ptr<ID3D11Resource> texture,
                                        const D3D11_SRV_DIMENSION srv_dimension,
                                        const DXGI_FORMAT format) noexcept -> Game_texture_handle
@@ -1223,6 +1422,10 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
    _shader_rendertype = Rendertype::invalid;
    _aa_method = Antialiasing_method::none;
    _current_rt_format = Swapchain::format;
+
+   _tex2d_generated_mips.store(0, std::memory_order_relaxed);
+   _tex2d_compressed_generated_mips.store(0, std::memory_order_relaxed);
+   _tex2d_preexisting_mips.store(0, std::memory_order_relaxed);
 
    update_rendertargets();
    update_refraction_target();
@@ -2300,6 +2503,19 @@ void Shader_patch::update_imgui() noexcept
 
          ImGui::Text(fmt::format("Indirect Constant Storage Used: {}"sv,
                                  _constants_storage_used.load(std::memory_order_relaxed))
+                        .c_str());
+
+         ImGui::Text(fmt::format("Texture2D runtime generated mip maps: {}"sv,
+                                 _tex2d_generated_mips.load(std::memory_order_relaxed))
+                        .c_str());
+
+         ImGui::Text(
+            fmt::format("Texture2D (compressed) runtime generated mip maps: {}"sv,
+                        _tex2d_compressed_generated_mips.load(std::memory_order_relaxed))
+               .c_str());
+
+         ImGui::Text(fmt::format("Texture2D with existing mip maps: {}"sv,
+                                 _tex2d_preexisting_mips.load(std::memory_order_relaxed))
                         .c_str());
       }
 

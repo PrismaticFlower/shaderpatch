@@ -94,6 +94,12 @@ struct user_config {
       bool_user_config_value{L"Enable User Effects Config", false, L"Enabled", L"Disabled"},
 
       string_user_config_value{L"User Effects Config", L"user.spfx"},
+
+      bool_user_config_value{L"Generate Missing Mip Maps", false, L"Enabled", L"Disabled"},
+
+      bool_user_config_value{
+         L"Generate Missing Mip Maps for Compressed Textures", false,
+         L"Enabled", L"Disabled"},
    };
 
    user_config_value_vector effects = {

@@ -339,6 +339,16 @@ private:
    void rename_ia_buffer_dynamic_cpu(const Buffer_handle buffer_handle,
                                      const std::size_t index) noexcept;
 
+   auto create_game_texture2d_gen_mips(const UINT width, const UINT height,
+                                       const DXGI_FORMAT format,
+                                       const Mapped_texture& init_data) noexcept
+      -> std::optional<Game_texture_handle>;
+
+   auto create_game_texture2d_gen_mips_decompressed(const UINT width, const UINT height,
+                                                    const DXGI_FORMAT format,
+                                                    const Mapped_texture& init_data) noexcept
+      -> std::optional<Game_texture_handle>;
+
    auto create_game_texture(Com_ptr<ID3D11Resource> texture,
                             const D3D11_SRV_DIMENSION srv_dimension,
                             const DXGI_FORMAT format) noexcept -> Game_texture_handle;
@@ -575,6 +585,10 @@ private:
    std::unique_ptr<BF2_log_monitor> _bf2_log_monitor;
    Constants_indirect_storage_allocator _constants_storage_allocator{4'194'304};
    std::atomic_size_t _constants_storage_used = 0;
+
+   std::atomic_int _tex2d_generated_mips = 0;
+   std::atomic_int _tex2d_compressed_generated_mips = 0;
+   std::atomic_int _tex2d_preexisting_mips = 0;
 
    Command_queue _command_queue;
    std::jthread _command_processor_thread{[this](std::stop_token stop_token) {

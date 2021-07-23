@@ -174,6 +174,8 @@ struct User_config {
       Value<bool> disable_light_brightness_rescaling = false;
       Value<bool> enable_user_effects_config = false;
       Value<std::string> user_effects_config = "user.spfx";
+      Value<bool> enable_gen_mip_maps = false;
+      Value<bool> enable_gen_mip_maps_for_compressed = false;
    } graphics;
 
    Effects_user_config effects{};

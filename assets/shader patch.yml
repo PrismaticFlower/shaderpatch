@@ -44,6 +44,10 @@ Graphics:
 
    User Effects Config: user.spfx
 
+   Generate Missing Mip Maps: no
+
+   Generate Missing Mip Maps for Compressed Textures: no
+
 Effects:
    Bloom: yes
    

@@ -178,6 +178,12 @@ void User_config::parse_file(const std::string& path)
    graphics.user_effects_config =
       config["Graphics"s]["User Effects Config"s].as<std::string>();
 
+   graphics.enable_gen_mip_maps =
+      config["Graphics"s]["Generate Missing Mip Maps"s].as<bool>();
+
+   graphics.enable_gen_mip_maps_for_compressed =
+      config["Graphics"s]["Generate Missing Mip Maps for Compressed Textures"s].as<bool>();
+
    effects.bloom = config["Effects"s]["Bloom"s].as<bool>();
 
    effects.vignette = config["Effects"s]["Vignette"s].as<bool>();
