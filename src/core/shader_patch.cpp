@@ -19,6 +19,7 @@
 #include <cmath>
 
 #include <comdef.h>
+#include <fmt/locale.h>
 
 using namespace std::literals;
 
@@ -2490,31 +2491,103 @@ void Shader_patch::update_imgui() noexcept
       user_config.show_imgui();
       _effects.show_imgui(_window);
 
-      std::scoped_lock lock{_materials_pool_mutex};
+      // Material Editor
+      {
+         std::scoped_lock lock{_materials_pool_mutex};
 
-      material::show_editor(_material_factory, _materials_pool);
+         material::show_editor(_material_factory, _materials_pool);
+      }
 
       if (_bf2_log_monitor) _bf2_log_monitor->show_imgui(true);
 
-      if (ImGui::Begin("CPU Pipeline Stats")) {
-         ImGui::Text(fmt::format("Command Queue Waits/Stalls: {}"sv,
+      if (ImGui::Begin("Stats")) {
+         const std::locale locale{""};
+
+         ImGui::Text(fmt::format(locale, "CPU Command Queue Waits/Stalls: {:L}"sv,
                                  _command_queue.wait_count())
                         .c_str());
 
-         ImGui::Text(fmt::format("Indirect Constant Storage Used: {}"sv,
+         ImGui::Text(fmt::format(locale, "Indirect Constant Storage Used: {:L}"sv,
                                  _constants_storage_used.load(std::memory_order_relaxed))
                         .c_str());
 
-         ImGui::Text(fmt::format("Texture2D runtime generated mip maps: {}"sv,
+         ImGui::Separator();
+
+         // Resource Stats
+         {
+            std::scoped_lock lock{_game_texture_pool_mutex, _buffer_pool_mutex,
+                                  _materials_pool_mutex};
+
+            ImGui::Text(fmt::format(locale, "Vertex/Index Buffer Count: {:L}"sv,
+                                    _buffer_pool.size())
+                           .c_str());
+
+            ImGui::Text(fmt::format(locale, "Game Texture Count: {:L}"sv,
+                                    _game_texture_pool.size())
+                           .c_str());
+
+            ImGui::Text(fmt::format(locale, "SP Material Count: {:L}"sv,
+                                    _materials_pool.size())
+                           .c_str());
+         }
+
+         ImGui::Text(fmt::format(locale, "SP Material Resource Count: {:L}"sv,
+                                 _shader_resource_database.size())
+                        .c_str());
+
+         ImGui::Separator();
+
+         // DXGI Memory Stats
+         {
+            Com_ptr<IDXGIDevice4> dxgi_device;
+
+            _device->QueryInterface(dxgi_device.clear_and_assign());
+
+            Com_ptr<IDXGIAdapter> adapter;
+
+            dxgi_device->GetAdapter(adapter.clear_and_assign());
+
+            Com_ptr<IDXGIAdapter4> adapter4;
+
+            adapter->QueryInterface(adapter4.clear_and_assign());
+
+            DXGI_QUERY_VIDEO_MEMORY_INFO gpu_memory_info;
+
+            adapter4->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL,
+                                           &gpu_memory_info);
+
+            ImGui::Text(fmt::format(locale, "Local GPU Memory Used: {:L}"sv,
+                                    gpu_memory_info.CurrentUsage)
+                           .c_str());
+
+            ImGui::Text(fmt::format(locale, "Local GPU Memory Budget: {:L}"sv,
+                                    gpu_memory_info.Budget)
+                           .c_str());
+
+            adapter4->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_NON_LOCAL,
+                                           &gpu_memory_info);
+
+            ImGui::Text(fmt::format(locale, "Non-Local GPU Memory Used: {:L}"sv,
+                                    gpu_memory_info.CurrentUsage)
+                           .c_str());
+
+            ImGui::Text(fmt::format(locale, "Non-Local GPU Memory Budget: {:L}"sv,
+                                    gpu_memory_info.Budget)
+                           .c_str());
+         }
+
+         ImGui::Separator();
+
+         ImGui::Text(fmt::format(locale, "Texture2D runtime generated mip maps: {:L}"sv,
                                  _tex2d_generated_mips.load(std::memory_order_relaxed))
                         .c_str());
 
          ImGui::Text(
-            fmt::format("Texture2D (compressed) runtime generated mip maps: {}"sv,
+            fmt::format(locale, "Texture2D (compressed) runtime generated mip maps: {:L}"sv,
                         _tex2d_compressed_generated_mips.load(std::memory_order_relaxed))
                .c_str());
 
-         ImGui::Text(fmt::format("Texture2D with existing mip maps: {}"sv,
+         ImGui::Text(fmt::format(locale, "Texture2D with existing mip maps: {:L}"sv,
                                  _tex2d_preexisting_mips.load(std::memory_order_relaxed))
                         .c_str());
       }

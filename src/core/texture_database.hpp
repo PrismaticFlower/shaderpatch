@@ -38,6 +38,13 @@ public:
 
    auto imgui_resource_picker() noexcept -> Imgui_pick_result;
 
+   auto size() const noexcept -> std::size_t
+   {
+      std::scoped_lock lock{_resources_mutex};
+
+      return _resources.size();
+   }
+
 private:
    auto lookup(const std::string_view name) const noexcept
       -> ID3D11ShaderResourceView*;
