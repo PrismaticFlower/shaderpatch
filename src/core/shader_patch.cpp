@@ -6,6 +6,7 @@
 #include "../material/editor.hpp"
 #include "../user_config.hpp"
 #include "basic_builtin_textures.hpp"
+#include "gpu_pipeline_statistics.hpp"
 #include "patch_material_io.hpp"
 #include "patch_texture_io.hpp"
 #include "screenshot.hpp"
@@ -114,7 +115,8 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
      _effects{_device, _shader_database, game_thread_tasks},
      _bf2_log_monitor{user_config.developer.monitor_bfront2_log
                          ? std::make_unique<BF2_log_monitor>()
-                         : nullptr}
+                         : nullptr},
+     _gpu_pipeline_statistics{std::make_unique<GPU_pipeline_statistics>(_device)}
 {
    _game_texture_pool.reserve(1024);
    _buffer_pool.reserve(1024);
@@ -2578,18 +2580,57 @@ void Shader_patch::update_imgui() noexcept
 
          ImGui::Separator();
 
-         ImGui::Text(fmt::format(locale, "Texture2D runtime generated mip maps: {:L}"sv,
-                                 _tex2d_generated_mips.load(std::memory_order_relaxed))
-                        .c_str());
+         // GPU Pipeline Stats
+         {
+            _gpu_pipeline_statistics->mark_end(*_device_context);
 
-         ImGui::Text(
-            fmt::format(locale, "Texture2D (compressed) runtime generated mip maps: {:L}"sv,
-                        _tex2d_compressed_generated_mips.load(std::memory_order_relaxed))
-               .c_str());
+            auto gpu_stats = _gpu_pipeline_statistics->data(*_device_context);
 
-         ImGui::Text(fmt::format(locale, "Texture2D with existing mip maps: {:L}"sv,
-                                 _tex2d_preexisting_mips.load(std::memory_order_relaxed))
-                        .c_str());
+            ImGui::Text(
+               fmt::format(locale, "IA Vertices: {:L}"sv, gpu_stats.IAVertices).c_str());
+
+            ImGui::Text(fmt::format(locale, "IA Primitives: {:L}"sv, gpu_stats.IAPrimitives)
+                           .c_str());
+
+            ImGui::Text(fmt::format(locale, "VS Invocations: {:L}"sv, gpu_stats.VSInvocations)
+                           .c_str());
+
+            ImGui::Text(fmt::format(locale, "Rasterizer Primitive Invocations: {:L}"sv,
+                                    gpu_stats.CInvocations)
+                           .c_str());
+
+            ImGui::Text(fmt::format(locale, "Rasterized Primitives: {:L}"sv,
+                                    gpu_stats.CPrimitives)
+                           .c_str());
+
+            ImGui::Text(fmt::format(locale, "PS Invocations: {:L}"sv, gpu_stats.PSInvocations)
+                           .c_str());
+
+            ImGui::Text(fmt::format(locale, "CS Invocations: {:L}"sv, gpu_stats.CSInvocations)
+                           .c_str());
+
+            _gpu_pipeline_statistics->mark_begin(*_device_context);
+         }
+
+         ImGui::Separator();
+
+         // Generated Mip Maps Info
+         {
+            ImGui::Text(
+               fmt::format(locale, "Texture2D runtime generated mip maps: {:L}"sv,
+                           _tex2d_generated_mips.load(std::memory_order_relaxed))
+                  .c_str());
+
+            ImGui::Text(
+               fmt::format(locale, "Texture2D (compressed) runtime generated mip maps: {:L}"sv,
+                           _tex2d_compressed_generated_mips.load(std::memory_order_relaxed))
+                  .c_str());
+
+            ImGui::Text(
+               fmt::format(locale, "Texture2D with existing mip maps: {:L}"sv,
+                           _tex2d_preexisting_mips.load(std::memory_order_relaxed))
+                  .c_str());
+         }
       }
 
       ImGui::End();

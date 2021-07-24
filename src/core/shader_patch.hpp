@@ -52,6 +52,8 @@ class BF2_log_monitor;
 
 namespace core {
 
+class GPU_pipeline_statistics;
+
 class Shader_patch {
 public:
    Shader_patch(IDXGIAdapter4& adapter, const HWND window, const UINT width,
@@ -583,6 +585,7 @@ private:
    text::Font_atlas_builder _font_atlas_builder{_device};
 
    std::unique_ptr<BF2_log_monitor> _bf2_log_monitor;
+   std::unique_ptr<GPU_pipeline_statistics> _gpu_pipeline_statistics;
    Constants_indirect_storage_allocator _constants_storage_allocator{4'194'304};
    std::atomic_size_t _constants_storage_used = 0;
 
