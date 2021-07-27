@@ -10,6 +10,8 @@
 
 #include <fmt/format.h>
 
+using namespace std::literals;
+
 namespace sp::material {
 
 namespace {

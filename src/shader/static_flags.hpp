@@ -10,6 +10,8 @@
 #include <span>
 #include <string>
 
+using namespace std::literals;
+
 namespace sp::shader {
 
 class Static_flags {

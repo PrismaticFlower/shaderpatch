@@ -52,7 +52,8 @@ private:
 inline void freetype_checked_call(const FT_Error error)
 {
    if (error)
-      log_and_terminate("FreeType has reported an error. Unable to build font atlas!"sv);
+      log_and_terminate(
+         "FreeType has reported an error. Unable to build font atlas!");
 }
 
 inline auto make_freetype_library() noexcept -> Freetype_ptr<FT_Library, FT_Done_FreeType>

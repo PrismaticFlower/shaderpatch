@@ -16,6 +16,8 @@
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg,
                                                       WPARAM wParam, LPARAM lParam);
 
+using namespace std::literals;
+
 namespace sp {
 
 namespace {
@@ -168,18 +170,16 @@ void hook_dinput8_device(IDirectInput8A& dinput) noexcept
    dinput.CreateDevice(GUID_SysKeyboard, device.clear_and_assign(), nullptr);
 
    DirectInput8A_GetDeviceStateFunc* const Keyboard_DirectInput8A_GetDeviceStateHook =
-      [](IDirectInputDevice8A* const self, DWORD cbData, LPVOID lpvData) noexcept
-   {
-      return DirectInput8A_GetDeviceStateHook(self, cbData, lpvData,
-                                              *Keyboard_DirectInput8A_GetDeviceStateTrue);
-   };
+      [](IDirectInputDevice8A* const self, DWORD cbData, LPVOID lpvData) noexcept {
+         return DirectInput8A_GetDeviceStateHook(self, cbData, lpvData,
+                                                 *Keyboard_DirectInput8A_GetDeviceStateTrue);
+      };
 
    DirectInput8A_SetCooperativeLevelFunc* const Keyboard_DirectInput8A_SetCooperativeLevelHook =
-      [](IDirectInputDevice8A* const self, HWND hwnd, DWORD dwFlags) noexcept
-   {
-      return DirectInput8A_SetCooperativeLevelHook(self, hwnd, dwFlags,
-                                                   *Keyboard_DirectInput8A_SetCooperativeLevelTrue);
-   };
+      [](IDirectInputDevice8A* const self, HWND hwnd, DWORD dwFlags) noexcept {
+         return DirectInput8A_SetCooperativeLevelHook(self, hwnd, dwFlags,
+                                                      *Keyboard_DirectInput8A_SetCooperativeLevelTrue);
+      };
 
    Keyboard_DirectInput8A_GetDeviceStateTrue =
       hook_vtable(*device, 9, Keyboard_DirectInput8A_GetDeviceStateHook);
@@ -190,18 +190,16 @@ void hook_dinput8_device(IDirectInput8A& dinput) noexcept
    dinput.CreateDevice(GUID_SysMouse, device.clear_and_assign(), nullptr);
 
    DirectInput8A_GetDeviceStateFunc* const Mouse_DirectInput8A_GetDeviceStateHook =
-      [](IDirectInputDevice8A* const self, DWORD cbData, LPVOID lpvData) noexcept
-   {
-      return DirectInput8A_GetDeviceStateHook(self, cbData, lpvData,
-                                              *Mouse_DirectInput8A_GetDeviceStateTrue);
-   };
+      [](IDirectInputDevice8A* const self, DWORD cbData, LPVOID lpvData) noexcept {
+         return DirectInput8A_GetDeviceStateHook(self, cbData, lpvData,
+                                                 *Mouse_DirectInput8A_GetDeviceStateTrue);
+      };
 
    DirectInput8A_SetCooperativeLevelFunc* const Mouse_DirectInput8A_SetCooperativeLevelHook =
-      [](IDirectInputDevice8A* const self, HWND hwnd, DWORD dwFlags) noexcept
-   {
-      return DirectInput8A_SetCooperativeLevelHook(self, hwnd, dwFlags,
-                                                   *Mouse_DirectInput8A_SetCooperativeLevelTrue);
-   };
+      [](IDirectInputDevice8A* const self, HWND hwnd, DWORD dwFlags) noexcept {
+         return DirectInput8A_SetCooperativeLevelHook(self, hwnd, dwFlags,
+                                                      *Mouse_DirectInput8A_SetCooperativeLevelTrue);
+      };
 
    if (auto* const existing_func =
           get_vfunc_pointer<DirectInput8A_GetDeviceStateFunc>(*device, 9);

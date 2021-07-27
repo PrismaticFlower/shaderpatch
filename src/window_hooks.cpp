@@ -7,6 +7,8 @@
 
 #include <detours/detours.h>
 
+using namespace std::literals;
+
 namespace sp {
 
 namespace {

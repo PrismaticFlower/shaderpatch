@@ -5,6 +5,8 @@
 
 #include <cstdint>
 
+using namespace std::literals;
+
 namespace sp::core {
 
 namespace {

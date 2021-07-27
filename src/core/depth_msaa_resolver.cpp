@@ -2,6 +2,8 @@
 #include "depth_msaa_resolver.hpp"
 #include "../logger.hpp"
 
+using namespace std::literals;
+
 namespace sp::core {
 
 Depth_msaa_resolver::Depth_msaa_resolver(ID3D11Device5& device,

@@ -5,6 +5,8 @@
 
 #include <exception>
 
+using namespace std::literals;
+
 namespace sp::d3d9 {
 
 Upload_scratch_buffer upload_scratch_buffer;
