@@ -137,7 +137,7 @@ private:
              _device->CreateTexture2D(&texture_desc, nullptr,
                                       rendertarget.texture.clear_and_assign());
           FAILED(result)) {
-         log_and_terminate("Failed to create rendertarget texture! reason: ",
+         log_and_terminate("Failed to create rendertarget texture! reason: {}",
                            _com_error{result}.ErrorMessage());
       }
 
@@ -150,7 +150,7 @@ private:
                 _device->CreateShaderResourceView(rendertarget.texture.get(), &srv_desc,
                                                   rendertarget.srv.clear_and_assign());
              FAILED(result)) {
-            log_and_terminate("Failed to create rendertarget SRV! reason: ",
+            log_and_terminate("Failed to create rendertarget SRV! reason: {}",
                               _com_error{result}.ErrorMessage());
          }
       }
@@ -164,7 +164,7 @@ private:
                 _device->CreateRenderTargetView(rendertarget.texture.get(), &rtv_desc,
                                                 rendertarget.rtv.clear_and_assign());
              FAILED(result)) {
-            log_and_terminate("Failed to create rendertarget RTV! reason: ",
+            log_and_terminate("Failed to create rendertarget RTV! reason: {}",
                               _com_error{result}.ErrorMessage());
          }
       }
@@ -178,7 +178,7 @@ private:
                 _device->CreateUnorderedAccessView(rendertarget.texture.get(), &uav_desc,
                                                    rendertarget.uav.clear_and_assign());
              FAILED(result)) {
-            log_and_terminate("Failed to create rendertarget UAV! reason: ",
+            log_and_terminate("Failed to create rendertarget UAV! reason: {}",
                               _com_error{result}.ErrorMessage());
          }
       }

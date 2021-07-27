@@ -192,8 +192,8 @@ auto load_group_definition(const std::filesystem::path& path) noexcept -> Group_
          return load_group_definition(path);
       }
 
-      log_and_terminate("Failed to load shader group definition '"sv,
-                        path.filename().string(), "' reason: "sv, e.what());
+      log_and_terminate("Failed to load shader group definition '{}' reason: {}"sv,
+                        path.filename().string(), e.what());
    }
 }
 

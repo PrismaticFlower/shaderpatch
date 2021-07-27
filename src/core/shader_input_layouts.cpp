@@ -81,7 +81,7 @@ auto Shader_input_layouts::create_layout(
                                    _bytecode.data(), _bytecode.size(),
                                    il.clear_and_assign());
        FAILED(result)) {
-      log_and_terminate("Failed to create Direct3D 11 input layout! Reason: ",
+      log_and_terminate("Failed to create Direct3D 11 input layout! Reason: {}",
                         _com_error{result}.ErrorMessage());
    }
 

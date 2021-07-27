@@ -65,8 +65,7 @@ inline auto get_log_stream() noexcept -> std::ostream&
    return logger._log_file;
 }
 
-template<typename... Args>
-inline void log(const Log_level level, Args&&... args) noexcept
+inline void log(const Log_level level, const std::string_view str) noexcept
 {
    auto& stream = get_log_stream();
 
@@ -74,7 +73,7 @@ inline void log(const Log_level level, Args&&... args) noexcept
    const auto local_time = std::localtime(&time);
 
    stream << level << ' ' << std::put_time(local_time, "%T") << ' ';
-   (stream << ... << args);
+   stream << str;
    stream << std::endl;
 }
 
@@ -95,8 +94,8 @@ inline void log_debug([[maybe_unused]] std::string_view format_str,
 }
 
 template<typename... Args>
-inline void log_fmt(const Log_level level, std::string_view format_str,
-                    const Args&... args) noexcept
+inline void log(const Log_level level, std::string_view format_str,
+                const Args&... args) noexcept
 {
    auto& stream = get_log_stream();
 
@@ -109,18 +108,18 @@ inline void log_fmt(const Log_level level, std::string_view format_str,
 }
 
 template<typename... Args>
-[[noreturn]] inline void log_and_terminate(Args&&... args)
+[[noreturn]] inline void log_and_terminate(const std::string_view str)
 {
-   log(Log_level::error, std::forward<Args>(args)...);
+   log(Log_level::error, str);
 
    std::terminate();
 }
 
 template<typename... Args>
-[[noreturn]] inline void log_and_terminate_fmt(std::string_view format_str,
-                                               const Args&... args)
+[[noreturn]] inline void log_and_terminate(std::string_view format_str,
+                                           const Args&... args)
 {
-   log_fmt(Log_level::error, format_str, args...);
+   log(Log_level::error, format_str, args...);
 
    std::terminate();
 }

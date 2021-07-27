@@ -56,7 +56,7 @@ auto create_device(IDXGIAdapter4& adapater) noexcept -> Com_ptr<ID3D11Device5>
                             supported_feature_levels.size(), D3D11_SDK_VERSION,
                             device.clear_and_assign(), nullptr, nullptr);
        FAILED(result)) {
-      log_and_terminate("Failed to create Direct3D 11 device! Reason: ",
+      log_and_terminate("Failed to create Direct3D 11 device! Reason: {}",
                         _com_error{result}.ErrorMessage());
    }
 
@@ -298,7 +298,7 @@ auto Shader_patch::create_game_texture2d(const UINT width, const UINT height,
    if (const auto result = _device->CreateTexture2D(&desc, initial_data.data(),
                                                     texture.clear_and_assign());
        FAILED(result)) {
-      log(Log_level::error, "Failed to create game texture! reason: ",
+      log(Log_level::error, "Failed to create game texture! reason: {}",
           _com_error{result}.ErrorMessage());
 
       return {};
@@ -347,7 +347,7 @@ auto Shader_patch::create_game_texture3d(const UINT width, const UINT height,
    if (const auto result = _device->CreateTexture3D(&desc, initial_data.data(),
                                                     texture.clear_and_assign());
        FAILED(result)) {
-      log(Log_level::error, "Failed to create game texture! reason: ",
+      log(Log_level::error, "Failed to create game texture! reason: {}",
           _com_error{result}.ErrorMessage());
 
       return {};
@@ -398,7 +398,7 @@ auto Shader_patch::create_game_texture_cube(const UINT width, const UINT height,
    if (const auto result = _device->CreateTexture2D(&desc, initial_data.data(),
                                                     texture.clear_and_assign());
        FAILED(result)) {
-      log(Log_level::error, "Failed to create game texture! reason: ",
+      log(Log_level::error, "Failed to create game texture! reason: {}",
           _com_error{result}.ErrorMessage());
 
       return {};
@@ -423,14 +423,15 @@ auto Shader_patch::create_patch_texture(const std::span<const std::byte> texture
 
       auto* const raw_srv = srv.get();
 
-      log(Log_level::info, "Loaded texture "sv, std::quoted(name));
+      log(Log_level::info, "Loaded texture '{}'"sv, name);
 
       _shader_resource_database.insert(std::move(srv), name);
 
       return ptr_to_handle<Patch_texture_handle>(raw_srv);
    }
    catch (std::exception& e) {
-      log(Log_level::error, "Failed to create unknown texture! reason: "sv, e.what());
+      log(Log_level::error, "Failed to create unknown texture! reason: {}"sv,
+          e.what());
 
       return null_handle;
    }
@@ -456,12 +457,13 @@ auto Shader_patch::create_patch_material(const std::span<const std::byte> materi
                             _material_factory.create_material(config)))
                          .get();
 
-      log(Log_level::info, "Loaded material "sv, std::quoted(material->name));
+      log(Log_level::info, "Loaded material '{}'"sv, material->name);
 
       return ptr_to_handle<Material_handle>(material);
    }
    catch (std::exception& e) {
-      log(Log_level::error, "Failed to create unknown material! reason: "sv, e.what());
+      log(Log_level::error, "Failed to create unknown material! reason: {}"sv,
+          e.what());
 
       return null_handle;
    }
@@ -531,8 +533,8 @@ auto Shader_patch::create_ia_buffer(const UINT size, const bool vertex_buffer,
       if (const auto result =
              _device->CreateBuffer(&desc, nullptr, buffer.clear_and_assign());
           FAILED(result)) {
-         log_and_terminate_fmt("Failed to create game IA buffer! reason: {}",
-                               _com_error{result}.ErrorMessage());
+         log_and_terminate("Failed to create game IA buffer! reason: {}",
+                           _com_error{result}.ErrorMessage());
       }
 
       return buffer;
@@ -646,7 +648,7 @@ void Shader_patch::update_texture(const Game_texture_handle game_texture_handle,
       if (const auto result =
              _device->CreateTexture2D(&desc, nullptr, dest_texture.clear_and_assign());
           FAILED(result)) {
-         log(Log_level::error, "Failed to create game texture! reason: ",
+         log(Log_level::error, "Failed to create game texture! reason: {}",
              _com_error{result}.ErrorMessage());
 
          return;
@@ -663,7 +665,7 @@ void Shader_patch::update_texture(const Game_texture_handle game_texture_handle,
                 _device->CreateShaderResourceView(dest_texture.get(), &srv_desc,
                                                   srv.clear_and_assign());
              FAILED(result)) {
-            log(Log_level::error, "Failed to create game texture SRV! reason: ",
+            log(Log_level::error, "Failed to create game texture SRV! reason: {}",
                 _com_error{result}.ErrorMessage());
 
             return;
@@ -686,7 +688,7 @@ void Shader_patch::update_texture(const Game_texture_handle game_texture_handle,
                 _device->CreateShaderResourceView(dest_texture.get(), &srgb_srv_desc,
                                                   srgb_srv.clear_and_assign());
              FAILED(result)) {
-            log(Log_level::error, "Failed to create game texture SRGB SRV! reason: ",
+            log(Log_level::error, "Failed to create game texture SRGB SRV! reason: {}",
                 _com_error{result}.ErrorMessage());
 
             return;
@@ -1197,7 +1199,7 @@ auto Shader_patch::create_game_texture2d_gen_mips(const UINT width, const UINT h
           _device->CreateTexture2D(&mip_gen_desc, nullptr,
                                    mip_gen_texture.clear_and_assign());
        FAILED(result)) {
-      log(Log_level::error, "Failed to create game texture! reason: ",
+      log(Log_level::error, "Failed to create game texture! reason: {}",
           _com_error{result}.ErrorMessage());
 
       return std::nullopt;
@@ -1209,7 +1211,7 @@ auto Shader_patch::create_game_texture2d_gen_mips(const UINT width, const UINT h
           _device->CreateShaderResourceView(mip_gen_texture.get(), nullptr,
                                             mip_gen_srv.clear_and_assign());
        FAILED(result)) {
-      log(Log_level::error, "Failed to create game texture! reason: ",
+      log(Log_level::error, "Failed to create game texture! reason: {}",
           _com_error{result}.ErrorMessage());
 
       return std::nullopt;
@@ -1231,7 +1233,7 @@ auto Shader_patch::create_game_texture2d_gen_mips(const UINT width, const UINT h
    if (const auto result =
           _device->CreateTexture2D(&desc, nullptr, texture.clear_and_assign());
        FAILED(result)) {
-      log(Log_level::error, "Failed to create game texture! reason: ",
+      log(Log_level::error, "Failed to create game texture! reason: {}",
           _com_error{result}.ErrorMessage());
 
       return std::nullopt;
@@ -1291,7 +1293,7 @@ auto Shader_patch::create_game_texture2d_gen_mips_decompressed(
           _device->CreateTexture2D(&mip_gen_desc, nullptr,
                                    mip_gen_texture.clear_and_assign());
        FAILED(result)) {
-      log(Log_level::error, "Failed to create game texture! reason: ",
+      log(Log_level::error, "Failed to create game texture! reason: {}",
           _com_error{result}.ErrorMessage());
 
       return std::nullopt;
@@ -1303,7 +1305,7 @@ auto Shader_patch::create_game_texture2d_gen_mips_decompressed(
           _device->CreateShaderResourceView(mip_gen_texture.get(), nullptr,
                                             mip_gen_srv.clear_and_assign());
        FAILED(result)) {
-      log(Log_level::error, "Failed to create game texture! reason: ",
+      log(Log_level::error, "Failed to create game texture! reason: {}",
           _com_error{result}.ErrorMessage());
 
       return std::nullopt;
@@ -1323,7 +1325,7 @@ auto Shader_patch::create_game_texture2d_gen_mips_decompressed(
    if (const auto result =
           _device->CreateTexture2D(&desc, nullptr, texture.clear_and_assign());
        FAILED(result)) {
-      log(Log_level::error, "Failed to create game texture! reason: ",
+      log(Log_level::error, "Failed to create game texture! reason: {}",
           _com_error{result}.ErrorMessage());
 
       return std::nullopt;
@@ -1359,7 +1361,7 @@ auto Shader_patch::create_game_texture(Com_ptr<ID3D11Resource> texture,
              _device->CreateShaderResourceView(texture.get(), &srv_desc,
                                                srv.clear_and_assign());
           FAILED(result)) {
-         log(Log_level::error, "Failed to create game texture SRV! reason: ",
+         log(Log_level::error, "Failed to create game texture SRV! reason: {}",
              _com_error{result}.ErrorMessage());
 
          return {};
@@ -1378,7 +1380,7 @@ auto Shader_patch::create_game_texture(Com_ptr<ID3D11Resource> texture,
              _device->CreateShaderResourceView(texture.get(), &srgb_srv_desc,
                                                srgb_srv.clear_and_assign());
           FAILED(result)) {
-         log(Log_level::error, "Failed to create game texture SRGB SRV! reason: ",
+         log(Log_level::error, "Failed to create game texture SRGB SRV! reason: {}",
              _com_error{result}.ErrorMessage());
 
          return {};
@@ -1503,7 +1505,7 @@ void Shader_patch::destroy_patch_texture(const Patch_texture_handle texture_hand
 
    if (!exists) return; // Texture has already been replaced.
 
-   log(Log_level::info, "Destroying texture "sv, std::quoted(name));
+   log(Log_level::info, "Destroying texture '{}'"sv, name);
 
    _shader_resource_database.erase(texture);
 }
@@ -1521,7 +1523,7 @@ void Shader_patch::destroy_patch_material(const Material_handle material_handle)
    for (auto it = _materials_pool.begin(); it != _materials_pool.end(); ++it) {
       if (it->get() != material) continue;
 
-      log(Log_level::info, "Destroying material "sv, std::quoted(material->name));
+      log(Log_level::info, "Destroying material '{}'"sv, material->name);
 
       _materials_pool.erase(it);
 
@@ -1538,7 +1540,7 @@ void Shader_patch::load_patch_effects_config(const std::string_view effects_conf
       _effects.enabled(true);
    }
    catch (std::exception& e) {
-      log_and_terminate("Failed to load effects config! reason: "sv, e.what());
+      log_and_terminate("Failed to load effects config! reason: {}"sv, e.what());
    }
 }
 
@@ -1559,7 +1561,7 @@ void Shader_patch::load_colorgrading_regions(const std::span<const std::byte> re
          ucfb::Reader_strict<"clrg"_mn>{regions_data}));
    }
    catch (std::exception& e) {
-      log(Log_level::error, "Failed to load colorgrading regions! reason: "sv,
+      log(Log_level::error, "Failed to load colorgrading regions! reason: {}"sv,
           e.what());
    }
 }

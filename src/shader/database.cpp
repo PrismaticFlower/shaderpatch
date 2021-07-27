@@ -32,7 +32,7 @@ auto get_shader_group(const absl::flat_hash_map<std::string, std::unique_ptr<T>>
       return *group->second;
    }
 
-   log_and_terminate("Unable to find shader group '"sv, name, "'"sv);
+   log_and_terminate("Unable to find shader group '{}'"sv, name);
 }
 
 template<typename T>
@@ -65,7 +65,7 @@ auto create_shader(ID3D11Device5& device, const Bytecode_blob& bytecode) noexcep
    if (auto result = std::invoke(create, device, bytecode.data(), bytecode.size(),
                                  nullptr, shader.clear_and_assign());
        FAILED(result)) {
-      log(Log_level::warning, "Failed to create shader, reason: "sv,
+      log(Log_level::warning, "Failed to create shader, reason: {}"sv,
           _com_error{result}.ErrorMessage());
    }
 
@@ -88,9 +88,9 @@ auto create_entrypoint_vertex_state(const Group_definition& definition,
                  .generic_input_state = entrypoint.vertex_state.generic_input};
       }
       else {
-         log_and_terminate("Unable to find vertex input layout '"sv,
+         log_and_terminate("Unable to find vertex input layout '{}' in shader group '{}'"sv,
                            entrypoint.vertex_state.input_layout,
-                           "' in shader group '"sv, definition.group_name, "'"sv);
+                           definition.group_name);
       }
    }
    else {
@@ -158,8 +158,8 @@ auto create_rendertype_state_descs(const Group_definition& definition,
       const auto verify_entrypoint_exists = [&](const std::string& entrypoint) {
          if (definition.entrypoints.contains(entrypoint)) return;
 
-         log_and_terminate("Can't find entrypoint definition '"sv, entrypoint,
-                           "' in shader group '"sv, definition.group_name, "'"sv);
+         log_and_terminate("Can't find entrypoint definition '{}' in shader group '{}'"sv,
+                           entrypoint, definition.group_name);
       };
 
       verify_entrypoint_exists(state.vs_entrypoint);
@@ -288,8 +288,8 @@ public:
       const auto& entrypoint_desc = get_entrypoint_desc(group_name, entrypoint_name);
 
       if (entrypoint_desc.stage != to_stage<T>()) {
-         log_and_terminate("Shader stage mismatch for entrypoint '"sv,
-                           entrypoint_name, "' from group '"sv, group_name, "'"sv);
+         log_and_terminate("Shader stage mismatch for entrypoint '{}' from group '{}'"sv,
+                           entrypoint_name, group_name);
       }
 
       auto bytecode = compile(_source_file_store, entrypoint_desc, static_flags);
@@ -332,8 +332,8 @@ public:
       // Multithreading stuff to stop double compilation goes here.
 
       if (entrypoint_desc.stage != Stage::vertex) {
-         log_and_terminate("Shader stage mismatch for entrypoint '"sv,
-                           entrypoint_name, "' from group '"sv, group_name, "'"sv);
+         log_and_terminate("Shader stage mismatch for entrypoint '{}' from group '{}'"sv,
+                           entrypoint_name, group_name);
       }
 
       auto bytecode =
@@ -402,11 +402,11 @@ private:
             return entrypoint->second;
          }
 
-         log_and_terminate("Unable to find shader entrypoint '"sv, entrypoint_name,
-                           "' in shader group '"sv, group_name, "'!"sv);
+         log_and_terminate("Unable to find shader entrypoint '{}' in shader group '{}'!"sv,
+                           entrypoint_name, group_name);
       }
 
-      log_and_terminate("Unable to find shader group '"sv, group_name, "'!"sv);
+      log_and_terminate("Unable to find shader group '{}'!"sv, group_name);
    }
 
    Com_ptr<ID3D11Device5> _device;
@@ -537,7 +537,7 @@ auto Rendertypes_database::operator[](const std::string_view rendertype) noexcep
       return *it->second;
    }
 
-   log_and_terminate("Attempt to get nonexistent rendertype '"sv, rendertype, "'!"sv);
+   log_and_terminate("Attempt to get nonexistent rendertype '{}'!"sv, rendertype);
 }
 
 Rendertype::Rendertype(Database_internal& database,
@@ -558,8 +558,8 @@ auto Rendertype::state(const std::string_view state) noexcept -> Rendertype_stat
       return *it->second;
    }
 
-   log_and_terminate("Attempt to get nonexistent state '"sv, state,
-                     "' from rendertype'"sv, _name, "'!"sv);
+   log_and_terminate("Attempt to get nonexistent state '{}' from rendertype'{}'!"sv,
+                     state, _name);
 }
 
 Rendertype_state::Rendertype_state(Database_internal& database,

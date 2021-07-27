@@ -53,10 +53,9 @@ auto Shader_set::Material_shader_state::get_vs(const shader::Vertex_shader_flags
       return shader->second;
    }
 
-   log_and_terminate("Failed to find vertex shader for material shader '"sv,
-                     shader_name, "' with shader state '"sv, state_name,
-                     "'! vertex shader flags: ("sv, flags_to_bitstring(flags),
-                     ") '"sv, to_string(flags), "'"sv);
+   log_and_terminate("Failed to find vertex shader for material shader '{}' with shader state '{}'! vertex shader flags: ({}) '{}'"sv,
+                     shader_name, state_name, flags_to_bitstring(flags),
+                     to_string(flags));
 }
 
 auto Shader_set::get_state(const std::string& state_name) noexcept
@@ -66,8 +65,8 @@ auto Shader_set::get_state(const std::string& state_name) noexcept
       return state->second;
    }
 
-   log_and_terminate("Failed to find shader state '"sv, state_name,
-                     "' for material shader '"sv, _name, "'!"sv);
+   log_and_terminate("Failed to find shader state '{}' for material shader '{}'!"sv,
+                     state_name, _name);
 }
 
 auto Shader_set::init_shaders(shader::Rendertype& rendertype,

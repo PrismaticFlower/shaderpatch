@@ -200,8 +200,8 @@ void Control::save_params_to_yaml_file(const fs::path& save_to) noexcept
    std::ofstream file{save_to};
 
    if (!file) {
-      log(Log_level::error, "Failed to open file "sv, save_to,
-          " to write effects config."sv);
+      log(Log_level::error, "Failed to open file {} to write effects config."sv,
+          save_to.string());
 
       _save_failure = true;
 
@@ -225,8 +225,9 @@ void Control::save_params_to_munged_file(const fs::path& save_to) noexcept
       _save_failure = false;
    }
    catch (std::exception& e) {
-      log(Log_level::warning, "Exception occured while writing effects config tp "sv,
-          save_to, " Reason: "sv, e.what());
+      log(Log_level::warning,
+          "Exception occured while writing effects config to '{}' Reason: {}"sv,
+          save_to.string(), e.what());
 
       _save_failure = true;
    }
@@ -240,8 +241,9 @@ void Control::load_params_from_yaml_file(const fs::path& load_from) noexcept
       config = YAML::LoadFile(load_from.string());
    }
    catch (std::exception& e) {
-      log(Log_level::error, "Failed to open file "sv, load_from,
-          " to read effects config. Reason: "sv, e.what());
+      log(Log_level::error,
+          "Failed to open file '{}' to read effects config. Reason: {}"sv,
+          load_from.string(), e.what());
 
       _open_failure = true;
    }
@@ -250,8 +252,9 @@ void Control::load_params_from_yaml_file(const fs::path& load_from) noexcept
       read_config(config);
    }
    catch (std::exception& e) {
-      log(Log_level::warning, "Exception occured while reading effects config from "sv,
-          load_from, " Reason: "sv, e.what());
+      log(Log_level::warning,
+          "Exception occured while reading effects config from '{}' Reason: {}"sv,
+          load_from.string(), e.what());
 
       _open_failure = true;
    }

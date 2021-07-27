@@ -410,8 +410,9 @@ auto Color_grading_regions_blender::get_region_params(const std::string_view con
       return i;
    }
 
-   log(Log_level::info, "Color Grading config "sv, std::quoted(config_name),
-       " does not exist. Using default config.");
+   log(Log_level::info,
+       "Color Grading config '{}' does not exist. Using default config."sv,
+       config_name);
 
    _region_params_names.emplace_back(config_name);
    _region_cg_params.emplace_back();

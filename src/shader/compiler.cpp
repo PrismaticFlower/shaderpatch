@@ -193,7 +193,7 @@ auto compile(Source_file_store& file_store, const Entrypoint_description& entryp
          return compile(file_store, entrypoint, static_flags, vertex_shader_flags);
       }
 
-      log_and_terminate("Unable to compile shader!\n", error_message_view);
+      log_and_terminate("Unable to compile shader!\n{}", error_message_view);
    }
 
    log_debug("Compiled shader {}:{}({:x})"sv, entrypoint.source_name,

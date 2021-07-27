@@ -185,7 +185,7 @@ Creator::Creator() noexcept
       create_adapter(dxgi_create_flags);
    }
 
-   log(Log_level::info, "Selected GPU "sv, gpu_desc());
+   log(Log_level::info, "Selected GPU {}"sv, gpu_desc());
 
    MONITORINFO info{sizeof(MONITORINFO)};
    GetMonitorInfoW(MonitorFromPoint({0, 0}, MONITOR_DEFAULTTOPRIMARY), &info);

@@ -36,7 +36,7 @@ OIT_provider::OIT_provider(Com_ptr<ID3D11Device5> device, shader::Database& shad
          missing = "typed Unordered Access View loads."sv;
       }
 
-      log(Log_level::info, "Adaptive Order-Independent Transparency is unsupported. GPU is missing support for ",
+      log(Log_level::info, "Adaptive Order-Independent Transparency is unsupported. GPU is missing support for {}",
           missing);
    }
 }

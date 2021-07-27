@@ -33,7 +33,7 @@ auto make_sampler(ID3D11Device1& device, const D3D11_FILTER filter,
    if (const auto result =
           device.CreateSamplerState(&desc, sampler.clear_and_assign());
        FAILED(result)) {
-      log_and_terminate("Failed to create sampler state! reason: ",
+      log_and_terminate("Failed to create sampler state! reason: {}",
                         _com_error{result}.ErrorMessage());
    }
 

@@ -41,8 +41,7 @@ auto create_tmp_file() -> std::pair<std::ofstream, win32::Unique_handle>
    GetTempFileNameW(temp_directory.c_str(), L"SP_", 0, tmp_file_path.data());
 
    if (const auto code = GetLastError(); code != ERROR_SUCCESS) {
-      log_and_terminate("Unable to get temporary file name. Error code is "sv,
-                        std::hex, code);
+      log_and_terminate("Unable to get temporary file name. Error code is {}"sv, code);
    }
 
    win32::Unique_handle file{
@@ -51,8 +50,8 @@ auto create_tmp_file() -> std::pair<std::ofstream, win32::Unique_handle>
                   FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE, nullptr)};
 
    if (file.get() == INVALID_HANDLE_VALUE) {
-      log_and_terminate("Unable to create temporary file. Error code is "sv,
-                        std::hex, GetLastError());
+      log_and_terminate("Unable to create temporary file. Error code is {}"sv,
+                        GetLastError());
    }
 
    std::ofstream stream = [&] {
@@ -66,7 +65,7 @@ auto create_tmp_file() -> std::pair<std::ofstream, win32::Unique_handle>
       FILE* const crt_file = _wfdopen(crt_desc, L"r+b");
 
       if (!crt_file)
-         log_and_terminate("Unable to create temporary file. errno was "sv, errno);
+         log_and_terminate("Unable to create temporary file. errno was {}"sv, errno);
 
       return std::ofstream{crt_file};
    }();

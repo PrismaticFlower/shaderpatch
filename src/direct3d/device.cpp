@@ -1283,8 +1283,8 @@ HRESULT Device::CreateQuery(D3DQUERYTYPE type, IDirect3DQuery9** query) noexcept
    case D3DQUERYTYPE_BANDWIDTHTIMINGS:
    case D3DQUERYTYPE_CACHEUTILIZATION:
    case D3DQUERYTYPE_MEMORYPRESSURE:
-      log(Log_level::warning,
-          "Unsupported query type requested: ", static_cast<int>(type));
+      log(Log_level::warning, "Unsupported query type requested: {}",
+          static_cast<int>(type));
       return D3DERR_NOTAVAILABLE;
    }
 
@@ -1299,8 +1299,9 @@ auto Device::create_texture2d_managed(const UINT width, const UINT height,
    const auto format = d3d_to_dxgi_format(d3d_format);
 
    if (format == DXGI_FORMAT_UNKNOWN) {
-      log_and_terminate("Attempt to create texture using unsupported format: ",
-                        static_cast<int>(d3d_format));
+      log_and_terminate(
+         "Attempt to create texture using unsupported format: {}",
+         static_cast<int>(d3d_format));
    }
 
    std::unique_ptr<Format_patcher> format_patcher = nullptr;
@@ -1335,8 +1336,9 @@ auto Device::create_texture3d_managed(const UINT width, const UINT height,
    const auto format = d3d_to_dxgi_format(d3d_format);
 
    if (format == DXGI_FORMAT_UNKNOWN) {
-      log_and_terminate("Attempt to create texture using unsupported format: ",
-                        static_cast<int>(d3d_format));
+      log_and_terminate(
+         "Attempt to create texture using unsupported format: {}",
+         static_cast<int>(d3d_format));
    }
 
    return Texture3d_managed::create(_shader_patch, width, height, depth,
@@ -1350,8 +1352,9 @@ auto Device::create_texturecube_managed(const UINT width, const UINT mip_levels,
    const auto format = d3d_to_dxgi_format(d3d_format);
 
    if (format == DXGI_FORMAT_UNKNOWN) {
-      log_and_terminate("Attempt to create texture using unsupported format: ",
-                        static_cast<int>(d3d_format));
+      log_and_terminate(
+         "Attempt to create texture using unsupported format: {}",
+         static_cast<int>(d3d_format));
    }
 
    std::unique_ptr<Format_patcher> format_patcher = nullptr;

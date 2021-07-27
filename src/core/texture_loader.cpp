@@ -21,7 +21,7 @@ void load_texture_lvl(const std::filesystem::path lvl_path, ID3D11Device1& devic
       }
    }
    catch (std::exception& e) {
-      log_and_terminate("Failed to load builtin textures! reason: ", e.what());
+      log_and_terminate("Failed to load builtin textures! reason: {}", e.what());
    }
 }
 

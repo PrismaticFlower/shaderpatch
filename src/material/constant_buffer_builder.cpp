@@ -95,7 +95,7 @@ auto parse_type(const std::string_view type_str) noexcept -> Type
    auto type = types.find(type_str);
 
    if (type == types.end()) {
-      log_and_terminate_fmt("Invalid type in constant buffer layout '{}'!"sv, type_str);
+      log_and_terminate("Invalid type in constant buffer layout '{}'!"sv, type_str);
    }
 
    return type->second;
@@ -120,8 +120,8 @@ void parse_layout(const std::string_view layout, T&& callback) noexcept
       var_name = trim_whitespace(var_name);
 
       if (type_string.empty() || var_name.empty()) {
-         log_and_terminate_fmt("Parse error on line #{} in constant buffer layout!"sv,
-                               line.number);
+         log_and_terminate("Parse error on line #{} in constant buffer layout!"sv,
+                           line.number);
       }
 
       if (auto [array_var_name, size_str] = split_string_on(var_name, "["sv);
@@ -133,8 +133,8 @@ void parse_layout(const std::string_view layout, T&& callback) noexcept
 
          if (std::from_chars(size_str.data(), size_str.data() + size_str.size(), size)
                 .ec != std::errc{}) {
-            log_and_terminate_fmt("Parse error on line #{} in constant buffer layout! Unable to parse array size '{}'."sv,
-                                  line.number, size_str);
+            log_and_terminate("Parse error on line #{} in constant buffer layout! Unable to parse array size '{}'."sv,
+                              line.number, size_str);
          }
 
          for (std::size_t i = 0; i < size; ++i) {
@@ -230,14 +230,14 @@ void Constant_buffer_builder::set(const std::string_view field_name,
                D* const dest, const S& src) { *dest = src; },
             [&]<typename D, typename S,
                 typename = std::enable_if_t<!std::is_same_v<D, S>>>(D* const, const S&) {
-               log_and_terminate_fmt("Type mismatch (field type: {} arg type: {}) for material constant buffer field '{}'!"sv,
+               log_and_terminate("Type mismatch (field type: {} arg type: {}) for material constant buffer field '{}'!"sv,
                                      typeid(D).name(), typeid(S).name(), field_name);
             },
          },
          field->second, value);
    }
    else {
-      log_and_terminate_fmt("Attempt to set nonexistent material constant buffer field '{}'!"sv,
+      log_and_terminate("Attempt to set nonexistent material constant buffer field '{}'!"sv,
                             field_name);
    }
 }

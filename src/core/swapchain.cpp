@@ -39,7 +39,7 @@ auto create_swapchain(ID3D11Device1& device, IDXGIAdapter2& adapter,
           factory->CreateSwapChainForHwnd(&device, window, &swap_chain_desc, nullptr,
                                           nullptr, swapchain.clear_and_assign());
        FAILED(result)) {
-      log_and_terminate("Failed to create DXGI swapchain! Reason: ",
+      log_and_terminate("Failed to create DXGI swapchain! reason: {}",
                         _com_error{result}.ErrorMessage());
    }
 
@@ -113,7 +113,7 @@ void Swapchain::present() noexcept
    const auto flags = _allow_tearing ? DXGI_PRESENT_ALLOW_TEARING : 0;
 
    if (const auto result = _swapchain->Present(0, flags); FAILED(result)) {
-      log_and_terminate("Frame Present call failed! reason: ",
+      log_and_terminate("Frame Present call failed! reason: {}",
                         _com_error{result}.ErrorMessage());
    }
 }

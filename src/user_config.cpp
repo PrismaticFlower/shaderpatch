@@ -38,8 +38,8 @@ User_config::User_config(const std::string& path) noexcept
       parse_file(path);
    }
    catch (std::exception& e) {
-      log(Log_level::warning, "Failed to read config file "sv,
-          std::quoted(path), ". reason:"sv, e.what());
+      log(Log_level::warning, "Failed to read config file '{}' reason: {}"sv,
+          path, e.what());
    }
 }
 

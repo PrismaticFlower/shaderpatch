@@ -40,7 +40,7 @@ auto make_resources(std::span<const std::string> resource_names,
       resources.emplace_back(resource_database.at_if(name));
 
       if (!resources.back()) {
-         log_fmt(Log_level::warning, "Shader resource '{}' does not exist."sv, name);
+         log(Log_level::warning, "Shader resource '{}' does not exist."sv, name);
       }
    }
 

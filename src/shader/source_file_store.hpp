@@ -42,8 +42,9 @@ public:
          return it->second.data;
       }
 
-      log(Log_level::error, "Failed to find file '"sv, name,
-          "' in shader source file store. This may be caused by the case sensitivty of the source file store."sv);
+      log(Log_level::error,
+          "Failed to find file '{}' in shader source file store. This may be caused by the case sensitivty of the source file store."sv,
+          name);
 
       return std::nullopt;
    }
@@ -54,8 +55,8 @@ public:
          return it->second.path;
       }
 
-      log_and_terminate("Failed to find file '"sv, name,
-                        "' in shader source file store. This may be caused by the case sensitivty of the source file store."sv);
+      log_and_terminate("Failed to find file '{}' in shader source file store. This may be caused by the case sensitivty of the source file store."sv,
+                        name);
    }
 
    auto last_write_time(const std::string_view name) const noexcept
@@ -65,8 +66,8 @@ public:
          return it->second.last_write_time;
       }
 
-      log_and_terminate("Failed to find file '"sv, name,
-                        "' in shader source file store. This may be caused by the case sensitivty of the source file store."sv);
+      log_and_terminate("Failed to find file '{}' in shader source file store. This may be caused by the case sensitivty of the source file store."sv,
+                        name);
    }
 
 #ifndef __INTELLISENSE__
