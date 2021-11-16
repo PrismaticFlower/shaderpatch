@@ -27,6 +27,22 @@ void User_config::show_imgui() noexcept
 {
    ImGui::Begin("User Config", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
+   if (ImGui::CollapsingHeader("User Interface", ImGuiTreeNodeFlags_DefaultOpen)) {
+      const auto color_picker = [](const char* name, std::array<std::uint8_t, 3>& color) {
+         std::array<float, 3> rgb_color{color[0] / 255.f, color[1] / 255.f,
+                                        color[2] / 255.f};
+
+         ImGui::ColorEdit3(name, rgb_color.data());
+
+         color = {static_cast<std::uint8_t>(rgb_color[0] * 255),
+                  static_cast<std::uint8_t>(rgb_color[1] * 255),
+                  static_cast<std::uint8_t>(rgb_color[2] * 255)};
+      };
+
+      color_picker("Friend Color", ui.friend_color);
+      color_picker("Foe Color", ui.foe_color);
+   }
+
    if (ImGui::CollapsingHeader("Graphics", ImGuiTreeNodeFlags_DefaultOpen)) {
       graphics.antialiasing_method = aa_method_from_string(ImGui::StringPicker(
          "Anti-Aliasing Method", std::string{to_string(graphics.antialiasing_method)},
@@ -124,6 +140,13 @@ void User_config::parse_file(const std::string& path)
 
    display.game_perceived_resolution_override_height =
       config["Display"s]["Game Perceived Resolution Override"s][1].as<std::uint32_t>();
+
+   for (std::size_t i = 0; i < 3; ++i) {
+      ui.friend_color[i] =
+       static_cast<std::uint8_t>(config["User Interface"s]["Friend Color"s][i].as<std::uint32_t>());
+      ui.foe_color[i] =
+        static_cast<std::uint8_t>(config["User Interface"s]["Foe Color"s][i].as<std::uint32_t>());
+   }
 
    graphics.gpu_selection_method = gpu_selection_method_from_string(
       config["Graphics"s]["GPU Selection Method"s].as<std::string>());

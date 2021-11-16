@@ -26,6 +26,65 @@ const static bool use_hardedged_test = NORMAL_USE_HARDEDGED_TEST;
 const static bool use_shadow_map = NORMAL_USE_SHADOW_MAP;
 const static bool use_projected_texture = NORMAL_USE_PROJECTED_TEXTURE;
 
+float4 get_normal_material_diffuse_color()
+{
+   const uint3 friend_color_uint = {1, 86, 213};
+   const uint3 friend_crosshair_dot_color_uint = {1, 154, 255};
+   const uint3 foe_color_uint = {223, 32, 32};
+   const uint3 foe_crosshair_dot_color_uint = {255, 54, 54};
+
+   const uint3 color_uint = material_diffuse_color.rgb * 255.0;
+
+   float4 color = material_diffuse_color;
+
+   if (all(color_uint == friend_color_uint)) {
+      color.rgb = friend_color;
+   }
+   else if (all(color_uint == friend_crosshair_dot_color_uint)) {
+      color.rgb = friend_corsshair_dot_color;
+   }
+   else if (all(color_uint == foe_color_uint)) {
+      color.rgb = foe_color;
+   }
+   else if (all(color_uint == foe_crosshair_dot_color_uint)) {
+      color.rgb = foe_crosshair_dot_color;
+   }
+
+   return color;
+}
+
+float4 get_normal_material_color()
+{
+   float4 color = get_normal_material_diffuse_color();
+
+   if (input_color_srgb) color = srgb_to_linear(color);
+   
+   return color;
+}
+
+float4 get_normal_material_color(float4 color)
+{
+#ifdef __VERTEX_INPUT_COLOR__
+   float4 diffuse_color = get_normal_material_diffuse_color();
+
+   if (input_color_srgb) {
+      const float3 vertex_lin = srgb_to_linear(color.rgb * color_state.y + color_state.x);
+      const float3 matl_lin = srgb_to_linear(diffuse_color.rgb);
+
+      color.rgb = vertex_lin * matl_lin;
+   }
+   else {
+      color.rgb = (color.rgb * color_state.y + color_state.x) * diffuse_color.rgb;
+   }
+
+   color.a = (color.a * color_state.w + color_state.z) * diffuse_color.a;
+#else
+   return get_normal_material_color();
+#endif
+
+   return color;
+}
+
 struct Vs_output_unlit
 {
    float2 diffuse_texcoords : TEXCOORD0;
@@ -55,7 +114,7 @@ Vs_output_unlit unlit_main_vs(Vertex_input input)
    output.material_color_fade.a = 
       use_transparency ? calculate_near_fade_transparent(positionPS) : 
                          calculate_near_fade(positionPS);
-   output.material_color_fade *= get_material_color(input.color());
+   output.material_color_fade *= get_normal_material_color(input.color());
    output.fog = calculate_fog(positionWS, positionPS);
 
    return output;
@@ -101,7 +160,7 @@ Vs_output main_vs(Vertex_input input)
    output.projection_texcoords = mul(float4(positionWS, 1.0), light_proj_matrix);
    output.shadow_texcoords = transform_shadowmap_coords(positionPS);
 
-   output.material_color_fade = get_material_color(input.color());
+   output.material_color_fade = get_normal_material_color(input.color());
    output.material_color_fade.a *=
       use_transparency ? calculate_near_fade_transparent(positionPS) : 
                          calculate_near_fade(positionPS);

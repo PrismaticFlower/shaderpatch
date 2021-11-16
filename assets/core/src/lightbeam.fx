@@ -6,6 +6,23 @@
 
 // clang-format off
 
+float4 get_vertex_color(float4 color) 
+{
+   const uint3 friend_color_uint = {1, 86, 213};
+   const uint3 foe_color_uint = {223, 32, 32};
+
+   const uint3 color_uint = color.rgb * 255.0;
+
+   if (all(color_uint == friend_color_uint)) {
+      color.rgb = friend_color;
+   }
+   else if (all(color_uint == foe_color_uint)) {
+      color.rgb = foe_color;
+   }
+
+   return color;
+}
+
 struct Vs_input
 {
    float4 position : POSITION;
@@ -30,7 +47,7 @@ Vs_output lightbeam_vs(Vertex_input input)
 
    output.positionPS = positionPS;
 
-   output.color = get_material_color(input.color());
+   output.color = get_material_color(get_vertex_color(input.color()));
    output.color.rgb *= lighting_scale;
    output.color.a *= calculate_near_fade_transparent(positionPS);
    output.fog = calculate_fog(positionWS, positionPS);

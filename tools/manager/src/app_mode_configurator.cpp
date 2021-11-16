@@ -280,12 +280,21 @@ auto make_config_ui(std::shared_ptr<user_config> config) -> config::ui_root
                              elements.emplace_back().emplace<config::text_box>();
 
                           init_common(control, setting);
+                       },
+
+                       [&](color_user_config_value& setting) {
+                          auto& control =
+                             elements.emplace_back().emplace<config::color_picker>();
+
+                          init_common(control, setting);
                        }},
+
             setting);
       }
    };
 
    make_page(L"Display"sv, config->display);
+   make_page(L"User Interface"sv, config->user_interface);
    make_page(L"Graphics"sv, config->graphics);
    make_page(L"Effects"sv, config->effects);
    make_page(L"Developer"sv, config->developer);

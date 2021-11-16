@@ -71,6 +71,23 @@ LR"(The override for the game's perceived resolution, for use with `Enable Game 
 },
 
 {
+L"User Interface"sv,      
+LR"(Settings affecting the user interface/HUD of the game.
+
+Note that Friend-Foe changes color do not work when a unit flashes on the minimap. They do work for everything else.)"sv
+},
+
+{
+L"Friend Color"sv,      
+LR"(Color to use for Friend HUD and world elemenets. (Command Posts, crosshair, etc))"sv
+},
+
+{
+L"Foe Color"sv,      
+LR"(Color to use for Foe HUD and world elemenets. (Command Posts, crosshair, etc))"sv
+},
+
+{
 L"Graphics"sv,      
 LR"(Settings directly affecting the rendering of the game.)"sv
 },

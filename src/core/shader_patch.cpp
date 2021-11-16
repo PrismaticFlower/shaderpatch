@@ -1,6 +1,7 @@
 
 #include "shader_patch.hpp"
 #include "../bf2_log_monitor.hpp"
+#include "../effects/color_helpers.hpp"
 #include "../input_hooker.hpp"
 #include "../logger.hpp"
 #include "../material/editor.hpp"
@@ -212,6 +213,7 @@ void Shader_patch::present() noexcept
    update_rendertargets();
    update_refraction_target();
    update_samplers();
+   update_team_colors();
 
    if (_patch_backbuffer) _game_rendertargets[0] = _patch_backbuffer;
 }
@@ -1164,7 +1166,8 @@ void Shader_patch::bind_static_resources() noexcept
 
    auto* cb_scene = _cb_scene_buffer.get();
    const auto vs_constant_buffers =
-      std::array{cb_scene, _cb_draw_buffer.get(), _cb_fixedfunction_buffer.get()};
+      std::array{cb_scene, _cb_draw_buffer.get(), _cb_team_colors_buffer.get(),
+                 _cb_fixedfunction_buffer.get()};
 
    _device_context->VSSetConstantBuffers(0, vs_constant_buffers.size(),
                                          vs_constant_buffers.data());
@@ -1173,7 +1176,8 @@ void Shader_patch::bind_static_resources() noexcept
    _device_context->VSSetShaderResources(0, 1, &cb_skin_buffer);
 
    const auto ps_constant_buffers =
-      std::array{_cb_draw_ps_buffer.get(), _cb_draw_buffer.get()};
+      std::array{_cb_draw_ps_buffer.get(), _cb_draw_buffer.get(),
+                 _cb_team_colors_buffer.get()};
 
    _device_context->PSSetConstantBuffers(0, ps_constant_buffers.size(),
                                          ps_constant_buffers.data());
@@ -1844,6 +1848,87 @@ void Shader_patch::update_samplers() noexcept
    auto* const sampler = _sampler_states.aniso_wrap_sampler.get();
 
    _device_context->PSSetSamplers(0, 1, &sampler);
+}
+
+void Shader_patch::update_team_colors() noexcept
+{
+   const auto team_color_coeffs = [] {
+      const glm::vec3 friend_color = {0.003921569f, 0.3372549f, 0.8352942f};
+      const glm::vec3 friend_health_color = {0.003921569f, 0.2980392f, 0.7333333f};
+      const glm::vec3 friend_corsshair_dot_color = {0.0039215f, 0.6039215f, 1.0f};
+      const glm::vec3 foe_color = {0.8745099f, 0.1254902f, 0.1254902f};
+      const glm::vec3 foe_text_color = {0.5882353f, 0.1176471f, 0.1176471f};
+      const glm::vec3 foe_health_color = {0.6588235f, 0.1098039f, 0.1098039f};
+      const glm::vec3 foe_crosshair_dot_color = {1.0f, 0.2117647f, 0.2117647f};
+
+      const glm::vec3 friend_hsv = effects::rgb_to_hsv(friend_color);
+      const glm::vec3 friend_health_hsv = effects::rgb_to_hsv(friend_health_color);
+      const glm::vec3 friend_corsshair_dot_hsv =
+         effects::rgb_to_hsv(friend_corsshair_dot_color);
+      const glm::vec3 foe_hsv = effects::rgb_to_hsv(foe_color);
+      const glm::vec3 foe_text_hsv = effects::rgb_to_hsv(foe_text_color);
+      const glm::vec3 foe_health_hsv = effects::rgb_to_hsv(foe_health_color);
+      const glm::vec3 foe_crosshair_dot_hsv =
+         effects::rgb_to_hsv(foe_crosshair_dot_color);
+
+      struct Team_color_coefficients {
+         glm::vec3 friend_health;
+         glm::vec3 friend_corsshair_dot;
+         glm::vec3 foe_text;
+         glm::vec3 foe_health;
+         glm::vec3 foe_crosshair_dot;
+      };
+
+      Team_color_coefficients coeffs{
+         .friend_health = friend_health_hsv / friend_hsv,
+         .friend_corsshair_dot = friend_corsshair_dot_hsv / friend_hsv,
+         .foe_text = foe_text_hsv / foe_hsv,
+         .foe_health = foe_health_hsv / foe_hsv,
+         .foe_crosshair_dot = foe_crosshair_dot_hsv / foe_hsv,
+      };
+
+      coeffs.friend_health.x = 1.0f;
+      coeffs.friend_corsshair_dot.x = 1.0f;
+      coeffs.foe_text.x = 1.0f;
+      coeffs.foe_health.x = 1.0f;
+      coeffs.foe_crosshair_dot.x = 1.0f;
+
+      return coeffs;
+   }();
+
+   cb::Team_colors colors{
+      .friend_color = {user_config.ui.friend_color[0] / 255.f,
+                       user_config.ui.friend_color[1] / 255.f,
+                       user_config.ui.friend_color[2] / 255.f},
+      .foe_color = {user_config.ui.foe_color[0] / 255.f,
+                    user_config.ui.foe_color[1] / 255.f,
+                    user_config.ui.foe_color[2] / 255.f},
+   };
+
+   const glm::vec3 friend_hsv = effects::rgb_to_hsv(colors.friend_color);
+   const glm::vec3 foe_hsv = effects::rgb_to_hsv(colors.foe_color);
+
+   colors.friend_health_color =
+      effects::hsv_to_rgb(team_color_coeffs.friend_health * friend_hsv);
+   colors.friend_corsshair_dot_color =
+      effects::hsv_to_rgb(team_color_coeffs.friend_corsshair_dot * friend_hsv);
+   colors.foe_text_color = effects::hsv_to_rgb(team_color_coeffs.foe_text * foe_hsv);
+   colors.foe_health_color =
+      effects::hsv_to_rgb(team_color_coeffs.foe_health * foe_hsv);
+   colors.foe_crosshair_dot_color =
+      effects::hsv_to_rgb(team_color_coeffs.foe_crosshair_dot * foe_hsv);
+
+   colors.friend_health_color = glm::clamp(colors.friend_health_color, 0.0f, 1.0f);
+   colors.friend_corsshair_dot_color =
+      glm::clamp(colors.friend_corsshair_dot_color, 0.0f, 1.0f);
+   colors.foe_text_color = glm::clamp(colors.foe_text_color, 0.0f, 1.0f);
+   colors.foe_health_color = glm::clamp(colors.foe_health_color, 0.0f, 1.0f);
+   colors.foe_crosshair_dot_color =
+      glm::clamp(colors.foe_crosshair_dot_color, 0.0f, 1.0f);
+
+   colors.foe_text_color = colors.foe_color;
+
+   update_dynamic_buffer(*_device_context, *_cb_team_colors_buffer, colors);
 }
 
 void Shader_patch::update_material_resources() noexcept

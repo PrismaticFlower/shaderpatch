@@ -125,4 +125,16 @@ static_assert(draw_ps_game_count == 5);
 
 #undef CB_MAX_GAME_CONSTANTS
 
+struct alignas(16) Team_colors {
+   alignas(16) glm::vec3 friend_color;
+   alignas(16) glm::vec3 friend_health_color;
+   alignas(16) glm::vec3 friend_corsshair_dot_color;
+   alignas(16) glm::vec3 foe_color;
+   alignas(16) glm::vec3 foe_text_color;
+   alignas(16) glm::vec3 foe_health_color;
+   alignas(16) glm::vec3 foe_crosshair_dot_color;
+};
+
+static_assert(sizeof(Team_colors) == 112);
+
 }

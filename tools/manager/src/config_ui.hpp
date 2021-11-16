@@ -35,8 +35,12 @@ struct text_box : ui_element_base {
    std::shared_ptr<winrt::hstring> value;
 };
 
+struct color_picker : ui_element_base {
+   std::shared_ptr<std::array<std::uint8_t, 3>> value;
+};
+
 using ui_element =
-   std::variant<toggle_switch, uint_slider, uint2_boxes, combo_box, text_box>;
+   std::variant<toggle_switch, uint_slider, uint2_boxes, combo_box, text_box, color_picker>;
 
 struct ui_page {
    winrt::hstring name;

@@ -67,6 +67,11 @@ struct User_config {
    } display;
 
    struct {
+      std::array<std::uint8_t, 3> friend_color = {1, 86, 213};
+      std::array<std::uint8_t, 3> foe_color = {223, 32, 32};
+   } ui;
+
+   struct {
       GPU_selection_method gpu_selection_method =
          GPU_selection_method::highest_performance;
       Antialiasing_method antialiasing_method = Antialiasing_method::cmaa2;

@@ -31,9 +31,13 @@ struct enum_user_config_value : basic_user_config_value<winrt::hstring> {
 struct string_user_config_value : basic_user_config_value<winrt::hstring> {
 };
 
+struct color_user_config_value
+   : basic_user_config_value<std::array<std::uint8_t, 3>> {
+};
+
 using user_config_value_vector =
    std::vector<std::variant<bool_user_config_value, percentage_user_config_value, uint2_user_config_value,
-                            enum_user_config_value, string_user_config_value>>;
+                            enum_user_config_value, string_user_config_value, color_user_config_value>>;
 
 struct user_config {
    bool_user_config_value enabled{L"Shader Patch Enabled", true, L"Yes", L"No"};
@@ -57,6 +61,12 @@ struct user_config {
       uint2_user_config_value{L"Game Perceived Resolution Override",
                               {1920, 1080},
                               {L"Width", L"Height"}},
+   };
+
+   user_config_value_vector user_interface = {
+      color_user_config_value{L"Friend Color", {1, 86, 213}},
+
+      color_user_config_value{L"Foe Color", {223, 32, 32}},
    };
 
    user_config_value_vector graphics = {
@@ -112,28 +122,27 @@ struct user_config {
                              {L"Fastest", L"Fast", L"Medium", L"High", L"Highest"}},
    };
 
-   user_config_value_vector developer = {
-      string_user_config_value{L"Screen Toggle", L"0xDC"},
+   user_config_value_vector developer =
+      {string_user_config_value{L"Screen Toggle", L"0xDC"},
 
-      bool_user_config_value{L"Monitor BFront2.log", false, L"Yes", L"No"},
+       bool_user_config_value{L"Monitor BFront2.log", false, L"Yes", L"No"},
 
-      bool_user_config_value{L"Allow Event Queries", false, L"Yes", L"No"},
+       bool_user_config_value{L"Allow Event Queries", false, L"Yes", L"No"},
 
-      bool_user_config_value{L"Use D3D11 Debug Layer", false, L"Yes", L"No"},
+       bool_user_config_value{L"Use D3D11 Debug Layer", false, L"Yes", L"No"},
 
-      bool_user_config_value{L"Use DXGI 1.2 Factory", false, L"Yes", L"No"},
+       bool_user_config_value{L"Use DXGI 1.2 Factory", false, L"Yes", L"No"},
 
-      string_user_config_value{L"Shader Cache Path",
-                               LR"(.\data\shaderpatch\.shader_dxbc_cache)"},
+       string_user_config_value{L"Shader Cache Path",
+                                LR"(.\data\shaderpatch\.shader_dxbc_cache)"},
 
-      string_user_config_value{L"Shader Definitions Path",
-                               LR"(.\data\shaderpatch\shaders\definitions)"},
+       string_user_config_value{L"Shader Definitions Path",
+                                LR"(.\data\shaderpatch\shaders\definitions)"},
 
-      string_user_config_value{L"Shader Source Path", LR"(.\data\shaderpatch\shaders\src)"},
+       string_user_config_value{L"Shader Source Path", LR"(.\data\shaderpatch\shaders\src)"},
 
-      string_user_config_value{L"Material Scripts Path",
-                               LR"(.\data\shaderpatch\scripts\material)"},
+       string_user_config_value{L"Material Scripts Path",
+                                LR"(.\data\shaderpatch\scripts\material)"},
 
-      string_user_config_value{L"Scalable Font Name", L"ariblk.ttf"},
-   };
+       string_user_config_value{L"Scalable Font Name", L"ariblk.ttf"}};
 };

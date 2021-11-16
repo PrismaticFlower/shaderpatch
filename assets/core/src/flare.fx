@@ -13,6 +13,23 @@ struct Vs_textured_output
 
 Texture2D<float4> flare_map : register(t0);
 
+float4 get_vertex_color(float4 color) 
+{
+   const uint3 friend_color_uint = {1, 86, 213};
+   const uint3 foe_color_uint = {223, 32, 32};
+
+   const uint3 color_uint = color.rgb * 255.0;
+
+   if (all(color_uint == friend_color_uint)) {
+      color.rgb = friend_color;
+   }
+   else if (all(color_uint == foe_color_uint)) {
+      color.rgb = foe_color;
+   }
+
+   return color;
+}
+
 Vs_textured_output flare_textured_vs(Vertex_input input)
 {
    Vs_textured_output output;
@@ -21,7 +38,7 @@ Vs_textured_output flare_textured_vs(Vertex_input input)
 
    output.positionPS = transformer.positionPS();
 
-   float4 material_color = get_material_color(input.color());
+   float4 material_color = get_material_color(get_vertex_color(input.color()));
    material_color.rgb *= lighting_scale;
 
    output.color = material_color;
@@ -59,7 +76,7 @@ Vs_untextured_output flare_untextured_vs(Vertex_input input)
 
    output.positionPS = transformer.positionPS();
 
-   float4 material_color = get_material_color(input.color());
+   float4 material_color = get_material_color(get_vertex_color(input.color()));
    material_color.rgb *= lighting_scale;
 
    output.color = material_color;

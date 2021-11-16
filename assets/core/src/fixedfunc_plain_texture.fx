@@ -24,7 +24,6 @@ Vs_output main_vs(Vs_input input)
    output.positionPS = float4(position, 0.0, 1.0);
    output.texcoords = input.texcoords;
 
-   
    return output;
 }
 

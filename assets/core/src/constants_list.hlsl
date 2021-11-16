@@ -40,7 +40,18 @@ cbuffer DrawConstants : register(b1)
    float4 custom_constants[9];
 }
 
-cbuffer FixedfuncConstants : register(b2)
+cbuffer TeamColorConstants : register(b2) 
+{
+   float3 friend_color;
+   float3 friend_health_color;
+   float3 friend_corsshair_dot_color;
+   float3 foe_color;
+   float3 foe_text_color;
+   float3 foe_health_color;
+   float3 foe_crosshair_dot_color;
+}
+
+cbuffer FixedfuncConstants : register(b3)
 {
    float4 ff_texture_factor;
    float2 ff_inv_resolution;
@@ -123,9 +134,9 @@ static const float4 light_spot_dir = light_packed_constants[light_spot_offset + 
 static const float4 light_spot_params = light_packed_constants[light_spot_offset + 3];
 
 #ifdef __VERTEX_SHADER__
-#define MATERIAL_CB_INDEX b3
+#define MATERIAL_CB_INDEX b4
 #elif defined(__PIXEL_SHADER__)
-#define MATERIAL_CB_INDEX b2
+#define MATERIAL_CB_INDEX b3
 #else
 #define MATERIAL_CB_INDEX b0
 #endif

@@ -55,6 +55,10 @@ void save_user_config(const std::filesystem::path& path, const user_config& conf
                  [](const std::array<std::uint32_t, 2>& v) {
                     return "["s + std::to_string(v[0]) + ", "s +
                            std::to_string(v[1]) + "]"s;
+                 },
+                 [](const std::array<std::uint8_t, 3>& v) {
+                    return "["s + std::to_string(v[0]) + ", "s +
+                           std::to_string(v[1]) + ", "s + std::to_string(v[2]) + "]"s;
                  }};
    constexpr static auto line_break = "\n\n"sv;
    constexpr static auto indention = "   "sv;
@@ -70,6 +74,12 @@ void save_user_config(const std::filesystem::path& path, const user_config& conf
    out << "Display: "sv << line_break;
 
    for (const auto& setting : config.display) std::visit(write_value, setting);
+
+   out << "User Interface: "sv << line_break;
+
+   for (const auto& setting : config.user_interface) {
+      std::visit(write_value, setting);
+   }
 
    out << "Graphics: "sv << line_break;
 

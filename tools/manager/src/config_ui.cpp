@@ -28,6 +28,9 @@ constexpr double combo_box_width = 300.0;
 
 constexpr double text_box_width = 300.0;
 
+constexpr double color_pick_button_length = 40.0;
+constexpr double color_pick_button_margin = 10.0;
+
 auto create_header_text_block(winrt::hstring string) -> Xaml::Controls::TextBlock
 {
    Xaml::Controls::TextBlock text_block;
@@ -190,6 +193,69 @@ auto create_element(const text_box& text_box, std::shared_ptr<bool> value_change
    });
 
    return box;
+}
+
+auto create_element(const color_picker& color_picker,
+                    std::shared_ptr<bool> value_changed) -> Xaml::UIElement
+{
+   Color color{255u, (*color_picker.value)[0], (*color_picker.value)[1],
+               (*color_picker.value)[2]};
+
+   Xaml::Controls::StackPanel stack_panel;
+   stack_panel.Orientation(Xaml::Controls::Orientation::Horizontal);
+
+   Xaml::Controls::TextBlock value_text_block;
+   value_text_block.Text(std::to_wstring(color.R) + L" " + std::to_wstring(color.G) +
+                         L" " + std::to_wstring(color.B));
+   value_text_block.HorizontalAlignment(Xaml::HorizontalAlignment::Left);
+   value_text_block.VerticalAlignment(Xaml::VerticalAlignment::Center);
+   value_text_block.Padding(Xaml::Thickness{slider_value_padding});
+   value_text_block.Width(100.0);
+
+   Xaml::Media::SolidColorBrush button_brush;
+   button_brush.Color(color);
+
+   Xaml::Controls::Button button;
+
+   button.Width(color_pick_button_length);
+   button.Height(color_pick_button_length);
+   button.Margin(Xaml::Thickness{color_pick_button_margin});
+   button.Background(button_brush);
+   button.HorizontalAlignment(Xaml::HorizontalAlignment::Left);
+
+   Xaml::Controls::Flyout picker_flyout;
+
+   Xaml::Controls::ColorPicker picker;
+
+   picker.IsMoreButtonVisible(false);
+   picker.IsColorSliderVisible(true);
+   picker.IsColorChannelTextInputVisible(true);
+   picker.IsHexInputVisible(true);
+   picker.IsAlphaEnabled(false);
+   picker.Color(color);
+   picker.ColorChanged(
+      [=, value = color_picker.value](IInspectable box,
+                                      Xaml::Controls::ColorChangedEventArgs args) {
+         Xaml::Media::SolidColorBrush button_brush;
+         button_brush.Color(args.NewColor());
+         button.Background(button_brush);
+
+         value_text_block.Text(std::to_wstring(args.NewColor().R) + L" " +
+                               std::to_wstring(args.NewColor().G) + L" " +
+                               std::to_wstring(args.NewColor().B));
+
+         *value = {args.NewColor().R, args.NewColor().G, args.NewColor().B};
+         *value_changed = true;
+      });
+
+   picker_flyout.Content(picker);
+
+   button.Flyout(picker_flyout);
+
+   stack_panel.Children().Append(value_text_block);
+   stack_panel.Children().Append(button);
+
+   return stack_panel;
 }
 
 auto create_page(const ui_page& ui_page, std::shared_ptr<bool> value_changed)

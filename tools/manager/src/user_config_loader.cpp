@@ -68,6 +68,12 @@ auto load_user_config(const std::filesystem::path& path) -> user_config
                               ? winrt::to_hstring(category[utf8_name].as<std::string>())
                               : setting.value;
                      }
+                     else if constexpr (std::is_same_v<setting_type, color_user_config_value>) {
+                        for (std::size_t i = 0; i < setting.value.size(); ++i) {
+                           setting.value[i] =
+                              category[utf8_name][i].as<std::uint8_t>(setting.value[i]);
+                        }
+                     }
                      else {
                         setting.value =
                            category[utf8_name].as<typename setting_type::value_type>(
@@ -82,6 +88,7 @@ auto load_user_config(const std::filesystem::path& path) -> user_config
       };
 
       load_category(yaml["Display"s], config.display);
+      load_category(yaml["User Interface"s], config.user_interface);
       load_category(yaml["Graphics"s], config.graphics);
       load_category(yaml["Effects"s], config.effects);
       load_category(yaml["Developer"s], config.developer);

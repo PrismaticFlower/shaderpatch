@@ -23,6 +23,42 @@ float4 transform_interface_position(float3 position)
    return positionPS;
 }
 
+float4 get_interface_color()
+{
+   float4 color;
+
+   const uint3 friend_color_uint = {1, 86, 213}; // main friend colour
+   const uint3 friend_health_color_uint = {1, 76, 187};
+   const uint3 foe_color_uint = {223, 32, 32}; // main foe colour
+   const uint3 foe_text_color_uint = {150, 30, 30};
+   const uint3 foe_health_color_uint = {168, 28, 28};
+   
+   const uint3 interface_color_uint = interface_color.rgb * 255.0;
+
+   if (all(interface_color_uint == friend_color_uint)) {
+      color = float4(friend_color, interface_color.a);
+   }
+   else if (all(interface_color_uint == friend_health_color_uint)) {
+      color = float4(friend_health_color, interface_color.a);
+   }
+   else if (all(interface_color_uint == foe_color_uint)) {
+      color = float4(foe_color, interface_color.a);
+   }
+   else if (all(interface_color_uint == foe_text_color_uint)) {
+      color = float4(foe_text_color, interface_color.a);
+   }
+   else if (all(interface_color_uint == foe_health_color_uint)) {
+      color = float4(foe_health_color, interface_color.a);
+   }
+   else {
+      color = interface_color;
+   }
+
+   if (input_color_srgb) color = srgb_to_linear(color);
+
+   return color;
+}
+
 // Masked Bitmap Element
 
 struct Vs_masked_input
@@ -54,7 +90,7 @@ float4 masked_bitmap_ps(float2 texcoords[2] : TEXCOORD0) : SV_Target0
    const float4 mask = element_mask.Sample(linear_clamp_sampler, texcoords[1]);
    const float4 texture_color = element_texture.Sample(linear_clamp_sampler, texcoords[0]);
 
-   return texture_color * interface_color * mask;
+   return texture_color * get_interface_color() * mask;
 }
 
 // Vector Element
@@ -83,7 +119,7 @@ Vs_vector_output vector_vs(Vs_vector_input input)
 
 float4 vector_ps(float4 color : COLOR) : SV_Target0
 {
-   return color * interface_color;
+   return color * get_interface_color();
 }
 
 // Bitmap Untextured
@@ -95,7 +131,7 @@ float4 bitmap_untextured_vs(float3 position : POSITION) : SV_Position
 
 float4 bitmap_untextured_ps() : SV_Target0
 {
-   return interface_color;
+   return get_interface_color();
 }
 
 // Bitmap Textured
@@ -124,6 +160,6 @@ Vs_textured_output bitmap_textured_vs(Vs_textured_input input)
 
 float4 bitmap_textured_ps(float2 texcoords : TEXCOORD) : SV_Target0
 {
-   return element_texture.Sample(linear_clamp_sampler, texcoords) * interface_color;
+   return element_texture.Sample(linear_clamp_sampler, texcoords) * get_interface_color();
 
 }

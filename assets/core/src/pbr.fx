@@ -24,7 +24,7 @@ const static float4 blend_constant = ps_custom_constants[0];
 const static float4 x_texcoords_transform = custom_constants[1];
 const static float4 y_texcoords_transform = custom_constants[2];
 
-cbuffer MaterialConstants : register(b2)
+cbuffer MaterialConstants : register(MATERIAL_CB_INDEX)
 {
    float3 base_color;
    float base_metallicness;

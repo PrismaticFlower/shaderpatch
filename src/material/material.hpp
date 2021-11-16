@@ -36,8 +36,8 @@ struct Material {
    static constexpr auto vs_resources_offset = 1;
    static constexpr auto ps_resources_offset = 7;
 
-   static constexpr auto vs_cb_offset = 3;
-   static constexpr auto ps_cb_offset = 2;
+   static constexpr auto vs_cb_offset = 4;
+   static constexpr auto ps_cb_offset = 3;
 
    using Resource_names = absl::InlinedVector<std::string, 16>;
 

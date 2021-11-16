@@ -69,6 +69,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
          active_mode = make_app_mode_configurator(xaml_desktop_source, true);
       }
 
+      if (BOOL translated = false;
+          SUCCEEDED(xaml_interop->PreTranslateMessage(&msg, &translated)) && translated) {
+         continue;
+      }
+
       TranslateMessage(&msg);
       DispatchMessageW(&msg);
    }

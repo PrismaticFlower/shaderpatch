@@ -267,6 +267,8 @@ private:
 
    void update_samplers() noexcept;
 
+   void update_team_colors() noexcept;
+
    void update_material_resources() noexcept;
 
    void set_linear_rendering(bool linear_rendering) noexcept;
@@ -395,6 +397,8 @@ private:
       create_dynamic_constant_buffer(*_device, sizeof(cb::Fixedfunction));
    const Com_ptr<ID3D11Buffer> _cb_draw_ps_buffer =
       create_dynamic_constant_buffer(*_device, sizeof(_cb_draw_ps));
+   const Com_ptr<ID3D11Buffer> _cb_team_colors_buffer =
+      create_dynamic_constant_buffer(*_device, sizeof(cb::Team_colors));
    const Com_ptr<ID3D11Buffer> _cb_skin_buffer =
       create_dynamic_texture_buffer(*_device, sizeof(_cb_skin));
    const Com_ptr<ID3D11ShaderResourceView> _cb_skin_buffer_srv = [this] {
