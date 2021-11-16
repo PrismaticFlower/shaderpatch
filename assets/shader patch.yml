@@ -21,6 +21,11 @@ Display:
    
    Game Perceived Resolution Override: [1920, 1080]
 
+User Interface: 
+   Friend Color: [1, 86, 213]
+
+   Foe Color: [223, 32, 32]
+   
 Graphics:
    GPU Selection Method: Highest Performance
 
