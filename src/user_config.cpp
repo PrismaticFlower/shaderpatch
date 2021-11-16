@@ -1,6 +1,7 @@
 
 #include "user_config.hpp"
 #include "imgui/imgui_ext.hpp"
+#include "shader_patch_version.hpp"
 
 #include <filesystem>
 
@@ -99,9 +100,7 @@ void User_config::show_imgui() noexcept
                                             to_string(SSAO_quality::highest)}));
    }
 
-   if (ImGui::CollapsingHeader("Developer")) {
-      ImGui::Checkbox("Allow Event Queries", &developer.allow_event_queries);
-   }
+   ImGui::Text("Shader Patch v%s", current_shader_patch_version_string.c_str());
 
    ImGui::End();
 }
