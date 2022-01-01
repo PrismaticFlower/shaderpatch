@@ -847,6 +847,10 @@ void Shader_patch::clear_depthstencil(const float depth, const UINT8 stencil,
 
    if (!dsv) return;
 
+   // The game clears depthstencil before drawing first person models.
+   // This allows OIT to be resolved before they're drawn.
+   if (_oit_active) resolve_oit();
+
    const UINT clear_flags = (clear_depth ? D3D11_CLEAR_DEPTH : 0) |
                             (clear_stencil ? D3D11_CLEAR_STENCIL : 0);
 
