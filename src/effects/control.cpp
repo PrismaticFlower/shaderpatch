@@ -599,15 +599,11 @@ FFX_cas_params show_ffx_cas_imgui(FFX_cas_params params) noexcept
    // The hope is this has the effect of making people observe and consider the trade off of increased
    // sharpness vs ringing when configuring CAS. Or maybe it won't and this is a waste of time.
 
-   constexpr float max_sharpness = 0.4f;
-
-   float fidelity =
-      1.0f - (std::clamp(params.sharpness, 0.0f, max_sharpness) / max_sharpness);
+   float fidelity = 1.0f - std::clamp(params.sharpness, 0.0f, 1.0f);
 
    ImGui::DragFloat("Fidelity", &fidelity, 0.01f, 0.0f, 1.0f);
 
-   params.sharpness =
-      std::lerp(0.0f, max_sharpness, std::clamp(1.0f - fidelity, 0.0f, 1.0f));
+   params.sharpness = std::clamp(1.0f - fidelity, 0.0f, 1.0f);
 
    return params;
 }

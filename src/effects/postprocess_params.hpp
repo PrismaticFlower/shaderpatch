@@ -508,13 +508,10 @@ struct convert<sp::effects::FFX_cas_params> {
    {
       using namespace std::literals;
 
-      constexpr float max_load_sharpness = 0.4f;
-
       params = sp::effects::FFX_cas_params{};
 
       params.enabled = node["Enable"s].as<bool>(params.enabled);
-      params.sharpness = node["Sharpness"s].as<float>(
-         std::clamp(params.sharpness, 0.0f, max_load_sharpness));
+      params.sharpness = node["Sharpness"s].as<float>(params.sharpness);
 
       return true;
    }
