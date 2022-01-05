@@ -28,11 +28,12 @@ struct Effects_control_config {
    bool oit_requested = false;
    bool disable_light_brightness_rescaling = false;
    bool fp_rendertargets = false;
+   bool workaround_bugged_cloth = false;
 };
 
 class Control {
 public:
-   Control(Com_ptr<ID3D11Device4> device, shader::Database& shaders) noexcept;
+   Control(Com_ptr<ID3D11Device5> device, shader::Database& shaders) noexcept;
 
    bool enabled(const bool enabled) noexcept;
 
@@ -97,6 +98,7 @@ struct convert<sp::effects::Effects_control_config> {
       node["DisableLightBrightnessRescaling"s] =
          config.disable_light_brightness_rescaling;
       node["FPRenderTargets"s] = config.fp_rendertargets;
+      node["BuggedClothWorkaround"s] = config.workaround_bugged_cloth;
 
       return node;
    }
@@ -114,6 +116,8 @@ struct convert<sp::effects::Effects_control_config> {
             config.disable_light_brightness_rescaling);
       config.fp_rendertargets =
          node["FPRenderTargets"s].as<bool>(config.fp_rendertargets);
+      config.workaround_bugged_cloth =
+         node["BuggedClothWorkaround"s].as<bool>(config.workaround_bugged_cloth);
 
       return true;
    }

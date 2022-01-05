@@ -1479,20 +1479,13 @@ void Shader_patch::game_rendertype_changed() noexcept
                                                             _patch_backbuffer.height,
                                                             _patch_backbuffer.sample_count};
 
-         if (_aa_method == Antialiasing_method::cmaa2) {
-            _effects.postprocess.apply(*_device_context, _rendertarget_allocator,
-                                       _effects.profiler, _shader_resource_database,
-                                       _cb_scene.vs_view_positionWS, _effects.ffx_cas,
-                                       _effects.cmaa2, postprocess_input,
-                                       _swapchain.postprocess_output());
-         }
-         else {
-            _effects.postprocess.apply(*_device_context, _rendertarget_allocator,
-                                       _effects.profiler, _shader_resource_database,
-                                       _cb_scene.vs_view_positionWS,
-                                       _effects.ffx_cas, postprocess_input,
-                                       _swapchain.postprocess_output());
-         }
+         _effects.postprocess.apply(*_device_context, _rendertarget_allocator,
+                                    _effects.profiler, _shader_resource_database,
+                                    _cb_scene.vs_view_positionWS, _effects.ffx_cas,
+                                    _effects.cmaa2, postprocess_input,
+                                    _swapchain.postprocess_output(),
+                                    {.apply_cmaa2 = _aa_method ==
+                                                    Antialiasing_method::cmaa2});
 
          set_linear_rendering(false);
          _discard_draw_calls = true;
@@ -2039,11 +2032,11 @@ void Shader_patch::patch_backbuffer_resolve() noexcept
 
       _late_backbuffer_resolver.resolve(*_device_context, _shader_resource_database,
                                         _effects_active && _effects.config().hdr_rendering,
-                                        _game_rendertargets[0], cmma_target.rtv());
+                                        _game_rendertargets[0], *cmma_target.rtv());
 
       _effects.cmaa2.apply(*_device_context, _effects.profiler,
-                           {.input = cmma_target.srv(),
-                            .output = cmma_target.uav(),
+                           {.input = *cmma_target.srv(),
+                            .output = *cmma_target.uav(),
                             .width = _game_rendertargets[0].width,
                             .height = _game_rendertargets[0].height});
 

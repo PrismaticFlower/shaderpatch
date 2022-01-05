@@ -76,7 +76,7 @@ void Scope_blur::apply(ID3D11DeviceContext4& dc, const Game_rendertarget& dest,
       auto* const srv = &input_srv;
       dc.PSSetShaderResources(0, 1, &srv);
 
-      auto* const rtv = &blur_rt.rtv();
+      auto* const rtv = blur_rt.rtv();
       dc.OMSetRenderTargets(1, &rtv, nullptr);
 
       dc.Draw(3, 0);
@@ -92,7 +92,7 @@ void Scope_blur::apply(ID3D11DeviceContext4& dc, const Game_rendertarget& dest,
 
       dc.OMSetRenderTargets(0, nullptr, nullptr);
 
-      auto* const srv = &blur_rt.srv();
+      auto* const srv = blur_rt.srv();
       dc.PSSetShaderResources(0, 1, &srv);
 
       auto* const rtv = dest.rtv.get();

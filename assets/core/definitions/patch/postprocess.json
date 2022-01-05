@@ -23,42 +23,14 @@
       ]
     },
 
-    "main_ps": {
-      "stage": "pixel",
-
-      "defines": [
-        [ "CONVERT_TO_SRGB", "1" ],
-        [ "COLOR_GRADING_ACTIVE", "1" ],
-        [ "DITHERING_ACTIVE", "1" ],
-        [ "OUTPUT_CMAA2_LUMA", "0" ]
-      ],
-
-      "static_flags": [
-        "BLOOM_ACTIVE",
-        "BLOOM_USE_DIRT",
-        "VIGNETTE_ACTIVE",
-        "FILM_GRAIN_ACTIVE",
-        "FILM_GRAIN_COLORED"
-      ],
-
-      "static_flags_ops": {
-        "BLOOM_USE_DIRT": {
-          "BLOOM_ACTIVE": "set"
-        },
-
-        "FILM_GRAIN_COLORED": {
-          "FILM_GRAIN_ACTIVE": "set"
-        }
-      }
-    },
-
-    "main_cmaa2_pre_ps": {
+    "main_combine_ps": {
       "stage": "pixel",
       "function_name": "main_ps",
 
       "defines": [
         [ "CONVERT_TO_SRGB", "0" ],
         [ "COLOR_GRADING_ACTIVE", "1" ],
+        [ "VIGNETTE_ACTIVE", "0" ],
         [ "FILM_GRAIN_ACTIVE", "0" ],
         [ "FILM_GRAIN_COLORED", "0" ],
         [ "DITHERING_ACTIVE", "0" ],
@@ -67,8 +39,7 @@
 
       "static_flags": [
         "BLOOM_ACTIVE",
-        "BLOOM_USE_DIRT",
-        "VIGNETTE_ACTIVE"
+        "BLOOM_USE_DIRT"
       ],
 
       "static_flags_ops": {
@@ -78,14 +49,13 @@
       }
     },
 
-    "main_cmaa2_post_ps": {
+    "main_finalize_ps": {
       "stage": "pixel",
       "function_name": "main_ps",
 
       "defines": [
         [ "BLOOM_ACTIVE", "0" ],
         [ "BLOOM_USE_DIRT", "0" ],
-        [ "VIGNETTE_ACTIVE", "0" ],
         [ "CONVERT_TO_SRGB", "1" ],
         [ "COLOR_GRADING_ACTIVE", "0" ],
         [ "DITHERING_ACTIVE", "1" ],
@@ -94,7 +64,8 @@
 
       "static_flags": [
         "FILM_GRAIN_ACTIVE",
-        "FILM_GRAIN_COLORED"
+        "FILM_GRAIN_COLORED",
+        "VIGNETTE_ACTIVE"
       ],
 
       "static_flags_ops": {

@@ -137,7 +137,7 @@ void Bloom::apply(ID3D11DeviceContext4& dc, const Game_rendertarget& dest,
       auto* const srv = &input_srv;
       dc.PSSetShaderResources(0, 1, &srv);
 
-      auto* const rtv = &y_rt.rtv();
+      auto* const rtv = y_rt.rtv();
       dc.OMSetRenderTargets(1, &rtv, nullptr);
 
       dc.Draw(3, 0);
@@ -157,10 +157,10 @@ void Bloom::apply(ID3D11DeviceContext4& dc, const Game_rendertarget& dest,
 
          dc.OMSetRenderTargets(0, nullptr, nullptr);
 
-         auto* const srv = &y_rt.srv();
+         auto* const srv = y_rt.srv();
          dc.PSSetShaderResources(0, 1, &srv);
 
-         auto* const rtv = &x_rt.rtv();
+         auto* const rtv = x_rt.rtv();
          dc.OMSetRenderTargets(1, &rtv, nullptr);
 
          dc.Draw(3, 0);
@@ -174,10 +174,10 @@ void Bloom::apply(ID3D11DeviceContext4& dc, const Game_rendertarget& dest,
 
          dc.OMSetRenderTargets(0, nullptr, nullptr);
 
-         auto* const srv = &x_rt.srv();
+         auto* const srv = x_rt.srv();
          dc.PSSetShaderResources(0, 1, &srv);
 
-         auto* const rtv = &y_rt.rtv();
+         auto* const rtv = y_rt.rtv();
          dc.OMSetRenderTargets(1, &rtv, nullptr);
 
          dc.Draw(3, 0);
@@ -212,7 +212,7 @@ void Bloom::apply(ID3D11DeviceContext4& dc, const Game_rendertarget& dest,
    {
       dc.PSSetShader(_ps_overlay.get(), nullptr, 0);
 
-      auto* const srv = &y_rt.srv();
+      auto* const srv = y_rt.srv();
       dc.PSSetShaderResources(0, 1, &srv);
 
       auto* const rtv = dest.rtv.get();

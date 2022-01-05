@@ -7,6 +7,7 @@
 #include "../material/material.hpp"
 #include "../material/shader_factory.hpp"
 #include "../shader/database.hpp"
+#include "../user_config.hpp"
 #include "backbuffer_cmaa2_views.hpp"
 #include "com_ptr.hpp"
 #include "constant_buffers.hpp"

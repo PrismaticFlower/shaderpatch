@@ -68,24 +68,34 @@ public:
          }
       }
 
-      auto srv() const noexcept -> ID3D11ShaderResourceView&
+      auto srv() const noexcept -> ID3D11ShaderResourceView*
       {
-         return *_rendertarget.srv;
+         return _rendertarget.srv.get();
       }
 
-      auto rtv() const noexcept -> ID3D11RenderTargetView&
+      auto rtv() const noexcept -> ID3D11RenderTargetView*
       {
-         return *_rendertarget.rtv;
+         return _rendertarget.rtv.get();
       }
 
-      auto uav() const noexcept -> ID3D11UnorderedAccessView&
+      auto uav() const noexcept -> ID3D11UnorderedAccessView*
       {
-         return *_rendertarget.uav;
+         return _rendertarget.uav.get();
       }
 
       auto texture() const noexcept -> ID3D11Texture2D&
       {
          return *_rendertarget.texture;
+      }
+
+      auto width() const noexcept -> UINT
+      {
+         return _rendertarget.desc.width;
+      }
+
+      auto height() const noexcept -> UINT
+      {
+         return _rendertarget.desc.height;
       }
 
    private:

@@ -2,7 +2,10 @@
 #include "control.hpp"
 #include "../imgui/imgui_ext.hpp"
 #include "../logger.hpp"
+#include "../user_config.hpp"
 #include "file_dialogs.hpp"
+#include "filmic_tonemapper.hpp"
+#include "postprocess_params.hpp"
 #include "tonemappers.hpp"
 #include "volume_resource.hpp"
 
@@ -37,7 +40,7 @@ FFX_cas_params show_ffx_cas_imgui(FFX_cas_params params) noexcept;
 void show_tonemapping_curve(std::function<float(float)> tonemapper) noexcept;
 }
 
-Control::Control(Com_ptr<ID3D11Device4> device, shader::Database& shaders) noexcept
+Control::Control(Com_ptr<ID3D11Device5> device, shader::Database& shaders) noexcept
    : postprocess{device, shaders}, cmaa2{device, shaders}, ssao{device}, ffx_cas{device, shaders}, profiler{device}
 {
    if (user_config.graphics.enable_user_effects_config)
@@ -106,6 +109,21 @@ void Control::show_imgui(HWND game_window) noexcept
                      "Disable light brightness rescaling in stock shaders. Has "
                      "no affect on custom materials. HDR Rendering implies "
                      "this option.");
+               }
+            }
+
+            if (_config.hdr_rendering || _config.fp_rendertargets) {
+               ImGui::Checkbox("Bugged Cloth Workaround",
+                               &_config.workaround_bugged_cloth);
+
+               if (ImGui::IsItemHovered()) {
+                  ImGui::SetTooltip(
+                     "Some cloth can produce NaNs when drawn. These turn into "
+                     "large black boxes when ran through the bloom filter. "
+                     "This option enables a pass to convert these NaNs into "
+                     "pure black pixels.\n\nThis option should not be "
+                     "prohbitively expensive but it is always cheaper to not "
+                     "run it if it is not needed.");
                }
             }
          }
