@@ -118,7 +118,8 @@ private:
 
 enum class Postprocess_combine_flags {
    bloom_active = 0b1,
-   bloom_use_dirt = 0b10
+   bloom_use_dirt = 0b10,
+   output_luma = 0b100
 };
 
 enum class Postprocess_finalize_flags {
@@ -300,12 +301,6 @@ public:
               const Postprocess_input input, const Postprocess_output output,
               const Postprocess_options options) noexcept
    {
-      bind_common_state(dc);
-
-      update_colorgrading_bloom(dc, camera_position);
-      update_shaders();
-      update_and_bind_cb(dc, input.width, input.height);
-
       const auto process_format = _hdr_state == Hdr_state::hdr
                                      ? DXGI_FORMAT_R16G16B16A16_FLOAT
                                      : DXGI_FORMAT_R11G11B10_FLOAT;
@@ -316,6 +311,14 @@ public:
       const bool output_luma = cmaa2_enabled;
       const bool compute_stages_active = cas_enabled || cmaa2_enabled;
 
+      // State setup.
+      bind_common_state(dc);
+
+      update_colorgrading_bloom(dc, camera_position);
+      update_shaders(output_luma);
+      update_and_bind_cb(dc, input.width, input.height);
+
+      // Postprocessing!
       Work_texture work_texture = input;
 
       if (resolve_msaa) {
@@ -765,7 +768,7 @@ private:
                                            _random_engine(), _random_engine()};
    }
 
-   void update_shaders() noexcept
+   void update_shaders(const bool output_luma) noexcept
    {
       if (!std::exchange(_config_changed, false)) return;
 
@@ -777,6 +780,9 @@ private:
          if (_bloom_use_dirt)
             postprocess_combine_flags |= Postprocess_combine_flags::bloom_use_dirt;
       }
+
+      if (output_luma)
+         postprocess_combine_flags |= Postprocess_combine_flags::output_luma;
 
       Postprocess_finalize_flags postprocess_finalize_flags{};
 

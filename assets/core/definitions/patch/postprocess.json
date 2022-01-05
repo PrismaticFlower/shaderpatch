@@ -33,13 +33,13 @@
         [ "VIGNETTE_ACTIVE", "0" ],
         [ "FILM_GRAIN_ACTIVE", "0" ],
         [ "FILM_GRAIN_COLORED", "0" ],
-        [ "DITHERING_ACTIVE", "0" ],
-        [ "OUTPUT_CMAA2_LUMA", "1" ]
+        [ "DITHERING_ACTIVE", "0" ]
       ],
 
       "static_flags": [
         "BLOOM_ACTIVE",
-        "BLOOM_USE_DIRT"
+        "BLOOM_USE_DIRT",
+        "OUTPUT_CMAA2_LUMA"
       ],
 
       "static_flags_ops": {
