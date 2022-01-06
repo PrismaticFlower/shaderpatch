@@ -20,7 +20,7 @@ inline constexpr Shader_metadata fixedfunc_plain_texture_declaration{
    .rendertype = Rendertype::fixedfunc_plain_texture,
    .shader_name = "plain texture"sv,
 
-   .srgb_state = {false, false, false, false}};
+   .srgb_state = {true, false, false, false}};
 
 inline constexpr Shader_metadata
    fixedfunc_scene_blur_declaration{.rendertype = Rendertype::fixedfunc_scene_blur,
