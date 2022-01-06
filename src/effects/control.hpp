@@ -2,6 +2,7 @@
 
 #include "../effects/cmaa2.hpp"
 #include "../effects/ffx_cas.hpp"
+#include "../effects/mask_nan.hpp"
 #include "../effects/postprocess.hpp"
 #include "../effects/profiler.hpp"
 #include "../effects/ssao.hpp"
@@ -39,6 +40,12 @@ public:
 
    bool enabled() const noexcept;
 
+   bool workaround_bugged_cloth() const noexcept
+   {
+      return _enabled & (_config.fp_rendertargets | _config.hdr_rendering) &
+             _config.workaround_bugged_cloth;
+   }
+
    void config(const Effects_control_config& config) noexcept
    {
       _config = config;
@@ -59,6 +66,7 @@ public:
    effects::CMAA2 cmaa2;
    effects::SSAO ssao;
    effects::FFX_cas ffx_cas;
+   effects::Mask_nan mask_nan;
    effects::Profiler profiler;
 
 private:

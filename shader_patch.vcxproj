@@ -203,6 +203,7 @@
     <ClCompile Include="src\effects\color_grading_regions_blender.cpp" />
     <ClCompile Include="src\effects\control.cpp" />
     <ClCompile Include="src\effects\ffx_cas.cpp" />
+    <ClCompile Include="src\effects\mask_nan.cpp" />
     <ClCompile Include="src\effects\postprocess.cpp" />
     <ClCompile Include="src\effects\profiler.cpp" />
     <ClCompile Include="src\effects\ssao.cpp" />
@@ -311,6 +312,7 @@
     <ClInclude Include="src\effects\color_helpers.hpp" />
     <ClInclude Include="src\effects\ffx_cas.hpp" />
     <ClInclude Include="src\effects\filmic_tonemapper.hpp" />
+    <ClInclude Include="src\effects\mask_nan.hpp" />
     <ClInclude Include="src\effects\postprocess_params.hpp" />
     <ClInclude Include="src\effects\color_grading_lut_baker.hpp" />
     <ClInclude Include="src\effects\control.hpp" />

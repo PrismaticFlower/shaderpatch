@@ -389,6 +389,12 @@
     <None Include="src\lighting_occlusion.hlsl">
       <Filter>src</Filter>
     </None>
+    <None Include="src\mask_nan.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="definitions\patch\mask_nan.json">
+      <Filter>definitions\patch</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">

@@ -279,6 +279,7 @@
     <ClCompile Include="src\material\sol_create_usertypes.cpp">
       <Filter>src\material</Filter>
     </ClCompile>
+    <ClCompile Include="src\effects\mask_nan.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -707,6 +708,7 @@
     <ClInclude Include="src\material\material_type.hpp">
       <Filter>src\material</Filter>
     </ClInclude>
+    <ClInclude Include="src\effects\mask_nan.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />

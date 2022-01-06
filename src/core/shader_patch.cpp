@@ -1394,6 +1394,23 @@ void Shader_patch::game_rendertype_changed() noexcept
       }
    }
 
+   // Work around for bugged cloth.
+   switch (_shader_rendertype) {
+   case Rendertype::fixedfunc_scene_blur:
+   case Rendertype::fixedfunc_zoom_blur:
+   case Rendertype::hdr:
+   case Rendertype::filtercopy:
+      if (_effects.workaround_bugged_cloth()) {
+         _effects.mask_nan.apply(*_device_context,
+                                 {.rtv = *_game_rendertargets[0].rtv,
+                                  .width = _game_rendertargets[0].width,
+                                  .height = _game_rendertargets[0].height},
+                                 _effects.profiler);
+
+         restore_all_game_state();
+      }
+   }
+
    if (user_config.graphics.enable_alternative_postprocessing) {
       if (_shader_rendertype == Rendertype::filtercopy) {
          _discard_draw_calls = true;

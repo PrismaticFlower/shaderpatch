@@ -41,7 +41,12 @@ void show_tonemapping_curve(std::function<float(float)> tonemapper) noexcept;
 }
 
 Control::Control(Com_ptr<ID3D11Device5> device, shader::Database& shaders) noexcept
-   : postprocess{device, shaders}, cmaa2{device, shaders}, ssao{device}, ffx_cas{device, shaders}, profiler{device}
+   : postprocess{device, shaders},
+     cmaa2{device, shaders},
+     ssao{device},
+     ffx_cas{device, shaders},
+     mask_nan{device, shaders},
+     profiler{device}
 {
    if (user_config.graphics.enable_user_effects_config)
       load_params_from_yaml_file(user_config.graphics.user_effects_config);
@@ -123,7 +128,9 @@ void Control::show_imgui(HWND game_window) noexcept
                      "This option enables a pass to convert these NaNs into "
                      "pure black pixels.\n\nThis option should not be "
                      "prohbitively expensive but it is always cheaper to not "
-                     "run it if it is not needed.");
+                     "run it if it is not needed.\n\nIf you're a modder always "
+                     "try and fix your cloth assets first before enabling "
+                     "this.");
                }
             }
          }

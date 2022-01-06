@@ -1,0 +1,14 @@
+{
+  "group_name": "mask_nan",
+  "source_name": "mask_nan.fx",
+
+  "entrypoints": {
+    "main_ps": {
+      "stage": "pixel"
+    }
+  },
+
+  "rendertypes": {},
+
+  "states": {}
+}
