@@ -2017,53 +2017,27 @@ void Shader_patch::resolve_oit() noexcept
 
 void Shader_patch::patch_backbuffer_resolve() noexcept
 {
-   if (DirectX::MakeTypeless(_game_rendertargets[0].format) ==
-       DirectX::MakeTypeless(Swapchain::format)) {
-      if (_rt_sample_count > 1) {
-         _device_context->ResolveSubresource(_swapchain.texture(), 0,
-                                             _game_rendertargets[0].texture.get(),
-                                             0, _game_rendertargets[0].format);
-      }
-      else {
-         if (_aa_method == Antialiasing_method::cmaa2) {
-            _effects.cmaa2.apply(*_device_context, _effects.profiler,
-                                 {.input = *_backbuffer_cmaa2_views.srv,
-                                  .output = *_backbuffer_cmaa2_views.uav,
-                                  .width = _game_rendertargets[0].width,
-                                  .height = _game_rendertargets[0].height});
-         }
+   _backbuffer_resolver
+      .apply(*_device_context,
+             {.texture = *_game_rendertargets[0].texture,
+              .srv = *(_backbuffer_cmaa2_views.srv ? _backbuffer_cmaa2_views.srv
+                                                   : _game_rendertargets[0].srv),
+              .uav = _backbuffer_cmaa2_views.uav.get(),
 
-         _device_context->CopyResource(_swapchain.texture(),
-                                       _game_rendertargets[0].texture.get());
-      }
-   }
-   else if (_aa_method == Antialiasing_method::cmaa2) {
-      auto cmma_target = _rendertarget_allocator.allocate(
-         {.format = DXGI_FORMAT_R8G8B8A8_TYPELESS,
-          .width = _game_rendertargets[0].width,
-          .height = _game_rendertargets[0].height,
-          .bind_flags = effects::rendertarget_bind_srv_rtv_uav,
-          .srv_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
-          .rtv_format = DXGI_FORMAT_R8G8B8A8_UNORM,
-          .uav_format = DXGI_FORMAT_R8G8B8A8_UNORM});
+              .format = _game_rendertargets[0].format,
+              .width = _game_rendertargets[0].width,
+              .height = _game_rendertargets[0].height,
+              .sample_count = _game_rendertargets[0].sample_count},
 
-      _late_backbuffer_resolver.resolve(*_device_context, _shader_resource_database,
-                                        _effects_active && _effects.config().hdr_rendering,
-                                        _game_rendertargets[0], *cmma_target.rtv());
+             {.use_cmma2 = _aa_method == Antialiasing_method::cmaa2,
+              .linear_input = _effects_active && _effects.config().hdr_rendering},
 
-      _effects.cmaa2.apply(*_device_context, _effects.profiler,
-                           {.input = *cmma_target.srv(),
-                            .output = *cmma_target.uav(),
-                            .width = _game_rendertargets[0].width,
-                            .height = _game_rendertargets[0].height});
+             _swapchain,
 
-      _device_context->CopyResource(_swapchain.texture(), &cmma_target.texture());
-   }
-   else {
-      _late_backbuffer_resolver.resolve(*_device_context, _shader_resource_database,
-                                        _effects_active && _effects.config().hdr_rendering,
-                                        _game_rendertargets[0], *_swapchain.rtv());
-   }
+             {.cmaa2 = _effects.cmaa2,
+              .rt_allocator = _rendertarget_allocator,
+              .profiler = _effects.profiler,
+              .resources = _shader_resource_database});
 
    _game_rendertargets[0] = _swapchain.game_rendertarget();
 

@@ -147,9 +147,6 @@
     <ClCompile Include="src\core\game_rendertarget.cpp">
       <Filter>src\core</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\late_backbuffer_resolver.cpp">
-      <Filter>src\core</Filter>
-    </ClCompile>
     <ClCompile Include="src\effects\profiler.cpp">
       <Filter>src\effects</Filter>
     </ClCompile>
@@ -280,6 +277,7 @@
       <Filter>src\material</Filter>
     </ClCompile>
     <ClCompile Include="src\effects\mask_nan.cpp" />
+    <ClCompile Include="src\core\postprocessing\backbuffer_resolver.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -449,9 +447,6 @@
     </ClInclude>
     <ClInclude Include="src\direct3d\upload_texture.hpp">
       <Filter>src\direct3d</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\late_backbuffer_resolver.hpp">
-      <Filter>src\core</Filter>
     </ClInclude>
     <ClInclude Include="src\effects\profiler.hpp">
       <Filter>src\effects</Filter>
@@ -709,6 +704,7 @@
       <Filter>src\material</Filter>
     </ClInclude>
     <ClInclude Include="src\effects\mask_nan.hpp" />
+    <ClInclude Include="src\core\postprocessing\backbuffer_resolver.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />

@@ -22,9 +22,9 @@
 #include "image_stretcher.hpp"
 #include "input_layout_descriptions.hpp"
 #include "input_layout_element.hpp"
-#include "late_backbuffer_resolver.hpp"
 #include "oit_provider.hpp"
 #include "patch_effects_config_handle.hpp"
+#include "postprocessing/backbuffer_resolver.hpp"
 #include "sampler_states.hpp"
 #include "small_function.hpp"
 #include "swapchain.hpp"
@@ -433,12 +433,12 @@ private:
    OIT_provider _oit_provider{_device, _shader_database};
 
    const Image_stretcher _image_stretcher{*_device, _shader_database};
-   Late_backbuffer_resolver _late_backbuffer_resolver{*_device, _shader_database};
    const Depth_msaa_resolver _depth_msaa_resolver{*_device, _shader_database};
    Sampler_states _sampler_states{*_device};
    Shader_resource_database _shader_resource_database{
       load_texture_lvl(L"data/shaderpatch/textures.lvl", *_device)};
    Game_alt_postprocessing _game_postprocessing{*_device, _shader_database};
+   postprocessing::Backbuffer_resolver _backbuffer_resolver{_device, _shader_database};
 
    effects::Control _effects{_device, _shader_database};
    effects::Rendertarget_allocator _rendertarget_allocator{_device};
