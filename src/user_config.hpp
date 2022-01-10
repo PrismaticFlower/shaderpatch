@@ -56,7 +56,7 @@ struct User_config {
       std::uint32_t screen_percent = 100;
       std::uint32_t resolution_scale = 100;
       bool scale_dpi_with_resolution_scale = true;
-      bool allow_tearing = true;
+      bool allow_tearing = false;
       bool centred = true;
       bool dpi_aware = true;
       bool dpi_scaling = true;
@@ -82,7 +82,7 @@ struct User_config {
       bool enable_oit = false;
       bool enable_alternative_postprocessing = true;
       bool enable_scene_blur = true;
-      bool enable_16bit_color_rendering = true;
+      bool enable_16bit_color_rendering = false;
       bool disable_light_brightness_rescaling = false;
       bool enable_user_effects_config = false;
       std::string user_effects_config;

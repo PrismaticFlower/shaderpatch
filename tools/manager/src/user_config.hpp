@@ -48,7 +48,7 @@ struct user_config {
       percentage_user_config_value{L"Resolution Scale", 100, 50},
       bool_user_config_value{L"Scale UI with Resolution Scale", true, L"Yes", L"No"},
 
-      bool_user_config_value{L"Allow Tearing", true, L"Tearing Allowed",
+      bool_user_config_value{L"Allow Tearing", false, L"Tearing Allowed",
                              L"Tearing Disallowed"},
 
       bool_user_config_value{L"Centred", true, L"Centred", L"Uncentred"},
@@ -86,7 +86,7 @@ struct user_config {
                              L"x16",
                              {L"off", L"x2", L"x4", L"x8", L"x16"}},
 
-      bool_user_config_value{L"Enable 16-Bit Color Channel Rendering", true,
+      bool_user_config_value{L"Enable 16-Bit Color Channel Rendering", false,
                              L"Enabled", L"Disabled"},
 
       bool_user_config_value{L"Enable Order-Independent Transparency", false,

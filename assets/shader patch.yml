@@ -7,7 +7,7 @@ Display:
    
    Scale UI with Resolution Scale: yes
 
-   Allow Tearing: yes
+   Allow Tearing: no
    
    Centred: yes
 
@@ -37,7 +37,7 @@ Graphics:
 
    Anisotropic Filtering: x16
    
-   Enable 16-Bit Color Channel Rendering: yes
+   Enable 16-Bit Color Channel Rendering: no
 
    Enable Order-Independent Transparency: no
 
