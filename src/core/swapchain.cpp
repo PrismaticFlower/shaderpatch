@@ -28,7 +28,7 @@ auto create_swapchain(ID3D11Device1& device, IDXGIAdapter2& adapter,
    swap_chain_desc.BufferUsage =
       DXGI_USAGE_SHADER_INPUT | DXGI_USAGE_RENDER_TARGET_OUTPUT;
    swap_chain_desc.BufferCount = swap_chain_buffers;
-   swap_chain_desc.Scaling = DXGI_SCALING_NONE;
+   swap_chain_desc.Scaling = DXGI_SCALING_STRETCH;
    swap_chain_desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
    swap_chain_desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
    swap_chain_desc.Flags = allow_tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;

@@ -3,6 +3,10 @@ Shader Patch Enabled: yes
 Display:
    Screen Percent: 100
 
+   Resolution Scale: 100
+   
+   Scale UI with Resolution Scale: yes
+
    Allow Tearing: yes
    
    Centred: yes

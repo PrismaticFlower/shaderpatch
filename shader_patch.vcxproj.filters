@@ -705,6 +705,7 @@
     </ClInclude>
     <ClInclude Include="src\effects\mask_nan.hpp" />
     <ClInclude Include="src\core\postprocessing\backbuffer_resolver.hpp" />
+    <ClInclude Include="src\core\normalized_rect.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />

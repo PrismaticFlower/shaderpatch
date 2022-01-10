@@ -54,6 +54,8 @@ struct User_config {
 
    struct {
       std::uint32_t screen_percent = 100;
+      std::uint32_t resolution_scale = 100;
+      bool scale_dpi_with_resolution_scale = true;
       bool allow_tearing = true;
       bool centred = true;
       bool dpi_aware = true;

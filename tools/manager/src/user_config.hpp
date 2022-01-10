@@ -45,6 +45,9 @@ struct user_config {
    user_config_value_vector display = {
       percentage_user_config_value{L"Screen Percent", 100, 10},
 
+      percentage_user_config_value{L"Resolution Scale", 100, 50},
+      bool_user_config_value{L"Scale UI with Resolution Scale", true, L"Yes", L"No"},
+
       bool_user_config_value{L"Allow Tearing", true, L"Tearing Allowed",
                              L"Tearing Disallowed"},
 

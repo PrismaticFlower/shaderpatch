@@ -91,17 +91,22 @@ auto create_device(IDXGIAdapter4& adapater) noexcept -> Com_ptr<ID3D11Device5>
 
    return device5;
 }
+
 }
 
 Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
                            const UINT width, const UINT height) noexcept
    : _device{create_device(adapter)},
-     _swapchain{_device, adapter, window, width, height},
+     _swapchain{_device, adapter, window,
+                width * user_config.display.resolution_scale / 100,
+                height * user_config.display.resolution_scale / 100},
      _window{window},
-     _nearscene_depthstencil{*_device, width, height,
+     _nearscene_depthstencil{*_device, _swapchain.width(), _swapchain.height(),
                              to_sample_count(user_config.graphics.antialiasing_method)},
-     _farscene_depthstencil{*_device, width, height, 1},
+     _farscene_depthstencil{*_device, _swapchain.width(), _swapchain.height(), 1},
      _reflectionscene_depthstencil{*_device, 512, 256, 1},
+     _window_width{},
+     _window_height{},
      _bf2_log_monitor{user_config.developer.monitor_bfront2_log
                          ? std::make_unique<BF2_log_monitor>()
                          : nullptr}
@@ -150,10 +155,13 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
    _effects.postprocess.color_grading_regions({});
    _oit_provider.clear_resources();
 
-   _swapchain.resize(width, height);
+   _window_width = width;
+   _window_height = height;
+   _swapchain.resize(width * _swapchain_scale / 100, height * _swapchain_scale / 100);
    _game_rendertargets.emplace_back() = _swapchain.game_rendertarget();
-   _nearscene_depthstencil = {*_device, width, height, _rt_sample_count};
-   _farscene_depthstencil = {*_device, width, height, 1};
+   _nearscene_depthstencil = {*_device, _swapchain.width(), _swapchain.height(),
+                              _rt_sample_count};
+   _farscene_depthstencil = {*_device, _swapchain.width(), _swapchain.height(), 1};
    _refraction_rt = {};
    _farscene_refraction_rt = {};
    _current_game_rendertarget = _game_backbuffer_index;
@@ -214,6 +222,7 @@ void Shader_patch::present() noexcept
    update_refraction_target();
    update_samplers();
    update_team_colors();
+   update_swapchain_scale();
 
    if (_patch_backbuffer) _game_rendertargets[0] = _patch_backbuffer;
 }
@@ -267,7 +276,10 @@ auto Shader_patch::create_game_rendertarget(const UINT width, const UINT height)
    -> Game_rendertarget_id
 {
    const int index = _game_rendertargets.size();
-   _game_rendertargets.emplace_back(*_device, _current_rt_format, width, height);
+   _game_rendertargets.emplace_back(*_device, _current_rt_format,
+                                    width == _window_width ? _swapchain.width() : width,
+                                    height == _window_height ? _swapchain.height()
+                                                             : height);
 
    return Game_rendertarget_id{index};
 }
@@ -797,9 +809,9 @@ void Shader_patch::unmap_dynamic_texture(const Game_texture& texture,
 }
 
 void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
-                                        const RECT source_rect,
+                                        const Normalized_rect source_rect,
                                         const Game_rendertarget_id dest,
-                                        const RECT dest_rect) noexcept
+                                        const Normalized_rect dest_rect) noexcept
 {
    auto& src_rt = _game_rendertargets[static_cast<int>(source)];
    auto& dest_rt = _game_rendertargets[static_cast<int>(dest)];
@@ -807,8 +819,8 @@ void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
    if (_on_stretch_rendertarget)
       _on_stretch_rendertarget(src_rt, source_rect, dest_rt, dest_rect);
 
-   const auto src_box = rect_to_box(source_rect);
-   const auto dest_box = rect_to_box(dest_rect);
+   const auto src_box = to_box(src_rt, source_rect);
+   const auto dest_box = to_box(dest_rt, dest_rect);
 
    // Skip any fullscreen resolve or copy operation, as these will be handled as special cases by the shaders that use them.
    if (glm::uvec2{src_rt.width, src_rt.height} ==
@@ -825,11 +837,17 @@ void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
 }
 
 void Shader_patch::color_fill_rendertarget(const Game_rendertarget_id rendertarget,
-                                           const glm::vec4 color, const RECT* rect) noexcept
+                                           const glm::vec4 color,
+                                           const Normalized_rect* normalized_rect) noexcept
 {
-   _device_context
-      ->ClearView(_game_rendertargets[static_cast<int>(rendertarget)].rtv.get(),
-                  &color.x, rect, rect ? 1 : 0);
+   if (auto& rt = _game_rendertargets[static_cast<int>(rendertarget)]; normalized_rect) {
+      RECT rect = to_rect(rt, *normalized_rect);
+
+      _device_context->ClearView(rt.rtv.get(), &color.x, &rect, 1);
+   }
+   else {
+      _device_context->ClearView(rt.rtv.get(), &color.x, nullptr, 0);
+   }
 }
 
 void Shader_patch::clear_rendertarget(const glm::vec4 color) noexcept
@@ -1232,9 +1250,10 @@ void Shader_patch::game_rendertype_changed() noexcept
       }
 
       _on_stretch_rendertarget =
-         [this, backup_rt = std::move(backup_rt)](Game_rendertarget&, const RECT,
+         [this, backup_rt = std::move(backup_rt)](Game_rendertarget&,
+                                                  const Normalized_rect&,
                                                   Game_rendertarget& dest,
-                                                  const RECT) noexcept {
+                                                  const Normalized_rect&) noexcept {
             _game_rendertargets[0] = std::move(backup_rt);
             _on_stretch_rendertarget = nullptr;
             _om_targets_dirty = true;
@@ -1362,15 +1381,17 @@ void Shader_patch::game_rendertype_changed() noexcept
             _om_targets_dirty = true;
             _oit_active = true;
 
-            _on_stretch_rendertarget = [&](Game_rendertarget&, const RECT,
-                                           Game_rendertarget&,
-                                           const RECT dest_rect) noexcept {
-               if (dest_rect.left == 0 && dest_rect.top == 0 &&
-                   dest_rect.bottom == 256 && dest_rect.right == 256)
-                  return;
+            _on_stretch_rendertarget =
+               [&](Game_rendertarget&, const Normalized_rect&, Game_rendertarget& dest_rt,
+                   const Normalized_rect& normalized_dest_rect) noexcept {
+                  auto dest_rect = to_rect(dest_rt, normalized_dest_rect);
 
-               resolve_oit();
-            };
+                  if (dest_rect.left == 0 && dest_rect.top == 0 &&
+                      dest_rect.bottom == 256 && dest_rect.right == 256)
+                     return;
+
+                  resolve_oit();
+               };
          }
 
          _on_rendertype_changed = nullptr;
@@ -1775,37 +1796,15 @@ void Shader_patch::update_rendertargets() noexcept
 
    _nearscene_depthstencil = {*_device, _swapchain.width(), _swapchain.height(),
                               _rt_sample_count};
-   _patch_backbuffer = {};
    _shadow_msaa_rt = {};
-   _backbuffer_cmaa2_views = {};
 
    if (_rt_sample_count > 1) {
-      _patch_backbuffer =
-         Game_rendertarget{*_device, _current_rt_format, _swapchain.width(),
-                           _swapchain.height(), _rt_sample_count};
       _shadow_msaa_rt = {*_device,           shadow_texture_format,
                          _swapchain.width(), _swapchain.height(),
                          _rt_sample_count,   Game_rt_type::shadow};
    }
-   else if (_effects_active || user_config.graphics.enable_16bit_color_rendering) {
-      _patch_backbuffer =
-         Game_rendertarget{*_device, _current_rt_format, _swapchain.width(),
-                           _swapchain.height(), 1};
-   }
 
-   if (_aa_method == Antialiasing_method::cmaa2 &&
-       !(user_config.graphics.enable_16bit_color_rendering || _effects_active)) {
-      _patch_backbuffer = Game_rendertarget{*_device,
-                                            DXGI_FORMAT_R8G8B8A8_TYPELESS,
-                                            DXGI_FORMAT_R8G8B8A8_UNORM,
-                                            _swapchain.width(),
-                                            _swapchain.height(),
-                                            D3D11_BIND_UNORDERED_ACCESS};
-      _backbuffer_cmaa2_views =
-         Backbuffer_cmaa2_views{*_device, *_patch_backbuffer.texture,
-                                DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
-                                DXGI_FORMAT_R8G8B8A8_UNORM};
-   }
+   recreate_patch_backbuffer();
 
    _game_rendertargets[0] =
       _patch_backbuffer ? _patch_backbuffer : _swapchain.game_rendertarget();
@@ -1949,6 +1948,88 @@ void Shader_patch::update_material_resources() noexcept
 {
    for (auto& mat : _materials) {
       mat->update_resources(_shader_resource_database);
+   }
+}
+
+void Shader_patch::update_swapchain_scale() noexcept
+{
+   if (user_config.display.resolution_scale ==
+       std::exchange(_swapchain_scale, user_config.display.resolution_scale)) {
+      return;
+   }
+
+   _rendertarget_allocator.reset();
+   _om_targets_dirty = true;
+
+   if (_game_rendertargets[0].type == Game_rt_type::presentation) {
+      _game_rendertargets[0] = {};
+      _device_context->OMSetRenderTargets(0, nullptr, nullptr); // make sure the swapchain isn't still bound as a rendertarget.
+   }
+
+   const UINT old_width = _swapchain.width();
+   const UINT old_height = _swapchain.height();
+
+   _swapchain.resize(_window_width * _swapchain_scale / 100,
+                     _window_height * _swapchain_scale / 100);
+
+   // depthstencil textures
+   _nearscene_depthstencil = {*_device, _swapchain.width(), _swapchain.height(),
+                              _rt_sample_count};
+   _farscene_depthstencil = {*_device, _swapchain.width(), _swapchain.height(), 1};
+
+   // shadow MSAA target
+   if (_shadow_msaa_rt) {
+      _shadow_msaa_rt = {*_device,           shadow_texture_format,
+                         _swapchain.width(), _swapchain.height(),
+                         _rt_sample_count,   Game_rt_type::shadow};
+   }
+
+   // patch backbuffer handling
+   recreate_patch_backbuffer();
+
+   _game_rendertargets[0] =
+      _patch_backbuffer ? _patch_backbuffer : _swapchain.game_rendertarget();
+
+   for (auto& rt : _game_rendertargets) {
+      if (rt.type == Game_rt_type::presentation) continue;
+
+      if (rt.width == old_width && rt.height == old_height) {
+         rt = Game_rendertarget{*_device, _current_rt_format,
+                                _swapchain.width(), _swapchain.height()};
+      }
+   }
+
+   ImGui_ImplWin32_SwapchainScale(_swapchain_scale);
+}
+
+void Shader_patch::recreate_patch_backbuffer() noexcept
+{
+   _patch_backbuffer = {};
+   _backbuffer_cmaa2_views = {};
+
+   if (_rt_sample_count > 1) {
+      _patch_backbuffer =
+         Game_rendertarget{*_device, _current_rt_format, _swapchain.width(),
+                           _swapchain.height(), _rt_sample_count};
+   }
+   else if (_effects_active || user_config.graphics.enable_16bit_color_rendering) {
+      _patch_backbuffer =
+         Game_rendertarget{*_device, _current_rt_format, _swapchain.width(),
+                           _swapchain.height(), 1};
+   }
+
+   if (_aa_method == Antialiasing_method::cmaa2 &&
+       !(user_config.graphics.enable_16bit_color_rendering || _effects_active)) {
+      _patch_backbuffer = Game_rendertarget{*_device,
+                                            DXGI_FORMAT_R8G8B8A8_TYPELESS,
+                                            DXGI_FORMAT_R8G8B8A8_UNORM,
+                                            _swapchain.width(),
+                                            _swapchain.height(),
+                                            D3D11_BIND_UNORDERED_ACCESS};
+      _backbuffer_cmaa2_views =
+         Backbuffer_cmaa2_views{*_device, *_patch_backbuffer.texture,
+                                DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+                                DXGI_FORMAT_R8G8B8A8_UNORM};
    }
 }
 

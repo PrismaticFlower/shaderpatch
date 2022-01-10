@@ -22,6 +22,7 @@
 #include "image_stretcher.hpp"
 #include "input_layout_descriptions.hpp"
 #include "input_layout_element.hpp"
+#include "normalized_rect.hpp"
 #include "oit_provider.hpp"
 #include "patch_effects_config_handle.hpp"
 #include "postprocessing/backbuffer_resolver.hpp"
@@ -157,12 +158,13 @@ public:
    void unmap_dynamic_texture(const Game_texture& texture, const UINT mip_level) noexcept;
 
    void stretch_rendertarget(const Game_rendertarget_id source,
-                             const RECT source_rect, const Game_rendertarget_id dest,
-                             const RECT dest_rect) noexcept;
+                             const Normalized_rect source_rect,
+                             const Game_rendertarget_id dest,
+                             const Normalized_rect dest_rect) noexcept;
 
    void color_fill_rendertarget(const Game_rendertarget_id rendertarget,
                                 const glm::vec4 color,
-                                const RECT* rect = nullptr) noexcept;
+                                const Normalized_rect* rect = nullptr) noexcept;
 
    void clear_rendertarget(const glm::vec4 color) noexcept;
 
@@ -271,6 +273,10 @@ private:
    void update_team_colors() noexcept;
 
    void update_material_resources() noexcept;
+
+   void update_swapchain_scale() noexcept;
+
+   void recreate_patch_backbuffer() noexcept;
 
    void set_linear_rendering(bool linear_rendering) noexcept;
 
@@ -382,7 +388,9 @@ private:
    bool _imgui_enabled = false;
    bool _screenshot_requested = false;
 
-   Small_function<void(Game_rendertarget&, const RECT, Game_rendertarget&, const RECT) noexcept> _on_stretch_rendertarget;
+   Small_function<void(Game_rendertarget&, const Normalized_rect&,
+                       Game_rendertarget&, const Normalized_rect&) noexcept>
+      _on_stretch_rendertarget;
    Small_function<void() noexcept> _on_rendertype_changed;
 
    cb::Scene _cb_scene{};
@@ -458,6 +466,9 @@ private:
    UINT _rt_sample_count = 1;
    Antialiasing_method _aa_method = Antialiasing_method::none;
    Refraction_quality _refraction_quality = Refraction_quality::medium;
+   UINT _swapchain_scale = user_config.display.resolution_scale;
+   UINT _window_width = 0;
+   UINT _window_height = 0;
 
    text::Font_atlas_builder _font_atlas_builder{_device};
 

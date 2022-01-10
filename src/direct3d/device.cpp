@@ -197,8 +197,17 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
    const UINT window_height =
       monitor_height * user_config.display.screen_percent / 100;
 
-   const UINT dpi = GetDpiForWindow(_window);
    const UINT base_dpi = 96;
+   const UINT dpi = [&] {
+      UINT dpi = GetDpiForWindow(_window);
+
+      if (user_config.display.scale_dpi_with_resolution_scale) {
+         dpi = dpi * 100 / user_config.display.resolution_scale;
+      }
+
+      return dpi;
+   }();
+
    std::uint32_t text_dpi = dpi;
 
    _actual_width = window_width;
@@ -502,21 +511,11 @@ HRESULT Device::StretchRect(IDirect3DSurface9* source_surface,
 
    if (!source_id || !dest_id) return D3DERR_INVALIDCALL;
 
-   const auto perceived_rect_to_actual = [this](const D3DSURFACE_DESC& desc, RECT rect) {
-      if (desc.Width == _perceived_width && desc.Height == _perceived_height) {
-         rect.left = rect.left * _actual_width / _perceived_width;
-         rect.right = rect.right * _actual_width / _perceived_width;
-         rect.top = rect.top * _actual_height / _perceived_height;
-         rect.bottom = rect.bottom * _actual_height / _perceived_height;
-      }
-
-      return rect;
-   };
-
-   _shader_patch.stretch_rendertarget(*source_id,
-                                      perceived_rect_to_actual(src_desc, *source_rect),
-                                      *dest_id,
-                                      perceived_rect_to_actual(dest_desc, *dest_rect));
+   _shader_patch.stretch_rendertarget(
+      *source_id,
+      core::make_normalized_rect(*source_rect, src_desc.Width, src_desc.Height),
+      *dest_id,
+      core::make_normalized_rect(*dest_rect, dest_desc.Width, dest_desc.Height));
 
    return S_OK;
 }
@@ -533,7 +532,15 @@ HRESULT Device::ColorFill(IDirect3DSurface9* surface, const RECT* rect,
 
    if (!rendertarget_id) return D3DERR_INVALIDCALL;
 
-   _shader_patch.color_fill_rendertarget(*rendertarget_id, unpack_d3dcolor(color), rect);
+   D3DSURFACE_DESC surface_desc{};
+   surface->GetDesc(&surface_desc);
+
+   auto normalized_rect =
+      rect ? core::make_normalized_rect(*rect, surface_desc.Width, surface_desc.Height)
+           : core::Normalized_rect{};
+
+   _shader_patch.color_fill_rendertarget(*rendertarget_id, unpack_d3dcolor(color),
+                                         rect ? &normalized_rect : nullptr);
 
    return S_OK;
 }

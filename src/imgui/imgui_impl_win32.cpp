@@ -45,6 +45,7 @@
 static HWND g_hWnd = 0;
 static INT64 g_Time = 0;
 static INT64 g_TicksPerSecond = 0;
+static int g_swapchainScale = 100;
 static ImGuiMouseCursor g_LastMouseCursor = ImGuiMouseCursor_COUNT;
 static bool g_HasGamepad = false;
 static bool g_WantUpdateHasGamepad = true;
@@ -156,12 +157,18 @@ static void ImGui_ImplWin32_UpdateMousePos()
    if (HWND active_window = ::GetForegroundWindow())
       if (active_window == g_hWnd || ::IsChild(active_window, g_hWnd))
          if (::GetCursorPos(&pos) && ::ScreenToClient(g_hWnd, &pos))
-            io.MousePos = ImVec2((float)pos.x, (float)pos.y);
+            io.MousePos = ImVec2((float)(pos.x * g_swapchainScale / 100),
+                                 (float)(pos.y * g_swapchainScale / 100));
 }
 
 #ifdef _MSC_VER
 #pragma comment(lib, "xinput")
 #endif
+
+void ImGui_ImplWin32_SwapchainScale(int scale)
+{
+   g_swapchainScale = scale;
+}
 
 // Gamepad navigation mapping
 static void ImGui_ImplWin32_UpdateGamepads()
@@ -232,7 +239,8 @@ void ImGui_ImplWin32_NewFrame()
    RECT rect;
    ::GetClientRect(g_hWnd, &rect);
    io.DisplaySize =
-      ImVec2((float)(rect.right - rect.left), (float)(rect.bottom - rect.top));
+      ImVec2((float)((rect.right - rect.left) * g_swapchainScale / 100),
+             (float)((rect.bottom - rect.top) * g_swapchainScale / 100));
 
    // Setup time step
    INT64 current_time;

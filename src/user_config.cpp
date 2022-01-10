@@ -28,6 +28,16 @@ void User_config::show_imgui() noexcept
 {
    ImGui::Begin("User Config", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
+   if (ImGui::CollapsingHeader("Display", ImGuiTreeNodeFlags_DefaultOpen)) {
+
+      int resolution_scale = display.resolution_scale;
+      ImGui::InputInt("Resolution Scale (swapchain)", &resolution_scale);
+      display.resolution_scale = std::clamp(resolution_scale, 50, 100);
+
+      ImGui::Checkbox("Scale UI with Resolution Scale",
+                      &display.scale_dpi_with_resolution_scale);
+   }
+
    if (ImGui::CollapsingHeader("User Interface", ImGuiTreeNodeFlags_DefaultOpen)) {
       const auto color_picker = [](const char* name, std::array<std::uint8_t, 3>& color) {
          std::array<float, 3> rgb_color{color[0] / 255.f, color[1] / 255.f,
@@ -116,6 +126,12 @@ void User_config::parse_file(const std::string& path)
    display.screen_percent =
       std::clamp(config["Display"s]["Screen Percent"s].as<std::uint32_t>(), 10u, 100u);
 
+   display.resolution_scale =
+      std::clamp(config["Display"s]["Resolution Scale"s].as<std::uint32_t>(), 50u, 100u);
+
+   display.scale_dpi_with_resolution_scale =
+      config["Display"s]["Scale UI with Resolution Scale"s].as<bool>();
+
    display.allow_tearing = config["Display"s]["Allow Tearing"s].as<bool>();
 
    display.centred = config["Display"s]["Centred"s].as<bool>();
@@ -141,10 +157,10 @@ void User_config::parse_file(const std::string& path)
       config["Display"s]["Game Perceived Resolution Override"s][1].as<std::uint32_t>();
 
    for (std::size_t i = 0; i < 3; ++i) {
-      ui.friend_color[i] =
-       static_cast<std::uint8_t>(config["User Interface"s]["Friend Color"s][i].as<std::uint32_t>());
-      ui.foe_color[i] =
-        static_cast<std::uint8_t>(config["User Interface"s]["Foe Color"s][i].as<std::uint32_t>());
+      ui.friend_color[i] = static_cast<std::uint8_t>(
+         config["User Interface"s]["Friend Color"s][i].as<std::uint32_t>());
+      ui.foe_color[i] = static_cast<std::uint8_t>(
+         config["User Interface"s]["Foe Color"s][i].as<std::uint32_t>());
    }
 
    graphics.gpu_selection_method = gpu_selection_method_from_string(

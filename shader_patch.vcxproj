@@ -260,6 +260,7 @@
     <ClInclude Include="src\core\depthstencil.hpp" />
     <ClInclude Include="src\core\depth_msaa_resolver.hpp" />
     <ClInclude Include="src\core\game_alt_postprocessing.hpp" />
+    <ClInclude Include="src\core\normalized_rect.hpp" />
     <ClInclude Include="src\core\oit_provider.hpp" />
     <ClInclude Include="src\core\patch_effects_config_handle.hpp" />
     <ClInclude Include="src\core\game_input_layout.hpp" />
