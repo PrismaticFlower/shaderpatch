@@ -395,6 +395,9 @@
     <None Include="definitions\patch\mask_nan.json">
       <Filter>definitions\patch</Filter>
     </None>
+    <None Include="definitions\patch\pixel_inspector.json">
+      <Filter>definitions\patch</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">
@@ -417,5 +420,10 @@
     <ClInclude Include="src\ffx_cas.h">
       <Filter>src</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="src\pixel_inspector.fx">
+      <Filter>src</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

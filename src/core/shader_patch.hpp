@@ -32,6 +32,7 @@
 #include "text/font_atlas_builder.hpp"
 #include "texture_database.hpp"
 #include "texture_loader.hpp"
+#include "tools/pixel_inspector.hpp"
 
 #include <span>
 #include <vector>
@@ -473,6 +474,8 @@ private:
    text::Font_atlas_builder _font_atlas_builder{_device};
 
    std::unique_ptr<BF2_log_monitor> _bf2_log_monitor;
+
+   tools::Pixel_inspector _pixel_inspector{_device, _shader_database};
 };
 }
 }

@@ -208,7 +208,6 @@ void Shader_patch::present() noexcept
       screenshot(*_device, *_device_context, _swapchain, screenshots_folder);
 
    _swapchain.present();
-   _om_targets_dirty = true;
 
    _shader_database.cache_update();
 
@@ -223,6 +222,7 @@ void Shader_patch::present() noexcept
    update_samplers();
    update_team_colors();
    update_swapchain_scale();
+   restore_all_game_state();
 
    if (_patch_backbuffer) _game_rendertargets[0] = _patch_backbuffer;
 }
@@ -1725,6 +1725,20 @@ void Shader_patch::update_imgui() noexcept
       material::show_editor(_material_factory, _materials);
 
       if (_bf2_log_monitor) _bf2_log_monitor->show_imgui(true);
+
+      // Dev Tools Window
+      ImGui::SetNextWindowCollapsed(true, ImGuiCond_FirstUseEver);
+
+      if (ImGui::Begin("Dev Tools")) {
+         ImGui::Checkbox("Pixel Inspector", &_pixel_inspector.enabled);
+
+         if (_pixel_inspector.enabled) {
+            _pixel_inspector.show(*_device_context, _swapchain, _window,
+                                  _swapchain_scale);
+         }
+      }
+
+      ImGui::End();
    }
 
    if (_imgui_enabled) {

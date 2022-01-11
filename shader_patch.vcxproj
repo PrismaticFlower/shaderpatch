@@ -171,6 +171,7 @@
     <ClCompile Include="src\core\texture_database.cpp" />
     <ClCompile Include="src\core\texture_loader.cpp" />
     <ClCompile Include="src\core\text\font_atlas_builder.cpp" />
+    <ClCompile Include="src\core\tools\pixel_inspector.cpp" />
     <ClCompile Include="src\direct3d\device.cpp" />
     <ClCompile Include="src\direct3d\format_patcher.cpp" />
     <ClCompile Include="src\direct3d\helpers.cpp" />
@@ -283,6 +284,7 @@
     <ClInclude Include="src\core\texture_database.hpp" />
     <ClInclude Include="src\core\texture_loader.hpp" />
     <ClInclude Include="src\core\text\font_atlas_builder.hpp" />
+    <ClInclude Include="src\core\tools\pixel_inspector.hpp" />
     <ClInclude Include="src\direct3d\format_patcher.hpp" />
     <ClInclude Include="src\direct3d\upload_texture.hpp" />
     <ClInclude Include="src\direct3d\upload_scratch_buffer.hpp" />

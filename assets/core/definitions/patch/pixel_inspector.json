@@ -1,0 +1,14 @@
+{
+  "group_name": "pixel inspector",
+  "source_name": "pixel_inspector.fx",
+
+  "entrypoints": {
+    "main_ps": {
+      "stage": "pixel"
+    }
+  },
+
+  "rendertypes": {},
+
+  "states": {}
+}
