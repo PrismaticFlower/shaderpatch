@@ -1,6 +1,8 @@
 
 #include "pixel_inspector.hpp"
 
+#include "../../imgui/imgui.h"
+
 namespace sp::core::tools {
 
 namespace {
@@ -49,7 +51,7 @@ Pixel_inspector::Pixel_inspector(Com_ptr<ID3D11Device5> device, shader::Database
 void Pixel_inspector::show(ID3D11DeviceContext1& dc, Swapchain& swapchain,
                            const HWND window, const UINT swapchain_scale) noexcept
 {
-   if ((GetKeyState(VK_LBUTTON) & 0x8000)) {
+   if (!ImGui::GetIO().WantCaptureMouse && (GetKeyState(VK_LBUTTON) & 0x8000)) {
       if (!GetCursorPos(&_window_pos)) return;
       if (!ScreenToClient(window, &_window_pos)) return;
    }
