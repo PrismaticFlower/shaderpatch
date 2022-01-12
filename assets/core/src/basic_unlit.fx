@@ -59,8 +59,30 @@ Vs_output main_vs(Vertex_input input)
    return output;
 }
 
-float4 main_ps(Vs_output input) : SV_Target0
+struct Ps_output {
+   float4 out_color : SV_Target0;
+
+#if BASIC_UNLIT_USE_HARDEDGED_TEST
+   uint out_coverage : SV_Coverage;
+#endif
+
+   void color(float4 color)
+   {
+      out_color = color;
+   }
+
+   void coverage(uint coverage)
+   {  
+#     if BASIC_UNLIT_USE_HARDEDGED_TEST
+         out_coverage = coverage;
+#     endif
+   }
+};
+
+Ps_output main_ps(Vs_output input)
 {
+   Ps_output output;
+
    const float2 texcoords = input.texcoords;
 
    float4 color = color_map.Sample(aniso_wrap_sampler, texcoords);
@@ -68,7 +90,28 @@ float4 main_ps(Vs_output input) : SV_Target0
    color *= input.color;
 
    // Hardedged Alpha Test
-   if (use_hardedged_test && color.a < 0.5) discard;
+   if (use_hardedged_test) {
+      uint coverage = 0;
+
+      [branch] 
+      if (supersample_alpha_test) {
+         for (uint i = 0; i < GetRenderTargetSampleCount(); ++i) {
+            const float2 sample_texcoords = EvaluateAttributeAtSample(input.texcoords, i);
+            const float alpha = color_map.Sample(aniso_wrap_sampler, sample_texcoords).a;
+
+            const uint visible = alpha >= 0.5;
+
+            coverage |= (visible << i);
+         }
+      }
+      else {
+         coverage = color.a >= 0.5 ? 0xffffffff : 0;
+      }
+
+      if (coverage == 0) discard;
+
+      output.coverage(coverage);
+   }
 
    const float3 emissive = emissive_map.Sample(aniso_wrap_sampler, texcoords) * emissive_power;
 
@@ -88,13 +131,15 @@ float4 main_ps(Vs_output input) : SV_Target0
       color.a = saturate(input.fade);
    }
    
-   return color;
+   output.color(color);
+
+   return output;
 }
 
 [earlydepthstencil]
 void oit_main_ps(Vs_output input)
 {
-   const float4 color = main_ps(input);
+   Ps_output output = main_ps(input);
 
-   aoit::write_pixel((uint2)input.positionPS.xy, input.positionPS.z, color);
+   aoit::write_pixel((uint2)input.positionPS.xy, input.positionPS.z, output.out_color);
 }

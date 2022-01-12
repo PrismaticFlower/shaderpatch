@@ -97,13 +97,56 @@ struct Ps_input
    bool front_face : SV_IsFrontFace;
 };
 
-float4 main_ps(Ps_input input) : SV_Target0
+struct Ps_output {
+   float4 out_color : SV_Target0;
+
+#if PBR_USE_HARDEDGED_TEST
+   uint out_coverage : SV_Coverage;
+#endif
+
+   void color(float4 color)
+   {
+      out_color = color;
+   }
+
+   void coverage(uint coverage)
+   {  
+#     if PBR_USE_HARDEDGED_TEST
+         out_coverage = coverage;
+#     endif
+   }
+};
+
+Ps_output main_ps(Ps_input input)
 {
+   Ps_output output;
+
    const float4 albedo_map_color = albedo_map.Sample(aniso_wrap_sampler, input.texcoords);
    const float3 albedo = albedo_map_color.rgb * base_color;
 
    // Hardedged Alphatest
-   if (use_hardedged_test && albedo_map_color.a < 0.5) discard;
+   if (use_hardedged_test) {
+      uint coverage = 0;
+
+      [branch] 
+      if (supersample_alpha_test) {
+         for (uint i = 0; i < GetRenderTargetSampleCount(); ++i) {
+            const float2 sample_texcoords = EvaluateAttributeAtSample(input.texcoords, i);
+            const float alpha = albedo_map.Sample(aniso_wrap_sampler, sample_texcoords).a;
+
+            const uint visible = alpha >= 0.5;
+
+            coverage |= (visible << i);
+         }
+      }
+      else {
+         coverage = albedo_map_color.a >= 0.5 ? 0xffffffff : 0;
+      }
+
+      if (coverage == 0) discard;
+
+      output.coverage(coverage);
+   }
 
    // Calculate Metallicness & Roughness factors
    float metallicness = base_metallicness;
@@ -161,13 +204,15 @@ float4 main_ps(Ps_input input) : SV_Target0
       alpha = saturate(input.fade);
    }
 
-   return float4(color, alpha);
+   output.color(float4(color, alpha));
+
+   return output;
 }
 
 [earlydepthstencil]
 void oit_main_ps(Ps_input input, uint coverage : SV_Coverage)
 {
-   const float4 color = main_ps(input);
+   Ps_output output = main_ps(input);
 
-   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, color);
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, output.out_color);
 }

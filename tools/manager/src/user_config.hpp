@@ -82,6 +82,8 @@ struct user_config {
                              L"CMAA2",
                              {L"off", L"CMAA2", L"MSAAx4", L"MSAAx8"}},
 
+      bool_user_config_value{L"Supersample Alpha Test", false, L"Yes", L"No"},
+
       enum_user_config_value{L"Anisotropic Filtering",
                              L"x16",
                              {L"off", L"x2", L"x4", L"x8", L"x16"}},

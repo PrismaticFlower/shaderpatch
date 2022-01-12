@@ -62,6 +62,8 @@ void User_config::show_imgui() noexcept
                                             to_string(Antialiasing_method::msaax4),
                                             to_string(Antialiasing_method::msaax8)}));
 
+      ImGui::Checkbox("Supersample Alpha Test", &graphics.supersample_alpha_test);
+
       graphics.anisotropic_filtering = anisotropic_filtering_from_string(ImGui::StringPicker(
          "Anisotropic Filtering", std::string{to_string(graphics.anisotropic_filtering)},
          std::initializer_list<std::string>{to_string(Anisotropic_filtering::off),
@@ -168,6 +170,9 @@ void User_config::parse_file(const std::string& path)
 
    graphics.antialiasing_method = aa_method_from_string(
       config["Graphics"s]["Anti-Aliasing Method"s].as<std::string>());
+
+   graphics.supersample_alpha_test =
+      config["Graphics"s]["Supersample Alpha Test"s].as<bool>();
 
    graphics.anisotropic_filtering = anisotropic_filtering_from_string(
       config["Graphics"s]["Anisotropic Filtering"s].as<std::string>());

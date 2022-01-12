@@ -85,6 +85,7 @@ struct User_config {
       bool enable_16bit_color_rendering = false;
       bool disable_light_brightness_rescaling = false;
       bool enable_user_effects_config = false;
+      bool supersample_alpha_test = false;
       std::string user_effects_config;
    } graphics;
 

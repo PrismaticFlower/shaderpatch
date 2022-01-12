@@ -35,6 +35,8 @@ Graphics:
 
    Anti-Aliasing Method: CMAA2
 
+   Supersample Alpha Test: no
+
    Anisotropic Filtering: x16
    
    Enable 16-Bit Color Channel Rendering: no

@@ -119,6 +119,15 @@ LR"(Anti-Aliasing method to use, can be "none", "CMAA2", "MSAAx4" or "MSAAx8".)"
 },
 
 {
+L"Supersample Alpha Test"sv,      
+LR"(Enables supersampling the alpha test for hardedged transparency/alpha cutouts when Multisampling Anti-Aliasing is enabled.
+
+This provides excellent anti-aliasing for alpha cutouts (foliage, flat fences, etc) and should be much cheaper than general supersampling. It however does raise the number of texture samples that need to be taken by however many rendertarget samples there are - fast high end GPUs may not even notice this, low power mobile GPUs may struggle more.
+
+If enabling this causes performance issues but you'd still really like it then lowering the level of Anisotropic Filtering may help make reduce the performance cost of this option.)"sv
+},
+
+{
 L"Anisotropic Filtering"sv,      
 LR"(Anisotropic Filtering level for textures, can be "off", "x2", "x4", "x8" or "x16".)"sv
 },

@@ -40,7 +40,7 @@ cbuffer DrawConstants : register(b1)
    float4 custom_constants[9];
 }
 
-cbuffer TeamColorConstants : register(b2) 
+cbuffer TeamColorConstants : register(b2)
 {
    float3 friend_color;
    float3 friend_health_color;
@@ -77,6 +77,7 @@ cbuffer PSDrawConstants : register(b0)
    bool fog_enabled;
    bool limit_normal_shader_bright_lights;
    bool ps_input_color_srgb;
+   bool supersample_alpha_test;
    float time_seconds;
 }
 

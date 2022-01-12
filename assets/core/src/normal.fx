@@ -185,8 +185,30 @@ float get_glow_factor(float4 diffuse_map_color)
    return lerp(blend_constants.b, diffuse_map_color.a, blend_constants.a);
 }
 
-float4 unlit_main_ps(Ps_input_unlit input) : SV_Target0
+struct Ps_output {
+   float4 out_color : SV_Target0;
+
+#if NORMAL_USE_HARDEDGED_TEST && !NORMAL_USE_TRANSPARENCY
+   uint out_coverage : SV_Coverage;
+#endif
+
+   void color(float4 color)
+   {
+      out_color = color;
+   }
+
+   void coverage(uint coverage)
+   {  
+#     if NORMAL_USE_HARDEDGED_TEST && !NORMAL_USE_TRANSPARENCY
+         out_coverage = coverage;
+#     endif
+   }
+};
+
+Ps_output unlit_main_ps(Ps_input_unlit input)
 {
+   Ps_output output;
+
    const float4 diffuse_map_color = diffuse_map.Sample(aniso_wrap_sampler,
                                                        input.diffuse_texcoords);
    const float3 detail_color = detail_map.Sample(aniso_wrap_sampler, input.detail_texcoords);
@@ -207,12 +229,33 @@ float4 unlit_main_ps(Ps_input_unlit input) : SV_Target0
       alpha *= diffuse_map_color.a;
    }
    else if (use_hardedged_test) {
-      if (diffuse_map_color.a < 0.5) discard;
+      uint coverage = 0;
+
+      [branch] 
+      if (supersample_alpha_test) {
+         for (uint i = 0; i < GetRenderTargetSampleCount(); ++i) {
+            const float2 sample_texcoords = EvaluateAttributeAtSample(input.diffuse_texcoords, i);
+            const float alpha = diffuse_map.Sample(aniso_wrap_sampler, sample_texcoords).a;
+
+            const uint visible = alpha >= 0.5;
+
+            coverage |= (visible << i);
+         }
+      }
+      else {
+         coverage = diffuse_map_color.a >= 0.5 ? 0xffffffff : 0;
+      }
+
+      if (coverage == 0) discard;
+
+      output.coverage(coverage);
    }
 
    color = apply_fog(color, input.fog);
+   
+   output.color(float4(color, saturate(alpha)));
 
-   return float4(color, saturate(alpha));
+   return output;
 }
 
 struct Ps_input
@@ -231,8 +274,10 @@ struct Ps_input
    float fog : FOG;
 };
 
-float4 main_ps(Ps_input input) : SV_Target0
+Ps_output main_ps(Ps_input input)
 {
+   Ps_output output;
+
    const float4 diffuse_map_color = diffuse_map.Sample(aniso_wrap_sampler,
                                                        input.diffuse_texcoords);
    const float3 detail_color = detail_map.Sample(aniso_wrap_sampler, input.detail_texcoords);
@@ -278,27 +323,50 @@ float4 main_ps(Ps_input input) : SV_Target0
       }
    }
    else {
-      if (use_hardedged_test && diffuse_map_color.a < 0.5) discard;
+      if (use_hardedged_test) {
+         uint coverage = 0;
+
+         [branch] 
+         if (supersample_alpha_test) {
+            for (uint i = 0; i < GetRenderTargetSampleCount(); ++i) {
+               const float2 sample_texcoords = EvaluateAttributeAtSample(input.diffuse_texcoords, i);
+               const float alpha = diffuse_map.Sample(aniso_wrap_sampler, sample_texcoords).a;
+
+               const uint visible = alpha >= 0.5;
+
+               coverage |= (visible << i);
+            }
+         }
+         else {
+            coverage = diffuse_map_color.a >= 0.5 ? 0xffffffff : 0;
+         }
+
+         if (coverage == 0) discard;
+
+         output.coverage(coverage);
+      }
 
       alpha = input.material_color_fade.a;
    }
 
    color = apply_fog(color, input.fog);
 
-   return float4(color, saturate(alpha));
+   output.color(float4(color, saturate(alpha)));
+
+   return output;
 }
 
 [earlydepthstencil]
 void oit_unlit_main_ps(Ps_input_unlit input, float4 positionSS : SV_Position) {
-   const float4 color = unlit_main_ps(input);
+   Ps_output result = unlit_main_ps(input);
 
-   aoit::write_pixel(positionSS.xy, positionSS.z, color);
+   aoit::write_pixel(positionSS.xy, positionSS.z, result.out_color);
 }
 
 [earlydepthstencil]
 void oit_main_ps(Ps_input input, float4 positionSS : SV_Position)
 {
-   const float4 color = main_ps(input);
-
-   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, color);
+   Ps_output result = main_ps(input);
+   
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, result.out_color);
 }

@@ -176,8 +176,30 @@ struct Ps_input
 
 };
 
-float4 main_ps(Ps_input input) : SV_Target0
+struct Ps_output {
+   float4 out_color : SV_Target0;
+
+#if NORMAL_EXT_USE_HARDEDGED_TEST
+   uint out_coverage : SV_Coverage;
+#endif
+
+   void color(float4 color)
+   {
+      out_color = color;
+   }
+
+   void coverage(uint coverage)
+   {  
+#     if NORMAL_EXT_USE_HARDEDGED_TEST
+         out_coverage = coverage;
+#     endif
+   }
+};
+
+Ps_output main_ps(Ps_input input)
 {
+   Ps_output output;
+
    const float3x3 tangent_to_world = input.tangent_to_world();
 
    const float3 viewWS = normalize(view_positionWS - input.positionWS);
@@ -219,7 +241,28 @@ float4 main_ps(Ps_input input) : SV_Target0
       diffuse_map.Sample(aniso_wrap_sampler, texcoords);
 
    // Hardedged Alpha Test
-   if (use_hardedged_test && diffuse_map_color.a < 0.5) discard;
+   if (use_hardedged_test) {
+      uint coverage = 0;
+
+      [branch] 
+      if (!use_parallax_occlusion_mapping && supersample_alpha_test) {
+         for (uint i = 0; i < GetRenderTargetSampleCount(); ++i) {
+            const float2 sample_texcoords = EvaluateAttributeAtSample(input.texcoords, i);
+            const float alpha = diffuse_map.Sample(aniso_wrap_sampler, sample_texcoords).a;
+
+            const uint visible = alpha >= 0.5;
+
+            coverage |= (visible << i);
+         }
+      }
+      else {
+         coverage = diffuse_map_color.a >= 0.5 ? 0xffffffff : 0;
+      }
+
+      if (coverage == 0) discard;
+
+      output.coverage(coverage);
+   }
 
    // Get Diffuse Color
    float3 diffuse_color = diffuse_map_color.rgb * base_diffuse_color;
@@ -322,13 +365,15 @@ float4 main_ps(Ps_input input) : SV_Target0
       alpha = saturate(input.material_color_fade.a);
    }
    
-   return float4(color, alpha);
+   output.color(float4(color, alpha));
+
+   return output;
 }
 
 [earlydepthstencil]
 void oit_main_ps(Ps_input input)
 {
-   const float4 color = main_ps(input);
+   Ps_output output = main_ps(input);
 
-   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, color);
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, output.out_color);
 }
