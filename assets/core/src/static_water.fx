@@ -195,10 +195,10 @@ float4 main_ps(Ps_input input) : SV_Target0
 }
 
 [earlydepthstencil] 
-void oit_main_ps(Ps_input input) {
+void oit_main_ps(Ps_input input, uint coverage : SV_Coverage) {
    const float4 color = main_ps(input);
 
-   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, color);
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, color, coverage);
 }
 
 float3 get_specular(float3 normalWS, float3 viewWS, float3 positionWS)

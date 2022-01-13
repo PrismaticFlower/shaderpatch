@@ -357,16 +357,16 @@ Ps_output main_ps(Ps_input input)
 }
 
 [earlydepthstencil]
-void oit_unlit_main_ps(Ps_input_unlit input, float4 positionSS : SV_Position) {
+void oit_unlit_main_ps(Ps_input_unlit input, float4 positionSS : SV_Position, uint coverage : SV_Coverage) {
    Ps_output result = unlit_main_ps(input);
 
-   aoit::write_pixel(positionSS.xy, positionSS.z, result.out_color);
+   aoit::write_pixel(positionSS.xy, positionSS.z, result.out_color, coverage);
 }
 
 [earlydepthstencil]
-void oit_main_ps(Ps_input input, float4 positionSS : SV_Position)
+void oit_main_ps(Ps_input input, float4 positionSS : SV_Position, uint coverage : SV_Coverage)
 {
    Ps_output result = main_ps(input);
    
-   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, result.out_color);
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, result.out_color, coverage);
 }

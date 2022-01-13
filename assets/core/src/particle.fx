@@ -124,17 +124,17 @@ float4 blur_ps(Ps_blur_input input) : SV_Target0
 }
 
 [earlydepthstencil]
-void oit_normal_ps(Ps_normal_input input, float4 positionSS : SV_Position)
+void oit_normal_ps(Ps_normal_input input, float4 positionSS : SV_Position, uint coverage : SV_Coverage)
 {
    const float4 color = normal_ps(input);
 
-   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, color);
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, color, coverage);
 }
 
 [earlydepthstencil]
-void oit_blur_ps(Ps_blur_input input)
+void oit_blur_ps(Ps_blur_input input, uint coverage : SV_Coverage)
 {
    const float4 color = blur_ps(input);
 
-   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, color);
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, color, coverage);
 }

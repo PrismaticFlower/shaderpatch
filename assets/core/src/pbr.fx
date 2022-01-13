@@ -214,5 +214,5 @@ void oit_main_ps(Ps_input input, uint coverage : SV_Coverage)
 {
    Ps_output output = main_ps(input);
 
-   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, output.out_color);
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, output.out_color, coverage);
 }

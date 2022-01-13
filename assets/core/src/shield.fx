@@ -6,6 +6,8 @@
 #include "vertex_transformer.hlsl"
 #include "vertex_utilities.hlsl"
 
+// clang-format off
+
 const static float3 specular_color = custom_constants[0].xyz;
 const static float4 shield_constants = custom_constants[3];
 const static float2 near_scene_fade_scale = custom_constants[4].xy;
@@ -93,7 +95,8 @@ struct Ps_input {
    return float4(color, 1.0);
 }
 
-[earlydepthstencil] void oit_shield_ps(Ps_input input, float4 positionSS : SV_Position) 
+[earlydepthstencil] 
+void oit_shield_ps(Ps_input input, float4 positionSS : SV_Position, uint coverage : SV_Coverage) 
 {
    const float3 normalWS = normalize(input.normalWS);
    const float3 view_normalWS = normalize(input.positionWS - view_positionWS);
@@ -115,5 +118,5 @@ struct Ps_input {
    color = (color + (specular / max(alpha, 1e-5))) * lighting_scale;
    color = apply_fog(color, input.fog);
 
-   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, float4(color, alpha));
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, float4(color, alpha), coverage);
 }

@@ -71,9 +71,9 @@ float4 lightbeam_ps(Ps_input input) : SV_Target0
 }
 
 [earlydepthstencil]
-void oit_lightbeam_ps(Ps_input input, float4 positionSS : SV_Position)
+void oit_lightbeam_ps(Ps_input input, float4 positionSS : SV_Position, uint coverage : SV_Coverage)
 {
    const float4 color = lightbeam_ps(input);
 
-   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, color);
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, color, coverage);
 }

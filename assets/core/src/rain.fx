@@ -2,6 +2,8 @@
 #include "generic_vertex_input.hlsl"
 #include "vertex_transformer.hlsl"
 
+// clang-format off
+
 struct Vs_output
 {
    float4 color : COLOR;
@@ -26,7 +28,7 @@ float4 rain_ps(float4 color : COLOR) : SV_Target0
 }
 
 [earlydepthstencil]
-void oit_rain_ps(float4 color : COLOR, float4 positionSS : SV_Position) 
+void oit_rain_ps(float4 color : COLOR, float4 positionSS : SV_Position, uint coverage : SV_Coverage) 
 {
-   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, color);
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, color, coverage);
 }

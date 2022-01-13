@@ -137,9 +137,9 @@ Ps_output main_ps(Vs_output input)
 }
 
 [earlydepthstencil]
-void oit_main_ps(Vs_output input)
+void oit_main_ps(Vs_output input, uint coverage : SV_Coverage)
 {
    Ps_output output = main_ps(input);
 
-   aoit::write_pixel((uint2)input.positionPS.xy, input.positionPS.z, output.out_color);
+   aoit::write_pixel((uint2)input.positionPS.xy, input.positionPS.z, output.out_color, coverage);
 }

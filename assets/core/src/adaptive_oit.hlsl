@@ -225,8 +225,11 @@ void insert_fragment(const float3 frag_color, const float frag_depth,
 
 // Main interface functions.
 
-void write_pixel(const uint2 index, const float depth, const float4 color)
+void write_pixel(const uint2 index, const float depth, const float4 color, const uint coverage)
 {
+   [branch]
+   if ((coverage & 1) != 1) return;
+
    const float clamped_alpha = saturate(color.a);
    const float clamped_depth = saturate(depth);
 

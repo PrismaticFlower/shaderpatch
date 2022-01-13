@@ -143,6 +143,8 @@ If Effects are enabled and HDR rendering is enabled by a map then this setting h
 L"Enable Order-Independent Transparency"sv,      
 LR"(Enables the use of an Order-Independent Transparency approximation. It should go without saying that this increases the cost of rendering. Requires a GPU with support for Rasterizer Ordered Views and typed Unordered Access View loads. 
 
+When this is enabled transparent objects will no longer be affected by Multisample Anti-Aliasing (MSAA), this can be especially noticeable when using resolution scaling - although it does depend on the map. Postprocessing Anti-Aliasing options like CMAA2 are unaffected.
+
 Known to be buggy on old NVIDIA drivers. Try updating your GPU driver if you encounter issues.)"sv
 },
 

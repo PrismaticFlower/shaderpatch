@@ -1789,15 +1789,7 @@ void Shader_patch::update_rendertargets() noexcept
          return Swapchain::format;
    }();
 
-   const auto new_aa_method = [&] {
-      if (user_config.graphics.antialiasing_method != Antialiasing_method::none &&
-          (_oit_provider.enabled() ||
-           (_effects.enabled() && _effects.config().oit_requested))) {
-         return Antialiasing_method::cmaa2;
-      }
-
-      return user_config.graphics.antialiasing_method;
-   }();
+   const auto new_aa_method = user_config.graphics.antialiasing_method;
 
    if (const auto [old_format, old_aa_method] =
           std::pair{std::exchange(_current_rt_format, new_format),
