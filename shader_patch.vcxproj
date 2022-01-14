@@ -104,6 +104,10 @@
       <ObjectFileOutput />
     </FxCompile>
     <PostBuildEvent />
+    <PostBuildEvent>
+      <Command>copy "$(WindowsSdkDir)Redist\D3D\x86\d3dcompiler_47.dll" "$(OutputPath)"</Command>
+      <Message>Copying D3DCompiler Redist...</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -146,6 +150,12 @@
     <FxCompile>
       <ObjectFileOutput />
     </FxCompile>
+    <PostBuildEvent>
+      <Command>copy "$(WindowsSdkDir)Redist\D3D\x86\d3dcompiler_47.dll" "$(OutputPath)"</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Copying D3DCompiler Redist...</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\bf2_log_monitor.cpp" />
