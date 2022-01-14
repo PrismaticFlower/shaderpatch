@@ -2,11 +2,6 @@
 
 Shader Patch should be very simple to get up and running. You can either run the installer or simply copy the contents of this folder
 into your `GameData` folder.
- 
-The installer does require you to have .NET Framework 4.6 installed but in the majority of cases it already 
-will be. If it isn't you can grab it from the link below (as of writing this).
-
-.NET Framework 4.6 - https://www.microsoft.com/en-nz/download/details.aspx?id=48130
 
 If you do not have write access to your game directory the installer may prompt you to
 run it as an Administrator; it will however only do this if it has to. It will depend on your OS version, 
@@ -16,7 +11,11 @@ admin elevation.
 
 ### Configuring ###
 
-Shader Patch comes with a number of settings that can be adjusted by the user. See and edit the config file 'shader patch.yml' in 
+Shader Patch comes with a number of settings that can be adjusted by the user. You can run 'Shader Patch Settings.exe' 
+(or 'Shader Patch Installer.exe' if you manually installed, they're the same application and will enter the configurator mode when 
+it detects being in the game's folder) or you can edit the and edit the config file 'shader patch.yml' directly. 
+
+See and edit the config file 'shader patch.yml' in 
 your game directory for a list and descriptions of them. Checking it out before using Shader Patch is highly recommended.
 
 ### Uninstalling ###
@@ -28,11 +27,11 @@ However if you did not run the installer then you must manually delete the files
 you'll need to delete. (Relative to "GameData".)
 
    ./d3d9.dll
-   ./Microsoft.Expression.Drawing.dll
+   ./d3dcompiler_47.dll
    ./shader patch acknowledgements.txt
-   ./Shader Patch Installer.exe
+   ./Shader Patch Installer.exe # Renamed to Shader Patch Settings.exe by the installer.
+   ./Shader Patch Settings.exe # Will not be present if the installer was not run.
    ./shader patch license.txt
    ./shader patch readme.txt
    ./shader patch.yml
-   ./yaml-cpp.dll
    ./data/shaderpatch
