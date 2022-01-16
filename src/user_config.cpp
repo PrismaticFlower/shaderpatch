@@ -158,6 +158,10 @@ void User_config::parse_file(const std::string& path)
    display.game_perceived_resolution_override_height =
       config["Display"s]["Game Perceived Resolution Override"s][1].as<std::uint32_t>();
 
+   ui.extra_ui_scaling =
+      std::clamp(config["User Interface"s]["Extra UI Scaling"s].as<std::uint32_t>(),
+                 100u, 200u);
+
    for (std::size_t i = 0; i < 3; ++i) {
       ui.friend_color[i] = static_cast<std::uint8_t>(
          config["User Interface"s]["Friend Color"s][i].as<std::uint32_t>());

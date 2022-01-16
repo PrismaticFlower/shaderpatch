@@ -69,6 +69,7 @@ struct User_config {
    } display;
 
    struct {
+      std::uint32_t extra_ui_scaling = 100;
       std::array<std::uint8_t, 3> friend_color = {1, 86, 213};
       std::array<std::uint8_t, 3> foe_color = {223, 32, 32};
    } ui;

@@ -67,6 +67,10 @@ struct user_config {
    };
 
    user_config_value_vector user_interface = {
+      enum_user_config_value{L"Extra UI Scaling",
+                             L"100",
+                             {L"100", L"125", L"150", L"175", L"200"}},
+
       color_user_config_value{L"Friend Color", {1, 86, 213}},
 
       color_user_config_value{L"Foe Color", {223, 32, 32}},

@@ -205,6 +205,8 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
          dpi = dpi * 100 / user_config.display.resolution_scale;
       }
 
+      dpi = dpi * user_config.ui.extra_ui_scaling / 100;
+
       return dpi;
    }();
 
@@ -253,6 +255,16 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
          _perceived_height = _actual_height;
          text_dpi = base_dpi;
       }
+   }
+
+   // The game's UI layout code starts to struggle with resolutions below 640x480. So we clamp to it here to avoid issues.
+   if (_perceived_width < 640u) {
+      _perceived_height =
+         std::max(_perceived_height, _perceived_height * 640u / _perceived_width);
+      _perceived_width = std::max(_perceived_width, 640u);
+
+      text_dpi = text_dpi_from_resolution(_actual_width, _actual_height, _perceived_width,
+                                          _perceived_height, base_dpi);
    }
 
    params->BackBufferWidth = _perceived_width;

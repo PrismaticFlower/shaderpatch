@@ -90,7 +90,14 @@ LR"(The override for the game's perceived resolution, for use with `Enable Game 
 L"User Interface"sv,      
 LR"(Settings affecting the user interface/HUD of the game.
 
-Note that Friend-Foe changes color do not work when a unit flashes on the minimap. They do work for everything else.)"sv
+Note that Friend-Foe color changes do not work when a unit flashes on the minimap. They do work for everything else.)"sv
+},
+
+{
+L"Extra UI Scaling"sv,      
+LR"(Extra scaling for the UI/HUD on top of normal display scaling. As a percentage. This can be used to make text larger if it is too small but only has effect when Display Scaling is enabled.
+
+Note that the trick Shader Patch uses to scale the game's UI (lowering the resolution the game thinks it's rendering at) can't scale indefinitely, if changing this has to effect and you're on a high DPI screen it's possible you've hit the limit for how much scaling Shader Patch can allow.)"sv
 },
 
 {
