@@ -385,6 +385,9 @@ private:
    bool _msaa_depthstencil_resolve = false;
    bool _linear_rendering = false;
    bool _oit_active = false;
+   bool _stock_bloom_used = false;
+   bool _stock_bloom_used_last_frame = false;
+   bool _effects_postprocessing_applied = false;
 
    bool _imgui_enabled = false;
    bool _screenshot_requested = false;

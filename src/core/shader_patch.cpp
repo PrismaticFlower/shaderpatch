@@ -833,6 +833,41 @@ void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
    }
 
    _image_stretcher.stretch(*_device_context, src_box, src_rt, dest_box, dest_rt);
+
+   // Check for motion blur accumulation stretch. This happens right before the UI/HUD are drawn and is the ideal time to apply postprocessing.
+   if (source == get_back_buffer() &&
+       glm::uvec2{dest_rt.width, dest_rt.height} == glm::uvec2{512, 256} &&
+       glm::uvec2{src_rt.width, src_rt.height} ==
+          glm::uvec2{src_box.right - src_box.left, src_box.bottom - src_box.top} &&
+       glm::uvec2{dest_rt.width, dest_rt.height} ==
+          glm::uvec2{dest_box.right - dest_box.left, dest_box.bottom - dest_box.top}) {
+      if (_effects_active) {
+         _use_interface_depthstencil = true;
+         _game_rendertargets[0] = _swapchain.game_rendertarget();
+
+         _device_context->ClearDepthStencilView(_farscene_depthstencil.dsv.get(),
+                                                D3D11_CLEAR_DEPTH, 1.0f, 0x0);
+
+         const effects::Postprocess_input postprocess_input{*_patch_backbuffer.srv,
+                                                            _patch_backbuffer.format,
+                                                            _patch_backbuffer.width,
+                                                            _patch_backbuffer.height,
+                                                            _patch_backbuffer.sample_count};
+
+         _effects.postprocess.apply(*_device_context, _rendertarget_allocator,
+                                    _effects.profiler, _shader_resource_database,
+                                    _cb_scene.vs_view_positionWS, _effects.ffx_cas,
+                                    _effects.cmaa2, postprocess_input,
+                                    _swapchain.postprocess_output(),
+                                    {.apply_cmaa2 = _aa_method ==
+                                                    Antialiasing_method::cmaa2});
+
+         set_linear_rendering(false);
+
+         _effects_postprocessing_applied = true;
+      }
+   }
+
    restore_all_game_state();
 }
 
@@ -1052,7 +1087,11 @@ void Shader_patch::set_constants(const cb::Scene_tag, const UINT offset,
                constants.data(), constants.size_bytes());
 
    if (offset < (offsetof(cb::Scene, near_scene_fade_scale) / sizeof(glm::vec4))) {
-      const float scale = _linear_rendering ? 1.0f : _cb_scene.vs_lighting_scale;
+      const float default_scale = _effects_active && !_stock_bloom_used_last_frame &&
+                                        !_effects_postprocessing_applied
+                                     ? 0.5f
+                                     : _cb_scene.vs_lighting_scale;
+      const float scale = _linear_rendering ? 1.0f : default_scale;
 
       _cb_draw_ps_dirty = true;
       _cb_scene.vs_lighting_scale = scale;
@@ -1505,27 +1544,7 @@ void Shader_patch::game_rendertype_changed() noexcept
          restore_all_game_state();
       }
       else if (_shader_rendertype == Rendertype::hdr) {
-         _use_interface_depthstencil = true;
-         _game_rendertargets[0] = _swapchain.game_rendertarget();
-
-         _device_context->ClearDepthStencilView(_farscene_depthstencil.dsv.get(),
-                                                D3D11_CLEAR_DEPTH, 1.0f, 0x0);
-
-         const effects::Postprocess_input postprocess_input{*_patch_backbuffer.srv,
-                                                            _patch_backbuffer.format,
-                                                            _patch_backbuffer.width,
-                                                            _patch_backbuffer.height,
-                                                            _patch_backbuffer.sample_count};
-
-         _effects.postprocess.apply(*_device_context, _rendertarget_allocator,
-                                    _effects.profiler, _shader_resource_database,
-                                    _cb_scene.vs_view_positionWS, _effects.ffx_cas,
-                                    _effects.cmaa2, postprocess_input,
-                                    _swapchain.postprocess_output(),
-                                    {.apply_cmaa2 = _aa_method ==
-                                                    Antialiasing_method::cmaa2});
-
-         set_linear_rendering(false);
+         _stock_bloom_used = true;
          _discard_draw_calls = true;
 
          restore_all_game_state();
@@ -1709,6 +1728,8 @@ void Shader_patch::update_frame_state() noexcept
    _use_interface_depthstencil = false;
    _lock_projtex_cube_slot = false;
    _oit_active = false;
+   _stock_bloom_used_last_frame = std::exchange(_stock_bloom_used, false);
+   _effects_postprocessing_applied = false;
 }
 
 void Shader_patch::update_imgui() noexcept
@@ -2058,8 +2079,8 @@ void Shader_patch::set_linear_rendering(bool linear_rendering) noexcept
       _cb_scene.input_color_srgb = false;
       _cb_draw_ps.input_color_srgb = false;
       _cb_draw_ps.limit_normal_shader_bright_lights = limit_normal_shader_bright_lights;
-      _cb_scene.vs_lighting_scale = 0.5f;
-      _cb_draw_ps.ps_lighting_scale = 0.5f;
+      _cb_scene.vs_lighting_scale = _stock_bloom_used_last_frame ? 0.5f : 1.0f;
+      _cb_draw_ps.ps_lighting_scale = _stock_bloom_used_last_frame ? 0.5f : 1.0f;
    }
 
    _cb_scene_dirty = true;
