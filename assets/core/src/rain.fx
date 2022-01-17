@@ -18,6 +18,7 @@ Vs_output rain_vs(Vertex_input input)
 
    output.positionPS = transformer.positionPS();
    output.color = get_material_color(input.color());
+   output.color.rgb *= lighting_scale;
 
    return output;
 }
