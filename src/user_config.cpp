@@ -123,114 +123,143 @@ void User_config::parse_file(const std::string& path)
 
    const auto config = YAML::LoadFile(path);
 
-   enabled = config["Shader Patch Enabled"s].as<bool>();
+   enabled = config["Shader Patch Enabled"s].as<bool>(enabled);
 
    display.screen_percent =
-      std::clamp(config["Display"s]["Screen Percent"s].as<std::uint32_t>(), 10u, 100u);
+      std::clamp(config["Display"s]["Screen Percent"s].as<std::uint32_t>(
+                    display.screen_percent),
+                 10u, 100u);
 
    display.resolution_scale =
-      std::clamp(config["Display"s]["Resolution Scale"s].as<std::uint32_t>(), 50u, 100u);
+      std::clamp(config["Display"s]["Resolution Scale"s].as<std::uint32_t>(
+                    display.resolution_scale),
+                 50u, 100u);
 
    display.scale_dpi_with_resolution_scale =
-      config["Display"s]["Scale UI with Resolution Scale"s].as<bool>();
+      config["Display"s]["Scale UI with Resolution Scale"s].as<bool>(
+         display.scale_dpi_with_resolution_scale);
 
-   display.allow_tearing = config["Display"s]["Allow Tearing"s].as<bool>();
+   display.allow_tearing =
+      config["Display"s]["Allow Tearing"s].as<bool>(display.allow_tearing);
 
-   display.centred = config["Display"s]["Centred"s].as<bool>();
+   display.centred = config["Display"s]["Centred"s].as<bool>(display.centred);
 
    display.treat_800x600_as_interface =
-      config["Display"s]["Treat 800x600 As Interface"s].as<bool>();
+      config["Display"s]["Treat 800x600 As Interface"s].as<bool>(
+         display.treat_800x600_as_interface);
 
-   display.windowed_interface = config["Display"s]["Windowed Interface"s].as<bool>();
+   display.windowed_interface =
+      config["Display"s]["Windowed Interface"s].as<bool>(display.windowed_interface);
 
-   display.dpi_aware = config["Display"s]["Display Scaling Aware"s].as<bool>();
+   display.dpi_aware =
+      config["Display"s]["Display Scaling Aware"s].as<bool>(display.dpi_aware);
 
-   display.dpi_scaling = config["Display"s]["Display Scaling"s].as<bool>();
+   display.dpi_scaling =
+      config["Display"s]["Display Scaling"s].as<bool>(display.dpi_scaling);
 
-   display.scalable_fonts = config["Display"s]["Scalable Fonts"s].as<bool>();
+   display.scalable_fonts =
+      config["Display"s]["Scalable Fonts"s].as<bool>(display.scalable_fonts);
 
    display.enable_game_perceived_resolution_override =
-      config["Display"s]["Enable Game Perceived Resolution Override"s].as<bool>();
+      config["Display"s]["Enable Game Perceived Resolution Override"s].as<bool>(
+         display.enable_game_perceived_resolution_override);
 
    display.game_perceived_resolution_override_width =
-      config["Display"s]["Game Perceived Resolution Override"s][0].as<std::uint32_t>();
+      config["Display"s]["Game Perceived Resolution Override"s][0].as<std::uint32_t>(
+         display.game_perceived_resolution_override_width);
 
    display.game_perceived_resolution_override_height =
-      config["Display"s]["Game Perceived Resolution Override"s][1].as<std::uint32_t>();
+      config["Display"s]["Game Perceived Resolution Override"s][1].as<std::uint32_t>(
+         display.game_perceived_resolution_override_height);
 
    ui.extra_ui_scaling =
-      std::clamp(config["User Interface"s]["Extra UI Scaling"s].as<std::uint32_t>(),
+      std::clamp(config["User Interface"s]["Extra UI Scaling"s].as<std::uint32_t>(
+                    ui.extra_ui_scaling),
                  100u, 200u);
 
    for (std::size_t i = 0; i < 3; ++i) {
       ui.friend_color[i] = static_cast<std::uint8_t>(
-         config["User Interface"s]["Friend Color"s][i].as<std::uint32_t>());
+         config["User Interface"s]["Friend Color"s][i].as<std::uint32_t>(
+            ui.friend_color[i]));
       ui.foe_color[i] = static_cast<std::uint8_t>(
-         config["User Interface"s]["Foe Color"s][i].as<std::uint32_t>());
+         config["User Interface"s]["Foe Color"s][i].as<std::uint32_t>(ui.foe_color[i]));
    }
 
    graphics.gpu_selection_method = gpu_selection_method_from_string(
-      config["Graphics"s]["GPU Selection Method"s].as<std::string>());
+      config["Graphics"s]["GPU Selection Method"s].as<std::string>("Highest Performance"s));
 
    graphics.antialiasing_method = aa_method_from_string(
-      config["Graphics"s]["Anti-Aliasing Method"s].as<std::string>());
+      config["Graphics"s]["Anti-Aliasing Method"s].as<std::string>(
+         to_string(graphics.antialiasing_method)));
 
    graphics.supersample_alpha_test =
       config["Graphics"s]["Supersample Alpha Test"s].as<bool>();
 
    graphics.anisotropic_filtering = anisotropic_filtering_from_string(
-      config["Graphics"s]["Anisotropic Filtering"s].as<std::string>());
+      config["Graphics"s]["Anisotropic Filtering"s].as<std::string>(
+         to_string(graphics.anisotropic_filtering)));
 
    graphics.refraction_quality = refraction_quality_from_string(
-      config["Graphics"s]["Refraction Quality"s].as<std::string>());
+      config["Graphics"s]["Refraction Quality"s].as<std::string>(
+         to_string(graphics.refraction_quality)));
 
    graphics.enable_oit =
-      config["Graphics"s]["Enable Order-Independent Transparency"s].as<bool>();
+      config["Graphics"s]["Enable Order-Independent Transparency"s].as<bool>(
+         graphics.enable_oit);
 
    graphics.enable_alternative_postprocessing =
-      config["Graphics"s]["Enable Alternative Post Processing"s].as<bool>();
+      config["Graphics"s]["Enable Alternative Post Processing"s].as<bool>(
+         graphics.enable_alternative_postprocessing);
 
-   graphics.enable_scene_blur = config["Graphics"s]["Enable Scene Blur"s].as<bool>();
+   graphics.enable_scene_blur =
+      config["Graphics"s]["Enable Scene Blur"s].as<bool>(graphics.enable_scene_blur);
 
    graphics.enable_16bit_color_rendering =
-      config["Graphics"s]["Enable 16-Bit Color Channel Rendering"s].as<bool>();
+      config["Graphics"s]["Enable 16-Bit Color Channel Rendering"s].as<bool>(
+         graphics.enable_16bit_color_rendering);
 
    graphics.disable_light_brightness_rescaling =
-      config["Graphics"s]["Disable Light Brightness Rescaling"s].as<bool>();
+      config["Graphics"s]["Disable Light Brightness Rescaling"s].as<bool>(
+         graphics.disable_light_brightness_rescaling);
 
    graphics.enable_user_effects_config =
-      config["Graphics"s]["Enable User Effects Config"s].as<bool>();
+      config["Graphics"s]["Enable User Effects Config"s].as<bool>(
+         graphics.enable_user_effects_config);
 
    graphics.user_effects_config =
-      config["Graphics"s]["User Effects Config"s].as<std::string>();
+      config["Graphics"s]["User Effects Config"s].as<std::string>(
+         graphics.user_effects_config);
 
-   effects.bloom = config["Effects"s]["Bloom"s].as<bool>();
+   effects.bloom = config["Effects"s]["Bloom"s].as<bool>(effects.bloom);
 
-   effects.vignette = config["Effects"s]["Vignette"s].as<bool>();
+   effects.vignette = config["Effects"s]["Vignette"s].as<bool>(effects.vignette);
 
-   effects.film_grain = config["Effects"s]["Film Grain"s].as<bool>();
+   effects.film_grain = config["Effects"s]["Film Grain"s].as<bool>(effects.film_grain);
 
    effects.colored_film_grain =
-      config["Effects"s]["Allow Colored Film Grain"s].as<bool>();
+      config["Effects"s]["Allow Colored Film Grain"s].as<bool>(effects.colored_film_grain);
 
-   effects.ssao = config["Effects"s]["SSAO"s].as<bool>();
+   effects.ssao = config["Effects"s]["SSAO"s].as<bool>(effects.ssao);
 
-   effects.ssao_quality = ssao_quality_from_string(
-      config["Effects"s]["SSAO Quality"s].as<std::string>());
+   effects.ssao_quality =
+      ssao_quality_from_string(config["Effects"s]["SSAO Quality"s].as<std::string>(
+         to_string(effects.ssao_quality)));
 
-   developer.toggle_key = config["Developer"s]["Screen Toggle"s].as<int>();
+   developer.toggle_key =
+      config["Developer"s]["Screen Toggle"s].as<int>(developer.toggle_key);
 
    developer.monitor_bfront2_log =
-      config["Developer"s]["Monitor BFront2.log"s].as<bool>();
+      config["Developer"s]["Monitor BFront2.log"s].as<bool>(developer.monitor_bfront2_log);
 
    developer.allow_event_queries =
-      config["Developer"s]["Allow Event Queries"s].as<bool>();
+      config["Developer"s]["Allow Event Queries"s].as<bool>(developer.allow_event_queries);
 
    developer.use_d3d11_debug_layer =
-      config["Developer"s]["Use D3D11 Debug Layer"s].as<bool>();
+      config["Developer"s]["Use D3D11 Debug Layer"s].as<bool>(
+         developer.use_d3d11_debug_layer);
 
    developer.use_dxgi_1_2_factory =
-      config["Developer"s]["Use DXGI 1.2 Factory"s].as<bool>();
+      config["Developer"s]["Use DXGI 1.2 Factory"s].as<bool>(developer.use_dxgi_1_2_factory);
 
    developer.shader_cache_path =
       config["Developer"s]["Shader Cache Path"s].as<std::string>();
