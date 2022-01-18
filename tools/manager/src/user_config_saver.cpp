@@ -1,12 +1,20 @@
 #include "framework.hpp"
 
 #include "overloaded.hpp"
+#include "string_helpers.hpp"
+#include "user_config_descriptions.hpp"
 #include "user_config_saver.hpp"
+
+#include <algorithm>
 
 using namespace std::literals;
 
 constexpr auto temp_save_path = L"~TMP.shader patch.yml"sv;
 constexpr auto save_path = L"shader patch.yml"sv;
+
+namespace {
+
+}
 
 void user_config_saver::enqueue_async_save(const user_config& config)
 {
@@ -62,8 +70,30 @@ void save_user_config(const std::filesystem::path& path, const user_config& conf
                  }};
    constexpr static auto line_break = "\n\n"sv;
    constexpr static auto indention = "   "sv;
+   constexpr static auto max_comment_line_size = 100;
 
    const auto write_value = [&](const auto& setting) {
+      auto description = to_utf8(user_config_descriptions.at(setting.name));
+
+      for (std::string_view line : lines_iterator{description}) {
+         out << indention << "#"sv;
+
+         std::size_t current_line_length = 0;
+
+         for (auto& token : token_iterator{line}) {
+            current_line_length += (token.size() + 1); // + 1 for ' '
+
+            if (current_line_length >= max_comment_line_size) {
+               out << '\n' << indention << "#"sv;
+               current_line_length = 0;
+            }
+
+            out << ' ' << token;
+         }
+
+         out << '\n';
+      }
+
       out << indention << to_utf8(setting.name) << ": "sv
           << printify(setting.value) << line_break;
    };

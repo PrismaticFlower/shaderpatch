@@ -80,6 +80,9 @@
     <ClInclude Include="src\string_utilities.hpp">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="src\string_helpers.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\framework.cpp">

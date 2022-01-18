@@ -1,92 +1,239 @@
 Shader Patch Enabled: yes
 
-Display:
+Display: 
+
+   # Precentage of the sceen the game's window will take up. Value from 10 to 100.
    Screen Percent: 100
 
+   # Render resolution scale, as a percentage. This controls the resolution the game will be rendered
+   # at but does not affect window size.
+   # 
+   # For instance if your desktop resolution is 3840 x 2160 (4K) setting this to 50 will render the
+   # game at 1920 x 1080.
+   # 
+   # The game will be upscaled back to 3840 x 2160 by the GPU when it is sent to the display.
+   # 
+   # Lowering this can boost perforomance. Usage of an Anti-Aliasing Method with this option is highly
+   # reccomended.
    Resolution Scale: 100
-   
+
+   # Keeps the game's UI and HUD from becoming illegible when Resolution Scale is used. This only has
+   # an effect if Display Scaling is 'yes'.
    Scale UI with Resolution Scale: yes
 
+   # Allow tearing when displaying frames. This can allow lower latency and is also required for
+   # variable refresh rate technologies to work.
    Allow Tearing: no
-   
+
+   # Whether to centre the window or not. If `ScreenPercent` is 100 there will be no difference between
+   # a centred and uncentred window.
    Centred: yes
 
+   # Whether 800x600 will be treated as the resolution used by the game's main menu interface. When
+   # enabled causes Shader Patch to override the game's resolution without informing the game it has done so.
+   # Doing this keeps the interface usable while still letting you enjoy fullscreen ingame.
    Treat 800x600 As Interface: yes
 
+   # When `Treat 800x600 As Interface` is `yes` controls whether the game's interface will be rendered
+   # fullscreen (which can lead to stretching on the UI) or if it'll be kept in a 800x600 window.
    Windowed Interface: no
 
+   # Whether to mark the game DPI aware or not. When your display scaling is not at 100% having this be
+   # `yes` keeps the game being drawn at native resolution and stops Windows' upscaling it after the fact.
    Display Scaling Aware: yes
-   
+
+   # When `Display Scaling Aware` is `yes` controls if the game's perceived resolution will be scaled
+   # based on the display scaling factor. This effectively adjusts the scale UI and HUD elements are
+   # positioned and drawn with to match the display's scale.
    Display Scaling: yes
 
+   # Whether to replace the game's core fonts with ones that can be scaled. If you have any mods
+   # installed that also replace the game's fonts when this setting is enabled then they will be superseded by
+   # Shader Patch's fonts.
    Scalable Fonts: yes
 
+   # Enables the overriding the resolution the game thinks it is rendering at, without changing the
+   # resolution it is actually rendered at. This can have the affect of altering the aspect ratio of the game and
+   # the scaling and position of UI/HUD elements.
+   # 
+   # When set to `yes` causes `Display Scaling` to be ignored.
+   # 
+   # If you're unsure what this is useful for then **leave** it set to "no".
    Enable Game Perceived Resolution Override: no
-   
+
+   # The override for the game's perceived resolution, for use with `Enable Game Perceived Resolution
+   # Override`.
    Game Perceived Resolution Override: [1920, 1080]
 
 User Interface: 
-   Extra UI Scaling: 100
 
+   # Extra scaling for the UI/HUD on top of normal display scaling. As a percentage. This can be used
+   # to make text larger if it is too small but only has effect when Display Scaling is enabled.
+   # 
+   # Note that the trick Shader Patch uses to scale the game's UI (lowering the resolution the game
+   # thinks it's rendering at) can't scale indefinitely, if changing this has to effect and you're on a high
+   # DPI screen it's possible you've hit the limit for how much scaling Shader Patch can allow.
+   Extra UI Scaling: 150
+
+   # Color to use for Friend HUD and world elemenets. (Command Posts, crosshair, etc)
    Friend Color: [1, 86, 213]
 
+   # Color to use for Foe HUD and world elemenets. (Command Posts, crosshair, etc)
    Foe Color: [223, 32, 32]
-   
-Graphics:
+
+Graphics: 
+
+   # How to select the GPU to use. Can be "Highest Performance", "Lowest Power Usage", "Highest Feature
+   # Level", "Most Memory" or "Use CPU".
    GPU Selection Method: Highest Performance
 
+   # Anti-Aliasing method to use, can be "none", "CMAA2", "MSAAx4" or "MSAAx8".
    Anti-Aliasing Method: CMAA2
 
+   # Enables supersampling the alpha test for hardedged transparency/alpha cutouts when Multisampling
+   # Anti-Aliasing is enabled.
+   # 
+   # This provides excellent anti-aliasing for alpha cutouts (foliage, flat fences, etc) and should be
+   # much cheaper than general supersampling. It however does raise the number of texture samples that need
+   # to be taken by however many rendertarget samples there are - fast high end GPUs may not even notice
+   # this, low power mobile GPUs may struggle more.
+   # 
+   # If enabling this causes performance issues but you'd still really like it then lowering the level
+   # of Anisotropic Filtering may help make reduce the performance cost of this option.
    Supersample Alpha Test: no
 
+   # Anisotropic Filtering level for textures, can be "off", "x2", "x4", "x8" or "x16".
    Anisotropic Filtering: x16
-   
+
+   # Controls whether R1G16B16A16 rendertargets will be used or not. Due to the way SWBFII is drawn
+   # using them can cut down significantly on banding. Additionally when they are enabled dithering will be
+   # applied when they are copied into R8G8B8A8 textures for display to further reduce banding.
+   # 
+   # If Effects are enabled and HDR rendering is enabled by a map then this setting has no effect.
    Enable 16-Bit Color Channel Rendering: no
 
+   # Enables the use of an Order-Independent Transparency approximation. It should go without saying
+   # that this increases the cost of rendering. Requires a GPU with support for Rasterizer Ordered Views and
+   # typed Unordered Access View loads.
+   # 
+   # When this is enabled transparent objects will no longer be affected by Multisample Anti-Aliasing
+   # (MSAA), this can be especially noticeable when using resolution scaling - although it does depend on the
+   # map. Postprocessing Anti-Aliasing options like CMAA2 are unaffected.
+   # 
+   # Known to be buggy on old NVIDIA drivers. Try updating your GPU driver if you encounter issues.
    Enable Order-Independent Transparency: no
 
+   # Enables the use of an alternative post processing path for some of the game's post processing
+   # effects. The benefit to this is the alternative path is designed to be independent of the game's resolution
+   # and is unaffected by bugs the vanilla path suffers from relating to high resolutions.
+   # 
+   # In some cases the alternative path may produce results that do not exactly match the intended look
+   # of a map.
    Enable Alternative Post Processing: yes
 
+   # Enables maps to make use of the game's scene blur effect. Has a performance cost but using it will
+   # keep the map's artwork more inline with the creators vision. Note this is **unrelated** to the Effects
+   # system and also only takes effect when `Enable Alternative Post Processing` is `yes`.
    Enable Scene Blur: yes
-   
+
+   # Quality level of refractions. Can be "Low", "Medium", "High" or "Ultra".
+   # "Low" sets the resolution of the refractions to 1/4 screen resolution, Medium 1/2, High 1/2 and
+   # Ultra matches screen resolution.
+   # 
+   # On "High" or "Ultra" refractions will also be masked using the depth buffer.
    Refraction Quality: Medium
 
+   # In the vanilla shaders for most surfaces after calculating incoming light for a surface the
+   # brightness of the light is rescaled to keep it from being too dark or too bright. (Or at least that is what I
+   # *assume* the reason to be.)
+   # 
+   # Disabling this can increase the realism and correctness of lighting for objects lit by the
+   # affected shaders. But for maps/mods that have had their lighting carefully balanced by the author it could
+   # do more harm than good. It is also likely to increase the amount of surfaces that are bright enough
+   # to cause light bloom in a scene.
+   # 
+   # This setting has no affect on custom materials or when Effects are enabled. (Effects have an
+   # equivalent setting however.)
    Disable Light Brightness Rescaling: no
 
+   # When a map or mod has not loaded an Effects Config Shader Patch can use a user specified config.
    Enable User Effects Config: no
 
+   # The name of the Effects Config to load when `Enable User Effects Config` is true. The config
+   # should be in the same directory as the game's executable.
    User Effects Config: user.spfx
 
-Effects:
+Effects: 
+
+   # Enable or disable a mod using the Bloom effect. This effect is can have a slight performance
+   # impact.
    Bloom: yes
-   
+
+   # Enable or disable a mod using the Vignette effect. This effect is really cheap.
    Vignette: yes
-   
+
+   # Enable or disable a mod using the Film Grain effect. This effect is fairly cheap.
    Film Grain: yes
-   
-   Allow Colored Film Grain: yes 
-   
+
+   # Enable or disable a mod using being allowed to use Colored Film Grain. Slightly more expensive
+   # than just regular Film Grain, if a mod is using it.
+   Allow Colored Film Grain: yes
+
+   # Enable or disable a mod using Screen Space Ambient Occlusion. (Not actually true Ambient Occlusion
+   # as it is applied indiscriminately to opaque surfaces.)
+   # 
+   # Has anywhere from a slight performance impact to significant performance impact depending on the
+   # quality setting.
    SSAO: yes
-   
+
+   # Quality of SSAO when enabled. Can be "Fastest", "Fast", Medium", "High" or "Highest". Each step up
+   # is usually 1.5x-2.0x more expensive than the last setting.
    SSAO Quality: Medium
-   
-Developer:
+
+Developer: 
+
+   # Toggle key for the developer screen. Giving access to useful things for mod makers and Shader
+   # Patch developers alike.
+   # 
+   # The value identifies the virtual key that activates the debug screen, below are some common values
+   # for you to choose from. (Copy and paste the value on the right of your desired key.)
+   # 
+   # '~': 0xC0
+   # '\': 0xDC
+   # 'Backspace': 0x08
+   # 'F12': 0x7B
    Screen Toggle: 0xDC
-   
+
+   # Enables the monitoring, filtering and display of "BFront2.log" ingame. Can not be changed ingame.
+   # Only useful to modders.
    Monitor BFront2.log: no
-   
+
+   # Controls whether or not Shader Patch will allow the game to use GPU event queries.
    Allow Event Queries: no
-   
+
+   # Enable the D3D11 debug layer, typically requires the Windows SDK to be installed to work.
+   # 
+   # Even if this flag is true the debug layer will only be enabled if a debugger is attached to the
+   # game.
    Use D3D11 Debug Layer: no
 
+   # Limit Shader Patch to using a DXGI 1.2 factory to work around a crash in the Visual Studio
+   # Graphics Debugger. This also bypasses all GPU selection logic.
    Use DXGI 1.2 Factory: no
-   
+
+   # Path for shader cache file.
    Shader Cache Path: .\data\shaderpatch\.shader_dxbc_cache
 
+   # Path to shader definitions. (.json files describing shader entrypoints and variations within a
+   # file)
    Shader Definitions Path: .\data\shaderpatch\shaders\definitions
 
+   # Path to shader HLSL source files.
    Shader Source Path: .\data\shaderpatch\shaders\src
 
+   # Path to material types Lua scripts.
    Material Scripts Path: .\data\shaderpatch\scripts\material
 
+   # Name of the font to use when Scalable Fonts are enabled.
    Scalable Font Name: ariblk.ttf
+
