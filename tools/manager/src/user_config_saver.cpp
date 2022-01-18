@@ -12,10 +12,6 @@ using namespace std::literals;
 constexpr auto temp_save_path = L"~TMP.shader patch.yml"sv;
 constexpr auto save_path = L"shader patch.yml"sv;
 
-namespace {
-
-}
-
 void user_config_saver::enqueue_async_save(const user_config& config)
 {
    if (_cancel_current_save) _cancel_current_save->store(true);
