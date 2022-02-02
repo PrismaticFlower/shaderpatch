@@ -1,0 +1,75 @@
+{
+  "group_name": "shadowmesh",
+  "source_name": "shadowmesh.fx",
+
+  "entrypoints": {
+    "opaque_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": true,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "hardedged_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": true,
+          "normal": false,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "hardedged_ps": {
+      "stage": "pixel"
+    }
+  },
+
+  "rendertypes": { "shadowmesh": {} },
+
+  "states": {
+    "opaque": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "opaque_vs"
+      },
+
+      "pixel_shader": {
+        "comment": "unused",
+        "entrypoint": "hardedged_ps"
+      }
+    },
+
+    "hardedged": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "hardedged_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "hardedged_ps"
+      }
+    }
+  }
+}

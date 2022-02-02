@@ -22,15 +22,17 @@ auto Shader_input_layouts::get(ID3D11Device1& device,
 
    const auto& layout_desc = descriptions[index];
 
-   return *_layouts.emplace_back(index, create_layout(device, layout_desc)).second;
+   const std::size_t needed_size = index + 1;
+
+   if (needed_size > _layouts.size()) _layouts.resize(needed_size);
+
+   return *(_layouts[index] = create_layout(device, layout_desc));
 }
 
 auto Shader_input_layouts::find_layout(const std::uint16_t index) const noexcept
    -> ID3D11InputLayout*
 {
-   for (const auto& layout : _layouts) {
-      if (layout.first == index) return layout.second.get();
-   }
+   if (index < _layouts.size()) return _layouts[index].get();
 
    return nullptr;
 }

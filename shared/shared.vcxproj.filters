@@ -120,6 +120,12 @@
     <ClInclude Include="include\material_rendertype_property_mappings.hpp">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\plf_hive.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\bounding_box.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\patch_texture_io.cpp">

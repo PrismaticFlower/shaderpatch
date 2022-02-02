@@ -398,6 +398,18 @@
     <None Include="definitions\patch\pixel_inspector.json">
       <Filter>definitions\patch</Filter>
     </None>
+    <None Include="definitions\patch\shadowmesh.json">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="src\shadowmap_render.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="src\shadowmesh.fx">
+      <Filter>src</Filter>
+    </None>
+    <None Include="definitions\patch\shadowmap_render.json">
+      <Filter>definitions\patch</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">

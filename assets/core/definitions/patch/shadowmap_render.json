@@ -1,0 +1,22 @@
+{
+  "group_name": "shadowmap render",
+  "source_name": "shadowmap_render.fx",
+
+  "entrypoints": {
+    "main_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto"
+      }
+    },
+
+    "main_ps": {
+      "stage": "pixel"
+    }
+  },
+
+  "rendertypes": {},
+
+  "states": {}
+}

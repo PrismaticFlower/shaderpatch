@@ -38,7 +38,7 @@ private:
                       const std::span<const Input_layout_element> descriptions) noexcept
       -> Com_ptr<ID3D11InputLayout>;
 
-   std::vector<std::pair<std::int32_t, Com_ptr<ID3D11InputLayout>>> _layouts;
+   std::vector<Com_ptr<ID3D11InputLayout>> _layouts;
    const shader::Vertex_input_layout _input_signature;
    const shader::Bytecode_blob _bytecode;
 };

@@ -70,6 +70,8 @@ using Material_handle =
 using Texture_handle =
    std::unique_ptr<ID3D11ShaderResourceView, Small_function<void(ID3D11ShaderResourceView*) noexcept>>;
 
+class Shadows_provider;
+
 class Shader_patch {
 public:
    Shader_patch(IDXGIAdapter4& adapter, const HWND window, const UINT width,
@@ -392,6 +394,8 @@ private:
    bool _imgui_enabled = false;
    bool _screenshot_requested = false;
 
+   Small_function<void(const D3D11_PRIMITIVE_TOPOLOGY, const UINT, const UINT) noexcept> _on_draw;
+   Small_function<void(const D3D11_PRIMITIVE_TOPOLOGY, const UINT, const UINT, const UINT) noexcept> _on_draw_indexed;
    Small_function<void(Game_rendertarget&, const Normalized_rect&,
                        Game_rendertarget&, const Normalized_rect&) noexcept>
       _on_stretch_rendertarget;
@@ -458,6 +462,8 @@ private:
    material::Factory _material_factory{_device, _shader_rendertypes_database,
                                        _shader_resource_database};
    std::vector<std::unique_ptr<material::Material>> _materials;
+
+   std::unique_ptr<Shadows_provider> _shadows;
 
    glm::mat4 _informal_projection_matrix;
 

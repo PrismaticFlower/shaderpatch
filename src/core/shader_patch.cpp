@@ -10,6 +10,7 @@
 #include "patch_material_io.hpp"
 #include "patch_texture_io.hpp"
 #include "screenshot.hpp"
+#include "shadows_provider.hpp"
 #include "utility.hpp"
 
 #include "../imgui/imgui_impl_dx11.h"
@@ -109,7 +110,8 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
      _window_height{},
      _bf2_log_monitor{user_config.developer.monitor_bfront2_log
                          ? std::make_unique<BF2_log_monitor>()
-                         : nullptr}
+                         : nullptr},
+     _shadows{std::make_unique<Shadows_provider>(_device, _shader_database)}
 {
    add_builtin_textures(*_device, _shader_resource_database);
    bind_static_resources();
@@ -196,6 +198,33 @@ void Shader_patch::set_text_dpi(const std::uint32_t dpi) noexcept
 
 void Shader_patch::present() noexcept
 {
+   ImGui::DragFloat("shadow bias", &_shadows->config.shadow_bias, 0.0001f,
+                    -1.0f, 1.0f, "%.5f");
+
+   ImGui::Text("zprepass meshes: %i", _shadows->meshes.zprepass.size());
+   ImGui::Text("zprepass compressed meshes: %i",
+               _shadows->meshes.zprepass_compressed.size());
+   ImGui::Text("zprepass skinned meshes: %i",
+               _shadows->meshes.zprepass_skinned.size());
+   ImGui::Text("zprepass compressed skinned meshes: %i",
+               _shadows->meshes.zprepass_compressed_skinned.size());
+
+   ImGui::Text("zprepass hardedged meshes: %i",
+               _shadows->meshes.zprepass_hardedged.size());
+   ImGui::Text("zprepass hardedged compressed meshes: %i",
+               _shadows->meshes.zprepass_hardedged_compressed.size());
+   ImGui::Text("zprepass hardedged skinned meshes: %i",
+               _shadows->meshes.zprepass_hardedged_skinned.size());
+   ImGui::Text("zprepass hardedged compressed skinned meshes: %i",
+               _shadows->meshes.zprepass_hardedged_compressed_skinned.size());
+
+   ImGui::Text("zprepass skins: %i", _shadows->meshes.skins.size());
+
+   ImGui::Text("cached zprepass compressed meshes: %i",
+               _shadows->temp_cached_zprepass_compressed);
+   ImGui::Text("cached zprepass hardedged compressed meshes: %i",
+               _shadows->temp_cached_zprepass_hardedged_compressed);
+
    _effects.profiler.end_frame(*_device_context);
    _game_postprocessing.end_frame();
 
@@ -214,6 +243,8 @@ void Shader_patch::present() noexcept
    if (_font_atlas_builder.update_srv_database(_shader_resource_database)) {
       update_material_resources();
    }
+
+   _shadows->end_frame();
 
    update_frame_state();
    update_effects();
@@ -1152,6 +1183,8 @@ void Shader_patch::draw(const D3D11_PRIMITIVE_TOPOLOGY topology,
 {
    update_dirty_state(topology);
 
+   if (_on_draw) _on_draw(topology, vertex_count, start_vertex);
+
    if (_discard_draw_calls) return;
 
    _device_context->Draw(vertex_count, start_vertex);
@@ -1162,6 +1195,9 @@ void Shader_patch::draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
                                 const UINT start_vertex) noexcept
 {
    update_dirty_state(topology);
+
+   if (_on_draw_indexed)
+      _on_draw_indexed(topology, index_count, start_index, start_vertex);
 
    if (_discard_draw_calls) return;
 
@@ -1257,14 +1293,68 @@ void Shader_patch::game_rendertype_changed() noexcept
 {
    if (_on_rendertype_changed) _on_rendertype_changed();
 
-   if (_shader_rendertype == Rendertype::stencilshadow) {
+   if (_shader_rendertype == Rendertype::zprepass) {
+      _shadows->view_proj_matrix =
+         std::bit_cast<glm::mat4>(_cb_scene.projection_matrix);
+
+      _on_draw_indexed = [&](const D3D11_PRIMITIVE_TOPOLOGY topology,
+                             const UINT index_count, const UINT start_index,
+                             const UINT start_vertex) noexcept {
+         const bool hardedged =
+            _game_shader->shader_name.size() == "near opaque hardedged"sv.size(); // there's only one other state for zprepass, so we can take a shortcut here
+         const bool skinned = (_game_shader->vertex_shader_flags &
+                               shader::Vertex_shader_flags::hard_skinned) ==
+                              shader::Vertex_shader_flags::hard_skinned;
+
+         auto& meshes = _shadows->meshes;
+         UINT skin_index = meshes.noskin;
+
+         if (skinned) {
+            skin_index = meshes.skins.size();
+
+            meshes.skins.emplace_back(_cb_skin.bone_matrices);
+         }
+
+         if (hardedged) {
+            meshes
+               .select_zprepass_hardedged(_game_input_layout.compressed, skinned)
+               .emplace_back(_game_input_layout.layout_index, topology,
+                             _game_index_buffer, _game_index_buffer_offset,
+                             _game_vertex_buffer, _game_vertex_buffer_offset,
+                             _game_vertex_buffer_stride, index_count,
+                             start_index, start_vertex,
+                             glm::vec3{_cb_draw.position_decompress_min},
+                             glm::vec3{_cb_draw.position_decompress_max},
+                             _cb_draw.world_matrix, skin_index,
+                             _cb_draw.custom_constants[0],
+                             _cb_draw.custom_constants[1], _game_textures[0].srv);
+         }
+         else {
+            meshes.select_zprepass(_game_input_layout.compressed, skinned)
+               .emplace_back(topology, _game_index_buffer,
+                             _game_index_buffer_offset, _game_vertex_buffer,
+                             _game_vertex_buffer_offset, _game_vertex_buffer_stride,
+                             index_count, start_index, start_vertex,
+                             glm::vec3{_cb_draw.position_decompress_min},
+                             glm::vec3{_cb_draw.position_decompress_max},
+                             _cb_draw.world_matrix, skin_index);
+         }
+      };
+      _on_rendertype_changed = [&]() noexcept {
+         _on_draw_indexed = nullptr;
+         _on_rendertype_changed = nullptr;
+      };
+   }
+   else if (_shader_rendertype == Rendertype::stencilshadow) {
+      _shadows->light_direction = _cb_draw.custom_constants[0];
+
       _on_rendertype_changed = [this]() noexcept {
          _discard_draw_calls = true;
          _on_rendertype_changed = nullptr;
       };
    }
    else if (_shader_rendertype == Rendertype::shadowquad) {
-      _discard_draw_calls = false;
+      const bool use_alternative_shadows = true;
 
       const bool multisampled = _rt_sample_count > 1;
       auto* const shadow_rt = [&]() -> Game_rendertarget* {
@@ -1293,9 +1383,10 @@ void Shader_patch::game_rendertype_changed() noexcept
                                                   const Normalized_rect&,
                                                   Game_rendertarget& dest,
                                                   const Normalized_rect&) noexcept {
-            _game_rendertargets[0] = std::move(backup_rt);
+            _game_rendertargets[0] = backup_rt;
             _on_stretch_rendertarget = nullptr;
             _om_targets_dirty = true;
+            _discard_draw_calls = false;
 
             if (dest.type != Game_rt_type::shadow) {
                dest = Game_rendertarget{*_device,
@@ -1311,6 +1402,26 @@ void Shader_patch::game_rendertype_changed() noexcept
                                                    _shadow_msaa_rt.texture.get(),
                                                    0, shadow_texture_format);
          };
+
+      if (use_alternative_shadows) {
+         if (shadow_rt) {
+            _shadows->draw_shadow_maps(*_device_context,
+                                       {.input_layout_descriptions = _input_layout_descriptions,
+                                        .scene_depth = *_nearscene_depthstencil.srv,
+                                        .scene_dsv = *_nearscene_depthstencil.dsv_readonly,
+                                        .target_map = *shadow_rt->rtv,
+                                        .target_width = shadow_rt->width,
+                                        .target_height = shadow_rt->height,
+                                        .profiler = _effects.profiler});
+
+            restore_all_game_state();
+         }
+
+         _discard_draw_calls = true;
+      }
+      else {
+         _discard_draw_calls = false;
+      }
    }
    else if (_shader_rendertype == Rendertype::refraction) {
       resolve_refraction_texture();

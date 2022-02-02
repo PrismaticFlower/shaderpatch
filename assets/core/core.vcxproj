@@ -177,6 +177,7 @@
     <None Include="definitions\patch\postprocess_msaa_resolve.json" />
     <None Include="definitions\patch\scene_blur.json" />
     <None Include="definitions\patch\scope_blur.json" />
+    <None Include="definitions\patch\shadowmap_render.json" />
     <None Include="definitions\patch\skybox.json" />
     <None Include="definitions\patch\static_water.json" />
     <None Include="definitions\patch\text.json" />
@@ -221,6 +222,7 @@
     <None Include="definitions\patch\pbr.json" />
     <None Include="definitions\patch\skyfog_ext.json.ignore" />
     <None Include="definitions\patch\stretch_texture.json" />
+    <None Include="definitions\patch\shadowmesh.json" />
     <None Include="definitions\perpixeldiffuselighting.json" />
     <None Include="definitions\prereflection.json" />
     <None Include="definitions\rain.json" />
@@ -526,6 +528,12 @@
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\pixel_inspector.fx" />
+    <None Include="src\shadowmap_render.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="src\shadowmesh.fx">
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
