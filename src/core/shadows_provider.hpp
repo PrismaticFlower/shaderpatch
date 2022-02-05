@@ -11,7 +11,6 @@
 
 #include <d3d11_4.h>
 
-#include <absl/container/flat_hash_map.h>
 #include <glm/glm.hpp>
 
 namespace sp::effects {
@@ -24,6 +23,8 @@ struct Shadows_config {
    float start_depth = 0.5f;
    float end_depth = 256.0f;
    float shadow_bias = -0.0015f;
+
+   bool enable_offscreen_cache = false; // TODO: Properly support this.
 };
 
 class Shadows_provider {
@@ -120,6 +121,8 @@ public:
          bool operator==(const Zprepass_hardedged&) const noexcept = default;
       };
 
+      using Stencilshadow = Zprepass;
+
       struct Skin {
          std::array<std::array<glm::vec4, 3>, 15> bone_matrices;
       };
@@ -176,6 +179,27 @@ public:
       std::vector<Zprepass_hardedged> zprepass_hardedged_compressed_skinned = [] {
          std::vector<Zprepass_hardedged> init;
          init.reserve(4);
+
+         return init;
+      }();
+
+      std::vector<Stencilshadow> stencilshadow = [] {
+         std::vector<Stencilshadow> init;
+         init.reserve(128);
+
+         return init;
+      }();
+
+      std::vector<Stencilshadow> stencilshadow_skinned = [] {
+         std::vector<Stencilshadow> init;
+         init.reserve(128);
+
+         return init;
+      }();
+
+      std::vector<Stencilshadow> stencilshadow_skinned_gen_normal = [] {
+         std::vector<Stencilshadow> init;
+         init.reserve(128);
 
          return init;
       }();
@@ -239,6 +263,9 @@ public:
          zprepass_hardedged_compressed.clear();
          zprepass_hardedged_skinned.clear();
          zprepass_hardedged_compressed_skinned.clear();
+         stencilshadow.clear();
+         stencilshadow_skinned.clear();
+         stencilshadow_skinned_gen_normal.clear();
          skins.clear();
       }
    };
@@ -357,6 +384,7 @@ private:
    Com_ptr<ID3D11InputLayout> _mesh_compressed_il;
    Com_ptr<ID3D11InputLayout> _mesh_skinned_il;
    Com_ptr<ID3D11InputLayout> _mesh_compressed_skinned_il;
+   Com_ptr<ID3D11InputLayout> _mesh_stencilshadow_skinned_il;
 
    Com_ptr<ID3D11VertexShader> _mesh_vs;
    Com_ptr<ID3D11VertexShader> _mesh_compressed_vs;
