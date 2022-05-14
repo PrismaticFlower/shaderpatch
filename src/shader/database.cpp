@@ -372,7 +372,7 @@ public:
 
       for (const auto& [group, entrypoints] : _entrypoint_descs) {
          for (const auto& [entrypoint_name, entrypoint] : entrypoints) {
-            if (entrypoint.stage == to_stage<T::shader_interface>()) {
+            if (entrypoint.stage == to_stage<typename T::shader_interface>()) {
                groups.emplace(group, std::make_unique<T>(group, *this));
 
                break;

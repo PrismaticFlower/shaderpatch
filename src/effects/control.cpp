@@ -398,8 +398,6 @@ namespace {
 
 Bloom_params show_bloom_imgui(Bloom_params params) noexcept
 {
-   constexpr auto max_float = std::numeric_limits<float>::max();
-
    if (ImGui::CollapsingHeader("Basic Controls", ImGuiTreeNodeFlags_DefaultOpen)) {
       ImGui::Checkbox("Enabled", &params.enabled);
 

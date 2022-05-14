@@ -377,11 +377,8 @@ auto munge_declaration(const Shader_declaration<shader_pool_size, state_pass_cou
             }
 
             // PASS
-            using std::views::transform;
-
-            for (const auto& shader_name :
-                 state.passes |
-                    transform([](const auto& pass) { return pass.shader_name; })) {
+            for (const auto& state_pass : state.passes) {
+               const auto& shader_name = state_pass.shader_name;
                auto pass = stat.emplace_child("PASS"_mn);
 
                const auto& variations = shader_variation_index.at(shader_name);

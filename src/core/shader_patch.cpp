@@ -1513,7 +1513,7 @@ void Shader_patch::game_rendertype_changed() noexcept
 
          const float weight_pow = 2.8f;
          const float intensity =
-            std::pow(_cb_draw_ps.ps_custom_constants[1].w * 4.0f, 2.8f) *
+            std::pow(_cb_draw_ps.ps_custom_constants[1].w * 4.0f, weight_pow) *
             _cb_draw_ps.ps_custom_constants[1].x;
 
          _game_postprocessing.bloom_threshold(_cb_draw_ps.ps_custom_constants[0].w);

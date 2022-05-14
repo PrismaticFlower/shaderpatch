@@ -73,7 +73,7 @@ void Backbuffer_resolver::apply_mismatch_format(ID3D11DeviceContext1& dc,
                                                 Swapchain& swapchain,
                                                 const Interfaces& interfaces) noexcept
 {
-   const bool msaa_input = input.sample_count > 1;
+   [[maybe_unused]] const bool msaa_input = input.sample_count > 1;
    const bool want_post_aa = flags.use_cmma2;
 
    // Fast Path for no post AA.
