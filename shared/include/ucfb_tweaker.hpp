@@ -90,7 +90,7 @@ public:
    Tweaker get_child(const bool unaligned = false)
    {
       const auto child_offset = _head;
-      const auto child_mn = get<Magic_number>().load();
+      [[maybe_unused]] const auto child_mn = get<Magic_number>().load();
       const auto child_size = get<std::uint32_t>().load();
 
       _head += child_size;

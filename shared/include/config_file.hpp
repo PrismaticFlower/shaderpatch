@@ -216,7 +216,7 @@ public:
                                  std::forward<First>(first));
          }
          else {
-            static_assert(false,
+            static_assert(std::is_same_v<std::decay_t<First>, void>,
                           "Unable to construct config value from argument.");
          }
       }
@@ -260,7 +260,7 @@ public:
          }
       }
       else {
-         static_assert(false, "Unknown Value_type.");
+         static_assert(std::is_same_v<Value_type, void>, "Unknown Value_type.");
       }
    }
 
@@ -278,7 +278,7 @@ public:
          _values.at(index) = static_cast<std::string>(value);
       }
       else {
-         static_assert(false, "Unknown Value_type.");
+         static_assert(std::is_same_v<Value_type, void>, "Unknown Value_type.");
       }
    }
 
