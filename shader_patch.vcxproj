@@ -143,6 +143,7 @@
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <DelayLoadDLLs>
       </DelayLoadDLLs>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <CustomBuild>
       <Outputs>a lot of shader files (hopefully)</Outputs>
@@ -252,7 +253,9 @@
     <ClCompile Include="src\material\constant_buffer_builder.cpp" />
     <ClCompile Include="src\material\editor.cpp" />
     <ClCompile Include="src\material\material.cpp" />
-    <ClCompile Include="src\material\factory.cpp" />
+    <ClCompile Include="src\material\factory.cpp">
+      <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</WholeProgramOptimization>
+    </ClCompile>
     <ClCompile Include="src\material\shader_factory.cpp" />
     <ClCompile Include="src\material\shader_set.cpp" />
     <ClCompile Include="src\material\sol_create_usertypes.cpp" />
