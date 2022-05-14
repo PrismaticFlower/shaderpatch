@@ -38,12 +38,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="ispc.xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ispc.targets" />
-  </ItemGroup>
-  <ItemGroup>
     <Filter Include="src">
       <UniqueIdentifier>{ece917c4-9047-4a69-bd3b-7edbdaa5ba24}</UniqueIdentifier>
     </Filter>
@@ -52,8 +46,8 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ISPC Include="src\ispc_texcomp\kernel.ispc">
+    <None Include="src\ispc_texcomp\kernel.ispc">
       <Filter>src\ispc_texcomp</Filter>
-    </ISPC>
+    </None>
   </ItemGroup>
 </Project>

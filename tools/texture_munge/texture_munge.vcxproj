@@ -76,7 +76,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>kernel.obj;kernel_sse2.obj;kernel_sse4.obj;kernel_avx.obj;kernel_avx2.obj</AdditionalDependencies>
-      <AdditionalLibraryDirectories>build\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>ispc_bin\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -95,7 +95,7 @@
     <Link />
     <Link>
       <AdditionalDependencies>kernel.obj;kernel_sse2.obj;kernel_sse4.obj;kernel_avx.obj;kernel_avx2.obj</AdditionalDependencies>
-      <AdditionalLibraryDirectories>build\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>ispc_bin\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -114,13 +114,9 @@
     <ClInclude Include="src\texture_type.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="ispc.targets" />
-  </ItemGroup>
-  <ItemGroup>
-    <Xml Include="ispc.xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <ISPC Include="src\ispc_texcomp\kernel.ispc" />
+    <None Include="src\ispc_texcomp\kernel.ispc">
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\shared\shared.vcxproj">
@@ -128,6 +124,5 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <Import Project="ispc.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>
