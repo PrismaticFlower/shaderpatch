@@ -1,0 +1,39 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+  "name": "shaderpatch",
+  "version": "0.0.0",
+  "dependencies": [
+    {
+      "name": "abseil",
+      "features": [
+        "cxx17"
+      ]
+    },
+
+    {
+      "name": "freetype",
+      "default-features": false
+    },
+
+    {
+      "name": "lua",
+      "features": [
+        "cpp"
+      ]
+    },
+
+    "directxtex",
+    "directxmesh",
+    "openexr",
+    "zlib",
+    "stb",
+    "glm",
+    "ms-gsl",
+    "nlohmann-json",
+    "clara",
+    "yaml-cpp",
+    "fmt",
+    "detours",
+    "sol2"
+  ]
+}

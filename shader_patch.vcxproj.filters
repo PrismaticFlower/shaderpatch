@@ -711,6 +711,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />
+    <None Include="vcpkg.json" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="src\effects\assao\ASSAO.hlsl">

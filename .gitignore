@@ -28,6 +28,7 @@ build/
 [Bb]in/
 [Oo]bj/
 [Ll]og/ 
+vcpkg_installed/
 
 
 # Visual Studio 2015 cache/options directory
