@@ -407,6 +407,9 @@
     <None Include="src\pixel_inspector.fx">
       <Filter>src</Filter>
     </None>
+    <None Include="src\interior_mapping.hlsl">
+      <Filter>src</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">

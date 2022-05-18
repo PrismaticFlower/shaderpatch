@@ -1,6 +1,7 @@
 #include "adaptive_oit.hlsl"
 #include "constants_list.hlsl"
 #include "generic_vertex_input.hlsl"
+#include "interior_mapping.hlsl"
 #include "lighting_pbr.hlsl"
 #include "normal_ext_common.hlsl"
 #include "pixel_sampler_states.hlsl"
@@ -23,7 +24,7 @@ Texture2D<float4> overlay_diffuse_map : register(ps, t13);
 Texture2D<float4> overlay_normal_map : register(ps, t14);
 Texture2D<float> ao_map : register(ps, t15);
 TextureCube<float3> env_map : register(ps, t16);
-
+TextureCube<float3> interior_map_atlas : register(ps, t17);
 // Game Custom Constants
 
 const static float4 blend_constant = ps_custom_constants[0];
@@ -51,6 +52,7 @@ cbuffer MaterialConstants : register(MATERIAL_CB_INDEX)
    bool   use_env_map;
    float  env_map_vis;
    float  dynamic_normal_sign;
+   float3 interior_spacing;
 };
 
 // Shader Feature Controls
@@ -60,6 +62,7 @@ const static bool use_parallax_occlusion_mapping = NORMAL_EXT_USE_PARALLAX_OCCLU
 const static bool use_vertex_color_for_emissive = NORMAL_EXT_USE_VERTEX_COLOR_FOR_EMISSIVE;
 const static bool use_transparency = NORMAL_EXT_USE_TRANSPARENCY;
 const static bool use_hardedged_test = NORMAL_EXT_USE_HARDEDGED_TEST;
+const static bool use_interior_mapping = NORMAL_EXT_USE_INTERIOR_MAPPING;
 
 struct Vs_output
 {
@@ -348,6 +351,14 @@ Ps_output main_ps(Ps_input input)
       const float so = pbr::specular_occlusion(saturate(dot(normalWS, viewWS)), ao, roughness);
 
       color += (gloss * so * env_map_vis * env * base_specular_color);
+   }
+
+   // Apply interior mapping, if using.
+   if (use_interior_mapping) {
+      const float3 interior_color = 
+         interior_map(normalize(mul(tangent_to_world, input.positionWS - view_positionWS)), 
+                      input.texcoords, interior_spacing, tangent_to_world, interior_map_atlas);
+      color.rgb = (interior_color * (1.0 - diffuse_map_color.a)) + color.rgb;
    }
 
    // Apply fog.
