@@ -115,13 +115,13 @@ void sol_create_usertypes(sol::state& lua) noexcept
    auto log = lua["log"sv].get_or_create<sol::table>();
 
    log["str_info"sv] = [](const std::string_view str) noexcept {
-      log_fmt(Log_level::info, str);
+      sp::log(Log_level::info, str);
    };
    log["str_warning"sv] = [](const std::string_view str) noexcept {
-      log_fmt(Log_level::warning, str);
+      sp::log(Log_level::warning, str);
    };
    log["str_error"sv] = [](const std::string_view str) noexcept {
-      log_fmt(Log_level::error, str);
+      sp::log(Log_level::error, str);
    };
 
    lua.do_string(R"(

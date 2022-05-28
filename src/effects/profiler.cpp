@@ -2,6 +2,7 @@
 #include "profiler.hpp"
 
 #include <algorithm>
+#include <numeric>
 
 #include <gsl/gsl>
 
