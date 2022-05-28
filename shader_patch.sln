@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29503.13
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32519.379
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shader_patch", "shader_patch.vcxproj", "{77065F00-E7E4-4EDF-8C98-6EB87BC49C4D}"
 EndProject
@@ -29,10 +29,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "manager", "tools\manager\ma
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "material_updater", "tools\material_updater\material_updater.vcxproj", "{7517AA92-58FE-4981-8370-2CD881BEE9FC}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "texture_array_maker", "tools\texture_array_maker\texture_array_maker.vcxproj", "{B07B91E6-6E70-4716-BECD-5291D52AB702}"
+EndProject
 Global
-	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		submodules\imgui\imgui.vcxitems*{77065f00-e7e4-4edf-8c98-6eb87bc49c4d}*SharedItemsImports = 4
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
@@ -105,6 +104,12 @@ Global
 		{7517AA92-58FE-4981-8370-2CD881BEE9FC}.Release|x64.Build.0 = Release|x64
 		{7517AA92-58FE-4981-8370-2CD881BEE9FC}.Release|x86.ActiveCfg = Release|x64
 		{7517AA92-58FE-4981-8370-2CD881BEE9FC}.Release|x86.Build.0 = Release|x64
+		{B07B91E6-6E70-4716-BECD-5291D52AB702}.Debug|x64.ActiveCfg = Debug|x64
+		{B07B91E6-6E70-4716-BECD-5291D52AB702}.Debug|x64.Build.0 = Debug|x64
+		{B07B91E6-6E70-4716-BECD-5291D52AB702}.Debug|x86.ActiveCfg = Debug|x64
+		{B07B91E6-6E70-4716-BECD-5291D52AB702}.Release|x64.ActiveCfg = Release|x64
+		{B07B91E6-6E70-4716-BECD-5291D52AB702}.Release|x64.Build.0 = Release|x64
+		{B07B91E6-6E70-4716-BECD-5291D52AB702}.Release|x86.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -117,8 +122,12 @@ Global
 		{77099BDD-CB40-4C78-85BB-04F6E07F98D9} = {69E77B09-01C8-4B00-929C-69F81C130C74}
 		{87C16869-1FA0-4995-B731-365D230D72F3} = {69E77B09-01C8-4B00-929C-69F81C130C74}
 		{7517AA92-58FE-4981-8370-2CD881BEE9FC} = {69E77B09-01C8-4B00-929C-69F81C130C74}
+		{B07B91E6-6E70-4716-BECD-5291D52AB702} = {69E77B09-01C8-4B00-929C-69F81C130C74}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E60021EE-5B9E-4C2E-B6AB-83302F205408}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		submodules\imgui\imgui.vcxitems*{77065f00-e7e4-4edf-8c98-6eb87bc49c4d}*SharedItemsImports = 4
 	EndGlobalSection
 EndGlobal
