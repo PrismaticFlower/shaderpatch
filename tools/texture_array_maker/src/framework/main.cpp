@@ -106,7 +106,8 @@ int main(int, char**)
    while (!done) {
       // Poll and handle messages (inputs, window resize, etc.)
       // See the WndProc() function below for our to dispatch events to the Win32 backend.
-      WaitMessage();
+
+      if (GetFocus() != hwnd) WaitMessage();
 
       MSG msg;
       while (::PeekMessageW(&msg, NULL, 0U, 0U, PM_REMOVE)) {
@@ -160,7 +161,7 @@ bool CreateDeviceD3D(HWND hWnd)
    sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
    sd.BufferDesc.RefreshRate.Numerator = 0;
    sd.BufferDesc.RefreshRate.Denominator = 0;
-   sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+   sd.Flags = 0;
    sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
    sd.OutputWindow = hWnd;
    sd.SampleDesc.Count = 1;
