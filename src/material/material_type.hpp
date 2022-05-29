@@ -2,6 +2,7 @@
 
 #include "material.hpp"
 #include "properties_view.hpp"
+#include "resource_info_view.hpp"
 #include "shader_factory.hpp"
 
 #include <cstddef>
@@ -40,9 +41,11 @@ public:
       return _script_env["make_constant_buffer"] != nullptr;
    }
 
-   auto make_constant_buffer(Properties_view properties_view) -> std::vector<std::byte>
+   auto make_constant_buffer(Properties_view properties_view,
+                             Resource_info_views resource_info_views)
+      -> std::vector<std::byte>
    {
-      return _script_env["make_constant_buffer"](properties_view);
+      return _script_env["make_constant_buffer"](properties_view, resource_info_views);
    }
 
    bool has_resources() const noexcept

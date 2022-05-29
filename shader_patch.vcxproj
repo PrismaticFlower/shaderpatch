@@ -260,6 +260,7 @@
     <ClCompile Include="src\material\factory.cpp">
       <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</WholeProgramOptimization>
     </ClCompile>
+    <ClCompile Include="src\material\resource_info_view.cpp" />
     <ClCompile Include="src\material\shader_factory.cpp" />
     <ClCompile Include="src\material\shader_set.cpp" />
     <ClCompile Include="src\material\sol_create_usertypes.cpp" />
@@ -400,6 +401,7 @@
     <ClInclude Include="src\material\shader_factory.hpp" />
     <ClInclude Include="src\material\shader_set.hpp" />
     <ClInclude Include="src\material\sol_create_usertypes.hpp" />
+    <ClInclude Include="src\material\resource_info_view.hpp" />
     <ClInclude Include="src\shader\bytecode_blob.hpp" />
     <ClInclude Include="src\shader\cache.hpp" />
     <ClInclude Include="src\shader\common.hpp" />

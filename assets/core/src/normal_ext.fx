@@ -24,7 +24,7 @@ Texture2D<float4> overlay_diffuse_map : register(ps, t13);
 Texture2D<float4> overlay_normal_map : register(ps, t14);
 Texture2D<float> ao_map : register(ps, t15);
 TextureCube<float3> env_map : register(ps, t16);
-TextureCube<float3> interior_map_atlas : register(ps, t17);
+TextureCubeArray<float3> interior_map_array : register(ps, t17);
 // Game Custom Constants
 
 const static float4 blend_constant = ps_custom_constants[0];
@@ -53,6 +53,7 @@ cbuffer MaterialConstants : register(MATERIAL_CB_INDEX)
    float  env_map_vis;
    float  dynamic_normal_sign;
    float3 interior_spacing;
+   float2 interior_map_array_size_info;
 };
 
 // Shader Feature Controls
@@ -357,7 +358,9 @@ Ps_output main_ps(Ps_input input)
    if (use_interior_mapping) {
       const float3 interior_color = 
          interior_map(normalize(mul(tangent_to_world, input.positionWS - view_positionWS)), 
-                      input.texcoords, interior_spacing, tangent_to_world, interior_map_atlas);
+                      input.texcoords, interior_spacing, tangent_to_world, 
+                      interior_map_array, interior_map_array_size_info);
+
       color.rgb = (interior_color * (1.0 - diffuse_map_color.a)) + color.rgb;
    }
 

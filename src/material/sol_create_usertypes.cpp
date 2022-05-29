@@ -4,6 +4,7 @@
 #include "constant_buffer_builder.hpp"
 #include "material.hpp"
 #include "properties_view.hpp"
+#include "resource_info_view.hpp"
 
 #include <glm/glm.hpp>
 #include <sol/sol.hpp>
@@ -108,6 +109,35 @@ void sol_create_usertypes(sol::state& lua) noexcept
    properties_view["get_uint4"sv] = &Properties_view::get<glm::uvec4>;
 
    properties_view["get_bool"sv] = &Properties_view::get<bool>;
+
+   lua.new_enum("resource_type",                            //
+                "buffer", Resource_type::buffer,            //
+                "texture1d", Resource_type::texture1d,      //
+                "texture2d", Resource_type::texture2d,      //
+                "texture3d", Resource_type::texture3d,      //
+                "texture_cube", Resource_type::texture_cube //
+   );
+
+   auto resource_info = lua.new_usertype<Resource_info>("resource_info");
+
+   resource_info["type"sv] = &Resource_info::type;
+   resource_info["width"sv] = &Resource_info::width;
+   resource_info["buffer_length"sv] = &Resource_info::buffer_length;
+   resource_info["height"sv] = &Resource_info::height;
+   resource_info["depth"sv] = &Resource_info::depth;
+   resource_info["array_size"sv] = &Resource_info::array_size;
+   resource_info["mip_levels"sv] = &Resource_info::mip_levels;
+
+   auto resource_info_view =
+      lua.new_usertype<Resource_info_view>("resource_info_view");
+
+   resource_info_view["get"sv] = &Resource_info_view::get;
+
+   auto resource_info_views =
+      lua.new_usertype<Resource_info_views>("resource_info_views");
+
+   resource_info_views["vs"sv] = &Resource_info_views::vs;
+   resource_info_views["ps"sv] = &Resource_info_views::ps;
 
    lua.new_enum("constant_buffer_bind_flag"sv, "none"sv, Constant_buffer_bind::none,
                 "vs"sv, Constant_buffer_bind::vs, "ps"sv, Constant_buffer_bind::ps);

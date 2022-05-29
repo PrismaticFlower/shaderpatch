@@ -2,7 +2,7 @@
 constant_buffer_bind = constant_buffer_bind_flag.ps
 fail_safe_texture_index = 0
 
-function make_constant_buffer(props)
+function make_constant_buffer(props, resources_desc_view)
    local cb = constant_buffer_builder.new([[
       float3 base_diffuse_color;
       float  gloss_map_weight;
@@ -21,6 +21,7 @@ function make_constant_buffer(props)
       float  env_map_vis;
       float  dynamic_normal_sign;
       float3 interior_spacing;
+      float2 interior_map_array_size_info;
    ]])
 
    cb:set("base_diffuse_color",
@@ -44,6 +45,11 @@ function make_constant_buffer(props)
    cb:set("dynamic_normal_sign", math2.sign(props:get_float("DynamicNormalSign", 1.0)))
    cb:set("interior_spacing", 
           props:get_float3("InteriorRoomSize", float3.new(1.0, 1.0, 1.0)))
+
+   local interior_map_index = 10
+   local interior_map_array_size = resources_desc_view.ps:get(interior_map_index).array_size
+
+   cb:set("interior_map_array_size_info", float2.new(1.0 / interior_map_array_size, interior_map_array_size))
 
    return cb:complete()
 end
