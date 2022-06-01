@@ -25,6 +25,16 @@ public:
 
    explicit Constant_buffer_builder(const std::string_view layout) noexcept;
 
+   void set_int(const std::string_view field_name, const std::int32_t value) noexcept
+   {
+      set(field_name, value);
+   }
+
+   void set_uint(const std::string_view field_name, const std::uint32_t value) noexcept
+   {
+      set(field_name, value);
+   }
+
    void set(const std::string_view field_name, const value_type& value) noexcept;
 
    auto complete() noexcept -> std::vector<std::byte>

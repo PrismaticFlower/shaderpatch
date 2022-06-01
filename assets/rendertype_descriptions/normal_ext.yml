@@ -105,6 +105,15 @@ Properties:
       Default: [1.0, 1.0, 1.0]
       Range: [0.000001, 100000.0]
 
+   InteriorRandomizeWalls:
+      Type: bool
+      Default: true
+
+   InteriorRandomnessSeed:
+      Type: uint
+      Default: 0
+      Range: [0, 4294967295]
+
 Resource Properties:
    DiffuseMap:
    NormalMap: 

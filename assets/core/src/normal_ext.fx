@@ -53,7 +53,9 @@ cbuffer MaterialConstants : register(MATERIAL_CB_INDEX)
    float  env_map_vis;
    float  dynamic_normal_sign;
    float3 interior_spacing;
+   uint   interior_hash_seed;
    float2 interior_map_array_size_info;
+   bool   interior_randomize_walls;
 };
 
 // Shader Feature Controls
@@ -355,10 +357,10 @@ Ps_output main_ps(Ps_input input)
    }
 
    // Apply interior mapping, if using.
-   if (use_interior_mapping) {
+   if (use_interior_mapping && diffuse_map_color.a < 1.0) {
       const float3 interior_color = 
          interior_map(normalize(mul(tangent_to_world, input.positionWS - view_positionWS)), 
-                      input.texcoords, interior_spacing, tangent_to_world, 
+                      input.texcoords, interior_spacing, interior_hash_seed, interior_randomize_walls, 
                       interior_map_array, interior_map_array_size_info);
 
       color.rgb = (interior_color * (1.0 - diffuse_map_color.a)) + color.rgb;
