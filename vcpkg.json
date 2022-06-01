@@ -22,7 +22,13 @@
       ]
     },
 
-    "directxtex",
+    {
+      "name": "directxtex",
+      "features": [
+        "openexr"
+      ]
+    },
+
     "directxmesh",
     "openexr",
     "zlib",

@@ -1,0 +1,1 @@
+Simple tool for creating cubemap texture arrays from multiple unfolded 2D cubemaps. Made **very** quickly based on the DX11 Dear ImGui demo app. Lots of global state and other stuff that deviates from how the rest of the codebase is written.

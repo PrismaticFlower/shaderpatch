@@ -74,6 +74,8 @@
       <AdditionalIncludeDirectories>$(SolutionDir)/shared/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+      <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -94,6 +96,8 @@
       <AdditionalIncludeDirectories>$(SolutionDir)/shared/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+      <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
     <Link />
     <Link>
@@ -102,14 +106,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\DirectXTexEXR.cpp" />
     <ClCompile Include="src\ispc_texcomp\ispc_texcomp.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\munge_texture.cpp" />
     <ClCompile Include="src\process_image.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\DirectXTexEXR.h" />
     <ClInclude Include="src\format_helpers.hpp" />
     <ClInclude Include="src\ispc_texcomp\ispc_texcomp.h" />
     <ClInclude Include="src\munge_texture.hpp" />

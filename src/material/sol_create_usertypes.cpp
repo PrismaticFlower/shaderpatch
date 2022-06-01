@@ -4,6 +4,7 @@
 #include "constant_buffer_builder.hpp"
 #include "material.hpp"
 #include "properties_view.hpp"
+#include "resource_info_view.hpp"
 
 #include <glm/glm.hpp>
 #include <sol/sol.hpp>
@@ -67,9 +68,7 @@ void create_vec_type(sol::state& lua, const char* name) noexcept
    if constexpr (T::length() >= 4) type["w"sv] = &T::w;
 }
 
-}
-
-void sol_create_usertypes(sol::state& lua) noexcept
+void add_vec_types(sol::state& lua) noexcept
 {
    create_vec_type<glm::vec2>(lua, "float2");
    create_vec_type<glm::vec3>(lua, "float3");
@@ -82,14 +81,41 @@ void sol_create_usertypes(sol::state& lua) noexcept
    create_vec_type<glm::uvec2>(lua, "uint2");
    create_vec_type<glm::uvec3>(lua, "uint3");
    create_vec_type<glm::uvec4>(lua, "uint4");
+}
 
+void add_constant_buffer_builder(sol::state& lua) noexcept
+{
    auto constant_buffer_builder = lua.new_usertype<Constant_buffer_builder>(
       "constant_buffer_builder",
       sol::constructors<Constant_buffer_builder(std::string_view)>());
 
    constant_buffer_builder["set"sv] = &Constant_buffer_builder::set;
+   constant_buffer_builder["set_int"sv] = &Constant_buffer_builder::set_int;
+   constant_buffer_builder["set_uint"sv] = &Constant_buffer_builder::set_uint;
    constant_buffer_builder["complete"sv] = &Constant_buffer_builder::complete;
+}
 
+void add_prop_makers(sol::state& lua) noexcept
+{
+   auto uint_prop = lua["uint_prop"sv].get_or_create<sol::table>();
+
+   uint_prop["make"sv] = [](std::uint32_t i) noexcept {
+      Constant_buffer_builder::value_type value;
+
+      value.emplace<std::uint32_t>(i);
+
+      return value;
+   };
+
+   auto int_prop = lua["int_prop"sv].get_or_create<sol::table>();
+
+   int_prop["make"sv] = [](std::int32_t i) noexcept {
+      return Constant_buffer_builder::value_type{i};
+   };
+}
+
+void add_properties_view(sol::state& lua) noexcept
+{
    auto properties_view = lua.new_usertype<Properties_view>("properties_view");
 
    properties_view["get_float"sv] = &Properties_view::get<float>;
@@ -108,20 +134,58 @@ void sol_create_usertypes(sol::state& lua) noexcept
    properties_view["get_uint4"sv] = &Properties_view::get<glm::uvec4>;
 
    properties_view["get_bool"sv] = &Properties_view::get<bool>;
+}
 
+void add_resource_info(sol::state& lua) noexcept
+{
+   lua.new_enum("resource_type",                            //
+                "buffer", Resource_type::buffer,            //
+                "texture1d", Resource_type::texture1d,      //
+                "texture2d", Resource_type::texture2d,      //
+                "texture3d", Resource_type::texture3d,      //
+                "texture_cube", Resource_type::texture_cube //
+   );
+
+   auto resource_info = lua.new_usertype<Resource_info>("resource_info");
+
+   resource_info["type"sv] = &Resource_info::type;
+   resource_info["width"sv] = &Resource_info::width;
+   resource_info["buffer_length"sv] = &Resource_info::buffer_length;
+   resource_info["height"sv] = &Resource_info::height;
+   resource_info["depth"sv] = &Resource_info::depth;
+   resource_info["array_size"sv] = &Resource_info::array_size;
+   resource_info["mip_levels"sv] = &Resource_info::mip_levels;
+
+   auto resource_info_view =
+      lua.new_usertype<Resource_info_view>("resource_info_view");
+
+   resource_info_view["get"sv] = &Resource_info_view::get;
+
+   auto resource_info_views =
+      lua.new_usertype<Resource_info_views>("resource_info_views");
+
+   resource_info_views["vs"sv] = &Resource_info_views::vs;
+   resource_info_views["ps"sv] = &Resource_info_views::ps;
+}
+
+void add_constant_buffer_bind_flag(sol::state& lua) noexcept
+{
    lua.new_enum("constant_buffer_bind_flag"sv, "none"sv, Constant_buffer_bind::none,
                 "vs"sv, Constant_buffer_bind::vs, "ps"sv, Constant_buffer_bind::ps);
+}
 
+void add_logger(sol::state& lua) noexcept
+{
    auto log = lua["log"sv].get_or_create<sol::table>();
 
    log["str_info"sv] = [](const std::string_view str) noexcept {
-      log_fmt(Log_level::info, str);
+      sp::log(Log_level::info, str);
    };
    log["str_warning"sv] = [](const std::string_view str) noexcept {
-      log_fmt(Log_level::warning, str);
+      sp::log(Log_level::warning, str);
    };
    log["str_error"sv] = [](const std::string_view str) noexcept {
-      log_fmt(Log_level::error, str);
+      sp::log(Log_level::error, str);
    };
 
    lua.do_string(R"(
@@ -129,12 +193,29 @@ void sol_create_usertypes(sol::state& lua) noexcept
       log.warning = function(...) log.str_warning(string.format(...)) end
       log.error = function(...) log.str_error(string.format(...)) end
    )"sv);
+}
 
+void add_math(sol::state& lua) noexcept
+{
    auto math = lua["math2"sv].get_or_create<sol::table>();
 
    math["exp2"sv] = sol::resolve<double(double)>(std::exp2);
    math["rcp"sv] = [](double v) { return 1.0 / v; };
    math["sign"sv] = [](double v) { return v < 0.0 ? -1.0 : 1.0; };
+}
+
+}
+
+void sol_create_usertypes(sol::state& lua) noexcept
+{
+   add_vec_types(lua);
+   add_constant_buffer_builder(lua);
+   add_prop_makers(lua);
+   add_properties_view(lua);
+   add_resource_info(lua);
+   add_constant_buffer_bind_flag(lua);
+   add_logger(lua);
+   add_math(lua);
 }
 
 }

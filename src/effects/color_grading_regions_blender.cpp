@@ -6,6 +6,7 @@
 #include <array>
 #include <fstream>
 #include <iomanip>
+#include <numeric>
 
 #include <gsl/gsl>
 

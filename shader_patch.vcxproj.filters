@@ -279,6 +279,7 @@
     <ClCompile Include="src\effects\mask_nan.cpp" />
     <ClCompile Include="src\core\postprocessing\backbuffer_resolver.cpp" />
     <ClCompile Include="src\core\tools\pixel_inspector.cpp" />
+    <ClCompile Include="src\material\resource_info_view.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -708,6 +709,7 @@
     <ClInclude Include="src\core\postprocessing\backbuffer_resolver.hpp" />
     <ClInclude Include="src\core\normalized_rect.hpp" />
     <ClInclude Include="src\core\tools\pixel_inspector.hpp" />
+    <ClInclude Include="src\material\resource_info_view.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />
