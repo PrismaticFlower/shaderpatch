@@ -44,7 +44,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>bin\$(Configuration)\</OutDir>
+    <OutDir>D:\GOG Games\Star Wars - Battlefront 2\GameData\</OutDir>
     <IntDir>build\$(Configuration)\</IntDir>
     <TargetName>d3d9</TargetName>
     <TargetExt>.dll</TargetExt>
@@ -75,7 +75,7 @@
       <SDLCheck>true</SDLCheck>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <PreprocessorDefinitions>SOL_USING_CXX_LUA;GLM_FORCE_SILENT_WARNINGS;GLM_FORCE_CXX17;_ENABLE_EXTENDED_ALIGNED_STORAGE=1;NOMINMAX;_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING;_CRT_SECURE_NO_WARNINGS;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_CXX20_CISO646_REMOVED_WARNING;SOL_USING_CXX_LUA;GLM_FORCE_SILENT_WARNINGS;GLM_FORCE_CXX17;_ENABLE_EXTENDED_ALIGNED_STORAGE=1;NOMINMAX;_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING;_CRT_SECURE_NO_WARNINGS;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>4324;4275;4251;4127;4018;4201</DisableSpecificWarnings>
       <ConformanceMode>true</ConformanceMode>
@@ -123,7 +123,7 @@
       <SDLCheck>true</SDLCheck>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <PreprocessorDefinitions>SOL_USING_CXX_LUA;GLM_FORCE_SILENT_WARNINGS;GLM_FORCE_CXX17;_ENABLE_EXTENDED_ALIGNED_STORAGE=1;NOMINMAX;_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING;_CRT_SECURE_NO_WARNINGS;NDEBUG;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_CXX20_CISO646_REMOVED_WARNING;SOL_USING_CXX_LUA;GLM_FORCE_SILENT_WARNINGS;GLM_FORCE_CXX17;_ENABLE_EXTENDED_ALIGNED_STORAGE=1;NOMINMAX;_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING;_CRT_SECURE_NO_WARNINGS;NDEBUG;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>true</TreatWarningAsError>
       <AdditionalIncludeDirectories>$(SolutionDir)/shared/include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4324;4275;4251;4127;4018;4201</DisableSpecificWarnings>

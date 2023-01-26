@@ -110,9 +110,11 @@ void Swapchain::resize(const UINT width, const UINT height) noexcept
 
 void Swapchain::present() noexcept
 {
-   const auto flags = _allow_tearing ? DXGI_PRESENT_ALLOW_TEARING : 0;
+   const auto result = _allow_tearing
+                          ? _swapchain->Present(0, DXGI_PRESENT_ALLOW_TEARING)
+                          : _swapchain->Present(1, 0);
 
-   if (const auto result = _swapchain->Present(0, flags); FAILED(result)) {
+   if (FAILED(result)) {
       log_and_terminate("Frame Present call failed! reason: ",
                         _com_error{result}.ErrorMessage());
    }

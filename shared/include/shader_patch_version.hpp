@@ -23,7 +23,7 @@ struct Shader_patch_version {
    constexpr bool operator==(const Shader_patch_version&) const noexcept = default;
 };
 
-inline const Shader_patch_version current_shader_patch_version{1, 6, 0};
+inline const Shader_patch_version current_shader_patch_version{1, 6, 1};
 
 extern const std::string current_shader_patch_version_string;
 

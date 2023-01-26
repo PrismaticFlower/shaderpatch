@@ -91,7 +91,7 @@
       <AdditionalIncludeDirectories>$(SolutionDir)/shared/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <DisableSpecificWarnings>4251;4275;4201</DisableSpecificWarnings>
-      <PreprocessorDefinitions>GLM_FORCE_SILENT_WARNINGS;GLM_FORCE_CXX17;GLM_FORCE_SWIZZLE;_MBCS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_CXX20_CISO646_REMOVED_WARNING;GLM_FORCE_SILENT_WARNINGS;GLM_FORCE_CXX17;GLM_FORCE_SWIZZLE;_MBCS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
@@ -106,13 +106,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\envfx_edits.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\munge_colorgrading_regions.cpp" />
     <ClCompile Include="src\munge_spfx.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\envfx_edits.hpp" />
     <ClInclude Include="src\munge_colorgrading_regions.hpp" />
     <ClInclude Include="src\munge_spfx.hpp" />
   </ItemGroup>

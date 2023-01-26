@@ -87,7 +87,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;NOMINMAX;GLM_FORCE_SILENT_WARNINGS;GLM_FORCE_CXX17;GLM_FORCE_SWIZZLE;_MBCS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_CXX20_CISO646_REMOVED_WARNING;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;NOMINMAX;GLM_FORCE_SILENT_WARNINGS;GLM_FORCE_CXX17;GLM_FORCE_SWIZZLE;_MBCS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)/shared/include</AdditionalIncludeDirectories>

@@ -69,7 +69,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <PreprocessorDefinitions>GLM_FORCE_SILENT_WARNINGS;GLM_FORCE_CXX17;GLM_FORCE_SWIZZLE;_MBCS;NOMINMAX;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_CXX20_CISO646_REMOVED_WARNING;GLM_FORCE_SILENT_WARNINGS;GLM_FORCE_CXX17;GLM_FORCE_SWIZZLE;_MBCS;NOMINMAX;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4018;4251;4275;4201</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>$(SolutionDir)/shared/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
