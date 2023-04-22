@@ -119,14 +119,10 @@
     <ClCompile Include="src\munge_terrain_materials.cpp" />
     <ClCompile Include="src\optimize_mesh.cpp" />
     <ClCompile Include="src\terrain_assemble_textures.cpp" />
-    <ClCompile Include="src\terrain_cut.cpp" />
-    <ClCompile Include="src\terrain_downsample.cpp" />
     <ClCompile Include="src\terrain_map.cpp" />
     <ClCompile Include="src\terrain_modelify.cpp" />
     <ClCompile Include="src\terrain_model_segment.cpp" />
-    <ClCompile Include="src\terrain_model_shadows.cpp" />
     <ClCompile Include="src\terrain_save_material.cpp" />
-    <ClCompile Include="src\terrain_vertex_buffer.cpp" />
     <ClCompile Include="src\vertex_buffer.cpp" />
     <ClCompile Include="src\weld_vertex_list.cpp" />
   </ItemGroup>
@@ -143,16 +139,12 @@
     <ClInclude Include="src\optimize_mesh.hpp" />
     <ClInclude Include="src\terrain_assemble_textures.hpp" />
     <ClInclude Include="src\terrain_constants.hpp" />
-    <ClInclude Include="src\terrain_cut.hpp" />
-    <ClInclude Include="src\terrain_downsample.hpp" />
+    <ClInclude Include="src\terrain_map.hpp" />
     <ClInclude Include="src\terrain_materials_config.hpp" />
     <ClInclude Include="src\terrain_modelify.hpp" />
     <ClInclude Include="src\terrain_model_segment.hpp" />
-    <ClInclude Include="src\terrain_model_shadows.hpp" />
     <ClInclude Include="src\terrain_save_material.hpp" />
     <ClInclude Include="src\terrain_texture_transform.hpp" />
-    <ClInclude Include="src\terrain_vertex_buffer.hpp" />
-    <ClInclude Include="src\terrain_map.hpp" />
     <ClInclude Include="src\vertex_buffer.hpp" />
     <ClInclude Include="src\weld_vertex_list.hpp" />
   </ItemGroup>

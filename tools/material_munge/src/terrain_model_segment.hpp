@@ -1,7 +1,9 @@
 #pragma once
 
 #include "index_buffer.hpp"
-#include "terrain_vertex_buffer.hpp"
+#include "terrain_map.hpp"
+#include "ucfb_reader.hpp"
+#include "vertex_buffer.hpp"
 
 #include <vector>
 
@@ -9,19 +11,45 @@
 
 namespace sp {
 
+struct Terrain_info {
+   float grid_size = 0.0f;
+   float height_scale = 0.0f;
+   float height_min = 0.0f;
+   float height_max = 0.0f;
+   std::uint16_t terrain_length = 0;
+   std::uint16_t patch_length = 0;
+};
+
+struct Terrain_vertex {
+   glm::i16vec3 position;
+   glm::uint16 texture_indices;
+   glm::uint32 normal;
+   glm::uint32 tangent;
+};
+
+static_assert(sizeof(Terrain_vertex) == 16);
+
+using Terrain_vertex_buffer = std::vector<Terrain_vertex>;
+
+constexpr auto terrain_vbuf_flags =
+   Vbuf_flags::position | Vbuf_flags::normal | Vbuf_flags::tangents |
+   Vbuf_flags::texcoords | Vbuf_flags::position_compressed |
+   Vbuf_flags::normal_compressed | Vbuf_flags::texcoord_compressed;
+
+constexpr auto terrain_vbuf_static_lighting_flags =
+   Vbuf_flags::position | Vbuf_flags::normal | Vbuf_flags::tangents |
+   Vbuf_flags::static_lighting | Vbuf_flags::texcoords |
+   Vbuf_flags::position_compressed | Vbuf_flags::normal_compressed |
+   Vbuf_flags::texcoord_compressed;
+
 struct Terrain_model_segment {
    Index_buffer_16 indices;
    Terrain_vertex_buffer vertices;
    std::array<glm::vec3, 2> bbox;
 };
 
-auto create_terrain_model_segments(const Terrain_triangle_list& triangles)
-   -> std::vector<Terrain_model_segment>;
-
-auto create_terrain_low_detail_model_segment(const Terrain_triangle_list& triangles)
-   -> Terrain_model_segment;
-
-auto optimize_terrain_model_segments(std::vector<Terrain_model_segment> segments) noexcept
+auto create_terrain_model_segments(ucfb::Reader_strict<"PCHS"_mn> pchs,
+                                   const Terrain_info info)
    -> std::vector<Terrain_model_segment>;
 
 auto calculate_terrain_model_segments_aabb(const std::vector<Terrain_model_segment>& segments) noexcept

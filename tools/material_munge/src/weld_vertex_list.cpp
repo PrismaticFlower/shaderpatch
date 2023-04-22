@@ -13,8 +13,6 @@ namespace {
 constexpr auto pos_max_diff = 0.00025f;
 constexpr auto normal_threshold = 1.0f - (1.f / 128.5f);
 constexpr auto texcoords_max_diff = 1.f / 2048.f;
-constexpr auto terrain_blend_threshold = (1.f / 255.5f);
-constexpr auto terrain_color_threshold = (1.f / 255.5f);
 
 auto init_vertex_buffer(const Vertex_buffer& old_vbuf) noexcept -> Vertex_buffer
 {
@@ -142,31 +140,6 @@ bool is_vertex_similar(const Vertex_buffer& left_vbuf, const int left_index,
    return true;
 }
 
-bool is_vertex_similar(const Terrain_vertex& left, const Terrain_vertex& right) noexcept
-{
-   if (left.texture_indices != right.texture_indices) return false;
-
-   if (glm::distance(left.position, right.position) > pos_max_diff)
-      return false;
-
-   if (glm::any(glm::greaterThan(glm::vec2{glm::distance(left.texture_blend[0],
-                                                         right.texture_blend[0]),
-                                           glm::distance(left.texture_blend[1],
-                                                         right.texture_blend[1])},
-                                 glm::vec2{terrain_blend_threshold})))
-      return false;
-
-   if (glm::any(glm::greaterThan(glm::abs(right.diffuse_lighting - left.diffuse_lighting),
-                                 glm::vec3{terrain_color_threshold})))
-      return false;
-
-   if (glm::any(glm::greaterThan(glm::abs(right.base_color - left.base_color),
-                                 glm::vec3{terrain_color_threshold})))
-      return false;
-
-   return false;
-}
-
 auto find_similar_vertex(const Vertex_buffer& ref_vbuf, const int ref_index,
                          const Vertex_buffer& in_vbuf) noexcept -> int
 {
@@ -177,28 +150,6 @@ auto find_similar_vertex(const Vertex_buffer& ref_vbuf, const int ref_index,
    return -1;
 }
 
-auto find_similar_vertex(const Terrain_vertex& ref_vertex,
-                         const Terrain_vertex_buffer& vertices) noexcept -> int
-{
-   for (auto v = 0; v < vertices.size(); ++v) {
-      if (is_vertex_similar(ref_vertex, vertices[v])) return v;
-   }
-
-   return -1;
-}
-
-auto add_terrain_vertex(Terrain_vertex_buffer& buffer, const Terrain_vertex& vertex)
-   -> std::uint32_t
-{
-   if (const auto index = find_similar_vertex(vertex, buffer); index != -1) {
-      return static_cast<std::uint32_t>(index);
-   }
-   else {
-      buffer.push_back(vertex);
-
-      return static_cast<std::uint32_t>(buffer.size() - 1);
-   }
-}
 }
 
 auto weld_vertex_list(const Vertex_buffer& vertex_buffer) noexcept
@@ -228,25 +179,5 @@ auto weld_vertex_list(const Vertex_buffer& vertex_buffer) noexcept
    }
 
    return {std::move(ibuf), std::move(welded_vbuf)};
-}
-
-auto weld_vertex_list(const Terrain_triangle_list& triangles) noexcept
-   -> std::pair<Index_buffer_32, Terrain_vertex_buffer>
-{
-   Expects((triangles.size() * 3) < std::numeric_limits<std::int32_t>::max());
-
-   std::pair<Index_buffer_32, Terrain_vertex_buffer> result;
-   auto& [indices, vertices] = result;
-
-   vertices.reserve(triangles.size() * 3);
-   indices.reserve(triangles.size());
-
-   for (auto& tri : triangles) {
-      indices.push_back({add_terrain_vertex(vertices, tri[0]),
-                         add_terrain_vertex(vertices, tri[1]),
-                         add_terrain_vertex(vertices, tri[2])});
-   }
-
-   return result;
 }
 }

@@ -203,15 +203,5 @@ void terrain_save_material(const Terrain_materials_config& config,
    write_patch_material(output_munge_files_dir / mtrl.name += ".material"sv, mtrl);
    emit_req_file(output_munge_files_dir / mtrl.name += ".material.req"sv,
                  {{"sptex"s, req_contents}});
-
-   // Save low detail material
-
-   mtrl.name += terrain_low_detail_suffix;
-   mtrl.properties =
-      create_properties(config, texture_transforms, textures_order, true);
-
-   write_patch_material(output_munge_files_dir / mtrl.name += ".material"sv, mtrl);
-   emit_req_file(output_munge_files_dir / mtrl.name += ".material.req"sv,
-                 {{"sptex"s, req_contents}});
 }
 }

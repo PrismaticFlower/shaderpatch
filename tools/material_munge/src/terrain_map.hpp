@@ -1,6 +1,5 @@
 #pragma once
 
-#include "terrain_cut.hpp"
 #include "terrain_texture_transform.hpp"
 
 #include <array>
@@ -21,23 +20,21 @@ struct Terrain_map {
    Terrain_map(Terrain_map&&) = default;
    Terrain_map& operator=(Terrain_map&&) = default;
 
-   explicit Terrain_map(const Terrain_map&);
+   Terrain_map(const Terrain_map&) = default;
    Terrain_map& operator=(const Terrain_map&) = delete;
 
    ~Terrain_map() = default;
 
    std::uint16_t length{};
+   float grid_scale = 0.0f;
+   float world_size = 0.0f;
    std::vector<std::string> texture_names;
    std::array<Terrain_texture_transform, 16> texture_transforms;
    std::string detail_texture;
-   std::vector<Terrain_cut> cuts;
 
-   std::unique_ptr<glm::vec3[]> position;
-   std::unique_ptr<glm::vec3[]> color;
-   std::unique_ptr<glm::vec3[]> diffuse_lighting;
-   std::unique_ptr<std::array<float, 16>[]> texture_weights;
+   std::vector<std::array<std::uint8_t, 16>> texture_weights;
 };
 
-auto load_terrain_map(const std::filesystem::path& path,
-                      const glm::vec3 terrain_offset) -> Terrain_map;
+auto load_terrain_map(const std::filesystem::path& path) -> Terrain_map;
+
 }

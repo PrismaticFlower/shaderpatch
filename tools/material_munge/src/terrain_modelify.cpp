@@ -6,10 +6,8 @@
 #include "memory_mapped_file.hpp"
 #include "swbf_fnv_1a.hpp"
 #include "terrain_constants.hpp"
-#include "terrain_downsample.hpp"
 #include "terrain_model_segment.hpp"
 #include "terrain_texture_transform.hpp"
-#include "terrain_vertex_buffer.hpp"
 #include "ucfb_editor.hpp"
 #include "ucfb_writer.hpp"
 
@@ -28,19 +26,34 @@ namespace {
 
 constexpr auto modl_max_segments = 48;
 
+bool check_terrain(ucfb::Editor& editor) noexcept
+{
+   if (ucfb::find(editor, "tern"_mn) == editor.end()) return false;
+
+   auto& tern =
+      std::get<ucfb::Editor_parent_chunk>(ucfb::find(editor, "tern"_mn)->second);
+
+   return ucfb::find(tern, "INFO"_mn) != tern.end() and
+          ucfb::find(tern, "PCHS"_mn) != tern.end();
+}
+
+auto read_terrain_info(ucfb::Reader_strict<"INFO"_mn> reader) -> Terrain_info
+{
+   Terrain_info info{};
+
+   info.grid_size = reader.read_unaligned<float>();
+   info.height_scale = reader.read_unaligned<float>();
+   info.height_min = reader.read_unaligned<float>();
+   info.height_max = reader.read_unaligned<float>();
+   info.terrain_length = reader.read_unaligned<std::uint16_t>();
+   info.patch_length = reader.read_unaligned<std::uint16_t>();
+
+   return info;
+}
+
 void remove_tern_geometry(ucfb::Editor_parent_chunk& tern)
 {
    tern.erase(ucfb::find(tern, "PCHS"_mn));
-}
-
-auto create_low_detail_terrain(const Terrain_map& terrain) -> Terrain_model_segment
-{
-   const auto low_terrain = terrain_downsample(terrain, terrain_low_detail_length);
-   const auto low_terrain_triangles = create_terrain_triangle_list(low_terrain);
-
-   return optimize_terrain_model_segments(
-             {create_terrain_low_detail_model_segment(low_terrain_triangles)})
-      .front();
 }
 
 auto sort_terrain_segments_into_models(std::vector<Terrain_model_segment> segments)
@@ -76,7 +89,6 @@ auto sort_terrain_segments_into_models(std::vector<Terrain_model_segment> segmen
 void add_terrain_model_segm(ucfb::Editor_parent_chunk& modl,
                             const std::string_view material_name,
                             const std::string_view bone_name,
-                            const std::array<glm::vec3, 2> model_aabb,
                             const Terrain_model_segment& segment,
                             const bool keep_static_lighting)
 {
@@ -171,7 +183,13 @@ void add_terrain_model_segm(ucfb::Editor_parent_chunk& modl,
          std::get<0>(segm.emplace_back("VBUF"_mn, ucfb::Editor_data_chunk{}).second)
             .writer();
 
-      output_vertex_buffer(segment.vertices, vbuf, model_aabb, keep_static_lighting);
+      vbuf.write(static_cast<std::uint32_t>(segment.vertices.size()),
+                 static_cast<std::uint32_t>(sizeof(Terrain_vertex)),
+                 keep_static_lighting ? terrain_vbuf_static_lighting_flags
+                                      : terrain_vbuf_flags);
+      vbuf.write(std::as_bytes(std::span{segment.vertices}));
+
+      vbuf.write(std::uint64_t{}); // trailing unused texcoords & binormal
    }
 
    // BNAM
@@ -241,8 +259,8 @@ void add_terrain_model_modl(ucfb::Editor& editor, const std::string_view model_n
 
    // segm(s)
    for (const auto& segment : segments) {
-      add_terrain_model_segm(modl, material_name, skel_bone_name, model_aabb,
-                             segment, keep_static_lighting);
+      add_terrain_model_segm(modl, material_name, skel_bone_name, segment,
+                             keep_static_lighting);
    }
 
    // SPHR
@@ -251,7 +269,7 @@ void add_terrain_model_modl(ucfb::Editor& editor, const std::string_view model_n
          std::get<0>(modl.emplace_back("SPHR"_mn, ucfb::Editor_data_chunk{}).second)
             .writer();
 
-      sphr.write(glm::vec3{});
+      sphr.write((model_aabb[0] + model_aabb[1]) / 2.0f);
       sphr.write(glm::max(glm::length(model_aabb[0]), glm::length(model_aabb[1])));
    }
 }
@@ -260,15 +278,10 @@ void add_terrain_model_chunk(ucfb::Editor& editor,
                              const std::string_view material_name, const int index,
                              const std::array<glm::vec3, 2> model_aabb,
                              const std::vector<Terrain_model_segment>& segments,
-                             const std::optional<Terrain_model_segment>& low_detail_segment,
-                             const bool high_res_far_terrain,
                              const bool keep_static_lighting)
 {
    constexpr std::string_view skel_bone_name = "root";
    const auto model_name = std::string{terrain_model_name} + std::to_string(index);
-   const auto model_name_lowd = model_name + std::string{terrain_low_detail_suffix};
-   const auto material_name_lowd = std::string{material_name} +=
-      terrain_low_detail_suffix;
 
    // skel
    {
@@ -320,17 +333,6 @@ void add_terrain_model_chunk(ucfb::Editor& editor,
                              model_aabb, segments, keep_static_lighting);
    }
 
-   // modl - LOWD
-   if (low_detail_segment) {
-      add_terrain_model_modl(editor, model_name_lowd, skel_bone_name, material_name_lowd,
-                             model_aabb, std::span(&(*low_detail_segment), 1),
-                             keep_static_lighting);
-   }
-   else if (high_res_far_terrain) {
-      add_terrain_model_modl(editor, model_name_lowd, skel_bone_name, material_name_lowd,
-                             model_aabb, segments, keep_static_lighting);
-   }
-
    // gmod
    {
       auto& gmod = std::get<1>(
@@ -364,13 +366,13 @@ void add_terrain_model_chunk(ucfb::Editor& editor,
          lod0.write<std::uint32_t>(0); // vertex count
       }
 
-      // LOWD
-      if (low_detail_segment || high_res_far_terrain) {
+      {
+         // LOWD
          auto lowd =
             std::get<0>(gmod.emplace_back("LOWD"_mn, ucfb::Editor_data_chunk{}).second)
                .writer();
 
-         lowd.write_unaligned(model_name_lowd);
+         lowd.write_unaligned(model_name);
          lowd.write<std::uint32_t>(0); // vertex count
       }
    }
@@ -378,8 +380,6 @@ void add_terrain_model_chunk(ucfb::Editor& editor,
 
 void add_terrain_model_chunks(ucfb::Editor& editor, const std::string_view material_name,
                               const std::vector<Terrain_model_segment>& segments,
-                              const std::optional<Terrain_model_segment>& low_detail_segment,
-                              const bool high_res_far_terrain,
                               const bool keep_static_lighting)
 {
    const auto model_aabb = calculate_terrain_model_segments_aabb(segments);
@@ -387,8 +387,7 @@ void add_terrain_model_chunks(ucfb::Editor& editor, const std::string_view mater
 
    for (auto i = 0; i < models.size(); ++i) {
       add_terrain_model_chunk(editor, material_name, i, model_aabb, models[i],
-                              i == 0 ? low_detail_segment : std::nullopt,
-                              high_res_far_terrain, keep_static_lighting);
+                              keep_static_lighting);
    }
 
    // wrld
@@ -497,19 +496,18 @@ void write_req_path(const std::filesystem::path& main_output_path,
    {
       "material"
 )"sv << std::quoted(material_name)
-        << '\n'
-        << std::quoted(std::string{material_name} += terrain_low_detail_suffix) << R"(
+        << R"(
    }
 })"sv;
 }
 }
 
-void terrain_modelify(const Terrain_map& terrain, const std::string_view material_suffix,
-                      const bool high_res_far_terrain, const bool keep_static_lighting,
+void terrain_modelify(const std::string_view material_suffix,
+                      const bool keep_static_lighting,
                       const std::filesystem::path& munged_input_terrain_path,
                       const std::filesystem::path& output_path)
 {
-   Expects(terrain.length != 0 && fs::exists(munged_input_terrain_path) &&
+   Expects(fs::exists(munged_input_terrain_path) &&
            fs::is_regular_file(munged_input_terrain_path) &&
            fs::exists(output_path.parent_path()));
 
@@ -523,23 +521,30 @@ void terrain_modelify(const Terrain_map& terrain, const std::string_view materia
       return ucfb::Editor{ucfb::Reader_strict<"ucfb"_mn>{file.bytes()}, is_parent};
    }();
 
+   if (!check_terrain(editor)) {
+      throw std::runtime_error{
+         "Bad munged terrain. Missing tern, INFO or PCHS chunk. This is quite "
+         "sad "
+         "news so have a sad face =( But no hints on how to solve it because "
+         "we don't know! Try cleaning and making sure your terrain is enabled "
+         "maybe? Good luck!"};
+   }
+
    auto& tern_editor =
       std::get<ucfb::Editor_parent_chunk>(ucfb::find(editor, "tern"_mn)->second);
 
-   remove_tern_geometry(tern_editor);
-
-   const auto terrain_triangle_list = create_terrain_triangle_list(terrain);
-   const auto terrain_model_segments = optimize_terrain_model_segments(
-      create_terrain_model_segments(terrain_triangle_list));
-   const auto terrain_low_detail_segment =
-      !high_res_far_terrain ? std::optional{create_low_detail_terrain(terrain)}
-                            : std::nullopt;
+   const auto terrain_model_segments =
+      create_terrain_model_segments(ucfb::make_strict_reader<"PCHS"_mn>(
+                                       ucfb::find(tern_editor, "PCHS"_mn)),
+                                    read_terrain_info(ucfb::make_strict_reader<"INFO"_mn>(
+                                       ucfb::find(tern_editor, "INFO"_mn))));
 
    std::string material_name{terrain_material_name};
    material_name += material_suffix;
 
+   remove_tern_geometry(tern_editor);
+
    add_terrain_model_chunks(editor, material_name, terrain_model_segments,
-                            terrain_low_detail_segment, high_res_far_terrain,
                             keep_static_lighting);
 
    auto file = ucfb::open_file_for_output(output_path);

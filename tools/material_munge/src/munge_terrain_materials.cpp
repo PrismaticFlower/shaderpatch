@@ -4,6 +4,7 @@
 #include "memory_mapped_file.hpp"
 #include "synced_io.hpp"
 #include "terrain_assemble_textures.hpp"
+#include "terrain_map.hpp"
 #include "terrain_materials_config.hpp"
 #include "terrain_modelify.hpp"
 #include "terrain_save_material.hpp"
@@ -21,13 +22,13 @@ namespace sp {
 
 namespace {
 
-auto load_terrain(const fs::path& matl_path, const glm::vec3 terrain_offset) -> Terrain_map
+auto load_terrain(const fs::path& matl_path) -> Terrain_map
 {
    fs::path ter_path = matl_path;
    ter_path.replace_extension(".ter"sv);
 
    try {
-      return load_terrain_map(ter_path, terrain_offset);
+      return load_terrain_map(ter_path);
    }
    catch (std::exception&) {
       throw compose_exception<std::runtime_error>("Failed to load terrain file "sv,
@@ -90,15 +91,13 @@ void munge_terrain_materials(const std::unordered_map<Ci_string, std::filesystem
 
          const auto terrain_suffix = file.second.stem().string();
          const auto config = load_terrain_materials_config(file.second);
-         const auto terrain_map = load_terrain(file.second, config.terrain_offset);
+         const auto terrain_map = load_terrain(file.second);
 
          if (const auto terrain_output_file_path =
                 output_munge_files_dir / munged_terrain_file_name;
              should_modelify_terrain(config_last_write_time, munged_terrain_input_file_path,
                                      terrain_output_file_path)) {
-            terrain_modelify(terrain_map, terrain_suffix,
-                             config.far_terrain == Terrain_far::fullres,
-                             config.use_ze_static_lighting,
+            terrain_modelify(terrain_suffix, config.use_ze_static_lighting,
                              munged_terrain_input_file_path, terrain_output_file_path);
          }
 

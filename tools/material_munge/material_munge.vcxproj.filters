@@ -48,13 +48,7 @@
     <ClCompile Include="src\index_buffer.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\terrain_vertex_buffer.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\terrain_model_segment.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\terrain_model_shadows.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\terrain_assemble_textures.cpp">
@@ -63,15 +57,7 @@
     <ClCompile Include="src\terrain_save_material.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\terrain_map.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\terrain_downsample.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\terrain_cut.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
+    <ClCompile Include="src\terrain_map.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\helpers.hpp">
@@ -110,9 +96,6 @@
     <ClInclude Include="src\terrain_modelify.hpp">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\terrain_vertex_buffer.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="src\index_buffer.hpp">
       <Filter>src</Filter>
     </ClInclude>
@@ -125,9 +108,6 @@
     <ClInclude Include="src\terrain_constants.hpp">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\terrain_model_shadows.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="src\terrain_materials_config.hpp">
       <Filter>src</Filter>
     </ClInclude>
@@ -137,14 +117,6 @@
     <ClInclude Include="src\terrain_save_material.hpp">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\terrain_map.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\terrain_cut.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\terrain_downsample.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
+    <ClInclude Include="src\terrain_map.hpp" />
   </ItemGroup>
 </Project>
