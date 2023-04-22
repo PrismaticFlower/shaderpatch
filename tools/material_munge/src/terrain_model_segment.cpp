@@ -205,6 +205,20 @@ auto read_vbuf(ucfb::Reader_strict<"VBUF"_mn> vbuf,
    return result;
 }
 
+auto make_bbox(std::span<const glm::vec3> uncompressed_positions)
+   -> std::array<glm::vec3, 2>
+{
+   std::array<glm::vec3, 2> bbox = {glm::vec3{std::numeric_limits<float>::max()},
+                                    glm::vec3{std::numeric_limits<float>::lowest()}};
+
+   for (auto& v : uncompressed_positions) {
+      bbox[0] = glm::min(bbox[0], v);
+      bbox[1] = glm::max(bbox[1], v);
+   }
+
+   return bbox;
+}
+
 auto combine_segments(const std::vector<Terrain_model_segment>& segments,
                       const std::size_t patches_length)
    -> std::vector<Terrain_model_segment>
@@ -317,8 +331,7 @@ auto create_terrain_model_segments(ucfb::Reader_strict<"PCHS"_mn> pchs,
          }
 
          segment.vertices = std::move(vbuf_result.vertices);
-         segment.bbox = {glm::vec3{world_min_x, world_min_y, world_min_z},
-                         glm::vec3{world_max_x, world_max_y, world_max_z}};
+         segment.bbox = make_bbox(vbuf_result.uncompressed_positions);
       }
    }
 
