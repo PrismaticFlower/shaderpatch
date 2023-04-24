@@ -49,10 +49,8 @@ struct Terrain_model_segment {
 };
 
 auto create_terrain_model_segments(ucfb::Reader_strict<"PCHS"_mn> pchs,
-                                   const Terrain_info info)
+                                   const Terrain_info info,
+                                   const std::array<glm::vec3, 2> world_bbox)
    -> std::vector<Terrain_model_segment>;
-
-auto calculate_terrain_model_segments_aabb(const std::vector<Terrain_model_segment>& segments) noexcept
-   -> std::array<glm::vec3, 2>;
 
 }

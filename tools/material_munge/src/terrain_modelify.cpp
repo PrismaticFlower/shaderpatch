@@ -380,13 +380,13 @@ void add_terrain_model_chunk(ucfb::Editor& editor,
 
 void add_terrain_model_chunks(ucfb::Editor& editor, const std::string_view material_name,
                               const std::vector<Terrain_model_segment>& segments,
-                              const bool keep_static_lighting)
+                              const bool keep_static_lighting,
+                              const std::array<glm::vec3, 2> world_bbox)
 {
-   const auto model_aabb = calculate_terrain_model_segments_aabb(segments);
    const auto models = sort_terrain_segments_into_models(std::move(segments));
 
    for (auto i = 0; i < models.size(); ++i) {
-      add_terrain_model_chunk(editor, material_name, i, model_aabb, models[i],
+      add_terrain_model_chunk(editor, material_name, i, world_bbox, models[i],
                               keep_static_lighting);
    }
 
@@ -533,11 +533,28 @@ void terrain_modelify(const std::string_view material_suffix,
    auto& tern_editor =
       std::get<ucfb::Editor_parent_chunk>(ucfb::find(editor, "tern"_mn)->second);
 
+   const Terrain_info info = read_terrain_info(
+      ucfb::make_strict_reader<"INFO"_mn>(ucfb::find(tern_editor, "INFO"_mn)));
+
+   const float world_length = info.terrain_length * info.grid_size;
+   const float half_world_length = world_length / 2.0f;
+
+   const float world_min_x = -half_world_length;
+   const float world_max_x = half_world_length;
+
+   const float world_min_y = info.height_min;
+   const float world_max_y = info.height_max;
+
+   const float world_min_z = -half_world_length + info.grid_size;
+   const float world_max_z = half_world_length + info.grid_size;
+
+   const std::array world_bbox = {glm::vec3{world_min_x, world_min_y, world_min_z},
+                                  glm::vec3{world_max_x, world_max_y, world_max_z}};
+
    const auto terrain_model_segments =
       create_terrain_model_segments(ucfb::make_strict_reader<"PCHS"_mn>(
                                        ucfb::find(tern_editor, "PCHS"_mn)),
-                                    read_terrain_info(ucfb::make_strict_reader<"INFO"_mn>(
-                                       ucfb::find(tern_editor, "INFO"_mn))));
+                                    info, world_bbox);
 
    std::string material_name{terrain_material_name};
    material_name += material_suffix;
@@ -545,7 +562,7 @@ void terrain_modelify(const std::string_view material_suffix,
    remove_tern_geometry(tern_editor);
 
    add_terrain_model_chunks(editor, material_name, terrain_model_segments,
-                            keep_static_lighting);
+                            keep_static_lighting, world_bbox);
 
    auto file = ucfb::open_file_for_output(output_path);
    ucfb::File_writer writer{"ucfb"_mn, file};

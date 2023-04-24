@@ -274,7 +274,8 @@ auto combine_segments(const std::vector<Terrain_model_segment>& segments,
 }
 
 auto create_terrain_model_segments(ucfb::Reader_strict<"PCHS"_mn> pchs,
-                                   const Terrain_info info)
+                                   const Terrain_info info,
+                                   const std::array<glm::vec3, 2> world_bbox)
    -> std::vector<Terrain_model_segment>
 {
    const Index_buffer_16 default_index_buffer = create_index_buffer(
@@ -289,15 +290,6 @@ auto create_terrain_model_segments(ucfb::Reader_strict<"PCHS"_mn> pchs,
    const float world_length = info.terrain_length * info.grid_size;
    const float half_world_length = world_length / 2.0f;
    const float patch_length = info.patch_length * info.grid_size;
-
-   const float world_min_x = -half_world_length;
-   const float world_max_x = half_world_length;
-
-   const float world_min_y = info.height_min;
-   const float world_max_y = info.height_max;
-
-   const float world_min_z = -half_world_length + info.grid_size;
-   const float world_max_z = half_world_length + info.grid_size;
 
    for (std::size_t z = 0; z < patches_length; ++z) {
       for (std::size_t x = 0; x < patches_length; ++x) {
@@ -317,9 +309,7 @@ auto create_terrain_model_segments(ucfb::Reader_strict<"PCHS"_mn> pchs,
 
          Vbuf_result vbuf_result =
             read_vbuf(vbuf, vbuf_compressed, {patch_min_x, 0.0f, patch_min_z},
-                      {glm::vec3{world_min_x, world_min_y, world_min_z},
-                       glm::vec3{world_max_x, world_max_y, world_max_z}},
-                      patch_info.textures);
+                      world_bbox, patch_info.textures);
 
          if (auto ibuf = ptch.read_child(std::nothrow);
              ibuf and ibuf->magic_number() == "IBUF"_mn) {
@@ -338,19 +328,4 @@ auto create_terrain_model_segments(ucfb::Reader_strict<"PCHS"_mn> pchs,
    return combine_segments(segments, patches_length);
 }
 
-auto calculate_terrain_model_segments_aabb(const std::vector<Terrain_model_segment>& segments) noexcept
-   -> std::array<glm::vec3, 2>
-{
-   if (segments.empty()) return {};
-
-   std::array<glm::vec3, 2> aabb = segments[0].bbox;
-
-   std::for_each(segments.cbegin() + 1, segments.cend(),
-                 [&](const Terrain_model_segment& segment) {
-                    aabb[0] = glm::min(aabb[0], segment.bbox[0]);
-                    aabb[1] = glm::max(aabb[1], segment.bbox[1]);
-                 });
-
-   return aabb;
-}
 }
