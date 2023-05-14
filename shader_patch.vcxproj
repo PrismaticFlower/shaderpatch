@@ -44,7 +44,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>D:\GOG Games\Star Wars - Battlefront 2\GameData\</OutDir>
+    <OutDir>bin\$(Configuration)\</OutDir>
     <IntDir>build\$(Configuration)\</IntDir>
     <TargetName>d3d9</TargetName>
     <TargetExt>.dll</TargetExt>
