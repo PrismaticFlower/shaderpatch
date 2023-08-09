@@ -249,10 +249,9 @@ void print_values(std::ostream& stream, const Values_range& values)
             else if constexpr (std::is_same_v<Type, std::string>) {
                stream << std::quoted(val);
             }
-            else
-
-            {
-               static_assert(false, "Unexpected Node_value type!");
+            else {
+               static_assert(not std::is_same_v<Type, void>,
+                             "Unexpected Node_value type!");
             }
          },
          v);

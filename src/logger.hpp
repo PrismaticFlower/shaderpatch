@@ -104,7 +104,7 @@ inline void log_fmt(const Log_level level, std::string_view format_str,
    const auto local_time = std::localtime(&time);
 
    stream << level << ' ' << std::put_time(local_time, "%T") << ' ';
-   stream << fmt::format(format_str, args...);
+   stream << fmt::vformat(format_str, fmt::make_format_args(args...));
    stream << std::endl;
 }
 

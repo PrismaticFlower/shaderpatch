@@ -6,6 +6,7 @@
 #include <array>
 #include <fstream>
 #include <iomanip>
+#include <numeric>
 
 #include <gsl/gsl>
 
@@ -391,9 +392,6 @@ void Color_grading_regions_blender::init_regions(const Color_grading_regions& re
    _region_names.reserve(regions.regions.size());
 
    for (const auto& region : regions.regions) {
-      const auto inv_fade_length =
-         region.fade_length <= 0.0f ? 10000.0f : (1.0f / region.fade_length);
-
       _regions.emplace_back(region, get_region_params(region.config_name));
       _region_names.emplace_back(region.name);
    }

@@ -12,8 +12,6 @@ Shader_factory::Shader_factory(Com_ptr<ID3D11Device5> device,
 auto Shader_factory::create(std::string rendertype, Flags flags) noexcept
    -> std::shared_ptr<Shader_set>
 {
-   constexpr auto v = absl::container_internal::IsTransparent<Hash>::value;
-
    if (auto it = _cache.find(std::tie(rendertype, flags)); it != _cache.end()) {
       return it->second;
    }
