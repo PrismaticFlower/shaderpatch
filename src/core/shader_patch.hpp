@@ -463,6 +463,7 @@ private:
    const HWND _window;
 
    bool _effects_active = false;
+   bool _effects_request_soft_skinning = false;
    DXGI_FORMAT _current_rt_format = Swapchain::format;
    int _current_effects_id = 0;
 

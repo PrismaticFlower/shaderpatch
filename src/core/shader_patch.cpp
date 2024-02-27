@@ -937,8 +937,9 @@ void Shader_patch::set_input_layout(const Game_input_layout& input_layout) noexc
       _cb_scene_dirty = true;
    }
 
-   const std::uint32_t soft_skin = input_layout.has_vertex_weights &
-                                   user_config.graphics.allow_vertex_soft_skinning;
+   const std::uint32_t soft_skin = (input_layout.has_vertex_weights &
+                                    user_config.graphics.allow_vertex_soft_skinning) |
+                                   _effects_request_soft_skinning;
 
    if (soft_skin != _cb_scene.vs_use_soft_skinning) {
       _cb_scene.vs_use_soft_skinning = soft_skin;
@@ -1801,6 +1802,9 @@ void Shader_patch::update_effects() noexcept
    if (std::exchange(_effects_active, _effects.enabled()) != _effects.enabled()) {
       _use_interface_depthstencil = false;
    }
+
+   _effects_request_soft_skinning =
+      _effects_active & _effects.config().soft_skinning_requested;
 
    update_rendertargets();
    set_linear_rendering(_effects.enabled() && _effects.config().hdr_rendering);
