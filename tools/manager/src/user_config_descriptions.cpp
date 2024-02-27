@@ -163,6 +163,13 @@ In some cases the alternative path may produce results that do not exactly match
 },
 
 {
+L"Allow Vertex Soft Skinning"sv,      
+LR"(Allows the use of Shader Patch's soft skinning shaders. This makes compatible assets appear smoother when being animated.
+
+There is a very, very small chance of compatibility issues from using this. If in the unlikely event you get unusual looking player models with Shader Patch (but not without) then turning this off may solve it.)"sv
+},
+
+{
 L"Enable Scene Blur"sv,      
 LR"(Enables maps to make use of the game's scene blur effect. Has a performance cost but using it will keep the map's artwork more inline with the creators vision. Note this is **unrelated** to the Effects system and also only takes effect when `Enable Alternative Post Processing` is `yes`.)"sv
 },

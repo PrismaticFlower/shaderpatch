@@ -21,6 +21,8 @@ auto init_tangents_vertex_buffer(const std::vector<std::array<std::uint16_t, 3>>
 
    if (old_vbuf.blendindices)
       vbuf.blendindices = std::make_unique<glm::uint32[]>(vbuf.count);
+   if (old_vbuf.blendweights)
+      vbuf.blendweights = std::make_unique<glm::vec3[]>(vbuf.count);
    if (old_vbuf.colors)
       vbuf.colors = std::make_unique<glm::uint32[]>(vbuf.count);
    if (old_vbuf.static_lighting_colors)
@@ -34,6 +36,8 @@ auto init_tangents_vertex_buffer(const std::vector<std::array<std::uint16_t, 3>>
 
          if (old_vbuf.blendindices)
             vbuf.blendindices[f * 3 + v] = old_vbuf.blendindices[index_buffer[f][v]];
+         if (old_vbuf.blendweights)
+            vbuf.blendweights[f * 3 + v] = old_vbuf.blendweights[index_buffer[f][v]];
          if (old_vbuf.colors)
             vbuf.colors[f * 3 + v] = old_vbuf.colors[index_buffer[f][v]];
          if (old_vbuf.static_lighting_colors)

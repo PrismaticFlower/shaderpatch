@@ -23,6 +23,9 @@ auto init_dest_vertex_buffer(const Vertex_buffer& old) noexcept -> Vertex_buffer
    if (old.blendindices)
       vertex_buffer.blendindices = std::make_unique<glm::uint32[]>(old.count);
 
+   if (old.blendweights)
+      vertex_buffer.blendweights = std::make_unique<glm::vec3[]>(old.count);
+
    if (old.normals)
       vertex_buffer.normals = std::make_unique<glm::vec3[]>(old.count);
 
@@ -98,6 +101,9 @@ auto optimize_vertex_buffer(Index_buffer_16 index_buffer, const Vertex_buffer& v
 
       if (vertex_buffer.blendindices)
          dest_vertex_buffer.blendindices[i] = vertex_buffer.blendindices[remap[i]];
+
+      if (vertex_buffer.blendweights)
+         dest_vertex_buffer.blendweights[i] = vertex_buffer.blendweights[remap[i]];
 
       if (vertex_buffer.normals)
          dest_vertex_buffer.normals[i] = vertex_buffer.normals[remap[i]];

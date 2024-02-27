@@ -135,9 +135,8 @@ public:
       -> Patch_effects_config_handle;
 
    auto create_game_input_layout(const std::span<const Input_layout_element> layout,
-                                 const bool compressed,
-                                 const bool particle_texture_scale) noexcept
-      -> Game_input_layout;
+                                 const bool compressed, const bool particle_texture_scale,
+                                 const bool vertex_weights) noexcept -> Game_input_layout;
 
    auto create_ia_buffer(const UINT size, const bool vertex_buffer,
                          const bool index_buffer, const bool dynamic) noexcept
@@ -464,6 +463,7 @@ private:
    const HWND _window;
 
    bool _effects_active = false;
+   bool _effects_request_soft_skinning = false;
    DXGI_FORMAT _current_rt_format = Swapchain::format;
    int _current_effects_id = 0;
 

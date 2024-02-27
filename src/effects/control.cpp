@@ -95,6 +95,16 @@ void Control::show_imgui(HWND game_window) noexcept
                   "user's GPU supports it.");
             }
 
+            ImGui::Checkbox("Request Soft Skinning", &_config.soft_skinning_requested);
+
+            if (ImGui::IsItemHovered()) {
+               ImGui::SetTooltip(
+                  "Informs SP that soft skinning is required for some models "
+                  "to render correctly and that it should be enabled even if "
+                  "the "
+                  "user has switched it off.");
+            }
+
             if (!_config.hdr_rendering) {
                ImGui::Checkbox("Floating-point Render Targets",
                                &_config.fp_rendertargets);

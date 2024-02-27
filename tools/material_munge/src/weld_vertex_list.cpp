@@ -24,6 +24,9 @@ auto init_vertex_buffer(const Vertex_buffer& old_vbuf) noexcept -> Vertex_buffer
    if (old_vbuf.blendindices)
       vertex_buffer.blendindices = std::make_unique<glm::uint32[]>(old_vbuf.count);
 
+   if (old_vbuf.blendweights)
+      vertex_buffer.blendweights = std::make_unique<glm::vec3[]>(old_vbuf.count);
+
    if (old_vbuf.normals)
       vertex_buffer.normals = std::make_unique<glm::vec3[]>(old_vbuf.count);
 
@@ -60,6 +63,9 @@ auto push_back_vertex(const Vertex_buffer& src_vbuf, const int src_index,
    if (src_vbuf.blendindices)
       dest_vbuf.blendindices[index] = src_vbuf.blendindices[src_index];
 
+   if (src_vbuf.blendweights)
+      dest_vbuf.blendweights[index] = src_vbuf.blendweights[src_index];
+
    if (src_vbuf.normals) dest_vbuf.normals[index] = src_vbuf.normals[src_index];
 
    if (src_vbuf.tangents)
@@ -94,6 +100,11 @@ bool is_vertex_similar(const Vertex_buffer& left_vbuf, const int left_index,
 
    if (left_vbuf.blendindices) {
       if (left_vbuf.blendindices[left_index] != right_vbuf.blendindices[right_index])
+         return false;
+   }
+
+   if (left_vbuf.blendweights) {
+      if (left_vbuf.blendweights[left_index] != right_vbuf.blendweights[right_index])
          return false;
    }
 

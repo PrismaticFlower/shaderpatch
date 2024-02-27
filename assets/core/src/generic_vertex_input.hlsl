@@ -8,12 +8,14 @@ namespace vi {
 #ifdef __VERTEX_INPUT_IS_COMPRESSED__
 typedef int4 Position_vec;
 typedef unorm float4 Blend_indices_vec;
+typedef unorm float4 Blend_weight_vec;
 typedef unorm float4 Normal_vec;
 typedef unorm float4 Color_vec;
 typedef int2 Texcoords_vec;
 #else
-typedef float3 Position_vec;
+      typedef float3 Position_vec;
 typedef unorm float4 Blend_indices_vec;
+typedef float2 Blend_weight_vec;
 typedef float3 Normal_vec;
 typedef unorm float4 Color_vec;
 typedef float2 Texcoords_vec;
@@ -38,15 +40,31 @@ struct Vertex_input
 #  endif
    }
 
-   int bone_index()
+   float3 blend_weights()
+   {
+      if (vs_use_soft_skinning) 
+      {
+#        ifdef __VERTEX_INPUT_BLEND_WEIGHT__
+               return float3(_blend_weights.x, _blend_weights.y, 1.0 - _blend_weights.x - _blend_weights.y);
+#        else
+            return float3(1.0, 0.0, 0.0);
+#        endif
+      }
+      else
+      {
+         return float3(1.0, 0.0, 0.0);
+      }
+   }
+   
+   int3 bone_index()
    {
 #  ifdef __VERTEX_INPUT_BLEND_INDICES__
-      return int(_blend_indices.x * 255);
+      return int3(_blend_indices.xyz * 255);
 #  else
-      return 0;
+      return int3(0, 0, 0);
 #  endif
    }
-
+   
    float3 normal()
    {
 #  ifdef __VERTEX_INPUT_NORMAL__
@@ -138,6 +156,10 @@ struct Vertex_input
    detail::vi::Position_vec _position : POSITION;
 #endif
 
+#ifdef __VERTEX_INPUT_BLEND_WEIGHT__
+   detail::vi::Blend_weight_vec _blend_weights : BLENDWEIGHT;
+#endif
+   
 #ifdef __VERTEX_INPUT_BLEND_INDICES__
    detail::vi::Blend_indices_vec _blend_indices : BLENDINDICES;
 #endif

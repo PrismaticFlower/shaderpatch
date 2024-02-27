@@ -723,10 +723,10 @@ auto Shader_patch::create_patch_effects_config(const std::span<const std::byte> 
 
 auto Shader_patch::create_game_input_layout(
    const std::span<const Input_layout_element> layout, const bool compressed,
-   const bool particle_texture_scale) noexcept -> Game_input_layout
+   const bool particle_texture_scale, const bool vertex_weights) noexcept -> Game_input_layout
 {
    return {_input_layout_descriptions.try_add(layout), compressed,
-           particle_texture_scale};
+           particle_texture_scale, vertex_weights};
 }
 
 auto Shader_patch::create_ia_buffer(const UINT size, const bool vertex_buffer,
@@ -934,6 +934,15 @@ void Shader_patch::set_input_layout(const Game_input_layout& input_layout) noexc
    if (std::uint32_t{input_layout.particle_texture_scale} !=
        _cb_scene.particle_texture_scale) {
       _cb_scene.particle_texture_scale = input_layout.particle_texture_scale;
+      _cb_scene_dirty = true;
+   }
+
+   const std::uint32_t soft_skin = (input_layout.has_vertex_weights &
+                                    user_config.graphics.allow_vertex_soft_skinning) |
+                                   _effects_request_soft_skinning;
+
+   if (soft_skin != _cb_scene.vs_use_soft_skinning) {
+      _cb_scene.vs_use_soft_skinning = soft_skin;
       _cb_scene_dirty = true;
    }
 }
@@ -1793,6 +1802,9 @@ void Shader_patch::update_effects() noexcept
    if (std::exchange(_effects_active, _effects.enabled()) != _effects.enabled()) {
       _use_interface_depthstencil = false;
    }
+
+   _effects_request_soft_skinning =
+      _effects_active & _effects.config().soft_skinning_requested;
 
    update_rendertargets();
    set_linear_rendering(_effects.enabled() && _effects.config().hdr_rendering);

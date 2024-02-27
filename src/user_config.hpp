@@ -87,6 +87,7 @@ struct User_config {
       bool disable_light_brightness_rescaling = false;
       bool enable_user_effects_config = false;
       bool supersample_alpha_test = false;
+      bool allow_vertex_soft_skinning = false;
       std::string user_effects_config;
    } graphics;
 
