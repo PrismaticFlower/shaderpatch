@@ -30,8 +30,7 @@ enum class Vbuf_flags : std::uint32_t {
 };
 
 template<>
-struct is_enum_flag<Vbuf_flags> : std::true_type {
-};
+struct is_enum_flag<Vbuf_flags> : std::true_type {};
 
 struct Vertex_buffer {
    Vertex_buffer() = default;
@@ -42,6 +41,7 @@ struct Vertex_buffer {
 
    std::unique_ptr<glm::vec3[]> positions;
    std::unique_ptr<glm::uint32[]> blendindices;
+   std::unique_ptr<glm::vec3[]> blendweights;
    std::unique_ptr<glm::vec3[]> normals;
    std::unique_ptr<glm::vec3[]> tangents;
    std::unique_ptr<float[]> bitangent_signs;

@@ -119,6 +119,8 @@ auto get_vertex_input_layout(const Vertex_generic_input_state state,
 
    const auto position_type =
       compressed ? Vertex_input_type::sint4 : Vertex_input_type::float3;
+   const auto blendweight_type =
+      compressed ? Vertex_input_type::float4 : Vertex_input_type::float2;
    const auto blendindices_type = Vertex_input_type::float4;
    const auto normal_type =
       compressed ? Vertex_input_type::float4 : Vertex_input_type::float3;
@@ -139,6 +141,8 @@ auto get_vertex_input_layout(const Vertex_generic_input_state state,
    }
 
    if (hard_skinned) {
+      layout.push_back({.semantic_name = "BLENDWEIGHT"s, .input_type = blendweight_type});
+
       layout.push_back(
          {.semantic_name = "BLENDINDICES"s, .input_type = blendindices_type});
    }

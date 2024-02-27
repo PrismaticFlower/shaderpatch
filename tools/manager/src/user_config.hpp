@@ -28,12 +28,10 @@ struct enum_user_config_value : basic_user_config_value<winrt::hstring> {
    std::vector<winrt::hstring> possible_values;
 };
 
-struct string_user_config_value : basic_user_config_value<winrt::hstring> {
-};
+struct string_user_config_value : basic_user_config_value<winrt::hstring> {};
 
 struct color_user_config_value
-   : basic_user_config_value<std::array<std::uint8_t, 3>> {
-};
+   : basic_user_config_value<std::array<std::uint8_t, 3>> {};
 
 using user_config_value_vector =
    std::vector<std::variant<bool_user_config_value, percentage_user_config_value, uint2_user_config_value,
@@ -100,6 +98,8 @@ struct user_config {
 
       bool_user_config_value{L"Enable Alternative Post Processing", true,
                              L"Enabled", L"Disabled"},
+
+      bool_user_config_value{L"Allow Vertex Soft Skinning", true, L"Yes", L"No"},
 
       bool_user_config_value{L"Enable Scene Blur", true, L"Enabled", L"Disabled"},
 

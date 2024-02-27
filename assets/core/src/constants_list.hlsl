@@ -17,6 +17,7 @@ cbuffer SceneConstants : register(b0)
    float4x3 shadow_map_transform;
    float2 vs_pixel_offset;
    bool vs_input_color_srgb;
+   bool vs_use_soft_skinning;
    float time;
    bool particle_texture_scale;
    float prev_near_fade_scale;

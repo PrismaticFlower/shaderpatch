@@ -84,6 +84,8 @@ void User_config::show_imgui() noexcept
       ImGui::Checkbox("Enable Alternative Post Processing",
                       &graphics.enable_alternative_postprocessing);
 
+      ImGui::Checkbox("Allow Vertex Soft Skinning", &graphics.allow_vertex_soft_skinning);
+
       ImGui::Checkbox("Enable Scene Blur", &graphics.enable_scene_blur);
 
       ImGui::Checkbox("Enable 16-Bit Color Channel Rendering",
@@ -210,6 +212,10 @@ void User_config::parse_file(const std::string& path)
    graphics.enable_alternative_postprocessing =
       config["Graphics"s]["Enable Alternative Post Processing"s].as<bool>(
          graphics.enable_alternative_postprocessing);
+
+   graphics.allow_vertex_soft_skinning =
+      config["Graphics"s]["Allow Vertex Soft Skinning"s].as<bool>(
+         graphics.allow_vertex_soft_skinning);
 
    graphics.enable_scene_blur =
       config["Graphics"s]["Enable Scene Blur"s].as<bool>(graphics.enable_scene_blur);

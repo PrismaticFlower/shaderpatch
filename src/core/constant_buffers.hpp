@@ -14,16 +14,11 @@ namespace sp::core::cb {
    (sizeof(Type) - (sizeof(Type) - offsetof(Type, first_patch_constant))) /    \
       sizeof(glm::vec4);
 
-struct Scene_tag {
-};
-struct Draw_tag {
-};
-struct Fixedfunction_tag {
-};
-struct Skin_tag {
-};
-struct Draw_ps_tag {
-};
+struct Scene_tag {};
+struct Draw_tag {};
+struct Fixedfunction_tag {};
+struct Skin_tag {};
+struct Draw_ps_tag {};
 
 static constexpr Scene_tag scene{};
 static constexpr Draw_tag draw{};
@@ -43,11 +38,11 @@ struct alignas(16) Scene {
    std::array<glm::vec4, 3> shadow_map_transform;
    glm::vec2 pixel_offset;
    std::uint32_t input_color_srgb;
+   std::uint32_t vs_use_soft_skinning;
    float time;
    std::uint32_t particle_texture_scale;
    float prev_near_scene_fade_scale;
    float prev_near_scene_fade_offset;
-   std::uint32_t _padding2{};
 };
 
 constexpr auto scene_game_count = CB_MAX_GAME_CONSTANTS(Scene, pixel_offset);

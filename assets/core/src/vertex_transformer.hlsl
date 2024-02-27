@@ -101,7 +101,7 @@ class Transformer_hard_skinned : Transformer
 {
    float3 positionOS()
    {
-      return mul(float4(input.position(), 1.0), bone_matrices[input.bone_index()]);
+      return mul(float4(input.position(), 1.0), skin_matrix);
    }
 
    float3 positionWS()
@@ -116,7 +116,7 @@ class Transformer_hard_skinned : Transformer
 
    float3 normalOS()
    {
-      return mul(input.normal(), (float3x3)bone_matrices[input.bone_index()]);
+      return mul(input.normal(), (float3x3)skin_matrix);
    }
 
    float3 normalWS()
@@ -126,7 +126,7 @@ class Transformer_hard_skinned : Transformer
 
    float3 tangentOS()
    {
-      return mul(input.tangent(), (float3x3)bone_matrices[input.bone_index()]);
+      return mul(input.tangent(), (float3x3)skin_matrix);
    }
 
    float3 tangentWS()
@@ -136,7 +136,7 @@ class Transformer_hard_skinned : Transformer
 
    float3 bitangentOS()
    {
-      return mul(input.bitangent(), (float3x3)bone_matrices[input.bone_index()]);
+      return mul(input.bitangent(), (float3x3)skin_matrix);
    }
 
    float3 bitangentWS()
@@ -146,7 +146,7 @@ class Transformer_hard_skinned : Transformer
 
    float3 patch_tangentOS()
    {
-      return mul(input.patch_tangent(), (float3x3)bone_matrices[input.bone_index()]);
+      return mul(input.patch_tangent(), (float3x3)skin_matrix);
    }
 
    float3 patch_tangentWS()
@@ -160,6 +160,7 @@ class Transformer_hard_skinned : Transformer
    }
 
    Vertex_input input;
+   float4x3 skin_matrix;
 };
 
 class Transformer_null : Transformer
@@ -233,6 +234,18 @@ Transformer create_transformer(Vertex_input input)
    Transformer_unskinned transformer;
 #elif defined(__VERTEX_TRANSFORM_HARD_SKINNED__)
    Transformer_hard_skinned transformer;
+   
+   int3 bone_index = input.bone_index();
+   float3 weights = input.blend_weights();
+   
+   float4x3 skin_matrix;
+   
+   skin_matrix = bone_matrices[bone_index.x] * weights.x;
+   skin_matrix += bone_matrices[bone_index.y] * weights.y;
+   skin_matrix += bone_matrices[bone_index.z] * weights.z;
+   
+   transformer.skin_matrix = skin_matrix;
+   
 #elif !defined(__VERTEX_SHADER__)
    Transformer_null transformer;
 #else

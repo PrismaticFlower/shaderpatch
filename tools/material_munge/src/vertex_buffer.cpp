@@ -8,6 +8,20 @@ namespace sp {
 
 namespace {
 
+auto decompress_blendweights(const glm::uint32 weights) noexcept -> glm::vec3
+{
+   const auto swizzled_weights = static_cast<glm::vec3>(glm::unpackUnorm4x8(weights));
+
+   return {swizzled_weights.z, swizzled_weights.y, swizzled_weights.x};
+}
+
+auto compress_blendweights(const glm::vec3 weights) noexcept -> glm::uint32
+{
+   const auto swizzled_weights = glm::vec3{weights.z, weights.y, weights.x};
+
+   return glm::packUnorm4x8(glm::vec4{swizzled_weights, 0.0f});
+}
+
 auto decompress_normal(const glm::uint32 normal) noexcept -> glm::vec3
 {
    const auto swizzled_normal =
@@ -47,6 +61,20 @@ void read_vertex(const Vbuf_flags flags, ucfb::Reader_strict<"VBUF"_mn>& vbuf,
       }
       else {
          output.positions[index] = vbuf.read<glm::vec3>();
+      }
+   }
+
+   if ((flags & Vbuf_flags::blendweight) == Vbuf_flags::blendweight) {
+      if ((flags & Vbuf_flags::blendinfo_compressed) == Vbuf_flags::blendinfo_compressed) {
+         const auto compressed = vbuf.read<glm::uint32>();
+
+         output.blendweights[index] = decompress_blendweights(compressed);
+      }
+      else {
+         const glm::vec2 weights = vbuf.read<glm::vec2>();
+
+         output.blendweights[index] =
+            glm::vec3{weights.x, weights.y, 1.0 - weights.x - weights.y};
       }
    }
 
@@ -106,6 +134,15 @@ void write_vertex(const Vertex_buffer& vertex_buffer, const int index,
       }
       else {
          writer.write(vertex_buffer.positions[index]);
+      }
+   }
+
+   if ((flags & Vbuf_flags::blendweight) == Vbuf_flags::blendweight) {
+      if ((flags & Vbuf_flags::blendinfo_compressed) == Vbuf_flags::blendinfo_compressed) {
+         writer.write(compress_blendweights(vertex_buffer.blendweights[index]));
+      }
+      else {
+         writer.write(static_cast<glm::vec2>(vertex_buffer.blendweights[index]));
       }
    }
 
@@ -173,7 +210,14 @@ auto get_vbuf_flags(const Vertex_buffer& vertex_buffer, const bool compressed) n
       if (compressed) flags |= Vbuf_flags::position_compressed;
    }
 
-   if (vertex_buffer.blendindices) flags |= Vbuf_flags::blendindices;
+   if (vertex_buffer.blendindices) {
+      flags |= Vbuf_flags::blendindices;
+
+      if (vertex_buffer.blendweights) {
+         flags |= Vbuf_flags::blendweight;
+         if (compressed) flags |= Vbuf_flags::blendinfo_compressed;
+      }
+   }
 
    if (vertex_buffer.normals) {
       flags |= Vbuf_flags::normal;
@@ -215,6 +259,15 @@ auto get_vbuf_stride(const Vbuf_flags flags) noexcept -> std::uint32_t
 
    if ((flags & Vbuf_flags::blendindices) == Vbuf_flags::blendindices)
       stride += sizeof(glm::uint32);
+
+   if ((flags & Vbuf_flags::blendweight) == Vbuf_flags::blendweight) {
+      if ((flags & Vbuf_flags::blendinfo_compressed) == Vbuf_flags::blendinfo_compressed) {
+         stride += sizeof(glm::uint32);
+      }
+      else {
+         stride += sizeof(glm::vec2);
+      }
+   }
 
    if ((flags & Vbuf_flags::normal) == Vbuf_flags::normal) {
       if ((flags & Vbuf_flags::normal_compressed) == Vbuf_flags::normal_compressed) {
@@ -262,6 +315,9 @@ Vertex_buffer::Vertex_buffer(const std::size_t count, const Vbuf_flags flags) no
    if ((flags & Vbuf_flags::blendindices) == Vbuf_flags::blendindices)
       blendindices = std::make_unique<glm::uint32[]>(count);
 
+   if ((flags & Vbuf_flags::blendweight) == Vbuf_flags::blendweight)
+      blendweights = std::make_unique<glm::vec3[]>(count);
+
    if ((flags & Vbuf_flags::normal) == Vbuf_flags::normal)
       normals = std::make_unique<glm::vec3[]>(count);
 
@@ -285,14 +341,6 @@ auto create_vertex_buffer(ucfb::Reader_strict<"VBUF"_mn> vbuf,
 {
    const auto [count, stride, flags] =
       vbuf.read_multi<std::uint32_t, std::uint32_t, Vbuf_flags>();
-
-   if ((flags & Vbuf_flags::blendweight) == Vbuf_flags::blendweight) {
-      throw std::runtime_error{
-         "VBUF has softskin weights! SWBFII does not have support for "
-         "hardware "
-         "accelerated mesh soft skining, look for \"-softskin\" in any "
-         "relevent `.option` files and remove it. "};
-   }
 
    Vertex_buffer buffer{count, flags};
 
