@@ -200,6 +200,12 @@ void Shader_patch::present() noexcept
    _effects.profiler.end_frame(*_device_context);
    _game_postprocessing.end_frame();
 
+   if (_render_width != _swapchain.width() || _render_height != _swapchain.height()) {
+      const std::array<float, 4> black{0.0f, 0.0f, 0.0f, 0.0f};
+
+      _device_context->ClearRenderTargetView(_swapchain.rtv(), black.data());
+   }
+
    if (_game_rendertargets[0].type != Game_rt_type::presentation)
       patch_backbuffer_resolve();
 
@@ -2054,9 +2060,7 @@ void Shader_patch::recreate_patch_backbuffer() noexcept
       _patch_backbuffer = Game_rendertarget{*_device, _current_rt_format,
                                             _render_width, _render_height, 1};
    }
-
-   if (_aa_method == Antialiasing_method::cmaa2 &&
-       !(user_config.graphics.enable_16bit_color_rendering || _effects_active)) {
+   else if (_aa_method == Antialiasing_method::cmaa2) {
       _patch_backbuffer = Game_rendertarget{*_device,
                                             DXGI_FORMAT_R8G8B8A8_TYPELESS,
                                             DXGI_FORMAT_R8G8B8A8_UNORM,
@@ -2067,6 +2071,11 @@ void Shader_patch::recreate_patch_backbuffer() noexcept
          Backbuffer_cmaa2_views{*_device, *_patch_backbuffer.texture,
                                 DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
                                 DXGI_FORMAT_R8G8B8A8_UNORM};
+   }
+   else if (_render_width != _swapchain.width() ||
+            _render_height != _swapchain.height()) {
+      _patch_backbuffer = Game_rendertarget{*_device, DXGI_FORMAT_R8G8B8A8_UNORM,
+                                            _render_width, _render_height, 1};
    }
 }
 

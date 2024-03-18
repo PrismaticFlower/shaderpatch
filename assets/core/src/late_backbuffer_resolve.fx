@@ -9,6 +9,7 @@ const static uint sample_count = SAMPLE_COUNT;
 const static float inv_sample_count = 1.0 / sample_count;
 
 cbuffer Constants : register(b0) {
+   float2 resolution;
    uint2 randomness;
 };
 
@@ -21,22 +22,41 @@ float3 apply_dithering(const float3 color, const uint2 position)
    return color + (blue_noise / 255.0);
 }
 
-float4 main_vs(uint id : SV_VertexID) : SV_Position
+struct Vs_output
 {
-   if (id == 0) return float4(-1.f, -1.f, 0.0, 1.0);
-   else if (id == 1) return float4(-1.f, 3.f, 0.0, 1.0);
-   else return float4(3.f, -1.f, 0.0, 1.0);
+   float2 positionSS : POSITION;
+   float4 positionPS : SV_Position;
+};
+
+Vs_output main_vs(uint id : SV_VertexID)
+{
+   Vs_output output;
+
+   if (id == 0) {
+      output.positionPS = float4(-1.f, -1.f, 0.0, 1.0);
+      output.positionSS = float2(0.0, 1.0) * resolution;
+   }
+   else if (id == 1) {
+      output.positionPS = float4(-1.f, 3.f, 0.0, 1.0);
+      output.positionSS = float2(0.0, -1.0) * resolution;
+   }
+   else {
+      output.positionPS = float4(3.f, -1.f, 0.0, 1.0);
+      output.positionSS = float2(2.0, 1.0) * resolution;
+   }
+
+   return output;
 }
 
-float4 main_ps(float4 positionSS : SV_Position) : SV_Target0
+float4 main_ps(float2 positionSS : POSITION) : SV_Target0
 {
-   const float3 color = backbuffer_texture[(uint2)positionSS.xy];
-   const float3 dithered_color = apply_dithering(color, (uint2)positionSS.xy);
+   const float3 color = backbuffer_texture[(uint2)positionSS];
+   const float3 dithered_color = apply_dithering(color, (uint2)positionSS);
 
    return float4(dithered_color, 1.0);
 }
 
-float4 main_ms_ps(float4 positionSS : SV_Position) : SV_Target0
+float4 main_ms_ps(float2 positionSS : POSITION) : SV_Target0
 {
    const uint2 pos = (uint2)positionSS;
    float3 color = 0.0;
@@ -48,21 +68,21 @@ float4 main_ms_ps(float4 positionSS : SV_Position) : SV_Target0
    color *= inv_sample_count;
 
    const float3 srgb_color = linear_to_srgb(color);
-   const float3 dithered_srgb_color = apply_dithering(srgb_color, (uint2)positionSS.xy);
+   const float3 dithered_srgb_color = apply_dithering(srgb_color, (uint2)positionSS);
 
    return float4(dithered_srgb_color, 1.0);
 }
 
-float4 main_linear_ps(float4 positionSS : SV_Position) : SV_Target0
+float4 main_linear_ps(float2 positionSS : POSITION) : SV_Target0
 {
-   const float3 color = backbuffer_texture[(uint2)positionSS.xy];
+   const float3 color = backbuffer_texture[(uint2)positionSS];
    const float3 srgb_color = linear_to_srgb(color);
-   const float3 dithered_srgb_color = apply_dithering(srgb_color, (uint2)positionSS.xy);
+   const float3 dithered_srgb_color = apply_dithering(srgb_color, (uint2)positionSS);
 
    return float4(dithered_srgb_color, 1.0);
 }
 
-float4 main_linear_ms_ps(float4 positionSS : SV_Position) : SV_Target0
+float4 main_linear_ms_ps(float2 positionSS : POSITION) : SV_Target0
 {
    const uint2 pos = (uint2)positionSS;
    float3 color = 0.0;
@@ -74,7 +94,7 @@ float4 main_linear_ms_ps(float4 positionSS : SV_Position) : SV_Target0
    color *= inv_sample_count;
 
    const float3 srgb_color = linear_to_srgb(color);
-   const float3 dithered_srgb_color = apply_dithering(srgb_color, (uint2)positionSS.xy);
+   const float3 dithered_srgb_color = apply_dithering(srgb_color, (uint2)positionSS);
 
    return float4(dithered_srgb_color, 1.0);
 }
