@@ -311,6 +311,11 @@ private:
 
       return dc;
    }();
+   UINT _resolution_scale = user_config.display.resolution_scale;
+   UINT _render_width = 0;
+   UINT _render_height = 0;
+   UINT _window_width = 0;
+   UINT _window_height = 0;
    Swapchain _swapchain;
 
    Input_layout_descriptions _input_layout_descriptions;
@@ -470,9 +475,6 @@ private:
    UINT _rt_sample_count = 1;
    Antialiasing_method _aa_method = Antialiasing_method::none;
    Refraction_quality _refraction_quality = Refraction_quality::medium;
-   UINT _swapchain_scale = user_config.display.resolution_scale;
-   UINT _window_width = 0;
-   UINT _window_height = 0;
 
    text::Font_atlas_builder _font_atlas_builder{_device};
 

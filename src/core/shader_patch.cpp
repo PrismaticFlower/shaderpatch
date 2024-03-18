@@ -97,16 +97,16 @@ auto create_device(IDXGIAdapter4& adapater) noexcept -> Com_ptr<ID3D11Device5>
 Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
                            const UINT width, const UINT height) noexcept
    : _device{create_device(adapter)},
-     _swapchain{_device, adapter, window,
-                width * user_config.display.resolution_scale / 100,
-                height * user_config.display.resolution_scale / 100},
+     _render_width{width * user_config.display.resolution_scale / 100},
+     _render_height{height * user_config.display.resolution_scale / 100},
+     _window_width{width},
+     _window_height{height},
+     _swapchain{_device, adapter, window, _render_width, _render_height},
      _window{window},
-     _nearscene_depthstencil{*_device, _swapchain.width(), _swapchain.height(),
+     _nearscene_depthstencil{*_device, _render_width, _render_height,
                              to_sample_count(user_config.graphics.antialiasing_method)},
-     _farscene_depthstencil{*_device, _swapchain.width(), _swapchain.height(), 1},
+     _farscene_depthstencil{*_device, _render_width, _render_height, 1},
      _reflectionscene_depthstencil{*_device, 512, 256, 1},
-     _window_width{},
-     _window_height{},
      _bf2_log_monitor{user_config.developer.monitor_bfront2_log
                          ? std::make_unique<BF2_log_monitor>()
                          : nullptr}
@@ -155,13 +155,14 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
    _effects.postprocess.color_grading_regions({});
    _oit_provider.clear_resources();
 
+   _render_width = width * user_config.display.resolution_scale / 100;
+   _render_height = height * user_config.display.resolution_scale / 100;
    _window_width = width;
    _window_height = height;
-   _swapchain.resize(width * _swapchain_scale / 100, height * _swapchain_scale / 100);
+   _swapchain.resize(_render_width, _render_height);
    _game_rendertargets.emplace_back() = _swapchain.game_rendertarget();
-   _nearscene_depthstencil = {*_device, _swapchain.width(), _swapchain.height(),
-                              _rt_sample_count};
-   _farscene_depthstencil = {*_device, _swapchain.width(), _swapchain.height(), 1};
+   _nearscene_depthstencil = {*_device, _render_width, _render_height, _rt_sample_count};
+   _farscene_depthstencil = {*_device, _render_width, _render_height, 1};
    _refraction_rt = {};
    _farscene_refraction_rt = {};
    _current_game_rendertarget = _game_backbuffer_index;
@@ -277,9 +278,8 @@ auto Shader_patch::create_game_rendertarget(const UINT width, const UINT height)
 {
    const int index = _game_rendertargets.size();
    _game_rendertargets.emplace_back(*_device, _current_rt_format,
-                                    width == _window_width ? _swapchain.width() : width,
-                                    height == _window_height ? _swapchain.height()
-                                                             : height);
+                                    width == _window_width ? _render_width : width,
+                                    height == _window_height ? _render_height : height);
 
    return Game_rendertarget_id{index};
 }
@@ -1309,8 +1309,8 @@ void Shader_patch::game_rendertype_changed() noexcept
             if (dest.type != Game_rt_type::shadow) {
                dest = Game_rendertarget{*_device,
                                         shadow_texture_format,
-                                        _swapchain.width(),
-                                        _swapchain.height(),
+                                        _render_width,
+                                        _render_height,
                                         1,
                                         Game_rt_type::shadow};
             }
@@ -1765,7 +1765,7 @@ void Shader_patch::update_imgui() noexcept
 
          if (_pixel_inspector.enabled) {
             _pixel_inspector.show(*_device_context, _swapchain, _window,
-                                  _swapchain_scale);
+                                  _resolution_scale);
          }
       }
 
@@ -1834,14 +1834,13 @@ void Shader_patch::update_rendertargets() noexcept
    _rt_sample_count = to_sample_count(_aa_method);
    _om_targets_dirty = true;
 
-   _nearscene_depthstencil = {*_device, _swapchain.width(), _swapchain.height(),
-                              _rt_sample_count};
+   _nearscene_depthstencil = {*_device, _render_width, _render_height, _rt_sample_count};
    _shadow_msaa_rt = {};
 
    if (_rt_sample_count > 1) {
-      _shadow_msaa_rt = {*_device,           shadow_texture_format,
-                         _swapchain.width(), _swapchain.height(),
-                         _rt_sample_count,   Game_rt_type::shadow};
+      _shadow_msaa_rt = {*_device,         shadow_texture_format,
+                         _render_width,    _render_height,
+                         _rt_sample_count, Game_rt_type::shadow};
    }
 
    recreate_patch_backbuffer();
@@ -1872,11 +1871,10 @@ void Shader_patch::update_refraction_target() noexcept
    const auto scale_factor = to_scale_factor(_refraction_quality);
 
    _refraction_rt = Game_rendertarget{*_device, _current_rt_format,
-                                      _swapchain.width() / scale_factor,
-                                      _swapchain.height() / scale_factor};
-   _farscene_refraction_rt =
-      Game_rendertarget{*_device, _current_rt_format, _swapchain.width() / 8,
-                        _swapchain.height() / 8};
+                                      _render_width / scale_factor,
+                                      _render_height / scale_factor};
+   _farscene_refraction_rt = Game_rendertarget{*_device, _current_rt_format,
+                                               _render_width / 8, _render_height / 8};
 
    _shader_resource_database.insert(_refraction_rt.srv, refraction_texture_name);
 
@@ -1994,7 +1992,7 @@ void Shader_patch::update_material_resources() noexcept
 void Shader_patch::update_swapchain_scale() noexcept
 {
    if (user_config.display.resolution_scale ==
-       std::exchange(_swapchain_scale, user_config.display.resolution_scale)) {
+       std::exchange(_resolution_scale, user_config.display.resolution_scale)) {
       return;
    }
 
@@ -2006,22 +2004,23 @@ void Shader_patch::update_swapchain_scale() noexcept
       _device_context->OMSetRenderTargets(0, nullptr, nullptr); // make sure the swapchain isn't still bound as a rendertarget.
    }
 
-   const UINT old_width = _swapchain.width();
-   const UINT old_height = _swapchain.height();
+   const UINT old_width = _render_width;
+   const UINT old_height = _render_height;
 
-   _swapchain.resize(_window_width * _swapchain_scale / 100,
-                     _window_height * _swapchain_scale / 100);
+   _render_width = _window_width * _resolution_scale / 100;
+   _render_height = _window_height * _resolution_scale / 100;
+
+   _swapchain.resize(_render_width, _render_height);
 
    // depthstencil textures
-   _nearscene_depthstencil = {*_device, _swapchain.width(), _swapchain.height(),
-                              _rt_sample_count};
-   _farscene_depthstencil = {*_device, _swapchain.width(), _swapchain.height(), 1};
+   _nearscene_depthstencil = {*_device, _render_width, _render_height, _rt_sample_count};
+   _farscene_depthstencil = {*_device, _render_width, _render_height, 1};
 
    // shadow MSAA target
    if (_shadow_msaa_rt) {
-      _shadow_msaa_rt = {*_device,           shadow_texture_format,
-                         _swapchain.width(), _swapchain.height(),
-                         _rt_sample_count,   Game_rt_type::shadow};
+      _shadow_msaa_rt = {*_device,         shadow_texture_format,
+                         _render_width,    _render_height,
+                         _rt_sample_count, Game_rt_type::shadow};
    }
 
    // patch backbuffer handling
@@ -2034,12 +2033,12 @@ void Shader_patch::update_swapchain_scale() noexcept
       if (rt.type == Game_rt_type::presentation) continue;
 
       if (rt.width == old_width && rt.height == old_height) {
-         rt = Game_rendertarget{*_device, _current_rt_format,
-                                _swapchain.width(), _swapchain.height()};
+         rt = Game_rendertarget{*_device, _current_rt_format, _render_width,
+                                _render_height};
       }
    }
 
-   ImGui_ImplWin32_SwapchainScale(_swapchain_scale);
+   ImGui_ImplWin32_SwapchainScale(_resolution_scale);
 }
 
 void Shader_patch::recreate_patch_backbuffer() noexcept
@@ -2048,14 +2047,12 @@ void Shader_patch::recreate_patch_backbuffer() noexcept
    _backbuffer_cmaa2_views = {};
 
    if (_rt_sample_count > 1) {
-      _patch_backbuffer =
-         Game_rendertarget{*_device, _current_rt_format, _swapchain.width(),
-                           _swapchain.height(), _rt_sample_count};
+      _patch_backbuffer = Game_rendertarget{*_device, _current_rt_format, _render_width,
+                                            _render_height, _rt_sample_count};
    }
    else if (_effects_active || user_config.graphics.enable_16bit_color_rendering) {
-      _patch_backbuffer =
-         Game_rendertarget{*_device, _current_rt_format, _swapchain.width(),
-                           _swapchain.height(), 1};
+      _patch_backbuffer = Game_rendertarget{*_device, _current_rt_format,
+                                            _render_width, _render_height, 1};
    }
 
    if (_aa_method == Antialiasing_method::cmaa2 &&
@@ -2063,8 +2060,8 @@ void Shader_patch::recreate_patch_backbuffer() noexcept
       _patch_backbuffer = Game_rendertarget{*_device,
                                             DXGI_FORMAT_R8G8B8A8_TYPELESS,
                                             DXGI_FORMAT_R8G8B8A8_UNORM,
-                                            _swapchain.width(),
-                                            _swapchain.height(),
+                                            _render_width,
+                                            _render_height,
                                             D3D11_BIND_UNORDERED_ACCESS};
       _backbuffer_cmaa2_views =
          Backbuffer_cmaa2_views{*_device, *_patch_backbuffer.texture,
