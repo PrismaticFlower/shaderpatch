@@ -201,10 +201,6 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
    const UINT dpi = [&] {
       UINT dpi = GetDpiForWindow(_window);
 
-      if (user_config.display.scale_dpi_with_resolution_scale) {
-         dpi = dpi * 100 / user_config.display.resolution_scale;
-      }
-
       dpi = dpi * user_config.ui.extra_ui_scaling / 100;
 
       return dpi;

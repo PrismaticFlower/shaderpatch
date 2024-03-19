@@ -21,22 +21,6 @@ LR"(Precentage of the sceen the game's window will take up. Value from 10 to 100
 },
 
 {
-L"Resolution Scale"sv,      
-LR"(Render resolution scale, as a percentage. This controls the resolution the game will be rendered at but does not affect window size.
-
-For instance if your desktop resolution is 3840 x 2160 (4K) setting this to 50 will render the game at 1920 x 1080. 
-
-The game will be upscaled back to 3840 x 2160 by the GPU when it is sent to the display.
-
-Lowering this can boost perforomance. Usage of an Anti-Aliasing Method with this option is highly reccomended.)"sv
-},
-
-{
-L"Scale UI with Resolution Scale"sv,      
-LR"(Keeps the game's UI and HUD from becoming illegible when Resolution Scale is used. This only has an effect if Display Scaling is 'yes'.)"sv
-},
-
-{
 L"Allow Tearing"sv,      
 LR"(Allow tearing when displaying frames. This can allow lower latency and is also required for variable refresh rate technologies to work.)"sv
 },

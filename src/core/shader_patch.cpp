@@ -97,8 +97,8 @@ auto create_device(IDXGIAdapter4& adapater) noexcept -> Com_ptr<ID3D11Device5>
 Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
                            const UINT width, const UINT height) noexcept
    : _device{create_device(adapter)},
-     _render_width{width * user_config.display.resolution_scale / 100},
-     _render_height{height * user_config.display.resolution_scale / 100},
+     _render_width{width},
+     _render_height{height},
      _window_width{width},
      _window_height{height},
      _swapchain{_device, adapter, window, _render_width, _render_height},
@@ -155,8 +155,8 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
    _effects.postprocess.color_grading_regions({});
    _oit_provider.clear_resources();
 
-   _render_width = width * user_config.display.resolution_scale / 100;
-   _render_height = height * user_config.display.resolution_scale / 100;
+   _render_width = width;
+   _render_height = height;
    _window_width = width;
    _window_height = height;
    _swapchain.resize(_render_width, _render_height);
@@ -227,7 +227,6 @@ void Shader_patch::present() noexcept
    update_refraction_target();
    update_samplers();
    update_team_colors();
-   update_swapchain_scale();
    restore_all_game_state();
 
    if (_patch_backbuffer) _game_rendertargets[0] = _patch_backbuffer;
@@ -1774,8 +1773,7 @@ void Shader_patch::update_imgui() noexcept
          ImGui::Checkbox("Pixel Inspector", &_pixel_inspector.enabled);
 
          if (_pixel_inspector.enabled) {
-            _pixel_inspector.show(*_device_context, _swapchain, _window,
-                                  _resolution_scale);
+            _pixel_inspector.show(*_device_context, _swapchain, _window);
          }
       }
 
@@ -2001,63 +1999,6 @@ void Shader_patch::update_material_resources() noexcept
    for (auto& mat : _materials) {
       mat->update_resources(_shader_resource_database);
    }
-}
-
-void Shader_patch::update_swapchain_scale() noexcept
-{
-   if (user_config.display.resolution_scale ==
-       std::exchange(_resolution_scale, user_config.display.resolution_scale)) {
-      return;
-   }
-
-   _rendertarget_allocator.reset();
-   _om_targets_dirty = true;
-
-   if (_game_rendertargets[0].type == Game_rt_type::presentation) {
-      _game_rendertargets[0] = {};
-      _device_context->OMSetRenderTargets(0, nullptr, nullptr); // make sure the swapchain isn't still bound as a rendertarget.
-   }
-
-   const UINT old_width = _render_width;
-   const UINT old_height = _render_height;
-
-   _render_width = _window_width * _resolution_scale / 100;
-   _render_height = _window_height * _resolution_scale / 100;
-
-   _swapchain.resize(_render_width, _render_height);
-
-   // depthstencil textures
-   _nearscene_depthstencil = {*_device, _render_width, _render_height, _rt_sample_count};
-   _farscene_depthstencil = {*_device, _render_width, _render_height, 1};
-
-   if (_interface_depthstencil) {
-      _interface_depthstencil =
-         Depthstencil{*_device, _swapchain.width(), _swapchain.height(), 1};
-   }
-
-   // shadow MSAA target
-   if (_shadow_msaa_rt) {
-      _shadow_msaa_rt = {*_device,         shadow_texture_format,
-                         _render_width,    _render_height,
-                         _rt_sample_count, Game_rt_type::shadow};
-   }
-
-   // patch backbuffer handling
-   recreate_patch_backbuffer();
-
-   _game_rendertargets[0] =
-      _patch_backbuffer ? _patch_backbuffer : _swapchain.game_rendertarget();
-
-   for (auto& rt : _game_rendertargets) {
-      if (rt.type == Game_rt_type::presentation) continue;
-
-      if (rt.width == old_width && rt.height == old_height) {
-         rt = Game_rendertarget{*_device, _current_rt_format, _render_width,
-                                _render_height};
-      }
-   }
-
-   ImGui_ImplWin32_SwapchainScale(_resolution_scale);
 }
 
 void Shader_patch::recreate_patch_backbuffer() noexcept

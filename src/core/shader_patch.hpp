@@ -274,8 +274,6 @@ private:
 
    void update_material_resources() noexcept;
 
-   void update_swapchain_scale() noexcept;
-
    void recreate_patch_backbuffer() noexcept;
 
    void set_linear_rendering(bool linear_rendering) noexcept;
@@ -311,7 +309,6 @@ private:
 
       return dc;
    }();
-   UINT _resolution_scale = user_config.display.resolution_scale;
    UINT _render_width = 0;
    UINT _render_height = 0;
    UINT _window_width = 0;

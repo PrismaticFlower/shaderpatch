@@ -165,11 +165,6 @@ static void ImGui_ImplWin32_UpdateMousePos()
 #pragma comment(lib, "xinput")
 #endif
 
-void ImGui_ImplWin32_SwapchainScale(int scale)
-{
-   g_swapchainScale = scale;
-}
-
 // Gamepad navigation mapping
 static void ImGui_ImplWin32_UpdateGamepads()
 {

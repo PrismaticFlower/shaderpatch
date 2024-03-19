@@ -28,16 +28,6 @@ void User_config::show_imgui() noexcept
 {
    ImGui::Begin("User Config", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
-   if (ImGui::CollapsingHeader("Display", ImGuiTreeNodeFlags_DefaultOpen)) {
-
-      int resolution_scale = display.resolution_scale;
-      ImGui::InputInt("Resolution Scale (swapchain)", &resolution_scale);
-      display.resolution_scale = std::clamp(resolution_scale, 50, 100);
-
-      ImGui::Checkbox("Scale UI with Resolution Scale",
-                      &display.scale_dpi_with_resolution_scale);
-   }
-
    if (ImGui::CollapsingHeader("User Interface", ImGuiTreeNodeFlags_DefaultOpen)) {
       const auto color_picker = [](const char* name, std::array<std::uint8_t, 3>& color) {
          std::array<float, 3> rgb_color{color[0] / 255.f, color[1] / 255.f,
@@ -131,15 +121,6 @@ void User_config::parse_file(const std::string& path)
       std::clamp(config["Display"s]["Screen Percent"s].as<std::uint32_t>(
                     display.screen_percent),
                  10u, 100u);
-
-   display.resolution_scale =
-      std::clamp(config["Display"s]["Resolution Scale"s].as<std::uint32_t>(
-                    display.resolution_scale),
-                 50u, 100u);
-
-   display.scale_dpi_with_resolution_scale =
-      config["Display"s]["Scale UI with Resolution Scale"s].as<bool>(
-         display.scale_dpi_with_resolution_scale);
 
    display.allow_tearing =
       config["Display"s]["Allow Tearing"s].as<bool>(display.allow_tearing);
