@@ -83,7 +83,7 @@ public:
    Shader_patch(Shader_patch&&) = delete;
    Shader_patch& operator=(Shader_patch&&) = delete;
 
-   void reset(const UINT width, const UINT height) noexcept;
+   void reset(const UINT window_width, const UINT window_height) noexcept;
 
    void set_text_dpi(const std::uint32_t dpi) noexcept;
 
@@ -342,6 +342,7 @@ private:
 
    Depthstencil _nearscene_depthstencil;
    Depthstencil _farscene_depthstencil;
+   Depthstencil _interface_depthstencil;
    Depthstencil _reflectionscene_depthstencil;
    Game_depthstencil _current_depthstencil_id = Game_depthstencil::nearscene;
 

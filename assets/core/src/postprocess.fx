@@ -1,7 +1,6 @@
 
 #include "color_utilities.hlsl"
 #include "film_grain.hlsl"
-#include "fullscreen_tri_vs.hlsl"
 #include "postprocess_common.hlsl"
 
 // clang-format off
@@ -73,7 +72,37 @@ struct Postprocessing_output
 #  endif
 };
 
-Postprocessing_output main_ps(float2 texcoords : TEXCOORD, float4 positionSS : SV_Position)
+struct Vs_output
+{
+   float2 texcoords : TEXCOORD;
+   float2 positionSS : POSITION;
+   float4 positionPS : SV_Position;
+};
+
+Vs_output main_vs(uint id : SV_VertexID)
+{
+   Vs_output output;
+
+   if (id == 0) {
+      output.positionPS = float4(-1.f, -1.f, 0.0, 1.0);
+      output.texcoords = float2(0.0, 1.0);
+      output.positionSS = float2(0.0, 1.0) * resolution;
+   }
+   else if (id == 1) {
+      output.positionPS = float4(-1.f, 3.f, 0.0, 1.0);
+      output.texcoords = float2(0.0, -1.0);
+      output.positionSS = float2(0.0, -1.0) * resolution;
+   }
+   else {
+      output.positionPS = float4(3.f, -1.f, 0.0, 1.0);
+      output.texcoords = float2(2.0, 1.0);
+      output.positionSS = float2(2.0, 1.0) * resolution;
+   }
+
+   return output;
+}
+
+Postprocessing_output main_ps(float2 texcoords : TEXCOORD, float2 positionSS : POSITION)
 {
    float3 color = scene_texture[(uint2)positionSS.xy].rgb;
 
@@ -100,7 +129,7 @@ Postprocessing_output main_ps(float2 texcoords : TEXCOORD, float4 positionSS : S
    return output;
 }
 
-float3 stock_hdr_to_linear_ps(float2 texcoords : TEXCOORD, float4 positionSS : SV_Position) : SV_Target0
+float3 stock_hdr_to_linear_ps(float2 texcoords : TEXCOORD, float2 positionSS : POSITION) : SV_Target0
 {
    const float3 color_srgb = scene_texture[(uint2)positionSS.xy].rgb;
    const float3 color_linear = srgb_to_linear(color_srgb + color_srgb);

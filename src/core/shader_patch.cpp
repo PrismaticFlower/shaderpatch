@@ -200,14 +200,13 @@ void Shader_patch::present() noexcept
    _effects.profiler.end_frame(*_device_context);
    _game_postprocessing.end_frame();
 
-   if (_render_width != _swapchain.width() || _render_height != _swapchain.height()) {
+   if (_game_rendertargets[0].type != Game_rt_type::presentation) {
       const std::array<float, 4> black{0.0f, 0.0f, 0.0f, 0.0f};
 
       _device_context->ClearRenderTargetView(_swapchain.rtv(), black.data());
-   }
 
-   if (_game_rendertargets[0].type != Game_rt_type::presentation)
       patch_backbuffer_resolve();
+   }
 
    update_imgui();
 
@@ -851,7 +850,7 @@ void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
          _use_interface_depthstencil = true;
          _game_rendertargets[0] = _swapchain.game_rendertarget();
 
-         _device_context->ClearDepthStencilView(_farscene_depthstencil.dsv.get(),
+         _device_context->ClearDepthStencilView(_interface_depthstencil.dsv.get(),
                                                 D3D11_CLEAR_DEPTH, 1.0f, 0x0);
 
          const effects::Postprocess_input postprocess_input{*_patch_backbuffer.srv,
@@ -1216,7 +1215,7 @@ auto Shader_patch::current_depthstencil(const bool readonly) const noexcept
 {
    const auto depthstencil = [this]() -> const Depthstencil* {
       if (_current_depthstencil_id == Game_depthstencil::nearscene)
-         return &(_use_interface_depthstencil ? _farscene_depthstencil
+         return &(_use_interface_depthstencil ? _interface_depthstencil
                                               : _nearscene_depthstencil);
       else if (_current_depthstencil_id == Game_depthstencil::farscene)
          return &_farscene_depthstencil;
@@ -1650,9 +1649,14 @@ void Shader_patch::update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primit
 
       // Update viewport.
       {
-         const auto viewport =
-            CD3D11_VIEWPORT{0.0f, 0.0f, static_cast<float>(rt.width),
-                            static_cast<float>(rt.height)};
+         const D3D11_VIEWPORT viewport =
+            rt.type == Game_rt_type::presentation
+               ? CD3D11_VIEWPORT{(_swapchain.width() - _render_width) / 2.0f,
+                                 (_swapchain.height() - _render_height) / 2.0f,
+                                 static_cast<float>(_render_width),
+                                 static_cast<float>(_render_height)}
+               : CD3D11_VIEWPORT{0.0f, 0.0f, static_cast<float>(rt.width),
+                                 static_cast<float>(rt.height)};
 
          _device_context->RSSetViewports(1, &viewport);
 
@@ -1807,6 +1811,10 @@ void Shader_patch::update_effects() noexcept
 {
    if (std::exchange(_effects_active, _effects.enabled()) != _effects.enabled()) {
       _use_interface_depthstencil = false;
+      _interface_depthstencil =
+         _effects_active
+            ? Depthstencil{*_device, _swapchain.width(), _swapchain.height(), 1}
+            : Depthstencil{};
    }
 
    _effects_request_soft_skinning =
@@ -2021,6 +2029,11 @@ void Shader_patch::update_swapchain_scale() noexcept
    // depthstencil textures
    _nearscene_depthstencil = {*_device, _render_width, _render_height, _rt_sample_count};
    _farscene_depthstencil = {*_device, _render_width, _render_height, 1};
+
+   if (_interface_depthstencil) {
+      _interface_depthstencil =
+         Depthstencil{*_device, _swapchain.width(), _swapchain.height(), 1};
+   }
 
    // shadow MSAA target
    if (_shadow_msaa_rt) {
