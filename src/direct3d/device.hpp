@@ -594,6 +594,8 @@ private:
 
    bool _fixed_func_active = true;
 
+   UINT _monitor_width;
+   UINT _monitor_height;
    UINT _actual_width;
    UINT _actual_height;
    UINT _perceived_width;

@@ -41,14 +41,10 @@ struct user_config {
    bool_user_config_value enabled{L"Shader Patch Enabled", true, L"Yes", L"No"};
 
    user_config_value_vector display = {
-      percentage_user_config_value{L"Screen Percent", 100, 10},
-
       bool_user_config_value{L"Allow Tearing", false, L"Tearing Allowed",
                              L"Tearing Disallowed"},
 
-      bool_user_config_value{L"Centred", true, L"Centred", L"Uncentred"},
       bool_user_config_value{L"Treat 800x600 As Interface", true, L"Yes", L"No"},
-      bool_user_config_value{L"Windowed Interface", false, L"Yes", L"No"},
 
       bool_user_config_value{L"Display Scaling Aware", true, L"Yes", L"No"},
       bool_user_config_value{L"Display Scaling", true, L"On", L"Off"},

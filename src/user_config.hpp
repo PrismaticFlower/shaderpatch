@@ -53,13 +53,11 @@ struct User_config {
    bool enabled = true;
 
    struct {
-      std::uint32_t screen_percent = 100;
       bool allow_tearing = false;
-      bool centred = true;
       bool dpi_aware = true;
       bool dpi_scaling = true;
+      bool dsr_vsr_scaling = true;
       bool treat_800x600_as_interface = true;
-      bool windowed_interface = false;
       bool scalable_fonts = true;
       bool enable_game_perceived_resolution_override = false;
       std::uint32_t game_perceived_resolution_override_width = 1920;

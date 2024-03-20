@@ -57,6 +57,25 @@ inline void centre_window(const HWND window)
                 SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSENDCHANGING);
 }
 
+inline void position_window(const HWND window, const UINT width, const UINT height)
+{
+   Expects(IsWindow(window));
+
+   MONITORINFO mon_info{sizeof(MONITORINFO)};
+
+   GetMonitorInfoA(MonitorFromWindow(window, MONITOR_DEFAULTTOPRIMARY), &mon_info);
+   const RECT mon_area = mon_info.rcMonitor;
+
+   const UINT monitor_width = mon_area.right - mon_area.left;
+   const UINT monitor_height = mon_area.bottom - mon_area.top;
+
+   const UINT offset_x = (monitor_width - width) / 2;
+   const UINT offset_y = (monitor_height - height) / 2;
+
+   SetWindowPos(window, HWND_TOP, mon_area.left + offset_x, mon_area.top + offset_y,
+                width, height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSENDCHANGING);
+}
+
 inline void leftalign_window(const HWND window)
 {
    Expects(IsWindow(window));
@@ -74,28 +93,10 @@ inline void clip_cursor_to_window(const HWND window)
 {
    Expects(IsWindow(window));
 
-   RECT rect;
-   GetClientRect(window, &rect);
+   RECT rect = {};
+   if (!GetWindowRect(window, &rect)) return;
 
-   POINT upper_left;
-   upper_left.x = rect.left;
-   upper_left.y = rect.top;
-
-   POINT bottom_right;
-   bottom_right.x = rect.right;
-   bottom_right.y = rect.bottom;
-
-   MapWindowPoints(window, nullptr, &upper_left, 1);
-   MapWindowPoints(window, nullptr, &bottom_right, 1);
-
-   RECT translated_rect;
-
-   translated_rect.left = upper_left.x;
-   translated_rect.top = upper_left.y;
-   translated_rect.right = bottom_right.x;
-   translated_rect.bottom = bottom_right.y;
-
-   ClipCursor(&translated_rect);
+   ClipCursor(&rect);
 }
 
 }

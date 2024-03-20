@@ -117,22 +117,12 @@ void User_config::parse_file(const std::string& path)
 
    enabled = config["Shader Patch Enabled"s].as<bool>(enabled);
 
-   display.screen_percent =
-      std::clamp(config["Display"s]["Screen Percent"s].as<std::uint32_t>(
-                    display.screen_percent),
-                 10u, 100u);
-
    display.allow_tearing =
       config["Display"s]["Allow Tearing"s].as<bool>(display.allow_tearing);
-
-   display.centred = config["Display"s]["Centred"s].as<bool>(display.centred);
 
    display.treat_800x600_as_interface =
       config["Display"s]["Treat 800x600 As Interface"s].as<bool>(
          display.treat_800x600_as_interface);
-
-   display.windowed_interface =
-      config["Display"s]["Windowed Interface"s].as<bool>(display.windowed_interface);
 
    display.dpi_aware =
       config["Display"s]["Display Scaling Aware"s].as<bool>(display.dpi_aware);

@@ -16,28 +16,13 @@ LR"(Settings for controlling the display of the game.)"sv
 },
 
 {
-L"Screen Percent"sv,      
-LR"(Precentage of the sceen the game's window will take up. Value from 10 to 100.)"sv
-},
-
-{
 L"Allow Tearing"sv,      
 LR"(Allow tearing when displaying frames. This can allow lower latency and is also required for variable refresh rate technologies to work.)"sv
 },
 
 {
-L"Centred"sv,      
-LR"(Whether to centre the window or not. If `ScreenPercent` is 100 there will be no difference between a centred and uncentred window.)"sv
-},
-
-{
 L"Treat 800x600 As Interface"sv,      
 LR"(Whether 800x600 will be treated as the resolution used by the game's main menu interface. When enabled causes Shader Patch to override the game's resolution without informing the game it has done so. Doing this keeps the interface usable while still letting you enjoy fullscreen ingame.)"sv
-},
-
-{
-L"Windowed Interface"sv,      
-LR"(When `Treat 800x600 As Interface` is `yes` controls whether the game's interface will be rendered fullscreen (which can lead to stretching on the UI) or if it'll be kept in a 800x600 window.)"sv
 },
 
 {

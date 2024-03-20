@@ -58,6 +58,12 @@ Device::Device(IDirect3D9& parent, IDXGIAdapter4& adapter, const HWND window,
      _perceived_width{width},
      _perceived_height{height}
 {
+   MONITORINFO info{sizeof(MONITORINFO)};
+   GetMonitorInfoW(MonitorFromWindow(_window, MONITOR_DEFAULTTONEAREST), &info);
+
+   _monitor_width = info.rcMonitor.right - info.rcMonitor.left;
+   _monitor_height = info.rcMonitor.bottom - info.rcMonitor.top;
+
    _parent.AddRef();
 }
 
@@ -187,16 +193,6 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
 
    if (!params) return D3DERR_INVALIDCALL;
 
-   MONITORINFO info{sizeof(MONITORINFO)};
-   GetMonitorInfoW(MonitorFromWindow(_window, MONITOR_DEFAULTTONEAREST), &info);
-
-   const UINT monitor_width = info.rcMonitor.right - info.rcMonitor.left;
-   const UINT monitor_height = info.rcMonitor.bottom - info.rcMonitor.top;
-
-   const UINT window_width = monitor_width * user_config.display.screen_percent / 100;
-   const UINT window_height =
-      monitor_height * user_config.display.screen_percent / 100;
-
    const UINT base_dpi = 96;
    const UINT dpi = [&] {
       UINT dpi = GetDpiForWindow(_window);
@@ -208,49 +204,55 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
 
    std::uint32_t text_dpi = dpi;
 
-   _actual_width = window_width;
-   _actual_height = window_height;
+   bool legacy_fullscreen = !params->Windowed;
+
+   _actual_width = params->BackBufferWidth;
+   _actual_height = params->BackBufferHeight;
+   _perceived_width = _actual_width;
+   _perceived_height = _actual_height;
 
    if (user_config.display.treat_800x600_as_interface &&
        params->BackBufferWidth == 800 && params->BackBufferHeight == 600) {
-      _perceived_width = 800;
-      _perceived_height = 600;
-
-      if (user_config.display.windowed_interface) {
-         if (user_config.display.dpi_aware && user_config.display.dpi_scaling) {
-            _actual_width = std::min(800 * dpi / base_dpi, monitor_width);
-            _actual_height = std::min(600 * dpi / base_dpi, monitor_height);
-         }
-         else {
-            _actual_width = 800;
-            _actual_height = 600;
-         }
-      }
-      else {
-         text_dpi = text_dpi_from_resolution(_actual_width, _actual_height,
-                                             _perceived_width,
-                                             _perceived_height, base_dpi);
-      }
-   }
-   else {
-      if (user_config.display.enable_game_perceived_resolution_override) {
-         _perceived_width = user_config.display.game_perceived_resolution_override_width;
-         _perceived_height =
-            user_config.display.game_perceived_resolution_override_height;
+      if (!params->Windowed) {
+         _actual_width = _monitor_width;
+         _actual_height = _monitor_height;
 
          text_dpi = text_dpi_from_resolution(_actual_width, _actual_height,
                                              _perceived_width,
                                              _perceived_height, base_dpi);
       }
       else if (user_config.display.dpi_aware && user_config.display.dpi_scaling) {
+         _actual_width = std::min(800 * dpi / base_dpi, _monitor_width);
+         _actual_height = std::min(600 * dpi / base_dpi, _monitor_height);
+      }
+   }
+   else if (user_config.display.enable_game_perceived_resolution_override) {
+      _perceived_width = user_config.display.game_perceived_resolution_override_width;
+      _perceived_height = user_config.display.game_perceived_resolution_override_height;
+
+      text_dpi = text_dpi_from_resolution(_actual_width, _actual_height, _perceived_width,
+                                          _perceived_height, base_dpi);
+   }
+   else if (user_config.display.dpi_aware && user_config.display.dpi_scaling) {
+      if (user_config.display.dsr_vsr_scaling && _actual_width > _monitor_width ||
+          _actual_height > _monitor_height) { // Scaling for DSR/VSR.
+         text_dpi =
+            text_dpi_from_resolution(_actual_width, _actual_height,
+                                     _monitor_width, _monitor_height, base_dpi);
+         text_dpi = text_dpi * user_config.ui.extra_ui_scaling / 100;
+
+         _perceived_width = _actual_width * base_dpi / text_dpi;
+         _perceived_height = _actual_height * base_dpi / text_dpi;
+      }
+      else { // Normal DPI scaling.
          _perceived_width = _actual_width * base_dpi / dpi;
          _perceived_height = _actual_height * base_dpi / dpi;
       }
-      else {
-         _perceived_width = _actual_width;
-         _perceived_height = _actual_height;
-         text_dpi = base_dpi;
-      }
+   }
+   else {
+      _perceived_width = _actual_width;
+      _perceived_height = _actual_height;
+      text_dpi = base_dpi;
    }
 
    // The game's UI layout code starts to struggle with resolutions below 640x480. So we clamp to it here to avoid issues.
@@ -266,20 +268,13 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
    params->BackBufferWidth = _perceived_width;
    params->BackBufferHeight = _perceived_height;
 
-   win32::resize_window(_window, _actual_width, _actual_height);
-
-   if (user_config.display.centred || user_config.display.screen_percent == 100) {
-      win32::centre_window(_window);
+   if (_actual_width == _monitor_width && _actual_height == _monitor_height) {
+      legacy_fullscreen = false;
    }
-   else {
-      win32::leftalign_window(_window);
-   }
-
-   win32::clip_cursor_to_window(_window);
 
    _render_state_manager.reset();
    _texture_stage_manager.reset();
-   _shader_patch.reset(_actual_width, _actual_height);
+   _shader_patch.reset(legacy_fullscreen, _actual_width, _actual_height);
    _shader_patch.set_text_dpi(text_dpi);
    _fixed_func_active = true;
 
@@ -290,6 +285,9 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
                                                 _perceived_width, _perceived_height);
 
    _viewport = {0, 0, _perceived_width, _perceived_height, 0.0f, 1.0f};
+
+   win32::position_window(_window, _actual_width, _actual_height);
+   win32::clip_cursor_to_window(_window);
 
    return S_OK;
 }

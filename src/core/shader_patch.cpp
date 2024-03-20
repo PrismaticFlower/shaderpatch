@@ -101,7 +101,7 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
      _render_height{height},
      _window_width{width},
      _window_height{height},
-     _swapchain{_device, adapter, window, _render_width, _render_height},
+     _swapchain{_device, window, _render_width, _render_height},
      _window{window},
      _nearscene_depthstencil{*_device, _render_width, _render_height,
                              to_sample_count(user_config.graphics.antialiasing_method)},
@@ -147,7 +147,8 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
 
 Shader_patch::~Shader_patch() = default;
 
-void Shader_patch::reset(const UINT width, const UINT height) noexcept
+void Shader_patch::reset(const bool legacy_fullscreen, const UINT width,
+                         const UINT height) noexcept
 {
    _device_context->ClearState();
    _game_rendertargets.clear();
@@ -159,7 +160,7 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
    _render_height = height;
    _window_width = width;
    _window_height = height;
-   _swapchain.resize(_render_width, _render_height);
+   _swapchain.resize(legacy_fullscreen, _render_width, _render_height);
    _game_rendertargets.emplace_back() = _swapchain.game_rendertarget();
    _nearscene_depthstencil = {*_device, _render_width, _render_height, _rt_sample_count};
    _farscene_depthstencil = {*_device, _render_width, _render_height, 1};
@@ -213,7 +214,17 @@ void Shader_patch::present() noexcept
    if (std::exchange(_screenshot_requested, false))
       screenshot(*_device, *_device_context, _swapchain, screenshots_folder);
 
-   _swapchain.present();
+   if (_swapchain.present() == Present_status::needs_reset) {
+      const bool reset_game_rendertarget =
+         _game_rendertargets[0].type == Game_rt_type::presentation;
+
+      if (reset_game_rendertarget) _game_rendertargets[0] = {};
+
+      _swapchain.reset(*_device_context);
+
+      if (reset_game_rendertarget)
+         _game_rendertargets[0] = _swapchain.game_rendertarget();
+   }
 
    _shader_database.cache_update();
 

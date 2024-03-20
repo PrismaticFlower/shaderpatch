@@ -187,11 +187,10 @@ Creator::Creator() noexcept
 
    log(Log_level::info, "Selected GPU "sv, gpu_desc());
 
-   MONITORINFO info{sizeof(MONITORINFO)};
-   GetMonitorInfoW(MonitorFromPoint({0, 0}, MONITOR_DEFAULTTOPRIMARY), &info);
-
-   pseudo_display_modes[2].Width = (info.rcMonitor.right - info.rcMonitor.left);
-   pseudo_display_modes[2].Height = (info.rcMonitor.bottom - info.rcMonitor.top);
+   if (!_d3d9) {
+      log_and_terminate(
+         "Failed to get IDirect3D9 interface for display mode enumeration.");
+   }
 }
 
 HRESULT Creator::CreateDevice(UINT adapter_index, D3DDEVTYPE, HWND focus_window,
@@ -325,10 +324,7 @@ UINT Creator::GetAdapterModeCount(UINT adapter_index, D3DFORMAT d3d_format) noex
    Debug_trace::func(__FUNCSIG__);
    std::lock_guard lock{_mutex};
 
-   if (adapter_index != 0) return 0;
-   if (d3d_format != D3DFMT_X8R8G8B8) return 0;
-
-   return pseudo_display_modes.size();
+   return _d3d9->GetAdapterModeCount(adapter_index, d3d_format);
 }
 
 HRESULT Creator::EnumAdapterModes(UINT adapter_index, D3DFORMAT d3d_format,
@@ -337,14 +333,7 @@ HRESULT Creator::EnumAdapterModes(UINT adapter_index, D3DFORMAT d3d_format,
    Debug_trace::func(__FUNCSIG__);
    std::lock_guard lock{_mutex};
 
-   if (!display_mode) return D3DERR_INVALIDCALL;
-   if (adapter_index != 0) return D3DERR_INVALIDCALL;
-   if (d3d_format != D3DFMT_X8R8G8B8) return D3DERR_NOTAVAILABLE;
-   if (mode_index >= pseudo_display_modes.size()) return D3DERR_INVALIDCALL;
-
-   *display_mode = pseudo_display_modes.begin()[mode_index];
-
-   return S_OK;
+   return _d3d9->EnumAdapterModes(adapter_index, d3d_format, mode_index, display_mode);
 }
 
 HRESULT Creator::GetAdapterDisplayMode(UINT, D3DDISPLAYMODE*) noexcept

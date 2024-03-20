@@ -11,12 +11,30 @@ namespace {
 
 constexpr auto swap_chain_buffers = 2;
 
-auto create_swapchain(ID3D11Device1& device, IDXGIAdapter2& adapter,
-                      const HWND window, const UINT width, const UINT height,
-                      const bool allow_tearing) noexcept -> Com_ptr<IDXGISwapChain1>
+auto create_swapchain(ID3D11Device1& device, const HWND window, const UINT width,
+                      const UINT height, const bool allow_tearing) noexcept
+   -> Com_ptr<IDXGISwapChain1>
 {
+   Com_ptr<IDXGIDevice> dxgi_device;
+
+   if (FAILED(device.QueryInterface(dxgi_device.clear_and_assign()))) {
+      log_and_terminate(
+         "Failed to create swap chain. Unable to get DXGI device.");
+   }
+
+   Com_ptr<IDXGIAdapter1> adapter;
+
+   if (FAILED(dxgi_device->GetParent(IID_PPV_ARGS(adapter.clear_and_assign())))) {
+      log_and_terminate(
+         "Failed to create swap chain. Unable to get DXGI adapter.");
+   }
+
    Com_ptr<IDXGIFactory2> factory;
-   adapter.GetParent(__uuidof(IDXGIFactory2), factory.void_clear_and_assign());
+
+   if (FAILED(adapter->GetParent(IID_PPV_ARGS(factory.clear_and_assign())))) {
+      log_and_terminate(
+         "Failed to create swap chain. Unable to get DXGI factory.");
+   }
 
    DXGI_SWAP_CHAIN_DESC1 swap_chain_desc;
 
@@ -31,7 +49,8 @@ auto create_swapchain(ID3D11Device1& device, IDXGIAdapter2& adapter,
    swap_chain_desc.Scaling = DXGI_SCALING_STRETCH;
    swap_chain_desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
    swap_chain_desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
-   swap_chain_desc.Flags = allow_tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
+   swap_chain_desc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH |
+                           (allow_tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0);
 
    Com_ptr<IDXGISwapChain1> swapchain;
 
@@ -39,18 +58,8 @@ auto create_swapchain(ID3D11Device1& device, IDXGIAdapter2& adapter,
           factory->CreateSwapChainForHwnd(&device, window, &swap_chain_desc, nullptr,
                                           nullptr, swapchain.clear_and_assign());
        FAILED(result)) {
-      log_and_terminate("Failed to create DXGI swapchain! Reason: ",
-                        _com_error{result}.ErrorMessage());
-   }
-
-   Com_ptr<IDXGIFactory1> parent;
-
-   if (const auto result = swapchain->GetParent(__uuidof(IDXGIFactory1),
-                                                parent.void_clear_and_assign());
-       SUCCEEDED(result))
-
-   {
-      parent->MakeWindowAssociation(window, DXGI_MWA_NO_ALT_ENTER);
+      log_and_terminate_fmt("Failed to create DXGI swapchain! Reason: {}",
+                            _com_error{result}.ErrorMessage());
    }
 
    return swapchain;
@@ -80,44 +89,77 @@ bool supports_tearing() noexcept
 
 }
 
-Swapchain::Swapchain(Com_ptr<ID3D11Device1> device, IDXGIAdapter2& adapter,
-                     const HWND window, const UINT width, const UINT height) noexcept
+Swapchain::Swapchain(Com_ptr<ID3D11Device1> device, const HWND window,
+                     const UINT width, const UINT height) noexcept
    : _device{device},
-     _swapchain{create_swapchain(*device, adapter, window, width, height,
+     _swapchain{create_swapchain(*device, window, width, height,
                                  supports_tearing() && user_config.display.allow_tearing)},
+     _window{window},
      _allow_tearing{supports_tearing() && user_config.display.allow_tearing},
+     _fullscreen{false},
      _width{width},
      _height{height}
 {
+   _swapchain->GetBuffer(0, IID_PPV_ARGS(_texture.clear_and_assign()));
+   _device->CreateRenderTargetView(_texture.get(), nullptr, _rtv.clear_and_assign());
+   _device->CreateShaderResourceView(_texture.get(), nullptr, _srv.clear_and_assign());
 }
 
-void Swapchain::resize(const UINT width, const UINT height) noexcept
+void Swapchain::reset(ID3D11DeviceContext& dc) noexcept
+{
+   _texture = nullptr;
+   _rtv = nullptr;
+   _srv = nullptr;
+
+   dc.ClearState();
+   dc.Flush();
+
+   resize(_fullscreen, _width, _height);
+}
+
+void Swapchain::resize(const bool fullscreen, const UINT width, const UINT height) noexcept
 {
    _width = width;
    _height = height;
+   _fullscreen = fullscreen;
 
    _texture = nullptr;
    _rtv = nullptr;
    _srv = nullptr;
 
+   _swapchain->SetFullscreenState(_fullscreen, nullptr);
    _swapchain->ResizeBuffers(swap_chain_buffers, _width, _height, format,
-                             _allow_tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0);
+                             DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH |
+                                (_allow_tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING
+                                                : 0));
+
    _swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D),
                          _texture.void_clear_and_assign());
    _device->CreateRenderTargetView(_texture.get(), nullptr, _rtv.clear_and_assign());
    _device->CreateShaderResourceView(_texture.get(), nullptr, _srv.clear_and_assign());
 }
 
-void Swapchain::present() noexcept
+auto Swapchain::present() noexcept -> Present_status
 {
-   const auto result = _allow_tearing
-                          ? _swapchain->Present(0, DXGI_PRESENT_ALLOW_TEARING)
-                          : _swapchain->Present(1, 0);
+   BOOL fullscreen_state = false;
+   _swapchain->GetFullscreenState(&fullscreen_state, nullptr);
 
-   if (FAILED(result)) {
-      log_and_terminate("Frame Present call failed! reason: ",
+   if ((fullscreen_state != 0) != _fullscreen) {
+      _fullscreen = not _fullscreen;
+
+      return Present_status::needs_reset;
+   }
+
+   const UINT sync_interval = _allow_tearing ? 0 : 1;
+   const UINT flags = !_fullscreen && _allow_tearing ? DXGI_PRESENT_ALLOW_TEARING : 0;
+
+   if (const HRESULT result = _swapchain->Present(sync_interval, flags);
+       FAILED(result)) {
+      log_and_terminate(Log_level::error, "Frame Present call failed! reason: ",
                         _com_error{result}.ErrorMessage());
    }
+
+   return Present_status::ok;
 }
 
 auto Swapchain::game_rendertarget() const noexcept -> Game_rendertarget
