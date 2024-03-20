@@ -58,6 +58,8 @@ Device::Device(IDirect3D9& parent, IDXGIAdapter4& adapter, const HWND window,
      _perceived_width{width},
      _perceived_height{height}
 {
+   win32::make_borderless_window(_window);
+
    MONITORINFO info{sizeof(MONITORINFO)};
    GetMonitorInfoW(MonitorFromWindow(_window, MONITOR_DEFAULTTONEAREST), &info);
 

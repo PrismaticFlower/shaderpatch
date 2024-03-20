@@ -205,17 +205,10 @@ HRESULT Creator::CreateDevice(UINT adapter_index, D3DDEVTYPE, HWND focus_window,
    if (!returned_device_interface) return D3DERR_INVALIDCALL;
 
    if (!_device) {
-      win32::make_borderless_window(focus_window);
-      win32::clip_cursor_to_window(focus_window);
-      ShowWindow(focus_window, SW_NORMAL);
-
       _device =
          Device::create(*this, *_adapter,
                         parameters->hDeviceWindow ? parameters->hDeviceWindow : focus_window,
                         parameters->BackBufferWidth, parameters->BackBufferHeight);
-   }
-   else {
-      _device->Reset(parameters);
    }
 
    *returned_device_interface = _device.unmanaged_copy();

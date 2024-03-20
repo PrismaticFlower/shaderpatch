@@ -11,10 +11,7 @@ inline void make_borderless_window(const HWND window)
 {
    Expects(IsWindow(window));
 
-   SetWindowLongPtr(window, GWL_STYLE, WS_POPUP | WS_VISIBLE);
-   SetWindowPos(window, nullptr, 0, 0, 0, 0,
-                SWP_FRAMECHANGED | SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER |
-                   SWP_NOACTIVATE | SWP_NOSENDCHANGING);
+   SetWindowLongPtrA(window, GWL_STYLE, WS_POPUP | WS_VISIBLE);
 }
 
 inline void resize_window(const HWND window, const UINT width, const UINT height)
