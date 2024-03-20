@@ -274,6 +274,8 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
       legacy_fullscreen = false;
    }
 
+   win32::position_window(_window, _monitor_width, _monitor_height);
+
    _render_state_manager.reset();
    _texture_stage_manager.reset();
    _shader_patch.reset(legacy_fullscreen, _actual_width, _actual_height);
@@ -287,8 +289,6 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
                                                 _perceived_width, _perceived_height);
 
    _viewport = {0, 0, _perceived_width, _perceived_height, 0.0f, 1.0f};
-
-   win32::position_window(_window, _actual_width, _actual_height);
 
    if (GetFocus() == _window) win32::clip_cursor_to_window(_window);
 

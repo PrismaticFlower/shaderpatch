@@ -101,7 +101,7 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
      _render_height{height},
      _window_width{width},
      _window_height{height},
-     _swapchain{_device, window, _render_width, _render_height},
+     _swapchain{_device, window},
      _window{window},
      _nearscene_depthstencil{*_device, _render_width, _render_height,
                              to_sample_count(user_config.graphics.antialiasing_method)},
@@ -160,7 +160,7 @@ void Shader_patch::reset(const bool legacy_fullscreen, const UINT width,
    _render_height = height;
    _window_width = width;
    _window_height = height;
-   _swapchain.resize(legacy_fullscreen, _render_width, _render_height);
+   _swapchain.resize(legacy_fullscreen);
    _game_rendertargets.emplace_back() = _swapchain.game_rendertarget();
    _nearscene_depthstencil = {*_device, _render_width, _render_height, _rt_sample_count};
    _farscene_depthstencil = {*_device, _render_width, _render_height, 1};
