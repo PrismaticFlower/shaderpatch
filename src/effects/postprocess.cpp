@@ -643,11 +643,13 @@ private:
    {
       Profile profile{profiler, dc, "Postprocessing - Finalize Output"};
 
+      auto* const cb = _global_constant_buffer.get();
+
       dc.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+      dc.VSSetConstantBuffers(global_cb_slot, 1, &cb);
       dc.VSSetShader(_fullscreen_vs.get(), nullptr, 0);
 
       auto* const sampler = _linear_clamp_sampler.get();
-      auto* const cb = _global_constant_buffer.get();
       dc.PSSetSamplers(0, 1, &sampler);
       dc.PSSetConstantBuffers(global_cb_slot, 1, &cb);
       dc.PSSetShader(_postprocess_finalize_ps.get(), nullptr, 0);
