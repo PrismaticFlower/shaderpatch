@@ -228,6 +228,7 @@
     <ClCompile Include="src\effects\ssao.cpp" />
     <ClCompile Include="src\file_hooks.cpp" />
     <ClCompile Include="src\game_support\font_declarations.cpp" />
+    <ClCompile Include="src\game_support\memory_hacks.cpp" />
     <ClCompile Include="src\game_support\munged_shader_declarations.cpp" />
     <ClCompile Include="src\imgui\imgui.cpp">
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5054;4275;4251;4127;4018</DisableSpecificWarnings>
@@ -374,6 +375,7 @@
     <ClInclude Include="src\game_support\fixedfunc_shader_metadata.hpp" />
     <ClInclude Include="src\game_support\font_declarations.hpp" />
     <ClInclude Include="src\game_support\font_info.hpp" />
+    <ClInclude Include="src\game_support\memory_hacks.hpp" />
     <ClInclude Include="src\game_support\munged_shader_declarations.hpp" />
     <ClInclude Include="src\game_support\shader_declaration.hpp" />
     <ClInclude Include="src\game_support\shader_declarations.hpp" />

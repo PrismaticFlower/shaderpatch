@@ -64,6 +64,11 @@ struct Mapped_texture {
    std::byte* data;
 };
 
+struct Reset_flags {
+   bool legacy_fullscreen = false;
+   bool aspect_ratio_hack = false;
+};
+
 using Material_handle =
    std::unique_ptr<material::Material, Small_function<void(material::Material*) noexcept>>;
 
@@ -83,7 +88,7 @@ public:
    Shader_patch(Shader_patch&&) = delete;
    Shader_patch& operator=(Shader_patch&&) = delete;
 
-   void reset(const bool legacy_fullscreen, const UINT width, const UINT height) noexcept;
+   void reset(const Reset_flags flags, const UINT width, const UINT height) noexcept;
 
    void set_text_dpi(const std::uint32_t dpi) noexcept;
 
@@ -390,7 +395,9 @@ private:
    bool _stock_bloom_used = false;
    bool _stock_bloom_used_last_frame = false;
    bool _effects_postprocessing_applied = false;
+   bool _override_viewport = false;
 
+   bool _aspect_ratio_hack_enabled = false;
    bool _imgui_enabled = false;
    bool _screenshot_requested = false;
 
@@ -473,6 +480,8 @@ private:
    UINT _rt_sample_count = 1;
    Antialiasing_method _aa_method = Antialiasing_method::none;
    Refraction_quality _refraction_quality = Refraction_quality::medium;
+
+   D3D11_VIEWPORT _viewport_override = {};
 
    text::Font_atlas_builder _font_atlas_builder{_device};
 

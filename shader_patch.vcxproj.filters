@@ -280,6 +280,7 @@
     <ClCompile Include="src\core\postprocessing\backbuffer_resolver.cpp" />
     <ClCompile Include="src\core\tools\pixel_inspector.cpp" />
     <ClCompile Include="src\material\resource_info_view.cpp" />
+    <ClCompile Include="src\game_support\memory_hacks.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -710,6 +711,7 @@
     <ClInclude Include="src\core\normalized_rect.hpp" />
     <ClInclude Include="src\core\tools\pixel_inspector.hpp" />
     <ClInclude Include="src\material\resource_info_view.hpp" />
+    <ClInclude Include="src\game_support\memory_hacks.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />

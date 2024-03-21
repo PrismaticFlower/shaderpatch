@@ -151,6 +151,13 @@ void User_config::parse_file(const std::string& path)
       config["Display"s]["Game Perceived Resolution Override"s][1].as<std::uint32_t>(
          display.game_perceived_resolution_override_height);
 
+   display.aspect_ratio_hack =
+      config["Display"s]["Aspect Ratio Hack"s].as<bool>(display.aspect_ratio_hack);
+
+   display.aspect_ratio_hack_hud = aspect_ratio_hud_from_string(
+      config["Display"s]["Aspect Ratio Hack HUD Handling"s].as<std::string>(
+         to_string(display.aspect_ratio_hack_hud)));
+
    ui.extra_ui_scaling =
       std::clamp(config["User Interface"s]["Extra UI Scaling"s].as<std::uint32_t>(
                     ui.extra_ui_scaling),

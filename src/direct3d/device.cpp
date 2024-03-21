@@ -206,7 +206,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
 
    std::uint32_t text_dpi = dpi;
 
-   bool legacy_fullscreen = !params->Windowed;
+   core::Reset_flags reset_flags{.legacy_fullscreen = !params->Windowed};
 
    _actual_width = params->BackBufferWidth;
    _actual_height = params->BackBufferHeight;
@@ -242,7 +242,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
                                                 _perceived_height, base_dpi);
          }
 
-         legacy_fullscreen = false;
+         reset_flags.legacy_fullscreen = false;
       }
       else if (user_config.display.dpi_aware && user_config.display.dpi_scaling) {
          _actual_width = std::min(800 * dpi / base_dpi, _monitor_width);
@@ -291,18 +291,44 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
                                           _perceived_height, base_dpi);
    }
 
+   if (user_config.display.aspect_ratio_hack && _perceived_width != 800 &&
+       _perceived_height != 600) {
+      switch (user_config.display.aspect_ratio_hack_hud) {
+      case Aspect_ratio_hud::centre_4_3:
+      case Aspect_ratio_hud::stretch_4_3: {
+         if (_perceived_width > _perceived_height) {
+            _perceived_width = _perceived_height * 4 / 3;
+         }
+         else {
+            _perceived_height = _perceived_width * 3 / 4;
+         }
+      } break;
+      case Aspect_ratio_hud::centre_16_9:
+      case Aspect_ratio_hud::stretch_16_9: {
+         if (_perceived_width > _perceived_height) {
+            _perceived_width = _perceived_height * 16 / 9;
+         }
+         else {
+            _perceived_height = _perceived_width * 9 / 16;
+         }
+      } break;
+      }
+
+      reset_flags.aspect_ratio_hack = true;
+   }
+
    params->BackBufferWidth = _perceived_width;
    params->BackBufferHeight = _perceived_height;
 
    if (window_width == _monitor_width && window_height == _monitor_height) {
-      legacy_fullscreen = false;
+      reset_flags.legacy_fullscreen = false;
    }
 
    win32::position_window(_window, window_width, window_height);
 
    _render_state_manager.reset();
    _texture_stage_manager.reset();
-   _shader_patch.reset(legacy_fullscreen, _actual_width, _actual_height);
+   _shader_patch.reset(reset_flags, _actual_width, _actual_height);
    _shader_patch.set_text_dpi(text_dpi);
    _fixed_func_active = true;
 

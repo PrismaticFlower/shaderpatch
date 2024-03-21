@@ -2,6 +2,7 @@
 #include "shader_patch.hpp"
 #include "../bf2_log_monitor.hpp"
 #include "../effects/color_helpers.hpp"
+#include "../game_support/memory_hacks.hpp"
 #include "../input_hooker.hpp"
 #include "../logger.hpp"
 #include "../material/editor.hpp"
@@ -147,8 +148,7 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
 
 Shader_patch::~Shader_patch() = default;
 
-void Shader_patch::reset(const bool legacy_fullscreen, const UINT width,
-                         const UINT height) noexcept
+void Shader_patch::reset(const Reset_flags flags, const UINT width, const UINT height) noexcept
 {
    _device_context->ClearState();
    _game_rendertargets.clear();
@@ -160,7 +160,7 @@ void Shader_patch::reset(const bool legacy_fullscreen, const UINT width,
    _render_height = height;
    _window_width = width;
    _window_height = height;
-   _swapchain.resize(legacy_fullscreen);
+   _swapchain.resize(flags.legacy_fullscreen);
    _game_rendertargets.emplace_back() = _swapchain.game_rendertarget();
    _nearscene_depthstencil = {*_device, _render_width, _render_height, _rt_sample_count};
    _farscene_depthstencil = {*_device, _render_width, _render_height, 1};
@@ -184,6 +184,7 @@ void Shader_patch::reset(const bool legacy_fullscreen, const UINT width,
    _shader_rendertype = Rendertype::invalid;
    _aa_method = Antialiasing_method::none;
    _current_rt_format = Swapchain::format;
+   _aspect_ratio_hack_enabled = flags.aspect_ratio_hack;
 
    update_rendertargets();
    update_refraction_target();
@@ -882,6 +883,56 @@ void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
          set_linear_rendering(false);
 
          _effects_postprocessing_applied = true;
+      }
+
+      if (_aspect_ratio_hack_enabled) {
+         const float render_width = static_cast<float>(_render_width);
+         const float render_height = static_cast<float>(_render_height);
+
+         game_support::set_aspect_ratio(render_height / render_width);
+
+         switch (user_config.display.aspect_ratio_hack_hud) {
+         case Aspect_ratio_hud::centre_4_3: {
+            float override_width = render_width;
+            float override_height = render_height;
+
+            if (override_width > override_height) {
+               override_width = override_height * 4.0f / 3.0f;
+            }
+            else {
+               override_height = override_width * 3.0f / 4.0f;
+            }
+
+            _viewport_override = {.TopLeftX = (render_width - override_width) / 2.0f,
+                                  .TopLeftY = (render_height - override_height) / 2.0f,
+                                  .Width = override_width,
+                                  .Height = override_height,
+                                  .MinDepth = 0.0f,
+                                  .MaxDepth = 1.0f};
+
+            _override_viewport = true;
+         } break;
+         case Aspect_ratio_hud::centre_16_9: {
+            float override_width = render_width;
+            float override_height = render_height;
+
+            if (override_width > override_height) {
+               override_width = override_height * 16.0f / 9.0f;
+            }
+            else {
+               override_height = override_width * 9.0f / 16.0f;
+            }
+
+            _viewport_override = {.TopLeftX = (render_width - override_width) / 2.0f,
+                                  .TopLeftY = (render_height - override_height) / 2.0f,
+                                  .Width = override_width,
+                                  .Height = override_height,
+                                  .MinDepth = 0.0f,
+                                  .MaxDepth = 1.0f};
+
+            _override_viewport = true;
+         } break;
+         }
       }
    }
 
@@ -1661,7 +1712,7 @@ void Shader_patch::update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primit
 
       // Update viewport.
       {
-         const D3D11_VIEWPORT viewport =
+         D3D11_VIEWPORT viewport =
             rt.type == Game_rt_type::presentation
                ? CD3D11_VIEWPORT{(_swapchain.width() - _render_width) / 2.0f,
                                  (_swapchain.height() - _render_height) / 2.0f,
@@ -1669,6 +1720,8 @@ void Shader_patch::update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primit
                                  static_cast<float>(_render_height)}
                : CD3D11_VIEWPORT{0.0f, 0.0f, static_cast<float>(rt.width),
                                  static_cast<float>(rt.height)};
+
+         if (_override_viewport) viewport = _viewport_override;
 
          _device_context->RSSetViewports(1, &viewport);
 
@@ -1761,6 +1814,7 @@ void Shader_patch::update_frame_state() noexcept
    _oit_active = false;
    _stock_bloom_used_last_frame = std::exchange(_stock_bloom_used, false);
    _effects_postprocessing_applied = false;
+   _override_viewport = false;
 }
 
 void Shader_patch::update_imgui() noexcept

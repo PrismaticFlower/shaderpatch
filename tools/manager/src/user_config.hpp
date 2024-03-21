@@ -53,6 +53,12 @@ struct user_config {
 
       bool_user_config_value{L"Scalable Fonts", true, L"On", L"Off"},
 
+      bool_user_config_value{L"Aspect Ratio Hack", false, L"On", L"Off"},
+      enum_user_config_value{L"Aspect Ratio Hack HUD Handling",
+                             L"Centre 4_3",
+                             {L"Stretch 4_3", L"Centre 4_3", L"Stretch 16_9",
+                              L"Centre 16_9"}},
+
       bool_user_config_value{L"Enable Game Perceived Resolution Override", false},
       uint2_user_config_value{L"Game Perceived Resolution Override",
                               {1920, 1080},
