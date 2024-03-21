@@ -51,7 +51,7 @@ Com_ptr<Device> Device::create(IDirect3D9& parent, IDXGIAdapter4& adapter,
 Device::Device(IDirect3D9& parent, IDXGIAdapter4& adapter, const HWND window,
                const UINT width, const UINT height) noexcept
    : _parent{parent},
-     _shader_patch{adapter, window, width, height},
+     _shader_patch{adapter, window, width, height, width, height},
      _adapter{copy_raw_com_ptr(adapter)},
      _window{window},
      _actual_width{width},
@@ -334,7 +334,8 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
 
    _render_state_manager.reset();
    _texture_stage_manager.reset();
-   _shader_patch.reset(reset_flags, _actual_width, _actual_height);
+   _shader_patch.reset(reset_flags, _actual_width, _actual_height, window_width,
+                       window_height);
    _shader_patch.set_text_dpi(text_dpi);
    _fixed_func_active = true;
 

@@ -14,7 +14,8 @@ class Swapchain {
 public:
    constexpr static auto format = DXGI_FORMAT_R8G8B8A8_UNORM;
 
-   Swapchain(Com_ptr<ID3D11Device1> device, const HWND window) noexcept;
+   Swapchain(Com_ptr<ID3D11Device1> device, const HWND window, const UINT width,
+             const UINT height) noexcept;
 
    ~Swapchain() = default;
 
@@ -26,7 +27,7 @@ public:
 
    void reset(ID3D11DeviceContext& dc) noexcept;
 
-   void resize(const bool fullscreen) noexcept;
+   void resize(const bool fullscreen, const UINT width, const UINT height) noexcept;
 
    auto present() noexcept -> Present_status;
 

@@ -11,8 +11,9 @@ namespace {
 
 constexpr auto swap_chain_buffers = 2;
 
-auto create_swapchain(ID3D11Device1& device, const HWND window,
-                      const bool allow_tearing) noexcept -> Com_ptr<IDXGISwapChain1>
+auto create_swapchain(ID3D11Device1& device, const HWND window, const UINT width,
+                      const UINT height, const bool allow_tearing) noexcept
+   -> Com_ptr<IDXGISwapChain1>
 {
    Com_ptr<IDXGIDevice> dxgi_device;
 
@@ -37,8 +38,8 @@ auto create_swapchain(ID3D11Device1& device, const HWND window,
 
    DXGI_SWAP_CHAIN_DESC1 swap_chain_desc;
 
-   swap_chain_desc.Width = 0;
-   swap_chain_desc.Height = 0;
+   swap_chain_desc.Width = width;
+   swap_chain_desc.Height = height;
    swap_chain_desc.Format = Swapchain::format;
    swap_chain_desc.Stereo = false;
    swap_chain_desc.SampleDesc = {1, 0};
@@ -88,24 +89,20 @@ bool supports_tearing() noexcept
 
 }
 
-Swapchain::Swapchain(Com_ptr<ID3D11Device1> device, const HWND window) noexcept
+Swapchain::Swapchain(Com_ptr<ID3D11Device1> device, const HWND window,
+                     const UINT width, const UINT height) noexcept
    : _device{device},
-     _swapchain{create_swapchain(*device, window,
+     _swapchain{create_swapchain(*device, window, width, height,
                                  supports_tearing() && user_config.display.allow_tearing)},
      _window{window},
      _allow_tearing{supports_tearing() && user_config.display.allow_tearing},
-     _fullscreen{false}
+     _fullscreen{false},
+     _width{width},
+     _height{height}
 {
    _swapchain->GetBuffer(0, IID_PPV_ARGS(_texture.clear_and_assign()));
    _device->CreateRenderTargetView(_texture.get(), nullptr, _rtv.clear_and_assign());
    _device->CreateShaderResourceView(_texture.get(), nullptr, _srv.clear_and_assign());
-
-   DXGI_SWAP_CHAIN_DESC1 desc{};
-
-   _swapchain->GetDesc1(&desc);
-
-   _width = desc.Width;
-   _height = desc.Height;
 }
 
 void Swapchain::reset(ID3D11DeviceContext& dc) noexcept
@@ -117,11 +114,13 @@ void Swapchain::reset(ID3D11DeviceContext& dc) noexcept
    dc.ClearState();
    dc.Flush();
 
-   resize(_fullscreen);
+   resize(_fullscreen, _width, _height);
 }
 
-void Swapchain::resize(const bool fullscreen) noexcept
+void Swapchain::resize(const bool fullscreen, const UINT width, const UINT height) noexcept
 {
+   _width = width;
+   _height = height;
    _fullscreen = fullscreen;
 
    _texture = nullptr;
@@ -129,7 +128,7 @@ void Swapchain::resize(const bool fullscreen) noexcept
    _srv = nullptr;
 
    _swapchain->SetFullscreenState(_fullscreen, nullptr);
-   _swapchain->ResizeBuffers(swap_chain_buffers, 0, 0, format,
+   _swapchain->ResizeBuffers(swap_chain_buffers, _width, _height, format,
                              DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH |
                                 (_allow_tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING
                                                 : 0));
@@ -138,13 +137,6 @@ void Swapchain::resize(const bool fullscreen) noexcept
                          _texture.void_clear_and_assign());
    _device->CreateRenderTargetView(_texture.get(), nullptr, _rtv.clear_and_assign());
    _device->CreateShaderResourceView(_texture.get(), nullptr, _srv.clear_and_assign());
-
-   DXGI_SWAP_CHAIN_DESC1 desc{};
-
-   _swapchain->GetDesc1(&desc);
-
-   _width = desc.Width;
-   _height = desc.Height;
 }
 
 auto Swapchain::present() noexcept -> Present_status

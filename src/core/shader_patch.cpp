@@ -96,13 +96,14 @@ auto create_device(IDXGIAdapter4& adapater) noexcept -> Com_ptr<ID3D11Device5>
 }
 
 Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
-                           const UINT width, const UINT height) noexcept
+                           const UINT render_width, const UINT render_height,
+                           const UINT window_width, const UINT window_height) noexcept
    : _device{create_device(adapter)},
-     _render_width{width},
-     _render_height{height},
-     _window_width{width},
-     _window_height{height},
-     _swapchain{_device, window},
+     _render_width{render_width},
+     _render_height{render_height},
+     _window_width{window_width},
+     _window_height{window_height},
+     _swapchain{_device, window, window_width, window_height},
      _window{window},
      _nearscene_depthstencil{*_device, _render_width, _render_height,
                              to_sample_count(user_config.graphics.antialiasing_method)},
@@ -148,7 +149,9 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
 
 Shader_patch::~Shader_patch() = default;
 
-void Shader_patch::reset(const Reset_flags flags, const UINT width, const UINT height) noexcept
+void Shader_patch::reset(const Reset_flags flags, const UINT render_width,
+                         const UINT render_height, const UINT window_width,
+                         const UINT window_height) noexcept
 {
    _device_context->ClearState();
    _game_rendertargets.clear();
@@ -156,11 +159,11 @@ void Shader_patch::reset(const Reset_flags flags, const UINT width, const UINT h
    _effects.postprocess.color_grading_regions({});
    _oit_provider.clear_resources();
 
-   _render_width = width;
-   _render_height = height;
-   _window_width = width;
-   _window_height = height;
-   _swapchain.resize(flags.legacy_fullscreen);
+   _render_width = render_width;
+   _render_height = render_height;
+   _window_width = window_width;
+   _window_height = window_height;
+   _swapchain.resize(flags.legacy_fullscreen, window_width, window_height);
    _game_rendertargets.emplace_back() = _swapchain.game_rendertarget();
    _nearscene_depthstencil = {*_device, _render_width, _render_height, _rt_sample_count};
    _farscene_depthstencil = {*_device, _render_width, _render_height, 1};

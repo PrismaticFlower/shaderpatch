@@ -77,8 +77,9 @@ using Texture_handle =
 
 class Shader_patch {
 public:
-   Shader_patch(IDXGIAdapter4& adapter, const HWND window, const UINT width,
-                const UINT height) noexcept;
+   Shader_patch(IDXGIAdapter4& adapter, const HWND window,
+                const UINT render_width, const UINT render_height,
+                const UINT window_width, const UINT window_height) noexcept;
 
    ~Shader_patch();
 
@@ -88,7 +89,8 @@ public:
    Shader_patch(Shader_patch&&) = delete;
    Shader_patch& operator=(Shader_patch&&) = delete;
 
-   void reset(const Reset_flags flags, const UINT width, const UINT height) noexcept;
+   void reset(const Reset_flags flags, const UINT render_width, const UINT render_height,
+              const UINT window_width, const UINT window_height) noexcept;
 
    void set_text_dpi(const std::uint32_t dpi) noexcept;
 
