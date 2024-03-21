@@ -234,6 +234,11 @@ void Shader_patch::present() noexcept
       update_material_resources();
    }
 
+   if (_set_aspect_ratio_on_present) {
+      game_support::set_aspect_ratio(static_cast<float>(_render_height) /
+                                     static_cast<float>(_render_width));
+   }
+
    update_frame_state();
    update_effects();
    update_rendertargets();
@@ -895,7 +900,8 @@ void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
          const float render_height = static_cast<float>(_render_height);
 
          game_support::find_aspect_ratio(_expected_aspect_ratio);
-         game_support::set_aspect_ratio(render_height / render_width);
+
+         _set_aspect_ratio_on_present = true;
 
          switch (user_config.display.aspect_ratio_hack_hud) {
          case Aspect_ratio_hud::centre_4_3: {
@@ -908,6 +914,8 @@ void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
             else {
                override_height = override_width * 3.0f / 4.0f;
             }
+
+            game_support::set_aspect_ratio(override_height / override_width);
 
             _viewport_override = {.TopLeftX = (render_width - override_width) / 2.0f,
                                   .TopLeftY = (render_height - override_height) / 2.0f,
@@ -928,6 +936,8 @@ void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
             else {
                override_height = override_width * 9.0f / 16.0f;
             }
+
+            game_support::set_aspect_ratio(override_height / override_width);
 
             _viewport_override = {.TopLeftX = (render_width - override_width) / 2.0f,
                                   .TopLeftY = (render_height - override_height) / 2.0f,
@@ -1821,6 +1831,7 @@ void Shader_patch::update_frame_state() noexcept
    _stock_bloom_used_last_frame = std::exchange(_stock_bloom_used, false);
    _effects_postprocessing_applied = false;
    _override_viewport = false;
+   _set_aspect_ratio_on_present = false;
 }
 
 void Shader_patch::update_imgui() noexcept

@@ -399,6 +399,7 @@ private:
    bool _stock_bloom_used_last_frame = false;
    bool _effects_postprocessing_applied = false;
    bool _override_viewport = false;
+   bool _set_aspect_ratio_on_present = false;
 
    bool _aspect_ratio_hack_enabled = false;
    bool _imgui_enabled = false;
