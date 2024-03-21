@@ -49,6 +49,7 @@ struct user_config {
 
       bool_user_config_value{L"Display Scaling Aware", true, L"Yes", L"No"},
       bool_user_config_value{L"Display Scaling", true, L"On", L"Off"},
+      bool_user_config_value{L"DSR-VSR Display Scaling", true, L"On", L"Off"},
 
       bool_user_config_value{L"Scalable Fonts", true, L"On", L"Off"},
 

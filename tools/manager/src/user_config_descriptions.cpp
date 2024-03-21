@@ -41,6 +41,11 @@ LR"(When `Display Scaling Aware` is `yes` controls if the game's perceived resol
 },
 
 {
+L"DSR-VSR Display Scaling"sv,      
+LR"(When `Display Scaling Aware` is `yes` controls if the game's perceived resolution will be scaled based on if Shader Patch detects Dynamic Super Resolution/Virtual Super Resolution being used. The detection is based on if the game's resolution increases past the starting desktop resolution.)"sv
+},
+
+{
 L"Scalable Fonts"sv,      
 LR"(Whether to replace the game's core fonts with ones that can be scaled. If you have any mods installed that also replace the game's fonts when this setting is enabled then they will be superseded by Shader Patch's fonts.)"sv
 },

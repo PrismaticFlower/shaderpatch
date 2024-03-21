@@ -133,6 +133,9 @@ void User_config::parse_file(const std::string& path)
    display.dpi_scaling =
       config["Display"s]["Display Scaling"s].as<bool>(display.dpi_scaling);
 
+   display.dsr_vsr_scaling =
+      config["Display"s]["DSR-VSR Display Scaling"s].as<bool>(display.dsr_vsr_scaling);
+
    display.scalable_fonts =
       config["Display"s]["Scalable Fonts"s].as<bool>(display.scalable_fonts);
 
