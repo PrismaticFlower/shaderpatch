@@ -197,6 +197,11 @@ void Shader_patch::set_text_dpi(const std::uint32_t dpi) noexcept
    _font_atlas_builder.set_dpi(dpi);
 }
 
+void Shader_patch::set_expected_aspect_ratio(const float expected_aspect_ratio) noexcept
+{
+   _expected_aspect_ratio = expected_aspect_ratio;
+}
+
 void Shader_patch::present() noexcept
 {
    _effects.profiler.end_frame(*_device_context);
@@ -889,6 +894,7 @@ void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
          const float render_width = static_cast<float>(_render_width);
          const float render_height = static_cast<float>(_render_height);
 
+         game_support::find_aspect_ratio(_expected_aspect_ratio);
          game_support::set_aspect_ratio(render_height / render_width);
 
          switch (user_config.display.aspect_ratio_hack_hud) {

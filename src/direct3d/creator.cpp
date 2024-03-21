@@ -1,6 +1,5 @@
 
 #include "creator.hpp"
-#include "../game_support/memory_hacks.hpp"
 #include "../logger.hpp"
 #include "../user_config.hpp"
 #include "../window_helpers.hpp"
@@ -216,12 +215,6 @@ HRESULT Creator::CreateDevice(UINT adapter_index, D3DDEVTYPE, HWND focus_window,
 
    if (!((behavior_flags & D3DCREATE_FPU_PRESERVE) == D3DCREATE_FPU_PRESERVE)) {
       update_fp_control();
-   }
-
-   if (user_config.display.aspect_ratio_hack) {
-      game_support::set_aspect_ratio_ptr(
-         std::launder(reinterpret_cast<float*>(returned_device_interface) +
-                      game_support::aspect_ratio_device_ptr_offset));
    }
 
    return S_OK;

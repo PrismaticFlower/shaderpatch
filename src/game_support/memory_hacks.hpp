@@ -2,9 +2,9 @@
 
 namespace sp::game_support {
 
-constexpr int aspect_ratio_device_ptr_offset = -7;
+void set_aspect_ratio_search_ptr(float* aspect_ratio_search_ptr) noexcept;
 
-void set_aspect_ratio_ptr(float* aspect_ratio_ptr) noexcept;
+void find_aspect_ratio(float expected_aspect_ratio);
 
 void set_aspect_ratio(float new_aspect_ratio) noexcept;
 

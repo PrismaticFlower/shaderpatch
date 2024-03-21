@@ -92,6 +92,8 @@ public:
 
    void set_text_dpi(const std::uint32_t dpi) noexcept;
 
+   void set_expected_aspect_ratio(const float expected_aspect_ratio) noexcept;
+
    void present() noexcept;
 
    auto get_back_buffer() noexcept -> Game_rendertarget_id;
@@ -318,6 +320,7 @@ private:
    UINT _render_height = 0;
    UINT _window_width = 0;
    UINT _window_height = 0;
+   float _expected_aspect_ratio = 0.75f;
    Swapchain _swapchain;
 
    Input_layout_descriptions _input_layout_descriptions;

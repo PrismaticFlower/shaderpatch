@@ -1,5 +1,6 @@
 
 #include "device.hpp"
+#include "../game_support/memory_hacks.hpp"
 #include "../user_config.hpp"
 #include "../window_helpers.hpp"
 #include "buffer.hpp"
@@ -313,6 +314,11 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
          }
       } break;
       }
+
+      game_support::set_aspect_ratio_search_ptr(
+         std::launder(reinterpret_cast<float*>(params)));
+      _shader_patch.set_expected_aspect_ratio(static_cast<float>(_perceived_height) /
+                                              static_cast<float>(_perceived_width));
 
       reset_flags.aspect_ratio_hack = true;
    }

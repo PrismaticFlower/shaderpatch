@@ -54,7 +54,7 @@ LR"(Whether to replace the game's core fonts with ones that can be scaled. If yo
 L"Aspect Ratio Hack"sv,      
 LR"(Enables a "hack" (or series of) to override the game's aspect ratio while keeping the HUD visible. It's not perfect but can make the game far more playable at ultrawide aspect ratios than it otherwise would be.
 
-This depends on the game storing it's aspect ratio at a specific offset in memory from where it stores it's IDirect3DDevice9 pointer. This is the case for the current (as of 2024-03-21) Steam & GoG builds of the game. I am unsure about others. This is the only feature in SP to depend on a memory offset in the game.
+This feature will search the memory around the "D3DPRESENT_PARAMETERS" it passes to "IDirect3DDevice9::Reset" for the aspect ratio. It is able to successfully find it on all versions of the game I have (DVD/GoG/Steam/Modtools) and no other values in the area seem to resemble anything looking like an aspect ratio. Which should make it quite reliable. But there is always the tiny chance it'll end up overwriting some random pointer and cause all sorts of fun (hopefully just a crash but who knows), so use at your own risk and all that. This is the only feature in SP to depend on reading or writing a value in the game's memory. And it will NEVER do it unless this is explicitly enabled.
 
 Loading screens will often appear distorted when using this.
 
@@ -63,7 +63,7 @@ See and configure Aspect Ratio Hack HUD Handling below as well.)"sv
 
 {
 L"Aspect Ratio Hack HUD Handling"sv,      
-LR"(How to handle the HUD when using the Aspect Ratio Hack. 
+LR"(How to handle the HUD when using the Aspect Ratio Hack. Can be "Stretch 4_3", "Centre 4_3", "Stretch 16_9" or "Centre 16_9".
 
 In Stretch mode the HUD will be stretched out across the entire screen. This can look acceptable depending on the amount of stretching, a 4:3 HUD stretched to 32:9 will look worse than a 16:9 HUD stretched to the same.
 
