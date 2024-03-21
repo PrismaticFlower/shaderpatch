@@ -202,10 +202,6 @@ void Shader_patch::present() noexcept
    _game_postprocessing.end_frame();
 
    if (_game_rendertargets[0].type != Game_rt_type::presentation) {
-      const std::array<float, 4> black{0.0f, 0.0f, 0.0f, 0.0f};
-
-      _device_context->ClearRenderTargetView(_swapchain.rtv(), black.data());
-
       patch_backbuffer_resolve();
    }
 
@@ -241,6 +237,12 @@ void Shader_patch::present() noexcept
    restore_all_game_state();
 
    if (_patch_backbuffer) _game_rendertargets[0] = _patch_backbuffer;
+
+   if (_game_rendertargets[0].type != Game_rt_type::presentation) {
+      const std::array<float, 4> black{0.0f, 0.0f, 0.0f, 0.0f};
+
+      _device_context->ClearRenderTargetView(_swapchain.rtv(), black.data());
+   }
 }
 
 auto Shader_patch::get_back_buffer() noexcept -> Game_rendertarget_id
