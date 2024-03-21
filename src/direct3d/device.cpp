@@ -213,19 +213,43 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
    _perceived_width = _actual_width;
    _perceived_height = _actual_height;
 
+   UINT window_width = _actual_width;
+   UINT window_height = _actual_height;
+
    if (user_config.display.treat_800x600_as_interface &&
        params->BackBufferWidth == 800 && params->BackBufferHeight == 600) {
       if (!params->Windowed) {
-         _actual_width = _monitor_width;
-         _actual_height = _monitor_height;
+         if (user_config.display.stretch_interface) {
+            _actual_width = _monitor_width;
+            _actual_height = _monitor_height;
+            window_width = _monitor_width;
+            window_height = _monitor_height;
+         }
+         else {
+            if (_monitor_width > _monitor_height) {
+               _actual_width = _monitor_height * 4 / 3;
+               _actual_height = _monitor_height;
+            }
+            else {
+               _actual_width = _monitor_width;
+               _actual_height = _monitor_width * 3 / 4;
+            }
 
-         text_dpi = text_dpi_from_resolution(_actual_width, _actual_height,
-                                             _perceived_width,
-                                             _perceived_height, base_dpi);
+            window_width = _monitor_width;
+            window_height = _monitor_height;
+            text_dpi = text_dpi_from_resolution(_actual_width, _actual_height,
+                                                _perceived_width,
+                                                _perceived_height, base_dpi);
+         }
+
+         legacy_fullscreen = false;
       }
       else if (user_config.display.dpi_aware && user_config.display.dpi_scaling) {
          _actual_width = std::min(800 * dpi / base_dpi, _monitor_width);
          _actual_height = std::min(600 * dpi / base_dpi, _monitor_height);
+
+         window_width = _actual_width;
+         window_height = _actual_height;
       }
    }
    else if (user_config.display.enable_game_perceived_resolution_override) {
@@ -270,11 +294,11 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
    params->BackBufferWidth = _perceived_width;
    params->BackBufferHeight = _perceived_height;
 
-   if (_actual_width == _monitor_width && _actual_height == _monitor_height) {
+   if (window_width == _monitor_width && window_height == _monitor_height) {
       legacy_fullscreen = false;
    }
 
-   win32::position_window(_window, _monitor_width, _monitor_height);
+   win32::position_window(_window, window_width, window_height);
 
    _render_state_manager.reset();
    _texture_stage_manager.reset();

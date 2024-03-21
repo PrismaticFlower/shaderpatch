@@ -124,6 +124,9 @@ void User_config::parse_file(const std::string& path)
       config["Display"s]["Treat 800x600 As Interface"s].as<bool>(
          display.treat_800x600_as_interface);
 
+   display.stretch_interface =
+      config["Display"s]["Stretch Interface"s].as<bool>(display.stretch_interface);
+
    display.dpi_aware =
       config["Display"s]["Display Scaling Aware"s].as<bool>(display.dpi_aware);
 

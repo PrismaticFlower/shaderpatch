@@ -45,6 +45,7 @@ struct user_config {
                              L"Tearing Disallowed"},
 
       bool_user_config_value{L"Treat 800x600 As Interface", true, L"Yes", L"No"},
+      bool_user_config_value{L"Stretch Interface", false, L"Yes", L"No"},
 
       bool_user_config_value{L"Display Scaling Aware", true, L"Yes", L"No"},
       bool_user_config_value{L"Display Scaling", true, L"On", L"Off"},

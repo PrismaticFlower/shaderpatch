@@ -26,6 +26,11 @@ LR"(Whether 800x600 will be treated as the resolution used by the game's main me
 },
 
 {
+L"Stretch Interface"sv,      
+LR"(When Treat 800x600 As Interface is enabled controls if the interface will be stretched across the screen or if it's 4:3 aspect ratio will be maintained using black bars.)"sv
+},
+
+{
 L"Display Scaling Aware"sv,      
 LR"(Whether to mark the game DPI aware or not. When your display scaling is not at 100% having this be `yes` keeps the game being drawn at native resolution and stops Windows' upscaling it after the fact.)"sv
 },
