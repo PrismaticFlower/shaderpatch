@@ -71,7 +71,11 @@ inline auto make_freetype_face(FT_Library library,
 {
    FT_Face raw_face = nullptr;
 
-   freetype_checked_call(FT_New_Face(library, font_path.string().c_str(), 0, &raw_face));
+   const std::string path = font_path.string();
+
+   if (FT_New_Face(library, path.c_str(), 0, &raw_face)) {
+      log_and_terminate_fmt("FreeType was unable to load font: {}", path);
+   }
 
    return Freetype_ptr<FT_Face, FT_Done_Face>{raw_face};
 }
