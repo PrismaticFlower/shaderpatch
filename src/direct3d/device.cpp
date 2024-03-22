@@ -211,6 +211,22 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
 
    _actual_width = params->BackBufferWidth;
    _actual_height = params->BackBufferHeight;
+
+   if (user_config.display.override_resolution) {
+      if (user_config.display.treat_800x600_as_interface &&
+          _actual_width == 800 && _actual_height == 600) {
+         // Do Nothing!
+      }
+      else {
+         _actual_width = _monitor_width *
+                         user_config.display.override_resolution_screen_percent / 100;
+         _actual_height = _monitor_height *
+                          user_config.display.override_resolution_screen_percent / 100;
+      }
+
+      reset_flags.legacy_fullscreen = false;
+   }
+
    _perceived_width = _actual_width;
    _perceived_height = _actual_height;
 

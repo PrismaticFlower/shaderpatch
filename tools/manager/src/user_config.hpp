@@ -63,6 +63,9 @@ struct user_config {
       uint2_user_config_value{L"Game Perceived Resolution Override",
                               {1920, 1080},
                               {L"Width", L"Height"}},
+
+      bool_user_config_value{L"Override Resolution", false},
+      percentage_user_config_value{L"Override Resolution Screen Percent", 100, 50},
    };
 
    user_config_value_vector user_interface = {

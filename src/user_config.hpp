@@ -72,6 +72,8 @@ struct User_config {
       bool enable_game_perceived_resolution_override = false;
       std::uint32_t game_perceived_resolution_override_width = 1920;
       std::uint32_t game_perceived_resolution_override_height = 1080;
+      bool override_resolution = false;
+      std::uint32_t override_resolution_screen_percent = 100;
    } display;
 
    struct {

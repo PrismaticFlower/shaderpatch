@@ -158,6 +158,14 @@ void User_config::parse_file(const std::string& path)
       config["Display"s]["Aspect Ratio Hack HUD Handling"s].as<std::string>(
          to_string(display.aspect_ratio_hack_hud)));
 
+   display.override_resolution =
+      config["Display"s]["Override Resolution"s].as<bool>(display.override_resolution);
+
+   display.override_resolution_screen_percent =
+      std::clamp(config["Display"s]["Override Resolution Screen Percent"s].as<std::uint32_t>(
+                    display.override_resolution_screen_percent),
+                 50u, 100u);
+
    ui.extra_ui_scaling =
       std::clamp(config["User Interface"s]["Extra UI Scaling"s].as<std::uint32_t>(
                     ui.extra_ui_scaling),

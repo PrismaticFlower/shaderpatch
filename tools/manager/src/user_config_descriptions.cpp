@@ -86,6 +86,16 @@ LR"(The override for the game's perceived resolution, for use with `Enable Game 
 },
 
 {
+L"Override Resolution"sv,      
+LR"(Enables the overriding the resolution the game will be rendered at to a percentage of the monitor's resolution. This is mostly intended for use with modtools' debug .exe.)"sv
+},
+
+{
+L"Override Resolution Screen Percent"sv,      
+LR"(When Override Resolution is enabled the percentage of the screen the game's window will take up.)"sv
+},
+
+{
 L"User Interface"sv,      
 LR"(Settings affecting the user interface/HUD of the game.
 
