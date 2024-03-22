@@ -308,8 +308,7 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
                                           _perceived_height, base_dpi);
    }
 
-   if (user_config.display.aspect_ratio_hack && _perceived_width != 800 &&
-       _perceived_height != 600) {
+   if (user_config.display.aspect_ratio_hack) {
       switch (user_config.display.aspect_ratio_hack_hud) {
       case Aspect_ratio_hud::centre_4_3:
       case Aspect_ratio_hud::stretch_4_3: {
