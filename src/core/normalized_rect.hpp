@@ -17,10 +17,10 @@ inline auto make_normalized_rect(const RECT& rect, const UINT width,
    const double width_flt = width;
    const double height_flt = height;
 
-   return {.left = (rect.left + 0.5f) / width_flt,
-           .top = (rect.top + 0.5f) / height_flt,
-           .right = (rect.right + 0.5f) / width_flt,
-           .bottom = (rect.bottom + +0.5f) / height_flt};
+   return {.left = rect.left / width_flt,
+           .top = rect.top / height_flt,
+           .right = rect.right / width_flt,
+           .bottom = rect.bottom / height_flt};
 }
 
 inline auto to_box(const Game_rendertarget& rt, const Normalized_rect& rect) noexcept
