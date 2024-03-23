@@ -256,7 +256,6 @@
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5054;4275;4251;4127;4018</DisableSpecificWarnings>
     </ClCompile>
     <ClCompile Include="src\input_config.cpp" />
-    <ClCompile Include="src\input_hooker.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\material\constant_buffer_builder.cpp" />
     <ClCompile Include="src\material\editor.cpp" />
@@ -268,6 +267,7 @@
     <ClCompile Include="src\material\shader_factory.cpp" />
     <ClCompile Include="src\material\shader_set.cpp" />
     <ClCompile Include="src\material\sol_create_usertypes.cpp" />
+    <ClCompile Include="src\message_hooks.cpp" />
     <ClCompile Include="src\shader\cache.cpp" />
     <ClCompile Include="src\shader\compiler.cpp" />
     <ClCompile Include="src\shader\database.cpp" />
@@ -395,7 +395,6 @@
     <ClInclude Include="src\imgui\imstb_rectpack.h" />
     <ClInclude Include="src\imgui\imstb_textedit.h" />
     <ClInclude Include="src\imgui\imstb_truetype.h" />
-    <ClInclude Include="src\input_hooker.hpp" />
     <ClInclude Include="src\input_config.hpp" />
     <ClInclude Include="src\logger.hpp" />
     <ClInclude Include="src\material\constant_buffer_builder.hpp" />
@@ -408,6 +407,7 @@
     <ClInclude Include="src\material\shader_set.hpp" />
     <ClInclude Include="src\material\sol_create_usertypes.hpp" />
     <ClInclude Include="src\material\resource_info_view.hpp" />
+    <ClInclude Include="src\message_hooks.hpp" />
     <ClInclude Include="src\shader\bytecode_blob.hpp" />
     <ClInclude Include="src\shader\cache.hpp" />
     <ClInclude Include="src\shader\common.hpp" />
