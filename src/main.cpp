@@ -17,6 +17,10 @@ namespace {
 
 auto load_system_d3d9_dll() noexcept -> HMODULE
 {
+   static HMODULE handle = nullptr;
+
+   if (handle != nullptr) return handle;
+
    std::wstring buffer;
    buffer.resize(512u);
 
@@ -25,7 +29,7 @@ auto load_system_d3d9_dll() noexcept -> HMODULE
 
    buffer += LR"(\d3d9.dll)";
 
-   const static auto handle = LoadLibraryW(buffer.c_str());
+   handle = LoadLibraryW(buffer.c_str());
 
    if (handle == nullptr) std::terminate();
 
