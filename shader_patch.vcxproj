@@ -227,6 +227,7 @@
     <ClCompile Include="src\effects\profiler.cpp" />
     <ClCompile Include="src\effects\ssao.cpp" />
     <ClCompile Include="src\file_hooks.cpp" />
+    <ClCompile Include="src\freetype_helpers.cpp" />
     <ClCompile Include="src\game_support\font_declarations.cpp" />
     <ClCompile Include="src\game_support\memory_hacks.cpp" />
     <ClCompile Include="src\game_support\munged_shader_declarations.cpp" />

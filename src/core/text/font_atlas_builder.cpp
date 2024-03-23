@@ -142,11 +142,15 @@ auto pack_glyphs(const std::array<Rendered_glyph, glyph_count>& rendered_glyphs,
 }
 
 struct Freetype_state {
-   explicit Freetype_state(const std::filesystem::path& font_path) noexcept
+   explicit Freetype_state(std::vector<FT_Byte> font_data) noexcept
+      : font_data{std::move(font_data)}
    {
-      for (auto& face : faces) face = make_freetype_face(library, font_path);
+      for (auto& face : faces) {
+         face = make_freetype_face(library, this->font_data);
+      }
    }
 
+   std::vector<FT_Byte> font_data;
    Freetype_ptr<FT_Library, FT_Done_FreeType> library = make_freetype_library();
    std::array<Freetype_ptr<FT_Face, FT_Done_Face>, atlas_count> faces;
 };
@@ -154,8 +158,8 @@ struct Freetype_state {
 Font_atlas_builder::Font_atlas_builder(Com_ptr<ID3D11Device5> device) noexcept
    : _device{device}
 {
-   _freetype_state = std::make_unique<Freetype_state>(
-      windows_fonts_folder() / user_config.developer.scalable_font_name);
+   _freetype_state = std::make_unique<Freetype_state>(load_font_data(
+      windows_fonts_folder() / user_config.developer.scalable_font_name));
 }
 
 Font_atlas_builder::~Font_atlas_builder()
@@ -184,7 +188,7 @@ bool Font_atlas_builder::update_srv_database(Shader_resource_database& database)
    bool updated = false;
 
    for (std::size_t i = 0; i < atlas_count; ++i) {
-      if (!std::exchange(_atlas_dirty[i], false)) continue;
+      if (!_atlas_dirty[i].exchange(false)) continue;
 
       database.insert(_atlas_index_srv[i], atlas_index_names[i]);
       database.insert(_atlas_texture_srv[i], atlas_names[i]);
@@ -300,7 +304,7 @@ void Font_atlas_builder::build_atlas(const std::size_t atlas_index,
    _atlas_index_srv[atlas_index] = atlas_index_srv;
    _atlas_texture[atlas_index] = atlas_texture;
    _atlas_texture_srv[atlas_index] = atlas_texture_srv;
-   _atlas_dirty[atlas_index] = true;
+   _atlas_dirty[atlas_index].store(true);
 }
 
 }

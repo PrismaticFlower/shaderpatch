@@ -281,6 +281,7 @@
     <ClCompile Include="src\core\tools\pixel_inspector.cpp" />
     <ClCompile Include="src\material\resource_info_view.cpp" />
     <ClCompile Include="src\game_support\memory_hacks.cpp" />
+    <ClCompile Include="src\freetype_helpers.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">

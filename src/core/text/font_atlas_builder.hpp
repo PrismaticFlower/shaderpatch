@@ -43,7 +43,7 @@ private:
    std::array<Com_ptr<ID3D11ShaderResourceView>, atlas_count> _atlas_index_srv;
    std::array<Com_ptr<ID3D11Texture2D>, atlas_count> _atlas_texture;
    std::array<Com_ptr<ID3D11ShaderResourceView>, atlas_count> _atlas_texture_srv;
-   std::array<bool, atlas_count> _atlas_dirty{};
+   std::array<std::atomic_bool, atlas_count> _atlas_dirty{};
 
    std::unique_ptr<Freetype_state> _freetype_state;
    std::atomic_bool _cancel_build = false;

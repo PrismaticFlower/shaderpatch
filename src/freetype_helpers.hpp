@@ -3,6 +3,7 @@
 #include "logger.hpp"
 
 #include <filesystem>
+#include <span>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -52,32 +53,15 @@ private:
 inline void freetype_checked_call(const FT_Error error)
 {
    if (error)
-      log_and_terminate("FreeType has reported an error. Unable to build font atlas!"sv);
+      log_and_terminate_fmt("FreeType has reported an error: {}"sv,
+                            FT_Error_String(error));
 }
 
-inline auto make_freetype_library() noexcept -> Freetype_ptr<FT_Library, FT_Done_FreeType>
-{
+auto make_freetype_library() noexcept -> Freetype_ptr<FT_Library, FT_Done_FreeType>;
 
-   FT_Library raw_library = nullptr;
+auto make_freetype_face(FT_Library library, std::span<const FT_Byte> data) noexcept
+   -> Freetype_ptr<FT_Face, FT_Done_Face>;
 
-   freetype_checked_call(FT_Init_FreeType(&raw_library));
-
-   return Freetype_ptr<FT_Library, FT_Done_FreeType>{raw_library};
-}
-
-inline auto make_freetype_face(FT_Library library,
-                               const std::filesystem::path& font_path) noexcept
-   -> Freetype_ptr<FT_Face, FT_Done_Face>
-{
-   FT_Face raw_face = nullptr;
-
-   const std::string path = font_path.string();
-
-   if (FT_New_Face(library, path.c_str(), 0, &raw_face)) {
-      log_and_terminate_fmt("FreeType was unable to load font: {}", path);
-   }
-
-   return Freetype_ptr<FT_Face, FT_Done_Face>{raw_face};
-}
+auto load_font_data(const std::filesystem::path& font_path) -> std::vector<FT_Byte>;
 
 }
