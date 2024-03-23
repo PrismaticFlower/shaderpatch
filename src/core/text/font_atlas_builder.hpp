@@ -27,6 +27,8 @@ public:
 
    bool update_srv_database(Shader_resource_database& database) noexcept;
 
+   static bool use_scalable_fonts() noexcept;
+
 private:
    void build_atlases(const std::uint32_t dpi) noexcept;
 

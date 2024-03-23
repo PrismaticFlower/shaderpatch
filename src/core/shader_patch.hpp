@@ -489,7 +489,10 @@ private:
 
    D3D11_VIEWPORT _viewport_override = {};
 
-   text::Font_atlas_builder _font_atlas_builder{_device};
+   std::unique_ptr<text::Font_atlas_builder> _font_atlas_builder =
+      text::Font_atlas_builder::use_scalable_fonts()
+         ? std::make_unique<text::Font_atlas_builder>(_device)
+         : nullptr;
 
    std::unique_ptr<BF2_log_monitor> _bf2_log_monitor;
 

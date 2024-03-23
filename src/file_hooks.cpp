@@ -113,10 +113,20 @@ auto edit_core_lvl_fonts(ucfb::Editor& core_editor,
 
 auto edit_core_lvl() noexcept -> win32::Unique_handle
 {
-   auto replacement_fonts_future = std::async(std::launch::async, [] {
-      return game_support::create_font_declarations(
-         windows_fonts_folder() / user_config.developer.scalable_font_name);
-   });
+   const bool use_scalable_fonts =
+      user_config.display.scalable_fonts &&
+      std::filesystem::exists(windows_fonts_folder() /
+                              user_config.developer.scalable_font_name);
+
+   auto replacement_fonts_future =
+      use_scalable_fonts
+         ? std::async(std::launch::async,
+                      [] {
+                         return game_support::create_font_declarations(
+                            windows_fonts_folder() /
+                            user_config.developer.scalable_font_name);
+                      })
+         : std::future<game_support::Font_declarations>{};
 
    constexpr static auto is_parent = [](const Magic_number mn) noexcept {
       return mn == "font"_mn;
@@ -143,8 +153,15 @@ auto edit_core_lvl() noexcept -> win32::Unique_handle
    core_editor.insert(core_editor.end(), shader_declarations.begin(),
                       shader_declarations.end());
 
-   if (user_config.display.scalable_fonts) {
+   if (use_scalable_fonts) {
       edit_core_lvl_fonts(core_editor, replacement_fonts_future.get());
+   }
+   else if (user_config.display.scalable_fonts) {
+      log_fmt(Log_level::error,
+              "Scalable Fonts have been disabled as the font "
+              "'{}\\{}' is missing.",
+              windows_fonts_folder().string(),
+              user_config.developer.scalable_font_name.string());
    }
 
    auto [ostream, file_handle] = create_tmp_file();

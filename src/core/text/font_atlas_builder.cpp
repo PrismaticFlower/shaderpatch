@@ -199,6 +199,16 @@ bool Font_atlas_builder::update_srv_database(Shader_resource_database& database)
    return updated;
 }
 
+bool Font_atlas_builder::use_scalable_fonts() noexcept
+{
+   const static bool use =
+      user_config.display.scalable_fonts &&
+      std::filesystem::exists(windows_fonts_folder() /
+                              user_config.developer.scalable_font_name);
+
+   return use;
+}
+
 void Font_atlas_builder::build_atlases(const std::uint32_t dpi) noexcept
 {
    std::for_each_n(std::execution::par, Index_iterator{}, atlas_count,

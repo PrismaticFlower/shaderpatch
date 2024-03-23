@@ -197,7 +197,7 @@ void Shader_patch::reset(const Reset_flags flags, const UINT render_width,
 
 void Shader_patch::set_text_dpi(const std::uint32_t dpi) noexcept
 {
-   _font_atlas_builder.set_dpi(dpi);
+   if (_font_atlas_builder) _font_atlas_builder->set_dpi(dpi);
 }
 
 void Shader_patch::set_expected_aspect_ratio(const float expected_aspect_ratio) noexcept
@@ -233,7 +233,8 @@ void Shader_patch::present() noexcept
 
    _shader_database.cache_update();
 
-   if (_font_atlas_builder.update_srv_database(_shader_resource_database)) {
+   if (_font_atlas_builder &&
+       _font_atlas_builder->update_srv_database(_shader_resource_database)) {
       update_material_resources();
    }
 
