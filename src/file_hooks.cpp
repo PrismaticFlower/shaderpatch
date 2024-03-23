@@ -23,7 +23,6 @@
 #include <absl/container/inlined_vector.h>
 
 #include <Windows.h>
-#include <detours/detours.h>
 #include <io.h>
 
 namespace sp {
@@ -286,7 +285,11 @@ print(string.format("Shader Patch Scripting API loaded. Shader Patch version is 
    return std::move(file_handle);
 }
 
-decltype(&CreateFileA) true_CreateFileA = CreateFileA;
+}
+
+}
+
+using namespace sp;
 
 extern "C" HANDLE WINAPI CreateFileA_hook(LPCSTR file_name,
                                           DWORD desired_access, DWORD share_mode,
@@ -302,28 +305,6 @@ extern "C" HANDLE WINAPI CreateFileA_hook(LPCSTR file_name,
          return get_sp_api_script().release();
    }
 
-   return true_CreateFileA(file_name, desired_access, share_mode,
-                           security_attributes, creation_disposition,
-                           flags_and_attributes, template_file);
-}
-
-}
-
-void install_file_hooks() noexcept
-{
-   bool failure = true;
-
-   if (DetourTransactionBegin() == NO_ERROR) {
-      if (DetourAttach(&reinterpret_cast<PVOID&>(true_CreateFileA),
-                       CreateFileA_hook) == NO_ERROR) {
-         if (DetourTransactionCommit() == NO_ERROR) {
-            failure = false;
-         }
-      }
-   }
-
-   if (failure) {
-      log_and_terminate("Failed to install file hooks."sv);
-   }
-}
+   return CreateFileA(file_name, desired_access, share_mode, security_attributes,
+                      creation_disposition, flags_and_attributes, template_file);
 }

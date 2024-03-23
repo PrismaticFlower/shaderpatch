@@ -44,11 +44,20 @@ auto get_dll_export(const HMODULE dll_handle, const char* const export_name)
    return address;
 }
 
-void install_game_d3d9_redirection() noexcept
+constexpr int processed_flags_none = 0b0;
+constexpr int processed_flags_d3d9 = 0b1;
+constexpr int processed_flags_kernel32 = 0b10;
+constexpr int processed_flags_user32 = 0b100;
+constexpr int processed_flags_all =
+   processed_flags_d3d9 | processed_flags_kernel32 | processed_flags_user32;
+
+enum class Inside { unknown, d3d9, kernel32, user32 };
+
+void install_game_redirections() noexcept
 {
    struct enumerate_context {
-      bool inside_d3d9_imports = false;
-      bool processed_d3d9_imports = false;
+      Inside inside = Inside::unknown;
+      int processed = processed_flags_none;
    };
 
    enumerate_context context{};
@@ -58,10 +67,20 @@ void install_game_d3d9_redirection() noexcept
       [](PVOID void_context, [[maybe_unused]] HMODULE module, LPCSTR name) noexcept -> BOOL {
          auto& context = *static_cast<enumerate_context*>(void_context);
 
-         if (context.processed_d3d9_imports) return false;
+         context.inside = Inside::unknown;
 
-         if (name && _strcmpi("d3d9.dll", name) == 0) {
-            context.inside_d3d9_imports = true;
+         if (context.processed == processed_flags_all) return false;
+
+         if (name) {
+            if (_strcmpi("d3d9.dll", name) == 0) {
+               context.inside = Inside::d3d9;
+            }
+            else if (_strcmpi("kernel32.dll", name) == 0) {
+               context.inside = Inside::kernel32;
+            }
+            else if (_strcmpi("user32.dll", name) == 0) {
+               context.inside = Inside::user32;
+            }
          }
 
          return true;
@@ -72,13 +91,41 @@ void install_game_d3d9_redirection() noexcept
 
          auto& context = *static_cast<enumerate_context*>(void_context);
 
-         if (context.inside_d3d9_imports) {
-            context.processed_d3d9_imports = true;
+         if (context.inside == Inside::d3d9) {
+            context.processed |= processed_flags_d3d9;
 
             if (strcmp("Direct3DCreate9", name) == 0) {
                auto memory_lock = sp::unlock_memory(func_ptr_ptr, sizeof(void*));
 
                *func_ptr_ptr = shader_patch_direct3d9_create;
+
+               return false;
+            }
+
+            return true;
+         }
+         else if (context.inside == Inside::kernel32) {
+            context.processed |= processed_flags_kernel32;
+
+            if (strcmp("CreateFileA", name) == 0) {
+               auto memory_lock = sp::unlock_memory(func_ptr_ptr, sizeof(void*));
+
+               *func_ptr_ptr = CreateFileA_hook;
+
+               return false;
+            }
+
+            return true;
+         }
+         else if (context.inside == Inside::user32) {
+            context.processed |= processed_flags_user32;
+
+            if (strcmp("CreateWindowExA", name) == 0) {
+               auto memory_lock = sp::unlock_memory(func_ptr_ptr, sizeof(void*));
+
+               *func_ptr_ptr = CreateWindowExA_hook;
+
+               sp::init_window_hook_game_thread_id(GetCurrentThreadId());
 
                return false;
             }
@@ -95,9 +142,7 @@ void install_game_d3d9_redirection() noexcept
 BOOL WINAPI DllMain(HINSTANCE, DWORD reason, LPVOID)
 {
    if (reason == DLL_PROCESS_ATTACH) {
-      sp::install_file_hooks();
-      sp::install_window_hooks(GetCurrentThreadId());
-      install_game_d3d9_redirection();
+      install_game_redirections();
    }
 
    return true;
