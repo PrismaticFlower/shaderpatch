@@ -1,13 +1,9 @@
 
 
 #include "message_hooks.hpp"
-#include "com_ptr.hpp"
 #include "input_config.hpp"
 #include "logger.hpp"
-#include "utility.hpp"
 #include "window_helpers.hpp"
-
-#include <array>
 
 #include "imgui/imgui.h"
 
@@ -70,9 +66,14 @@ LRESULT CALLBACK wnd_proc_hook(int code, WPARAM w_param, LPARAM l_param)
 
 }
 
-void install_window_hooks(const HWND window) noexcept
+void install_message_hooks(const HWND window) noexcept
 {
-   Expects(window);
+   if (!window) {
+      log(Log_level::error, "No window passed to install_message_hooks. Some "
+                            "features may not work correctly.");
+
+      return;
+   }
 
    if (std::exchange(game_window, window)) {
       log_and_terminate("Attempt to install window hooks twice.");
@@ -85,7 +86,7 @@ void install_window_hooks(const HWND window) noexcept
 
    if (!wnd_proc_hhook) {
       log(Log_level::error,
-          "Failed to get install game window procedure hook. Developer Screen may not function."sv);
+          "Failed to get install WH_CALLWNDPROCRET hook. Some features may not work correctly."sv);
 
       return;
    }
@@ -94,8 +95,8 @@ void install_window_hooks(const HWND window) noexcept
       SetWindowsHookExW(WH_GETMESSAGE, &get_message_hook, nullptr, threadid);
 
    if (!get_message_hhook) {
-      log(Log_level::error, "Failed to game window message hook. Developer "
-                            "Screen will not function");
+      log(Log_level::error, "Failed to game WH_GETMESSAGE hook. Some features "
+                            "may not work correctly.");
 
       return;
    }

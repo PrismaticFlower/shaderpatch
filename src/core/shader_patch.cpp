@@ -125,7 +125,7 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
    _cb_draw_ps.cube_projtex = false;
    _cb_draw_ps.input_color_srgb = false;
 
-   install_window_hooks(window);
+   install_message_hooks(window);
 
    input_config.hotkey = user_config.developer.toggle_key;
    input_config.hotkey_func = [this]() noexcept {
