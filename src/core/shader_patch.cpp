@@ -3,6 +3,7 @@
 #include "../bf2_log_monitor.hpp"
 #include "../effects/color_helpers.hpp"
 #include "../game_support/memory_hacks.hpp"
+#include "../input_config.hpp"
 #include "../input_hooker.hpp"
 #include "../logger.hpp"
 #include "../material/editor.hpp"
@@ -126,14 +127,17 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
 
    install_window_hooks(window);
    install_dinput_hooks();
-   set_input_hotkey(user_config.developer.toggle_key);
-   set_input_hotkey_func([this]() noexcept {
+
+   input_config.hotkey = user_config.developer.toggle_key;
+   input_config.hotkey_func = [this]() noexcept {
       if (!std::exchange(_imgui_enabled, !_imgui_enabled))
-         set_input_mode(Input_mode::imgui);
+         input_config.mode = Input_mode::imgui;
       else
-         set_input_mode(Input_mode::normal);
-   });
-   set_input_screenshot_func([this]() noexcept { _screenshot_requested = true; });
+         input_config.mode = Input_mode::normal;
+   };
+   input_config.screenshot_func = [this]() noexcept {
+      _screenshot_requested = true;
+   };
 
    ImGui::CreateContext();
    ImGui::GetIO().MouseDrawCursor = true;

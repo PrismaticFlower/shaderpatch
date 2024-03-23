@@ -254,6 +254,7 @@
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5054;4275;4251;4127;4018</DisableSpecificWarnings>
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5054;4275;4251;4127;4018</DisableSpecificWarnings>
     </ClCompile>
+    <ClCompile Include="src\input_config.cpp" />
     <ClCompile Include="src\input_hooker.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\material\constant_buffer_builder.cpp" />
@@ -394,6 +395,7 @@
     <ClInclude Include="src\imgui\imstb_textedit.h" />
     <ClInclude Include="src\imgui\imstb_truetype.h" />
     <ClInclude Include="src\input_hooker.hpp" />
+    <ClInclude Include="src\input_config.hpp" />
     <ClInclude Include="src\logger.hpp" />
     <ClInclude Include="src\material\constant_buffer_builder.hpp" />
     <ClInclude Include="src\material\editor.hpp" />

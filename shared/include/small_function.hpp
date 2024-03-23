@@ -14,7 +14,7 @@ class Small_function;
 template<typename Return, typename... Args>
 class Small_function<Return(Args...) noexcept> {
 public:
-   Small_function() = default;
+   constexpr Small_function() = default;
 
    Small_function(Small_function&& from) noexcept : Small_function{}
    {
@@ -98,16 +98,14 @@ private:
       new (_invocable_storage.data())
          Invocable_type{std::forward<Invocable>(invocable)};
 
-      _invoke = [](const void* invocable_storage, Args... args) noexcept
-      {
+      _invoke = [](const void* invocable_storage, Args... args) noexcept {
          const auto& invocable =
             *static_cast<const Invocable_type*>(invocable_storage);
 
          return std::invoke(invocable, std::forward<Args>(args)...);
       };
 
-      _destroy = [](void* invocable_storage) noexcept
-      {
+      _destroy = [](void* invocable_storage) noexcept {
          [[maybe_unused]] auto& invocable =
             *static_cast<Invocable_type*>(invocable_storage);
 

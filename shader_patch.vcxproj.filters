@@ -282,6 +282,7 @@
     <ClCompile Include="src\material\resource_info_view.cpp" />
     <ClCompile Include="src\game_support\memory_hacks.cpp" />
     <ClCompile Include="src\freetype_helpers.cpp" />
+    <ClCompile Include="src\input_config.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\hook_vtable.hpp">
@@ -713,6 +714,7 @@
     <ClInclude Include="src\core\tools\pixel_inspector.hpp" />
     <ClInclude Include="src\material\resource_info_view.hpp" />
     <ClInclude Include="src\game_support\memory_hacks.hpp" />
+    <ClInclude Include="src\input_config.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />

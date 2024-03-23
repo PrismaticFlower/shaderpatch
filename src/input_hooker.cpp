@@ -3,6 +3,7 @@
 #include "input_hooker.hpp"
 #include "com_ptr.hpp"
 #include "hook_vtable.hpp"
+#include "input_config.hpp"
 #include "logger.hpp"
 #include "utility.hpp"
 #include "window_helpers.hpp"
@@ -21,13 +22,8 @@ namespace sp {
 namespace {
 
 HWND game_window = nullptr;
-Input_mode input_mode = Input_mode::normal;
 HHOOK get_message_hhook = nullptr;
 HHOOK wnd_proc_hhook = nullptr;
-
-WPARAM input_hotkey = 0;
-Small_function<void() noexcept> input_hotkey_func;
-Small_function<void() noexcept> screenshot_func;
 
 LRESULT CALLBACK get_message_hook(int code, WPARAM w_param, LPARAM l_param)
 {
@@ -39,11 +35,12 @@ LRESULT CALLBACK get_message_hook(int code, WPARAM w_param, LPARAM l_param)
 
    switch (msg.message) {
    case WM_KEYUP:
-      if (const auto key = msg.wParam; key == input_hotkey && input_hotkey_func) {
-         input_hotkey_func();
+      if (const auto key = msg.wParam;
+          key == input_config.hotkey && input_config.hotkey_func) {
+         input_config.hotkey_func();
       }
-      else if (key == VK_SNAPSHOT && screenshot_func) {
-         screenshot_func();
+      else if (key == VK_SNAPSHOT && input_config.screenshot_func) {
+         input_config.screenshot_func();
       }
 
       [[fallthrough]];
@@ -51,7 +48,7 @@ LRESULT CALLBACK get_message_hook(int code, WPARAM w_param, LPARAM l_param)
    case WM_SYSKEYUP:
    case WM_SYSKEYDOWN:
    case WM_CHAR:
-      if (input_mode == Input_mode::normal) break;
+      if (input_config.mode == Input_mode::normal) break;
 
       ImGui_ImplWin32_WndProcHandler(game_window, msg.message, msg.wParam, msg.lParam);
    }
@@ -106,7 +103,7 @@ HRESULT __stdcall DirectInput8A_GetDeviceStateHook(
 {
    const auto devtype = get_device_type(*self);
 
-   if (input_mode == Input_mode::imgui) {
+   if (input_config.mode == Input_mode::imgui) {
       if (devtype == DI8DEVTYPE_MOUSE && cbData == sizeof(DIMOUSESTATE2)) {
          DIMOUSESTATE2 state{};
 
@@ -270,25 +267,5 @@ void install_window_hooks(const HWND window) noexcept
 
       return;
    }
-}
-
-void set_input_mode(const Input_mode mode) noexcept
-{
-   input_mode = mode;
-}
-
-void set_input_hotkey(const WPARAM hotkey) noexcept
-{
-   input_hotkey = hotkey;
-}
-
-void set_input_hotkey_func(Small_function<void() noexcept> function) noexcept
-{
-   input_hotkey_func = std::move(function);
-}
-
-void set_input_screenshot_func(Small_function<void() noexcept> function) noexcept
-{
-   screenshot_func = std::move(function);
 }
 }
