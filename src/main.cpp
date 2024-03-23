@@ -1,4 +1,5 @@
 
+#include "dinput_hooks.hpp"
 #include "direct3d/creator.hpp"
 #include "file_hooks.hpp"
 #include "logger.hpp"
@@ -52,10 +53,11 @@ constexpr int processed_flags_none = 0b0;
 constexpr int processed_flags_d3d9 = 0b1;
 constexpr int processed_flags_kernel32 = 0b10;
 constexpr int processed_flags_user32 = 0b100;
-constexpr int processed_flags_all =
-   processed_flags_d3d9 | processed_flags_kernel32 | processed_flags_user32;
+constexpr int processed_flags_dinput8 = 0b1000;
+constexpr int processed_flags_all = processed_flags_d3d9 | processed_flags_kernel32 |
+                                    processed_flags_user32 | processed_flags_dinput8;
 
-enum class Inside { unknown, d3d9, kernel32, user32 };
+enum class Inside { unknown, d3d9, kernel32, user32, dinput8 };
 
 void install_game_redirections() noexcept
 {
@@ -84,6 +86,9 @@ void install_game_redirections() noexcept
             }
             else if (_strcmpi("user32.dll", name) == 0) {
                context.inside = Inside::user32;
+            }
+            else if (_strcmpi("dinput8.dll", name) == 0) {
+               context.inside = Inside::dinput8;
             }
          }
 
@@ -130,6 +135,19 @@ void install_game_redirections() noexcept
                *func_ptr_ptr = CreateWindowExA_hook;
 
                sp::init_window_hook_game_thread_id(GetCurrentThreadId());
+
+               return false;
+            }
+
+            return true;
+         }
+         else if (context.inside == Inside::dinput8) {
+            context.processed |= processed_flags_dinput8;
+
+            if (strcmp("DirectInput8Create", name) == 0) {
+               auto memory_lock = sp::unlock_memory(func_ptr_ptr, sizeof(void*));
+
+               *func_ptr_ptr = DirectInput8Create_hook;
 
                return false;
             }

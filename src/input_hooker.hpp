@@ -6,8 +6,6 @@
 
 namespace sp {
 
-void install_dinput_hooks() noexcept;
-
 void install_window_hooks(const HWND window) noexcept;
 
 }
