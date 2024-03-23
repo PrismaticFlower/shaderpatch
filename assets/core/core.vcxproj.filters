@@ -410,6 +410,9 @@
     <None Include="src\interior_mapping.hlsl">
       <Filter>src</Filter>
     </None>
+    <None Include="src\ASSAO.hlsl">
+      <Filter>src</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">

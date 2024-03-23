@@ -5,24 +5,23 @@
 #pragma warning(disable : 4201)
 
 #include "assao/ASSAO.h"
-#include "assao/assao_shader.hpp"
 
 namespace sp::effects {
 
 using namespace std::literals;
 
 namespace {
-auto create_assao(ID3D11Device4& device)
+auto create_assao(ID3D11Device4& device, shader::Database& shaders)
    -> std::unique_ptr<ASSAO_Effect, std::add_pointer_t<void(ASSAO_Effect*)>>
 {
-   const ASSAO_CreateDescDX11 desc{&device, &assao_shader[0], sizeof(assao_shader)};
+   const ASSAO_CreateDescDX11 desc{&device, &shaders};
 
    return {ASSAO_Effect::CreateInstance(&desc), &ASSAO_Effect::DestroyInstance};
 }
 }
 
-SSAO::SSAO(Com_ptr<ID3D11Device4> device) noexcept
-   : _device{std::move(device)}, _assao_effect{create_assao(*_device)}
+SSAO::SSAO(Com_ptr<ID3D11Device4> device, shader::Database& shaders) noexcept
+   : _device{std::move(device)}, _assao_effect{create_assao(*_device, shaders)}
 {
 }
 

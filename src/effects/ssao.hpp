@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../shader/database.hpp"
 #include "com_ptr.hpp"
 #include "postprocess_params.hpp"
 #include "profiler.hpp"
@@ -15,7 +16,7 @@ namespace sp::effects {
 
 class SSAO {
 public:
-   SSAO(Com_ptr<ID3D11Device4> device) noexcept;
+   SSAO(Com_ptr<ID3D11Device4> device, shader::Database& shaders) noexcept;
 
    void params(const SSAO_params params) noexcept;
 
