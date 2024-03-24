@@ -42,7 +42,7 @@ void show_tonemapping_curve(std::function<float(float)> tonemapper) noexcept;
 
 Control::Control(Com_ptr<ID3D11Device5> device, shader::Database& shaders) noexcept
    : postprocess{device, shaders},
-     cmaa2{device, shaders},
+     cmaa2{device, shaders.compute("CMAA2"sv)},
      ssao{device, shaders},
      ffx_cas{device, shaders},
      mask_nan{device, shaders},

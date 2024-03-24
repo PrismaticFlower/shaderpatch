@@ -15,9 +15,8 @@ constexpr auto cmaa_pack_single_sample_edge_to_half_width = true;
 const glm::uvec2 cmaa2_cs_input_kernel_size{16, 16};
 
 enum class cmaa2_flags {
-   uav_store_typed = 0b1,
-   uav_store_convert_to_srgb = 0b10,
-   edge_detection_luma_separate_texture = 0b100
+   none = 0b0,
+   edge_detection_luma_separate_texture = 0b1
 };
 
 constexpr bool marked_as_enum_flag(cmaa2_flags) noexcept
@@ -66,8 +65,27 @@ auto create_structured_buffer_uav(ID3D11Device1& device, const UINT size,
 }
 }
 
-CMAA2::CMAA2(Com_ptr<ID3D11Device1> device, shader::Database& shaders) noexcept
-   : _point_sampler{[&] {
+CMAA2::CMAA2(Com_ptr<ID3D11Device1> device, shader::Group_compute& shaders) noexcept
+   : _edges_color2x2{shaders.entrypoint("EdgesColor2x2CS"sv, cmaa2_flags::none)},
+     _compute_dispatch_args{
+        shaders.entrypoint("ComputeDispatchArgsCS"sv, cmaa2_flags::none)},
+     _process_candidates{shaders.entrypoint("ProcessCandidatesCS"sv, cmaa2_flags::none)},
+     _deferred_color_apply2x2{
+        shaders.entrypoint("DeferredColorApply2x2CS"sv, cmaa2_flags::none)},
+     _edges_color2x2_luma_separate{
+        shaders.entrypoint("EdgesColor2x2CS"sv,
+                           cmaa2_flags::edge_detection_luma_separate_texture)},
+     _compute_dispatch_args_luma_separate{
+        shaders.entrypoint("ComputeDispatchArgsCS"sv,
+                           cmaa2_flags::edge_detection_luma_separate_texture)},
+     _process_candidates_luma_separate{
+
+        shaders.entrypoint("ProcessCandidatesCS"sv,
+                           cmaa2_flags::edge_detection_luma_separate_texture)},
+     _deferred_color_apply2x2_luma_separate{
+        shaders.entrypoint("DeferredColorApply2x2CS"sv,
+                           cmaa2_flags::edge_detection_luma_separate_texture)},
+     _point_sampler{[&] {
         CD3D11_SAMPLER_DESC desc{CD3D11_DEFAULT{}};
 
         desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
@@ -78,8 +96,7 @@ CMAA2::CMAA2(Com_ptr<ID3D11Device1> device, shader::Database& shaders) noexcept
 
         return sampler;
      }()},
-     _device{device},
-     _shaders{shaders.compute("CMAA2"sv)}
+     _device{device}
 {
 }
 
@@ -88,31 +105,17 @@ void CMAA2::apply(ID3D11DeviceContext1& dc, Profiler& profiler,
 {
    dc.ClearState();
 
-   const bool luma_input = input_output.luma_srv != nullptr;
-   bool shaders_changed =
-      std::exchange(_luma_separate_texture, luma_input) != luma_input;
-
    if (std::exchange(_size, glm::uvec2{input_output.width, input_output.height}) !=
        glm::uvec2{input_output.width, input_output.height}) {
       update_resources();
-      shaders_changed = true;
    }
-
-   if (shaders_changed) update_shaders();
 
    execute(dc, profiler, input_output);
 }
 
 void CMAA2::clear_resources() noexcept
 {
-   _luma_separate_texture = false;
-
    _size = {0, 0};
-
-   _edges_color2x2 = nullptr;
-   _compute_dispatch_args = nullptr;
-   _process_candidates = nullptr;
-   _deferred_color_apply2x2 = nullptr;
 
    _working_edges_uav = nullptr;
    _working_shape_candidates_uav = nullptr;
@@ -128,6 +131,17 @@ void CMAA2::execute(ID3D11DeviceContext1& dc, Profiler& profiler,
                     CMAA2_input_output input_output) noexcept
 {
    Profile full_profile{profiler, dc, "CMAA2"sv};
+
+   const bool luma_input = input_output.luma_srv != nullptr;
+
+   ID3D11ComputeShader& edges_color2x2 =
+      luma_input ? *_edges_color2x2_luma_separate : *_edges_color2x2;
+   ID3D11ComputeShader& compute_dispatch_args =
+      luma_input ? *_compute_dispatch_args_luma_separate : *_compute_dispatch_args;
+   ID3D11ComputeShader& process_candidates =
+      luma_input ? *_process_candidates_luma_separate : *_process_candidates;
+   ID3D11ComputeShader& deferred_color_apply2x2 =
+      luma_input ? *_deferred_color_apply2x2_luma_separate : *_deferred_color_apply2x2;
 
    auto* const sampler = _point_sampler.get();
    dc.CSSetSamplers(0, 1, &sampler);
@@ -154,28 +168,28 @@ void CMAA2::execute(ID3D11DeviceContext1& dc, Profiler& profiler,
       const auto thread_group_count =
          (_size + output_kernel_size * 2u - 1u) / (output_kernel_size * 2u);
 
-      dc.CSSetShader(_edges_color2x2.get(), nullptr, 0);
+      dc.CSSetShader(&edges_color2x2, nullptr, 0);
       dc.Dispatch(thread_group_count.x, thread_group_count.y, 1);
    }
 
    {
       Profile profile{profiler, dc, "CMAA2 - Dispatch Indirect Args #1"sv};
 
-      dc.CSSetShader(_compute_dispatch_args.get(), nullptr, 0);
+      dc.CSSetShader(&compute_dispatch_args, nullptr, 0);
       dc.Dispatch(2, 1, 1);
    }
 
    {
       Profile profile{profiler, dc, "CMAA2 - Process Shape Candidates"sv};
 
-      dc.CSSetShader(_process_candidates.get(), nullptr, 0);
+      dc.CSSetShader(&process_candidates, nullptr, 0);
       dc.DispatchIndirect(_working_control_buffer.get(), 0);
    }
 
    {
       Profile profile{profiler, dc, "CMAA2 - Dispatch Indirect Args #2"sv};
 
-      dc.CSSetShader(_compute_dispatch_args.get(), nullptr, 0);
+      dc.CSSetShader(&compute_dispatch_args, nullptr, 0);
       dc.Dispatch(1, 2, 1);
    }
 
@@ -188,7 +202,7 @@ void CMAA2::execute(ID3D11DeviceContext1& dc, Profiler& profiler,
    {
       Profile profile{profiler, dc, "CMAA2 - Deferred Color Apply"sv};
 
-      dc.CSSetShader(_deferred_color_apply2x2.get(), nullptr, 0);
+      dc.CSSetShader(&deferred_color_apply2x2, nullptr, 0);
       dc.DispatchIndirect(_working_control_buffer.get(), 0);
    }
 
@@ -269,19 +283,4 @@ void CMAA2::update_resources() noexcept
    }
 }
 
-void CMAA2::update_shaders() noexcept
-{
-   cmaa2_flags flags{};
-
-   if (_uav_store_typed) flags |= cmaa2_flags::uav_store_typed;
-   if (_uav_store_convert_to_srgb)
-      flags |= cmaa2_flags::uav_store_convert_to_srgb;
-   if (_luma_separate_texture)
-      flags |= cmaa2_flags::edge_detection_luma_separate_texture;
-
-   _edges_color2x2 = _shaders.entrypoint("EdgesColor2x2CS"sv, flags);
-   _compute_dispatch_args = _shaders.entrypoint("ComputeDispatchArgsCS"sv, flags);
-   _process_candidates = _shaders.entrypoint("ProcessCandidatesCS"sv, flags);
-   _deferred_color_apply2x2 = _shaders.entrypoint("DeferredColorApply2x2CS"sv, flags);
-}
 }
