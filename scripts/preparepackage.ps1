@@ -47,5 +47,9 @@ Start-Process -FilePath ".\bin\Release\shader_cache_primer.exe" -WorkingDirector
 del ".\packages\shaderpatch\shader patch.log"
 
 # Create Archives
-Compress-Archive -Path ".\packages\shaderpatch\*" -DestinationPath ".\packages\shaderpatch.zip" -CompressionLevel Optimal -Force
-Compress-Archive -Path ".\packages\shaderpatch-tools\*" -DestinationPath ".\packages\shaderpatch-tools.zip" -CompressionLevel Optimal -Force
+Push-Location -Path ".\packages\"
+
+7z a -tzip -mx=9 -mmt=on shaderpatch.zip ./shaderpatch/*
+7z a -tzip -mx=9 -mmt=on shaderpatch-tools.zip ./shaderpatch-tools/*
+
+Pop-Location
