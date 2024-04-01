@@ -854,28 +854,24 @@ void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
    if (_on_stretch_rendertarget)
       _on_stretch_rendertarget(src_rt, source_rect, dest_rt, dest_rect);
 
-   const auto src_box = to_box(src_rt, source_rect);
-   const auto dest_box = to_box(dest_rt, dest_rect);
+   const Normalized_rect full_rect = {0.0, 0.0, 1.0, 1.0};
 
    // Skip any fullscreen resolve or copy operation, as these will be handled as special cases by the shaders that use them.
    if (glm::uvec2{src_rt.width, src_rt.height} ==
           glm::uvec2{dest_rt.width, dest_rt.height} &&
-       glm::uvec2{src_rt.width, src_rt.height} ==
-          glm::uvec2{src_box.right - src_box.left, src_box.bottom - src_box.top} &&
-       glm::uvec2{dest_rt.width, dest_rt.height} ==
-          glm::uvec2{dest_box.right - dest_box.left, dest_box.bottom - dest_box.top}) {
+       source_rect == full_rect && dest_rect == full_rect) {
       return;
    }
+
+   const D3D11_BOX src_box = to_box(src_rt, source_rect);
+   const D3D11_BOX dest_box = to_box(dest_rt, dest_rect);
 
    _image_stretcher.stretch(*_device_context, src_box, src_rt, dest_box, dest_rt);
 
    // Check for motion blur accumulation stretch. This happens right before the UI/HUD are drawn and is the ideal time to apply postprocessing.
    if (source == get_back_buffer() &&
        glm::uvec2{dest_rt.width, dest_rt.height} == glm::uvec2{512, 256} &&
-       glm::uvec2{src_rt.width, src_rt.height} ==
-          glm::uvec2{src_box.right - src_box.left, src_box.bottom - src_box.top} &&
-       glm::uvec2{dest_rt.width, dest_rt.height} ==
-          glm::uvec2{dest_box.right - dest_box.left, dest_box.bottom - dest_box.top}) {
+       source_rect == full_rect && dest_rect == full_rect) {
       if (_effects_active) {
          _use_interface_depthstencil = true;
          _game_rendertargets[0] = _swapchain.game_rendertarget();

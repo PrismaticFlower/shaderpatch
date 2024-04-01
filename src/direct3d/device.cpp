@@ -562,17 +562,8 @@ HRESULT Device::StretchRect(IDirect3DSurface9* source_surface,
    D3DSURFACE_DESC src_desc{};
    source_surface->GetDesc(&src_desc);
 
-   const RECT default_source_rect{0, 0, static_cast<LONG>(src_desc.Width),
-                                  static_cast<LONG>(src_desc.Height)};
-
    D3DSURFACE_DESC dest_desc{};
    dest_surface->GetDesc(&dest_desc);
-
-   const RECT default_dest_rect{0, 0, static_cast<LONG>(dest_desc.Width),
-                                static_cast<LONG>(dest_desc.Height)};
-
-   if (!source_rect) source_rect = &default_source_rect;
-   if (!dest_rect) dest_rect = &default_dest_rect;
 
    const auto rect_in_surface = [](RECT rect, D3DSURFACE_DESC desc) -> bool {
       if ((rect.right - rect.left) > desc.Width) return false;
@@ -581,8 +572,12 @@ HRESULT Device::StretchRect(IDirect3DSurface9* source_surface,
       return true;
    };
 
-   if (!rect_in_surface(*source_rect, src_desc)) return D3DERR_INVALIDCALL;
-   if (!rect_in_surface(*dest_rect, dest_desc)) return D3DERR_INVALIDCALL;
+   if (source_rect && !rect_in_surface(*source_rect, src_desc)) {
+      return D3DERR_INVALIDCALL;
+   }
+   if (dest_rect && !rect_in_surface(*dest_rect, dest_desc)) {
+      return D3DERR_INVALIDCALL;
+   }
 
    const auto* const source_id =
       reinterpret_cast<Resource*>(source_surface)->get_if<core::Game_rendertarget_id>();
@@ -594,9 +589,13 @@ HRESULT Device::StretchRect(IDirect3DSurface9* source_surface,
 
    _shader_patch.stretch_rendertarget(
       *source_id,
-      core::make_normalized_rect(*source_rect, src_desc.Width, src_desc.Height),
+      source_rect
+         ? core::make_normalized_rect(*source_rect, src_desc.Width, src_desc.Height)
+         : core::Normalized_rect{0.0, 0.0, 1.0, 1.0},
       *dest_id,
-      core::make_normalized_rect(*dest_rect, dest_desc.Width, dest_desc.Height));
+      dest_rect
+         ? core::make_normalized_rect(*dest_rect, dest_desc.Width, dest_desc.Height)
+         : core::Normalized_rect{0.0, 0.0, 1.0, 1.0});
 
    return S_OK;
 }

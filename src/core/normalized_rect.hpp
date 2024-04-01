@@ -9,6 +9,8 @@ struct Normalized_rect {
    double top;
    double right;
    double bottom;
+
+   bool operator==(const Normalized_rect&) const noexcept = default;
 };
 
 inline auto make_normalized_rect(const RECT& rect, const UINT width,
