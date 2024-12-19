@@ -929,7 +929,7 @@ private:
 
    std::mt19937 _random_engine{std::random_device{}()};
    std::uniform_real_distribution<float> _random_real_dist{0.0f, 256.0f};
-   std::uniform_int<int> _random_int_dist{0, 63};
+   std::uniform_int_distribution<int> _random_int_dist{0, 63};
 
    std::vector<Com_ptr<ID3D11ShaderResourceView>> _blue_noise_srvs;
 
