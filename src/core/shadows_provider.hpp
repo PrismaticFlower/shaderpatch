@@ -25,6 +25,7 @@ struct Shadows_config {
    float shadow_bias = -0.0015f;
 
    bool enable_offscreen_cache = false; // TODO: Properly support this.
+   bool use_stencil_shadow_meshes = false;
 };
 
 class Shadows_provider {

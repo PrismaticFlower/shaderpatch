@@ -787,12 +787,15 @@ void Shadows_provider::draw_shadow_maps_instanced(ID3D11DeviceContext4& dc,
    dc.RSSetState(_rasterizer_state.get());
    dc.PSSetShader(nullptr, nullptr, 0);
 
-   draw_meshes(meshes.stencilshadow, _mesh_compressed_il.get(),
-               _mesh_compressed_vs.get());
-   draw_meshes(meshes.stencilshadow_skinned, _mesh_stencilshadow_skinned_il.get(),
-               _mesh_compressed_skinned_vs.get());
-   draw_meshes(meshes.stencilshadow_skinned_gen_normal,
-               _mesh_compressed_skinned_il.get(), _mesh_compressed_skinned_vs.get());
+   if (config.use_stencil_shadow_meshes) {
+      draw_meshes(meshes.stencilshadow, _mesh_compressed_il.get(),
+                  _mesh_compressed_vs.get());
+      draw_meshes(meshes.stencilshadow_skinned, _mesh_stencilshadow_skinned_il.get(),
+                  _mesh_compressed_skinned_vs.get());
+      draw_meshes(meshes.stencilshadow_skinned_gen_normal,
+                  _mesh_compressed_skinned_il.get(),
+                  _mesh_compressed_skinned_vs.get());
+   }
 
    if (config.enable_offscreen_cache) {
       const auto draw_cached_meshes =

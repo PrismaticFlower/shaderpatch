@@ -290,6 +290,10 @@ void Shader_patch::present() noexcept
    ImGui::DragFloat("shadow bias", &_shadows->config.shadow_bias, 0.0001f,
                     -1.0f, 1.0f, "%.5f");
 
+   ImGui::Checkbox("enable offscreen cache", &_shadows->config.enable_offscreen_cache);
+   ImGui::Checkbox("use stencil shadow meshes",
+                   &_shadows->config.use_stencil_shadow_meshes);
+
    ImGui::Text("zprepass meshes: %i", _shadows->meshes.zprepass.size());
    ImGui::Text("zprepass compressed meshes: %i",
                _shadows->meshes.zprepass_compressed.size());
