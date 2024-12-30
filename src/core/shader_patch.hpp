@@ -236,7 +236,7 @@ public:
              const UINT start_vertex) noexcept;
 
    void draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology, const UINT index_count,
-                     const UINT start_index, const UINT start_vertex) noexcept;
+                     const UINT start_index, const INT base_vertex) noexcept;
 
    void begin_query(ID3D11Query& query) noexcept;
 

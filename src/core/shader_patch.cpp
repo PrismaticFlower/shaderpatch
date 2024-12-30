@@ -1255,13 +1255,13 @@ void Shader_patch::draw(const D3D11_PRIMITIVE_TOPOLOGY topology,
 
 void Shader_patch::draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
                                 const UINT index_count, const UINT start_index,
-                                const UINT start_vertex) noexcept
+                                const INT base_vertex) noexcept
 {
    update_dirty_state(topology);
 
    if (_discard_draw_calls) return;
 
-   _device_context->DrawIndexed(index_count, start_index, start_vertex);
+   _device_context->DrawIndexed(index_count, start_index, base_vertex);
 }
 
 void Shader_patch::begin_query(ID3D11Query& query) noexcept
