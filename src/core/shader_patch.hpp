@@ -64,6 +64,11 @@ struct Mapped_texture {
    std::byte* data;
 };
 
+struct Reset_flags {
+   bool legacy_fullscreen = false;
+   bool aspect_ratio_hack = false;
+};
+
 using Material_handle =
    std::unique_ptr<material::Material, Small_function<void(material::Material*) noexcept>>;
 
@@ -74,8 +79,9 @@ class Shadows_provider;
 
 class Shader_patch {
 public:
-   Shader_patch(IDXGIAdapter4& adapter, const HWND window, const UINT width,
-                const UINT height) noexcept;
+   Shader_patch(IDXGIAdapter4& adapter, const HWND window,
+                const UINT render_width, const UINT render_height,
+                const UINT window_width, const UINT window_height) noexcept;
 
    ~Shader_patch();
 
@@ -85,9 +91,12 @@ public:
    Shader_patch(Shader_patch&&) = delete;
    Shader_patch& operator=(Shader_patch&&) = delete;
 
-   void reset(const UINT width, const UINT height) noexcept;
+   void reset(const Reset_flags flags, const UINT render_width, const UINT render_height,
+              const UINT window_width, const UINT window_height) noexcept;
 
    void set_text_dpi(const std::uint32_t dpi) noexcept;
+
+   void set_expected_aspect_ratio(const float expected_aspect_ratio) noexcept;
 
    void present() noexcept;
 
@@ -137,9 +146,8 @@ public:
       -> Patch_effects_config_handle;
 
    auto create_game_input_layout(const std::span<const Input_layout_element> layout,
-                                 const bool compressed,
-                                 const bool particle_texture_scale) noexcept
-      -> Game_input_layout;
+                                 const bool compressed, const bool particle_texture_scale,
+                                 const bool vertex_weights) noexcept -> Game_input_layout;
 
    auto create_ia_buffer(const UINT size, const bool vertex_buffer,
                          const bool index_buffer, const bool dynamic) noexcept
@@ -230,7 +238,7 @@ public:
              const UINT start_vertex) noexcept;
 
    void draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology, const UINT index_count,
-                     const UINT start_index, const UINT start_vertex) noexcept;
+                     const UINT start_index, const INT base_vertex) noexcept;
 
    void begin_query(ID3D11Query& query) noexcept;
 
@@ -277,8 +285,6 @@ private:
 
    void update_material_resources() noexcept;
 
-   void update_swapchain_scale() noexcept;
-
    void recreate_patch_backbuffer() noexcept;
 
    void set_linear_rendering(bool linear_rendering) noexcept;
@@ -314,6 +320,11 @@ private:
 
       return dc;
    }();
+   UINT _render_width = 0;
+   UINT _render_height = 0;
+   UINT _window_width = 0;
+   UINT _window_height = 0;
+   float _expected_aspect_ratio = 0.75f;
    Swapchain _swapchain;
 
    Input_layout_descriptions _input_layout_descriptions;
@@ -340,6 +351,7 @@ private:
 
    Depthstencil _nearscene_depthstencil;
    Depthstencil _farscene_depthstencil;
+   Depthstencil _interface_depthstencil;
    Depthstencil _reflectionscene_depthstencil;
    Game_depthstencil _current_depthstencil_id = Game_depthstencil::nearscene;
 
@@ -390,7 +402,10 @@ private:
    bool _stock_bloom_used = false;
    bool _stock_bloom_used_last_frame = false;
    bool _effects_postprocessing_applied = false;
+   bool _override_viewport = false;
+   bool _set_aspect_ratio_on_present = false;
 
+   bool _aspect_ratio_hack_enabled = false;
    bool _imgui_enabled = false;
    bool _screenshot_requested = false;
 
@@ -470,17 +485,20 @@ private:
    const HWND _window;
 
    bool _effects_active = false;
+   bool _effects_request_soft_skinning = false;
    DXGI_FORMAT _current_rt_format = Swapchain::format;
    int _current_effects_id = 0;
 
    UINT _rt_sample_count = 1;
    Antialiasing_method _aa_method = Antialiasing_method::none;
    Refraction_quality _refraction_quality = Refraction_quality::medium;
-   UINT _swapchain_scale = user_config.display.resolution_scale;
-   UINT _window_width = 0;
-   UINT _window_height = 0;
 
-   text::Font_atlas_builder _font_atlas_builder{_device};
+   D3D11_VIEWPORT _viewport_override = {};
+
+   std::unique_ptr<text::Font_atlas_builder> _font_atlas_builder =
+      text::Font_atlas_builder::use_scalable_fonts()
+         ? std::make_unique<text::Font_atlas_builder>(_device)
+         : nullptr;
 
    std::unique_ptr<BF2_log_monitor> _bf2_log_monitor;
 

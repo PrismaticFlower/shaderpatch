@@ -1,0 +1,1 @@
+kernel.ispc built with ISPC 1.10, in binary form to avoid requiring people looking to build SP having to get ISPC. If MSVC's C ABI ever changes or this needs to be built for something other than x64 these will likely need rebuilding. But until then this should work well as a convenient way for people to build SP.

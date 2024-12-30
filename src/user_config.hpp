@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "imgui/imgui_ext.hpp"
 #include "logger.hpp"
@@ -36,6 +36,13 @@ enum class SSAO_quality : std::int8_t { fastest, fast, medium, high, highest };
 
 enum class Refraction_quality : std::int8_t { low, medium, high, ultra };
 
+enum class Aspect_ratio_hud : std::int8_t {
+   stretch_4_3,
+   centre_4_3,
+   stretch_16_9,
+   centre_16_9
+};
+
 struct Effects_user_config {
    bool bloom = true;
    bool vignette = true;
@@ -53,19 +60,20 @@ struct User_config {
    bool enabled = true;
 
    struct {
-      std::uint32_t screen_percent = 100;
-      std::uint32_t resolution_scale = 100;
-      bool scale_dpi_with_resolution_scale = true;
       bool allow_tearing = false;
-      bool centred = true;
       bool dpi_aware = true;
       bool dpi_scaling = true;
+      bool dsr_vsr_scaling = true;
       bool treat_800x600_as_interface = true;
-      bool windowed_interface = false;
+      bool stretch_interface = false;
       bool scalable_fonts = true;
+      bool aspect_ratio_hack = false;
+      Aspect_ratio_hud aspect_ratio_hack_hud = Aspect_ratio_hud::centre_4_3;
       bool enable_game_perceived_resolution_override = false;
       std::uint32_t game_perceived_resolution_override_width = 1920;
       std::uint32_t game_perceived_resolution_override_height = 1080;
+      bool override_resolution = false;
+      std::uint32_t override_resolution_screen_percent = 100;
    } display;
 
    struct {
@@ -87,6 +95,8 @@ struct User_config {
       bool disable_light_brightness_rescaling = false;
       bool enable_user_effects_config = false;
       bool supersample_alpha_test = false;
+      bool allow_vertex_soft_skinning = false;
+      bool use_d3d11on12 = false;
       std::string user_effects_config;
    } graphics;
 
@@ -369,4 +379,41 @@ constexpr bool use_depth_refraction_mask(const Refraction_quality quality) noexc
    return false;
 }
 
+inline auto to_string(const Aspect_ratio_hud hud) noexcept -> std::string
+{
+   using namespace std::literals;
+
+   switch (hud) {
+   case Aspect_ratio_hud::stretch_4_3:
+      return "Stretch 4_3"s;
+   case Aspect_ratio_hud::centre_4_3:
+      return "Centre 4_3"s;
+   case Aspect_ratio_hud::stretch_16_9:
+      return "Stretch 16_9"s;
+   case Aspect_ratio_hud::centre_16_9:
+      return "Centre 16_9"s;
+   }
+
+   std::terminate();
+}
+
+inline auto aspect_ratio_hud_from_string(const std::string_view string) noexcept
+   -> Aspect_ratio_hud
+{
+   if (string == to_string(Aspect_ratio_hud::stretch_4_3)) {
+      return Aspect_ratio_hud::stretch_4_3;
+   }
+   else if (string == to_string(Aspect_ratio_hud::centre_4_3)) {
+      return Aspect_ratio_hud::centre_4_3;
+   }
+   else if (string == to_string(Aspect_ratio_hud::stretch_16_9)) {
+      return Aspect_ratio_hud::stretch_16_9;
+   }
+   else if (string == to_string(Aspect_ratio_hud::centre_16_9)) {
+      return Aspect_ratio_hud::centre_16_9;
+   }
+   else {
+      return Aspect_ratio_hud::centre_4_3;
+   }
+}
 }

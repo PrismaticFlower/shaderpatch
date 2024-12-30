@@ -28,16 +28,6 @@ void User_config::show_imgui() noexcept
 {
    ImGui::Begin("User Config", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
-   if (ImGui::CollapsingHeader("Display", ImGuiTreeNodeFlags_DefaultOpen)) {
-
-      int resolution_scale = display.resolution_scale;
-      ImGui::InputInt("Resolution Scale (swapchain)", &resolution_scale);
-      display.resolution_scale = std::clamp(resolution_scale, 50, 100);
-
-      ImGui::Checkbox("Scale UI with Resolution Scale",
-                      &display.scale_dpi_with_resolution_scale);
-   }
-
    if (ImGui::CollapsingHeader("User Interface", ImGuiTreeNodeFlags_DefaultOpen)) {
       const auto color_picker = [](const char* name, std::array<std::uint8_t, 3>& color) {
          std::array<float, 3> rgb_color{color[0] / 255.f, color[1] / 255.f,
@@ -84,6 +74,8 @@ void User_config::show_imgui() noexcept
       ImGui::Checkbox("Enable Alternative Post Processing",
                       &graphics.enable_alternative_postprocessing);
 
+      ImGui::Checkbox("Allow Vertex Soft Skinning", &graphics.allow_vertex_soft_skinning);
+
       ImGui::Checkbox("Enable Scene Blur", &graphics.enable_scene_blur);
 
       ImGui::Checkbox("Enable 16-Bit Color Channel Rendering",
@@ -125,37 +117,24 @@ void User_config::parse_file(const std::string& path)
 
    enabled = config["Shader Patch Enabled"s].as<bool>(enabled);
 
-   display.screen_percent =
-      std::clamp(config["Display"s]["Screen Percent"s].as<std::uint32_t>(
-                    display.screen_percent),
-                 10u, 100u);
-
-   display.resolution_scale =
-      std::clamp(config["Display"s]["Resolution Scale"s].as<std::uint32_t>(
-                    display.resolution_scale),
-                 50u, 100u);
-
-   display.scale_dpi_with_resolution_scale =
-      config["Display"s]["Scale UI with Resolution Scale"s].as<bool>(
-         display.scale_dpi_with_resolution_scale);
-
    display.allow_tearing =
       config["Display"s]["Allow Tearing"s].as<bool>(display.allow_tearing);
-
-   display.centred = config["Display"s]["Centred"s].as<bool>(display.centred);
 
    display.treat_800x600_as_interface =
       config["Display"s]["Treat 800x600 As Interface"s].as<bool>(
          display.treat_800x600_as_interface);
 
-   display.windowed_interface =
-      config["Display"s]["Windowed Interface"s].as<bool>(display.windowed_interface);
+   display.stretch_interface =
+      config["Display"s]["Stretch Interface"s].as<bool>(display.stretch_interface);
 
    display.dpi_aware =
       config["Display"s]["Display Scaling Aware"s].as<bool>(display.dpi_aware);
 
    display.dpi_scaling =
       config["Display"s]["Display Scaling"s].as<bool>(display.dpi_scaling);
+
+   display.dsr_vsr_scaling =
+      config["Display"s]["DSR-VSR Display Scaling"s].as<bool>(display.dsr_vsr_scaling);
 
    display.scalable_fonts =
       config["Display"s]["Scalable Fonts"s].as<bool>(display.scalable_fonts);
@@ -171,6 +150,21 @@ void User_config::parse_file(const std::string& path)
    display.game_perceived_resolution_override_height =
       config["Display"s]["Game Perceived Resolution Override"s][1].as<std::uint32_t>(
          display.game_perceived_resolution_override_height);
+
+   display.aspect_ratio_hack =
+      config["Display"s]["Aspect Ratio Hack"s].as<bool>(display.aspect_ratio_hack);
+
+   display.aspect_ratio_hack_hud = aspect_ratio_hud_from_string(
+      config["Display"s]["Aspect Ratio Hack HUD Handling"s].as<std::string>(
+         to_string(display.aspect_ratio_hack_hud)));
+
+   display.override_resolution =
+      config["Display"s]["Override Resolution"s].as<bool>(display.override_resolution);
+
+   display.override_resolution_screen_percent =
+      std::clamp(config["Display"s]["Override Resolution Screen Percent"s].as<std::uint32_t>(
+                    display.override_resolution_screen_percent),
+                 50u, 100u);
 
    ui.extra_ui_scaling =
       std::clamp(config["User Interface"s]["Extra UI Scaling"s].as<std::uint32_t>(
@@ -211,6 +205,10 @@ void User_config::parse_file(const std::string& path)
       config["Graphics"s]["Enable Alternative Post Processing"s].as<bool>(
          graphics.enable_alternative_postprocessing);
 
+   graphics.allow_vertex_soft_skinning =
+      config["Graphics"s]["Allow Vertex Soft Skinning"s].as<bool>(
+         graphics.allow_vertex_soft_skinning);
+
    graphics.enable_scene_blur =
       config["Graphics"s]["Enable Scene Blur"s].as<bool>(graphics.enable_scene_blur);
 
@@ -229,6 +227,9 @@ void User_config::parse_file(const std::string& path)
    graphics.user_effects_config =
       config["Graphics"s]["User Effects Config"s].as<std::string>(
          graphics.user_effects_config);
+
+   graphics.use_d3d11on12 =
+      config["Graphics"s]["Use Direct3D 11 on 12"s].as<bool>(graphics.use_d3d11on12);
 
    effects.bloom = config["Effects"s]["Bloom"s].as<bool>(effects.bloom);
 

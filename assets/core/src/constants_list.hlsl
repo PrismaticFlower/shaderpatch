@@ -17,6 +17,7 @@ cbuffer SceneConstants : register(b0)
    float4x3 shadow_map_transform;
    float2 vs_pixel_offset;
    bool vs_input_color_srgb;
+   bool vs_use_soft_skinning;
    float time;
    bool particle_texture_scale;
    float prev_near_fade_scale;
@@ -47,7 +48,9 @@ cbuffer TeamColorConstants : register(b2)
    float3 friend_corsshair_dot_color;
    float3 foe_color;
    float3 foe_text_color;
+   float3 foe_text_alt_color;
    float3 foe_health_color;
+   float3 foe_flag_color;
    float3 foe_crosshair_dot_color;
 }
 

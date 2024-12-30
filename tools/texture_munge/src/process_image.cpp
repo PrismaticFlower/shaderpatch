@@ -20,12 +20,11 @@
 #include <string_view>
 
 #include <DirectXTex.h>
+#include <DirectXTexEXR.h>
 #include <comdef.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/integer.hpp>
 #include <gsl/gsl>
-
-#include "DirectXTexEXR.h"
 
 namespace sp {
 

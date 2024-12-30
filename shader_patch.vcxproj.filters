@@ -42,9 +42,6 @@
     <ClCompile Include="src\main.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\input_hooker.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\effects\control.cpp">
       <Filter>src\effects</Filter>
     </ClCompile>
@@ -280,15 +277,15 @@
     <ClCompile Include="src\core\postprocessing\backbuffer_resolver.cpp" />
     <ClCompile Include="src\core\tools\pixel_inspector.cpp" />
     <ClCompile Include="src\core\shadows_provider.cpp" />
+    <ClCompile Include="src\material\resource_info_view.cpp" />
+    <ClCompile Include="src\game_support\memory_hacks.cpp" />
+    <ClCompile Include="src\freetype_helpers.cpp" />
+    <ClCompile Include="src\input_config.cpp" />
+    <ClCompile Include="src\dinput_hooks.cpp" />
+    <ClCompile Include="src\message_hooks.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\hook_vtable.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="src\shader_constants.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\input_hooker.hpp">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\window_helpers.hpp">
@@ -711,13 +708,14 @@
     <ClInclude Include="src\core\tools\pixel_inspector.hpp" />
     <ClInclude Include="src\core\shadows_provider.hpp" />
     <ClInclude Include="src\core\shadows_camera_helpers.hpp" />
+    <ClInclude Include="src\material\resource_info_view.hpp" />
+    <ClInclude Include="src\game_support\memory_hacks.hpp" />
+    <ClInclude Include="src\input_config.hpp" />
+    <ClInclude Include="src\dinput_hooks.hpp" />
+    <ClInclude Include="src\message_hooks.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />
-  </ItemGroup>
-  <ItemGroup>
-    <CustomBuild Include="src\effects\assao\ASSAO.hlsl">
-      <Filter>src\effects\assao</Filter>
-    </CustomBuild>
+    <None Include="vcpkg.json" />
   </ItemGroup>
 </Project>

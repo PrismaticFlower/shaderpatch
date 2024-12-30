@@ -10,4 +10,5 @@ if ($installationPath -and (test-path "$installationPath\Common7\Tools\vsdevcmd.
   }
 }
 
-
+# Add 7-zip to path.
+$env:path += ";${env:ProgramFiles}\7-Zip\"

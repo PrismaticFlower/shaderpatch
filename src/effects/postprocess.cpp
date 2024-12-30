@@ -643,16 +643,26 @@ private:
    {
       Profile profile{profiler, dc, "Postprocessing - Finalize Output"};
 
+      auto* const cb = _global_constant_buffer.get();
+
       dc.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+      dc.VSSetConstantBuffers(global_cb_slot, 1, &cb);
       dc.VSSetShader(_fullscreen_vs.get(), nullptr, 0);
 
       auto* const sampler = _linear_clamp_sampler.get();
-      auto* const cb = _global_constant_buffer.get();
       dc.PSSetSamplers(0, 1, &sampler);
       dc.PSSetConstantBuffers(global_cb_slot, 1, &cb);
       dc.PSSetShader(_postprocess_finalize_ps.get(), nullptr, 0);
 
-      set_viewport(dc, output.width, output.height);
+      const D3D11_VIEWPORT viewport{(output.width - input.width()) / 2.0f,
+                                    (output.height - input.height()) / 2.0f,
+                                    static_cast<float>(input.width()),
+                                    static_cast<float>(input.height()),
+                                    0.0f,
+                                    1.0f};
+
+      dc.RSSetViewports(1, &viewport);
+
       do_pass(dc, *input.srv(), output.rtv);
    }
 
@@ -683,6 +693,7 @@ private:
       const auto res = glm::uvec2{width, height};
       const auto flt_res = static_cast<glm::vec2>(res);
 
+      _global_constants.resolution = flt_res;
       _global_constants.scene_pixel_size = 1.0f / flt_res;
       _global_constants.film_grain_aspect = flt_res.x / flt_res.y;
       _global_constants.film_grain_size = flt_res / _film_grain_params.size;
@@ -702,6 +713,7 @@ private:
       }
 
       auto* const cb = _global_constant_buffer.get();
+      dc.VSSetConstantBuffers(global_cb_slot, 1, &cb);
       dc.PSSetConstantBuffers(global_cb_slot, 1, &cb);
    }
 
@@ -812,10 +824,8 @@ private:
    static_assert(sizeof(Resolve_constants) == 16);
 
    struct Global_constants {
+      glm::vec2 resolution;
       glm::vec2 scene_pixel_size;
-
-      float vignette_end;
-      float vignette_start;
 
       glm::vec3 bloom_global_scale;
       float bloom_threshold;
@@ -829,7 +839,9 @@ private:
       float film_grain_luma_amount;
 
       glm::vec2 film_grain_size;
-      std::array<float, 2> _padding0;
+
+      float vignette_end;
+      float vignette_start;
 
       glm::vec4 randomness_flt;
       glm::uvec4 randomness_uint;
@@ -917,7 +929,7 @@ private:
 
    std::mt19937 _random_engine{std::random_device{}()};
    std::uniform_real_distribution<float> _random_real_dist{0.0f, 256.0f};
-   std::uniform_int<int> _random_int_dist{0, 63};
+   std::uniform_int_distribution<int> _random_int_dist{0, 63};
 
    std::vector<Com_ptr<ID3D11ShaderResourceView>> _blue_noise_srvs;
 

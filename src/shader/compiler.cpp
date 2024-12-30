@@ -91,6 +91,7 @@ void get_vertex_shader_defines(const Entrypoint_description& entrypoint,
    }
 
    if (hard_skinned) {
+      output.emplace_back("__VERTEX_INPUT_BLEND_WEIGHT__", "1");
       output.emplace_back("__VERTEX_INPUT_BLEND_INDICES__", "1");
    }
 

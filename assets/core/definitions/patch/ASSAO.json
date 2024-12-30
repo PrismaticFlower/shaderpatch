@@ -1,0 +1,319 @@
+{
+  "group_name": "ASSAO",
+  "source_name": "ASSAO.hlsl",
+
+  "input_layouts": {
+    "vs_input": [
+      {
+        "semantic": {
+          "name": "SV_Position",
+          "index": 0
+        },
+        "format": "float4"
+      },
+      {
+        "semantic": {
+          "name": "TEXCOORD",
+          "index": 0
+        },
+        "format": "float2"
+      }
+    ]
+  },
+
+  "entrypoints": {
+    "VSMain": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "vs_input"
+      },
+
+      "defines": [
+        [ "SSAO_MAX_TAPS", "32" ],
+        [ "SSAO_MAX_REF_TAPS", "512" ],
+        [ "SSAO_ADAPTIVE_TAP_BASE_COUNT", "5" ],
+        [ "SSAO_ADAPTIVE_TAP_FLEXIBLE_COUNT", "27" ],
+        [ "SSAO_DEPTH_MIP_LEVELS", "4" ],
+        [ "SSAO_ENABLE_NORMAL_WORLD_TO_VIEW_CONVERSION", "0" ]
+      ]
+    },
+
+    "PSPrepareDepths": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SSAO_MAX_TAPS", "32" ],
+        [ "SSAO_MAX_REF_TAPS", "512" ],
+        [ "SSAO_ADAPTIVE_TAP_BASE_COUNT", "5" ],
+        [ "SSAO_ADAPTIVE_TAP_FLEXIBLE_COUNT", "27" ],
+        [ "SSAO_DEPTH_MIP_LEVELS", "4" ],
+        [ "SSAO_ENABLE_NORMAL_WORLD_TO_VIEW_CONVERSION", "0" ]
+      ]
+    },
+
+    "PSPrepareDepthsAndNormals": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SSAO_MAX_TAPS", "32" ],
+        [ "SSAO_MAX_REF_TAPS", "512" ],
+        [ "SSAO_ADAPTIVE_TAP_BASE_COUNT", "5" ],
+        [ "SSAO_ADAPTIVE_TAP_FLEXIBLE_COUNT", "27" ],
+        [ "SSAO_DEPTH_MIP_LEVELS", "4" ],
+        [ "SSAO_ENABLE_NORMAL_WORLD_TO_VIEW_CONVERSION", "0" ]
+      ]
+    },
+
+    "PSPrepareDepthsHalf": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SSAO_MAX_TAPS", "32" ],
+        [ "SSAO_MAX_REF_TAPS", "512" ],
+        [ "SSAO_ADAPTIVE_TAP_BASE_COUNT", "5" ],
+        [ "SSAO_ADAPTIVE_TAP_FLEXIBLE_COUNT", "27" ],
+        [ "SSAO_DEPTH_MIP_LEVELS", "4" ],
+        [ "SSAO_ENABLE_NORMAL_WORLD_TO_VIEW_CONVERSION", "0" ]
+      ]
+    },
+
+    "PSPrepareDepthsAndNormalsHalf": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SSAO_MAX_TAPS", "32" ],
+        [ "SSAO_MAX_REF_TAPS", "512" ],
+        [ "SSAO_ADAPTIVE_TAP_BASE_COUNT", "5" ],
+        [ "SSAO_ADAPTIVE_TAP_FLEXIBLE_COUNT", "27" ],
+        [ "SSAO_DEPTH_MIP_LEVELS", "4" ],
+        [ "SSAO_ENABLE_NORMAL_WORLD_TO_VIEW_CONVERSION", "0" ]
+      ]
+    },
+
+    "PSPrepareDepthMip1": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SSAO_MAX_TAPS", "32" ],
+        [ "SSAO_MAX_REF_TAPS", "512" ],
+        [ "SSAO_ADAPTIVE_TAP_BASE_COUNT", "5" ],
+        [ "SSAO_ADAPTIVE_TAP_FLEXIBLE_COUNT", "27" ],
+        [ "SSAO_DEPTH_MIP_LEVELS", "4" ],
+        [ "SSAO_ENABLE_NORMAL_WORLD_TO_VIEW_CONVERSION", "0" ]
+      ]
+    },
+
+    "PSPrepareDepthMip2": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SSAO_MAX_TAPS", "32" ],
+        [ "SSAO_MAX_REF_TAPS", "512" ],
+        [ "SSAO_ADAPTIVE_TAP_BASE_COUNT", "5" ],
+        [ "SSAO_ADAPTIVE_TAP_FLEXIBLE_COUNT", "27" ],
+        [ "SSAO_DEPTH_MIP_LEVELS", "4" ],
+        [ "SSAO_ENABLE_NORMAL_WORLD_TO_VIEW_CONVERSION", "0" ]
+      ]
+    },
+
+    "PSPrepareDepthMip3": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SSAO_MAX_TAPS", "32" ],
+        [ "SSAO_MAX_REF_TAPS", "512" ],
+        [ "SSAO_ADAPTIVE_TAP_BASE_COUNT", "5" ],
+        [ "SSAO_ADAPTIVE_TAP_FLEXIBLE_COUNT", "27" ],
+        [ "SSAO_DEPTH_MIP_LEVELS", "4" ],
+        [ "SSAO_ENABLE_NORMAL_WORLD_TO_VIEW_CONVERSION", "0" ]
+      ]
+    },
+
+    "PSGenerateQ0": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SSAO_MAX_TAPS", "32" ],
+        [ "SSAO_MAX_REF_TAPS", "512" ],
+        [ "SSAO_ADAPTIVE_TAP_BASE_COUNT", "5" ],
+        [ "SSAO_ADAPTIVE_TAP_FLEXIBLE_COUNT", "27" ],
+        [ "SSAO_DEPTH_MIP_LEVELS", "4" ],
+        [ "SSAO_ENABLE_NORMAL_WORLD_TO_VIEW_CONVERSION", "0" ]
+      ]
+    },
+
+    "PSGenerateQ1": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SSAO_MAX_TAPS", "32" ],
+        [ "SSAO_MAX_REF_TAPS", "512" ],
+        [ "SSAO_ADAPTIVE_TAP_BASE_COUNT", "5" ],
+        [ "SSAO_ADAPTIVE_TAP_FLEXIBLE_COUNT", "27" ],
+        [ "SSAO_DEPTH_MIP_LEVELS", "4" ],
+        [ "SSAO_ENABLE_NORMAL_WORLD_TO_VIEW_CONVERSION", "0" ]
+      ]
+    },
+
+    "PSGenerateQ2": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SSAO_MAX_TAPS", "32" ],
+        [ "SSAO_MAX_REF_TAPS", "512" ],
+        [ "SSAO_ADAPTIVE_TAP_BASE_COUNT", "5" ],
+        [ "SSAO_ADAPTIVE_TAP_FLEXIBLE_COUNT", "27" ],
+        [ "SSAO_DEPTH_MIP_LEVELS", "4" ],
+        [ "SSAO_ENABLE_NORMAL_WORLD_TO_VIEW_CONVERSION", "0" ]
+      ]
+    },
+
+    "PSGenerateQ3": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SSAO_MAX_TAPS", "32" ],
+        [ "SSAO_MAX_REF_TAPS", "512" ],
+        [ "SSAO_ADAPTIVE_TAP_BASE_COUNT", "5" ],
+        [ "SSAO_ADAPTIVE_TAP_FLEXIBLE_COUNT", "27" ],
+        [ "SSAO_DEPTH_MIP_LEVELS", "4" ],
+        [ "SSAO_ENABLE_NORMAL_WORLD_TO_VIEW_CONVERSION", "0" ]
+      ]
+    },
+
+    "PSGenerateQ3Base": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SSAO_MAX_TAPS", "32" ],
+        [ "SSAO_MAX_REF_TAPS", "512" ],
+        [ "SSAO_ADAPTIVE_TAP_BASE_COUNT", "5" ],
+        [ "SSAO_ADAPTIVE_TAP_FLEXIBLE_COUNT", "27" ],
+        [ "SSAO_DEPTH_MIP_LEVELS", "4" ],
+        [ "SSAO_ENABLE_NORMAL_WORLD_TO_VIEW_CONVERSION", "0" ]
+      ]
+    },
+
+    "PSSmartBlur": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SSAO_MAX_TAPS", "32" ],
+        [ "SSAO_MAX_REF_TAPS", "512" ],
+        [ "SSAO_ADAPTIVE_TAP_BASE_COUNT", "5" ],
+        [ "SSAO_ADAPTIVE_TAP_FLEXIBLE_COUNT", "27" ],
+        [ "SSAO_DEPTH_MIP_LEVELS", "4" ],
+        [ "SSAO_ENABLE_NORMAL_WORLD_TO_VIEW_CONVERSION", "0" ]
+      ]
+    },
+
+    "PSSmartBlurWide": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SSAO_MAX_TAPS", "32" ],
+        [ "SSAO_MAX_REF_TAPS", "512" ],
+        [ "SSAO_ADAPTIVE_TAP_BASE_COUNT", "5" ],
+        [ "SSAO_ADAPTIVE_TAP_FLEXIBLE_COUNT", "27" ],
+        [ "SSAO_DEPTH_MIP_LEVELS", "4" ],
+        [ "SSAO_ENABLE_NORMAL_WORLD_TO_VIEW_CONVERSION", "0" ]
+      ]
+    },
+
+    "PSNonSmartBlur": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SSAO_MAX_TAPS", "32" ],
+        [ "SSAO_MAX_REF_TAPS", "512" ],
+        [ "SSAO_ADAPTIVE_TAP_BASE_COUNT", "5" ],
+        [ "SSAO_ADAPTIVE_TAP_FLEXIBLE_COUNT", "27" ],
+        [ "SSAO_DEPTH_MIP_LEVELS", "4" ],
+        [ "SSAO_ENABLE_NORMAL_WORLD_TO_VIEW_CONVERSION", "0" ]
+      ]
+    },
+
+    "PSApply": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SSAO_MAX_TAPS", "32" ],
+        [ "SSAO_MAX_REF_TAPS", "512" ],
+        [ "SSAO_ADAPTIVE_TAP_BASE_COUNT", "5" ],
+        [ "SSAO_ADAPTIVE_TAP_FLEXIBLE_COUNT", "27" ],
+        [ "SSAO_DEPTH_MIP_LEVELS", "4" ],
+        [ "SSAO_ENABLE_NORMAL_WORLD_TO_VIEW_CONVERSION", "0" ]
+      ]
+    },
+
+    "PSNonSmartApply": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SSAO_MAX_TAPS", "32" ],
+        [ "SSAO_MAX_REF_TAPS", "512" ],
+        [ "SSAO_ADAPTIVE_TAP_BASE_COUNT", "5" ],
+        [ "SSAO_ADAPTIVE_TAP_FLEXIBLE_COUNT", "27" ],
+        [ "SSAO_DEPTH_MIP_LEVELS", "4" ],
+        [ "SSAO_ENABLE_NORMAL_WORLD_TO_VIEW_CONVERSION", "0" ]
+      ]
+    },
+
+    "PSNonSmartHalfApply": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SSAO_MAX_TAPS", "32" ],
+        [ "SSAO_MAX_REF_TAPS", "512" ],
+        [ "SSAO_ADAPTIVE_TAP_BASE_COUNT", "5" ],
+        [ "SSAO_ADAPTIVE_TAP_FLEXIBLE_COUNT", "27" ],
+        [ "SSAO_DEPTH_MIP_LEVELS", "4" ],
+        [ "SSAO_ENABLE_NORMAL_WORLD_TO_VIEW_CONVERSION", "0" ]
+      ]
+    },
+
+    "PSGenerateImportanceMap": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SSAO_MAX_TAPS", "32" ],
+        [ "SSAO_MAX_REF_TAPS", "512" ],
+        [ "SSAO_ADAPTIVE_TAP_BASE_COUNT", "5" ],
+        [ "SSAO_ADAPTIVE_TAP_FLEXIBLE_COUNT", "27" ],
+        [ "SSAO_DEPTH_MIP_LEVELS", "4" ],
+        [ "SSAO_ENABLE_NORMAL_WORLD_TO_VIEW_CONVERSION", "0" ]
+      ]
+    },
+
+    "PSPostprocessImportanceMapA": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SSAO_MAX_TAPS", "32" ],
+        [ "SSAO_MAX_REF_TAPS", "512" ],
+        [ "SSAO_ADAPTIVE_TAP_BASE_COUNT", "5" ],
+        [ "SSAO_ADAPTIVE_TAP_FLEXIBLE_COUNT", "27" ],
+        [ "SSAO_DEPTH_MIP_LEVELS", "4" ],
+        [ "SSAO_ENABLE_NORMAL_WORLD_TO_VIEW_CONVERSION", "0" ]
+      ]
+    },
+
+    "PSPostprocessImportanceMapB": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SSAO_MAX_TAPS", "32" ],
+        [ "SSAO_MAX_REF_TAPS", "512" ],
+        [ "SSAO_ADAPTIVE_TAP_BASE_COUNT", "5" ],
+        [ "SSAO_ADAPTIVE_TAP_FLEXIBLE_COUNT", "27" ],
+        [ "SSAO_DEPTH_MIP_LEVELS", "4" ],
+        [ "SSAO_ENABLE_NORMAL_WORLD_TO_VIEW_CONVERSION", "0" ]
+      ]
+    }
+  },
+
+  "rendertypes": {},
+
+  "states": {}
+}

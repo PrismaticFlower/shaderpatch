@@ -18,6 +18,9 @@
 
 #pragma once
 
+// Shader Patch Change: Add shader::Database forward declaration.
+namespace sp::shader { class Database; }
+
 struct ID3D11Device;
 struct ID3D11DeviceContext;
 struct ID3D11ShaderResourceView;
@@ -189,11 +192,10 @@ public:
 struct ASSAO_CreateDescDX11 : ASSAO_CreateDesc
 {
     ID3D11Device *                  Device;
-    const void *                    ShaderData;
-    size_t                          ShaderDataSize;
+    sp::shader::Database * ShaderDatabase;
 
     // data pointed to by shaderData is only used during a call to ASSAO_Effect::CreateInstance
-    ASSAO_CreateDescDX11( ID3D11Device * device, const void * shaderData, size_t shaderDataSize ) : Device( device ), ShaderData( shaderData ), ShaderDataSize( shaderDataSize ) { Platform = ASSAO_SupportedPlatforms::PC_DirectX11; }
+    ASSAO_CreateDescDX11( ID3D11Device * device, sp::shader::Database * shaderDatabase ) : Device( device ), ShaderDatabase( shaderDatabase ) { Platform = ASSAO_SupportedPlatforms::PC_DirectX11; }
 };
 
 // 

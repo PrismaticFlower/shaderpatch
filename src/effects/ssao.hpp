@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../shader/database.hpp"
 #include "com_ptr.hpp"
 #include "postprocess_params.hpp"
 #include "profiler.hpp"
@@ -15,7 +16,7 @@ namespace sp::effects {
 
 class SSAO {
 public:
-   SSAO(Com_ptr<ID3D11Device4> device) noexcept;
+   SSAO(Com_ptr<ID3D11Device4> device, shader::Database& shaders) noexcept;
 
    void params(const SSAO_params params) noexcept;
 
@@ -37,8 +38,6 @@ private:
 
    bool update_proj_matrix(const glm::mat4& new_proj_matrix) noexcept;
 
-   void record_commandlist() noexcept;
-
    const Com_ptr<ID3D11Device4> _device;
    const std::unique_ptr<ASSAO_Effect, std::add_pointer_t<void(ASSAO_Effect*)>> _assao_effect;
 
@@ -46,7 +45,6 @@ private:
 
    Com_ptr<ID3D11ShaderResourceView> _depth_srv;
    Com_ptr<ID3D11RenderTargetView> _output_rtv;
-   Com_ptr<ID3D11CommandList> _commandlist;
 
    glm::mat4 _proj_matrix;
 

@@ -2,9 +2,11 @@
 #include "shader_patch.hpp"
 #include "../bf2_log_monitor.hpp"
 #include "../effects/color_helpers.hpp"
-#include "../input_hooker.hpp"
+#include "../game_support/memory_hacks.hpp"
+#include "../input_config.hpp"
 #include "../logger.hpp"
 #include "../material/editor.hpp"
+#include "../message_hooks.hpp"
 #include "../user_config.hpp"
 #include "basic_builtin_textures.hpp"
 #include "patch_material_io.hpp"
@@ -20,6 +22,9 @@
 #include <cmath>
 
 #include <comdef.h>
+
+#include <d3d11on12.h>
+#include <d3d12.h>
 
 using namespace std::literals;
 
@@ -49,14 +54,86 @@ auto create_device(IDXGIAdapter4& adapater) noexcept -> Com_ptr<ID3D11Device5>
 
    if (d3d_debug) create_flags |= D3D11_CREATE_DEVICE_DEBUG;
 
-   if (const auto result =
-          D3D11CreateDevice(&adapater, D3D_DRIVER_TYPE_UNKNOWN, nullptr,
-                            create_flags, supported_feature_levels.data(),
-                            supported_feature_levels.size(), D3D11_SDK_VERSION,
-                            device.clear_and_assign(), nullptr, nullptr);
-       FAILED(result)) {
-      log_and_terminate("Failed to create Direct3D 11 device! Reason: ",
-                        _com_error{result}.ErrorMessage());
+   if (!user_config.graphics.use_d3d11on12) {
+      if (const auto result =
+             D3D11CreateDevice(&adapater, D3D_DRIVER_TYPE_UNKNOWN, nullptr,
+                               create_flags, supported_feature_levels.data(),
+                               supported_feature_levels.size(), D3D11_SDK_VERSION,
+                               device.clear_and_assign(), nullptr, nullptr);
+          FAILED(result)) {
+         log_and_terminate("Failed to create Direct3D 11 device! Reason: ",
+                           _com_error{result}.ErrorMessage());
+      }
+   }
+   else {
+      log(Log_level::info, "Creating D3D11on12 device...");
+
+      const HMODULE d3d11_module = LoadLibraryA("D3D11.dll");
+
+      if (!d3d11_module) {
+         log_and_terminate("Failed to create Direct3D 11on12 device! Reason: "
+                           "Unable to load D3D11.dll");
+      }
+
+      const PFN_D3D11ON12_CREATE_DEVICE D3D11On12CreateDevice =
+         reinterpret_cast<PFN_D3D11ON12_CREATE_DEVICE>(
+            GetProcAddress(d3d11_module, "D3D11On12CreateDevice"));
+
+      if (!D3D11On12CreateDevice) {
+         log_and_terminate("Failed to create Direct3D 11on12 device! Reason: "
+                           "Unable to get D3D11On12CreateDevice export.");
+      }
+
+      const HMODULE d3d12_module = LoadLibraryA("D3D12.dll");
+
+      if (!d3d12_module) {
+         log_and_terminate("Failed to create Direct3D 11on12 device! Reason: "
+                           "Unable to load D3D12.dll");
+      }
+
+      if (d3d_debug) {
+         using D3D12GetDebugInterfaceProc = decltype(&D3D12GetDebugInterface);
+
+         const D3D12GetDebugInterfaceProc D3D12GetDebugInterfacePtr =
+            reinterpret_cast<D3D12GetDebugInterfaceProc>(
+               GetProcAddress(d3d12_module, "D3D12GetDebugInterface"));
+
+         if (D3D12GetDebugInterfacePtr) {
+            Com_ptr<ID3D12Debug> d3d12_debug;
+
+            if (SUCCEEDED(D3D12GetDebugInterfacePtr(
+                   IID_PPV_ARGS(d3d12_debug.clear_and_assign())))) {
+               d3d12_debug->EnableDebugLayer();
+            }
+         }
+      }
+
+      using D3D12CreateDeviceProc = decltype(&D3D12CreateDevice);
+
+      const D3D12CreateDeviceProc D3D12CreateDevicePtr =
+         reinterpret_cast<D3D12CreateDeviceProc>(
+            GetProcAddress(d3d12_module, "D3D12CreateDevice"));
+
+      if (!D3D12CreateDevicePtr) {
+         log_and_terminate("Failed to create Direct3D 11on12 device! Reason: "
+                           "Unable to get D3D12CreateDevice export.");
+      }
+
+      Com_ptr<ID3D12Device> d3d12_device;
+
+      if (FAILED(D3D12CreateDevicePtr(&adapater, D3D_FEATURE_LEVEL_11_0,
+                                      IID_PPV_ARGS(d3d12_device.clear_and_assign())))) {
+         log_and_terminate("Failed to create Direct3D 11on12 device! Reason: "
+                           "Unable to create D3D12 device.");
+      }
+
+      if (FAILED(D3D11On12CreateDevice(d3d12_device.get(), create_flags,
+                                       supported_feature_levels.data(),
+                                       supported_feature_levels.size(), nullptr, 0, 1,
+                                       device.clear_and_assign(), nullptr, nullptr))) {
+         log_and_terminate("Failed to create Direct3D 11on12 device! Reason: "
+                           "Unable to create D3D11on12 device.");
+      }
    }
 
    Com_ptr<ID3D11Device5> device5;
@@ -96,18 +173,19 @@ auto create_device(IDXGIAdapter4& adapater) noexcept -> Com_ptr<ID3D11Device5>
 }
 
 Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
-                           const UINT width, const UINT height) noexcept
+                           const UINT render_width, const UINT render_height,
+                           const UINT window_width, const UINT window_height) noexcept
    : _device{create_device(adapter)},
-     _swapchain{_device, adapter, window,
-                width * user_config.display.resolution_scale / 100,
-                height * user_config.display.resolution_scale / 100},
+     _render_width{render_width},
+     _render_height{render_height},
+     _window_width{window_width},
+     _window_height{window_height},
+     _swapchain{_device, window, window_width, window_height},
      _window{window},
-     _nearscene_depthstencil{*_device, _swapchain.width(), _swapchain.height(),
+     _nearscene_depthstencil{*_device, _render_width, _render_height,
                              to_sample_count(user_config.graphics.antialiasing_method)},
-     _farscene_depthstencil{*_device, _swapchain.width(), _swapchain.height(), 1},
+     _farscene_depthstencil{*_device, _render_width, _render_height, 1},
      _reflectionscene_depthstencil{*_device, 512, 256, 1},
-     _window_width{},
-     _window_height{},
      _bf2_log_monitor{user_config.developer.monitor_bfront2_log
                          ? std::make_unique<BF2_log_monitor>()
                          : nullptr},
@@ -124,16 +202,18 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
    _cb_draw_ps.cube_projtex = false;
    _cb_draw_ps.input_color_srgb = false;
 
-   install_window_hooks(window);
-   install_dinput_hooks();
-   set_input_hotkey(user_config.developer.toggle_key);
-   set_input_hotkey_func([this]() noexcept {
+   install_message_hooks(window);
+
+   input_config.hotkey = user_config.developer.toggle_key;
+   input_config.hotkey_func = [this]() noexcept {
       if (!std::exchange(_imgui_enabled, !_imgui_enabled))
-         set_input_mode(Input_mode::imgui);
+         input_config.mode = Input_mode::imgui;
       else
-         set_input_mode(Input_mode::normal);
-   });
-   set_input_screenshot_func([this]() noexcept { _screenshot_requested = true; });
+         input_config.mode = Input_mode::normal;
+   };
+   input_config.screenshot_func = [this]() noexcept {
+      _screenshot_requested = true;
+   };
 
    ImGui::CreateContext();
    ImGui::GetIO().MouseDrawCursor = true;
@@ -149,7 +229,9 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
 
 Shader_patch::~Shader_patch() = default;
 
-void Shader_patch::reset(const UINT width, const UINT height) noexcept
+void Shader_patch::reset(const Reset_flags flags, const UINT render_width,
+                         const UINT render_height, const UINT window_width,
+                         const UINT window_height) noexcept
 {
    _device_context->ClearState();
    _game_rendertargets.clear();
@@ -157,13 +239,14 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
    _effects.postprocess.color_grading_regions({});
    _oit_provider.clear_resources();
 
-   _window_width = width;
-   _window_height = height;
-   _swapchain.resize(width * _swapchain_scale / 100, height * _swapchain_scale / 100);
+   _render_width = render_width;
+   _render_height = render_height;
+   _window_width = window_width;
+   _window_height = window_height;
+   _swapchain.resize(flags.legacy_fullscreen, window_width, window_height);
    _game_rendertargets.emplace_back() = _swapchain.game_rendertarget();
-   _nearscene_depthstencil = {*_device, _swapchain.width(), _swapchain.height(),
-                              _rt_sample_count};
-   _farscene_depthstencil = {*_device, _swapchain.width(), _swapchain.height(), 1};
+   _nearscene_depthstencil = {*_device, _render_width, _render_height, _rt_sample_count};
+   _farscene_depthstencil = {*_device, _render_width, _render_height, 1};
    _refraction_rt = {};
    _farscene_refraction_rt = {};
    _current_game_rendertarget = _game_backbuffer_index;
@@ -184,6 +267,7 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
    _shader_rendertype = Rendertype::invalid;
    _aa_method = Antialiasing_method::none;
    _current_rt_format = Swapchain::format;
+   _aspect_ratio_hack_enabled = flags.aspect_ratio_hack;
 
    update_rendertargets();
    update_refraction_target();
@@ -193,7 +277,12 @@ void Shader_patch::reset(const UINT width, const UINT height) noexcept
 
 void Shader_patch::set_text_dpi(const std::uint32_t dpi) noexcept
 {
-   _font_atlas_builder.set_dpi(dpi);
+   if (_font_atlas_builder) _font_atlas_builder->set_dpi(dpi);
+}
+
+void Shader_patch::set_expected_aspect_ratio(const float expected_aspect_ratio) noexcept
+{
+   _expected_aspect_ratio = expected_aspect_ratio;
 }
 
 void Shader_patch::present() noexcept
@@ -234,23 +323,40 @@ void Shader_patch::present() noexcept
    _effects.profiler.end_frame(*_device_context);
    _game_postprocessing.end_frame();
 
-   if (_game_rendertargets[0].type != Game_rt_type::presentation)
+   if (_game_rendertargets[0].type != Game_rt_type::presentation) {
       patch_backbuffer_resolve();
+   }
 
    update_imgui();
 
    if (std::exchange(_screenshot_requested, false))
       screenshot(*_device, *_device_context, _swapchain, screenshots_folder);
 
-   _swapchain.present();
+   if (_swapchain.present() == Present_status::needs_reset) {
+      const bool reset_game_rendertarget =
+         _game_rendertargets[0].type == Game_rt_type::presentation;
+
+      if (reset_game_rendertarget) _game_rendertargets[0] = {};
+
+      _swapchain.reset(*_device_context);
+
+      if (reset_game_rendertarget)
+         _game_rendertargets[0] = _swapchain.game_rendertarget();
+   }
 
    _shader_database.cache_update();
 
-   if (_font_atlas_builder.update_srv_database(_shader_resource_database)) {
+   if (_font_atlas_builder &&
+       _font_atlas_builder->update_srv_database(_shader_resource_database)) {
       update_material_resources();
    }
 
    _shadows->end_frame();
+   
+   if (_set_aspect_ratio_on_present) {
+      game_support::set_aspect_ratio(static_cast<float>(_render_height) /
+                                     static_cast<float>(_render_width));
+   }
 
    update_frame_state();
    update_effects();
@@ -258,10 +364,15 @@ void Shader_patch::present() noexcept
    update_refraction_target();
    update_samplers();
    update_team_colors();
-   update_swapchain_scale();
    restore_all_game_state();
 
    if (_patch_backbuffer) _game_rendertargets[0] = _patch_backbuffer;
+
+   if (_game_rendertargets[0].type != Game_rt_type::presentation) {
+      const std::array<float, 4> black{0.0f, 0.0f, 0.0f, 0.0f};
+
+      _device_context->ClearRenderTargetView(_swapchain.rtv(), black.data());
+   }
 }
 
 auto Shader_patch::get_back_buffer() noexcept -> Game_rendertarget_id
@@ -314,9 +425,8 @@ auto Shader_patch::create_game_rendertarget(const UINT width, const UINT height)
 {
    const int index = _game_rendertargets.size();
    _game_rendertargets.emplace_back(*_device, _current_rt_format,
-                                    width == _window_width ? _swapchain.width() : width,
-                                    height == _window_height ? _swapchain.height()
-                                                             : height);
+                                    width == _window_width ? _render_width : width,
+                                    height == _window_height ? _render_height : height);
 
    return Game_rendertarget_id{index};
 }
@@ -760,10 +870,10 @@ auto Shader_patch::create_patch_effects_config(const std::span<const std::byte> 
 
 auto Shader_patch::create_game_input_layout(
    const std::span<const Input_layout_element> layout, const bool compressed,
-   const bool particle_texture_scale) noexcept -> Game_input_layout
+   const bool particle_texture_scale, const bool vertex_weights) noexcept -> Game_input_layout
 {
    return {_input_layout_descriptions.try_add(layout), compressed,
-           particle_texture_scale};
+           particle_texture_scale, vertex_weights};
 }
 
 auto Shader_patch::create_ia_buffer(const UINT size, const bool vertex_buffer,
@@ -856,33 +966,29 @@ void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
    if (_on_stretch_rendertarget)
       _on_stretch_rendertarget(src_rt, source_rect, dest_rt, dest_rect);
 
-   const auto src_box = to_box(src_rt, source_rect);
-   const auto dest_box = to_box(dest_rt, dest_rect);
+   const Normalized_rect full_rect = {0.0, 0.0, 1.0, 1.0};
 
    // Skip any fullscreen resolve or copy operation, as these will be handled as special cases by the shaders that use them.
    if (glm::uvec2{src_rt.width, src_rt.height} ==
           glm::uvec2{dest_rt.width, dest_rt.height} &&
-       glm::uvec2{src_rt.width, src_rt.height} ==
-          glm::uvec2{src_box.right - src_box.left, src_box.bottom - src_box.top} &&
-       glm::uvec2{dest_rt.width, dest_rt.height} ==
-          glm::uvec2{dest_box.right - dest_box.left, dest_box.bottom - dest_box.top}) {
+       source_rect == full_rect && dest_rect == full_rect) {
       return;
    }
+
+   const D3D11_BOX src_box = to_box(src_rt, source_rect);
+   const D3D11_BOX dest_box = to_box(dest_rt, dest_rect);
 
    _image_stretcher.stretch(*_device_context, src_box, src_rt, dest_box, dest_rt);
 
    // Check for motion blur accumulation stretch. This happens right before the UI/HUD are drawn and is the ideal time to apply postprocessing.
    if (source == get_back_buffer() &&
        glm::uvec2{dest_rt.width, dest_rt.height} == glm::uvec2{512, 256} &&
-       glm::uvec2{src_rt.width, src_rt.height} ==
-          glm::uvec2{src_box.right - src_box.left, src_box.bottom - src_box.top} &&
-       glm::uvec2{dest_rt.width, dest_rt.height} ==
-          glm::uvec2{dest_box.right - dest_box.left, dest_box.bottom - dest_box.top}) {
+       source_rect == full_rect && dest_rect == full_rect) {
       if (_effects_active) {
          _use_interface_depthstencil = true;
          _game_rendertargets[0] = _swapchain.game_rendertarget();
 
-         _device_context->ClearDepthStencilView(_farscene_depthstencil.dsv.get(),
+         _device_context->ClearDepthStencilView(_interface_depthstencil.dsv.get(),
                                                 D3D11_CLEAR_DEPTH, 1.0f, 0x0);
 
          const effects::Postprocess_input postprocess_input{*_patch_backbuffer.srv,
@@ -902,6 +1008,62 @@ void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
          set_linear_rendering(false);
 
          _effects_postprocessing_applied = true;
+      }
+
+      if (_aspect_ratio_hack_enabled) {
+         const float render_width = static_cast<float>(_render_width);
+         const float render_height = static_cast<float>(_render_height);
+
+         game_support::find_aspect_ratio(_expected_aspect_ratio);
+
+         _set_aspect_ratio_on_present = true;
+
+         switch (user_config.display.aspect_ratio_hack_hud) {
+         case Aspect_ratio_hud::centre_4_3: {
+            float override_width = render_width;
+            float override_height = render_height;
+
+            if (override_width > override_height) {
+               override_width = override_height * 4.0f / 3.0f;
+            }
+            else {
+               override_height = override_width * 3.0f / 4.0f;
+            }
+
+            game_support::set_aspect_ratio(override_height / override_width);
+
+            _viewport_override = {.TopLeftX = (render_width - override_width) / 2.0f,
+                                  .TopLeftY = (render_height - override_height) / 2.0f,
+                                  .Width = override_width,
+                                  .Height = override_height,
+                                  .MinDepth = 0.0f,
+                                  .MaxDepth = 1.0f};
+
+            _override_viewport = true;
+         } break;
+         case Aspect_ratio_hud::centre_16_9: {
+            float override_width = render_width;
+            float override_height = render_height;
+
+            if (override_width > override_height) {
+               override_width = override_height * 16.0f / 9.0f;
+            }
+            else {
+               override_height = override_width * 9.0f / 16.0f;
+            }
+
+            game_support::set_aspect_ratio(override_height / override_width);
+
+            _viewport_override = {.TopLeftX = (render_width - override_width) / 2.0f,
+                                  .TopLeftY = (render_height - override_height) / 2.0f,
+                                  .Width = override_width,
+                                  .Height = override_height,
+                                  .MinDepth = 0.0f,
+                                  .MaxDepth = 1.0f};
+
+            _override_viewport = true;
+         } break;
+         }
       }
    }
 
@@ -971,6 +1133,15 @@ void Shader_patch::set_input_layout(const Game_input_layout& input_layout) noexc
    if (std::uint32_t{input_layout.particle_texture_scale} !=
        _cb_scene.particle_texture_scale) {
       _cb_scene.particle_texture_scale = input_layout.particle_texture_scale;
+      _cb_scene_dirty = true;
+   }
+
+   const std::uint32_t soft_skin = (input_layout.has_vertex_weights &
+                                    user_config.graphics.allow_vertex_soft_skinning) |
+                                   _effects_request_soft_skinning;
+
+   if (soft_skin != _cb_scene.vs_use_soft_skinning) {
+      _cb_scene.vs_use_soft_skinning = soft_skin;
       _cb_scene_dirty = true;
    }
 }
@@ -1198,7 +1369,7 @@ void Shader_patch::draw(const D3D11_PRIMITIVE_TOPOLOGY topology,
 
 void Shader_patch::draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
                                 const UINT index_count, const UINT start_index,
-                                const UINT start_vertex) noexcept
+                                const INT base_vertex) noexcept
 {
    update_dirty_state(topology);
 
@@ -1207,7 +1378,7 @@ void Shader_patch::draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
 
    if (_discard_draw_calls) return;
 
-   _device_context->DrawIndexed(index_count, start_index, start_vertex);
+   _device_context->DrawIndexed(index_count, start_index, base_vertex);
 }
 
 void Shader_patch::begin_query(ID3D11Query& query) noexcept
@@ -1243,7 +1414,7 @@ auto Shader_patch::current_depthstencil(const bool readonly) const noexcept
 {
    const auto depthstencil = [this]() -> const Depthstencil* {
       if (_current_depthstencil_id == Game_depthstencil::nearscene)
-         return &(_use_interface_depthstencil ? _farscene_depthstencil
+         return &(_use_interface_depthstencil ? _interface_depthstencil
                                               : _nearscene_depthstencil);
       else if (_current_depthstencil_id == Game_depthstencil::farscene)
          return &_farscene_depthstencil;
@@ -1443,8 +1614,8 @@ void Shader_patch::game_rendertype_changed() noexcept
             if (dest.type != Game_rt_type::shadow) {
                dest = Game_rendertarget{*_device,
                                         shadow_texture_format,
-                                        _swapchain.width(),
-                                        _swapchain.height(),
+                                        _render_width,
+                                        _render_height,
                                         1,
                                         Game_rt_type::shadow};
             }
@@ -1798,9 +1969,16 @@ void Shader_patch::update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primit
 
       // Update viewport.
       {
-         const auto viewport =
-            CD3D11_VIEWPORT{0.0f, 0.0f, static_cast<float>(rt.width),
-                            static_cast<float>(rt.height)};
+         D3D11_VIEWPORT viewport =
+            rt.type == Game_rt_type::presentation
+               ? CD3D11_VIEWPORT{(_swapchain.width() - _render_width) / 2.0f,
+                                 (_swapchain.height() - _render_height) / 2.0f,
+                                 static_cast<float>(_render_width),
+                                 static_cast<float>(_render_height)}
+               : CD3D11_VIEWPORT{0.0f, 0.0f, static_cast<float>(rt.width),
+                                 static_cast<float>(rt.height)};
+
+         if (_override_viewport) viewport = _viewport_override;
 
          _device_context->RSSetViewports(1, &viewport);
 
@@ -1893,6 +2071,8 @@ void Shader_patch::update_frame_state() noexcept
    _oit_active = false;
    _stock_bloom_used_last_frame = std::exchange(_stock_bloom_used, false);
    _effects_postprocessing_applied = false;
+   _override_viewport = false;
+   _set_aspect_ratio_on_present = false;
 }
 
 void Shader_patch::update_imgui() noexcept
@@ -1918,8 +2098,7 @@ void Shader_patch::update_imgui() noexcept
          ImGui::Checkbox("Pixel Inspector", &_pixel_inspector.enabled);
 
          if (_pixel_inspector.enabled) {
-            _pixel_inspector.show(*_device_context, _swapchain, _window,
-                                  _swapchain_scale);
+            _pixel_inspector.show(*_device_context, _swapchain, _window);
          }
       }
 
@@ -1955,7 +2134,14 @@ void Shader_patch::update_effects() noexcept
 {
    if (std::exchange(_effects_active, _effects.enabled()) != _effects.enabled()) {
       _use_interface_depthstencil = false;
+      _interface_depthstencil =
+         _effects_active
+            ? Depthstencil{*_device, _swapchain.width(), _swapchain.height(), 1}
+            : Depthstencil{};
    }
+
+   _effects_request_soft_skinning =
+      _effects_active & _effects.config().soft_skinning_requested;
 
    update_rendertargets();
    set_linear_rendering(_effects.enabled() && _effects.config().hdr_rendering);
@@ -1985,14 +2171,13 @@ void Shader_patch::update_rendertargets() noexcept
    _rt_sample_count = to_sample_count(_aa_method);
    _om_targets_dirty = true;
 
-   _nearscene_depthstencil = {*_device, _swapchain.width(), _swapchain.height(),
-                              _rt_sample_count};
+   _nearscene_depthstencil = {*_device, _render_width, _render_height, _rt_sample_count};
    _shadow_msaa_rt = {};
 
    if (_rt_sample_count > 1) {
-      _shadow_msaa_rt = {*_device,           shadow_texture_format,
-                         _swapchain.width(), _swapchain.height(),
-                         _rt_sample_count,   Game_rt_type::shadow};
+      _shadow_msaa_rt = {*_device,         shadow_texture_format,
+                         _render_width,    _render_height,
+                         _rt_sample_count, Game_rt_type::shadow};
    }
 
    recreate_patch_backbuffer();
@@ -2023,11 +2208,10 @@ void Shader_patch::update_refraction_target() noexcept
    const auto scale_factor = to_scale_factor(_refraction_quality);
 
    _refraction_rt = Game_rendertarget{*_device, _current_rt_format,
-                                      _swapchain.width() / scale_factor,
-                                      _swapchain.height() / scale_factor};
-   _farscene_refraction_rt =
-      Game_rendertarget{*_device, _current_rt_format, _swapchain.width() / 8,
-                        _swapchain.height() / 8};
+                                      _render_width / scale_factor,
+                                      _render_height / scale_factor};
+   _farscene_refraction_rt = Game_rendertarget{*_device, _current_rt_format,
+                                               _render_width / 8, _render_height / 8};
 
    _shader_resource_database.insert(_refraction_rt.srv, refraction_texture_name);
 
@@ -2056,13 +2240,25 @@ void Shader_patch::update_samplers() noexcept
 
 void Shader_patch::update_team_colors() noexcept
 {
-   const auto team_color_coeffs = [] {
+   struct Team_color_coefficients {
+      glm::vec3 friend_health;
+      glm::vec3 friend_corsshair_dot;
+      glm::vec3 foe_text;
+      glm::vec3 foe_text_alt;
+      glm::vec3 foe_health;
+      glm::vec3 foe_flag;
+      glm::vec3 foe_crosshair_dot;
+   };
+
+   const Team_color_coefficients team_color_coeffs = [] {
       const glm::vec3 friend_color = {0.003921569f, 0.3372549f, 0.8352942f};
       const glm::vec3 friend_health_color = {0.003921569f, 0.2980392f, 0.7333333f};
       const glm::vec3 friend_corsshair_dot_color = {0.0039215f, 0.6039215f, 1.0f};
       const glm::vec3 foe_color = {0.8745099f, 0.1254902f, 0.1254902f};
       const glm::vec3 foe_text_color = {0.5882353f, 0.1176471f, 0.1176471f};
+      const glm::vec3 foe_text_alt_color = {0.5215687f, 0.1254902f, 0.1254902f};
       const glm::vec3 foe_health_color = {0.6588235f, 0.1098039f, 0.1098039f};
+      const glm::vec3 foe_flag_color = {0.5882353f, 0.05882353f, 0.09803922f};
       const glm::vec3 foe_crosshair_dot_color = {1.0f, 0.2117647f, 0.2117647f};
 
       const glm::vec3 friend_hsv = effects::rgb_to_hsv(friend_color);
@@ -2071,30 +2267,28 @@ void Shader_patch::update_team_colors() noexcept
          effects::rgb_to_hsv(friend_corsshair_dot_color);
       const glm::vec3 foe_hsv = effects::rgb_to_hsv(foe_color);
       const glm::vec3 foe_text_hsv = effects::rgb_to_hsv(foe_text_color);
+      const glm::vec3 foe_text_alt_hsv = effects::rgb_to_hsv(foe_text_alt_color);
       const glm::vec3 foe_health_hsv = effects::rgb_to_hsv(foe_health_color);
+      const glm::vec3 foe_flag_hsv = effects::rgb_to_hsv(foe_flag_color);
       const glm::vec3 foe_crosshair_dot_hsv =
          effects::rgb_to_hsv(foe_crosshair_dot_color);
-
-      struct Team_color_coefficients {
-         glm::vec3 friend_health;
-         glm::vec3 friend_corsshair_dot;
-         glm::vec3 foe_text;
-         glm::vec3 foe_health;
-         glm::vec3 foe_crosshair_dot;
-      };
 
       Team_color_coefficients coeffs{
          .friend_health = friend_health_hsv / friend_hsv,
          .friend_corsshair_dot = friend_corsshair_dot_hsv / friend_hsv,
          .foe_text = foe_text_hsv / foe_hsv,
+         .foe_text_alt = foe_text_alt_hsv / foe_hsv,
          .foe_health = foe_health_hsv / foe_hsv,
+         .foe_flag = foe_flag_hsv / foe_hsv,
          .foe_crosshair_dot = foe_crosshair_dot_hsv / foe_hsv,
       };
 
       coeffs.friend_health.x = 1.0f;
       coeffs.friend_corsshair_dot.x = 1.0f;
       coeffs.foe_text.x = 1.0f;
+      coeffs.foe_text_alt.x = 1.0f;
       coeffs.foe_health.x = 1.0f;
+      coeffs.foe_flag.x = 1.0f;
       coeffs.foe_crosshair_dot.x = 1.0f;
 
       return coeffs;
@@ -2117,8 +2311,11 @@ void Shader_patch::update_team_colors() noexcept
    colors.friend_corsshair_dot_color =
       effects::hsv_to_rgb(team_color_coeffs.friend_corsshair_dot * friend_hsv);
    colors.foe_text_color = effects::hsv_to_rgb(team_color_coeffs.foe_text * foe_hsv);
+   colors.foe_text_alt_color =
+      effects::hsv_to_rgb(team_color_coeffs.foe_text_alt * foe_hsv);
    colors.foe_health_color =
       effects::hsv_to_rgb(team_color_coeffs.foe_health * foe_hsv);
+   colors.foe_flag_color = effects::hsv_to_rgb(team_color_coeffs.foe_flag * foe_hsv);
    colors.foe_crosshair_dot_color =
       effects::hsv_to_rgb(team_color_coeffs.foe_crosshair_dot * foe_hsv);
 
@@ -2126,11 +2323,16 @@ void Shader_patch::update_team_colors() noexcept
    colors.friend_corsshair_dot_color =
       glm::clamp(colors.friend_corsshair_dot_color, 0.0f, 1.0f);
    colors.foe_text_color = glm::clamp(colors.foe_text_color, 0.0f, 1.0f);
+   colors.foe_text_alt_color = glm::clamp(colors.foe_text_alt_color, 0.0f, 1.0f);
    colors.foe_health_color = glm::clamp(colors.foe_health_color, 0.0f, 1.0f);
+   colors.foe_flag_color = glm::clamp(colors.foe_flag_color, 0.0f, 1.0f);
    colors.foe_crosshair_dot_color =
       glm::clamp(colors.foe_crosshair_dot_color, 0.0f, 1.0f);
 
+   // Custom foe text colours can appear too dark when they're adjusted the same way as everything else.
+   // Though this is done above for completeness it is better (for the user) to just set it to the exact colour.
    colors.foe_text_color = colors.foe_color;
+   colors.foe_text_alt_color = colors.foe_color;
 
    update_dynamic_buffer(*_device_context, *_cb_team_colors_buffer, colors);
 }
@@ -2142,85 +2344,35 @@ void Shader_patch::update_material_resources() noexcept
    }
 }
 
-void Shader_patch::update_swapchain_scale() noexcept
-{
-   if (user_config.display.resolution_scale ==
-       std::exchange(_swapchain_scale, user_config.display.resolution_scale)) {
-      return;
-   }
-
-   _rendertarget_allocator.reset();
-   _om_targets_dirty = true;
-
-   if (_game_rendertargets[0].type == Game_rt_type::presentation) {
-      _game_rendertargets[0] = {};
-      _device_context->OMSetRenderTargets(0, nullptr, nullptr); // make sure the swapchain isn't still bound as a rendertarget.
-   }
-
-   const UINT old_width = _swapchain.width();
-   const UINT old_height = _swapchain.height();
-
-   _swapchain.resize(_window_width * _swapchain_scale / 100,
-                     _window_height * _swapchain_scale / 100);
-
-   // depthstencil textures
-   _nearscene_depthstencil = {*_device, _swapchain.width(), _swapchain.height(),
-                              _rt_sample_count};
-   _farscene_depthstencil = {*_device, _swapchain.width(), _swapchain.height(), 1};
-
-   // shadow MSAA target
-   if (_shadow_msaa_rt) {
-      _shadow_msaa_rt = {*_device,           shadow_texture_format,
-                         _swapchain.width(), _swapchain.height(),
-                         _rt_sample_count,   Game_rt_type::shadow};
-   }
-
-   // patch backbuffer handling
-   recreate_patch_backbuffer();
-
-   _game_rendertargets[0] =
-      _patch_backbuffer ? _patch_backbuffer : _swapchain.game_rendertarget();
-
-   for (auto& rt : _game_rendertargets) {
-      if (rt.type == Game_rt_type::presentation) continue;
-
-      if (rt.width == old_width && rt.height == old_height) {
-         rt = Game_rendertarget{*_device, _current_rt_format,
-                                _swapchain.width(), _swapchain.height()};
-      }
-   }
-
-   ImGui_ImplWin32_SwapchainScale(_swapchain_scale);
-}
-
 void Shader_patch::recreate_patch_backbuffer() noexcept
 {
    _patch_backbuffer = {};
    _backbuffer_cmaa2_views = {};
 
    if (_rt_sample_count > 1) {
-      _patch_backbuffer =
-         Game_rendertarget{*_device, _current_rt_format, _swapchain.width(),
-                           _swapchain.height(), _rt_sample_count};
+      _patch_backbuffer = Game_rendertarget{*_device, _current_rt_format, _render_width,
+                                            _render_height, _rt_sample_count};
    }
    else if (_effects_active || user_config.graphics.enable_16bit_color_rendering) {
-      _patch_backbuffer =
-         Game_rendertarget{*_device, _current_rt_format, _swapchain.width(),
-                           _swapchain.height(), 1};
+      _patch_backbuffer = Game_rendertarget{*_device, _current_rt_format,
+                                            _render_width, _render_height, 1};
    }
-
-   if (_aa_method == Antialiasing_method::cmaa2 &&
-       !(user_config.graphics.enable_16bit_color_rendering || _effects_active)) {
+   else if (_aa_method == Antialiasing_method::cmaa2) {
       _patch_backbuffer = Game_rendertarget{*_device,
                                             DXGI_FORMAT_R8G8B8A8_TYPELESS,
                                             DXGI_FORMAT_R8G8B8A8_UNORM,
-                                            _swapchain.width(),
-                                            _swapchain.height(),
+                                            _render_width,
+                                            _render_height,
                                             D3D11_BIND_UNORDERED_ACCESS};
       _backbuffer_cmaa2_views =
          Backbuffer_cmaa2_views{*_device, *_patch_backbuffer.texture,
                                 DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
                                 DXGI_FORMAT_R8G8B8A8_UNORM};
+   }
+   else if (_render_width != _swapchain.width() ||
+            _render_height != _swapchain.height()) {
+      _patch_backbuffer = Game_rendertarget{*_device, DXGI_FORMAT_R8G8B8A8_UNORM,
+                                            _render_width, _render_height, 1};
    }
 }
 

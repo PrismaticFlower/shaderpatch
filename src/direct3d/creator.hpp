@@ -11,7 +11,7 @@
 
 #include <dxgi1_6.h>
 
-#include <d3d9.h>
+extern "C" IDirect3D9* __stdcall direct3d9_create(UINT sdk) noexcept;
 
 namespace sp::d3d9 {
 
@@ -78,13 +78,9 @@ private:
 
    std::mutex _mutex;
 
-   std::array<D3DDISPLAYMODE, 3> pseudo_display_modes = {
-      {{640, 480, 60, D3DFMT_X8R8G8B8},
-       {800, 600, 60, D3DFMT_X8R8G8B8},
-       {1024, 768, 60, D3DFMT_X8R8G8B8}}};
-
    Com_ptr<IDXGIAdapter4> _adapter;
    Com_ptr<Device> _device;
+   Com_ptr<IDirect3D9> _d3d9{direct3d9_create(D3D_SDK_VERSION)};
 
    std::atomic<ULONG> _ref_count = 1;
 };

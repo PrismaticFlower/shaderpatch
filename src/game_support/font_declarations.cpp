@@ -143,13 +143,15 @@ auto make_font_declaration(std::string name, std::string_view atlas_index,
 
 auto create_font_declarations(const std::filesystem::path& font_path) -> Font_declarations
 {
-   const static Font_declarations font_declarations = [&font_path] {
+   const static Font_declarations font_declarations = [&] {
       auto freetype_library = make_freetype_library();
 
-      std::array freetype_faces{make_freetype_face(freetype_library, font_path),
-                                make_freetype_face(freetype_library, font_path),
-                                make_freetype_face(freetype_library, font_path),
-                                make_freetype_face(freetype_library, font_path)};
+      const std::vector<FT_Byte> font_data = load_font_data(font_path);
+
+      std::array freetype_faces{make_freetype_face(freetype_library, font_data),
+                                make_freetype_face(freetype_library, font_data),
+                                make_freetype_face(freetype_library, font_data),
+                                make_freetype_face(freetype_library, font_data)};
 
       const auto make_metrics_async = [&](const std::size_t i) {
          return std::async(std::launch::async, [i, &freetype_faces] {

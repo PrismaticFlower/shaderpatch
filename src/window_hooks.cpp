@@ -5,8 +5,6 @@
 
 #include <atomic>
 
-#include <detours/detours.h>
-
 namespace sp {
 
 namespace {
@@ -14,7 +12,16 @@ namespace {
 std::atomic_flag set_dpi_awareness{};
 DWORD game_thread_id{};
 
-decltype(&CreateWindowExA) true_CreateWindowExA = CreateWindowExA;
+}
+
+void init_window_hook_game_thread_id(DWORD id) noexcept
+{
+   game_thread_id = id;
+}
+
+}
+
+using namespace sp;
 
 extern "C" HWND WINAPI CreateWindowExA_hook(DWORD dwExStyle, LPCSTR lpClassName,
                                             LPCSTR lpWindowName, DWORD dwStyle,
@@ -29,31 +36,6 @@ extern "C" HWND WINAPI CreateWindowExA_hook(DWORD dwExStyle, LPCSTR lpClassName,
       SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
    }
 
-   return true_CreateWindowExA(dwExStyle, lpClassName, lpWindowName, dwStyle, X,
-                               Y, nWidth, nHeight, hWndParent, hMenu, hInstance,
-                               lpParam);
-}
-
-}
-
-void install_window_hooks(const DWORD main_thread_id) noexcept
-{
-   game_thread_id = main_thread_id;
-
-   bool failure = true;
-
-   if (DetourTransactionBegin() == NO_ERROR) {
-      if (DetourAttach(&reinterpret_cast<PVOID&>(true_CreateWindowExA),
-                       CreateWindowExA_hook) == NO_ERROR) {
-         if (DetourTransactionCommit() == NO_ERROR) {
-            failure = false;
-         }
-      }
-   }
-
-   if (failure) {
-      log_and_terminate("Failed to install file hooks."sv);
-   }
-}
-
+   return CreateWindowExA(dwExStyle, lpClassName, lpWindowName, dwStyle, X, Y,
+                          nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
 }

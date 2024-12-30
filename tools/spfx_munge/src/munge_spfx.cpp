@@ -1,7 +1,6 @@
 
 #include "munge_spfx.hpp"
 #include "compose_exception.hpp"
-#include "envfx_edits.hpp"
 #include "munge_colorgrading_regions.hpp"
 #include "req_file_helpers.hpp"
 #include "string_utilities.hpp"
@@ -118,7 +117,11 @@ void munge_spfx(const fs::path& spfx_path, const fs::path& output_dir)
                                                   spfx_path, " found."sv);
    }
 
-   edit_envfx(envfx_path, output_dir);
+   synced_print("Copying "sv, envfx_path.filename().string(), "..."sv);
+
+   fs::copy_file(envfx_path,
+                 output_dir / envfx_path.filename().replace_extension(".tmpfx"),
+                 fs::copy_options::overwrite_existing);
 
    synced_print("Munging "sv, spfx_path.filename().string(), "..."sv);
 

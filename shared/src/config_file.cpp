@@ -250,7 +250,7 @@ void print_values(std::ostream& stream, const Values_range& values)
                stream << std::quoted(val);
             }
             else {
-               static_assert(not std::is_same_v<Type, void>,
+               static_assert(std::is_same_v<Type, void>,
                              "Unexpected Node_value type!");
             }
          },

@@ -29,15 +29,24 @@ constexpr auto property_datatype() noexcept -> ImGuiDataType
 }
 
 template<typename Type>
+constexpr auto property_speed() noexcept -> float
+{
+   if constexpr (std::is_integral_v<Type>) return 0.25f;
+   if constexpr (std::is_floating_point_v<Type>) return 0.01f;
+}
+
+template<typename Type>
 struct Property_traits {
-   inline constexpr static auto data_type = property_datatype<Type>();
-   inline constexpr static auto length = 1;
+   inline constexpr static ImGuiDataType data_type = property_datatype<Type>();
+   inline constexpr static float speed = property_speed<Type>();
+   inline constexpr static int length = 1;
 };
 
 template<typename Type, std::size_t len>
 struct Property_traits<glm::vec<len, Type>> {
-   inline constexpr static auto data_type = property_datatype<Type>();
-   inline constexpr static auto length = len;
+   inline constexpr static ImGuiDataType data_type = property_datatype<Type>();
+   inline constexpr static float speed = property_speed<Type>();
+   inline constexpr static int length = len;
 };
 
 constexpr auto v = Property_traits<float>::length;
@@ -45,8 +54,10 @@ constexpr auto v = Property_traits<float>::length;
 template<typename Var_type>
 void property_editor(const std::string& name, Material_var<Var_type>& var) noexcept
 {
-   ImGui::DragScalarN(name.c_str(), Property_traits<Var_type>::data_type, &var.value,
-                      Property_traits<Var_type>::length, 0.01f, &var.min, &var.max);
+   using Traits = Property_traits<Var_type>;
+
+   ImGui::DragScalarN(name.c_str(), Traits::data_type, &var.value,
+                      Traits::length, Traits::speed, &var.min, &var.max);
 
    var.value = glm::clamp(var.value, var.min, var.max);
 }

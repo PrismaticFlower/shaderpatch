@@ -9,8 +9,7 @@ class Pixel_inspector {
 public:
    Pixel_inspector(Com_ptr<ID3D11Device5> device, shader::Database& shaders);
 
-   void show(ID3D11DeviceContext1& dc, Swapchain& swapchain, const HWND window,
-             const UINT swapchain_scale) noexcept;
+   void show(ID3D11DeviceContext1& dc, Swapchain& swapchain, const HWND window) noexcept;
 
    /// @brief Unused by Pixel_inspector itself, this is here purely to save putting yet another bool in Shader_patch just for a dev tool.
    bool enabled = false;

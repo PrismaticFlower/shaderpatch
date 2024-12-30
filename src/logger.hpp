@@ -79,7 +79,7 @@ inline void log(const Log_level level, Args&&... args) noexcept
 }
 
 template<typename... Args>
-inline void log_debug([[maybe_unused]] std::string_view format_str,
+inline void log_debug([[maybe_unused]] fmt::format_string<const Args&...> format_str,
                       [[maybe_unused]] const Args&... args) noexcept
 {
 #ifndef NDEBUG
@@ -95,7 +95,7 @@ inline void log_debug([[maybe_unused]] std::string_view format_str,
 }
 
 template<typename... Args>
-inline void log_fmt(const Log_level level, std::string_view format_str,
+inline void log_fmt(const Log_level level, fmt::format_string<const Args&...> format_str,
                     const Args&... args) noexcept
 {
    auto& stream = get_log_stream();
@@ -117,7 +117,7 @@ template<typename... Args>
 }
 
 template<typename... Args>
-[[noreturn]] inline void log_and_terminate_fmt(std::string_view format_str,
+[[noreturn]] inline void log_and_terminate_fmt(fmt::format_string<const Args&...> format_str,
                                                const Args&... args)
 {
    log_fmt(Log_level::error, format_str, args...);

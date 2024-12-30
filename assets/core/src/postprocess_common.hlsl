@@ -15,9 +15,8 @@ const static float bloom_radius_scale = 1.0;
 
 cbuffer PostprocessConstants : register(b0)
 {
+   float2 resolution;
    float2 scene_pixel_size;
-   float vignette_end;
-   float vignette_start;
 
    float3 bloom_global_scale;
    float bloom_threshold;
@@ -31,6 +30,9 @@ cbuffer PostprocessConstants : register(b0)
    float film_grain_luma_amount;
 
    float2 film_grain_size;
+
+   float vignette_end;
+   float vignette_start;
 
    float4 randomness_flt;
    uint4 randomness_uint;

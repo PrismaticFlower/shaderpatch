@@ -51,9 +51,10 @@ private:
                               const Flags flags, Swapchain& swapchain,
                               const Interfaces& interfaces) noexcept;
 
-   void resolve_input(ID3D11DeviceContext1& dc, const Input& input,
-                      const Flags flags, const Interfaces& interfaces,
-                      ID3D11RenderTargetView& target) noexcept;
+   void resolve_input(ID3D11DeviceContext1& dc, const Input& input, const Flags flags,
+                      const Interfaces& interfaces, ID3D11RenderTargetView& target,
+                      const float target_offset_left, const float target_offset_top,
+                      const UINT target_width, const UINT target_height) noexcept;
 
    auto get_blue_noise_texture(const Interfaces& interfaces) noexcept
       -> ID3D11ShaderResourceView*;

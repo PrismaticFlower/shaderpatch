@@ -8,12 +8,14 @@
 
 namespace sp::core {
 
+enum class Present_status { ok, needs_reset };
+
 class Swapchain {
 public:
    constexpr static auto format = DXGI_FORMAT_R8G8B8A8_UNORM;
 
-   Swapchain(Com_ptr<ID3D11Device1> device, IDXGIAdapter2& adapter,
-             const HWND window, const UINT width, const UINT height) noexcept;
+   Swapchain(Com_ptr<ID3D11Device1> device, const HWND window, const UINT width,
+             const UINT height) noexcept;
 
    ~Swapchain() = default;
 
@@ -23,9 +25,11 @@ public:
    Swapchain(Swapchain&&) = delete;
    Swapchain& operator=(Swapchain&&) = delete;
 
-   void resize(const UINT width, const UINT height) noexcept;
+   void reset(ID3D11DeviceContext& dc) noexcept;
 
-   void present() noexcept;
+   void resize(const bool fullscreen, const UINT width, const UINT height) noexcept;
+
+   auto present() noexcept -> Present_status;
 
    auto game_rendertarget() const noexcept -> Game_rendertarget;
 
@@ -44,31 +48,17 @@ public:
 private:
    const Com_ptr<ID3D11Device1> _device;
    const Com_ptr<IDXGISwapChain1> _swapchain;
-   Com_ptr<ID3D11Texture2D> _texture = [this] {
-      Com_ptr<ID3D11Texture2D> texture;
-      _swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D),
-                            texture.void_clear_and_assign());
+   Com_ptr<ID3D11Texture2D> _texture;
+   Com_ptr<ID3D11RenderTargetView> _rtv;
+   Com_ptr<ID3D11ShaderResourceView> _srv;
 
-      return texture;
-   }();
-   Com_ptr<ID3D11RenderTargetView> _rtv = [this] {
-      Com_ptr<ID3D11RenderTargetView> rtv;
-      _device->CreateRenderTargetView(_texture.get(), nullptr, rtv.clear_and_assign());
-
-      return rtv;
-   }();
-   Com_ptr<ID3D11ShaderResourceView> _srv = [this] {
-      Com_ptr<ID3D11ShaderResourceView> srv;
-      _device->CreateShaderResourceView(_texture.get(), nullptr,
-                                        srv.clear_and_assign());
-
-      return srv;
-   }();
+   const HWND _window;
 
    const bool _allow_tearing;
 
-   UINT _width;
-   UINT _height;
+   bool _fullscreen = false;
+   UINT _width = 0;
+   UINT _height = 0;
 };
 
 }

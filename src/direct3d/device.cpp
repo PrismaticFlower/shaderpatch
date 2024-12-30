@@ -1,5 +1,6 @@
 
 #include "device.hpp"
+#include "../game_support/memory_hacks.hpp"
 #include "../user_config.hpp"
 #include "../window_helpers.hpp"
 #include "buffer.hpp"
@@ -50,7 +51,7 @@ Com_ptr<Device> Device::create(IDirect3D9& parent, IDXGIAdapter4& adapter,
 Device::Device(IDirect3D9& parent, IDXGIAdapter4& adapter, const HWND window,
                const UINT width, const UINT height) noexcept
    : _parent{parent},
-     _shader_patch{adapter, window, width, height},
+     _shader_patch{adapter, window, width, height, width, height},
      _adapter{copy_raw_com_ptr(adapter)},
      _window{window},
      _actual_width{width},
@@ -58,6 +59,14 @@ Device::Device(IDirect3D9& parent, IDXGIAdapter4& adapter, const HWND window,
      _perceived_width{width},
      _perceived_height{height}
 {
+   win32::make_borderless_window(_window);
+
+   MONITORINFO info{sizeof(MONITORINFO)};
+   GetMonitorInfoW(MonitorFromWindow(_window, MONITOR_DEFAULTTONEAREST), &info);
+
+   _monitor_width = info.rcMonitor.right - info.rcMonitor.left;
+   _monitor_height = info.rcMonitor.bottom - info.rcMonitor.top;
+
    _parent.AddRef();
 }
 
@@ -187,23 +196,9 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
 
    if (!params) return D3DERR_INVALIDCALL;
 
-   MONITORINFO info{sizeof(MONITORINFO)};
-   GetMonitorInfoW(MonitorFromWindow(_window, MONITOR_DEFAULTTONEAREST), &info);
-
-   const UINT monitor_width = info.rcMonitor.right - info.rcMonitor.left;
-   const UINT monitor_height = info.rcMonitor.bottom - info.rcMonitor.top;
-
-   const UINT window_width = monitor_width * user_config.display.screen_percent / 100;
-   const UINT window_height =
-      monitor_height * user_config.display.screen_percent / 100;
-
    const UINT base_dpi = 96;
    const UINT dpi = [&] {
       UINT dpi = GetDpiForWindow(_window);
-
-      if (user_config.display.scale_dpi_with_resolution_scale) {
-         dpi = dpi * 100 / user_config.display.resolution_scale;
-      }
 
       dpi = dpi * user_config.ui.extra_ui_scaling / 100;
 
@@ -212,49 +207,95 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
 
    std::uint32_t text_dpi = dpi;
 
-   _actual_width = window_width;
-   _actual_height = window_height;
+   core::Reset_flags reset_flags{.legacy_fullscreen = !params->Windowed};
+
+   _actual_width = params->BackBufferWidth;
+   _actual_height = params->BackBufferHeight;
+
+   if (user_config.display.override_resolution) {
+      if (user_config.display.treat_800x600_as_interface &&
+          _actual_width == 800 && _actual_height == 600) {
+         // Do Nothing!
+      }
+      else {
+         _actual_width = _monitor_width *
+                         user_config.display.override_resolution_screen_percent / 100;
+         _actual_height = _monitor_height *
+                          user_config.display.override_resolution_screen_percent / 100;
+      }
+
+      reset_flags.legacy_fullscreen = false;
+   }
+
+   _perceived_width = _actual_width;
+   _perceived_height = _actual_height;
+
+   UINT window_width = _actual_width;
+   UINT window_height = _actual_height;
 
    if (user_config.display.treat_800x600_as_interface &&
        params->BackBufferWidth == 800 && params->BackBufferHeight == 600) {
-      _perceived_width = 800;
-      _perceived_height = 600;
-
-      if (user_config.display.windowed_interface) {
-         if (user_config.display.dpi_aware && user_config.display.dpi_scaling) {
-            _actual_width = std::min(800 * dpi / base_dpi, monitor_width);
-            _actual_height = std::min(600 * dpi / base_dpi, monitor_height);
+      if (!params->Windowed) {
+         if (user_config.display.stretch_interface) {
+            _actual_width = _monitor_width;
+            _actual_height = _monitor_height;
+            window_width = _monitor_width;
+            window_height = _monitor_height;
          }
          else {
-            _actual_width = 800;
-            _actual_height = 600;
-         }
-      }
-      else {
-         text_dpi = text_dpi_from_resolution(_actual_width, _actual_height,
-                                             _perceived_width,
-                                             _perceived_height, base_dpi);
-      }
-   }
-   else {
-      if (user_config.display.enable_game_perceived_resolution_override) {
-         _perceived_width = user_config.display.game_perceived_resolution_override_width;
-         _perceived_height =
-            user_config.display.game_perceived_resolution_override_height;
+            if (_monitor_width > _monitor_height) {
+               _actual_width = _monitor_height * 4 / 3;
+               _actual_height = _monitor_height;
+            }
+            else {
+               _actual_width = _monitor_width;
+               _actual_height = _monitor_width * 3 / 4;
+            }
 
-         text_dpi = text_dpi_from_resolution(_actual_width, _actual_height,
-                                             _perceived_width,
-                                             _perceived_height, base_dpi);
+            window_width = _monitor_width;
+            window_height = _monitor_height;
+            text_dpi = text_dpi_from_resolution(_actual_width, _actual_height,
+                                                _perceived_width,
+                                                _perceived_height, base_dpi);
+         }
+
+         reset_flags.legacy_fullscreen = false;
       }
       else if (user_config.display.dpi_aware && user_config.display.dpi_scaling) {
+         _actual_width = std::min(800 * dpi / base_dpi, _monitor_width);
+         _actual_height = std::min(600 * dpi / base_dpi, _monitor_height);
+
+         window_width = _actual_width;
+         window_height = _actual_height;
+      }
+   }
+   else if (user_config.display.enable_game_perceived_resolution_override) {
+      _perceived_width = user_config.display.game_perceived_resolution_override_width;
+      _perceived_height = user_config.display.game_perceived_resolution_override_height;
+
+      text_dpi = text_dpi_from_resolution(_actual_width, _actual_height, _perceived_width,
+                                          _perceived_height, base_dpi);
+   }
+   else if (user_config.display.dpi_aware && user_config.display.dpi_scaling) {
+      if (user_config.display.dsr_vsr_scaling && _actual_width > _monitor_width ||
+          _actual_height > _monitor_height) { // Scaling for DSR/VSR.
+         text_dpi =
+            text_dpi_from_resolution(_actual_width, _actual_height,
+                                     _monitor_width, _monitor_height, base_dpi);
+         text_dpi = text_dpi * user_config.ui.extra_ui_scaling / 100;
+
+         _perceived_width = _actual_width * base_dpi / text_dpi;
+         _perceived_height = _actual_height * base_dpi / text_dpi;
+      }
+      else { // Normal DPI scaling.
          _perceived_width = _actual_width * base_dpi / dpi;
          _perceived_height = _actual_height * base_dpi / dpi;
       }
-      else {
-         _perceived_width = _actual_width;
-         _perceived_height = _actual_height;
-         text_dpi = base_dpi;
-      }
+   }
+   else {
+      _perceived_width = _actual_width;
+      _perceived_height = _actual_height;
+      text_dpi = base_dpi;
    }
 
    // The game's UI layout code starts to struggle with resolutions below 640x480. So we clamp to it here to avoid issues.
@@ -267,23 +308,49 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
                                           _perceived_height, base_dpi);
    }
 
+   if (user_config.display.aspect_ratio_hack) {
+      switch (user_config.display.aspect_ratio_hack_hud) {
+      case Aspect_ratio_hud::centre_4_3:
+      case Aspect_ratio_hud::stretch_4_3: {
+         if (_perceived_width > _perceived_height) {
+            _perceived_width = _perceived_height * 4 / 3;
+         }
+         else {
+            _perceived_height = _perceived_width * 3 / 4;
+         }
+      } break;
+      case Aspect_ratio_hud::centre_16_9:
+      case Aspect_ratio_hud::stretch_16_9: {
+         if (_perceived_width > _perceived_height) {
+            _perceived_width = _perceived_height * 16 / 9;
+         }
+         else {
+            _perceived_height = _perceived_width * 9 / 16;
+         }
+      } break;
+      }
+
+      game_support::set_aspect_ratio_search_ptr(
+         std::launder(reinterpret_cast<float*>(params)));
+      _shader_patch.set_expected_aspect_ratio(static_cast<float>(_perceived_height) /
+                                              static_cast<float>(_perceived_width));
+
+      reset_flags.aspect_ratio_hack = true;
+   }
+
    params->BackBufferWidth = _perceived_width;
    params->BackBufferHeight = _perceived_height;
 
-   win32::resize_window(_window, _actual_width, _actual_height);
-
-   if (user_config.display.centred || user_config.display.screen_percent == 100) {
-      win32::centre_window(_window);
-   }
-   else {
-      win32::leftalign_window(_window);
+   if (window_width == _monitor_width && window_height == _monitor_height) {
+      reset_flags.legacy_fullscreen = false;
    }
 
-   win32::clip_cursor_to_window(_window);
+   win32::position_window(_window, window_width, window_height);
 
    _render_state_manager.reset();
    _texture_stage_manager.reset();
-   _shader_patch.reset(_actual_width, _actual_height);
+   _shader_patch.reset(reset_flags, _actual_width, _actual_height, window_width,
+                       window_height);
    _shader_patch.set_text_dpi(text_dpi);
    _fixed_func_active = true;
 
@@ -294,6 +361,8 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
                                                 _perceived_width, _perceived_height);
 
    _viewport = {0, 0, _perceived_width, _perceived_height, 0.0f, 1.0f};
+
+   if (GetFocus() == _window) win32::clip_cursor_to_window(_window);
 
    return S_OK;
 }
@@ -493,17 +562,8 @@ HRESULT Device::StretchRect(IDirect3DSurface9* source_surface,
    D3DSURFACE_DESC src_desc{};
    source_surface->GetDesc(&src_desc);
 
-   const RECT default_source_rect{0, 0, static_cast<LONG>(src_desc.Width),
-                                  static_cast<LONG>(src_desc.Height)};
-
    D3DSURFACE_DESC dest_desc{};
    dest_surface->GetDesc(&dest_desc);
-
-   const RECT default_dest_rect{0, 0, static_cast<LONG>(dest_desc.Width),
-                                static_cast<LONG>(dest_desc.Height)};
-
-   if (!source_rect) source_rect = &default_source_rect;
-   if (!dest_rect) dest_rect = &default_dest_rect;
 
    const auto rect_in_surface = [](RECT rect, D3DSURFACE_DESC desc) -> bool {
       if ((rect.right - rect.left) > desc.Width) return false;
@@ -512,8 +572,12 @@ HRESULT Device::StretchRect(IDirect3DSurface9* source_surface,
       return true;
    };
 
-   if (!rect_in_surface(*source_rect, src_desc)) return D3DERR_INVALIDCALL;
-   if (!rect_in_surface(*dest_rect, dest_desc)) return D3DERR_INVALIDCALL;
+   if (source_rect && !rect_in_surface(*source_rect, src_desc)) {
+      return D3DERR_INVALIDCALL;
+   }
+   if (dest_rect && !rect_in_surface(*dest_rect, dest_desc)) {
+      return D3DERR_INVALIDCALL;
+   }
 
    const auto* const source_id =
       reinterpret_cast<Resource*>(source_surface)->get_if<core::Game_rendertarget_id>();
@@ -525,9 +589,13 @@ HRESULT Device::StretchRect(IDirect3DSurface9* source_surface,
 
    _shader_patch.stretch_rendertarget(
       *source_id,
-      core::make_normalized_rect(*source_rect, src_desc.Width, src_desc.Height),
+      source_rect
+         ? core::make_normalized_rect(*source_rect, src_desc.Width, src_desc.Height)
+         : core::Normalized_rect{0.0, 0.0, 1.0, 1.0},
       *dest_id,
-      core::make_normalized_rect(*dest_rect, dest_desc.Width, dest_desc.Height));
+      dest_rect
+         ? core::make_normalized_rect(*dest_rect, dest_desc.Width, dest_desc.Height)
+         : core::Normalized_rect{0.0, 0.0, 1.0, 1.0});
 
    return S_OK;
 }

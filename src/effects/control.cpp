@@ -42,8 +42,8 @@ void show_tonemapping_curve(std::function<float(float)> tonemapper) noexcept;
 
 Control::Control(Com_ptr<ID3D11Device5> device, shader::Database& shaders) noexcept
    : postprocess{device, shaders},
-     cmaa2{device, shaders},
-     ssao{device},
+     cmaa2{device, shaders.compute("CMAA2"sv)},
+     ssao{device, shaders},
      ffx_cas{device, shaders},
      mask_nan{device, shaders},
      profiler{device}
@@ -93,6 +93,16 @@ void Control::show_imgui(HWND game_window) noexcept
                   "Informs SP that OIT is required for some models to "
                   "render correctly and that it should be enabled if the "
                   "user's GPU supports it.");
+            }
+
+            ImGui::Checkbox("Request Soft Skinning", &_config.soft_skinning_requested);
+
+            if (ImGui::IsItemHovered()) {
+               ImGui::SetTooltip(
+                  "Informs SP that soft skinning is required for some models "
+                  "to render correctly and that it should be enabled even if "
+                  "the "
+                  "user has switched it off.");
             }
 
             if (!_config.hdr_rendering) {
@@ -615,18 +625,9 @@ FFX_cas_params show_ffx_cas_imgui(FFX_cas_params params) noexcept
 {
    ImGui::Checkbox("Enabled", &params.enabled);
 
-   // Out of corcern of people just seeing "sharpness" and  thinking "of course I want sharpness" then
-   // setting the value to the max without paying too much attention to the ringing that introduces
-   // the sharpness param is flipped and renamed to "Fidelity" in the UI.
-   //
-   // The hope is this has the effect of making people observe and consider the trade off of increased
-   // sharpness vs ringing when configuring CAS. Or maybe it won't and this is a waste of time.
+   ImGui::DragFloat("Sharpness", &params.sharpness, 0.01f, 0.0f, 1.0f);
 
-   float fidelity = 1.0f - std::clamp(params.sharpness, 0.0f, 1.0f);
-
-   ImGui::DragFloat("Fidelity", &fidelity, 0.01f, 0.0f, 1.0f);
-
-   params.sharpness = std::clamp(1.0f - fidelity, 0.0f, 1.0f);
+   params.sharpness = std::clamp(params.sharpness, 0.0f, 1.0f);
 
    return params;
 }

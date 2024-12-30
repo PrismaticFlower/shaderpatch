@@ -28,11 +28,9 @@ There are more than this but below is a short list of some of the key features S
 To grab yourself the latest release simply follow this [link](https://github.com/SleepKiller/swbfii-shaderpatch/releases/latest) and download the **shaderpatch.zip** file. If it's the source code your after there should be button labeled `Clone or Download` somewhere at the top of this page you can use to grab a copy of the lastest source code.
 
 ## Building
-Before anything else you'll need to install [Visual Studio 2019 Community](https://www.visualstudio.com/downloads/) with the Desktop C++ 
-and Desktop .NET workloads.
+Before anything else you'll need to install [Visual Studio 2022 Community](https://www.visualstudio.com/downloads/) with the Desktop C++ workload.
 
-The project has several external dependencies, all of them are obtained through [vcpkg](https://github.com/microsoft/vcpkg). `scripts/install_vcpkgs.ps1` has a
-listing of all the dependencies.
+The project has several external dependencies, all of them are obtained through [vcpkg](https://github.com/microsoft/vcpkg). The project uses a [vcpkg manifest](https://github.com/SleepKiller/shaderpatch/blob/master/vcpkg.json) so that once vcpkg is installed (along with it's integration) the project can just be built and vcpkg will take care getting and building the dependencies.
 
 Once building you can use `scripts/preparepackages.ps1` to create ready to zip packages of Shader Patch and it's tools.
 

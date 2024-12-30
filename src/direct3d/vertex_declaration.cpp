@@ -41,6 +41,15 @@ bool is_compressed_input(const std::span<const D3DVERTEXELEMENT9> elements) noex
    return false;
 }
 
+bool has_vertex_weights(const std::span<const D3DVERTEXELEMENT9> elements) noexcept
+{
+   for (const auto& elem : elements) {
+      if (elem.Usage == D3DDECLUSAGE_BLENDWEIGHT) return true;
+   }
+
+   return false;
+}
+
 void add_missing_normal(std::vector<D3DVERTEXELEMENT9>& elements,
                         const bool compressed) noexcept
 {
@@ -155,6 +164,7 @@ auto create_input_layout(core::Shader_patch& shader_patch,
       std::equal(d3d9_elements.begin(), d3d9_elements.end(),
                  particle_decl_patch.second.begin(),
                  particle_decl_patch.second.end());
+   const bool vertex_weights = has_vertex_weights(d3d9_elements);
 
    std::vector<D3DVERTEXELEMENT9> patched_d3d9_elements{d3d9_elements.begin(),
                                                         d3d9_elements.end()};
@@ -165,7 +175,8 @@ auto create_input_layout(core::Shader_patch& shader_patch,
    const auto elements = translate_vertex_elements(patched_d3d9_elements);
 
    return shader_patch.create_game_input_layout(elements, compressed,
-                                                particle_texture_scale);
+                                                particle_texture_scale,
+                                                vertex_weights);
 }
 
 }

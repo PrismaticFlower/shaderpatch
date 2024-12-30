@@ -3,6 +3,7 @@
 #include "../logger.hpp"
 #include "../user_config.hpp"
 #include "material_type.hpp"
+#include "resource_info_view.hpp"
 #include "sol_create_usertypes.hpp"
 
 #include "../core/d3d11_helpers.hpp"
@@ -18,9 +19,12 @@ namespace sp::material {
 namespace {
 
 auto make_constant_buffer(ID3D11Device5& device, Material_type& material_type,
-                          Properties_view properties_view) -> Com_ptr<ID3D11Buffer>
+                          Properties_view properties_view,
+                          Resource_info_views resource_info_views)
+   -> Com_ptr<ID3D11Buffer>
 {
-   const auto buffer = material_type.make_constant_buffer(properties_view);
+   const auto buffer =
+      material_type.make_constant_buffer(properties_view, resource_info_views);
 
    return core::create_immutable_constant_buffer(device, std::span{buffer});
 }
@@ -115,11 +119,6 @@ void Factory::update_material(material::Material& material) noexcept
 
    Properties_view properties_view{material.properties};
 
-   if (material_type->has_constant_buffer()) {
-      material.constant_buffer =
-         make_constant_buffer(*_device, *material_type, properties_view);
-   }
-
    if (material_type->has_resources()) {
       material.ps_shader_resources_names =
          material_type->make_resources_vec(properties_view, material.resource_properties);
@@ -147,6 +146,15 @@ void Factory::update_material(material::Material& material) noexcept
    material.fail_safe_game_texture =
       make_fail_safe_texture(material_type->fail_safe_texture_index(),
                              material.ps_shader_resources);
+
+   if (material_type->has_constant_buffer()) {
+      Resource_info_views resource_info_views{.vs = {material.vs_shader_resources},
+                                              .ps = {material.ps_shader_resources}};
+
+      material.constant_buffer =
+         make_constant_buffer(*_device, *material_type, properties_view,
+                              resource_info_views);
+   }
 }
 
 }
