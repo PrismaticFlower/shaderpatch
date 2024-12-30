@@ -228,6 +228,9 @@ void User_config::parse_file(const std::string& path)
       config["Graphics"s]["User Effects Config"s].as<std::string>(
          graphics.user_effects_config);
 
+   graphics.use_d3d11on12 =
+      config["Graphics"s]["Use Direct3D 11 on 12"s].as<bool>(graphics.use_d3d11on12);
+
    effects.bloom = config["Effects"s]["Bloom"s].as<bool>(effects.bloom);
 
    effects.vignette = config["Effects"s]["Vignette"s].as<bool>(effects.vignette);

@@ -189,6 +189,12 @@ Graphics:
    # should be in the same directory as the game's executable.
    User Effects Config: user.spfx
 
+   # Force using Direct3D 11 on 12 instead of the any native Direct3D 11 driver. This can workaround
+   # bugs in the D3D11 driver. It is likely that turning this on will cost some performance however. CMAA2
+   # is also broken while using this (unsure why, there are no debug layer errors from D3D11 or D3D12
+   # about it).
+   Use Direct3D 11 on 12: no
+
 Effects: 
 
    # Enable or disable a mod using the Bloom effect. This effect is can have a slight performance

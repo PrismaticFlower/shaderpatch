@@ -96,6 +96,7 @@ struct User_config {
       bool enable_user_effects_config = false;
       bool supersample_alpha_test = false;
       bool allow_vertex_soft_skinning = false;
+      bool use_d3d11on12 = false;
       std::string user_effects_config;
    } graphics;
 

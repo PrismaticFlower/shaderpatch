@@ -211,6 +211,11 @@ LR"(The name of the Effects Config to load when `Enable User Effects Config` is 
 },
 
 {
+L"Use Direct3D 11 on 12"sv,      
+LR"(Force using Direct3D 11 on 12 instead of the any native Direct3D 11 driver. This can workaround bugs in the D3D11 driver. It is likely that turning this on will cost some performance however. CMAA2 is also broken while using this (unsure why, there are no debug layer errors from D3D11 or D3D12 about it).)"sv
+},
+
+{
 L"Effects"sv,      
 LR"(Settings for the Effects system, which allows modders to apply various effects to their mods at their discretion and configuration. Below are options provided to tweak the performance of this system for low-end/older GPUs.)"sv
 },

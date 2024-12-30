@@ -22,6 +22,9 @@
 
 #include <comdef.h>
 
+#include <d3d11on12.h>
+#include <d3d12.h>
+
 using namespace std::literals;
 
 namespace sp::core {
@@ -50,14 +53,86 @@ auto create_device(IDXGIAdapter4& adapater) noexcept -> Com_ptr<ID3D11Device5>
 
    if (d3d_debug) create_flags |= D3D11_CREATE_DEVICE_DEBUG;
 
-   if (const auto result =
-          D3D11CreateDevice(&adapater, D3D_DRIVER_TYPE_UNKNOWN, nullptr,
-                            create_flags, supported_feature_levels.data(),
-                            supported_feature_levels.size(), D3D11_SDK_VERSION,
-                            device.clear_and_assign(), nullptr, nullptr);
-       FAILED(result)) {
-      log_and_terminate("Failed to create Direct3D 11 device! Reason: ",
-                        _com_error{result}.ErrorMessage());
+   if (!user_config.graphics.use_d3d11on12) {
+      if (const auto result =
+             D3D11CreateDevice(&adapater, D3D_DRIVER_TYPE_UNKNOWN, nullptr,
+                               create_flags, supported_feature_levels.data(),
+                               supported_feature_levels.size(), D3D11_SDK_VERSION,
+                               device.clear_and_assign(), nullptr, nullptr);
+          FAILED(result)) {
+         log_and_terminate("Failed to create Direct3D 11 device! Reason: ",
+                           _com_error{result}.ErrorMessage());
+      }
+   }
+   else {
+      log(Log_level::info, "Creating D3D11on12 device...");
+
+      const HMODULE d3d11_module = LoadLibraryA("D3D11.dll");
+
+      if (!d3d11_module) {
+         log_and_terminate("Failed to create Direct3D 11on12 device! Reason: "
+                           "Unable to load D3D11.dll");
+      }
+
+      const PFN_D3D11ON12_CREATE_DEVICE D3D11On12CreateDevice =
+         reinterpret_cast<PFN_D3D11ON12_CREATE_DEVICE>(
+            GetProcAddress(d3d11_module, "D3D11On12CreateDevice"));
+
+      if (!D3D11On12CreateDevice) {
+         log_and_terminate("Failed to create Direct3D 11on12 device! Reason: "
+                           "Unable to get D3D11On12CreateDevice export.");
+      }
+
+      const HMODULE d3d12_module = LoadLibraryA("D3D12.dll");
+
+      if (!d3d12_module) {
+         log_and_terminate("Failed to create Direct3D 11on12 device! Reason: "
+                           "Unable to load D3D12.dll");
+      }
+
+      if (d3d_debug) {
+         using D3D12GetDebugInterfaceProc = decltype(&D3D12GetDebugInterface);
+
+         const D3D12GetDebugInterfaceProc D3D12GetDebugInterfacePtr =
+            reinterpret_cast<D3D12GetDebugInterfaceProc>(
+               GetProcAddress(d3d12_module, "D3D12GetDebugInterface"));
+
+         if (D3D12GetDebugInterfacePtr) {
+            Com_ptr<ID3D12Debug> d3d12_debug;
+
+            if (SUCCEEDED(D3D12GetDebugInterfacePtr(
+                   IID_PPV_ARGS(d3d12_debug.clear_and_assign())))) {
+               d3d12_debug->EnableDebugLayer();
+            }
+         }
+      }
+
+      using D3D12CreateDeviceProc = decltype(&D3D12CreateDevice);
+
+      const D3D12CreateDeviceProc D3D12CreateDevicePtr =
+         reinterpret_cast<D3D12CreateDeviceProc>(
+            GetProcAddress(d3d12_module, "D3D12CreateDevice"));
+
+      if (!D3D12CreateDevicePtr) {
+         log_and_terminate("Failed to create Direct3D 11on12 device! Reason: "
+                           "Unable to get D3D12CreateDevice export.");
+      }
+
+      Com_ptr<ID3D12Device> d3d12_device;
+
+      if (FAILED(D3D12CreateDevicePtr(&adapater, D3D_FEATURE_LEVEL_11_0,
+                                      IID_PPV_ARGS(d3d12_device.clear_and_assign())))) {
+         log_and_terminate("Failed to create Direct3D 11on12 device! Reason: "
+                           "Unable to create D3D12 device.");
+      }
+
+      if (FAILED(D3D11On12CreateDevice(d3d12_device.get(), create_flags,
+                                       supported_feature_levels.data(),
+                                       supported_feature_levels.size(), nullptr, 0, 1,
+                                       device.clear_and_assign(), nullptr, nullptr))) {
+         log_and_terminate("Failed to create Direct3D 11on12 device! Reason: "
+                           "Unable to create D3D11on12 device.");
+      }
    }
 
    Com_ptr<ID3D11Device5> device5;
