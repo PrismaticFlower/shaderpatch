@@ -301,12 +301,12 @@ inline auto d3d_primitive_count_to_vertex_count(const D3DPRIMITIVETYPE type,
    case D3DPT_LINELIST:
       return primitive_count * 2;
    case D3DPT_LINESTRIP:
-      return primitive_count > 1 ? primitive_count + 1 : 2;
+      return primitive_count + 1;
    case D3DPT_TRIANGLELIST:
       return primitive_count * 3;
    case D3DPT_TRIANGLESTRIP:
    case D3DPT_TRIANGLEFAN:
-      return primitive_count > 1 ? primitive_count + 2 : 3;
+      return primitive_count + 2;
    default:
       return primitive_count;
    }
