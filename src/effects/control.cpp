@@ -625,18 +625,9 @@ FFX_cas_params show_ffx_cas_imgui(FFX_cas_params params) noexcept
 {
    ImGui::Checkbox("Enabled", &params.enabled);
 
-   // Out of corcern of people just seeing "sharpness" and  thinking "of course I want sharpness" then
-   // setting the value to the max without paying too much attention to the ringing that introduces
-   // the sharpness param is flipped and renamed to "Fidelity" in the UI.
-   //
-   // The hope is this has the effect of making people observe and consider the trade off of increased
-   // sharpness vs ringing when configuring CAS. Or maybe it won't and this is a waste of time.
+   ImGui::DragFloat("Sharpness", &params.sharpness, 0.01f, 0.0f, 1.0f);
 
-   float fidelity = 1.0f - std::clamp(params.sharpness, 0.0f, 1.0f);
-
-   ImGui::DragFloat("Fidelity", &fidelity, 0.01f, 0.0f, 1.0f);
-
-   params.sharpness = std::clamp(1.0f - fidelity, 0.0f, 1.0f);
+   params.sharpness = std::clamp(params.sharpness, 0.0f, 1.0f);
 
    return params;
 }
