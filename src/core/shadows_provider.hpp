@@ -41,7 +41,7 @@ public:
          UINT vertex_buffer_stride;
          UINT index_count;
          UINT start_index;
-         UINT start_vertex;
+         INT base_vertex;
          glm::vec3 position_decompress_min;
          glm::vec3 position_decompress_max;
          std::array<glm::vec4, 3> world_matrix;
@@ -54,7 +54,7 @@ public:
                               mesh.index_buffer.get(), mesh.index_buffer_offset,
                               mesh.vertex_buffer.get(), mesh.vertex_buffer_offset,
                               mesh.vertex_buffer_stride, mesh.index_count,
-                              mesh.start_index, mesh.start_vertex,
+                              mesh.start_index, mesh.base_vertex,
                               mesh.position_decompress_min[0],
                               mesh.position_decompress_min[1],
                               mesh.position_decompress_min[2],
@@ -84,7 +84,7 @@ public:
          UINT vertex_buffer_stride;
          UINT index_count;
          UINT start_index;
-         UINT start_vertex;
+         INT base_vertex;
          glm::vec3 position_decompress_min;
          glm::vec3 position_decompress_max;
          std::array<glm::vec4, 3> world_matrix;
@@ -100,7 +100,7 @@ public:
                std::move(h), mesh.primitive_topology, mesh.index_buffer.get(),
                mesh.index_buffer_offset, mesh.vertex_buffer.get(),
                mesh.vertex_buffer_offset, mesh.vertex_buffer_stride,
-               mesh.index_count, mesh.start_index, mesh.start_vertex,
+               mesh.index_count, mesh.start_index, mesh.base_vertex,
                mesh.position_decompress_min[0], mesh.position_decompress_min[1],
                mesh.position_decompress_min[2], mesh.position_decompress_max[0],
                mesh.position_decompress_max[1], mesh.position_decompress_max[2],

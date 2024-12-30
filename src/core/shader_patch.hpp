@@ -410,7 +410,7 @@ private:
    bool _screenshot_requested = false;
 
    Small_function<void(const D3D11_PRIMITIVE_TOPOLOGY, const UINT, const UINT) noexcept> _on_draw;
-   Small_function<void(const D3D11_PRIMITIVE_TOPOLOGY, const UINT, const UINT, const UINT) noexcept> _on_draw_indexed;
+   Small_function<void(const D3D11_PRIMITIVE_TOPOLOGY, const UINT, const UINT, const INT) noexcept> _on_draw_indexed;
    Small_function<void(Game_rendertarget&, const Normalized_rect&,
                        Game_rendertarget&, const Normalized_rect&) noexcept>
       _on_stretch_rendertarget;

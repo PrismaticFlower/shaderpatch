@@ -352,7 +352,7 @@ void Shader_patch::present() noexcept
    }
 
    _shadows->end_frame();
-   
+
    if (_set_aspect_ratio_on_present) {
       game_support::set_aspect_ratio(static_cast<float>(_render_height) /
                                      static_cast<float>(_render_width));
@@ -1374,7 +1374,7 @@ void Shader_patch::draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
    update_dirty_state(topology);
 
    if (_on_draw_indexed)
-      _on_draw_indexed(topology, index_count, start_index, start_vertex);
+      _on_draw_indexed(topology, index_count, start_index, base_vertex);
 
    if (_discard_draw_calls) return;
 
@@ -1476,7 +1476,7 @@ void Shader_patch::game_rendertype_changed() noexcept
 
       _on_draw_indexed = [&](const D3D11_PRIMITIVE_TOPOLOGY topology,
                              const UINT index_count, const UINT start_index,
-                             const UINT start_vertex) noexcept {
+                             const INT base_vertex) noexcept {
          const bool hardedged =
             _game_shader->shader_name.size() == "near opaque hardedged"sv.size(); // there's only one other state for zprepass, so we can take a shortcut here
          const bool skinned = (_game_shader->vertex_shader_flags &
@@ -1498,9 +1498,8 @@ void Shader_patch::game_rendertype_changed() noexcept
                .emplace_back(_game_input_layout.layout_index, topology,
                              _game_index_buffer, _game_index_buffer_offset,
                              _game_vertex_buffer, _game_vertex_buffer_offset,
-                             _game_vertex_buffer_stride, index_count,
-                             start_index, start_vertex,
-                             glm::vec3{_cb_draw.position_decompress_min},
+                             _game_vertex_buffer_stride, index_count, start_index,
+                             base_vertex, glm::vec3{_cb_draw.position_decompress_min},
                              glm::vec3{_cb_draw.position_decompress_max},
                              _cb_draw.world_matrix, skin_index,
                              _cb_draw.custom_constants[0],
@@ -1508,11 +1507,10 @@ void Shader_patch::game_rendertype_changed() noexcept
          }
          else {
             meshes.select_zprepass(_game_input_layout.compressed, skinned)
-               .emplace_back(topology, _game_index_buffer,
-                             _game_index_buffer_offset, _game_vertex_buffer,
-                             _game_vertex_buffer_offset, _game_vertex_buffer_stride,
-                             index_count, start_index, start_vertex,
-                             glm::vec3{_cb_draw.position_decompress_min},
+               .emplace_back(topology, _game_index_buffer, _game_index_buffer_offset,
+                             _game_vertex_buffer, _game_vertex_buffer_offset,
+                             _game_vertex_buffer_stride, index_count, start_index,
+                             base_vertex, glm::vec3{_cb_draw.position_decompress_min},
                              glm::vec3{_cb_draw.position_decompress_max},
                              _cb_draw.world_matrix, skin_index);
          }

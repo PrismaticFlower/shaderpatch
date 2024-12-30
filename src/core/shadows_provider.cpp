@@ -414,7 +414,7 @@ void Shadows_provider::populate_mesh_cache() noexcept
       deduped_bboxes.emplace(bbox.min.x, bbox.min.y, bbox.min.z, bbox.max.x,
                              bbox.max.y, bbox.max.z, mesh.index_buffer.get(),
                              mesh.start_index, mesh.vertex_buffer.get(),
-                             mesh.start_vertex);
+                             mesh.base_vertex);
    }
 }
 
@@ -509,8 +509,7 @@ void Shadows_provider::upload_transform_cb_buffer(ID3D11DeviceContext4& dc) noex
    process_meshes(meshes.stencilshadow_skinned);
    process_meshes(meshes.stencilshadow_skinned_gen_normal);
 
-   const auto get_mesh = [](const auto& mesh_bbox) noexcept -> const auto&
-   {
+   const auto get_mesh = [](const auto& mesh_bbox) noexcept -> const auto& {
       return mesh_bbox.first;
    };
 
@@ -713,7 +712,7 @@ void Shadows_provider::draw_shadow_maps_instanced(ID3D11DeviceContext4& dc,
          dc.VSSetConstantBuffers1(0, 1, &transform_cb, &first_constant, &num_constants);
 
          dc.DrawIndexedInstanced(mesh.index_count, 4, mesh.start_index,
-                                 mesh.start_vertex, 0);
+                                 mesh.base_vertex, 0);
       }
 
       transform_cb_offset += meshes.size();
@@ -770,7 +769,7 @@ void Shadows_provider::draw_shadow_maps_instanced(ID3D11DeviceContext4& dc,
          dc.PSSetShaderResources(0, 1, &srv);
 
          dc.DrawIndexedInstanced(mesh.index_count, 4, mesh.start_index,
-                                 mesh.start_vertex, 0);
+                                 mesh.base_vertex, 0);
       }
 
       transform_cb_offset += meshes.size();
@@ -829,7 +828,7 @@ void Shadows_provider::draw_shadow_maps_instanced(ID3D11DeviceContext4& dc,
                                         &num_constants);
 
                dc.DrawIndexedInstanced(mesh.index_count, 4, mesh.start_index,
-                                       mesh.start_vertex, 0);
+                                       mesh.base_vertex, 0);
 
                i += 1;
             }

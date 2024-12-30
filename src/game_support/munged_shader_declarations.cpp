@@ -378,10 +378,9 @@ auto munge_declaration(const Shader_declaration<shader_pool_size, state_pass_cou
 
             // PASS
             for (const auto& state_pass : state.passes) {
-               const auto& shader_name = state_pass.shader_name;
                auto pass = stat.emplace_child("PASS"_mn);
 
-               const auto& shader_name = shader_pass.shader_name;
+               const auto& shader_name = state_pass.shader_name;
                const auto& variations = shader_variation_index.at(shader_name);
                const auto pass_flags =
                   get_pass_flags(get_pass_entry(shader_name, declaration.pool));
