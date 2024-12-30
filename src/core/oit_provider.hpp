@@ -36,8 +36,6 @@ private:
    void update_resources(ID3D11Texture2D& opaque_texture,
                          ID3D11RenderTargetView& opaque_rtv) noexcept;
 
-   void record_resolve_commandlist() noexcept;
-
    const Com_ptr<ID3D11Device5> _device;
    const Com_ptr<ID3D11VertexShader> _vs;
    const Com_ptr<ID3D11PixelShader> _ps;
@@ -66,8 +64,6 @@ private:
    Com_ptr<ID3D11ShaderResourceView> _depth_srv;
    Com_ptr<ID3D11UnorderedAccessView> _color_uav;
    Com_ptr<ID3D11ShaderResourceView> _color_srv;
-
-   Com_ptr<ID3D11CommandList> _resolve_commandlist;
 
    const bool _usable = usable(*_device);
 };

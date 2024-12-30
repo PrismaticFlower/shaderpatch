@@ -49,69 +49,9 @@ void SSAO::apply(effects::Profiler& profiler, ID3D11DeviceContext4& dc,
    if (&depth_input != _depth_srv || &output != _output_rtv ||
        update_quality_level() || update_proj_matrix(proj_matrix)) {
       update_resources(depth_input, output);
-      record_commandlist();
    }
 
    Profile profile{profiler, dc, "ASSAO"sv};
-
-   dc.ExecuteCommandList(_commandlist.get(), false);
-}
-
-void SSAO::clear_resources() noexcept
-{
-   _depth_srv = nullptr;
-   _output_rtv = nullptr;
-   _commandlist = nullptr;
-   _assao_effect->DeleteAllocatedVideoMemory();
-}
-
-void SSAO::update_resources(ID3D11ShaderResourceView& depth_input,
-                            ID3D11RenderTargetView& output) noexcept
-{
-   _depth_srv = copy_raw_com_ptr(depth_input);
-   _output_rtv = copy_raw_com_ptr(output);
-}
-
-bool SSAO::update_quality_level() noexcept
-{
-   int new_quality = -1;
-
-   switch (user_config.effects.ssao_quality) {
-   case SSAO_quality::fastest:
-      new_quality = -1;
-      break;
-   case SSAO_quality::fast:
-      new_quality = 0;
-      break;
-   case SSAO_quality::medium:
-      new_quality = 1;
-      break;
-   case SSAO_quality::high:
-      new_quality = 2;
-      break;
-   case SSAO_quality::highest:
-      new_quality = 3;
-      break;
-   }
-
-   if (std::exchange(_quality_level, new_quality) == new_quality) return false;
-
-   return true;
-}
-
-bool SSAO::update_proj_matrix(const glm::mat4& new_proj_matrix) noexcept
-{
-   const bool changed = _proj_matrix != new_proj_matrix;
-
-   if (changed) _proj_matrix = new_proj_matrix;
-
-   return changed;
-}
-
-void SSAO::record_commandlist() noexcept
-{
-   Com_ptr<ID3D11DeviceContext3> dc;
-   _device->CreateDeferredContext3(0, dc.clear_and_assign());
 
    const auto input_desc = [&] {
       Com_ptr<ID3D11Resource> resource;
@@ -161,13 +101,64 @@ void SSAO::record_commandlist() noexcept
    inputs.NormalsUnpackAdd = 0.0f;
    inputs.DrawOpaque = false;
 
-   inputs.DeviceContext = dc.get();
+   inputs.DeviceContext = &dc;
    inputs.DepthSRV = _depth_srv.get();
    inputs.OverrideOutputRTV = _output_rtv.get();
    inputs.NormalSRV = nullptr;
 
-   _assao_effect->Draw(settings, &inputs);
+   dc.OMSetRenderTargets(0, nullptr, nullptr);
 
-   dc->FinishCommandList(false, _commandlist.clear_and_assign());
+   _assao_effect->Draw(settings, &inputs);
 }
+
+void SSAO::clear_resources() noexcept
+{
+   _depth_srv = nullptr;
+   _output_rtv = nullptr;
+   _assao_effect->DeleteAllocatedVideoMemory();
+}
+
+void SSAO::update_resources(ID3D11ShaderResourceView& depth_input,
+                            ID3D11RenderTargetView& output) noexcept
+{
+   _depth_srv = copy_raw_com_ptr(depth_input);
+   _output_rtv = copy_raw_com_ptr(output);
+}
+
+bool SSAO::update_quality_level() noexcept
+{
+   int new_quality = -1;
+
+   switch (user_config.effects.ssao_quality) {
+   case SSAO_quality::fastest:
+      new_quality = -1;
+      break;
+   case SSAO_quality::fast:
+      new_quality = 0;
+      break;
+   case SSAO_quality::medium:
+      new_quality = 1;
+      break;
+   case SSAO_quality::high:
+      new_quality = 2;
+      break;
+   case SSAO_quality::highest:
+      new_quality = 3;
+      break;
+   }
+
+   if (std::exchange(_quality_level, new_quality) == new_quality) return false;
+
+   return true;
+}
+
+bool SSAO::update_proj_matrix(const glm::mat4& new_proj_matrix) noexcept
+{
+   const bool changed = _proj_matrix != new_proj_matrix;
+
+   if (changed) _proj_matrix = new_proj_matrix;
+
+   return changed;
+}
+
 }
