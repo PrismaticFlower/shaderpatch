@@ -300,9 +300,7 @@ public:
 private:
    void prepare_draw_shadow_maps(ID3D11DeviceContext4& dc, const Draw_args& args) noexcept;
 
-   void clean_mesh_cache() noexcept;
-
-   void populate_mesh_cache() noexcept;
+   void update_mesh_cache() noexcept;
 
    void build_cascade_info() noexcept;
 
@@ -332,35 +330,38 @@ private:
    void draw_to_target_map(ID3D11DeviceContext4& dc, const Draw_args& args) noexcept;
 
    struct Meshes_cache {
-      constexpr static UINT noskin = Meshes::noskin;
-
       using Zprepass = Meshes::Zprepass;
       using Zprepass_hardedged = Meshes::Zprepass_hardedged;
 
-      template<typename T>
-      struct Entry {
-         Bounding_box bbox;
-         T* cached_mesh;
-      };
-
-      absl::flat_hash_map<Zprepass, Bounding_box> zprepass_compressed = [] {
-         absl::flat_hash_map<Zprepass, Bounding_box> init;
+      std::vector<Zprepass> zprepass_compressed = [] {
+         std::vector<Zprepass> init;
 
          init.reserve(1024);
 
          return init;
       }();
-      absl::flat_hash_map<Zprepass_hardedged, Bounding_box> zprepass_hardedged_compressed =
-         [] {
-            absl::flat_hash_map<Zprepass_hardedged, Bounding_box> init;
+      std::vector<Zprepass_hardedged> zprepass_hardedged_compressed = [] {
+         std::vector<Zprepass_hardedged> init;
 
-            init.reserve(1024);
+         init.reserve(1024);
 
-            return init;
-         }();
+         return init;
+      }();
 
-      std::size_t dynamic_mesh_data_cache_frame = 0;
-      std::array<Com_ptr<ID3D11Buffer>, 2> dynamic_mesh_data_cache;
+      std::vector<Zprepass> last_frame_zprepass_compressed = [] {
+         std::vector<Zprepass> init;
+
+         init.reserve(1024);
+
+         return init;
+      }();
+      std::vector<Zprepass_hardedged> last_frame_zprepass_hardedged_compressed = [] {
+         std::vector<Zprepass_hardedged> init;
+
+         init.reserve(1024);
+
+         return init;
+      }();
    };
 
    struct Hardedged_vertex_shader {
@@ -420,6 +421,7 @@ private:
    Com_ptr<ID3D11SamplerState> _shadow_map_sampler;
 
    Meshes_cache _meshes_cache;
+   glm::mat4 _last_frame_view_proj;
 };
 
 }

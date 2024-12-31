@@ -103,6 +103,11 @@ auto make_bounding_box(const auto& mesh) noexcept -> Bounding_box
                                             {min.x, max.y, max.z, 1.0f},
                                             {max.x, max.y, max.z, 1.0f}}};
 
+   min = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
+          std::numeric_limits<float>::max()};
+   max = {std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(),
+          std::numeric_limits<float>::lowest()};
+
    for (const auto& v : vertices) {
       glm::vec3 posWS = {glm::dot(v, mesh.world_matrix[0]),
                          glm::dot(v, mesh.world_matrix[1]),
@@ -332,6 +337,12 @@ Shadows_provider::Shadows_provider(Com_ptr<ID3D11Device5> device,
 
 void Shadows_provider::end_frame() noexcept
 {
+   std::swap(meshes.zprepass_compressed, _meshes_cache.last_frame_zprepass_compressed);
+   std::swap(meshes.zprepass_hardedged_compressed,
+             _meshes_cache.last_frame_zprepass_hardedged_compressed);
+
+   _last_frame_view_proj = view_proj_matrix;
+
    meshes.clear();
 }
 
@@ -347,75 +358,65 @@ void Shadows_provider::draw_shadow_maps(ID3D11DeviceContext4& dc,
    draw_to_target_map(dc, args);
 
    dc.DiscardResource(_shadow_map_texture.get());
-
-   populate_mesh_cache();
 }
 
 void Shadows_provider::prepare_draw_shadow_maps(ID3D11DeviceContext4& dc,
                                                 const Draw_args& args) noexcept
 {
-   clean_mesh_cache();
+   update_mesh_cache();
 
    build_cascade_info();
 
    upload_buffer_data(dc, args);
 }
 
-void Shadows_provider::clean_mesh_cache() noexcept
+void Shadows_provider::update_mesh_cache() noexcept
 {
    Frustrum view_frustrum{glm::inverse(glm::dmat4{glm::transpose(view_proj_matrix)})};
 
-   const auto predicate = [&]<typename T>(const std::pair<T, Bounding_box>& entry) noexcept {
-      const auto& [mesh, bbox] = entry;
-
-      return intersects(view_frustrum, bbox) &&
-             intersects(view_frustrum, make_bounding_sphere(mesh));
+   const auto predicate = [&](const auto& mesh) noexcept {
+      return intersects(view_frustrum, make_bounding_box(mesh));
    };
 
-   absl::erase_if(_meshes_cache.zprepass_compressed, predicate);
-   absl::erase_if(_meshes_cache.zprepass_hardedged_compressed, predicate);
-}
+   std::erase_if(_meshes_cache.zprepass_compressed, predicate);
+   std::erase_if(_meshes_cache.zprepass_hardedged_compressed, predicate);
 
-void Shadows_provider::populate_mesh_cache() noexcept
-{
+   Frustrum last_frame_view_frustrum{
+      glm::inverse(glm::dmat4{glm::transpose(_last_frame_view_proj)})};
 
-   const auto fill_cache =
-      []<typename T>(const std::vector<T>& input,
-                     absl::flat_hash_map<T, Bounding_box>& output) noexcept {
-         for (const auto& mesh : input) {
-            // TODO: Dynamic mesh support.
+   const auto add_meshes = [&](auto& meshes, auto& output) {
+      for (auto& mesh : meshes) {
+         // TODO: Dynamic mesh support.
 
-            D3D11_BUFFER_DESC desc{};
+         D3D11_BUFFER_DESC desc{};
 
-            mesh.index_buffer->GetDesc(&desc);
+         mesh.index_buffer->GetDesc(&desc);
 
-            if (desc.Usage == D3D11_USAGE_DYNAMIC) continue;
+         if (desc.Usage == D3D11_USAGE_DYNAMIC) continue;
 
-            output.emplace(mesh, make_bounding_box(mesh));
-         }
-      };
+         const Bounding_box bbox = make_bounding_box(mesh);
 
-   fill_cache(meshes.zprepass_compressed, _meshes_cache.zprepass_compressed);
+         if (intersects(view_frustrum, bbox)) continue;
+         if (!intersects(last_frame_view_frustrum, bbox)) continue;
 
-   fill_cache(meshes.zprepass_hardedged_compressed,
+         //   intersects(view_frustrum, make_bounding_sphere(mesh))
+
+         output.push_back(std::move(mesh));
+      }
+   };
+
+   add_meshes(_meshes_cache.last_frame_zprepass_compressed,
+              _meshes_cache.zprepass_compressed);
+
+   add_meshes(_meshes_cache.last_frame_zprepass_hardedged_compressed,
               _meshes_cache.zprepass_hardedged_compressed);
+
+   _meshes_cache.last_frame_zprepass_compressed.clear();
+   _meshes_cache.last_frame_zprepass_hardedged_compressed.clear();
 
    temp_cached_zprepass_compressed = _meshes_cache.zprepass_compressed.size();
    temp_cached_zprepass_hardedged_compressed =
       _meshes_cache.zprepass_hardedged_compressed.size();
-
-   static absl::flat_hash_set<std::tuple<float, float, float, float, float, float,
-                                         ID3D11Buffer*, UINT, ID3D11Buffer*, UINT>>
-      deduped_bboxes;
-
-   deduped_bboxes.clear();
-
-   for (auto& [mesh, bbox] : _meshes_cache.zprepass_hardedged_compressed) {
-      deduped_bboxes.emplace(bbox.min.x, bbox.min.y, bbox.min.z, bbox.max.x,
-                             bbox.max.y, bbox.max.z, mesh.index_buffer.get(),
-                             mesh.start_index, mesh.vertex_buffer.get(),
-                             mesh.base_vertex);
-   }
 }
 
 void Shadows_provider::build_cascade_info() noexcept
@@ -505,17 +506,16 @@ void Shadows_provider::upload_transform_cb_buffer(ID3D11DeviceContext4& dc) noex
    process_meshes(meshes.zprepass_hardedged_skinned);
    process_meshes(meshes.zprepass_hardedged_compressed_skinned);
 
-   process_meshes(meshes.stencilshadow);
-   process_meshes(meshes.stencilshadow_skinned);
-   process_meshes(meshes.stencilshadow_skinned_gen_normal);
+   if (config.use_stencil_shadow_meshes) {
+      process_meshes(meshes.stencilshadow);
+      process_meshes(meshes.stencilshadow_skinned);
+      process_meshes(meshes.stencilshadow_skinned_gen_normal);
+   }
 
-   const auto get_mesh = [](const auto& mesh_bbox) noexcept -> const auto& {
-      return mesh_bbox.first;
-   };
-
-   process_meshes(_meshes_cache.zprepass_compressed | std::views::transform(get_mesh));
-   process_meshes(_meshes_cache.zprepass_hardedged_compressed |
-                  std::views::transform(get_mesh));
+   if (config.enable_offscreen_cache) {
+      process_meshes(_meshes_cache.zprepass_compressed);
+      process_meshes(_meshes_cache.zprepass_hardedged_compressed);
+   }
 
    dc.Unmap(_transforms_cb_buffer.get(), 0);
 }
@@ -798,49 +798,10 @@ void Shadows_provider::draw_shadow_maps_instanced(ID3D11DeviceContext4& dc,
    }
 
    if (config.enable_offscreen_cache) {
-      const auto draw_cached_meshes =
-         [&](const absl::flat_hash_map<Meshes::Zprepass, Bounding_box>& meshes,
-             ID3D11InputLayout* input_layout, ID3D11VertexShader* vertex_shader) {
-            if (meshes.empty()) return;
-
-            dc.IASetInputLayout(input_layout);
-            dc.VSSetShader(vertex_shader, nullptr, 0);
-
-            std::size_t i = 0;
-
-            for (const auto& [mesh, bbox] : meshes) {
-               dc.IASetIndexBuffer(mesh.index_buffer.get(), DXGI_FORMAT_R16_UINT,
-                                   mesh.index_buffer_offset);
-
-               auto* vertex_buffer = mesh.vertex_buffer.get();
-
-               dc.IASetVertexBuffers(0, 1, &vertex_buffer, &mesh.vertex_buffer_stride,
-                                     &mesh.vertex_buffer_offset);
-
-               auto* transform_cb = _transforms_cb_buffer.get();
-               UINT first_constant =
-                  (sizeof(Transform_cb) / 16) * (i + transform_cb_offset);
-               UINT num_constants = sizeof(Transform_cb) / 16;
-
-               if (current_primitive_topology != mesh.primitive_topology) {
-                  dc.IASetPrimitiveTopology(mesh.primitive_topology);
-                  current_primitive_topology = mesh.primitive_topology;
-               }
-
-               dc.VSSetConstantBuffers1(0, 1, &transform_cb, &first_constant,
-                                        &num_constants);
-
-               dc.DrawIndexedInstanced(mesh.index_count, 4, mesh.start_index,
-                                       mesh.base_vertex, 0);
-
-               i += 1;
-            }
-
-            transform_cb_offset += meshes.size();
-         };
-
-      draw_cached_meshes(_meshes_cache.zprepass_compressed,
-                         _mesh_compressed_il.get(), _mesh_compressed_vs.get());
+      draw_meshes(_meshes_cache.zprepass_compressed, _mesh_compressed_il.get(),
+                  _mesh_compressed_vs.get());
+      draw_hardedged_meshes(_meshes_cache.zprepass_hardedged_compressed,
+                            _mesh_hardedged_compressed);
    }
 }
 
