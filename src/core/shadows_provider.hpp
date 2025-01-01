@@ -13,6 +13,8 @@
 
 #include <glm/glm.hpp>
 
+#include <absl/container/flat_hash_set.h>
+
 namespace sp::effects {
 class Profiler;
 }
@@ -51,17 +53,18 @@ public:
          template<typename H>
          friend H AbslHashValue(H h, const Zprepass& mesh)
          {
-            return H::combine(std::move(h), mesh.primitive_topology,
+            return H::combine(std::move(h),
+                              // mesh.primitive_topology,
                               mesh.index_buffer.get(), mesh.index_buffer_offset,
                               mesh.vertex_buffer.get(), mesh.vertex_buffer_offset,
                               mesh.vertex_buffer_stride, mesh.index_count,
                               mesh.start_index, mesh.base_vertex,
-                              mesh.position_decompress_min[0],
-                              mesh.position_decompress_min[1],
-                              mesh.position_decompress_min[2],
-                              mesh.position_decompress_max[0],
-                              mesh.position_decompress_max[1],
-                              mesh.position_decompress_max[2],
+                              // mesh.position_decompress_min[0],
+                              // mesh.position_decompress_min[1],
+                              // mesh.position_decompress_min[2],
+                              // mesh.position_decompress_max[0],
+                              // mesh.position_decompress_max[1],
+                              // mesh.position_decompress_max[2],
                               mesh.world_matrix[0][0], mesh.world_matrix[0][1],
                               mesh.world_matrix[0][2], mesh.world_matrix[0][3],
                               mesh.world_matrix[1][0], mesh.world_matrix[1][1],
@@ -98,13 +101,15 @@ public:
          friend H AbslHashValue(H h, const Zprepass_hardedged& mesh)
          {
             return H::combine(
-               std::move(h), mesh.primitive_topology, mesh.index_buffer.get(),
-               mesh.index_buffer_offset, mesh.vertex_buffer.get(),
-               mesh.vertex_buffer_offset, mesh.vertex_buffer_stride,
-               mesh.index_count, mesh.start_index, mesh.base_vertex,
-               mesh.position_decompress_min[0], mesh.position_decompress_min[1],
-               mesh.position_decompress_min[2], mesh.position_decompress_max[0],
-               mesh.position_decompress_max[1], mesh.position_decompress_max[2],
+               std::move(h),
+               // mesh.primitive_topology,
+               mesh.index_buffer.get(), mesh.index_buffer_offset,
+               mesh.vertex_buffer.get(), mesh.vertex_buffer_offset,
+               mesh.vertex_buffer_stride, mesh.index_count, mesh.start_index,
+               mesh.base_vertex,
+               // mesh.position_decompress_min[0], mesh.position_decompress_min[1],
+               // mesh.position_decompress_min[2], mesh.position_decompress_max[0],
+               // mesh.position_decompress_max[1], mesh.position_decompress_max[2],
                mesh.world_matrix[0][0], mesh.world_matrix[0][1],
                mesh.world_matrix[0][2], mesh.world_matrix[0][3],
                mesh.world_matrix[1][0], mesh.world_matrix[1][1],
@@ -300,7 +305,9 @@ public:
 private:
    void prepare_draw_shadow_maps(ID3D11DeviceContext4& dc, const Draw_args& args) noexcept;
 
-   void update_mesh_cache() noexcept;
+   void clean_mesh_cache(ID3D11DeviceContext4& dc) noexcept;
+
+   void populate_mesh_cache() noexcept;
 
    void build_cascade_info() noexcept;
 
@@ -315,9 +322,13 @@ private:
    void upload_draw_to_target_buffer(ID3D11DeviceContext4& dc,
                                      const Draw_args& args) noexcept;
 
+   void upload_queries_transform_cb_buffer(ID3D11DeviceContext4& dc) noexcept;
+
    void resize_transform_cb_buffer(std::size_t needed_space) noexcept;
 
    void resize_skins_buffer(std::size_t needed_space) noexcept;
+
+   void resize_queries_transform_cb_buffer(std::size_t needed_space) noexcept;
 
    auto count_active_meshes() const noexcept -> std::size_t;
 
@@ -329,10 +340,30 @@ private:
 
    void draw_to_target_map(ID3D11DeviceContext4& dc, const Draw_args& args) noexcept;
 
+   void submit_cache_occlusion_queries(ID3D11DeviceContext4& dc,
+                                       const Draw_args& args) noexcept;
+
    struct Meshes_cache {
       using Zprepass = Meshes::Zprepass;
       using Zprepass_hardedged = Meshes::Zprepass_hardedged;
 
+      struct Async_query {
+         Com_ptr<ID3D11Query> occlusion;
+         std::size_t index;
+      };
+
+      struct Status {
+         bool multi_frame = false;
+         bool culled_by_game = false;
+      };
+
+      absl::flat_hash_set<Zprepass> zprepass_compressed_set = [] {
+         absl::flat_hash_set<Zprepass> init;
+
+         init.reserve(1024);
+
+         return init;
+      }();
       std::vector<Zprepass> zprepass_compressed = [] {
          std::vector<Zprepass> init;
 
@@ -348,20 +379,39 @@ private:
          return init;
       }();
 
-      std::vector<Zprepass> last_frame_zprepass_compressed = [] {
-         std::vector<Zprepass> init;
+      std::vector<Async_query> zprepass_compressed_queries;
+
+      absl::flat_hash_map<Zprepass, Status> this_frame_zprepass_compressed = [] {
+         absl::flat_hash_map<Zprepass, Status> init;
 
          init.reserve(1024);
 
          return init;
       }();
-      std::vector<Zprepass_hardedged> last_frame_zprepass_hardedged_compressed = [] {
-         std::vector<Zprepass_hardedged> init;
+      absl::flat_hash_map<Zprepass_hardedged, Status> this_frame_zprepass_hardedged_compressed =
+         [] {
+            absl::flat_hash_map<Zprepass_hardedged, Status> init;
+
+            init.reserve(1024);
+
+            return init;
+         }();
+
+      absl::flat_hash_map<Zprepass, Status> last_frame_zprepass_compressed = [] {
+         absl::flat_hash_map<Zprepass, Status> init;
 
          init.reserve(1024);
 
          return init;
       }();
+      absl::flat_hash_map<Zprepass_hardedged, Status> last_frame_zprepass_hardedged_compressed =
+         [] {
+            absl::flat_hash_map<Zprepass_hardedged, Status> init;
+
+            init.reserve(1024);
+
+            return init;
+         }();
    };
 
    struct Hardedged_vertex_shader {
@@ -375,12 +425,16 @@ private:
    Com_ptr<ID3D11Device5> _device;
 
    Com_ptr<ID3D11Buffer> _camera_cb_buffer;
+   Com_ptr<ID3D11Buffer> _queries_camera_cb_buffer;
 
    Com_ptr<ID3D11Buffer> _transforms_cb_buffer;
    std::size_t _transforms_cb_space = 0;
    Com_ptr<ID3D11Buffer> _skins_buffer;
    std::size_t _skins_space = 0;
    Com_ptr<ID3D11ShaderResourceView> _skins_srv;
+
+   Com_ptr<ID3D11Buffer> _queries_transforms_cb_buffer;
+   std::size_t _queries_transforms_cb_space = 0;
 
    Com_ptr<ID3D11InputLayout> _mesh_il;
    Com_ptr<ID3D11InputLayout> _mesh_compressed_il;
@@ -410,6 +464,8 @@ private:
 
    Com_ptr<ID3D11RasterizerState> _rasterizer_state;
    Com_ptr<ID3D11RasterizerState> _rasterizer_doublesided_state;
+
+   Com_ptr<ID3D11DepthStencilState> _queries_depthstencil_state;
 
    std::array<glm::mat4, 4> _cascade_view_proj_matrices;
    std::array<glm::mat4, 4> _cascade_texture_matrices;
