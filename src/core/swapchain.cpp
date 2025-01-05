@@ -155,7 +155,7 @@ auto Swapchain::present() noexcept -> Present_status
 
    if (const HRESULT result = _swapchain->Present(sync_interval, flags);
        FAILED(result)) {
-      log_and_terminate(Log_level::error, "Frame Present call failed! reason: ",
+      log_and_terminate("Frame Present call failed! reason: ",
                         _com_error{result}.ErrorMessage());
    }
 

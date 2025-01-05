@@ -123,6 +123,9 @@
     <ClInclude Include="include\bounding_box.hpp">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\ucfb_file_reader.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\patch_texture_io.cpp">

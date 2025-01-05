@@ -52,7 +52,7 @@
     <CodeAnalysisRuleSet>NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>D:\GOG Games\Star Wars - Battlefront 2\GameData\</OutDir>
+    <OutDir>bin\$(Configuration)\</OutDir>
     <IntDir>build\$(Configuration)\</IntDir>
     <TargetName>d3d9</TargetName>
     <TargetExt>.dll</TargetExt>
@@ -257,6 +257,7 @@
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5054;4275;4251;4127;4018</DisableSpecificWarnings>
     </ClCompile>
     <ClCompile Include="src\input_config.cpp" />
+    <ClCompile Include="src\logger.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\material\constant_buffer_builder.cpp" />
     <ClCompile Include="src\material\editor.cpp" />
@@ -275,6 +276,10 @@
     <ClCompile Include="src\shader\group_definition.cpp" />
     <ClCompile Include="src\shader\vertex_input_layout.cpp" />
     <ClCompile Include="src\shader_cache_primer.cpp" />
+    <ClCompile Include="src\shadows\internal\name_table.cpp" />
+    <ClCompile Include="src\shadows\loader.cpp" />
+    <ClCompile Include="src\shadows\read\read_model.cpp" />
+    <ClCompile Include="src\shadows\shadow_world.cpp" />
     <ClCompile Include="src\user_config.cpp" />
     <ClCompile Include="src\windows_fonts_folder.cpp" />
     <ClCompile Include="src\window_hooks.cpp" />
@@ -425,6 +430,12 @@
     <ClInclude Include="src\shader\static_flags.hpp" />
     <ClInclude Include="src\shader\vertex_input_layout.hpp" />
     <ClInclude Include="src\shader_constants.hpp" />
+    <ClInclude Include="src\shadows\input.hpp" />
+    <ClInclude Include="src\shadows\internal\mesh_buffer.hpp" />
+    <ClInclude Include="src\shadows\loader.hpp" />
+    <ClInclude Include="src\shadows\internal\name_table.hpp" />
+    <ClInclude Include="src\shadows\read\read_model.hpp" />
+    <ClInclude Include="src\shadows\shadow_world.hpp" />
     <ClInclude Include="src\unlock_memory.hpp" />
     <ClInclude Include="src\user_config.hpp" />
     <ClInclude Include="src\windows_fonts_folder.hpp" />

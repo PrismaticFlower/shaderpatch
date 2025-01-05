@@ -4,6 +4,7 @@
 #include "logger.hpp"
 #include "memory_mapped_file.hpp"
 #include "shader_patch_version.hpp"
+#include "shadows/loader.hpp"
 #include "smart_win32_handle.hpp"
 #include "string_utilities.hpp"
 #include "ucfb_editor.hpp"
@@ -299,10 +300,14 @@ extern "C" HANDLE WINAPI CreateFileA_hook(LPCSTR file_name,
                                           HANDLE template_file)
 {
    if (user_config.enabled && file_name) {
-      if (Ci_String_view{file_name} == R"(data\_lvl_pc\core.lvl)"_svci)
+      const Ci_String_view ci_file_name = file_name;
+
+      if (ci_file_name == R"(data\_lvl_pc\core.lvl)"_svci)
          return edit_core_lvl().release();
-      else if (Ci_String_view{file_name} == R"(data\_lvl_pc\shader_patch_api.script)"_svci)
+      else if (ci_file_name == R"(data\_lvl_pc\shader_patch_api.script)"_svci)
          return get_sp_api_script().release();
+      else if (ci_file_name.ends_with(".lvl"))
+         shadows::queue_load_lvl(file_name);
    }
 
    return CreateFileA(file_name, desired_access, share_mode, security_attributes,

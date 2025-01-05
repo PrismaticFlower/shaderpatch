@@ -7,6 +7,7 @@
 #include "../logger.hpp"
 #include "../material/editor.hpp"
 #include "../message_hooks.hpp"
+#include "../shadows/shadow_world.hpp"
 #include "../user_config.hpp"
 #include "basic_builtin_textures.hpp"
 #include "patch_material_io.hpp"
@@ -225,6 +226,8 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
    ImGui_ImplDX11_NewFrame();
    ImGui_ImplWin32_NewFrame();
    ImGui::NewFrame();
+
+   shadows::shadow_world.initialize(*_device);
 }
 
 Shader_patch::~Shader_patch() = default;

@@ -241,6 +241,7 @@
     <ClInclude Include="include\synced_io.hpp" />
     <ClInclude Include="include\throw_if_failed.hpp" />
     <ClInclude Include="include\ucfb_editor.hpp" />
+    <ClInclude Include="include\ucfb_file_reader.hpp" />
     <ClInclude Include="include\ucfb_reader.hpp" />
     <ClInclude Include="include\ucfb_tweaker.hpp" />
     <ClInclude Include="include\ucfb_writer.hpp" />
