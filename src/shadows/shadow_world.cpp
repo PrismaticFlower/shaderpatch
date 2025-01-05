@@ -1,5 +1,6 @@
 #include "shadow_world.hpp"
 
+#include "internal/mesh_buffer.hpp"
 #include "internal/name_table.hpp"
 
 #include "../logger.hpp"
@@ -13,6 +14,9 @@
 namespace sp::shadows {
 
 namespace {
+
+const UINT MESH_BUFFER_SIZE = 0x4000000;
+const UINT MESH_BUFFER_ELEMENT_SIZE = sizeof(std::uint16_t);
 
 struct Shadow_world {
    Shadow_world(ID3D11Device2& device) : _device{copy_raw_com_ptr(device)} {}
@@ -63,6 +67,13 @@ private:
    std::shared_mutex _mutex;
 
    Com_ptr<ID3D11Device2> _device;
+
+   Mesh_buffer _index_buffer{*_device, D3D11_BIND_INDEX_BUFFER,
+                             MESH_BUFFER_SIZE / MESH_BUFFER_ELEMENT_SIZE,
+                             MESH_BUFFER_ELEMENT_SIZE};
+   Mesh_buffer _vertex_buffer{*_device, D3D11_BIND_VERTEX_BUFFER,
+                              MESH_BUFFER_SIZE / MESH_BUFFER_ELEMENT_SIZE,
+                              MESH_BUFFER_ELEMENT_SIZE};
 
    Name_table _name_table;
 };

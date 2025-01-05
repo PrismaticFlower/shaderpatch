@@ -288,6 +288,7 @@
     <ClCompile Include="src\logger.cpp" />
     <ClCompile Include="src\shadows\read\read_model.cpp" />
     <ClCompile Include="src\shadows\internal\name_table.cpp" />
+    <ClCompile Include="src\shadows\internal\mesh_buffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\shader_constants.hpp">

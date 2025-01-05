@@ -44,7 +44,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>bin\$(Configuration)\</OutDir>
+    <OutDir>D:\GOG Games\Star Wars - Battlefront 2\GameData\</OutDir>
     <IntDir>build\$(Configuration)\</IntDir>
     <TargetName>d3d9</TargetName>
     <TargetExt>.dll</TargetExt>
@@ -52,7 +52,7 @@
     <CodeAnalysisRuleSet>NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>bin\$(Configuration)\</OutDir>
+    <OutDir>D:\GOG Games\Star Wars - Battlefront 2\GameData\</OutDir>
     <IntDir>build\$(Configuration)\</IntDir>
     <TargetName>d3d9</TargetName>
     <TargetExt>.dll</TargetExt>
@@ -276,6 +276,7 @@
     <ClCompile Include="src\shader\group_definition.cpp" />
     <ClCompile Include="src\shader\vertex_input_layout.cpp" />
     <ClCompile Include="src\shader_cache_primer.cpp" />
+    <ClCompile Include="src\shadows\internal\mesh_buffer.cpp" />
     <ClCompile Include="src\shadows\internal\name_table.cpp" />
     <ClCompile Include="src\shadows\loader.cpp" />
     <ClCompile Include="src\shadows\read\read_model.cpp" />
