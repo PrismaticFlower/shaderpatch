@@ -169,6 +169,8 @@ auto read_segment(ucfb::File_reader_child& segm) -> std::optional<Input_model::S
          child.read_array<std::uint16_t>(result.indices);
       } break;
       case "VBUF"_mn: {
+         if (!result.vertices.empty()) continue;
+
          const std::uint32_t count = child.read<std::uint32_t>();
          const std::uint32_t stride = child.read<std::uint32_t>();
          const Vbuf_flags flags = child.read<Vbuf_flags>();

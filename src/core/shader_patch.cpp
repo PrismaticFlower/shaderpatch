@@ -359,6 +359,7 @@ void Shader_patch::present() noexcept
    }
 
    _shadows->end_frame();
+   shadows::shadow_world.process_mesh_copy_queue(*_device_context);
 
    if (_set_aspect_ratio_on_present) {
       game_support::set_aspect_ratio(static_cast<float>(_render_height) /

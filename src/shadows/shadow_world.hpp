@@ -3,11 +3,14 @@
 #include "input.hpp"
 
 struct ID3D11Device2;
+struct ID3D11DeviceContext2;
 
 namespace sp::shadows {
 
 struct Shadow_world_interface {
    static void initialize(ID3D11Device2& device);
+
+   static void process_mesh_copy_queue(ID3D11DeviceContext2& dc) noexcept;
 
    static void clear() noexcept;
 

@@ -289,6 +289,7 @@
     <ClCompile Include="src\shadows\read\read_model.cpp" />
     <ClCompile Include="src\shadows\internal\name_table.cpp" />
     <ClCompile Include="src\shadows\internal\mesh_buffer.cpp" />
+    <ClCompile Include="src\shadows\internal\mesh_copy_queue.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\shader_constants.hpp">
@@ -725,6 +726,8 @@
     <ClInclude Include="src\shadows\read\read_model.hpp" />
     <ClInclude Include="src\shadows\internal\name_table.hpp" />
     <ClInclude Include="src\shadows\internal\mesh_buffer.hpp" />
+    <ClInclude Include="src\shadows\internal\model.hpp" />
+    <ClInclude Include="src\shadows\internal\mesh_copy_queue.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />

@@ -4,11 +4,10 @@
 
 namespace sp::shadows {
 
-Mesh_buffer::Mesh_buffer(ID3D11Device& device, D3D11_BIND_FLAG bind_flag,
-                         UINT element_count, UINT element_size)
-   : _element_count{element_count}
+Mesh_buffer::Mesh_buffer(ID3D11Device& device, D3D11_BIND_FLAG bind_flag, UINT byte_size)
+   : _size{byte_size}
 {
-   D3D11_BUFFER_DESC desc{.ByteWidth = _element_count * element_size,
+   D3D11_BUFFER_DESC desc{.ByteWidth = _size,
                           .Usage = D3D11_USAGE_DEFAULT,
                           .BindFlags = static_cast<UINT>(bind_flag)};
 
@@ -27,13 +26,21 @@ void Mesh_buffer::clear() noexcept
    _allocated = 0;
 }
 
-auto Mesh_buffer::allocate(UINT count, UINT& out_element_offset) noexcept -> HRESULT
+auto Mesh_buffer::allocate(UINT size, UINT alignment, UINT& out_offset) noexcept -> HRESULT
 {
-   if (_element_count - _allocated < count) return E_OUTOFMEMORY;
+   if (const UINT remainder = _allocated % alignment; remainder != 0) {
+      const UINT padding = alignment - remainder;
 
-   out_element_offset = _allocated;
+      if (_size - _allocated < padding) return E_OUTOFMEMORY;
 
-   _allocated += count;
+      _allocated += padding;
+   }
+
+   if (_size - _allocated < size) return E_OUTOFMEMORY;
+
+   out_offset = _allocated;
+
+   _allocated += size;
 
    return S_OK;
 }
