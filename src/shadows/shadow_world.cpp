@@ -32,10 +32,18 @@ struct Shadow_world {
    {
       std::scoped_lock lock{_mutex};
 
-      log_fmt(Log_level::info, "Read model '{}' (vert min: X {} Y {} Z {} vert max: X {} Y {} Z {} segments: {})",
-              model.name, model.min_vertex.x, model.min_vertex.y,
-              model.min_vertex.z, model.max_vertex.x, model.max_vertex.y,
-              model.max_vertex.z, model.segments.size());
+      if (model.segments.empty()) {
+         log_fmt(Log_level::info, "Discarding model '{}' with no usable segments for shadows. (Is either skinned or fully transparent).",
+                 model.name);
+
+         return;
+      }
+
+      log_debug("Read model '{}' (vert min: X {} Y {} Z {} vert max: X {} Y {} "
+                "Z {} segments: {})",
+                model.name, model.min_vertex.x, model.min_vertex.y,
+                model.min_vertex.z, model.max_vertex.x, model.max_vertex.y,
+                model.max_vertex.z, model.segments.size());
 
       const std::uint32_t name_hash = _name_table.add(model.name);
 
