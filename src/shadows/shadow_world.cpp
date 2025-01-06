@@ -107,57 +107,13 @@ struct Shadow_world {
                      merge_segment.topology != topology ||
                      merge_segment.texture_name_hash !=
                         fnv_1a_hash(segment.diffuse_texture)) {
-               const UINT vertex_buffer_element_size =
-                  sizeof(decltype(merge_segment.vertices)::value_type);
-               UINT vertex_buffer_byte_offset = 0;
-
-               if (FAILED(_vertex_buffer.allocate(merge_segment.vertices.size() *
-                                                     vertex_buffer_element_size,
-                                                  vertex_buffer_element_size,
-                                                  vertex_buffer_byte_offset))) {
-                  log(Log_level::error, "Ran out of Shadow World vertex buffer space! (model: {})",
-                      input_model.name);
-
-                  return;
-               }
-
-               UINT index_buffer_byte_offset = 0;
-
-               if (FAILED(_index_buffer.allocate(merge_segment.indices.size() *
-                                                    sizeof(std::uint16_t),
-                                                 sizeof(std::uint16_t),
-                                                 index_buffer_byte_offset))) {
-                  log(Log_level::error,
-                      "Ran out of Shadow World index buffer space! (model: {})",
-                      input_model.name);
-
-                  return;
-               }
-
-               _mesh_copy_queue.queue(std::as_bytes(std::span{merge_segment.vertices}),
-                                      *_vertex_buffer.get(),
-                                      vertex_buffer_byte_offset);
-
-               _mesh_copy_queue.queue(std::as_bytes(std::span{merge_segment.indices}),
-                                      *_index_buffer.get(), index_buffer_byte_offset);
-
-               std::vector<Model_segment_hardedged>& model_output =
-                  segment.doublesided ? model.hardedged_doublesided_segments
-                                      : model.hardedged_segments;
-
-               model_output.push_back({
-                  .topology = topology,
-                  .index_count = merge_segment.indices.size(),
-                  .start_index = index_buffer_byte_offset / sizeof(std::uint16_t),
-                  .base_vertex = static_cast<INT>(vertex_buffer_byte_offset /
-                                                  vertex_buffer_element_size),
-
-                  .texture = nullptr,
-               });
+               add_model_segment(input_model.name, merge_segment,
+                                 segment.doublesided ? model.hardedged_doublesided_segments
+                                                     : model.hardedged_segments);
 
                merge_segment.indices.clear();
                merge_segment.vertices.clear();
-               merge_segment.topology = topology;
+               merge_segment.topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
                merge_segment.texture_name_hash = 0;
             }
 
@@ -191,55 +147,13 @@ struct Shadow_world {
             else if (merge_segment.vertices.size() + segment.vertices.size() >
                         MAX_SEGMENT_VERTICES ||
                      merge_segment.topology != topology) {
-               const UINT vertex_buffer_element_size =
-                  sizeof(decltype(merge_segment.vertices)::value_type);
-               UINT vertex_buffer_byte_offset = 0;
-
-               if (FAILED(_vertex_buffer.allocate(merge_segment.vertices.size() *
-                                                     vertex_buffer_element_size,
-                                                  vertex_buffer_element_size,
-                                                  vertex_buffer_byte_offset))) {
-                  log(Log_level::error, "Ran out of Shadow World vertex buffer space! (model: {})",
-                      input_model.name);
-
-                  return;
-               }
-
-               UINT index_buffer_byte_offset = 0;
-
-               if (FAILED(_index_buffer.allocate(merge_segment.indices.size() *
-                                                    sizeof(std::uint16_t),
-                                                 sizeof(std::uint16_t),
-                                                 index_buffer_byte_offset))) {
-                  log(Log_level::error,
-                      "Ran out of Shadow World index buffer space! (model: {})",
-                      input_model.name);
-
-                  return;
-               }
-
-               _mesh_copy_queue.queue(std::as_bytes(std::span{merge_segment.vertices}),
-                                      *_vertex_buffer.get(),
-                                      vertex_buffer_byte_offset);
-
-               _mesh_copy_queue.queue(std::as_bytes(std::span{merge_segment.indices}),
-                                      *_index_buffer.get(), index_buffer_byte_offset);
-
-               std::vector<Model_segment>& model_output =
-                  segment.doublesided ? model.doublesided_segments
-                                      : model.opaque_segments;
-
-               model_output.push_back({
-                  .topology = topology,
-                  .index_count = merge_segment.indices.size(),
-                  .start_index = index_buffer_byte_offset / sizeof(std::uint16_t),
-                  .base_vertex = static_cast<INT>(vertex_buffer_byte_offset /
-                                                  vertex_buffer_element_size),
-               });
+               add_model_segment(input_model.name, merge_segment,
+                                 segment.doublesided ? model.doublesided_segments
+                                                     : model.opaque_segments);
 
                merge_segment.indices.clear();
                merge_segment.vertices.clear();
-               merge_segment.topology = topology;
+               merge_segment.topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
             }
 
             const std::size_t index_offset = merge_segment.vertices.size();
@@ -256,6 +170,24 @@ struct Shadow_world {
                   static_cast<std::uint16_t>(index + index_offset));
             }
          }
+      }
+
+      if (!opaque_segment.vertices.empty()) {
+         add_model_segment(input_model.name, opaque_segment, model.opaque_segments);
+      }
+
+      if (!doublesided_segment.vertices.empty()) {
+         add_model_segment(input_model.name, doublesided_segment,
+                           model.doublesided_segments);
+      }
+
+      if (!hardedged_segment.vertices.empty()) {
+         add_model_segment(input_model.name, hardedged_segment, model.hardedged_segments);
+      }
+
+      if (!hardedged_doublesided_segment.vertices.empty()) {
+         add_model_segment(input_model.name, hardedged_doublesided_segment,
+                           model.hardedged_doublesided_segments);
       }
 
       const std::size_t model_index = _models.size();
@@ -342,6 +274,92 @@ private:
    absl::flat_hash_map<std::uint32_t, std::size_t> _models_index;
 
    Name_table _name_table;
+
+   void add_model_segment(const std::string_view model_debug_name,
+                          const Model_merge_segment& merge_segment,
+                          std::vector<Model_segment>& model_output) noexcept
+   {
+      const UINT vertex_buffer_element_size =
+         sizeof(decltype(merge_segment.vertices)::value_type);
+      UINT vertex_buffer_byte_offset = 0;
+
+      if (FAILED(_vertex_buffer.allocate(merge_segment.vertices.size() * vertex_buffer_element_size,
+                                         vertex_buffer_element_size,
+                                         vertex_buffer_byte_offset))) {
+         log(Log_level::error, "Ran out of Shadow World vertex buffer space! (model: {})",
+             model_debug_name);
+
+         return;
+      }
+
+      UINT index_buffer_byte_offset = 0;
+
+      if (FAILED(_index_buffer.allocate(merge_segment.indices.size() * sizeof(std::uint16_t),
+                                        sizeof(std::uint16_t),
+                                        index_buffer_byte_offset))) {
+         log(Log_level::error, "Ran out of Shadow World index buffer space! (model: {})",
+             model_debug_name);
+
+         return;
+      }
+
+      _mesh_copy_queue.queue(std::as_bytes(std::span{merge_segment.vertices}),
+                             *_vertex_buffer.get(), vertex_buffer_byte_offset);
+
+      _mesh_copy_queue.queue(std::as_bytes(std::span{merge_segment.indices}),
+                             *_index_buffer.get(), index_buffer_byte_offset);
+
+      model_output.push_back({
+         .topology = merge_segment.topology,
+         .index_count = merge_segment.indices.size(),
+         .start_index = index_buffer_byte_offset / sizeof(std::uint16_t),
+         .base_vertex = static_cast<INT>(vertex_buffer_byte_offset / vertex_buffer_element_size),
+      });
+   }
+
+   void add_model_segment(const std::string_view model_debug_name,
+                          const Model_merge_segment_hardedged& merge_segment,
+                          std::vector<Model_segment_hardedged>& model_output) noexcept
+   {
+      const UINT vertex_buffer_element_size =
+         sizeof(decltype(merge_segment.vertices)::value_type);
+      UINT vertex_buffer_byte_offset = 0;
+
+      if (FAILED(_vertex_buffer.allocate(merge_segment.vertices.size() * vertex_buffer_element_size,
+                                         vertex_buffer_element_size,
+                                         vertex_buffer_byte_offset))) {
+         log(Log_level::error, "Ran out of Shadow World vertex buffer space! (model: {})",
+             model_debug_name);
+
+         return;
+      }
+
+      UINT index_buffer_byte_offset = 0;
+
+      if (FAILED(_index_buffer.allocate(merge_segment.indices.size() * sizeof(std::uint16_t),
+                                        sizeof(std::uint16_t),
+                                        index_buffer_byte_offset))) {
+         log(Log_level::error, "Ran out of Shadow World index buffer space! (model: {})",
+             model_debug_name);
+
+         return;
+      }
+
+      _mesh_copy_queue.queue(std::as_bytes(std::span{merge_segment.vertices}),
+                             *_vertex_buffer.get(), vertex_buffer_byte_offset);
+
+      _mesh_copy_queue.queue(std::as_bytes(std::span{merge_segment.indices}),
+                             *_index_buffer.get(), index_buffer_byte_offset);
+
+      model_output.push_back({
+         .topology = merge_segment.topology,
+         .index_count = merge_segment.indices.size(),
+         .start_index = index_buffer_byte_offset / sizeof(std::uint16_t),
+         .base_vertex = static_cast<INT>(vertex_buffer_byte_offset / vertex_buffer_element_size),
+
+         .texture = nullptr,
+      });
+   }
 };
 
 std::atomic<Shadow_world*> shadow_world_ptr = nullptr;
