@@ -134,7 +134,8 @@ auto Shader_resource_database::imgui_resource_picker() noexcept -> Imgui_pick_re
 
       if (desc.ViewDimension == D3D11_SRV_DIMENSION_TEXTURE2D ||
           desc.ViewDimension == D3D11_SRV_DIMENSION_TEXTURE2DARRAY) {
-         if (ImGui::ImageButton(srv, {64, 64})) {
+         if (ImGui::ImageButton(res.second.c_str(),
+                                reinterpret_cast<ImTextureID>(srv), {64, 64})) {
             result = {.srv = srv, .name = res.second};
             break;
          }
@@ -155,8 +156,8 @@ auto Shader_resource_database::imgui_resource_picker() noexcept -> Imgui_pick_re
    return result;
 }
 
-auto Shader_resource_database::lookup(const std::string_view name) const
-   noexcept -> ID3D11ShaderResourceView*
+auto Shader_resource_database::lookup(const std::string_view name) const noexcept
+   -> ID3D11ShaderResourceView*
 {
    if (name.front() == '$') return builtin_lookup(name);
 
@@ -166,8 +167,8 @@ auto Shader_resource_database::lookup(const std::string_view name) const
    return (it != _resources.cend()) ? it->first.get() : nullptr;
 }
 
-auto Shader_resource_database::builtin_lookup(const std::string_view name) const
-   noexcept -> ID3D11ShaderResourceView*
+auto Shader_resource_database::builtin_lookup(const std::string_view name) const noexcept
+   -> ID3D11ShaderResourceView*
 {
    Expects(!name.empty());
 

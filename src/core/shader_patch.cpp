@@ -230,7 +230,12 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
    shadows::shadow_world.initialize(*_device);
 }
 
-Shader_patch::~Shader_patch() = default;
+Shader_patch::~Shader_patch()
+{
+   ImGui_ImplDX11_Shutdown();
+   ImGui_ImplWin32_Shutdown();
+   ImGui::DestroyContext();
+}
 
 void Shader_patch::reset(const Reset_flags flags, const UINT render_width,
                          const UINT render_height, const UINT window_width,

@@ -13,7 +13,8 @@ namespace ImGui {
 
 inline bool InputText(const char* label, std::string& string,
                       ImGuiInputTextFlags flags = 0,
-                      ImGuiTextEditCallback callback = nullptr, void* user_data = nullptr)
+                      ImGuiInputTextCallback callback = nullptr,
+                      void* user_data = nullptr)
 {
    constexpr auto max_length = 4096;
 
@@ -52,7 +53,7 @@ inline auto StringPicker(const char* label, const std::string& current, Strings 
 
 inline bool DragFloatFormattedN(const char* label, float* v, int components,
                                 float v_speed, const float* v_min,
-                                const float* v_max, const char** formats, float power)
+                                const float* v_max, const char** formats)
 {
    ImGuiWindow* window = GetCurrentWindow();
    if (window->SkipItems) return false;
@@ -66,7 +67,7 @@ inline bool DragFloatFormattedN(const char* label, float* v, int components,
    for (int i = 0; i < components; i++) {
       PushID(i);
       value_changed |= DragScalar("##v", ImGuiDataType_Float, &v[i], v_speed,
-                                  v_min, v_max, formats[i], power);
+                                  v_min, v_max, formats[i]);
       SameLine(0, g.Style.ItemInnerSpacing.x);
       PopID();
       PopItemWidth();
@@ -81,27 +82,24 @@ inline bool DragFloatFormattedN(const char* label, float* v, int components,
 inline bool DragFloatFormatted2(const char* label, float v[2],
                                 std::array<const char*, 2> formats,
                                 float v_speed = 1.0f, float v_min = 0.0f,
-                                float v_max = 0.0f, float power = 1.0f)
+                                float v_max = 0.0f)
 {
-   return DragFloatFormattedN(label, v, 2, v_speed, &v_min, &v_max,
-                              formats.data(), power);
+   return DragFloatFormattedN(label, v, 2, v_speed, &v_min, &v_max, formats.data());
 }
 
 inline bool DragFloatFormatted3(const char* label, float v[3],
                                 std::array<const char*, 3> formats,
                                 float v_speed = 1.0f, float v_min = 0.0f,
-                                float v_max = 0.0f, float power = 1.0f)
+                                float v_max = 0.0f)
 {
-   return DragFloatFormattedN(label, v, 3, v_speed, &v_min, &v_max,
-                              formats.data(), power);
+   return DragFloatFormattedN(label, v, 3, v_speed, &v_min, &v_max, formats.data());
 }
 
 inline bool DragFloatFormatted4(const char* label, float v[4],
                                 std::array<const char*, 4> formats,
                                 float v_speed = 1.0f, float v_min = 0.0f,
-                                float v_max = 0.0f, float power = 1.0f)
+                                float v_max = 0.0f)
 {
-   return DragFloatFormattedN(label, v, 4, v_speed, &v_min, &v_max,
-                              formats.data(), power);
+   return DragFloatFormattedN(label, v, 4, v_speed, &v_min, &v_max, formats.data());
 }
 }

@@ -290,6 +290,7 @@
     <ClCompile Include="src\shadows\internal\name_table.cpp" />
     <ClCompile Include="src\shadows\internal\mesh_buffer.cpp" />
     <ClCompile Include="src\shadows\internal\mesh_copy_queue.cpp" />
+    <ClCompile Include="src\imgui\imgui_tables.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\shader_constants.hpp">
