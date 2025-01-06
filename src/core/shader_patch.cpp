@@ -2095,6 +2095,8 @@ void Shader_patch::update_imgui() noexcept
 
       material::show_editor(_material_factory, _materials);
 
+      shadows::shadow_world.show_imgui(*_device_context);
+
       if (_bf2_log_monitor) _bf2_log_monitor->show_imgui(true);
 
       // Dev Tools Window

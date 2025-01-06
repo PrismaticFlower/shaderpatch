@@ -55,4 +55,16 @@ auto Name_table::get_storage_vector(const std::size_t size) noexcept
    return _storage.back();
 }
 
+auto Name_table::begin() const noexcept
+   -> absl::flat_hash_map<std::uint32_t, const char*>::const_iterator
+{
+   return _map.begin();
+}
+
+auto Name_table::end() const noexcept
+   -> absl::flat_hash_map<std::uint32_t, const char*>::const_iterator
+{
+   return _map.end();
+}
+
 }

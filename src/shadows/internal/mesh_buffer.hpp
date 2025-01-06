@@ -15,6 +15,8 @@ struct Mesh_buffer {
 
    auto allocate(UINT size, UINT alignment, UINT& out_offset) noexcept -> HRESULT;
 
+   auto allocated_bytes() const noexcept -> UINT;
+
 private:
    Com_ptr<ID3D11Buffer> _buffer;
 

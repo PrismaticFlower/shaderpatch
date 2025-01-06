@@ -45,4 +45,9 @@ auto Mesh_buffer::allocate(UINT size, UINT alignment, UINT& out_offset) noexcept
    return S_OK;
 }
 
+auto Mesh_buffer::allocated_bytes() const noexcept -> UINT
+{
+   return _allocated;
+}
+
 }

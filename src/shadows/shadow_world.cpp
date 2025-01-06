@@ -5,6 +5,7 @@
 #include "internal/model.hpp"
 #include "internal/name_table.hpp"
 
+#include "../imgui/imgui.h"
 #include "../logger.hpp"
 
 #include "com_ptr.hpp"
@@ -284,6 +285,49 @@ struct Shadow_world {
       (void)instance;
    }
 
+   void show_imgui(ID3D11DeviceContext2& dc) noexcept
+   {
+      (void)dc;
+
+      if (ImGui::Begin("Shadow World")) {
+         if (ImGui::BeginTabBar("Tabs")) {
+            if (ImGui::BeginTabItem("Metrics")) {
+               ImGui::Text("Index Buffer Usage: %.1f / %.1f MB",
+                           _index_buffer.allocated_bytes() / 1'000'000.0,
+                           MESH_BUFFER_SIZE / 1'000'000.0);
+
+               ImGui::Text("Vertex Buffer Usage: %.1f / %.1f MB",
+                           _vertex_buffer.allocated_bytes() / 1'000'000.0,
+                           MESH_BUFFER_SIZE / 1'000'000.0);
+
+               ImGui::Text("Models Count: %u", _models.size());
+
+               ImGui::EndTabItem();
+            }
+
+            if (ImGui::BeginTabItem("Name Table")) {
+               ImGui::PushItemWidth(ImGui::CalcTextSize("0x00000000").x * 2.0f);
+
+               ImGui::LabelText("Hash", "Name");
+
+               ImGui::Separator();
+
+               for (const auto& [id, name] : _name_table) {
+                  ImGui::LabelText(name, "0x%.8x", id);
+               }
+
+               ImGui::PopItemWidth();
+
+               ImGui::EndTabItem();
+            }
+
+            ImGui::EndTabBar();
+         }
+      }
+
+      ImGui::End();
+   }
+
 private:
    std::shared_mutex _mutex;
 
@@ -372,4 +416,14 @@ void Shadow_world_interface::add_object_instance(const Input_instance& instance)
 
    self->add_object_instance(instance);
 }
+
+void Shadow_world_interface::show_imgui(ID3D11DeviceContext2& dc) noexcept
+{
+   Shadow_world* self = shadow_world_ptr.load(std::memory_order_relaxed);
+
+   if (!self) return;
+
+   self->show_imgui(dc);
+}
+
 }

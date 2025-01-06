@@ -22,6 +22,16 @@ struct Name_table {
    /// @return The name as a null terminated string or an empty, but valid null terminated string.
    auto lookup(const std::uint32_t name_hash) const noexcept -> const char*;
 
+   /// @brief Get an iterator for visualizing the table.
+   /// @return The begin iterator.
+   auto begin() const noexcept
+      -> absl::flat_hash_map<std::uint32_t, const char*>::const_iterator;
+
+   /// @brief Get the iterator for visualizing the table.
+   /// @return The end iterator.
+   auto end() const noexcept
+      -> absl::flat_hash_map<std::uint32_t, const char*>::const_iterator;
+
 private:
    auto get_storage_vector(const std::size_t size) noexcept -> std::vector<char>&;
 
