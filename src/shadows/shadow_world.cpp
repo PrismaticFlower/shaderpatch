@@ -46,7 +46,7 @@ struct Shadow_world {
       _models_index.clear();
    }
 
-   void add_model(Input_model&& input_model) noexcept
+   void add_model(const Input_model& input_model) noexcept
    {
       std::scoped_lock lock{_mutex};
 
@@ -263,21 +263,21 @@ struct Shadow_world {
       _models.push_back(std::move(model));
    }
 
-   void add_game_model(Input_game_model&& game_model) noexcept
+   void add_game_model(const Input_game_model& game_model) noexcept
    {
       std::scoped_lock lock{_mutex};
 
       (void)game_model;
    }
 
-   void add_object(Input_object_class&& object_class) noexcept
+   void add_object(const Input_object_class& object_class) noexcept
    {
       std::scoped_lock lock{_mutex};
 
       (void)object_class;
    }
 
-   void add_object_instance(Input_instance&& instance) noexcept
+   void add_object_instance(const Input_instance& instance) noexcept
    {
       std::scoped_lock lock{_mutex};
 
@@ -337,39 +337,39 @@ void Shadow_world_interface::clear() noexcept
    self->clear();
 }
 
-void Shadow_world_interface::add_model(Input_model&& model) noexcept
+void Shadow_world_interface::add_model(const Input_model& model) noexcept
 {
    Shadow_world* self = shadow_world_ptr.load(std::memory_order_relaxed);
 
    if (!self) return;
 
-   self->add_model(std::move(model));
+   self->add_model(model);
 }
 
-void Shadow_world_interface::add_game_model(Input_game_model&& game_model) noexcept
+void Shadow_world_interface::add_game_model(const Input_game_model& game_model) noexcept
 {
    Shadow_world* self = shadow_world_ptr.load(std::memory_order_relaxed);
 
    if (!self) return;
 
-   self->add_game_model(std::move(game_model));
+   self->add_game_model(game_model);
 }
 
-void Shadow_world_interface::add_object(Input_object_class&& object_class) noexcept
+void Shadow_world_interface::add_object(const Input_object_class& object_class) noexcept
 {
    Shadow_world* self = shadow_world_ptr.load(std::memory_order_relaxed);
 
    if (!self) return;
 
-   self->add_object(std::move(object_class));
+   self->add_object(object_class);
 }
 
-void Shadow_world_interface::add_object_instance(Input_instance&& instance) noexcept
+void Shadow_world_interface::add_object_instance(const Input_instance& instance) noexcept
 {
    Shadow_world* self = shadow_world_ptr.load(std::memory_order_relaxed);
 
    if (!self) return;
 
-   self->add_object_instance(std::move(instance));
+   self->add_object_instance(instance);
 }
 }
