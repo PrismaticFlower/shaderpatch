@@ -237,6 +237,73 @@ struct Shadow_world {
                ImGui::EndTabItem();
             }
 
+            if (ImGui::BeginTabItem("Models")) {
+               static std::uint32_t selected_model_hash = 0;
+               std::uint32_t selected_model_index = UINT32_MAX;
+
+               if (ImGui::BeginChild("##list",
+                                     {ImGui::GetContentRegionAvail().x * 0.4f, 0.0f},
+                                     ImGuiChildFlags_ResizeX)) {
+                  for (const auto& [model_name_hash, model_index] : _models_index) {
+                     const bool selected = selected_model_hash == model_name_hash;
+
+                     const char* name = _name_table.lookup(model_name_hash);
+
+                     if (ImGui::Selectable(name, selected)) {
+                        selected_model_hash = model_name_hash;
+                     }
+
+                     ImGui::SetItemTooltip(name);
+
+                     if (selected) selected_model_index = model_index;
+                  }
+               }
+
+               ImGui::EndChild();
+
+               ImGui::SameLine();
+
+               if (ImGui::BeginChild("##model") &&
+                   selected_model_index < _models.size()) {
+                  const Model& model = _models[selected_model_index];
+
+                  std::uint32_t tri_count = 0;
+
+                  const auto count_metrics = []<typename T>(const std::vector<T>& segments) {
+                     std::uint32_t count = 0;
+
+                     for (const auto& segment : segments) {
+                        if (segment.topology == D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST) {
+                           count += segment.index_count / 3u;
+                        }
+                        else {
+                           count += segment.index_count + 2u;
+                        }
+                     }
+
+                     return count;
+                  };
+
+                  tri_count += count_metrics(model.opaque_segments);
+                  tri_count += count_metrics(model.doublesided_segments);
+                  tri_count += count_metrics(model.hardedged_segments);
+                  tri_count += count_metrics(model.hardedged_doublesided_segments);
+
+                  ImGui::Text("Triangle Count: %u", tri_count);
+                  ImGui::Text("Opaque Segment: %u", model.opaque_segments.size());
+                  ImGui::Text("Doublesided Segment: %u",
+                              model.doublesided_segments.size());
+                  ImGui::Text("Hardedged Segments: %u",
+                              model.hardedged_segments.size());
+                  ImGui::Text("Hardedged Doublesided Segments: %u",
+                              model.hardedged_doublesided_segments.size());
+               }
+
+               ImGui::EndChild();
+
+               ImGui::EndTabItem();
+            }
+
             if (ImGui::BeginTabItem("Name Table")) {
                ImGui::PushItemWidth(ImGui::CalcTextSize("0x00000000").x * 2.0f);
 
