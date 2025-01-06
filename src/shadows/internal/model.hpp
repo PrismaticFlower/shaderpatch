@@ -7,6 +7,8 @@
 
 #include <d3d11.h>
 
+#include <glm/glm.hpp>
+
 namespace sp::shadows {
 
 struct Model_merge_segment {
@@ -42,6 +44,8 @@ struct Model_segment_hardedged {
 };
 
 struct Model {
+   glm::vec3 bbox_min;
+   glm::vec3 bbox_max;
 
    // TODO: Avoid allocations for simple meshes that fit in a single segment.
    std::vector<Model_segment> opaque_segments;

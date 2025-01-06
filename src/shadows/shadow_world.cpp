@@ -190,6 +190,9 @@ struct Shadow_world {
                            model.hardedged_doublesided_segments);
       }
 
+      model.bbox_min = input_model.min_vertex;
+      model.bbox_max = input_model.max_vertex;
+
       const std::size_t model_index = _models.size();
 
       _models_index.emplace(name_hash, model_index);
@@ -297,6 +300,11 @@ struct Shadow_world {
                               model.hardedged_segments.size());
                   ImGui::Text("Hardedged Doublesided Segments: %u",
                               model.hardedged_doublesided_segments.size());
+
+                  ImGui::Text("BBOX Min: %f %f %f", model.bbox_min.x,
+                              model.bbox_min.y, model.bbox_min.z);
+                  ImGui::Text("BBOX Max: %f %f %f", model.bbox_max.x,
+                              model.bbox_max.y, model.bbox_max.z);
                }
 
                ImGui::EndChild();
