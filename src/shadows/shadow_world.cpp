@@ -21,9 +21,7 @@ namespace sp::shadows {
 namespace {
 
 const UINT MESH_BUFFER_SIZE = 0x4000000;
-
-// One less than UINT16_MAX to avoid the trianlge strip cut value.
-const UINT MAX_SEGMENT_VERTICES = UINT16_MAX - 1;
+const UINT MAX_SEGMENT_VERTICES = D3D11_16BIT_INDEX_STRIP_CUT_VALUE - 1;
 
 struct Shadow_world {
    Shadow_world(ID3D11Device2& device) : _device{copy_raw_com_ptr(device)} {}
