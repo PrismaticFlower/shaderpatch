@@ -345,6 +345,24 @@ struct Shadow_world {
 
                ImGui::Text("Models Count: %u", _models.size());
 
+               std::size_t cpu_memory = sizeof(Shadow_world);
+
+               const auto get_bytes_capcity = []<typename T>(const T& container) {
+                  return container.capacity() * sizeof(T::value_type);
+               };
+
+               cpu_memory += get_bytes_capcity(_models);
+               cpu_memory += get_bytes_capcity(_models_index);
+               cpu_memory += get_bytes_capcity(_models_index);
+               cpu_memory += get_bytes_capcity(_game_models);
+               cpu_memory += get_bytes_capcity(_game_models_index);
+               cpu_memory += get_bytes_capcity(_entity_classes);
+               cpu_memory += get_bytes_capcity(_entity_classes_index);
+
+               cpu_memory += _name_table.allocated_bytes();
+
+               ImGui::Text("Approximate CPU Memory Used: %.1f KB", cpu_memory / 1'000.0);
+
                ImGui::EndTabItem();
             }
 

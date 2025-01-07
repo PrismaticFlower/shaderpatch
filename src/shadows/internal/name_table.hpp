@@ -32,6 +32,10 @@ struct Name_table {
    auto end() const noexcept
       -> absl::flat_hash_map<std::uint32_t, const char*>::const_iterator;
 
+   /// @brief Returns the approximate count for how much memory has been allocated by the Name_table.
+   /// @return The approximate count of allocated bytes.
+   auto allocated_bytes() const noexcept -> std::size_t;
+
 private:
    auto get_storage_vector(const std::size_t size) noexcept -> std::vector<char>&;
 

@@ -67,4 +67,15 @@ auto Name_table::end() const noexcept
    return _map.end();
 }
 
+auto Name_table::allocated_bytes() const noexcept -> std::size_t
+{
+   std::size_t count = _map.capacity() * sizeof(decltype(_map)::value_type);
+
+   for (const std::vector<char>& allocation : _storage) {
+      count += allocation.capacity();
+   }
+
+   return count;
+}
+
 }
