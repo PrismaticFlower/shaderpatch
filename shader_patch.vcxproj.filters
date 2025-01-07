@@ -291,6 +291,7 @@
     <ClCompile Include="src\shadows\internal\mesh_buffer.cpp" />
     <ClCompile Include="src\shadows\internal\mesh_copy_queue.cpp" />
     <ClCompile Include="src\imgui\imgui_tables.cpp" />
+    <ClCompile Include="src\shadows\internal\debug_model_draw.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\shader_constants.hpp">
@@ -729,6 +730,7 @@
     <ClInclude Include="src\shadows\internal\mesh_buffer.hpp" />
     <ClInclude Include="src\shadows\internal\model.hpp" />
     <ClInclude Include="src\shadows\internal\mesh_copy_queue.hpp" />
+    <ClInclude Include="src\shadows\internal\debug_model_draw.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />
