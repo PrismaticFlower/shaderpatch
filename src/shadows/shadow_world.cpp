@@ -51,7 +51,7 @@ struct Shadow_world {
       std::scoped_lock lock{_mutex};
 
       if (input_model.segments.empty()) {
-         log_fmt(Log_level::info, "Discarding model '{}' with no usable segments for shadows. (Is either skinned or fully transparent).",
+         log_fmt(Log_level::info, "Discarding model '{}' with no usable segments for shadows. (It is either skinned or fully transparent).",
                  input_model.name);
 
          return;
