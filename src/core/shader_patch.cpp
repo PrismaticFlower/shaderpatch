@@ -2088,11 +2088,6 @@ void Shader_patch::update_frame_state() noexcept
 
 void Shader_patch::update_imgui() noexcept
 {
-   auto* const rtv = _swapchain.rtv();
-
-   _device_context->OMSetRenderTargets(1, &rtv, nullptr);
-   _om_targets_dirty = true;
-
    if (_imgui_enabled) {
       ImGui::ShowDemoWindow();
       user_config.show_imgui();
@@ -2119,6 +2114,11 @@ void Shader_patch::update_imgui() noexcept
    }
 
    if (_imgui_enabled) {
+      auto* const rtv = _swapchain.rtv();
+
+      _device_context->OMSetRenderTargets(1, &rtv, nullptr);
+      _om_targets_dirty = true;
+
       ImGui::Render();
       ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
    }
@@ -2128,6 +2128,11 @@ void Shader_patch::update_imgui() noexcept
 
       auto& io = ImGui::GetIO();
       io.MouseDrawCursor = !io.MouseDrawCursor;
+
+      auto* const rtv = _swapchain.rtv();
+
+      _device_context->OMSetRenderTargets(1, &rtv, nullptr);
+      _om_targets_dirty = true;
 
       ImGui::Render();
       ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());

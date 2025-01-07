@@ -1,5 +1,6 @@
 #include "shadow_world.hpp"
 
+#include "internal/debug_model_draw.hpp"
 #include "internal/mesh_buffer.hpp"
 #include "internal/mesh_copy_queue.hpp"
 #include "internal/model.hpp"
@@ -113,8 +114,9 @@ struct Shadow_world {
 
                merge_segment.indices.clear();
                merge_segment.vertices.clear();
-               merge_segment.topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
-               merge_segment.texture_name_hash = 0;
+               merge_segment.topology = topology;
+               merge_segment.texture_name_hash =
+                  _name_table.add(segment.diffuse_texture);
             }
 
             const std::size_t index_offset = merge_segment.vertices.size();
@@ -129,8 +131,15 @@ struct Shadow_world {
                    segment.texcoords[i][1]});
             }
 
-            merge_segment.indices.reserve(merge_segment.indices.size() +
-                                          segment.indices.size());
+            const bool needs_cut = topology == D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP &&
+                                   !merge_segment.indices.empty();
+
+            merge_segment.indices.reserve(
+               merge_segment.indices.size() + segment.indices.size() + needs_cut ? 1 : 0);
+
+            if (needs_cut) {
+               merge_segment.indices.push_back(D3D11_16BIT_INDEX_STRIP_CUT_VALUE);
+            }
 
             for (const std::uint16_t index : segment.indices) {
                merge_segment.indices.push_back(
@@ -153,7 +162,7 @@ struct Shadow_world {
 
                merge_segment.indices.clear();
                merge_segment.vertices.clear();
-               merge_segment.topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
+               merge_segment.topology = topology;
             }
 
             const std::size_t index_offset = merge_segment.vertices.size();
@@ -162,8 +171,15 @@ struct Shadow_world {
                                           segment.vertices.begin(),
                                           segment.vertices.end());
 
-            merge_segment.indices.reserve(merge_segment.indices.size() +
-                                          segment.indices.size());
+            const bool needs_cut = topology == D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP &&
+                                   !merge_segment.indices.empty();
+
+            merge_segment.indices.reserve(
+               merge_segment.indices.size() + segment.indices.size() + needs_cut ? 1 : 0);
+
+            if (needs_cut) {
+               merge_segment.indices.push_back(D3D11_16BIT_INDEX_STRIP_CUT_VALUE);
+            }
 
             for (const std::uint16_t index : segment.indices) {
                merge_segment.indices.push_back(
@@ -222,8 +238,6 @@ struct Shadow_world {
 
    void show_imgui(ID3D11DeviceContext2& dc) noexcept
    {
-      (void)dc;
-
       if (ImGui::Begin("Shadow World")) {
          if (ImGui::BeginTabBar("Tabs")) {
             if (ImGui::BeginTabItem("Metrics")) {
@@ -305,6 +319,103 @@ struct Shadow_world {
                               model.bbox_min.y, model.bbox_min.z);
                   ImGui::Text("BBOX Max: %f %f %f", model.bbox_max.x,
                               model.bbox_max.y, model.bbox_max.z);
+
+                  static float preview_angle = 0.0f;
+
+                  ImGui::SliderAngle("Preview Rotation", &preview_angle);
+
+                  ImGui::Separator();
+
+                  const ImVec2 preview_size_flt = ImGui::GetContentRegionAvail();
+
+                  const UINT preview_width =
+                     static_cast<UINT>(std::max(preview_size_flt.x, 64.0f));
+                  const UINT preview_height =
+                     static_cast<UINT>(std::max(preview_size_flt.y, 64.0f));
+
+                  if (_debug_model_preview_width != preview_width ||
+                      _debug_model_preview_height != preview_height) {
+                     Com_ptr<ID3D11Texture2D> depth_stencil_texture;
+
+                     const D3D11_TEXTURE2D_DESC depth_stencil_desc = {
+                        .Width = preview_width,
+                        .Height = preview_height,
+                        .MipLevels = 1,
+                        .ArraySize = 1,
+                        .Format = DXGI_FORMAT_D16_UNORM,
+                        .SampleDesc = {1, 0},
+                        .Usage = D3D11_USAGE_DEFAULT,
+                        .BindFlags = D3D11_BIND_DEPTH_STENCIL,
+                     };
+
+                     if (FAILED(_device->CreateTexture2D(&depth_stencil_desc, nullptr,
+                                                         depth_stencil_texture.clear_and_assign()))) {
+                        log_and_terminate(
+                           "Failed to create debug model draw resource.");
+                     }
+
+                     if (FAILED(_device->CreateDepthStencilView(
+                            depth_stencil_texture.get(), nullptr,
+                            _debug_model_preview_dsv.clear_and_assign()))) {
+                        log_and_terminate(
+                           "Failed to create debug model draw resource.");
+                     }
+
+                     Com_ptr<ID3D11Texture2D> render_target_texture;
+
+                     const D3D11_TEXTURE2D_DESC render_target_desc = {
+                        .Width = preview_width,
+                        .Height = preview_height,
+                        .MipLevels = 1,
+                        .ArraySize = 1,
+                        .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+                        .SampleDesc = {1, 0},
+                        .Usage = D3D11_USAGE_DEFAULT,
+                        .BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET,
+                     };
+
+                     if (FAILED(_device->CreateTexture2D(&render_target_desc, nullptr,
+                                                         render_target_texture.clear_and_assign()))) {
+                        log_and_terminate(
+                           "Failed to create debug model draw resource.");
+                     }
+
+                     if (FAILED(_device->CreateRenderTargetView(
+                            render_target_texture.get(), nullptr,
+                            _debug_model_preview_rtv.clear_and_assign()))) {
+                        log_and_terminate(
+                           "Failed to create debug model draw resource.");
+                     }
+
+                     if (FAILED(_device->CreateShaderResourceView(
+                            render_target_texture.get(), nullptr,
+                            _debug_model_preview_srv.clear_and_assign()))) {
+                        log_and_terminate(
+                           "Failed to create debug model draw resource.");
+                     }
+
+                     _debug_model_preview_width = preview_width;
+                     _debug_model_preview_height = preview_height;
+                  }
+
+                  _debug_model_draw.draw(dc, model, preview_angle,
+                                         _index_buffer.get(), _vertex_buffer.get(),
+                                         {
+                                            .Width = static_cast<float>(preview_width),
+                                            .Height = static_cast<float>(preview_height),
+                                            .MinDepth = 0.0f,
+                                            .MaxDepth = 1.0f,
+                                         },
+                                         _debug_model_preview_rtv.get(),
+                                         _debug_model_preview_dsv.get());
+
+                  ImGui::GetWindowDrawList()->AddImage(
+                     reinterpret_cast<ImTextureID>(_debug_model_preview_srv.get()),
+                     ImGui::GetCursorScreenPos(),
+                     {
+                        ImGui::GetCursorScreenPos().x + static_cast<float>(preview_width),
+                        ImGui::GetCursorScreenPos().y + static_cast<float>(preview_height),
+                     });
                }
 
                ImGui::EndChild();
@@ -349,6 +460,15 @@ private:
    absl::flat_hash_map<std::uint32_t, std::size_t> _models_index;
 
    Name_table _name_table;
+
+   Debug_model_draw _debug_model_draw{*_device};
+
+   UINT _debug_model_preview_width = 0;
+   UINT _debug_model_preview_height = 0;
+
+   Com_ptr<ID3D11DepthStencilView> _debug_model_preview_dsv;
+   Com_ptr<ID3D11RenderTargetView> _debug_model_preview_rtv;
+   Com_ptr<ID3D11ShaderResourceView> _debug_model_preview_srv;
 
    void add_model_segment(const std::string_view model_debug_name,
                           const Model_merge_segment& merge_segment,
