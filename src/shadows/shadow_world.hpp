@@ -18,7 +18,7 @@ struct Shadow_world_interface {
 
    static void add_game_model(const Input_game_model& game_model) noexcept;
 
-   static void add_object(const Input_object_class& object_class) noexcept;
+   static void add_entity_class(const Input_entity_class& entity_class) noexcept;
 
    static void add_object_instance(const Input_instance& instance) noexcept;
 

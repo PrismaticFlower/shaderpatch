@@ -282,6 +282,7 @@
     <ClCompile Include="src\shadows\internal\mesh_copy_queue.cpp" />
     <ClCompile Include="src\shadows\internal\name_table.cpp" />
     <ClCompile Include="src\shadows\loader.cpp" />
+    <ClCompile Include="src\shadows\read\read_entity_class.cpp" />
     <ClCompile Include="src\shadows\read\read_game_model.cpp" />
     <ClCompile Include="src\shadows\read\read_model.cpp" />
     <ClCompile Include="src\shadows\shadow_world.cpp" />
@@ -439,10 +440,12 @@
     <ClInclude Include="src\shadows\internal\debug_model_draw.hpp" />
     <ClInclude Include="src\shadows\internal\mesh_buffer.hpp" />
     <ClInclude Include="src\shadows\internal\mesh_copy_queue.hpp" />
+    <ClInclude Include="src\shadows\internal\world\entity_class.hpp" />
     <ClInclude Include="src\shadows\internal\world\game_model.hpp" />
     <ClInclude Include="src\shadows\internal\world\model.hpp" />
     <ClInclude Include="src\shadows\loader.hpp" />
     <ClInclude Include="src\shadows\internal\name_table.hpp" />
+    <ClInclude Include="src\shadows\read\read_entity_class.hpp" />
     <ClInclude Include="src\shadows\read\read_game_model.hpp" />
     <ClInclude Include="src\shadows\read\read_model.hpp" />
     <ClInclude Include="src\shadows\shadow_world.hpp" />

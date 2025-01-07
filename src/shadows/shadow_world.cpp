@@ -4,6 +4,7 @@
 #include "internal/mesh_buffer.hpp"
 #include "internal/mesh_copy_queue.hpp"
 #include "internal/name_table.hpp"
+#include "internal/world/entity_class.hpp"
 #include "internal/world/game_model.hpp"
 #include "internal/world/model.hpp"
 
@@ -48,6 +49,9 @@ struct Shadow_world {
 
       _game_models.clear();
       _game_models_index.clear();
+
+      _entity_classes.clear();
+      _entity_classes_index.clear();
    }
 
    void add_model(const Input_model& input_model) noexcept
@@ -71,8 +75,8 @@ struct Shadow_world {
       const std::uint32_t name_hash = _name_table.add(input_model.name);
 
       if (_models_index.contains(name_hash)) {
-         log_debug("Skipping adding model '{}' as a model with the name hash "
-                   "already exists.",
+         log_debug("Skipping adding model '{}' as a model with the same name "
+                   "hash already exists.",
                    input_model.name);
 
          return;
@@ -248,8 +252,7 @@ struct Shadow_world {
 
       if (_game_models_index.contains(name_hash)) {
          log_debug("Skipping adding game model '{}' as a game model with the "
-                   "name hash "
-                   "already exists.",
+                   "same name hash already exists.",
                    input_game_model.name);
 
          return;
@@ -286,11 +289,38 @@ struct Shadow_world {
       _game_models.push_back(std::move(game_model));
    }
 
-   void add_object(const Input_object_class& object_class) noexcept
+   void add_entity_class(const Input_entity_class& input_entity_class) noexcept
    {
       std::scoped_lock lock{_mutex};
 
-      (void)object_class;
+      log_debug("Read entity class '{}' BASE: '{}' GeometryName: '{}'",
+                input_entity_class.type_name, input_entity_class.base_name,
+                input_entity_class.geometry_name);
+
+      auto game_model_it =
+         _game_models_index.find(fnv_1a_hash(input_entity_class.geometry_name));
+
+      if (game_model_it == _game_models_index.end()) {
+         log_fmt(Log_level::info, "Discarding entity class '{}' with missing (possibly discarded) game model '{}'.",
+                 input_entity_class.type_name, input_entity_class.geometry_name);
+
+         return;
+      }
+
+      const std::uint32_t name_hash = _name_table.add(input_entity_class.type_name);
+
+      if (_entity_classes_index.contains(name_hash)) {
+         log_debug("Skipping adding entity class '{}' as an entity class with "
+                   "the same name hash already exists.",
+                   input_entity_class.type_name);
+
+         return;
+      }
+
+      const std::size_t entity_class_index = _entity_classes.size();
+
+      _entity_classes_index.emplace(name_hash, entity_class_index);
+      _entity_classes.push_back({.game_model_index = game_model_it->second});
    }
 
    void add_object_instance(const Input_instance& instance) noexcept
@@ -540,6 +570,59 @@ struct Shadow_world {
                ImGui::EndTabItem();
             }
 
+            if (ImGui::BeginTabItem("Entity Classes")) {
+               static std::uint32_t selected_entity_class_hash = 0;
+               std::uint32_t selected_entity_class_index = UINT32_MAX;
+
+               if (ImGui::BeginChild("##list",
+                                     {ImGui::GetContentRegionAvail().x * 0.4f, 0.0f},
+                                     ImGuiChildFlags_ResizeX)) {
+                  for (const auto& [entity_class_name_hash, entity_class_index] :
+                       _entity_classes_index) {
+                     const bool selected =
+                        selected_entity_class_hash == entity_class_name_hash;
+
+                     const char* name = _name_table.lookup(entity_class_name_hash);
+
+                     if (ImGui::Selectable(name, selected)) {
+                        selected_entity_class_hash = entity_class_name_hash;
+                     }
+
+                     ImGui::SetItemTooltip(name);
+
+                     if (selected)
+                        selected_entity_class_index = entity_class_index;
+                  }
+               }
+
+               ImGui::EndChild();
+
+               ImGui::SameLine();
+
+               if (ImGui::BeginChild("##model") &&
+                   selected_entity_class_index < _entity_classes.size()) {
+                  const Entity_class& entity_class =
+                     _entity_classes[selected_entity_class_index];
+
+                  const auto game_model_name = [&](std::size_t index) {
+                     for (const auto& [game_model_name_hash, game_model_index] :
+                          _models_index) {
+                        if (game_model_index == index)
+                           return _name_table.lookup(game_model_name_hash);
+                     }
+
+                     return "<unknown>";
+                  };
+
+                  ImGui::Text("GeometryName: %s",
+                              game_model_name(entity_class.game_model_index));
+               }
+
+               ImGui::EndChild();
+
+               ImGui::EndTabItem();
+            }
+
             if (ImGui::BeginTabItem("Name Table")) {
                ImGui::PushItemWidth(ImGui::CalcTextSize("0x00000000").x * 2.0f);
 
@@ -578,6 +661,9 @@ private:
 
    std::vector<Game_model> _game_models;
    absl::flat_hash_map<std::uint32_t, std::size_t> _game_models_index;
+
+   std::vector<Entity_class> _entity_classes;
+   absl::flat_hash_map<std::uint32_t, std::size_t> _entity_classes_index;
 
    Name_table _name_table;
 
@@ -732,13 +818,13 @@ void Shadow_world_interface::add_game_model(const Input_game_model& game_model) 
    self->add_game_model(game_model);
 }
 
-void Shadow_world_interface::add_object(const Input_object_class& object_class) noexcept
+void Shadow_world_interface::add_entity_class(const Input_entity_class& entity_class) noexcept
 {
    Shadow_world* self = shadow_world_ptr.load(std::memory_order_relaxed);
 
    if (!self) return;
 
-   self->add_object(object_class);
+   self->add_entity_class(entity_class);
 }
 
 void Shadow_world_interface::add_object_instance(const Input_instance& instance) noexcept

@@ -53,9 +53,10 @@ struct Input_game_model {
    std::uint32_t lowd_tris = 0;
 };
 
-struct Input_object_class {
-   std::string name;
-   std::string game_model_name;
+struct Input_entity_class {
+   std::string base_name;
+   std::string type_name;
+   std::string geometry_name;
 };
 
 struct Input_instance {

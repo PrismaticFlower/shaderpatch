@@ -2,6 +2,7 @@
 #include "input.hpp"
 #include "shadow_world.hpp"
 
+#include "read/read_entity_class.hpp"
 #include "read/read_game_model.hpp"
 #include "read/read_model.hpp"
 
@@ -42,6 +43,7 @@ void load(const std::string& file_name) noexcept
             shadow_world.add_game_model(read_game_model(child));
          }
          else if (child.magic_number() == "entc"_mn) {
+            shadow_world.add_entity_class(read_entity_class(child));
          }
          else if (child.magic_number() == "wrld"_mn) {
          }
