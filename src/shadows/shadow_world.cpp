@@ -3,8 +3,8 @@
 #include "internal/debug_model_draw.hpp"
 #include "internal/mesh_buffer.hpp"
 #include "internal/mesh_copy_queue.hpp"
-#include "internal/model.hpp"
 #include "internal/name_table.hpp"
+#include "internal/world/model.hpp"
 
 #include "../imgui/imgui.h"
 #include "../logger.hpp"
@@ -216,6 +216,20 @@ struct Shadow_world {
    void add_game_model(const Input_game_model& game_model) noexcept
    {
       std::scoped_lock lock{_mutex};
+
+      log_debug("Read game model '{}' LOD0: '{}' ({}) LOD1: '{}' ({}) LOD2: "
+                "'{}' ({}) LOWD: '{}' ({})",
+                game_model.name,
+                game_model.lod0.empty() ? "<missing>" : game_model.lod0,
+                game_model.lod0_tris,
+                game_model.lod1.empty() ? "<missing>" : game_model.lod1,
+                game_model.lod1_tris,
+                game_model.lod2.empty() ? "<missing>" : game_model.lod2,
+                game_model.lod2_tris,
+                game_model.lod2.empty() ? "<missing>" : game_model.lod2,
+                game_model.lod2_tris,
+                game_model.lowd.empty() ? "<missing>" : game_model.lowd,
+                game_model.lowd_tris);
 
       (void)game_model;
    }

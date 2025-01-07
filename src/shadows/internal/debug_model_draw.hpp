@@ -1,6 +1,6 @@
 #pragma once
 
-#include "model.hpp"
+#include "world/model.hpp"
 
 #include <d3d11_2.h>
 
