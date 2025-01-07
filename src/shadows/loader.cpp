@@ -2,6 +2,7 @@
 #include "input.hpp"
 #include "shadow_world.hpp"
 
+#include "read/read_game_model.hpp"
 #include "read/read_model.hpp"
 
 #include "../logger.hpp"
@@ -38,6 +39,7 @@ void load(const std::string& file_name) noexcept
             shadow_world.add_model(read_model(child));
          }
          else if (child.magic_number() == "gmod"_mn) {
+            shadow_world.add_game_model(read_game_model(child));
          }
          else if (child.magic_number() == "entc"_mn) {
          }

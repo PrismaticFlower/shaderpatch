@@ -41,9 +41,16 @@ struct Input_game_model {
    std::string name;
 
    std::string lod0;
+   std::uint32_t lod0_tris = 0;
+
    std::string lod1;
+   std::uint32_t lod1_tris = 0;
+
    std::string lod2;
+   std::uint32_t lod2_tris = 0;
+
    std::string lowd;
+   std::uint32_t lowd_tris = 0;
 };
 
 struct Input_object_class {

@@ -4,6 +4,7 @@
 #include "internal/mesh_buffer.hpp"
 #include "internal/mesh_copy_queue.hpp"
 #include "internal/name_table.hpp"
+#include "internal/world/game_model.hpp"
 #include "internal/world/model.hpp"
 
 #include "../imgui/imgui.h"
@@ -44,6 +45,9 @@ struct Shadow_world {
 
       _models.clear();
       _models_index.clear();
+
+      _game_models.clear();
+      _game_models_index.clear();
    }
 
    void add_model(const Input_model& input_model) noexcept
@@ -213,25 +217,73 @@ struct Shadow_world {
       _models.push_back(std::move(model));
    }
 
-   void add_game_model(const Input_game_model& game_model) noexcept
+   void add_game_model(const Input_game_model& input_game_model) noexcept
    {
       std::scoped_lock lock{_mutex};
 
       log_debug("Read game model '{}' LOD0: '{}' ({}) LOD1: '{}' ({}) LOD2: "
                 "'{}' ({}) LOWD: '{}' ({})",
-                game_model.name,
-                game_model.lod0.empty() ? "<missing>" : game_model.lod0,
-                game_model.lod0_tris,
-                game_model.lod1.empty() ? "<missing>" : game_model.lod1,
-                game_model.lod1_tris,
-                game_model.lod2.empty() ? "<missing>" : game_model.lod2,
-                game_model.lod2_tris,
-                game_model.lod2.empty() ? "<missing>" : game_model.lod2,
-                game_model.lod2_tris,
-                game_model.lowd.empty() ? "<missing>" : game_model.lowd,
-                game_model.lowd_tris);
+                input_game_model.name,
+                input_game_model.lod0.empty() ? "<missing>" : input_game_model.lod0,
+                input_game_model.lod0_tris,
+                input_game_model.lod1.empty() ? "<missing>" : input_game_model.lod1,
+                input_game_model.lod1_tris,
+                input_game_model.lod2.empty() ? "<missing>" : input_game_model.lod2,
+                input_game_model.lod2_tris,
+                input_game_model.lod2.empty() ? "<missing>" : input_game_model.lod2,
+                input_game_model.lod2_tris,
+                input_game_model.lowd.empty() ? "<missing>" : input_game_model.lowd,
+                input_game_model.lowd_tris);
 
-      (void)game_model;
+      auto lod0_it = _models_index.find(fnv_1a_hash(input_game_model.lod0));
+
+      if (lod0_it == _models_index.end()) {
+         log_fmt(Log_level::info, "Discarding game model '{}' with missing (possibly discarded) model '{}'.",
+                 input_game_model.name, input_game_model.lod0);
+
+         return;
+      }
+
+      const std::uint32_t name_hash = _name_table.add(input_game_model.name);
+
+      if (_game_models_index.contains(name_hash)) {
+         log_debug("Skipping adding game model '{}' as a game model with the "
+                   "name hash "
+                   "already exists.",
+                   input_game_model.name);
+
+         return;
+      }
+
+      Game_model game_model{
+         .lod0_index = lod0_it->second,
+         .lod1_index = lod0_it->second,
+         .lod2_index = lod0_it->second,
+         .lowd_index = lod0_it->second,
+      };
+
+      if (auto lod1_it = _models_index.find(fnv_1a_hash(input_game_model.lod1));
+          lod1_it != _models_index.end()) {
+         game_model.lod1_index = lod1_it->second;
+         game_model.lod2_index = lod1_it->second;
+         game_model.lowd_index = lod1_it->second;
+      }
+
+      if (auto lod2_it = _models_index.find(fnv_1a_hash(input_game_model.lod2));
+          lod2_it != _models_index.end()) {
+         game_model.lod2_index = lod2_it->second;
+         game_model.lowd_index = lod2_it->second;
+      }
+
+      if (auto lowd_it = _models_index.find(fnv_1a_hash(input_game_model.lowd));
+          lowd_it != _models_index.end()) {
+         game_model.lowd_index = lowd_it->second;
+      }
+
+      const std::size_t model_index = _game_models.size();
+
+      _game_models_index.emplace(name_hash, model_index);
+      _game_models.push_back(std::move(game_model));
    }
 
    void add_object(const Input_object_class& object_class) noexcept
@@ -435,6 +487,59 @@ struct Shadow_world {
                ImGui::EndTabItem();
             }
 
+            if (ImGui::BeginTabItem("Game Models")) {
+               static std::uint32_t selected_game_model_hash = 0;
+               std::uint32_t selected_game_model_index = UINT32_MAX;
+
+               if (ImGui::BeginChild("##list",
+                                     {ImGui::GetContentRegionAvail().x * 0.4f, 0.0f},
+                                     ImGuiChildFlags_ResizeX)) {
+                  for (const auto& [game_model_name_hash, game_model_index] :
+                       _game_models_index) {
+                     const bool selected =
+                        selected_game_model_hash == game_model_name_hash;
+
+                     const char* name = _name_table.lookup(game_model_name_hash);
+
+                     if (ImGui::Selectable(name, selected)) {
+                        selected_game_model_hash = game_model_name_hash;
+                     }
+
+                     ImGui::SetItemTooltip(name);
+
+                     if (selected) selected_game_model_index = game_model_index;
+                  }
+               }
+
+               ImGui::EndChild();
+
+               ImGui::SameLine();
+
+               if (ImGui::BeginChild("##model") &&
+                   selected_game_model_index < _game_models.size()) {
+                  const Game_model& game_model =
+                     _game_models[selected_game_model_index];
+
+                  const auto model_name = [&](std::size_t index) {
+                     for (const auto& [model_name_hash, model_index] : _models_index) {
+                        if (model_index == index)
+                           return _name_table.lookup(model_name_hash);
+                     }
+
+                     return "<unknown>";
+                  };
+
+                  ImGui::Text("LOD0: %s", model_name(game_model.lod0_index));
+                  ImGui::Text("LOD1: %s", model_name(game_model.lod1_index));
+                  ImGui::Text("LOD2: %s", model_name(game_model.lod2_index));
+                  ImGui::Text("LOWD: %s", model_name(game_model.lowd_index));
+               }
+
+               ImGui::EndChild();
+
+               ImGui::EndTabItem();
+            }
+
             if (ImGui::BeginTabItem("Name Table")) {
                ImGui::PushItemWidth(ImGui::CalcTextSize("0x00000000").x * 2.0f);
 
@@ -470,6 +575,9 @@ private:
 
    std::vector<Model> _models;
    absl::flat_hash_map<std::uint32_t, std::size_t> _models_index;
+
+   std::vector<Game_model> _game_models;
+   absl::flat_hash_map<std::uint32_t, std::size_t> _game_models_index;
 
    Name_table _name_table;
 
