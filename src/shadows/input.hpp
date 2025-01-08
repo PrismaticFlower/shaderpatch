@@ -59,17 +59,20 @@ struct Input_entity_class {
    std::string geometry_name;
 };
 
-struct Input_instance {
+struct Input_object_instance {
    std::string name;
-   std::string class_name;
+   std::string type_name;
 
-   std::uint32_t layer_hash = 0;
+   /// @brief Name of the layer this instance is from. Provided as a string view to avoid needlessly copying it for each instance.
+   std::string_view layer_name;
 
-   /// @brief If not empty names the model to use instead of the one referenced in class name.
-   std::string model_override;
+   /// @brief If not empty names the model to use instead of the one referenced in the entity class.
+   std::string geometry_name_override;
 
    std::array<glm::vec3, 3> rotation;
    glm::vec3 positionWS;
+
+   bool in_child_lvl = false;
 };
 
 struct Input_animation_group {

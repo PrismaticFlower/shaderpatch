@@ -7,6 +7,7 @@
 #include "internal/world/entity_class.hpp"
 #include "internal/world/game_model.hpp"
 #include "internal/world/model.hpp"
+#include "internal/world/object_instance.hpp"
 
 #include "../imgui/imgui.h"
 #include "../logger.hpp"
@@ -52,6 +53,10 @@ struct Shadow_world {
 
       _entity_classes.clear();
       _entity_classes_index.clear();
+
+      _object_instances.clear();
+
+      _active_rebuild_needed = false;
    }
 
    void add_model(const Input_model& input_model) noexcept
@@ -323,11 +328,37 @@ struct Shadow_world {
       _entity_classes.push_back({.game_model_index = game_model_it->second});
    }
 
-   void add_object_instance(const Input_instance& instance) noexcept
+   void add_object_instance(const Input_object_instance& input_object_instance) noexcept
    {
       std::scoped_lock lock{_mutex};
 
-      (void)instance;
+      std::string_view name = input_object_instance.name;
+
+      if (name.empty()) name = "<unnamed>";
+
+      log_debug("Read object instance '{}' (type name: '{}' layer: '{}')", name,
+                input_object_instance.type_name, input_object_instance.layer_name);
+
+      auto entity_class_it =
+         _entity_classes_index.find(fnv_1a_hash(input_object_instance.type_name));
+
+      if (entity_class_it == _entity_classes_index.end()) {
+         log_fmt(Log_level::info, "Discarding onject instance '{}' with missing (possibly discarded) entity class '{}'.",
+                 name, input_object_instance.type_name);
+
+         return;
+      }
+
+      _object_instances.push_back({
+         .name_hash = _name_table.add(name),
+         .layer_name_hash = _name_table.add(input_object_instance.layer_name),
+         .game_model_index = _entity_classes[entity_class_it->second].game_model_index,
+         .from_child_lvl = input_object_instance.in_child_lvl,
+         .rotation = input_object_instance.rotation,
+         .positionWS = input_object_instance.positionWS,
+      });
+
+      _active_rebuild_needed = true;
    }
 
    void show_imgui(ID3D11DeviceContext2& dc) noexcept
@@ -358,6 +389,7 @@ struct Shadow_world {
                cpu_memory += get_bytes_capcity(_game_models_index);
                cpu_memory += get_bytes_capcity(_entity_classes);
                cpu_memory += get_bytes_capcity(_entity_classes_index);
+               cpu_memory += get_bytes_capcity(_object_instances);
 
                cpu_memory += _name_table.allocated_bytes();
 
@@ -372,7 +404,8 @@ struct Shadow_world {
 
                if (ImGui::BeginChild("##list",
                                      {ImGui::GetContentRegionAvail().x * 0.4f, 0.0f},
-                                     ImGuiChildFlags_ResizeX)) {
+                                     ImGuiChildFlags_ResizeX |
+                                        ImGuiChildFlags_FrameStyle)) {
                   for (const auto& [model_name_hash, model_index] : _models_index) {
                      const bool selected = selected_model_hash == model_name_hash;
 
@@ -541,7 +574,8 @@ struct Shadow_world {
 
                if (ImGui::BeginChild("##list",
                                      {ImGui::GetContentRegionAvail().x * 0.4f, 0.0f},
-                                     ImGuiChildFlags_ResizeX)) {
+                                     ImGuiChildFlags_ResizeX |
+                                        ImGuiChildFlags_FrameStyle)) {
                   for (const auto& [game_model_name_hash, game_model_index] :
                        _game_models_index) {
                      const bool selected =
@@ -594,7 +628,8 @@ struct Shadow_world {
 
                if (ImGui::BeginChild("##list",
                                      {ImGui::GetContentRegionAvail().x * 0.4f, 0.0f},
-                                     ImGuiChildFlags_ResizeX)) {
+                                     ImGuiChildFlags_ResizeX |
+                                        ImGuiChildFlags_FrameStyle)) {
                   for (const auto& [entity_class_name_hash, entity_class_index] :
                        _entity_classes_index) {
                      const bool selected =
@@ -641,6 +676,90 @@ struct Shadow_world {
                ImGui::EndTabItem();
             }
 
+            if (ImGui::BeginTabItem("Object Instances")) {
+               static std::uint32_t selected_object_instance_index = UINT32_MAX;
+
+               if (ImGui::BeginChild("##list",
+                                     {ImGui::GetContentRegionAvail().x * 0.4f, 0.0f},
+                                     ImGuiChildFlags_ResizeX |
+                                        ImGuiChildFlags_FrameStyle)) {
+                  for (std::uint32_t i = 0; i < _object_instances.size(); ++i) {
+                     ImGui::PushID(i);
+
+                     const Object_instance& object_instance = _object_instances[i];
+
+                     const bool selected = selected_object_instance_index == i;
+
+                     const char* name = _name_table.lookup(object_instance.name_hash);
+                     const char* layer_name =
+                        _name_table.lookup(object_instance.layer_name_hash);
+
+                     const ImVec2 cursor_positon = ImGui::GetCursorPos();
+
+                     if (ImGui::Selectable("##select", selected)) {
+                        selected_object_instance_index = i;
+                     }
+
+                     ImGui::SetItemTooltip("%s:%s", name, layer_name);
+
+                     ImGui::SetCursorPos(cursor_positon);
+
+                     ImGui::Text("%s:%s", name, layer_name);
+
+                     ImGui::PopID();
+                  }
+               }
+
+               ImGui::EndChild();
+
+               ImGui::SameLine();
+
+               if (ImGui::BeginChild("##instance") &&
+                   selected_object_instance_index < _object_instances.size()) {
+                  const Object_instance& object_instance =
+                     _object_instances[selected_object_instance_index];
+
+                  const auto game_model_name = [&](std::size_t index) {
+                     for (const auto& [game_model_name_hash, game_model_index] :
+                          _models_index) {
+                        if (game_model_index == index)
+                           return _name_table.lookup(game_model_name_hash);
+                     }
+
+                     return "<unknown>";
+                  };
+
+                  ImGui::Text("GeometryName: %s",
+                              game_model_name(object_instance.game_model_index));
+
+                  ImGui::Text("Rotation X: %f %f %f",
+                              object_instance.rotation[0].x,
+                              object_instance.rotation[0].y,
+                              object_instance.rotation[0].z);
+
+                  ImGui::Text("Rotation Y: %f %f %f",
+                              object_instance.rotation[1].x,
+                              object_instance.rotation[1].y,
+                              object_instance.rotation[1].z);
+
+                  ImGui::Text("Rotation Z: %f %f %f",
+                              object_instance.rotation[2].x,
+                              object_instance.rotation[2].y,
+                              object_instance.rotation[2].z);
+
+                  ImGui::Text("Position: %f %f %f", object_instance.positionWS.x,
+                              object_instance.positionWS.y,
+                              object_instance.positionWS.z);
+
+                  ImGui::Text("From Child lvl: %i",
+                              int{object_instance.from_child_lvl});
+               }
+
+               ImGui::EndChild();
+
+               ImGui::EndTabItem();
+            }
+
             if (ImGui::BeginTabItem("Name Table")) {
                ImGui::PushItemWidth(ImGui::CalcTextSize("0x00000000").x * 2.0f);
 
@@ -667,6 +786,8 @@ struct Shadow_world {
 private:
    std::shared_mutex _mutex;
 
+   bool _active_rebuild_needed = false;
+
    Com_ptr<ID3D11Device2> _device;
 
    Mesh_buffer _index_buffer{*_device, D3D11_BIND_INDEX_BUFFER, MESH_BUFFER_SIZE};
@@ -682,6 +803,8 @@ private:
 
    std::vector<Entity_class> _entity_classes;
    absl::flat_hash_map<std::uint32_t, std::size_t> _entity_classes_index;
+
+   std::vector<Object_instance> _object_instances;
 
    Name_table _name_table;
 
@@ -845,7 +968,7 @@ void Shadow_world_interface::add_entity_class(const Input_entity_class& entity_c
    self->add_entity_class(entity_class);
 }
 
-void Shadow_world_interface::add_object_instance(const Input_instance& instance) noexcept
+void Shadow_world_interface::add_object_instance(const Input_object_instance& instance) noexcept
 {
    Shadow_world* self = shadow_world_ptr.load(std::memory_order_relaxed);
 

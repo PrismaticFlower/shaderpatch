@@ -285,6 +285,7 @@
     <ClCompile Include="src\shadows\read\read_entity_class.cpp" />
     <ClCompile Include="src\shadows\read\read_game_model.cpp" />
     <ClCompile Include="src\shadows\read\read_model.cpp" />
+    <ClCompile Include="src\shadows\read\read_world.cpp" />
     <ClCompile Include="src\shadows\shadow_world.cpp" />
     <ClCompile Include="src\user_config.cpp" />
     <ClCompile Include="src\windows_fonts_folder.cpp" />
@@ -443,11 +444,13 @@
     <ClInclude Include="src\shadows\internal\world\entity_class.hpp" />
     <ClInclude Include="src\shadows\internal\world\game_model.hpp" />
     <ClInclude Include="src\shadows\internal\world\model.hpp" />
+    <ClInclude Include="src\shadows\internal\world\object_instance.hpp" />
     <ClInclude Include="src\shadows\loader.hpp" />
     <ClInclude Include="src\shadows\internal\name_table.hpp" />
     <ClInclude Include="src\shadows\read\read_entity_class.hpp" />
     <ClInclude Include="src\shadows\read\read_game_model.hpp" />
     <ClInclude Include="src\shadows\read\read_model.hpp" />
+    <ClInclude Include="src\shadows\read\read_world.hpp" />
     <ClInclude Include="src\shadows\shadow_world.hpp" />
     <ClInclude Include="src\unlock_memory.hpp" />
     <ClInclude Include="src\user_config.hpp" />

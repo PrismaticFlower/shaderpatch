@@ -5,6 +5,7 @@
 #include "read/read_entity_class.hpp"
 #include "read/read_game_model.hpp"
 #include "read/read_model.hpp"
+#include "read/read_world.hpp"
 
 #include "../logger.hpp"
 
@@ -46,6 +47,8 @@ void load(const std::string& file_name) noexcept
             shadow_world.add_entity_class(read_entity_class(child));
          }
          else if (child.magic_number() == "wrld"_mn) {
+            // Special case, has multiple children so it will add to shadow_world directly.
+            read_world(child, false);
          }
          else if (child.magic_number() == "lvl_"_mn) {
          }
