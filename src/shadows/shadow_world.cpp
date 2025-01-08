@@ -851,35 +851,140 @@ struct Shadow_world {
                         "Failed to create debug world draw resource.");
                   }
 
+                  const D3D11_TEXTURE2D_DESC pick_render_target_desc = {
+                     .Width = preview_width,
+                     .Height = preview_height,
+                     .MipLevels = 1,
+                     .ArraySize = 1,
+                     .Format = DXGI_FORMAT_R32_UINT,
+                     .SampleDesc = {1, 0},
+                     .Usage = D3D11_USAGE_DEFAULT,
+                     .BindFlags = D3D11_BIND_RENDER_TARGET,
+                  };
+
+                  if (FAILED(_device->CreateTexture2D(&pick_render_target_desc, nullptr,
+                                                      _debug_world_preview_pick
+                                                         .clear_and_assign()))) {
+                     log_and_terminate(
+                        "Failed to create debug world draw resource.");
+                  }
+
+                  if (FAILED(_device->CreateRenderTargetView(
+                         _debug_world_preview_pick.get(), nullptr,
+                         _debug_world_preview_pick_rtv.clear_and_assign()))) {
+                     log_and_terminate(
+                        "Failed to create debug world draw resource.");
+                  }
+
+                  const D3D11_TEXTURE1D_DESC readback_desc{
+                     .Width = 1,
+                     .MipLevels = 1,
+                     .ArraySize = 1,
+                     .Format = DXGI_FORMAT_R32_UINT,
+                     .Usage = D3D11_USAGE_STAGING,
+                     .CPUAccessFlags = D3D11_CPU_ACCESS_READ,
+                  };
+
+                  for (Com_ptr<ID3D11Texture1D>& buffer :
+                       _debug_world_preview_pick_readback) {
+                     if (FAILED(_device->CreateTexture1D(&readback_desc, nullptr,
+                                                         buffer.clear_and_assign()))) {
+                        log_and_terminate(
+                           "Failed to create debug world draw resource.");
+                     }
+                  }
+
                   _debug_world_preview_width = preview_width;
                   _debug_world_preview_height = preview_height;
                }
 
-               _debug_world_draw.draw(dc,
-                                      {
-                                         .models = _models,
-                                         .game_models = _game_models,
-                                         .object_instances = _object_instances,
+               _debug_world_draw
+                  .draw(dc,
+                        {
+                           .models = _models,
+                           .game_models = _game_models,
+                           .object_instances = _object_instances,
 
-                                      },
-                                      camera_yaw, camera_pitch, camera_positionWS,
-                                      _index_buffer.get(), _vertex_buffer.get(),
-                                      {
-                                         .Width = static_cast<float>(preview_width),
-                                         .Height = static_cast<float>(preview_height),
-                                         .MinDepth = 0.0f,
-                                         .MaxDepth = 1.0f,
-                                      },
-                                      _debug_world_preview_rtv.get(),
-                                      _debug_world_preview_dsv.get());
+                        },
+                        camera_yaw, camera_pitch, camera_positionWS,
+                        _index_buffer.get(), _vertex_buffer.get(),
+                        {
+                           .viewport =
+                              {
+                                 .Width = static_cast<float>(preview_width),
+                                 .Height = static_cast<float>(preview_height),
+                                 .MinDepth = 0.0f,
+                                 .MaxDepth = 1.0f,
+                              },
+                           .rtv = _debug_world_preview_rtv.get(),
+                           .picking_rtv = _debug_world_preview_pick_rtv.get(),
+                           .dsv = _debug_world_preview_dsv.get(),
+                        });
 
-               ImGui::GetWindowDrawList()->AddImage(
-                  reinterpret_cast<ImTextureID>(_debug_world_preview_srv.get()),
-                  ImGui::GetCursorScreenPos(),
-                  {
-                     ImGui::GetCursorScreenPos().x + static_cast<float>(preview_width),
-                     ImGui::GetCursorScreenPos().y + static_cast<float>(preview_height),
-                  });
+               const ImVec2 image_bottom_right = {
+                  ImGui::GetCursorScreenPos().x + static_cast<float>(preview_width),
+                  ImGui::GetCursorScreenPos().y + static_cast<float>(preview_height),
+               };
+
+               ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(
+                                                       _debug_world_preview_srv.get()),
+                                                    ImGui::GetCursorScreenPos(),
+                                                    image_bottom_right);
+
+               const ImVec2 mouse_position = ImGui::GetMousePos();
+
+               if (mouse_position.x >= ImGui::GetCursorScreenPos().x &&
+                   mouse_position.x < image_bottom_right.x &&
+                   mouse_position.y >= ImGui::GetCursorScreenPos().y &&
+                   mouse_position.y < image_bottom_right.x) {
+
+                  const UINT pick_position_x =
+                     std::clamp(static_cast<UINT>(mouse_position.x -
+                                                  ImGui::GetCursorScreenPos().x),
+                                0u, _debug_world_preview_width - 1u);
+                  const UINT pick_position_y =
+                     std::clamp(static_cast<UINT>(mouse_position.y -
+                                                  ImGui::GetCursorScreenPos().y),
+                                0u, _debug_world_preview_height - 1u);
+
+                  ID3D11Texture1D* readback_resource =
+                     _debug_world_preview_pick_readback[_debug_world_preview_pick_readback_index %
+                                                        _debug_world_preview_pick_readback
+                                                           .size()]
+                        .get();
+
+                  D3D11_MAPPED_SUBRESOURCE mapped{};
+
+                  if (FAILED(dc.Map(readback_resource, 0, D3D11_MAP_READ, 0, &mapped))) {
+                     log_and_terminate(
+                        "Failed to readback debug world draw resource");
+                  }
+
+                  std::uint32_t index = UINT32_MAX;
+
+                  std::memcpy(&index, mapped.pData, sizeof(index));
+
+                  dc.Unmap(readback_resource, 0);
+
+                  const D3D11_BOX box{
+                     .left = pick_position_x,
+                     .top = pick_position_y,
+                     .front = 0,
+                     .right = pick_position_x + 1,
+                     .bottom = pick_position_y + 1,
+                     .back = 1,
+                  };
+
+                  dc.CopySubresourceRegion(readback_resource, 0, 0, 0, 0,
+                                           _debug_world_preview_pick.get(), 0, &box);
+
+                  _debug_world_preview_pick_readback_index += 1;
+
+                  if (index < _object_instances.size()) {
+                     ImGui::SetTooltip(
+                        _name_table.lookup(_object_instances[index].name_hash));
+                  }
+               }
 
                ImGui::EndTabItem();
             }
@@ -948,6 +1053,11 @@ private:
    Com_ptr<ID3D11DepthStencilView> _debug_world_preview_dsv;
    Com_ptr<ID3D11RenderTargetView> _debug_world_preview_rtv;
    Com_ptr<ID3D11ShaderResourceView> _debug_world_preview_srv;
+   Com_ptr<ID3D11Texture2D> _debug_world_preview_pick;
+   Com_ptr<ID3D11RenderTargetView> _debug_world_preview_pick_rtv;
+
+   std::size_t _debug_world_preview_pick_readback_index = 0;
+   std::array<Com_ptr<ID3D11Texture1D>, 2> _debug_world_preview_pick_readback;
 
    void add_model_segment(const std::string_view model_debug_name,
                           const Model_merge_segment& merge_segment,

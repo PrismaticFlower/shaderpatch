@@ -11,19 +11,25 @@
 namespace sp::shadows {
 
 struct Debug_world_draw {
-   struct Inputs {
+   struct World_inputs {
       std::span<const Model> models;
       std::span<const Game_model> game_models;
       std::span<const Object_instance> object_instances;
    };
 
+   struct Target_inputs {
+      D3D11_VIEWPORT viewport;
+      ID3D11RenderTargetView* rtv;
+      ID3D11RenderTargetView* picking_rtv;
+      ID3D11DepthStencilView* dsv;
+   };
+
    Debug_world_draw(ID3D11Device& device);
 
-   void draw(ID3D11DeviceContext2& dc, const Inputs& world,
+   void draw(ID3D11DeviceContext2& dc, const World_inputs& world,
              const float camera_yaw, const float camera_pitch,
              const glm::vec3& camera_positioWS, ID3D11Buffer* index_buffer,
-             ID3D11Buffer* vertex_buffer, const D3D11_VIEWPORT& viewport,
-             ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv) noexcept;
+             ID3D11Buffer* vertex_buffer, const Target_inputs& target) noexcept;
 
 private:
    Com_ptr<ID3D11Device> _device;
