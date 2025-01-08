@@ -722,7 +722,7 @@ struct Shadow_world {
 
                   const auto game_model_name = [&](std::size_t index) {
                      for (const auto& [game_model_name_hash, game_model_index] :
-                          _models_index) {
+                          _game_models_index) {
                         if (game_model_index == index)
                            return _name_table.lookup(game_model_name_hash);
                      }
