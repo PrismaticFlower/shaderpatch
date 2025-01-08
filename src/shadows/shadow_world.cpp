@@ -1,6 +1,7 @@
 #include "shadow_world.hpp"
 
 #include "internal/debug_model_draw.hpp"
+#include "internal/debug_world_draw.hpp"
 #include "internal/mesh_buffer.hpp"
 #include "internal/mesh_copy_queue.hpp"
 #include "internal/name_table.hpp"
@@ -760,6 +761,129 @@ struct Shadow_world {
                ImGui::EndTabItem();
             }
 
+            if (ImGui::BeginTabItem("World Preview")) {
+               static float camera_yaw = 0.0f;
+               static float camera_pitch = 0.0f;
+               static glm::vec3 camera_positionWS = {};
+
+               ImGui::PushItemWidth(
+                  (ImGui::CalcItemWidth() - ImGui::GetStyle().ItemSpacing.x) * 0.5f);
+
+               ImGui::SliderAngle("##preview_yaw", &camera_yaw, -360.0f, 360.0f,
+                                  "Yaw: %.0f deg");
+
+               ImGui::SameLine();
+
+               ImGui::SliderAngle("##preview_pitch", &camera_pitch, -360.0f,
+                                  360.0f, "Pitch: %.0f deg");
+
+               ImGui::PopItemWidth();
+
+               ImGui::DragFloat3("Camera Position", &camera_positionWS.x);
+
+               ImGui::Separator();
+
+               const ImVec2 preview_size_flt = ImGui::GetContentRegionAvail();
+
+               const UINT preview_width =
+                  static_cast<UINT>(std::max(preview_size_flt.x, 64.0f));
+               const UINT preview_height =
+                  static_cast<UINT>(std::max(preview_size_flt.y, 64.0f));
+
+               if (_debug_world_preview_width != preview_width ||
+                   _debug_world_preview_height != preview_height) {
+                  Com_ptr<ID3D11Texture2D> depth_stencil_texture;
+
+                  const D3D11_TEXTURE2D_DESC depth_stencil_desc = {
+                     .Width = preview_width,
+                     .Height = preview_height,
+                     .MipLevels = 1,
+                     .ArraySize = 1,
+                     .Format = DXGI_FORMAT_D32_FLOAT,
+                     .SampleDesc = {1, 0},
+                     .Usage = D3D11_USAGE_DEFAULT,
+                     .BindFlags = D3D11_BIND_DEPTH_STENCIL,
+                  };
+
+                  if (FAILED(_device->CreateTexture2D(&depth_stencil_desc, nullptr,
+                                                      depth_stencil_texture.clear_and_assign()))) {
+                     log_and_terminate(
+                        "Failed to create debug world draw resource.");
+                  }
+
+                  if (FAILED(_device->CreateDepthStencilView(
+                         depth_stencil_texture.get(), nullptr,
+                         _debug_world_preview_dsv.clear_and_assign()))) {
+                     log_and_terminate(
+                        "Failed to create debug world draw resource.");
+                  }
+
+                  Com_ptr<ID3D11Texture2D> render_target_texture;
+
+                  const D3D11_TEXTURE2D_DESC render_target_desc = {
+                     .Width = preview_width,
+                     .Height = preview_height,
+                     .MipLevels = 1,
+                     .ArraySize = 1,
+                     .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+                     .SampleDesc = {1, 0},
+                     .Usage = D3D11_USAGE_DEFAULT,
+                     .BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET,
+                  };
+
+                  if (FAILED(_device->CreateTexture2D(&render_target_desc, nullptr,
+                                                      render_target_texture.clear_and_assign()))) {
+                     log_and_terminate(
+                        "Failed to create debug world draw resource.");
+                  }
+
+                  if (FAILED(_device->CreateRenderTargetView(
+                         render_target_texture.get(), nullptr,
+                         _debug_world_preview_rtv.clear_and_assign()))) {
+                     log_and_terminate(
+                        "Failed to create debug world draw resource.");
+                  }
+
+                  if (FAILED(_device->CreateShaderResourceView(
+                         render_target_texture.get(), nullptr,
+                         _debug_world_preview_srv.clear_and_assign()))) {
+                     log_and_terminate(
+                        "Failed to create debug world draw resource.");
+                  }
+
+                  _debug_world_preview_width = preview_width;
+                  _debug_world_preview_height = preview_height;
+               }
+
+               _debug_world_draw.draw(dc,
+                                      {
+                                         .models = _models,
+                                         .game_models = _game_models,
+                                         .object_instances = _object_instances,
+
+                                      },
+                                      camera_yaw, camera_pitch, camera_positionWS,
+                                      _index_buffer.get(), _vertex_buffer.get(),
+                                      {
+                                         .Width = static_cast<float>(preview_width),
+                                         .Height = static_cast<float>(preview_height),
+                                         .MinDepth = 0.0f,
+                                         .MaxDepth = 1.0f,
+                                      },
+                                      _debug_world_preview_rtv.get(),
+                                      _debug_world_preview_dsv.get());
+
+               ImGui::GetWindowDrawList()->AddImage(
+                  reinterpret_cast<ImTextureID>(_debug_world_preview_srv.get()),
+                  ImGui::GetCursorScreenPos(),
+                  {
+                     ImGui::GetCursorScreenPos().x + static_cast<float>(preview_width),
+                     ImGui::GetCursorScreenPos().y + static_cast<float>(preview_height),
+                  });
+
+               ImGui::EndTabItem();
+            }
+
             if (ImGui::BeginTabItem("Name Table")) {
                ImGui::PushItemWidth(ImGui::CalcTextSize("0x00000000").x * 2.0f);
 
@@ -809,6 +933,7 @@ private:
    Name_table _name_table;
 
    Debug_model_draw _debug_model_draw{*_device};
+   Debug_world_draw _debug_world_draw{*_device};
 
    UINT _debug_model_preview_width = 0;
    UINT _debug_model_preview_height = 0;
@@ -816,6 +941,13 @@ private:
    Com_ptr<ID3D11DepthStencilView> _debug_model_preview_dsv;
    Com_ptr<ID3D11RenderTargetView> _debug_model_preview_rtv;
    Com_ptr<ID3D11ShaderResourceView> _debug_model_preview_srv;
+
+   UINT _debug_world_preview_width = 0;
+   UINT _debug_world_preview_height = 0;
+
+   Com_ptr<ID3D11DepthStencilView> _debug_world_preview_dsv;
+   Com_ptr<ID3D11RenderTargetView> _debug_world_preview_rtv;
+   Com_ptr<ID3D11ShaderResourceView> _debug_world_preview_srv;
 
    void add_model_segment(const std::string_view model_debug_name,
                           const Model_merge_segment& merge_segment,
