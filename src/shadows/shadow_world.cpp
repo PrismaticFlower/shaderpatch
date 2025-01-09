@@ -32,6 +32,8 @@ struct Shadow_world {
 
    void process_mesh_copy_queue(ID3D11DeviceContext2& dc) noexcept
    {
+      std::scoped_lock lock{_mutex};
+
       _mesh_copy_queue.process(dc);
    }
 
