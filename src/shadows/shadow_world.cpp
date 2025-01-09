@@ -355,7 +355,18 @@ struct Shadow_world {
          .layer_name_hash = _name_table.add(input_object_instance.layer_name),
          .game_model_index = _entity_classes[entity_class_it->second].game_model_index,
          .from_child_lvl = input_object_instance.in_child_lvl,
-         .rotation = input_object_instance.rotation,
+         .rotation =
+            {
+               glm::vec3{input_object_instance.rotation[0].x,
+                         input_object_instance.rotation[1].x,
+                         input_object_instance.rotation[2].x},
+               glm::vec3{input_object_instance.rotation[0].y,
+                         input_object_instance.rotation[1].y,
+                         input_object_instance.rotation[2].y},
+               glm::vec3{input_object_instance.rotation[0].z,
+                         input_object_instance.rotation[1].z,
+                         input_object_instance.rotation[2].z},
+            },
          .positionWS = input_object_instance.positionWS,
       });
 
