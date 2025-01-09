@@ -322,8 +322,8 @@ void Debug_world_draw::draw(ID3D11DeviceContext2& dc, const World_inputs& world,
 
    glm::mat4 view_matrix = glm::identity<glm::mat4>();
 
-   view_matrix = glm::rotate(view_matrix, camera_yaw, glm::vec3{0.0f, 1.0f, 0.0f});
    view_matrix = glm::rotate(view_matrix, camera_pitch, glm::vec3{1.0f, 0.0f, 0.0f});
+   view_matrix = glm::rotate(view_matrix, camera_yaw, glm::vec3{0.0f, 1.0f, 0.0f});
    view_matrix = glm::translate(view_matrix, camera_positioWS);
 
    const glm::mat4 projection_matrix = glm::transpose(
