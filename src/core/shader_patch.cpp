@@ -298,10 +298,6 @@ void Shader_patch::present() noexcept
    ImGui::DragFloat("shadow bias", &_shadows->config.shadow_bias, 0.0001f,
                     -1.0f, 1.0f, "%.5f");
 
-   ImGui::Checkbox("enable offscreen cache", &_shadows->config.enable_offscreen_cache);
-   ImGui::Checkbox("use stencil shadow meshes",
-                   &_shadows->config.use_stencil_shadow_meshes);
-
    ImGui::Text("zprepass meshes: %i", _shadows->meshes.zprepass.size());
    ImGui::Text("zprepass compressed meshes: %i",
                _shadows->meshes.zprepass_compressed.size());
@@ -319,18 +315,7 @@ void Shader_patch::present() noexcept
    ImGui::Text("zprepass hardedged compressed skinned meshes: %i",
                _shadows->meshes.zprepass_hardedged_compressed_skinned.size());
 
-   ImGui::Text("stencilshadow meshes: %i", _shadows->meshes.stencilshadow.size());
-   ImGui::Text("stencilshadow skinned: %i",
-               _shadows->meshes.stencilshadow_skinned.size());
-   ImGui::Text("stencilshadow skinned gen normal: %i",
-               _shadows->meshes.stencilshadow_skinned_gen_normal.size());
-
    ImGui::Text("zprepass skins: %i", _shadows->meshes.skins.size());
-
-   ImGui::Text("cached zprepass compressed meshes: %i",
-               _shadows->temp_cached_zprepass_compressed);
-   ImGui::Text("cached zprepass hardedged compressed meshes: %i",
-               _shadows->temp_cached_zprepass_hardedged_compressed);
 
    _effects.profiler.end_frame(*_device_context);
    _game_postprocessing.end_frame();
@@ -1536,50 +1521,6 @@ void Shader_patch::game_rendertype_changed() noexcept
    else if (_shader_rendertype == Rendertype::stencilshadow) {
       _shadows->light_direction = _cb_draw.custom_constants[0];
       _discard_draw_calls = true;
-
-      _on_draw_indexed = [&](const D3D11_PRIMITIVE_TOPOLOGY topology,
-                             const UINT index_count, const UINT start_index,
-                             const UINT start_vertex) noexcept {
-         auto& meshes = _shadows->meshes;
-
-         if (_game_shader->shader_name == "extend directional unskinned"sv) {
-            meshes.stencilshadow
-               .emplace_back(topology, _game_index_buffer,
-                             _game_index_buffer_offset, _game_vertex_buffer,
-                             _game_vertex_buffer_offset, _game_vertex_buffer_stride,
-                             index_count, start_index, start_vertex,
-                             glm::vec3{_cb_draw.position_decompress_min},
-                             glm::vec3{_cb_draw.position_decompress_max},
-                             _cb_draw.world_matrix, meshes.noskin);
-         }
-         else if (_game_shader->shader_name == "extend directional hard skinned"sv) {
-            const UINT skin_index = meshes.skins.size();
-            meshes.skins.emplace_back(_cb_skin.bone_matrices);
-
-            meshes.stencilshadow_skinned
-               .emplace_back(topology, _game_index_buffer,
-                             _game_index_buffer_offset, _game_vertex_buffer,
-                             _game_vertex_buffer_offset, _game_vertex_buffer_stride,
-                             index_count, start_index, start_vertex,
-                             glm::vec3{_cb_draw.position_decompress_min},
-                             glm::vec3{_cb_draw.position_decompress_max},
-                             _cb_draw.world_matrix, skin_index);
-         }
-         else if (_game_shader->shader_name ==
-                  "extend directional hard skinned generate normal"sv) {
-            const UINT skin_index = meshes.skins.size();
-            meshes.skins.emplace_back(_cb_skin.bone_matrices);
-
-            meshes.stencilshadow_skinned_gen_normal
-               .emplace_back(topology, _game_index_buffer,
-                             _game_index_buffer_offset, _game_vertex_buffer,
-                             _game_vertex_buffer_offset, _game_vertex_buffer_stride,
-                             index_count, start_index, start_vertex,
-                             glm::vec3{_cb_draw.position_decompress_min},
-                             glm::vec3{_cb_draw.position_decompress_max},
-                             _cb_draw.world_matrix, skin_index);
-         }
-      };
 
       _on_rendertype_changed = [this]() noexcept {
          _discard_draw_calls = true;

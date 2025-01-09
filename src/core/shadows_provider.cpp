@@ -232,21 +232,6 @@ Shadows_provider::Shadows_provider(Com_ptr<ID3D11Device5> device,
       return buffer;
    }();
 
-   _queries_camera_cb_buffer = [&] {
-      Com_ptr<ID3D11Buffer> buffer;
-
-      const D3D11_BUFFER_DESC desc{.ByteWidth = sizeof(Camera_cb),
-                                   .Usage = D3D11_USAGE_DYNAMIC,
-                                   .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
-                                   .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE};
-
-      if (FAILED(device->CreateBuffer(&desc, nullptr, buffer.clear_and_assign()))) {
-         log_and_terminate("Unable to create shadow camera buffer!");
-      }
-
-      return buffer;
-   }();
-
    _draw_to_target_cb = [&] {
       Com_ptr<ID3D11Buffer> buffer;
 
@@ -290,21 +275,6 @@ Shadows_provider::Shadows_provider(Com_ptr<ID3D11Device5> device,
       }
 
       return rasterizer_state;
-   }();
-
-   _queries_depthstencil_state = [&] {
-      Com_ptr<ID3D11DepthStencilState> state;
-
-      const D3D11_DEPTH_STENCIL_DESC desc{.DepthEnable = true,
-                                          .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL,
-                                          .DepthFunc = D3D11_COMPARISON_ALWAYS,
-                                          .StencilEnable = false};
-
-      if (FAILED(device->CreateDepthStencilState(&desc, state.clear_and_assign()))) {
-         log_and_terminate("Unable to create shadow depthstencil state!");
-      }
-
-      return state;
    }();
 
    _draw_to_target_depthstencil_state = [&] {
@@ -367,10 +337,6 @@ Shadows_provider::Shadows_provider(Com_ptr<ID3D11Device5> device,
 
 void Shadows_provider::end_frame() noexcept
 {
-   _last_frame_view_proj = view_proj_matrix;
-
-   populate_mesh_cache();
-
    meshes.clear();
 }
 
@@ -391,115 +357,9 @@ void Shadows_provider::draw_shadow_maps(ID3D11DeviceContext4& dc,
 void Shadows_provider::prepare_draw_shadow_maps(ID3D11DeviceContext4& dc,
                                                 const Draw_args& args) noexcept
 {
-   clean_mesh_cache(dc);
-
    build_cascade_info();
 
    upload_buffer_data(dc, args);
-
-   submit_cache_occlusion_queries(dc, args);
-}
-
-void Shadows_provider::clean_mesh_cache(ID3D11DeviceContext4& dc) noexcept
-{
-   std::size_t delete_offset = 0;
-
-   for (Meshes_cache::Async_query& query : _meshes_cache.zprepass_compressed_queries) {
-      UINT64 visible = 0;
-
-      if (FAILED(dc.GetData(query.occlusion.get(), &visible, sizeof(visible), 0)))
-         continue;
-
-      if (visible) {
-         _meshes_cache.zprepass_compressed_set.erase(
-            _meshes_cache.zprepass_compressed[query.index - delete_offset]);
-         _meshes_cache.zprepass_compressed.erase(
-            _meshes_cache.zprepass_compressed.begin() + query.index - delete_offset);
-
-         delete_offset += 1;
-      }
-   }
-
-   _meshes_cache.zprepass_compressed_queries.clear();
-
-   Frustrum view_frustrum{glm::inverse(glm::dmat4{glm::transpose(view_proj_matrix)})};
-
-   for (std::size_t index = 0; index < _meshes_cache.zprepass_compressed.size();
-        ++index) {
-      const auto& mesh = _meshes_cache.zprepass_compressed[index];
-
-      if (!intersects(view_frustrum, make_bounding_box(mesh))) continue;
-
-      Meshes_cache::Async_query& query =
-         _meshes_cache.zprepass_compressed_queries.emplace_back();
-
-      D3D11_QUERY_DESC desc{.Query = D3D11_QUERY_OCCLUSION};
-
-      if (FAILED(_device->CreateQuery(&desc, query.occlusion.clear_and_assign()))) {
-         _meshes_cache.zprepass_compressed.clear();
-         _meshes_cache.zprepass_compressed_set.clear();
-         _meshes_cache.zprepass_compressed_queries.clear();
-
-         break;
-      }
-
-      query.index = index;
-   }
-
-   temp_cached_zprepass_compressed = _meshes_cache.zprepass_compressed.size();
-   temp_cached_zprepass_hardedged_compressed =
-      _meshes_cache.zprepass_hardedged_compressed.size();
-}
-
-void Shadows_provider::populate_mesh_cache() noexcept
-{
-   _meshes_cache.this_frame_zprepass_compressed.swap(
-      _meshes_cache.last_frame_zprepass_compressed);
-   _meshes_cache.this_frame_zprepass_hardedged_compressed.swap(
-      _meshes_cache.last_frame_zprepass_hardedged_compressed);
-
-   _meshes_cache.this_frame_zprepass_compressed.clear();
-   _meshes_cache.this_frame_zprepass_hardedged_compressed.clear();
-
-   for (auto& [mesh, status] : _meshes_cache.last_frame_zprepass_compressed) {
-      status.culled_by_game = true;
-   }
-
-   for (const auto& mesh : meshes.zprepass_compressed) {
-      // TODO: Dynamic mesh support.
-
-      D3D11_BUFFER_DESC desc{};
-
-      mesh.index_buffer->GetDesc(&desc);
-
-      if (desc.Usage == D3D11_USAGE_DYNAMIC) continue;
-
-      if (auto existing = _meshes_cache.last_frame_zprepass_compressed.find(mesh);
-          existing != _meshes_cache.last_frame_zprepass_compressed.end()) {
-         _meshes_cache.this_frame_zprepass_compressed
-            .emplace(existing->first, Meshes_cache::Status{.multi_frame = true,
-                                                           .culled_by_game = false});
-
-         existing->second.culled_by_game = false;
-      }
-      else {
-         _meshes_cache.this_frame_zprepass_compressed
-            .emplace(mesh, Meshes_cache::Status{.multi_frame = false,
-                                                .culled_by_game = false});
-      }
-   }
-
-   for (auto& [mesh, status] : _meshes_cache.last_frame_zprepass_compressed) {
-      if (status.multi_frame && status.culled_by_game) {
-         if (_meshes_cache.zprepass_compressed_set.insert(mesh).second) {
-            _meshes_cache.zprepass_compressed.push_back(mesh);
-         }
-      }
-   }
-
-   temp_cached_zprepass_compressed = _meshes_cache.zprepass_compressed.size();
-   temp_cached_zprepass_hardedged_compressed =
-      _meshes_cache.zprepass_hardedged_compressed.size();
 }
 
 void Shadows_provider::build_cascade_info() noexcept
@@ -530,7 +390,6 @@ void Shadows_provider::upload_buffer_data(ID3D11DeviceContext4& dc,
    upload_transform_cb_buffer(dc);
    upload_skins_buffer(dc);
    upload_draw_to_target_buffer(dc, args);
-   upload_queries_transform_cb_buffer(dc);
 }
 
 void Shadows_provider::upload_camera_cb_buffer(ID3D11DeviceContext4& dc) noexcept
@@ -592,17 +451,6 @@ void Shadows_provider::upload_transform_cb_buffer(ID3D11DeviceContext4& dc) noex
    process_meshes(meshes.zprepass_hardedged_skinned);
    process_meshes(meshes.zprepass_hardedged_compressed_skinned);
 
-   if (config.use_stencil_shadow_meshes) {
-      process_meshes(meshes.stencilshadow);
-      process_meshes(meshes.stencilshadow_skinned);
-      process_meshes(meshes.stencilshadow_skinned_gen_normal);
-   }
-
-   if (config.enable_offscreen_cache) {
-      process_meshes(_meshes_cache.zprepass_compressed);
-      process_meshes(_meshes_cache.zprepass_hardedged_compressed);
-   }
-
    dc.Unmap(_transforms_cb_buffer.get(), 0);
 }
 
@@ -642,45 +490,6 @@ void Shadows_provider::upload_draw_to_target_buffer(ID3D11DeviceContext4& dc,
    update_dynamic_buffer(dc, *_draw_to_target_cb, cb);
 }
 
-void Shadows_provider::upload_queries_transform_cb_buffer(ID3D11DeviceContext4& dc) noexcept
-{
-   const std::size_t transforms_count =
-      _meshes_cache.zprepass_compressed_queries.size();
-
-   if (transforms_count == 0) return;
-
-   if (transforms_count > _queries_transforms_cb_space) {
-      resize_queries_transform_cb_buffer(transforms_count);
-   }
-
-   D3D11_MAPPED_SUBRESOURCE mapped{};
-
-   if (FAILED(dc.Map(_queries_transforms_cb_buffer.get(), 0,
-                     D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
-      log_and_terminate("Failed to map shadows transforms buffer!");
-   }
-
-   std::byte* const mapped_data = static_cast<std::byte*>(mapped.pData);
-
-   std::size_t i = 0;
-
-   for (const auto& query : _meshes_cache.zprepass_compressed_queries) {
-      const auto& mesh = _meshes_cache.zprepass_compressed[query.index];
-
-      Transform_cb transform{.position_decompress_min = mesh.position_decompress_min,
-                             .skin_index = mesh.skin_index,
-                             .position_decompress_max = mesh.position_decompress_max,
-                             .world_matrix = mesh.world_matrix};
-
-      std::memcpy(mapped_data + i * sizeof(Transform_cb), &transform,
-                  sizeof(Transform_cb));
-
-      i += 1;
-   }
-
-   dc.Unmap(_queries_transforms_cb_buffer.get(), 0);
-}
-
 void Shadows_provider::resize_transform_cb_buffer(std::size_t needed_space) noexcept
 {
    _transforms_cb_space = needed_space + (needed_space / 2);
@@ -717,22 +526,6 @@ void Shadows_provider::resize_skins_buffer(std::size_t needed_space) noexcept
    }
 }
 
-void Shadows_provider::resize_queries_transform_cb_buffer(std::size_t needed_space) noexcept
-{
-   _queries_transforms_cb_space = needed_space + (needed_space / 2);
-
-   const D3D11_BUFFER_DESC desc{.ByteWidth = _queries_transforms_cb_space *
-                                             sizeof(Transform_cb),
-                                .Usage = D3D11_USAGE_DYNAMIC,
-                                .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
-                                .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE};
-
-   if (FAILED(_device->CreateBuffer(&desc, nullptr,
-                                    _queries_transforms_cb_buffer.clear_and_assign()))) {
-      log_and_terminate("Unable to create shadow transforms buffer!");
-   }
-}
-
 auto Shadows_provider::count_active_meshes() const noexcept -> std::size_t
 {
    return meshes.zprepass.size() + meshes.zprepass_compressed.size() +
@@ -740,11 +533,7 @@ auto Shadows_provider::count_active_meshes() const noexcept -> std::size_t
           meshes.zprepass_hardedged.size() +
           meshes.zprepass_hardedged_compressed.size() +
           meshes.zprepass_hardedged_skinned.size() +
-          meshes.zprepass_hardedged_compressed_skinned.size() +
-          meshes.stencilshadow.size() + meshes.stencilshadow_skinned.size() +
-          meshes.stencilshadow_skinned_gen_normal.size() +
-          _meshes_cache.zprepass_compressed.size() +
-          _meshes_cache.zprepass_hardedged_compressed.size();
+          meshes.zprepass_hardedged_compressed_skinned.size();
 }
 
 void Shadows_provider::create_shadow_map(const UINT length) noexcept
@@ -924,26 +713,6 @@ void Shadows_provider::draw_shadow_maps_instanced(ID3D11DeviceContext4& dc,
    draw_hardedged_meshes(meshes.zprepass_hardedged_skinned, _mesh_hardedged_skinned);
    draw_hardedged_meshes(meshes.zprepass_hardedged_compressed_skinned,
                          _mesh_hardedged_compressed_skinned);
-
-   dc.RSSetState(_rasterizer_state.get());
-   dc.PSSetShader(nullptr, nullptr, 0);
-
-   if (config.use_stencil_shadow_meshes) {
-      draw_meshes(meshes.stencilshadow, _mesh_compressed_il.get(),
-                  _mesh_compressed_vs.get());
-      draw_meshes(meshes.stencilshadow_skinned, _mesh_stencilshadow_skinned_il.get(),
-                  _mesh_compressed_skinned_vs.get());
-      draw_meshes(meshes.stencilshadow_skinned_gen_normal,
-                  _mesh_compressed_skinned_il.get(),
-                  _mesh_compressed_skinned_vs.get());
-   }
-
-   if (config.enable_offscreen_cache) {
-      draw_meshes(_meshes_cache.zprepass_compressed, _mesh_compressed_il.get(),
-                  _mesh_compressed_vs.get());
-      draw_hardedged_meshes(_meshes_cache.zprepass_hardedged_compressed,
-                            _mesh_hardedged_compressed);
-   }
 }
 
 void Shadows_provider::draw_to_target_map(ID3D11DeviceContext4& dc,
@@ -980,82 +749,6 @@ void Shadows_provider::draw_to_target_map(ID3D11DeviceContext4& dc,
    dc.PSSetShader(_draw_to_target_ps.get(), nullptr, 0);
 
    dc.Draw(3, 0);
-}
-
-void Shadows_provider::submit_cache_occlusion_queries(ID3D11DeviceContext4& dc,
-                                                      const Draw_args& args) noexcept
-{
-   if (_meshes_cache.zprepass_compressed_queries.empty()) return;
-
-   Profile profile{args.profiler, dc, "Shadow Maps - Cache Occlusion Queries"sv};
-
-   dc.BeginEventInt(L"Shadow Maps - Cache Occlusion Queries", 0xffffffff);
-
-   dc.ClearState();
-
-   update_dynamic_buffer(dc, *_queries_camera_cb_buffer,
-                         Camera_cb{.view_proj_matrices = {view_proj_matrix}});
-
-   auto* camera_cb = _queries_camera_cb_buffer.get();
-   auto* texture_sampler = _hardedged_texture_sampler.get();
-
-   dc.VSSetConstantBuffers(1, 1, &camera_cb);
-
-   const D3D11_VIEWPORT viewport{.TopLeftX = 0.0f,
-                                 .TopLeftY = 0.0f,
-                                 .Width = static_cast<float>(args.target_width),
-                                 .Height = static_cast<float>(args.target_height),
-                                 .MinDepth = 0.0f,
-                                 .MaxDepth = 1.0f};
-
-   dc.RSSetViewports(1, &viewport);
-   dc.RSSetState(_rasterizer_state.get());
-   dc.OMSetRenderTargets(0, nullptr, nullptr);
-   dc.OMSetDepthStencilState(_queries_depthstencil_state.get(), 0);
-
-   dc.PSSetSamplers(0, 1, &texture_sampler);
-
-   std::size_t transform_cb_offset = 0;
-   D3D11_PRIMITIVE_TOPOLOGY current_primitive_topology =
-      D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
-
-   dc.IASetInputLayout(_mesh_compressed_il.get());
-   dc.VSSetShader(_mesh_compressed_vs.get(), nullptr, 0);
-
-   for (std::size_t i = 0; i < _meshes_cache.zprepass_compressed_queries.size(); ++i) {
-      const Meshes_cache::Async_query& query =
-         _meshes_cache.zprepass_compressed_queries[i];
-
-      auto& mesh = _meshes_cache.zprepass_compressed[query.index];
-
-      dc.IASetIndexBuffer(mesh.index_buffer.get(), DXGI_FORMAT_R16_UINT,
-                          mesh.index_buffer_offset);
-
-      auto* vertex_buffer = mesh.vertex_buffer.get();
-
-      dc.IASetVertexBuffers(0, 1, &vertex_buffer, &mesh.vertex_buffer_stride,
-                            &mesh.vertex_buffer_offset);
-
-      auto* transform_cb = _queries_transforms_cb_buffer.get();
-      UINT first_constant = (sizeof(Transform_cb) / 16) * (i + transform_cb_offset);
-      UINT num_constants = sizeof(Transform_cb) / 16;
-
-      if (current_primitive_topology != mesh.primitive_topology) {
-         dc.IASetPrimitiveTopology(mesh.primitive_topology);
-         current_primitive_topology = mesh.primitive_topology;
-      }
-
-      dc.VSSetConstantBuffers1(0, 1, &transform_cb, &first_constant, &num_constants);
-
-      dc.Begin(query.occlusion.get());
-
-      dc.DrawIndexedInstanced(mesh.index_count, 1, mesh.start_index,
-                              mesh.base_vertex, 0);
-
-      dc.End(query.occlusion.get());
-   }
-
-   dc.EndEvent();
 }
 
 Shadows_provider::Hardedged_vertex_shader::Hardedged_vertex_shader(

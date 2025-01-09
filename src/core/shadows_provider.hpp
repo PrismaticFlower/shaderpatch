@@ -13,8 +13,6 @@
 
 #include <glm/glm.hpp>
 
-#include <absl/container/flat_hash_set.h>
-
 namespace sp::effects {
 class Profiler;
 }
@@ -25,9 +23,6 @@ struct Shadows_config {
    float start_depth = 0.5f;
    float end_depth = 256.0f;
    float shadow_bias = -0.0015f;
-
-   bool enable_offscreen_cache = false; // TODO: Properly support this.
-   bool use_stencil_shadow_meshes = false;
 };
 
 class Shadows_provider {
@@ -49,33 +44,6 @@ public:
          glm::vec3 position_decompress_max;
          std::array<glm::vec4, 3> world_matrix;
          UINT skin_index = noskin;
-
-         template<typename H>
-         friend H AbslHashValue(H h, const Zprepass& mesh)
-         {
-            return H::combine(std::move(h),
-                              // mesh.primitive_topology,
-                              mesh.index_buffer.get(), mesh.index_buffer_offset,
-                              mesh.vertex_buffer.get(), mesh.vertex_buffer_offset,
-                              mesh.vertex_buffer_stride, mesh.index_count,
-                              mesh.start_index, mesh.base_vertex,
-                              // mesh.position_decompress_min[0],
-                              // mesh.position_decompress_min[1],
-                              // mesh.position_decompress_min[2],
-                              // mesh.position_decompress_max[0],
-                              // mesh.position_decompress_max[1],
-                              // mesh.position_decompress_max[2],
-                              mesh.world_matrix[0][0], mesh.world_matrix[0][1],
-                              mesh.world_matrix[0][2], mesh.world_matrix[0][3],
-                              mesh.world_matrix[1][0], mesh.world_matrix[1][1],
-                              mesh.world_matrix[1][2], mesh.world_matrix[1][3],
-                              mesh.world_matrix[2][0], mesh.world_matrix[2][1],
-                              mesh.world_matrix[2][2], mesh.world_matrix[2][3]
-                              //, mesh.skin_index // exclude skin_index as we never cache skinned meshes
-            );
-         }
-
-         bool operator==(const Zprepass&) const noexcept = default;
       };
 
       struct Zprepass_hardedged {
@@ -96,35 +64,6 @@ public:
          glm::vec4 x_texcoord_transform;
          glm::vec4 y_texcoord_transform;
          Com_ptr<ID3D11ShaderResourceView> texture;
-
-         template<typename H>
-         friend H AbslHashValue(H h, const Zprepass_hardedged& mesh)
-         {
-            return H::combine(
-               std::move(h),
-               // mesh.primitive_topology,
-               mesh.index_buffer.get(), mesh.index_buffer_offset,
-               mesh.vertex_buffer.get(), mesh.vertex_buffer_offset,
-               mesh.vertex_buffer_stride, mesh.index_count, mesh.start_index,
-               mesh.base_vertex,
-               // mesh.position_decompress_min[0], mesh.position_decompress_min[1],
-               // mesh.position_decompress_min[2], mesh.position_decompress_max[0],
-               // mesh.position_decompress_max[1], mesh.position_decompress_max[2],
-               mesh.world_matrix[0][0], mesh.world_matrix[0][1],
-               mesh.world_matrix[0][2], mesh.world_matrix[0][3],
-               mesh.world_matrix[1][0], mesh.world_matrix[1][1],
-               mesh.world_matrix[1][2], mesh.world_matrix[1][3],
-               mesh.world_matrix[2][0], mesh.world_matrix[2][1],
-               mesh.world_matrix[2][2], mesh.world_matrix[2][3],
-               //, mesh.skin_index // exclude skin_index as we never cache skinned meshes
-               mesh.x_texcoord_transform[0], mesh.x_texcoord_transform[1],
-               mesh.x_texcoord_transform[2], mesh.x_texcoord_transform[3],
-               mesh.y_texcoord_transform[0], mesh.y_texcoord_transform[1],
-               mesh.y_texcoord_transform[2], mesh.y_texcoord_transform[3],
-               mesh.texture.get());
-         }
-
-         bool operator==(const Zprepass_hardedged&) const noexcept = default;
       };
 
       using Stencilshadow = Zprepass;
@@ -189,27 +128,6 @@ public:
          return init;
       }();
 
-      std::vector<Stencilshadow> stencilshadow = [] {
-         std::vector<Stencilshadow> init;
-         init.reserve(128);
-
-         return init;
-      }();
-
-      std::vector<Stencilshadow> stencilshadow_skinned = [] {
-         std::vector<Stencilshadow> init;
-         init.reserve(128);
-
-         return init;
-      }();
-
-      std::vector<Stencilshadow> stencilshadow_skinned_gen_normal = [] {
-         std::vector<Stencilshadow> init;
-         init.reserve(128);
-
-         return init;
-      }();
-
       std::vector<Skin> skins = [] {
          std::vector<Skin> init;
          init.reserve(512);
@@ -269,9 +187,6 @@ public:
          zprepass_hardedged_compressed.clear();
          zprepass_hardedged_skinned.clear();
          zprepass_hardedged_compressed_skinned.clear();
-         stencilshadow.clear();
-         stencilshadow_skinned.clear();
-         stencilshadow_skinned_gen_normal.clear();
          skins.clear();
       }
    };
@@ -299,15 +214,8 @@ public:
 
    void draw_shadow_maps(ID3D11DeviceContext4& dc, const Draw_args& args) noexcept;
 
-   std::size_t temp_cached_zprepass_compressed = 0;
-   std::size_t temp_cached_zprepass_hardedged_compressed = 0;
-
 private:
    void prepare_draw_shadow_maps(ID3D11DeviceContext4& dc, const Draw_args& args) noexcept;
-
-   void clean_mesh_cache(ID3D11DeviceContext4& dc) noexcept;
-
-   void populate_mesh_cache() noexcept;
 
    void build_cascade_info() noexcept;
 
@@ -322,13 +230,9 @@ private:
    void upload_draw_to_target_buffer(ID3D11DeviceContext4& dc,
                                      const Draw_args& args) noexcept;
 
-   void upload_queries_transform_cb_buffer(ID3D11DeviceContext4& dc) noexcept;
-
    void resize_transform_cb_buffer(std::size_t needed_space) noexcept;
 
    void resize_skins_buffer(std::size_t needed_space) noexcept;
-
-   void resize_queries_transform_cb_buffer(std::size_t needed_space) noexcept;
 
    auto count_active_meshes() const noexcept -> std::size_t;
 
@@ -339,80 +243,6 @@ private:
                                    effects::Profiler& profiler) noexcept;
 
    void draw_to_target_map(ID3D11DeviceContext4& dc, const Draw_args& args) noexcept;
-
-   void submit_cache_occlusion_queries(ID3D11DeviceContext4& dc,
-                                       const Draw_args& args) noexcept;
-
-   struct Meshes_cache {
-      using Zprepass = Meshes::Zprepass;
-      using Zprepass_hardedged = Meshes::Zprepass_hardedged;
-
-      struct Async_query {
-         Com_ptr<ID3D11Query> occlusion;
-         std::size_t index;
-      };
-
-      struct Status {
-         bool multi_frame = false;
-         bool culled_by_game = false;
-      };
-
-      absl::flat_hash_set<Zprepass> zprepass_compressed_set = [] {
-         absl::flat_hash_set<Zprepass> init;
-
-         init.reserve(1024);
-
-         return init;
-      }();
-      std::vector<Zprepass> zprepass_compressed = [] {
-         std::vector<Zprepass> init;
-
-         init.reserve(1024);
-
-         return init;
-      }();
-      std::vector<Zprepass_hardedged> zprepass_hardedged_compressed = [] {
-         std::vector<Zprepass_hardedged> init;
-
-         init.reserve(1024);
-
-         return init;
-      }();
-
-      std::vector<Async_query> zprepass_compressed_queries;
-
-      absl::flat_hash_map<Zprepass, Status> this_frame_zprepass_compressed = [] {
-         absl::flat_hash_map<Zprepass, Status> init;
-
-         init.reserve(1024);
-
-         return init;
-      }();
-      absl::flat_hash_map<Zprepass_hardedged, Status> this_frame_zprepass_hardedged_compressed =
-         [] {
-            absl::flat_hash_map<Zprepass_hardedged, Status> init;
-
-            init.reserve(1024);
-
-            return init;
-         }();
-
-      absl::flat_hash_map<Zprepass, Status> last_frame_zprepass_compressed = [] {
-         absl::flat_hash_map<Zprepass, Status> init;
-
-         init.reserve(1024);
-
-         return init;
-      }();
-      absl::flat_hash_map<Zprepass_hardedged, Status> last_frame_zprepass_hardedged_compressed =
-         [] {
-            absl::flat_hash_map<Zprepass_hardedged, Status> init;
-
-            init.reserve(1024);
-
-            return init;
-         }();
-   };
 
    struct Hardedged_vertex_shader {
       Hardedged_vertex_shader(
@@ -425,16 +255,12 @@ private:
    Com_ptr<ID3D11Device5> _device;
 
    Com_ptr<ID3D11Buffer> _camera_cb_buffer;
-   Com_ptr<ID3D11Buffer> _queries_camera_cb_buffer;
 
    Com_ptr<ID3D11Buffer> _transforms_cb_buffer;
    std::size_t _transforms_cb_space = 0;
    Com_ptr<ID3D11Buffer> _skins_buffer;
    std::size_t _skins_space = 0;
    Com_ptr<ID3D11ShaderResourceView> _skins_srv;
-
-   Com_ptr<ID3D11Buffer> _queries_transforms_cb_buffer;
-   std::size_t _queries_transforms_cb_space = 0;
 
    Com_ptr<ID3D11InputLayout> _mesh_il;
    Com_ptr<ID3D11InputLayout> _mesh_compressed_il;
@@ -465,8 +291,6 @@ private:
    Com_ptr<ID3D11RasterizerState> _rasterizer_state;
    Com_ptr<ID3D11RasterizerState> _rasterizer_doublesided_state;
 
-   Com_ptr<ID3D11DepthStencilState> _queries_depthstencil_state;
-
    std::array<glm::mat4, 4> _cascade_view_proj_matrices;
    std::array<glm::mat4, 4> _cascade_texture_matrices;
 
@@ -475,9 +299,6 @@ private:
    Com_ptr<ID3D11Buffer> _draw_to_target_cb;
    Com_ptr<ID3D11DepthStencilState> _draw_to_target_depthstencil_state;
    Com_ptr<ID3D11SamplerState> _shadow_map_sampler;
-
-   Meshes_cache _meshes_cache;
-   glm::mat4 _last_frame_view_proj;
 };
 
 }
