@@ -11,6 +11,42 @@ namespace sp::shadows {
 
 namespace {
 
+void push_info_filter(ID3D11Device& device)
+{
+   Com_ptr<ID3D11Debug> debug;
+
+   if (auto result = device.QueryInterface(debug.clear_and_assign());
+       SUCCEEDED(result)) {
+
+      Com_ptr<ID3D11InfoQueue> infoqueue;
+      if (result = debug->QueryInterface(infoqueue.clear_and_assign());
+          SUCCEEDED(result)) {
+         std::array hide{D3D11_MESSAGE_ID_DEVICE_DRAW_RENDERTARGETVIEW_NOT_SET};
+
+         D3D11_INFO_QUEUE_FILTER filter{};
+         filter.DenyList.NumIDs = hide.size();
+         filter.DenyList.pIDList = hide.data();
+
+         infoqueue->PushStorageFilter(&filter);
+      }
+   }
+}
+
+void pop_info_filter(ID3D11Device& device)
+{
+   Com_ptr<ID3D11Debug> debug;
+
+   if (auto result = device.QueryInterface(debug.clear_and_assign());
+       SUCCEEDED(result)) {
+
+      Com_ptr<ID3D11InfoQueue> infoqueue;
+      if (result = debug->QueryInterface(infoqueue.clear_and_assign());
+          SUCCEEDED(result)) {
+         infoqueue->PopStorageFilter();
+      }
+   }
+}
+
 auto sample_color(std::uint32_t i) noexcept -> glm::vec3
 {
    // Martin Roberts - The Unreasonable Effectiveness of Quasirandom Sequences https://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
@@ -306,30 +342,22 @@ Debug_world_draw::Debug_world_draw(ID3D11Device& device)
 }
 
 void Debug_world_draw::draw(ID3D11DeviceContext2& dc, const World_inputs& world,
-                            const float camera_yaw, const float camera_pitch,
-                            const glm::vec3& camera_positioWS,
+                            const glm::mat4& projection_matrix,
                             ID3D11Buffer* index_buffer, ID3D11Buffer* vertex_buffer,
                             const Target_inputs& target) noexcept
 {
    if (!_input_layout) initialize();
 
+   push_info_filter(*_device);
+
    dc.ClearState();
 
    dc.ClearDepthStencilView(target.dsv, D3D11_CLEAR_DEPTH, 1.0f, 0);
-   dc.ClearRenderTargetView(target.rtv, std::array{0.0f, 0.0f, 0.0f, 1.0f}.data());
-   dc.ClearRenderTargetView(target.picking_rtv,
-                            std::array{4294967295.0f, 0.0f, 0.0f, 0.0f}.data());
-
-   glm::mat4 view_matrix = glm::identity<glm::mat4>();
-
-   view_matrix = glm::rotate(view_matrix, camera_pitch, glm::vec3{1.0f, 0.0f, 0.0f});
-   view_matrix = glm::rotate(view_matrix, camera_yaw, glm::vec3{0.0f, 1.0f, 0.0f});
-   view_matrix = glm::translate(view_matrix, camera_positioWS);
-
-   const glm::mat4 projection_matrix = glm::transpose(
-      glm::perspectiveFovRH_ZO(1.5707964f, static_cast<float>(target.viewport.Width),
-                               static_cast<float>(target.viewport.Height), 1.0f, 2048.0f) *
-      view_matrix);
+   if (target.rtv)
+      dc.ClearRenderTargetView(target.rtv, std::array{0.0f, 0.0f, 0.0f, 1.0f}.data());
+   if (target.picking_rtv)
+      dc.ClearRenderTargetView(target.picking_rtv,
+                               std::array{4294967295.0f, 0.0f, 0.0f, 0.0f}.data());
 
    dc.IASetInputLayout(_input_layout.get());
    dc.IASetIndexBuffer(index_buffer, DXGI_FORMAT_R16_UINT, 0);
@@ -413,6 +441,28 @@ void Debug_world_draw::draw(ID3D11DeviceContext2& dc, const World_inputs& world,
          dc.DrawIndexed(segment.index_count, segment.start_index, segment.base_vertex);
       }
    }
+
+   pop_info_filter(*_device);
+}
+
+void Debug_world_draw::draw(ID3D11DeviceContext2& dc, const World_inputs& world,
+                            const float camera_yaw, const float camera_pitch,
+                            const glm::vec3& camera_positioWS,
+                            ID3D11Buffer* index_buffer, ID3D11Buffer* vertex_buffer,
+                            const Target_inputs& target) noexcept
+{
+   glm::mat4 view_matrix = glm::identity<glm::mat4>();
+
+   view_matrix = glm::rotate(view_matrix, camera_pitch, glm::vec3{1.0f, 0.0f, 0.0f});
+   view_matrix = glm::rotate(view_matrix, camera_yaw, glm::vec3{0.0f, 1.0f, 0.0f});
+   view_matrix = glm::translate(view_matrix, camera_positioWS);
+
+   const glm::mat4 projection_matrix = glm::transpose(
+      glm::perspectiveFovRH_ZO(1.5707964f, static_cast<float>(target.viewport.Width),
+                               static_cast<float>(target.viewport.Height), 1.0f, 2048.0f) *
+      view_matrix);
+
+   draw(dc, world, projection_matrix, index_buffer, vertex_buffer, target);
 }
 
 void Debug_world_draw::initialize() noexcept

@@ -2,15 +2,26 @@
 
 #include "input.hpp"
 
-struct ID3D11Device2;
-struct ID3D11DeviceContext2;
+#include <d3d11_2.h>
 
 namespace sp::shadows {
+
+struct Shadow_draw_view {
+   D3D11_VIEWPORT viewport;
+   ID3D11DepthStencilView* dsv = nullptr;
+   glm::mat4 shadow_projection_matrix;
+};
 
 struct Shadow_world_interface {
    static void initialize(ID3D11Device2& device);
 
    static void process_mesh_copy_queue(ID3D11DeviceContext2& dc) noexcept;
+
+   static void draw_shadow_world_preview(ID3D11DeviceContext2& dc,
+                                         const glm::mat4& projection_matrix,
+                                         const D3D11_VIEWPORT& viewport,
+                                         ID3D11RenderTargetView* rtv,
+                                         ID3D11DepthStencilView* dsv) noexcept;
 
    static void clear() noexcept;
 

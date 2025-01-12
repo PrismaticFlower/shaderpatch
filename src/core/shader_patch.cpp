@@ -298,6 +298,8 @@ void Shader_patch::present() noexcept
    ImGui::DragFloat("shadow bias", &_shadows->config.shadow_bias, 0.0001f,
                     -1.0f, 1.0f, "%.5f");
 
+   ImGui::Checkbox("Preview Shadow World", &_preview_shadow_world);
+
    ImGui::Text("zprepass meshes: %i", _shadows->meshes.zprepass.size());
    ImGui::Text("zprepass compressed meshes: %i",
                _shadows->meshes.zprepass_compressed.size());
@@ -982,6 +984,21 @@ void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
    if (source == get_back_buffer() &&
        glm::uvec2{dest_rt.width, dest_rt.height} == glm::uvec2{512, 256} &&
        source_rect == full_rect && dest_rect == full_rect) {
+      if (_preview_shadow_world) {
+         shadows::shadow_world.draw_shadow_world_preview(
+            *_device_context, _shadows->view_proj_matrix,
+            D3D11_VIEWPORT{
+               .TopLeftX = 0.0f,
+
+               .TopLeftY = 0.0f,
+               .Width = static_cast<float>(_game_rendertargets[0].width),
+               .Height = static_cast<float>(_game_rendertargets[0].height),
+               .MinDepth = 0.0f,
+               .MaxDepth = 1.0f,
+            },
+            _game_rendertargets[0].rtv.get(), _nearscene_depthstencil.dsv.get());
+      }
+
       if (_effects_active) {
          _use_interface_depthstencil = true;
          _game_rendertargets[0] = _swapchain.game_rendertarget();
@@ -1468,51 +1485,59 @@ void Shader_patch::game_rendertype_changed() noexcept
 {
    if (_on_rendertype_changed) _on_rendertype_changed();
 
+   const bool use_alternative_shadows = true;
+
    if (_shader_rendertype == Rendertype::zprepass) {
       _shadows->view_proj_matrix =
          std::bit_cast<glm::mat4>(_cb_scene.projection_matrix);
 
-      _on_draw_indexed = [&](const D3D11_PRIMITIVE_TOPOLOGY topology,
-                             const UINT index_count, const UINT start_index,
-                             const INT base_vertex) noexcept {
-         const bool hardedged =
-            _game_shader->shader_name.size() == "near opaque hardedged"sv.size(); // there's only one other state for zprepass, so we can take a shortcut here
-         const bool skinned = (_game_shader->vertex_shader_flags &
-                               shader::Vertex_shader_flags::hard_skinned) ==
-                              shader::Vertex_shader_flags::hard_skinned;
+      if (use_alternative_shadows) {
+         _on_draw_indexed = [&](const D3D11_PRIMITIVE_TOPOLOGY topology,
+                                const UINT index_count, const UINT start_index,
+                                const INT base_vertex) noexcept {
+            // there's only one other state for zprepass, so we can take a shortcut here
+            const bool hardedged = _game_shader->shader_name.size() ==
+                                   "near opaque hardedged"sv.size();
+            const bool skinned = (_game_shader->vertex_shader_flags &
+                                  shader::Vertex_shader_flags::hard_skinned) ==
+                                 shader::Vertex_shader_flags::hard_skinned;
 
-         auto& meshes = _shadows->meshes;
-         UINT skin_index = meshes.noskin;
+            auto& meshes = _shadows->meshes;
+            UINT skin_index = meshes.noskin;
 
-         if (skinned) {
-            skin_index = meshes.skins.size();
+            if (skinned) {
+               skin_index = meshes.skins.size();
 
-            meshes.skins.emplace_back(_cb_skin.bone_matrices);
-         }
+               meshes.skins.emplace_back(_cb_skin.bone_matrices);
+            }
 
-         if (hardedged) {
-            meshes
-               .select_zprepass_hardedged(_game_input_layout.compressed, skinned)
-               .emplace_back(_game_input_layout.layout_index, topology,
-                             _game_index_buffer, _game_index_buffer_offset,
-                             _game_vertex_buffer, _game_vertex_buffer_offset,
-                             _game_vertex_buffer_stride, index_count, start_index,
-                             base_vertex, glm::vec3{_cb_draw.position_decompress_min},
-                             glm::vec3{_cb_draw.position_decompress_max},
-                             _cb_draw.world_matrix, skin_index,
-                             _cb_draw.custom_constants[0],
-                             _cb_draw.custom_constants[1], _game_textures[0].srv);
-         }
-         else {
-            meshes.select_zprepass(_game_input_layout.compressed, skinned)
-               .emplace_back(topology, _game_index_buffer, _game_index_buffer_offset,
-                             _game_vertex_buffer, _game_vertex_buffer_offset,
-                             _game_vertex_buffer_stride, index_count, start_index,
-                             base_vertex, glm::vec3{_cb_draw.position_decompress_min},
-                             glm::vec3{_cb_draw.position_decompress_max},
-                             _cb_draw.world_matrix, skin_index);
-         }
-      };
+            if (hardedged) {
+               meshes
+                  .select_zprepass_hardedged(_game_input_layout.compressed, skinned)
+                  .emplace_back(_game_input_layout.layout_index, topology,
+                                _game_index_buffer, _game_index_buffer_offset,
+                                _game_vertex_buffer, _game_vertex_buffer_offset,
+                                _game_vertex_buffer_stride, index_count,
+                                start_index, base_vertex,
+                                glm::vec3{_cb_draw.position_decompress_min},
+                                glm::vec3{_cb_draw.position_decompress_max},
+                                _cb_draw.world_matrix, skin_index,
+                                _cb_draw.custom_constants[0],
+                                _cb_draw.custom_constants[1], _game_textures[0].srv);
+            }
+            else {
+               meshes.select_zprepass(_game_input_layout.compressed, skinned)
+                  .emplace_back(topology, _game_index_buffer,
+                                _game_index_buffer_offset, _game_vertex_buffer,
+                                _game_vertex_buffer_offset, _game_vertex_buffer_stride,
+                                index_count, start_index, base_vertex,
+                                glm::vec3{_cb_draw.position_decompress_min},
+                                glm::vec3{_cb_draw.position_decompress_max},
+                                _cb_draw.world_matrix, skin_index);
+            }
+         };
+      }
+
       _on_rendertype_changed = [&]() noexcept {
          _on_draw_indexed = nullptr;
          _on_rendertype_changed = nullptr;
@@ -1520,7 +1545,7 @@ void Shader_patch::game_rendertype_changed() noexcept
    }
    else if (_shader_rendertype == Rendertype::stencilshadow) {
       _shadows->light_direction = _cb_draw.custom_constants[0];
-      _discard_draw_calls = true;
+      _discard_draw_calls = use_alternative_shadows;
 
       _on_rendertype_changed = [this]() noexcept {
          _discard_draw_calls = true;
@@ -1529,8 +1554,6 @@ void Shader_patch::game_rendertype_changed() noexcept
       };
    }
    else if (_shader_rendertype == Rendertype::shadowquad) {
-      const bool use_alternative_shadows = true;
-
       const bool multisampled = _rt_sample_count > 1;
       auto* const shadow_rt = [&]() -> Game_rendertarget* {
          auto it =

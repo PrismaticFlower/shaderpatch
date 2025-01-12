@@ -27,6 +27,10 @@ struct Debug_world_draw {
    Debug_world_draw(ID3D11Device& device);
 
    void draw(ID3D11DeviceContext2& dc, const World_inputs& world,
+             const glm::mat4& projection_matrix, ID3D11Buffer* index_buffer,
+             ID3D11Buffer* vertex_buffer, const Target_inputs& target) noexcept;
+
+   void draw(ID3D11DeviceContext2& dc, const World_inputs& world,
              const float camera_yaw, const float camera_pitch,
              const glm::vec3& camera_positioWS, ID3D11Buffer* index_buffer,
              ID3D11Buffer* vertex_buffer, const Target_inputs& target) noexcept;

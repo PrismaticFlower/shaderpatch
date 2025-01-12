@@ -37,6 +37,29 @@ struct Shadow_world {
       _mesh_copy_queue.process(dc);
    }
 
+   void draw_shadow_world_preview(ID3D11DeviceContext2& dc,
+                                  const glm::mat4& projection_matrix,
+                                  const D3D11_VIEWPORT& viewport,
+                                  ID3D11RenderTargetView* rtv,
+                                  ID3D11DepthStencilView* dsv) noexcept
+   {
+      _debug_world_draw.draw(dc,
+                             {
+                                .models = _models,
+                                .game_models = _game_models,
+                                .object_instances = _object_instances,
+
+                             },
+                             projection_matrix, _index_buffer.get(),
+                             _vertex_buffer.get(),
+                             {
+                                .viewport = viewport,
+                                .rtv = rtv,
+                                .picking_rtv = nullptr,
+                                .dsv = dsv,
+                             });
+   }
+
    void clear() noexcept
    {
       std::scoped_lock lock{_mutex};
@@ -1185,6 +1208,18 @@ void Shadow_world_interface::process_mesh_copy_queue(ID3D11DeviceContext2& dc) n
    if (!self) return;
 
    self->process_mesh_copy_queue(dc);
+}
+
+void Shadow_world_interface::draw_shadow_world_preview(
+   ID3D11DeviceContext2& dc, const glm::mat4& projection_matrix,
+   const D3D11_VIEWPORT& viewport, ID3D11RenderTargetView* rtv,
+   ID3D11DepthStencilView* dsv) noexcept
+{
+   Shadow_world* self = shadow_world_ptr.load(std::memory_order_relaxed);
+
+   if (!self) return;
+
+   self->draw_shadow_world_preview(dc, projection_matrix, viewport, rtv, dsv);
 }
 
 void Shadow_world_interface::clear() noexcept
