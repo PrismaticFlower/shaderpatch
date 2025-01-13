@@ -277,6 +277,7 @@
     <ClCompile Include="src\shader\group_definition.cpp" />
     <ClCompile Include="src\shader\vertex_input_layout.cpp" />
     <ClCompile Include="src\shader_cache_primer.cpp" />
+    <ClCompile Include="src\shadows\internal\active_world.cpp" />
     <ClCompile Include="src\shadows\internal\debug_model_draw.cpp" />
     <ClCompile Include="src\shadows\internal\debug_world_draw.cpp" />
     <ClCompile Include="src\shadows\internal\mesh_buffer.cpp" />
@@ -443,6 +444,7 @@
     <ClInclude Include="src\shadows\internal\debug_model_draw.hpp" />
     <ClInclude Include="src\shadows\internal\mesh_buffer.hpp" />
     <ClInclude Include="src\shadows\internal\mesh_copy_queue.hpp" />
+    <ClInclude Include="src\shadows\internal\active_world.hpp" />
     <ClInclude Include="src\shadows\internal\world\entity_class.hpp" />
     <ClInclude Include="src\shadows\internal\world\game_model.hpp" />
     <ClInclude Include="src\shadows\internal\world\model.hpp" />

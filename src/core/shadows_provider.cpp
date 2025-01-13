@@ -602,7 +602,7 @@ void Shadows_provider::draw_shadow_maps_instanced(ID3D11DeviceContext4& dc,
                                  .MaxDepth = 1.0f};
 
    dc.RSSetViewports(1, &viewport);
-   dc.RSSetState(_rasterizer_state.get());
+   dc.RSSetState(_rasterizer_doublesided_state.get());
    dc.OMSetRenderTargets(0, nullptr, _shadow_map_dsv.get());
 
    dc.PSSetSamplers(0, 1, &texture_sampler);

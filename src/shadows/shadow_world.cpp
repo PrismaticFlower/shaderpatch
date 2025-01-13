@@ -1,5 +1,6 @@
 #include "shadow_world.hpp"
 
+#include "internal/active_world.hpp"
 #include "internal/debug_model_draw.hpp"
 #include "internal/debug_world_draw.hpp"
 #include "internal/mesh_buffer.hpp"
@@ -81,6 +82,8 @@ struct Shadow_world {
       _entity_classes_index.clear();
 
       _object_instances.clear();
+
+      _active_world.clear();
 
       _active_rebuild_needed = false;
    }
@@ -427,10 +430,19 @@ struct Shadow_world {
                cpu_memory += get_bytes_capcity(_entity_classes);
                cpu_memory += get_bytes_capcity(_entity_classes_index);
                cpu_memory += get_bytes_capcity(_object_instances);
+               cpu_memory += _active_world.metrics.used_cpu_memory;
 
                cpu_memory += _name_table.allocated_bytes();
 
                ImGui::Text("Approximate CPU Memory Used: %.1f KB", cpu_memory / 1'000.0);
+
+               ImGui::SeparatorText("Active World");
+
+               ImGui::Text("Approximate CPU Memory Used: %.1f KB",
+                           _active_world.metrics.used_cpu_memory / 1'000.0);
+
+               ImGui::Text("Approximate GPU Memory Used: %.1f KB",
+                           _active_world.metrics.used_gpu_memory / 1'000.0);
 
                ImGui::EndTabItem();
             }
@@ -1071,6 +1083,8 @@ private:
 
    std::vector<Object_instance> _object_instances;
 
+   Active_world _active_world;
+
    Name_table _name_table;
 
    Debug_model_draw _debug_model_draw{*_device};
@@ -1179,6 +1193,12 @@ private:
 
          .texture = nullptr,
       });
+   }
+
+   void build_active_world() noexcept
+   {
+      _active_world.build(*_device, _models, _game_models, _object_instances);
+      _active_rebuild_needed = false;
    }
 };
 

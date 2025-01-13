@@ -296,6 +296,7 @@
     <ClCompile Include="src\shadows\read\read_entity_class.cpp" />
     <ClCompile Include="src\shadows\read\read_world.cpp" />
     <ClCompile Include="src\shadows\internal\debug_world_draw.cpp" />
+    <ClCompile Include="src\shadows\internal\active_world.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\shader_constants.hpp">
@@ -742,6 +743,7 @@
     <ClInclude Include="src\shadows\read\read_world.hpp" />
     <ClInclude Include="src\shadows\internal\world\object_instance.hpp" />
     <ClInclude Include="src\shadows\internal\debug_world_draw.hpp" />
+    <ClInclude Include="src\shadows\internal\active_world.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />
