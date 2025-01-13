@@ -142,16 +142,16 @@ auto make_bounding_sphere(const auto& mesh) noexcept -> glm::vec4
 Shadows_provider::Shadows_provider(Com_ptr<ID3D11Device5> device,
                                    shader::Database& shaders) noexcept
    : _device{device},
-     _mesh_hardedged{shaders.vertex("shadowmesh"sv)
+     _mesh_hardedged{shaders.vertex("shadowmesh_zprepass"sv)
                         .entrypoint("hardedged_vs"sv, 0, Vertex_shader_flags::none)},
      _mesh_hardedged_compressed{
-        shaders.vertex("shadowmesh"sv)
+        shaders.vertex("shadowmesh_zprepass"sv)
            .entrypoint("hardedged_vs"sv, 0, Vertex_shader_flags::compressed)},
      _mesh_hardedged_skinned{
-        shaders.vertex("shadowmesh"sv)
+        shaders.vertex("shadowmesh_zprepass"sv)
            .entrypoint("hardedged_vs"sv, 0, Vertex_shader_flags::hard_skinned)},
      _mesh_hardedged_compressed_skinned{
-        shaders.vertex("shadowmesh"sv)
+        shaders.vertex("shadowmesh_zprepass"sv)
            .entrypoint("hardedged_vs"sv, 0,
                        Vertex_shader_flags::compressed | Vertex_shader_flags::hard_skinned)}
 {
@@ -159,7 +159,7 @@ Shadows_provider::Shadows_provider(Com_ptr<ID3D11Device5> device,
    resize_skins_buffer(64);
    create_shadow_map(TEMP_shadow_map_length);
 
-   auto& shader = shaders.vertex("shadowmesh"sv);
+   auto& shader = shaders.vertex("shadowmesh_zprepass"sv);
 
    _mesh_il = make_input_layout(*device,
                                 {{.SemanticName = "POSITION",
@@ -210,7 +210,8 @@ Shadows_provider::Shadows_provider(Com_ptr<ID3D11Device5> device,
                         Vertex_shader_flags::compressed |
                            Vertex_shader_flags::hard_skinned));
 
-   _mesh_hardedged_ps = shaders.pixel("shadowmesh"sv).entrypoint("hardedged_ps"sv);
+   _mesh_hardedged_ps =
+      shaders.pixel("shadowmesh_zprepass"sv).entrypoint("hardedged_ps"sv);
 
    _draw_to_target_vs = std::get<Com_ptr<ID3D11VertexShader>>(
       shaders.vertex("shadowmap render"sv).entrypoint("main_vs"sv, 0, Vertex_shader_flags::none));

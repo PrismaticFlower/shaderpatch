@@ -1,6 +1,6 @@
 {
-  "group_name": "shadowmesh",
-  "source_name": "shadowmesh.fx",
+  "group_name": "shadowmesh_zprepass",
+  "source_name": "shadowmesh_zprepass.fx",
 
   "entrypoints": {
     "opaque_vs": {
