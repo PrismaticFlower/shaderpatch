@@ -2,6 +2,8 @@
 
 #include "input.hpp"
 
+#include <span>
+
 #include <d3d11_2.h>
 
 namespace sp::shadows {
@@ -16,6 +18,10 @@ struct Shadow_world_interface {
    static void initialize(ID3D11Device2& device);
 
    static void process_mesh_copy_queue(ID3D11DeviceContext2& dc) noexcept;
+
+   static void draw_shadow_views(ID3D11DeviceContext2& dc,
+                                 const glm::mat4& view_proj_matrix,
+                                 std::span<const Shadow_draw_view> views) noexcept;
 
    static void draw_shadow_world_preview(ID3D11DeviceContext2& dc,
                                          const glm::mat4& projection_matrix,

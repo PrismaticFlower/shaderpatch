@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../shader/database.hpp"
-#include "bounding_box.hpp"
 #include "com_ptr.hpp"
 #include "shader_input_layouts.hpp"
 
@@ -284,6 +283,7 @@ private:
 
    Com_ptr<ID3D11Texture2D> _shadow_map_texture;
    Com_ptr<ID3D11DepthStencilView> _shadow_map_dsv;
+   std::array<Com_ptr<ID3D11DepthStencilView>, 4> _shadow_map_dsvs;
    Com_ptr<ID3D11ShaderResourceView> _shadow_map_srv;
 
    float _shadow_map_length_flt = 0.0f;

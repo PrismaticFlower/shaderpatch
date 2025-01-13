@@ -120,9 +120,6 @@
     <ClInclude Include="include\material_rendertype_property_mappings.hpp">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="include\bounding_box.hpp">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="include\ucfb_file_reader.hpp">
       <Filter>include</Filter>
     </ClInclude>

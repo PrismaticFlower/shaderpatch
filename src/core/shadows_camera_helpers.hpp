@@ -1,6 +1,6 @@
 #pragma once
 
-#include "bounding_box.hpp"
+#include "../shadows/frustum.hpp"
 
 #include <array>
 
@@ -8,150 +8,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace sp::core {
-
-namespace frustrum_corner {
-constexpr int bottom_left_near = 0;
-constexpr int bottom_right_near = 1;
-constexpr int top_left_near = 2;
-constexpr int top_right_near = 3;
-
-constexpr int bottom_left_far = 4;
-constexpr int bottom_right_far = 5;
-constexpr int top_left_far = 6;
-constexpr int top_right_far = 7;
-}
-
-namespace frustrum_planes {
-constexpr int near_ = 0;
-constexpr int far_ = 1;
-constexpr int top = 2;
-constexpr int bottom = 3;
-constexpr int left = 4;
-constexpr int right = 5;
-}
-
-struct Frustrum {
-   explicit Frustrum(const glm::mat4& inv_view_proj_matrix) noexcept
-   {
-      auto get_plane = [](std::array<glm::vec3, 3> points) noexcept -> glm::vec4 {
-         const std::array edges{points[1] - points[0], points[2] - points[0]};
-         const glm::vec3 normal = glm::normalize(glm::cross(edges[0], edges[1]));
-
-         return glm::vec4{normal, -glm::dot(normal, points[0])};
-      };
-
-      constexpr std::array<glm::vec4, 8> corners_proj = {{
-         {-1.0f, -1.0f, 0.0f, 1.0f}, // frustrum_corner::bottom_left_near,
-         {1.0f, -1.0f, 0.0f, 1.0f},  // frustrum_corner::bottom_right_near
-
-         {-1.0f, 1.0f, 0.0f, 1.0f}, // frustrum_corner::top_left_near
-         {1.0f, 1.0f, 0.0f, 1.0f},  // frustrum_corner::top_right_near
-
-         {-1.0f, -1.0f, 1.0f, 1.0f}, // frustrum_corner::bottom_left_far
-         {1.0f, -1.0f, 1.0f, 1.0f},  // frustrum_corner::bottom_right_far
-
-         {-1.0f, 1.0f, 1.0f, 1.0f}, // frustrum_corner::top_left_far
-         {1.0f, 1.0f, 1.0f, 1.0f}   // frustrum_corner::top_right_far
-      }};
-
-      for (std::size_t i = 0; i < corners.size(); ++i) {
-         glm::vec4 position = inv_view_proj_matrix * corners_proj[i];
-
-         corners[i] = glm::vec3{position} / position.w;
-      }
-
-      planes[frustrum_planes::near_] =
-         get_plane({corners[frustrum_corner::top_left_near],
-                    corners[frustrum_corner::top_right_near],
-                    corners[frustrum_corner::bottom_left_near]});
-
-      planes[frustrum_planes::far_] =
-         get_plane({corners[frustrum_corner::top_left_far],
-                    corners[frustrum_corner::bottom_left_far],
-                    corners[frustrum_corner::top_right_far]});
-
-      planes[frustrum_planes::bottom] =
-         get_plane({corners[frustrum_corner::bottom_left_near],
-                    corners[frustrum_corner::bottom_right_far],
-                    corners[frustrum_corner::bottom_left_far]});
-
-      planes[frustrum_planes::top] =
-         get_plane({corners[frustrum_corner::top_left_near],
-                    corners[frustrum_corner::top_left_far],
-                    corners[frustrum_corner::top_right_far]});
-
-      planes[frustrum_planes::left] =
-         get_plane({corners[frustrum_corner::top_left_near],
-                    corners[frustrum_corner::bottom_left_far],
-                    corners[frustrum_corner::top_left_far]});
-
-      planes[frustrum_planes::right] =
-         get_plane({corners[frustrum_corner::top_right_near],
-                    corners[frustrum_corner::top_right_far],
-                    corners[frustrum_corner::bottom_right_far]});
-   }
-
-   std::array<glm::vec3, 8> corners;
-   std::array<glm::vec4, 6> planes;
-};
-
-inline bool outside_plane(const glm::vec4& plane, const glm::vec3& point) noexcept
-{
-   return glm::dot(plane, glm::vec4{point, 1.0f}) < 0.0f;
-}
-
-inline bool outside_plane(const glm::vec4& plane, const glm::vec3& point,
-                          const float radius) noexcept
-{
-   return glm::dot(plane, glm::vec4{point, 1.0f}) < -radius;
-}
-
-inline bool intersects(const Frustrum& frustrum, const Bounding_box& bbox)
-{
-   for (const auto& plane : frustrum.planes) {
-      if (outside_plane(plane, {bbox.min.x, bbox.min.y, bbox.min.z}) &
-          outside_plane(plane, {bbox.max.x, bbox.min.y, bbox.min.z}) &
-          outside_plane(plane, {bbox.min.x, bbox.max.y, bbox.min.z}) &
-          outside_plane(plane, {bbox.max.x, bbox.max.y, bbox.min.z}) &
-          outside_plane(plane, {bbox.min.x, bbox.min.y, bbox.max.z}) &
-          outside_plane(plane, {bbox.max.x, bbox.min.y, bbox.max.z}) &
-          outside_plane(plane, {bbox.min.x, bbox.max.y, bbox.max.z}) &
-          outside_plane(plane, {bbox.max.x, bbox.max.y, bbox.max.z})) {
-         return false;
-      }
-   }
-
-   const auto outside_corner = [&](const glm::length_t index, auto comparator,
-                                   const float corner) {
-      bool outside = true;
-
-      for (const auto& frustrum_corner : frustrum.corners) {
-         outside &= comparator(frustrum_corner[index], corner);
-      }
-
-      return outside;
-   };
-
-   if (outside_corner(0, std::greater<>{}, bbox.max.x)) return false;
-   if (outside_corner(0, std::less<>{}, bbox.min.x)) return false;
-   if (outside_corner(1, std::greater<>{}, bbox.max.y)) return false;
-   if (outside_corner(1, std::less<>{}, bbox.min.y)) return false;
-   if (outside_corner(2, std::greater<>{}, bbox.max.z)) return false;
-   if (outside_corner(2, std::less<>{}, bbox.min.z)) return false;
-
-   return true;
-}
-
-inline bool intersects(const Frustrum& frustrum, const glm::vec4& bounding_sphere)
-{
-   for (const auto& plane : frustrum.planes) {
-      if (outside_plane(plane, glm::vec3{bounding_sphere}, bounding_sphere.w)) {
-         return false;
-      }
-   }
-
-   return true;
-}
 
 class Shadow_camera {
 public:
@@ -264,30 +120,29 @@ inline auto make_shadow_cascade_splits(const float near_clip, const float far_cl
 inline auto make_cascade_shadow_camera(const glm::vec3 light_direction,
                                        const float near_split,
                                        const float far_split, const float shadow_res,
-                                       const Frustrum& view_frustrum) -> Shadow_camera
+                                       const shadows::Frustum& view_frustum) -> Shadow_camera
 {
-   auto view_frustrum_corners = view_frustrum.corners;
+   auto view_frustum_corners = view_frustum.corners;
 
    for (int i = 0; i < 4; ++i) {
-      glm::vec3 corner_ray = view_frustrum_corners[i + 4] - view_frustrum_corners[i];
+      glm::vec3 corner_ray = view_frustum_corners[i + 4] - view_frustum_corners[i];
 
-      view_frustrum_corners[i + 4] =
-         view_frustrum_corners[i] + (corner_ray * far_split);
-      view_frustrum_corners[i] += (corner_ray * near_split);
+      view_frustum_corners[i + 4] = view_frustum_corners[i] + (corner_ray * far_split);
+      view_frustum_corners[i] += (corner_ray * near_split);
    }
 
-   glm::vec3 view_frustrum_center{0.0f, 0.0f, 0.0f};
+   glm::vec3 view_frustum_center{0.0f, 0.0f, 0.0f};
 
-   for (const auto& corner : view_frustrum_corners) {
-      view_frustrum_center += corner;
+   for (const auto& corner : view_frustum_corners) {
+      view_frustum_center += corner;
    }
 
-   view_frustrum_center /= 8.0f;
+   view_frustum_center /= 8.0f;
 
    float radius = std::numeric_limits<float>::lowest();
 
-   for (const auto& corner : view_frustrum_corners) {
-      radius = glm::max(glm::distance(corner, view_frustrum_center), radius);
+   for (const auto& corner : view_frustum_corners) {
+      radius = glm::max(glm::distance(corner, view_frustum_center), radius);
    }
 
    glm::vec3 bounds_max{radius};
@@ -295,12 +150,12 @@ inline auto make_cascade_shadow_camera(const glm::vec3 light_direction,
    glm::vec3 casecase_extents{bounds_max - bounds_min};
 
    glm::vec3 shadow_camera_position =
-      view_frustrum_center + light_direction * -bounds_min.z;
+      view_frustum_center + light_direction * -bounds_min.z;
 
    Shadow_camera shadow_camera;
    shadow_camera.set_projection(bounds_min.x, bounds_min.y, bounds_max.x,
                                 bounds_max.y, 0.0f, casecase_extents.z);
-   shadow_camera.look_at(shadow_camera_position, view_frustrum_center,
+   shadow_camera.look_at(shadow_camera_position, view_frustum_center,
                          glm::vec3{0.0f, 1.0f, 0.0f});
 
    auto shadow_view_projection = shadow_camera.view_projection_matrix();
@@ -330,14 +185,14 @@ inline auto make_shadow_cascades(const glm::vec3 light_direction,
 
    (void)near_clip, (void)far_clip;
 
-   Frustrum view_frustrum{glm::inverse(glm::dmat4{view_proj_matrix})};
+   shadows::Frustum view_frustum{glm::inverse(view_proj_matrix)};
 
    std::array<Shadow_camera, 4> cameras;
 
    for (int i = 0; i < 4; ++i) {
       cameras[i] = make_cascade_shadow_camera(light_direction, cascade_splits[i],
                                               cascade_splits[i + 1], shadow_res,
-                                              view_frustrum);
+                                              view_frustum);
    }
 
    return cameras;

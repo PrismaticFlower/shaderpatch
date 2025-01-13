@@ -38,6 +38,16 @@ struct Shadow_world {
       _mesh_copy_queue.process(dc);
    }
 
+   void draw_shadow_views(ID3D11DeviceContext2& dc, const glm::mat4& view_proj_matrix,
+                          std::span<const Shadow_draw_view> views) noexcept
+   {
+      std::scoped_lock lock{_mutex};
+
+      if (_active_rebuild_needed) build_active_world();
+
+      (void)dc, view_proj_matrix, views;
+   }
+
    void draw_shadow_world_preview(ID3D11DeviceContext2& dc,
                                   const glm::mat4& projection_matrix,
                                   const D3D11_VIEWPORT& viewport,
@@ -1230,6 +1240,17 @@ void Shadow_world_interface::process_mesh_copy_queue(ID3D11DeviceContext2& dc) n
    if (!self) return;
 
    self->process_mesh_copy_queue(dc);
+}
+
+void Shadow_world_interface::draw_shadow_views(ID3D11DeviceContext2& dc,
+                                               const glm::mat4& view_proj_matrix,
+                                               std::span<const Shadow_draw_view> views) noexcept
+{
+   Shadow_world* self = shadow_world_ptr.load(std::memory_order_relaxed);
+
+   if (!self) return;
+
+   self->draw_shadow_views(dc, view_proj_matrix, views);
 }
 
 void Shadow_world_interface::draw_shadow_world_preview(

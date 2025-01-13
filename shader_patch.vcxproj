@@ -277,6 +277,8 @@
     <ClCompile Include="src\shader\group_definition.cpp" />
     <ClCompile Include="src\shader\vertex_input_layout.cpp" />
     <ClCompile Include="src\shader_cache_primer.cpp" />
+    <ClCompile Include="src\shadows\bounding_box.cpp" />
+    <ClCompile Include="src\shadows\frustum.cpp" />
     <ClCompile Include="src\shadows\internal\active_world.cpp" />
     <ClCompile Include="src\shadows\internal\debug_model_draw.cpp" />
     <ClCompile Include="src\shadows\internal\debug_world_draw.cpp" />
@@ -439,6 +441,8 @@
     <ClInclude Include="src\shader\static_flags.hpp" />
     <ClInclude Include="src\shader\vertex_input_layout.hpp" />
     <ClInclude Include="src\shader_constants.hpp" />
+    <ClInclude Include="src\shadows\bounding_box.hpp" />
+    <ClInclude Include="src\shadows\frustum.hpp" />
     <ClInclude Include="src\shadows\input.hpp" />
     <ClInclude Include="src\shadows\internal\debug_world_draw.hpp" />
     <ClInclude Include="src\shadows\internal\debug_model_draw.hpp" />

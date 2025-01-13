@@ -2,6 +2,7 @@
 #include "shadows_provider.hpp"
 #include "../effects/profiler.hpp"
 #include "../logger.hpp"
+#include "../shadows/shadow_world.hpp"
 #include "d3d11_helpers.hpp"
 #include "shadows_camera_helpers.hpp"
 
@@ -84,7 +85,7 @@ auto make_input_layout(
    return result;
 }
 
-auto make_bounding_box(const auto& mesh) noexcept -> Bounding_box
+auto make_bounding_box(const auto& mesh) noexcept -> shadows::Bounding_box
 {
    glm::vec3 min =
       glm::vec3{static_cast<float>(-std::numeric_limits<std::int16_t>::max())}; // negated max is not a mistake
@@ -350,6 +351,41 @@ void Shadows_provider::draw_shadow_maps(ID3D11DeviceContext4& dc,
 
    draw_shadow_maps_instanced(dc, args.input_layout_descriptions, args.profiler);
 
+   const D3D11_VIEWPORT cascade_viewport = {
+      .Width = _shadow_map_length_flt,
+      .Height = _shadow_map_length_flt,
+      .MinDepth = 0.0f,
+      .MaxDepth = 1.0f,
+   };
+
+   const std::array<shadows::Shadow_draw_view, 4> shadow_views = {
+      shadows::Shadow_draw_view{
+         .viewport = cascade_viewport,
+         .dsv = _shadow_map_dsvs[0].get(),
+         .shadow_projection_matrix = _cascade_view_proj_matrices[0],
+      },
+
+      shadows::Shadow_draw_view{
+         .viewport = cascade_viewport,
+         .dsv = _shadow_map_dsvs[1].get(),
+         .shadow_projection_matrix = _cascade_view_proj_matrices[1],
+      },
+
+      shadows::Shadow_draw_view{
+         .viewport = cascade_viewport,
+         .dsv = _shadow_map_dsvs[2].get(),
+         .shadow_projection_matrix = _cascade_view_proj_matrices[2],
+      },
+
+      shadows::Shadow_draw_view{
+         .viewport = cascade_viewport,
+         .dsv = _shadow_map_dsvs[3].get(),
+         .shadow_projection_matrix = _cascade_view_proj_matrices[3],
+      },
+   };
+
+   shadows::shadow_world.draw_shadow_views(dc, view_proj_matrix, shadow_views);
+
    draw_to_target_map(dc, args);
 
    dc.DiscardResource(_shadow_map_texture.get());
@@ -365,10 +401,9 @@ void Shadows_provider::prepare_draw_shadow_maps(ID3D11DeviceContext4& dc,
 
 void Shadows_provider::build_cascade_info() noexcept
 {
-   auto cascades =
-      make_shadow_cascades(glm::normalize(-light_direction),
-                           glm::transpose(view_proj_matrix), config.start_depth,
-                           config.end_depth, _shadow_map_length_flt);
+   auto cascades = make_shadow_cascades(glm::normalize(-light_direction),
+                                        view_proj_matrix, config.start_depth,
+                                        config.end_depth, _shadow_map_length_flt);
 
    _cascade_view_proj_matrices =
       {glm::transpose(cascades[0].view_projection_matrix()),
@@ -381,7 +416,7 @@ void Shadows_provider::build_cascade_info() noexcept
                                 glm::transpose(cascades[2].texture_matrix()),
                                 glm::transpose(cascades[3].texture_matrix())};
 
-   // TODO: Frustrum culling.
+   // TODO: Frustum culling.
 }
 
 void Shadows_provider::upload_buffer_data(ID3D11DeviceContext4& dc,
@@ -554,14 +589,28 @@ void Shadows_provider::create_shadow_map(const UINT length) noexcept
       log_and_terminate("Unable to create shadow map!");
    }
 
-   const D3D11_DEPTH_STENCIL_VIEW_DESC dsv_desc{
-      .Format = DXGI_FORMAT_D32_FLOAT,
-      .ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY,
-      .Texture2DArray = {.MipSlice = 0, .FirstArraySlice = 0, .ArraySize = cascade_count}};
+   {
+      const D3D11_DEPTH_STENCIL_VIEW_DESC dsv_desc{
+         .Format = DXGI_FORMAT_D32_FLOAT,
+         .ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY,
+         .Texture2DArray = {.MipSlice = 0, .FirstArraySlice = 0, .ArraySize = cascade_count}};
 
-   if (FAILED(_device->CreateDepthStencilView(_shadow_map_texture.get(), &dsv_desc,
-                                              _shadow_map_dsv.clear_and_assign()))) {
-      log_and_terminate("Unable to create shadow map DSV!");
+      if (FAILED(_device->CreateDepthStencilView(_shadow_map_texture.get(), &dsv_desc,
+                                                 _shadow_map_dsv.clear_and_assign()))) {
+         log_and_terminate("Unable to create shadow map DSV!");
+      }
+   }
+
+   for (std::size_t i = 0; i < _shadow_map_dsvs.size(); ++i) {
+      const D3D11_DEPTH_STENCIL_VIEW_DESC dsv_desc{
+         .Format = DXGI_FORMAT_D32_FLOAT,
+         .ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY,
+         .Texture2DArray = {.MipSlice = 0, .FirstArraySlice = i, .ArraySize = 1}};
+
+      if (FAILED(_device->CreateDepthStencilView(_shadow_map_texture.get(), &dsv_desc,
+                                                 _shadow_map_dsvs[i].clear_and_assign()))) {
+         log_and_terminate("Unable to create shadow map DSV!");
+      }
    }
 
    const D3D11_SHADER_RESOURCE_VIEW_DESC
