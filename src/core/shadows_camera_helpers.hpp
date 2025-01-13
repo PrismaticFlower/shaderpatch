@@ -18,7 +18,7 @@ public:
 
    void look_at(const glm::vec3 eye, const glm::vec3 at, const glm::vec3 up) noexcept
    {
-      _view_matrix = glm::lookAtLH(eye, at, up);
+      _view_matrix = glm::transpose(glm::lookAtLH(eye, at, up));
 
       update();
    }
@@ -42,9 +42,9 @@ public:
       _projection_matrix[1][1] = inv_y_range + inv_y_range;
       _projection_matrix[2][2] = inv_z_range;
 
-      _projection_matrix[3][0] = -(max_x + min_x) * inv_x_range;
-      _projection_matrix[3][1] = -(max_y + min_y) * inv_y_range;
-      _projection_matrix[3][2] = -min_z * inv_z_range;
+      _projection_matrix[0][3] = -(max_x + min_x) * inv_x_range;
+      _projection_matrix[1][3] = -(max_y + min_y) * inv_y_range;
+      _projection_matrix[2][3] = -min_z * inv_z_range;
 
       update();
    }
@@ -74,19 +74,19 @@ public:
 private:
    void update() noexcept
    {
-      _view_projection_matrix = _projection_matrix * _view_matrix;
+      _view_projection_matrix = _view_matrix * _projection_matrix;
 
-      _view_projection_matrix[3].x += _stabilization.x;
-      _view_projection_matrix[3].y += _stabilization.y;
+      _view_projection_matrix[0][3] += _stabilization.x;
+      _view_projection_matrix[1][3] += _stabilization.y;
 
       _inv_view_projection_matrix = glm::inverse(glm::dmat4{_view_projection_matrix});
 
-      constexpr glm::mat4 bias_matrix{0.5f, 0.0f,  0.0f, 0.0f, //
-                                      0.0f, -0.5f, 0.0f, 0.0f, //
+      constexpr glm::mat4 bias_matrix{0.5f, 0.0f,  0.0f, 0.5f, //
+                                      0.0f, -0.5f, 0.0f, 0.5f, //
                                       0.0f, 0.0f,  1.0f, 0.0f, //
-                                      0.5f, 0.5f,  0.0f, 1.0f};
+                                      0.0f, 0.0f,  0.0f, 1.0f};
 
-      _texture_matrix = bias_matrix * _view_projection_matrix;
+      _texture_matrix = _view_projection_matrix * bias_matrix;
    }
 
    float _near_clip = 0.0f;
@@ -160,8 +160,7 @@ inline auto make_cascade_shadow_camera(const glm::vec3 light_direction,
 
    auto shadow_view_projection = shadow_camera.view_projection_matrix();
 
-   glm::vec4 shadow_origin =
-      shadow_view_projection * glm::vec4{0.0f, 0.0f, 0.0f, 1.0f};
+   glm::vec4 shadow_origin = glm::vec4{0.0f, 0.0f, 0.0f, 1.0f} * shadow_view_projection;
    shadow_origin /= shadow_origin.w;
    shadow_origin *= shadow_res / 2.0f;
 

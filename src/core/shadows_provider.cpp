@@ -405,16 +405,15 @@ void Shadows_provider::build_cascade_info() noexcept
                                         view_proj_matrix, config.start_depth,
                                         config.end_depth, _shadow_map_length_flt);
 
-   _cascade_view_proj_matrices =
-      {glm::transpose(cascades[0].view_projection_matrix()),
-       glm::transpose(cascades[1].view_projection_matrix()),
-       glm::transpose(cascades[2].view_projection_matrix()),
-       glm::transpose(cascades[3].view_projection_matrix())};
+   _cascade_view_proj_matrices = {cascades[0].view_projection_matrix(),
+                                  cascades[1].view_projection_matrix(),
+                                  cascades[2].view_projection_matrix(),
+                                  cascades[3].view_projection_matrix()};
 
-   _cascade_texture_matrices = {glm::transpose(cascades[0].texture_matrix()),
-                                glm::transpose(cascades[1].texture_matrix()),
-                                glm::transpose(cascades[2].texture_matrix()),
-                                glm::transpose(cascades[3].texture_matrix())};
+   _cascade_texture_matrices = {cascades[0].texture_matrix(),
+                                cascades[1].texture_matrix(),
+                                cascades[2].texture_matrix(),
+                                cascades[3].texture_matrix()};
 
    // TODO: Frustum culling.
 }
