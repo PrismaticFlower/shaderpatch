@@ -44,6 +44,8 @@ struct Shadow_world {
                                   ID3D11RenderTargetView* rtv,
                                   ID3D11DepthStencilView* dsv) noexcept
    {
+      std::scoped_lock lock{_mutex};
+
       _debug_world_draw.draw(dc,
                              {
                                 .models = _models,
