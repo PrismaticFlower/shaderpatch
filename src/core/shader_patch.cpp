@@ -227,7 +227,7 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
    ImGui_ImplWin32_NewFrame();
    ImGui::NewFrame();
 
-   shadows::shadow_world.initialize(*_device);
+   shadows::shadow_world.initialize(*_device, _shader_database);
 }
 
 Shader_patch::~Shader_patch()

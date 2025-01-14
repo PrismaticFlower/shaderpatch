@@ -6,6 +6,12 @@
 
 #include <d3d11_2.h>
 
+namespace sp::shader {
+
+class Database;
+
+}
+
 namespace sp::shadows {
 
 struct Shadow_draw_view {
@@ -15,7 +21,7 @@ struct Shadow_draw_view {
 };
 
 struct Shadow_world_interface {
-   static void initialize(ID3D11Device2& device);
+   static void initialize(ID3D11Device2& device, shader::Database& shaders);
 
    static void process_mesh_copy_queue(ID3D11DeviceContext2& dc) noexcept;
 

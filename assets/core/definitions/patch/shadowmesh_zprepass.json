@@ -44,7 +44,7 @@
     }
   },
 
-  "rendertypes": { "shadowmesh": {} },
+  "rendertypes": { "shadowmesh_zprepass": {} },
 
   "states": {
     "opaque": {

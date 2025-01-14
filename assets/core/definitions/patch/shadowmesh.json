@@ -1,0 +1,30 @@
+{
+  "group_name": "shadowmesh",
+  "source_name": "shadowmesh.fx",
+
+  "entrypoints": {
+    "opaque_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto"
+      }
+    },
+
+    "hardedged_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto"
+      }
+    },
+
+    "hardedged_ps": {
+      "stage": "pixel"
+    }
+  },
+
+  "rendertypes": {},
+
+  "states": {}
+}

@@ -299,6 +299,7 @@
     <ClCompile Include="src\shadows\internal\active_world.cpp" />
     <ClCompile Include="src\shadows\frustum.cpp" />
     <ClCompile Include="src\shadows\bounding_box.cpp" />
+    <ClCompile Include="src\shadows\internal\draw_resources.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\shader_constants.hpp">
@@ -748,6 +749,8 @@
     <ClInclude Include="src\shadows\internal\active_world.hpp" />
     <ClInclude Include="src\shadows\frustum.hpp" />
     <ClInclude Include="src\shadows\bounding_box.hpp" />
+    <ClInclude Include="src\shadows\internal\draw_resources.hpp" />
+    <ClInclude Include="src\shadows\internal\draw_view_constants.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />

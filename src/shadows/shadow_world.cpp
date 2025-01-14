@@ -5,6 +5,7 @@
 #include "internal/active_world.hpp"
 #include "internal/debug_model_draw.hpp"
 #include "internal/debug_world_draw.hpp"
+#include "internal/draw_resources.hpp"
 #include "internal/mesh_buffer.hpp"
 #include "internal/mesh_copy_queue.hpp"
 #include "internal/name_table.hpp"
@@ -31,7 +32,10 @@ const UINT MESH_BUFFER_SIZE = 0x4000000;
 const UINT MAX_SEGMENT_VERTICES = D3D11_16BIT_INDEX_STRIP_CUT_VALUE - 1;
 
 struct Shadow_world {
-   Shadow_world(ID3D11Device2& device) : _device{copy_raw_com_ptr(device)} {}
+   Shadow_world(ID3D11Device2& device, shader::Database& shaders)
+      : _device{copy_raw_com_ptr(device)}, _draw_resources{device, shaders}
+   {
+   }
 
    void process_mesh_copy_queue(ID3D11DeviceContext2& dc) noexcept
    {
@@ -179,15 +183,6 @@ struct Shadow_world {
          }
 
          _active_world.upload_instance_buffer(dc);
-
-         ImGui::Text("Active Opaque: %u",
-                     _active_world.active_opaque_instance_lists_count);
-         ImGui::Text("Active Doublesided: %u",
-                     _active_world.active_doublesided_instance_lists_count);
-         ImGui::Text("Active Hardedged: %u",
-                     _active_world.active_hardedged_instance_lists_count);
-         ImGui::Text("Active Hardedged Doublesided: %u",
-                     _active_world.active_hardedged_doublesided_instance_lists_count);
 
          _active_world.reset();
       }
@@ -1243,6 +1238,8 @@ private:
 
    Active_world _active_world;
 
+   Draw_resources _draw_resources;
+
    Name_table _name_table;
 
    Debug_model_draw _debug_model_draw{*_device};
@@ -1366,7 +1363,7 @@ std::atomic<Shadow_world*> shadow_world_ptr = nullptr;
 
 Shadow_world_interface shadow_world;
 
-void Shadow_world_interface::initialize(ID3D11Device2& device)
+void Shadow_world_interface::initialize(ID3D11Device2& device, shader::Database& shaders)
 {
    if (shadow_world_ptr.load() != nullptr) {
       log(Log_level::warning, "Attempt to initialize Shadow World twice.");
@@ -1374,7 +1371,7 @@ void Shadow_world_interface::initialize(ID3D11Device2& device)
       return;
    }
 
-   static Shadow_world shadow_world_impl{device};
+   static Shadow_world shadow_world_impl{device, shaders};
 
    shadow_world_ptr.store(&shadow_world_impl);
 }
