@@ -1,7 +1,7 @@
 cbuffer MeshCB : register(b0)
 {
-   float3 position_decompress_add;
    float3 position_decompress_mul;
+   float3 position_decompress_add;
 }
 
 cbuffer ViewCB : register(b1)

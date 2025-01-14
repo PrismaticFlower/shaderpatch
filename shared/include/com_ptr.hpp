@@ -13,14 +13,12 @@ namespace sp {
 namespace detail {
 
 template<typename Type, typename = void>
-struct Is_com_class : std::false_type {
-};
+struct Is_com_class : std::false_type {};
 
 template<typename Type>
 struct Is_com_class<Type, std::void_t<decltype(std::declval<Type>().AddRef()),
                                       decltype(std::declval<Type>().Release())>>
-   : std::true_type {
-};
+   : std::true_type {};
 
 template<typename Type>
 constexpr bool is_com_class_v = Is_com_class<Type>::value;
@@ -140,6 +138,11 @@ public:
    Class* get() const noexcept
    {
       return _pointer;
+   }
+
+   Class* const* get_ptr() const noexcept
+   {
+      return &_pointer;
    }
 
    Class& operator*() const noexcept

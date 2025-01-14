@@ -349,7 +349,11 @@ void Shadows_provider::draw_shadow_maps(ID3D11DeviceContext4& dc,
 
    dc.ClearState();
 
+   dc.ClearDepthStencilView(_shadow_map_dsv.get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+#if 0
    draw_shadow_maps_instanced(dc, args.input_layout_descriptions, args.profiler);
+#endif
 
    const D3D11_VIEWPORT cascade_viewport = {
       .Width = _shadow_map_length_flt,
@@ -633,8 +637,6 @@ void Shadows_provider::draw_shadow_maps_instanced(ID3D11DeviceContext4& dc,
                                                   effects::Profiler& profiler) noexcept
 {
    Profile profile{profiler, dc, "Shadow Maps - Draw Instanced"sv};
-
-   dc.ClearDepthStencilView(_shadow_map_dsv.get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
    auto* skins_srv = _skins_srv.get();
    auto* camera_cb = _camera_cb_buffer.get();

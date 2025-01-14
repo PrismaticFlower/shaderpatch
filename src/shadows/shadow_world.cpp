@@ -51,6 +51,12 @@ struct Shadow_world {
 
       if (_active_rebuild_needed) build_active_world();
 
+      dc.ClearState();
+
+      dc.OMSetDepthStencilState(_draw_resources.depth_stencil_state.get(), 0xff);
+
+      dc.PSSetSamplers(0, 1, _draw_resources.sampler_state.get_ptr());
+
       Frustum view_frustum{glm::inverse(glm::dmat4{view_proj_matrix})};
 
       for (const Shadow_draw_view& view : views) {
@@ -71,7 +77,7 @@ struct Shadow_world {
                           list.bbox_max_z.get()[instance_index]},
                };
 
-               if (intersects(view_frustum, bbox)) continue;
+               // if (intersects(view_frustum, bbox)) continue;
                if (!intersects(shadow_frustum, bbox)) continue;
 
                list.active_instances[list.active_count] = instance_index;
@@ -102,7 +108,7 @@ struct Shadow_world {
                           list.bbox_max_z.get()[instance_index]},
                };
 
-               if (intersects(view_frustum, bbox)) continue;
+               //  if (intersects(view_frustum, bbox)) continue;
                if (!intersects(shadow_frustum, bbox)) continue;
 
                list.active_instances[list.active_count] = instance_index;
@@ -134,7 +140,7 @@ struct Shadow_world {
                           list.bbox_max_z.get()[instance_index]},
                };
 
-               if (intersects(view_frustum, bbox)) continue;
+               //   if (intersects(view_frustum, bbox)) continue;
                if (!intersects(shadow_frustum, bbox)) continue;
 
                list.active_instances[list.active_count] = instance_index;
@@ -166,7 +172,7 @@ struct Shadow_world {
                           list.bbox_max_z.get()[instance_index]},
                };
 
-               if (intersects(view_frustum, bbox)) continue;
+               //  if (intersects(view_frustum, bbox)) continue;
                if (!intersects(shadow_frustum, bbox)) continue;
 
                list.active_instances[list.active_count] = instance_index;
@@ -182,12 +188,161 @@ struct Shadow_world {
             }
          }
 
+         D3D11_MAPPED_SUBRESOURCE mapped_view_constants{};
+
+         if (FAILED(dc.Map(_draw_resources.view_constants.get(), 0,
+                           D3D11_MAP_WRITE_DISCARD, 0, &mapped_view_constants))) {
+            log_and_terminate("Mapping shadow world view constants failed!");
+         }
+
+         std::memcpy(mapped_view_constants.pData, &view.shadow_projection_matrix,
+                     sizeof(view.shadow_projection_matrix));
+
+         dc.Unmap(_draw_resources.view_constants.get(), 0);
+
+         dc.RSSetViewports(1, &view.viewport);
+
+         dc.OMSetRenderTargets(0, nullptr, view.dsv);
+
          _active_world.upload_instance_buffer(dc);
+
+         dc.IASetInputLayout(_draw_resources.input_layout.get());
+         dc.IASetIndexBuffer(_index_buffer.get(), DXGI_FORMAT_R16_UINT, 0);
+
+         ID3D11Buffer* vertex_buffer = _vertex_buffer.get();
+         const UINT vertex_buffer_stride = 6;
+
+         const UINT instance_buffer_stride = sizeof(std::array<glm::vec4, 3>);
+         const UINT vertex_buffer_offset = 0;
+
+         dc.IASetVertexBuffers(
+            0, 2,
+            std::array<ID3D11Buffer*, 2>{vertex_buffer,
+                                         _active_world.instances_buffer.get()}
+               .data(),
+            std::array<UINT, 2>{vertex_buffer_stride, instance_buffer_stride}.data(),
+            std::array<UINT, 2>{vertex_buffer_offset, vertex_buffer_offset}.data());
+
+         dc.VSSetConstantBuffers(1, 1, _draw_resources.view_constants.get_ptr());
+         dc.VSSetShader(_draw_resources.vertex_shader.get(), nullptr, 0);
+
+         dc.RSSetState(_draw_resources.rasterizer_state.get());
+
+         dc.PSSetShader(nullptr, nullptr, 0);
+
+         const UINT constants_count = 16;
+
+         UINT start_instance = 0;
+         D3D11_PRIMITIVE_TOPOLOGY current_topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
+
+         for (std::uint32_t list_index :
+              std::span{_active_world.active_opaque_instance_lists.get(),
+                        _active_world.active_opaque_instance_lists_count}) {
+            Instance_list& list = _active_world.opaque_instance_lists[list_index];
+
+            if (current_topology != list.topology) {
+               dc.IASetPrimitiveTopology(list.topology);
+
+               current_topology = list.topology;
+            }
+
+            const UINT first_constant = list.constants_index * (256 / 16);
+
+            dc.VSSetConstantBuffers1(0, 1, _active_world.constants_buffer.get_ptr(),
+                                     &first_constant, &constants_count);
+
+            dc.DrawIndexedInstanced(list.index_count, list.active_count, list.start_index,
+                                    list.base_vertex, start_instance);
+
+            start_instance += list.active_count;
+         }
+
+         dc.RSSetState(_draw_resources.rasterizer_state_doublesided.get());
+
+         for (std::uint32_t list_index :
+              std::span{_active_world.active_doublesided_instance_lists.get(),
+                        _active_world.active_doublesided_instance_lists_count}) {
+            Instance_list& list = _active_world.doublesided_instance_lists[list_index];
+
+            if (current_topology != list.topology) {
+               dc.IASetPrimitiveTopology(list.topology);
+
+               current_topology = list.topology;
+            }
+
+            const UINT first_constant = list.constants_index * (256 / 16);
+
+            dc.VSSetConstantBuffers1(0, 1, _active_world.constants_buffer.get_ptr(),
+                                     &first_constant, &constants_count);
+
+            dc.DrawIndexedInstanced(list.index_count, list.active_count, list.start_index,
+                                    list.base_vertex, start_instance);
+
+            start_instance += list.active_count;
+         }
+
+         const UINT vertex_buffer_textured_stride = 10;
+
+         dc.IASetInputLayout(_draw_resources.input_layout_textured.get());
+         dc.IASetVertexBuffers(0, 1, &vertex_buffer, &vertex_buffer_textured_stride,
+                               &vertex_buffer_offset);
+
+         dc.VSSetShader(_draw_resources.vertex_shader_textured.get(), nullptr, 0);
+         dc.PSSetShader(_draw_resources.pixel_shader_hardedged.get(), nullptr, 0);
+
+         for (std::uint32_t list_index : std::span{
+                 _active_world.active_hardedged_doublesided_instance_lists.get(),
+                 _active_world.active_hardedged_doublesided_instance_lists_count}) {
+            Instance_list_textured& list =
+               _active_world.hardedged_doublesided_instance_lists[list_index];
+
+            if (current_topology != list.topology) {
+               dc.IASetPrimitiveTopology(list.topology);
+
+               current_topology = list.topology;
+            }
+
+            // TODO: Bind texture.
+
+            const UINT first_constant = list.constants_index * (256 / 16);
+
+            dc.VSSetConstantBuffers1(0, 1, _active_world.constants_buffer.get_ptr(),
+                                     &first_constant, &constants_count);
+            dc.DrawIndexedInstanced(list.index_count, list.active_count, list.start_index,
+                                    list.base_vertex, start_instance);
+
+            start_instance += list.active_count;
+         }
+
+         dc.RSSetState(_draw_resources.rasterizer_state.get());
+
+         for (std::uint32_t list_index :
+              std::span{_active_world.active_hardedged_instance_lists.get(),
+                        _active_world.active_hardedged_instance_lists_count}) {
+            Instance_list_textured& list =
+               _active_world.hardedged_instance_lists[list_index];
+
+            if (current_topology != list.topology) {
+               dc.IASetPrimitiveTopology(list.topology);
+
+               current_topology = list.topology;
+            }
+
+            // TODO: Bind texture.
+
+            const UINT first_constant = list.constants_index * (256 / 16);
+
+            dc.VSSetConstantBuffers1(0, 1, _active_world.constants_buffer.get_ptr(),
+                                     &first_constant, &constants_count);
+
+            dc.DrawIndexedInstanced(list.index_count, list.active_count, list.start_index,
+                                    list.base_vertex, start_instance);
+
+            start_instance += list.active_count;
+         }
 
          _active_world.reset();
       }
-
-      (void)dc, view_proj_matrix, views;
    }
 
    void draw_shadow_world_preview(ID3D11DeviceContext2& dc,
