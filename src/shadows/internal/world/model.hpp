@@ -47,6 +47,7 @@ struct Model_segment_hardedged {
 
 struct Model {
    Bounding_box bbox;
+   Bounding_box aabb;
 
    // TODO: Avoid allocations for simple meshes that fit in a single segment.
    std::vector<Model_segment> opaque_segments;

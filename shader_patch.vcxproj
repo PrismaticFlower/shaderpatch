@@ -281,6 +281,7 @@
     <ClCompile Include="src\shadows\frustum.cpp" />
     <ClCompile Include="src\shadows\internal\active_world.cpp" />
     <ClCompile Include="src\shadows\internal\debug_model_draw.cpp" />
+    <ClCompile Include="src\shadows\internal\debug_world_aabb_draw.cpp" />
     <ClCompile Include="src\shadows\internal\debug_world_draw.cpp" />
     <ClCompile Include="src\shadows\internal\draw_resources.cpp" />
     <ClCompile Include="src\shadows\internal\mesh_buffer.cpp" />
@@ -445,6 +446,7 @@
     <ClInclude Include="src\shadows\bounding_box.hpp" />
     <ClInclude Include="src\shadows\frustum.hpp" />
     <ClInclude Include="src\shadows\input.hpp" />
+    <ClInclude Include="src\shadows\internal\debug_world_aabb_draw.hpp" />
     <ClInclude Include="src\shadows\internal\draw_resources.hpp" />
     <ClInclude Include="src\shadows\internal\debug_world_draw.hpp" />
     <ClInclude Include="src\shadows\internal\debug_model_draw.hpp" />

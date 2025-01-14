@@ -1,5 +1,7 @@
 #include "bounding_box.hpp"
 
+#include <glm/gtc/quaternion.hpp>
+
 namespace sp::shadows {
 
 auto operator*(const Bounding_box& box,
@@ -18,10 +20,19 @@ auto operator*(const Bounding_box& box,
       glm::vec3{box.max.x, box.min.y, box.min.z},
    };
 
+   // Convert the rotation to a normalized quaternion, this fixes some issues
+   // with entities that have a bad rotation matrix.
+
+   glm::quat rotation{glm::mat3{
+      glm::vec3(transform[0]),
+      glm::vec3(transform[1]),
+      glm::vec3(transform[2]),
+   }};
+
+   rotation = glm::normalize(rotation);
+
    for (glm::vec3& v : vertices) {
-      v.x = glm::dot(transform[0], glm::vec4{v, 1.0f});
-      v.y = glm::dot(transform[1], glm::vec4{v, 1.0f});
-      v.z = glm::dot(transform[2], glm::vec4{v, 1.0f});
+      v = v * rotation;
    }
 
    Bounding_box new_box{vertices[0], vertices[0]};
@@ -30,6 +41,9 @@ auto operator*(const Bounding_box& box,
       new_box.min = glm::min(new_box.min, vertices[i]);
       new_box.max = glm::max(new_box.max, vertices[i]);
    }
+
+   new_box.min += glm::vec3{transform[0].w, transform[1].w, transform[2].w};
+   new_box.max += glm::vec3{transform[0].w, transform[1].w, transform[2].w};
 
    return new_box;
 }

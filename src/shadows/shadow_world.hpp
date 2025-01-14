@@ -35,6 +35,12 @@ struct Shadow_world_interface {
                                          ID3D11RenderTargetView* rtv,
                                          ID3D11DepthStencilView* dsv) noexcept;
 
+   static void draw_shadow_world_aabb_preview(ID3D11DeviceContext2& dc,
+                                              const glm::mat4& projection_matrix,
+                                              const D3D11_VIEWPORT& viewport,
+                                              ID3D11RenderTargetView* rtv,
+                                              ID3D11DepthStencilView* dsv) noexcept;
+
    static void clear() noexcept;
 
    static void add_model(const Input_model& model) noexcept;

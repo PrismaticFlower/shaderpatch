@@ -4,6 +4,7 @@
 
 #include "internal/active_world.hpp"
 #include "internal/debug_model_draw.hpp"
+#include "internal/debug_world_aabb_draw.hpp"
 #include "internal/debug_world_draw.hpp"
 #include "internal/draw_resources.hpp"
 #include "internal/mesh_buffer.hpp"
@@ -370,6 +371,28 @@ struct Shadow_world {
                              });
    }
 
+   void draw_shadow_world_aabb_preview(ID3D11DeviceContext2& dc,
+                                       const glm::mat4& projection_matrix,
+                                       const D3D11_VIEWPORT& viewport,
+                                       ID3D11RenderTargetView* rtv,
+                                       ID3D11DepthStencilView* dsv) noexcept
+   {
+      std::scoped_lock lock{_mutex};
+
+      _debug_world_aabb_draw.draw(dc,
+                                  {
+                                     .models = _models,
+                                     .game_models = _game_models,
+                                     .object_instances = _object_instances,
+                                  },
+                                  projection_matrix,
+                                  {
+                                     .viewport = viewport,
+                                     .rtv = rtv,
+                                     .dsv = dsv,
+                                  });
+   }
+
    void clear() noexcept
    {
       std::scoped_lock lock{_mutex};
@@ -556,6 +579,26 @@ struct Shadow_world {
       }
 
       model.bbox = {.min = input_model.min_vertex, .max = input_model.max_vertex};
+
+      const glm::vec3 position_decompress_mul =
+         (model.bbox.max - model.bbox.min) * (0.5f / INT16_MAX);
+      const glm::vec3 position_decompress_add =
+         (model.bbox.max + model.bbox.min) * 0.5f;
+
+      Bounding_box aabb{.min = glm::vec3{FLT_MAX}, .max = glm::vec3{-FLT_MAX}};
+
+      for (const Input_model::Segment& segment : input_model.segments) {
+         for (const auto& [x, y, z] : segment.vertices) {
+            const glm::vec3 positionCS = {x, y, z};
+            const glm::vec3 positionOS =
+               positionCS * position_decompress_mul + position_decompress_add;
+
+            aabb.min = glm::min(aabb.min, positionOS);
+            aabb.max = glm::max(aabb.max, positionOS);
+         }
+      }
+
+      model.aabb = aabb;
 
       const std::size_t model_index = _models.size();
 
@@ -1399,6 +1442,7 @@ private:
 
    Debug_model_draw _debug_model_draw{*_device};
    Debug_world_draw _debug_world_draw{*_device};
+   Debug_world_aabb_draw _debug_world_aabb_draw{*_device};
 
    UINT _debug_model_preview_width = 0;
    UINT _debug_model_preview_height = 0;
