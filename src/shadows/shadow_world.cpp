@@ -371,7 +371,7 @@ struct Shadow_world {
                              });
    }
 
-   void draw_shadow_world_aabb_preview(ID3D11DeviceContext2& dc,
+   void draw_shadow_world_aabb_overlay(ID3D11DeviceContext2& dc,
                                        const glm::mat4& projection_matrix,
                                        const D3D11_VIEWPORT& viewport,
                                        ID3D11RenderTargetView* rtv,
@@ -1605,6 +1605,18 @@ void Shadow_world_interface::draw_shadow_world_preview(
    if (!self) return;
 
    self->draw_shadow_world_preview(dc, projection_matrix, viewport, rtv, dsv);
+}
+
+void Shadow_world_interface::draw_shadow_world_aabb_overlay(
+   ID3D11DeviceContext2& dc, const glm::mat4& projection_matrix,
+   const D3D11_VIEWPORT& viewport, ID3D11RenderTargetView* rtv,
+   ID3D11DepthStencilView* dsv) noexcept
+{
+   Shadow_world* self = shadow_world_ptr.load(std::memory_order_relaxed);
+
+   if (!self) return;
+
+   self->draw_shadow_world_aabb_overlay(dc, projection_matrix, viewport, rtv, dsv);
 }
 
 void Shadow_world_interface::clear() noexcept

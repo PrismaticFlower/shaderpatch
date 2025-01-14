@@ -40,6 +40,16 @@ constexpr auto depth_texture_name = "_SP_BUILTIN_depth"sv;
 
 namespace {
 
+#ifndef NDEBUG
+
+constexpr bool enable_intrusive_debug_tools = true;
+
+#else
+
+constexpr bool enable_intrusive_debug_tools = false;
+
+#endif
+
 constexpr std::array supported_feature_levels{D3D_FEATURE_LEVEL_12_1,
                                               D3D_FEATURE_LEVEL_12_0,
                                               D3D_FEATURE_LEVEL_11_1,
@@ -299,6 +309,7 @@ void Shader_patch::present() noexcept
                     -1.0f, 1.0f, "%.5f");
 
    ImGui::Checkbox("Preview Shadow World", &_preview_shadow_world);
+   ImGui::Checkbox("Overlay Shadow World BBOXs", &_overlay_shadow_world_aabbs);
 
    ImGui::Text("zprepass meshes: %i", _shadows->meshes.zprepass.size());
    ImGui::Text("zprepass compressed meshes: %i",
@@ -984,7 +995,7 @@ void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
    if (source == get_back_buffer() &&
        glm::uvec2{dest_rt.width, dest_rt.height} == glm::uvec2{512, 256} &&
        source_rect == full_rect && dest_rect == full_rect) {
-      if (_preview_shadow_world) {
+      if (enable_intrusive_debug_tools && _preview_shadow_world) {
          shadows::shadow_world.draw_shadow_world_preview(
             *_device_context, _shadows->view_proj_matrix,
             D3D11_VIEWPORT{
@@ -1744,6 +1755,23 @@ void Shader_patch::game_rendertype_changed() noexcept
 
          _on_rendertype_changed = nullptr;
       };
+
+      if (enable_intrusive_debug_tools && _overlay_shadow_world_aabbs) {
+         shadows::shadow_world.draw_shadow_world_aabb_overlay(
+            *_device_context, _shadows->view_proj_matrix,
+            D3D11_VIEWPORT{
+               .TopLeftX = 0.0f,
+
+               .TopLeftY = 0.0f,
+               .Width = static_cast<float>(_game_rendertargets[0].width),
+               .Height = static_cast<float>(_game_rendertargets[0].height),
+               .MinDepth = 0.0f,
+               .MaxDepth = 1.0f,
+            },
+            _game_rendertargets[0].rtv.get(), _nearscene_depthstencil.dsv.get());
+
+         restore_all_game_state();
+      }
    }
 
    if (_oit_active) {
