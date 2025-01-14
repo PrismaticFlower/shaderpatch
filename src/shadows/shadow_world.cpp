@@ -1,5 +1,7 @@
 #include "shadow_world.hpp"
 
+#include "frustum.hpp"
+
 #include "internal/active_world.hpp"
 #include "internal/debug_model_draw.hpp"
 #include "internal/debug_world_draw.hpp"
@@ -44,6 +46,151 @@ struct Shadow_world {
       std::scoped_lock lock{_mutex};
 
       if (_active_rebuild_needed) build_active_world();
+
+      Frustum view_frustum{glm::inverse(glm::dmat4{view_proj_matrix})};
+
+      for (const Shadow_draw_view& view : views) {
+         Frustum shadow_frustum{glm::inverse(glm::dmat4{view.shadow_projection_matrix})};
+
+         for (std::uint32_t list_index = 0;
+              list_index < _active_world.opaque_instance_lists.size(); ++list_index) {
+            Instance_list& list = _active_world.opaque_instance_lists[list_index];
+
+            for (std::uint32_t instance_index = 0;
+                 instance_index < list.instance_count; ++instance_index) {
+               const Bounding_box bbox = {
+                  .min = {list.bbox_min_x.get()[instance_index],
+                          list.bbox_min_y.get()[instance_index],
+                          list.bbox_min_z.get()[instance_index]},
+                  .max = {list.bbox_max_x.get()[instance_index],
+                          list.bbox_max_y.get()[instance_index],
+                          list.bbox_max_z.get()[instance_index]},
+               };
+
+               if (intersects(view_frustum, bbox)) continue;
+               if (!intersects(shadow_frustum, bbox)) continue;
+
+               list.active_instances[list.active_count] = instance_index;
+
+               list.active_count += 1;
+            }
+
+            if (list.active_count != 0) {
+               _active_world.active_opaque_instance_lists[_active_world.active_opaque_instance_lists_count] =
+                  list_index;
+               _active_world.active_opaque_instance_lists_count += 1;
+            }
+         }
+
+         for (std::uint32_t list_index = 0;
+              list_index < _active_world.doublesided_instance_lists.size();
+              ++list_index) {
+            Instance_list& list = _active_world.doublesided_instance_lists[list_index];
+
+            for (std::uint32_t instance_index = 0;
+                 instance_index < list.instance_count; ++instance_index) {
+               const Bounding_box bbox = {
+                  .min = {list.bbox_min_x.get()[instance_index],
+                          list.bbox_min_y.get()[instance_index],
+                          list.bbox_min_z.get()[instance_index]},
+                  .max = {list.bbox_max_x.get()[instance_index],
+                          list.bbox_max_y.get()[instance_index],
+                          list.bbox_max_z.get()[instance_index]},
+               };
+
+               if (intersects(view_frustum, bbox)) continue;
+               if (!intersects(shadow_frustum, bbox)) continue;
+
+               list.active_instances[list.active_count] = instance_index;
+
+               list.active_count += 1;
+            }
+
+            if (list.active_count != 0) {
+               _active_world.active_doublesided_instance_lists[_active_world.active_doublesided_instance_lists_count] =
+                  list_index;
+               _active_world.active_doublesided_instance_lists_count += 1;
+            }
+         }
+
+         for (std::uint32_t list_index = 0;
+              list_index < _active_world.hardedged_instance_lists.size();
+              ++list_index) {
+            Instance_list_textured& list =
+               _active_world.hardedged_instance_lists[list_index];
+
+            for (std::uint32_t instance_index = 0;
+                 instance_index < list.instance_count; ++instance_index) {
+               const Bounding_box bbox = {
+                  .min = {list.bbox_min_x.get()[instance_index],
+                          list.bbox_min_y.get()[instance_index],
+                          list.bbox_min_z.get()[instance_index]},
+                  .max = {list.bbox_max_x.get()[instance_index],
+                          list.bbox_max_y.get()[instance_index],
+                          list.bbox_max_z.get()[instance_index]},
+               };
+
+               if (intersects(view_frustum, bbox)) continue;
+               if (!intersects(shadow_frustum, bbox)) continue;
+
+               list.active_instances[list.active_count] = instance_index;
+
+               list.active_count += 1;
+            }
+
+            if (list.active_count != 0) {
+               _active_world.active_hardedged_instance_lists[_active_world.active_hardedged_instance_lists_count] =
+                  list_index;
+               _active_world.active_hardedged_instance_lists_count += 1;
+            }
+         }
+
+         for (std::uint32_t list_index = 0;
+              list_index < _active_world.hardedged_doublesided_instance_lists.size();
+              ++list_index) {
+            Instance_list_textured& list =
+               _active_world.hardedged_doublesided_instance_lists[list_index];
+
+            for (std::uint32_t instance_index = 0;
+                 instance_index < list.instance_count; ++instance_index) {
+               const Bounding_box bbox = {
+                  .min = {list.bbox_min_x.get()[instance_index],
+                          list.bbox_min_y.get()[instance_index],
+                          list.bbox_min_z.get()[instance_index]},
+                  .max = {list.bbox_max_x.get()[instance_index],
+                          list.bbox_max_y.get()[instance_index],
+                          list.bbox_max_z.get()[instance_index]},
+               };
+
+               if (intersects(view_frustum, bbox)) continue;
+               if (!intersects(shadow_frustum, bbox)) continue;
+
+               list.active_instances[list.active_count] = instance_index;
+
+               list.active_count += 1;
+            }
+
+            if (list.active_count != 0) {
+               _active_world
+                  .active_hardedged_doublesided_instance_lists[_active_world.active_hardedged_doublesided_instance_lists_count] =
+                  list_index;
+               _active_world.active_hardedged_doublesided_instance_lists_count += 1;
+            }
+         }
+
+         _active_world.upload_instance_buffer(dc);
+
+         ImGui::Text("Active Opaque: %u",
+                     _active_world.active_opaque_instance_lists_count);
+         ImGui::Text("Active Doublesided: %u",
+                     _active_world.active_doublesided_instance_lists_count);
+         ImGui::Text("Active Hardedged: %u",
+                     _active_world.active_hardedged_instance_lists_count);
+         ImGui::Text("Active Hardedged Doublesided: %u",
+                     _active_world.active_hardedged_doublesided_instance_lists_count);
+
+         _active_world.reset();
+      }
 
       (void)dc, view_proj_matrix, views;
    }
@@ -258,8 +405,7 @@ struct Shadow_world {
                            model.hardedged_doublesided_segments);
       }
 
-      model.bbox_min = input_model.min_vertex;
-      model.bbox_max = input_model.max_vertex;
+      model.bbox = {.min = input_model.min_vertex, .max = input_model.max_vertex};
 
       const std::size_t model_index = _models.size();
 
@@ -521,10 +667,10 @@ struct Shadow_world {
                   ImGui::Text("Hardedged Doublesided Segments: %u",
                               model.hardedged_doublesided_segments.size());
 
-                  ImGui::Text("BBOX Min: %f %f %f", model.bbox_min.x,
-                              model.bbox_min.y, model.bbox_min.z);
-                  ImGui::Text("BBOX Max: %f %f %f", model.bbox_max.x,
-                              model.bbox_max.y, model.bbox_max.z);
+                  ImGui::Text("BBOX Min: %f %f %f", model.bbox.min.x,
+                              model.bbox.min.y, model.bbox.min.z);
+                  ImGui::Text("BBOX Max: %f %f %f", model.bbox.max.x,
+                              model.bbox.max.y, model.bbox.max.z);
 
                   static float preview_angle = 0.0f;
 

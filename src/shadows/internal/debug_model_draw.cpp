@@ -213,7 +213,7 @@ void Debug_model_draw::draw(ID3D11DeviceContext2& dc, const Model& model,
    dc.ClearDepthStencilView(dsv, D3D11_CLEAR_DEPTH, 1.0f, 0);
    dc.ClearRenderTargetView(rtv, std::array{0.0f, 0.0f, 0.0f, 1.0f}.data());
 
-   const float bounding_radius = glm::distance(model.bbox_max, model.bbox_min) * 0.5f;
+   const float bounding_radius = glm::distance(model.bbox.max, model.bbox.min) * 0.5f;
    const float camera_view_size = bounding_radius * 1.25f;
    const float aspect_ratio = viewport.Height / viewport.Width;
 
@@ -223,7 +223,7 @@ void Debug_model_draw::draw(ID3D11DeviceContext2& dc, const Model& model,
    // rotation = glm::rotate(rotation, -0.7853982f, glm::vec3{1.0f, 0.0f, 0.0f});
 
    const Constants constants = {
-      .position_decompress_mul = (model.bbox_max - model.bbox_min) * (0.5f / INT16_MAX),
+      .position_decompress_mul = (model.bbox.max - model.bbox.min) * (0.5f / INT16_MAX),
       .position_decompress_add =
          glm::vec3{0.0f, 0.0f, 0.0f}, //(model.bbox_max + model.bbox_min) * 0.5f,
       .projection_matrix = glm::transpose(

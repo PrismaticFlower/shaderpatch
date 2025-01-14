@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../bounding_box.hpp"
+
 #include "com_ptr.hpp"
 
 #include <array>
@@ -44,8 +46,7 @@ struct Model_segment_hardedged {
 };
 
 struct Model {
-   glm::vec3 bbox_min;
-   glm::vec3 bbox_max;
+   Bounding_box bbox;
 
    // TODO: Avoid allocations for simple meshes that fit in a single segment.
    std::vector<Model_segment> opaque_segments;

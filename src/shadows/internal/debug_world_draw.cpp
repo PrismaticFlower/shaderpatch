@@ -381,8 +381,8 @@ void Debug_world_draw::draw(ID3D11DeviceContext2& dc, const World_inputs& world,
 
       const Constants constants =
          {.position_decompress_mul =
-             (model.bbox_max - model.bbox_min) * (0.5f / INT16_MAX),
-          .position_decompress_add = (model.bbox_max + model.bbox_min) * 0.5f,
+             (model.bbox.max - model.bbox.min) * (0.5f / INT16_MAX),
+          .position_decompress_add = (model.bbox.max + model.bbox.min) * 0.5f,
           .rotation_matrix = {glm::vec4{object.rotation[0], 0.0f},
                               glm::vec4{object.rotation[1], 0.0f},
                               glm::vec4{object.rotation[2], 0.0f}},

@@ -50,9 +50,18 @@ void build_world_bbox(const Object_instance& object, const Model& model,
                       float& out_min_x, float& out_min_y, float& out_min_z,
                       float& out_max_x, float& out_max_y, float& out_max_z) noexcept
 {
-   (void)object, model;
+   const Bounding_box bboxWS =
+      model.bbox * std::array{glm::vec4{object.rotation[0], object.positionWS.x},
+                              glm::vec4{object.rotation[1], object.positionWS.y},
+                              glm::vec4{object.rotation[2], object.positionWS.z}};
 
-   out_min_x = out_min_y = out_min_z = out_max_x = out_max_y = out_max_z = 0.0f;
+   out_min_x = bboxWS.min.x;
+   out_min_y = bboxWS.min.y;
+   out_min_z = bboxWS.min.z;
+
+   out_max_x = bboxWS.max.x;
+   out_max_y = bboxWS.max.y;
+   out_max_z = bboxWS.max.z;
 }
 
 auto count_memory_usage(const Active_world& world) noexcept -> std::size_t
@@ -106,7 +115,7 @@ void Aligned_delete::operator()(void* ptr) const noexcept
    _aligned_free(ptr);
 }
 
-void Active_world::clear()
+void Active_world::clear() noexcept
 {
    *this = {};
 }
@@ -462,8 +471,8 @@ void Active_world::build(ID3D11Device2& device, std::span<const Model> models,
       const Model& model = models[model_index];
 
       gpu_constants.push_back({
-         .position_decompress_mul = (model.bbox_max - model.bbox_min) * (0.5f / INT16_MAX),
-         .position_decompress_add = (model.bbox_max + model.bbox_min) * 0.5f,
+         .position_decompress_mul = (model.bbox.max - model.bbox.min) * (0.5f / INT16_MAX),
+         .position_decompress_add = (model.bbox.max + model.bbox.min) * 0.5f,
       });
    }
 
@@ -485,6 +494,110 @@ void Active_world::build(ID3D11Device2& device, std::span<const Model> models,
    metrics.used_cpu_memory = count_memory_usage(*this);
    metrics.used_gpu_memory =
       instances_buffer_desc.ByteWidth + constants_buffer_desc.ByteWidth;
+}
+
+void Active_world::upload_instance_buffer(ID3D11DeviceContext2& dc) noexcept
+{
+   D3D11_MAPPED_SUBRESOURCE instance_buffer_mapped = {};
+
+   if (FAILED(dc.Map(instances_buffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0,
+                     &instance_buffer_mapped))) {
+      log_and_terminate("Failed to map shadow world instance buffer!");
+   }
+
+   std::array<glm::vec4, 3>* instances_buffer_dest =
+      static_cast<std::array<glm::vec4, 3>*>(instance_buffer_mapped.pData);
+
+   for (std::uint32_t list_index : std::span{active_opaque_instance_lists.get(),
+                                             active_opaque_instance_lists_count}) {
+      Instance_list& list = opaque_instance_lists[list_index];
+
+      for (std::uint32_t instance_index :
+           std::span{list.active_instances.get(), list.active_count}) {
+         std::memcpy(instances_buffer_dest, &list.transforms[instance_index],
+                     sizeof(std::array<glm::vec4, 3>));
+
+         instances_buffer_dest += 1;
+      }
+   }
+
+   for (std::uint32_t i = 0; i < active_doublesided_instance_lists_count; ++i) {
+      Instance_list& list =
+         doublesided_instance_lists[active_doublesided_instance_lists[i]];
+
+      for (std::uint32_t instance_index :
+           std::span{list.active_instances.get(), list.active_count}) {
+         std::memcpy(instances_buffer_dest, &list.transforms[instance_index],
+                     sizeof(std::array<glm::vec4, 3>));
+
+         instances_buffer_dest += 1;
+      }
+   }
+
+   for (std::uint32_t i = 0; i < active_hardedged_instance_lists_count; ++i) {
+      Instance_list_textured& list =
+         hardedged_instance_lists[active_hardedged_instance_lists[i]];
+
+      for (std::uint32_t instance_index :
+           std::span{list.active_instances.get(), list.active_count}) {
+         std::memcpy(instances_buffer_dest, &list.transforms[instance_index],
+                     sizeof(std::array<glm::vec4, 3>));
+
+         instances_buffer_dest += 1;
+      }
+   }
+
+   for (std::uint32_t i = 0;
+        i < active_hardedged_doublesided_instance_lists_count; ++i) {
+      Instance_list_textured& list =
+         hardedged_doublesided_instance_lists[active_hardedged_doublesided_instance_lists[i]];
+
+      for (std::uint32_t instance_index :
+           std::span{list.active_instances.get(), list.active_count}) {
+         std::memcpy(instances_buffer_dest, &list.transforms[instance_index],
+                     sizeof(std::array<glm::vec4, 3>));
+
+         instances_buffer_dest += 1;
+      }
+   }
+
+   dc.Unmap(instances_buffer.get(), 0);
+}
+
+void Active_world::reset() noexcept
+{
+   for (std::uint32_t i = 0; i < active_opaque_instance_lists_count; ++i) {
+      Instance_list& list = opaque_instance_lists[active_opaque_instance_lists[i]];
+
+      list.active_count = 0;
+   }
+
+   for (std::uint32_t i = 0; i < active_doublesided_instance_lists_count; ++i) {
+      Instance_list& list =
+         doublesided_instance_lists[active_doublesided_instance_lists[i]];
+
+      list.active_count = 0;
+   }
+
+   for (std::uint32_t i = 0; i < active_hardedged_instance_lists_count; ++i) {
+      Instance_list_textured& list =
+         hardedged_instance_lists[active_hardedged_instance_lists[i]];
+
+      list.active_count = 0;
+   }
+
+   for (std::uint32_t i = 0;
+        i < active_hardedged_doublesided_instance_lists_count; ++i) {
+      Instance_list_textured& list =
+         hardedged_doublesided_instance_lists[active_hardedged_doublesided_instance_lists[i]];
+
+      list.active_count = 0;
+   }
+
+   active_opaque_instance_lists_count = 0;
+   active_doublesided_instance_lists_count = 0;
+   active_hardedged_instance_lists_count = 0;
+   active_hardedged_doublesided_instance_lists_count = 0;
 }
 
 }

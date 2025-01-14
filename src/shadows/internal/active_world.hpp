@@ -114,11 +114,15 @@ struct Active_world {
 
    Active_world_metrics metrics;
 
-   void clear();
+   void clear() noexcept;
 
    void build(ID3D11Device2& device, std::span<const Model> models,
               std::span<const Game_model> game_models,
               std::span<const Object_instance> object_instances) noexcept;
+
+   void upload_instance_buffer(ID3D11DeviceContext2& dc) noexcept;
+
+   void reset() noexcept;
 };
 
 };
