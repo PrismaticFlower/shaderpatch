@@ -46,8 +46,10 @@ struct Model_segment_hardedged {
 };
 
 struct Model {
+   glm::vec3 position_decompress_mul;
+   glm::vec3 position_decompress_add;
+
    Bounding_box bbox;
-   Bounding_box aabb;
 
    // TODO: Avoid allocations for simple meshes that fit in a single segment.
    std::vector<Model_segment> opaque_segments;

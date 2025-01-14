@@ -223,9 +223,8 @@ void Debug_model_draw::draw(ID3D11DeviceContext2& dc, const Model& model,
    // rotation = glm::rotate(rotation, -0.7853982f, glm::vec3{1.0f, 0.0f, 0.0f});
 
    const Constants constants = {
-      .position_decompress_mul = (model.bbox.max - model.bbox.min) * (0.5f / INT16_MAX),
-      .position_decompress_add =
-         glm::vec3{0.0f, 0.0f, 0.0f}, //(model.bbox_max + model.bbox_min) * 0.5f,
+      .position_decompress_mul = model.position_decompress_mul,
+      .position_decompress_add = glm::vec3{0.0f, 0.0f, 0.0f},
       .projection_matrix = glm::transpose(
          glm::orthoRH_ZO(-camera_view_size, camera_view_size,
                          aspect_ratio * -camera_view_size, aspect_ratio * camera_view_size,

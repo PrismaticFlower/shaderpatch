@@ -578,27 +578,23 @@ struct Shadow_world {
                            model.hardedged_doublesided_segments);
       }
 
-      model.bbox = {.min = input_model.min_vertex, .max = input_model.max_vertex};
+      model.position_decompress_mul =
+         (input_model.max_vertex - input_model.min_vertex) * (0.5f / INT16_MAX);
+      model.position_decompress_add =
+         (input_model.max_vertex + input_model.min_vertex) * 0.5f;
 
-      const glm::vec3 position_decompress_mul =
-         (model.bbox.max - model.bbox.min) * (0.5f / INT16_MAX);
-      const glm::vec3 position_decompress_add =
-         (model.bbox.max + model.bbox.min) * 0.5f;
-
-      Bounding_box aabb{.min = glm::vec3{FLT_MAX}, .max = glm::vec3{-FLT_MAX}};
+      model.bbox = {.min = glm::vec3{FLT_MAX}, .max = glm::vec3{-FLT_MAX}};
 
       for (const Input_model::Segment& segment : input_model.segments) {
          for (const auto& [x, y, z] : segment.vertices) {
             const glm::vec3 positionCS = {x, y, z};
-            const glm::vec3 positionOS =
-               positionCS * position_decompress_mul + position_decompress_add;
+            const glm::vec3 positionOS = positionCS * model.position_decompress_mul +
+                                         model.position_decompress_add;
 
-            aabb.min = glm::min(aabb.min, positionOS);
-            aabb.max = glm::max(aabb.max, positionOS);
+            model.bbox.min = glm::min(model.bbox.min, positionOS);
+            model.bbox.max = glm::max(model.bbox.max, positionOS);
          }
       }
-
-      model.aabb = aabb;
 
       const std::size_t model_index = _models.size();
 

@@ -306,7 +306,7 @@ void Debug_world_aabb_draw::draw(ID3D11DeviceContext2& dc, const World_inputs& w
       const Model& model = world.models[game_model.lod0_index];
 
       const Bounding_box bbox =
-         model.aabb *
+         model.bbox *
          std::array{glm::vec4{object.rotation[0], object.positionWS.x},
                     glm::vec4{object.rotation[1], object.positionWS.y},
                     glm::vec4{object.rotation[2], object.positionWS.z}};

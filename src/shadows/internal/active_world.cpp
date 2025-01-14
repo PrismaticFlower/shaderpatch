@@ -471,8 +471,8 @@ void Active_world::build(ID3D11Device2& device, std::span<const Model> models,
       const Model& model = models[model_index];
 
       gpu_constants.push_back({
-         .position_decompress_mul = (model.bbox.max - model.bbox.min) * (0.5f / INT16_MAX),
-         .position_decompress_add = (model.bbox.max + model.bbox.min) * 0.5f,
+         .position_decompress_mul = model.position_decompress_mul,
+         .position_decompress_add = model.position_decompress_add,
       });
    }
 
