@@ -21,11 +21,11 @@ using effects::Profile;
 
 namespace {
 
-struct alignas(256) Camera_cb {
-   std::array<glm::mat4, 4> view_proj_matrices;
+struct alignas(16) Camera_cb {
+   glm::mat4 projection_matrix;
 };
 
-static_assert(sizeof(Camera_cb) == 256);
+static_assert(sizeof(Camera_cb) == 64);
 
 struct alignas(256) Transform_cb {
    glm::vec3 position_decompress_min;
@@ -85,57 +85,12 @@ auto make_input_layout(
    return result;
 }
 
-auto make_bounding_box(const auto& mesh) noexcept -> shadows::Bounding_box
+auto make_bounding_sphere(const auto& mesh) noexcept -> shadows::Bounding_sphere
 {
-   glm::vec3 min =
-      glm::vec3{static_cast<float>(-std::numeric_limits<std::int16_t>::max())}; // negated max is not a mistake
-   glm::vec3 max =
-      glm::vec3{static_cast<float>(std::numeric_limits<std::int16_t>::max())};
-
-   min = mesh.position_decompress_max + (mesh.position_decompress_min * min);
-   max = mesh.position_decompress_max + (mesh.position_decompress_min * max);
-
-   const std::array<glm::vec4, 8> vertices{{{min.x, min.y, min.z, 1.0f},
-                                            {max.x, min.y, min.z, 1.0f},
-                                            {min.x, max.y, min.z, 1.0f},
-                                            {max.x, max.y, min.z, 1.0f},
-                                            {min.x, min.y, max.z, 1.0f},
-                                            {max.x, min.y, max.z, 1.0f},
-                                            {min.x, max.y, max.z, 1.0f},
-                                            {max.x, max.y, max.z, 1.0f}}};
-
-   min = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
-          std::numeric_limits<float>::max()};
-   max = {std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(),
-          std::numeric_limits<float>::lowest()};
-
-   for (const auto& v : vertices) {
-      glm::vec3 posWS = {glm::dot(v, mesh.world_matrix[0]),
-                         glm::dot(v, mesh.world_matrix[1]),
-                         glm::dot(v, mesh.world_matrix[2])};
-
-      min = glm::min(min, posWS);
-      max = glm::max(max, posWS);
-   }
-
-   return {.min = min, .max = max};
-}
-
-auto make_bounding_sphere(const auto& mesh) noexcept -> glm::vec4
-{
-   glm::vec3 min =
-      glm::vec3{static_cast<float>(std::numeric_limits<std::int16_t>::min())};
-   glm::vec3 max =
-      glm::vec3{static_cast<float>(std::numeric_limits<std::int16_t>::max())};
-
-   min = mesh.position_decompress_max + (mesh.position_decompress_min * min);
-   max = mesh.position_decompress_max + (mesh.position_decompress_min * max);
-
-   glm::vec3 centre = (min + max) / 2.0f;
-
-   return {centre + glm::vec3{mesh.world_matrix[0][3], mesh.world_matrix[1][3],
-                              mesh.world_matrix[2][3]},
-           glm::distance(min, max) * 0.5f};
+   return {glm::vec3{mesh.world_matrix[0][3], mesh.world_matrix[1][3],
+                     mesh.world_matrix[2][3]} +
+              mesh.position_decompress_max,
+           glm::length(mesh.position_decompress_min * static_cast<float>(INT16_MAX))};
 }
 
 }
@@ -345,15 +300,15 @@ void Shadows_provider::end_frame() noexcept
 void Shadows_provider::draw_shadow_maps(ID3D11DeviceContext4& dc,
                                         const Draw_args& args) noexcept
 {
+   Profile profile{args.profiler, dc, "Shadow Maps - Draw Cascades"sv};
+
    prepare_draw_shadow_maps(dc, args);
 
    dc.ClearState();
 
    dc.ClearDepthStencilView(_shadow_map_dsv.get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
-#if 0
-   draw_shadow_maps_instanced(dc, args.input_layout_descriptions, args.profiler);
-#endif
+   draw_shadow_maps_cascades(dc, args.input_layout_descriptions);
 
    const D3D11_VIEWPORT cascade_viewport = {
       .Width = _shadow_map_length_flt,
@@ -418,24 +373,14 @@ void Shadows_provider::build_cascade_info() noexcept
                                 cascades[1].texture_matrix(),
                                 cascades[2].texture_matrix(),
                                 cascades[3].texture_matrix()};
-
-   // TODO: Frustum culling.
 }
 
 void Shadows_provider::upload_buffer_data(ID3D11DeviceContext4& dc,
                                           const Draw_args& args) noexcept
 {
-   upload_camera_cb_buffer(dc);
    upload_transform_cb_buffer(dc);
    upload_skins_buffer(dc);
    upload_draw_to_target_buffer(dc, args);
-}
-
-void Shadows_provider::upload_camera_cb_buffer(ID3D11DeviceContext4& dc) noexcept
-{
-   const Camera_cb cb{.view_proj_matrices = _cascade_view_proj_matrices};
-
-   update_dynamic_buffer(dc, *_camera_cb_buffer, cb);
 }
 
 void Shadows_provider::upload_transform_cb_buffer(ID3D11DeviceContext4& dc) noexcept
@@ -632,138 +577,257 @@ void Shadows_provider::create_shadow_map(const UINT length) noexcept
    _shadow_map_length_flt = static_cast<float>(length);
 }
 
-void Shadows_provider::draw_shadow_maps_instanced(ID3D11DeviceContext4& dc,
-                                                  const Input_layout_descriptions& input_layout_descriptions,
-                                                  effects::Profiler& profiler) noexcept
+void Shadows_provider::draw_shadow_maps_cascades(
+   ID3D11DeviceContext4& dc,
+   const Input_layout_descriptions& input_layout_descriptions) noexcept
 {
-   Profile profile{profiler, dc, "Shadow Maps - Draw Instanced"sv};
-
-   auto* skins_srv = _skins_srv.get();
-   auto* camera_cb = _camera_cb_buffer.get();
-   auto* texture_sampler = _hardedged_texture_sampler.get();
-
-   dc.VSSetShaderResources(0, 1, &skins_srv);
-   dc.VSSetConstantBuffers(1, 1, &camera_cb);
-
-   const D3D11_VIEWPORT viewport{.TopLeftX = 0.0f,
-                                 .TopLeftY = 0.0f,
-                                 .Width = _shadow_map_length_flt,
+   const D3D11_VIEWPORT viewport{.Width = _shadow_map_length_flt,
                                  .Height = _shadow_map_length_flt,
                                  .MinDepth = 0.0f,
                                  .MaxDepth = 1.0f};
 
+   dc.VSSetShaderResources(0, 1, _skins_srv.get_ptr());
+
    dc.RSSetViewports(1, &viewport);
-   dc.RSSetState(_rasterizer_doublesided_state.get());
-   dc.OMSetRenderTargets(0, nullptr, _shadow_map_dsv.get());
 
-   dc.PSSetSamplers(0, 1, &texture_sampler);
+   dc.PSSetSamplers(0, 1, _hardedged_texture_sampler.get_ptr());
 
-   std::size_t transform_cb_offset = 0;
-   D3D11_PRIMITIVE_TOPOLOGY current_primitive_topology =
-      D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
+   for (std::uint32_t view_index = 0; view_index < _shadow_map_dsvs.size();
+        ++view_index) {
+      fill_visibility_lists(_cascade_view_proj_matrices[view_index]);
 
-   const auto draw_meshes = [&](const std::vector<Meshes::Zprepass>& meshes,
-                                ID3D11InputLayout* input_layout,
-                                ID3D11VertexShader* vertex_shader) {
-      if (meshes.empty()) return;
+      update_dynamic_buffer(dc, *_camera_cb_buffer,
+                            Camera_cb{.projection_matrix =
+                                         _cascade_view_proj_matrices[view_index]});
 
-      dc.IASetInputLayout(input_layout);
-      dc.VSSetShader(vertex_shader, nullptr, 0);
+      dc.VSSetConstantBuffers(1, 1, _camera_cb_buffer.get_ptr());
 
-      for (std::size_t i = 0; i < meshes.size(); ++i) {
-         auto& mesh = meshes[i];
+      dc.RSSetState(_rasterizer_state.get());
 
-         dc.IASetIndexBuffer(mesh.index_buffer.get(), DXGI_FORMAT_R16_UINT,
-                             mesh.index_buffer_offset);
+      dc.OMSetRenderTargets(0, nullptr, _shadow_map_dsvs[view_index].get());
 
-         auto* vertex_buffer = mesh.vertex_buffer.get();
+      std::size_t transform_cb_offset = 0;
+      D3D11_PRIMITIVE_TOPOLOGY current_primitive_topology =
+         D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
 
-         dc.IASetVertexBuffers(0, 1, &vertex_buffer, &mesh.vertex_buffer_stride,
-                               &mesh.vertex_buffer_offset);
+      const auto draw_meshes = [&](const std::vector<Meshes::Zprepass>& meshes,
+                                   ID3D11InputLayout* input_layout,
+                                   ID3D11VertexShader* vertex_shader) {
+         if (meshes.empty()) return;
 
-         auto* transform_cb = _transforms_cb_buffer.get();
-         UINT first_constant = (sizeof(Transform_cb) / 16) * (i + transform_cb_offset);
-         UINT num_constants = sizeof(Transform_cb) / 16;
+         dc.IASetInputLayout(input_layout);
+         dc.VSSetShader(vertex_shader, nullptr, 0);
+         dc.PSSetShader(nullptr, nullptr, 0);
 
-         if (current_primitive_topology != mesh.primitive_topology) {
-            dc.IASetPrimitiveTopology(mesh.primitive_topology);
-            current_primitive_topology = mesh.primitive_topology;
+         for (std::size_t i = 0; i < meshes.size(); ++i) {
+            auto& mesh = meshes[i];
+
+            dc.IASetIndexBuffer(mesh.index_buffer.get(), DXGI_FORMAT_R16_UINT,
+                                mesh.index_buffer_offset);
+
+            auto* vertex_buffer = mesh.vertex_buffer.get();
+
+            dc.IASetVertexBuffers(0, 1, &vertex_buffer, &mesh.vertex_buffer_stride,
+                                  &mesh.vertex_buffer_offset);
+
+            auto* transform_cb = _transforms_cb_buffer.get();
+            UINT first_constant =
+               (sizeof(Transform_cb) / 16) * (i + transform_cb_offset);
+            UINT num_constants = sizeof(Transform_cb) / 16;
+
+            if (current_primitive_topology != mesh.primitive_topology) {
+               dc.IASetPrimitiveTopology(mesh.primitive_topology);
+               current_primitive_topology = mesh.primitive_topology;
+            }
+
+            dc.VSSetConstantBuffers1(0, 1, &transform_cb, &first_constant,
+                                     &num_constants);
+
+            dc.DrawIndexedInstanced(mesh.index_count, 4, mesh.start_index,
+                                    mesh.base_vertex, 0);
          }
 
-         dc.VSSetConstantBuffers1(0, 1, &transform_cb, &first_constant, &num_constants);
+         transform_cb_offset += meshes.size();
+      };
 
-         dc.DrawIndexedInstanced(mesh.index_count, 4, mesh.start_index,
-                                 mesh.base_vertex, 0);
-      }
+      draw_meshes(meshes.zprepass, _mesh_il.get(), _mesh_vs.get());
+      draw_meshes(meshes.zprepass_skinned, _mesh_skinned_il.get(),
+                  _mesh_skinned_vs.get());
 
-      transform_cb_offset += meshes.size();
-   };
+      const auto draw_culled_meshes = [&](const std::vector<std::uint32_t>& visible,
+                                          const std::vector<Meshes::Zprepass>& meshes,
+                                          ID3D11InputLayout* input_layout,
+                                          ID3D11VertexShader* vertex_shader) {
+         if (visible.empty()) return;
 
-   draw_meshes(meshes.zprepass, _mesh_il.get(), _mesh_vs.get());
-   draw_meshes(meshes.zprepass_compressed, _mesh_compressed_il.get(),
-               _mesh_compressed_vs.get());
-   draw_meshes(meshes.zprepass_skinned, _mesh_skinned_il.get(),
-               _mesh_skinned_vs.get());
-   draw_meshes(meshes.zprepass_compressed_skinned, _mesh_compressed_skinned_il.get(),
-               _mesh_compressed_skinned_vs.get());
+         dc.IASetInputLayout(input_layout);
+         dc.VSSetShader(vertex_shader, nullptr, 0);
+         dc.PSSetShader(nullptr, nullptr, 0);
 
-   const auto draw_hardedged_meshes = [&](const std::vector<Meshes::Zprepass_hardedged>& meshes,
-                                          Hardedged_vertex_shader& vertex_shader) {
-      if (meshes.empty()) return;
+         for (const std::uint32_t i : visible) {
+            auto& mesh = meshes[i];
 
-      dc.VSSetShader(vertex_shader.vs.get(), nullptr, 0);
-      dc.PSSetShader(_mesh_hardedged_ps.get(), nullptr, 0);
+            dc.IASetIndexBuffer(mesh.index_buffer.get(), DXGI_FORMAT_R16_UINT,
+                                mesh.index_buffer_offset);
 
-      std::uint16_t current_input_layout = std::numeric_limits<std::uint16_t>::max();
+            auto* vertex_buffer = mesh.vertex_buffer.get();
 
-      for (std::size_t i = 0; i < meshes.size(); ++i) {
-         auto& mesh = meshes[i];
+            dc.IASetVertexBuffers(0, 1, &vertex_buffer, &mesh.vertex_buffer_stride,
+                                  &mesh.vertex_buffer_offset);
 
-         if (current_input_layout != mesh.input_layout) {
-            dc.IASetInputLayout(
-               &vertex_shader.input_layouts.get(*_device, input_layout_descriptions,
-                                                mesh.input_layout));
+            auto* transform_cb = _transforms_cb_buffer.get();
+            UINT first_constant =
+               (sizeof(Transform_cb) / 16) * (i + transform_cb_offset);
+            UINT num_constants = sizeof(Transform_cb) / 16;
 
-            current_input_layout = mesh.input_layout;
+            if (current_primitive_topology != mesh.primitive_topology) {
+               dc.IASetPrimitiveTopology(mesh.primitive_topology);
+               current_primitive_topology = mesh.primitive_topology;
+            }
+
+            dc.VSSetConstantBuffers1(0, 1, &transform_cb, &first_constant,
+                                     &num_constants);
+
+            dc.DrawIndexedInstanced(mesh.index_count, 4, mesh.start_index,
+                                    mesh.base_vertex, 0);
          }
 
-         dc.IASetIndexBuffer(mesh.index_buffer.get(), DXGI_FORMAT_R16_UINT,
-                             mesh.index_buffer_offset);
+         transform_cb_offset += meshes.size();
+      };
 
-         auto* vertex_buffer = mesh.vertex_buffer.get();
+      draw_culled_meshes(_visibility_lists.zprepass_compressed,
+                         meshes.zprepass_compressed, _mesh_compressed_il.get(),
+                         _mesh_compressed_vs.get());
+      draw_culled_meshes(_visibility_lists.zprepass_compressed_skinned,
+                         meshes.zprepass_compressed_skinned,
+                         _mesh_compressed_skinned_il.get(),
+                         _mesh_compressed_skinned_vs.get());
 
-         dc.IASetVertexBuffers(0, 1, &vertex_buffer, &mesh.vertex_buffer_stride,
-                               &mesh.vertex_buffer_offset);
+      const auto draw_hardedged_meshes =
+         [&](const std::vector<Meshes::Zprepass_hardedged>& meshes,
+             Hardedged_vertex_shader& vertex_shader) {
+            if (meshes.empty()) return;
 
-         auto* transform_cb = _transforms_cb_buffer.get();
-         UINT first_constant = (sizeof(Transform_cb) / 16) * (i + transform_cb_offset);
-         UINT num_constants = sizeof(Transform_cb) / 16;
+            dc.VSSetShader(vertex_shader.vs.get(), nullptr, 0);
+            dc.PSSetShader(_mesh_hardedged_ps.get(), nullptr, 0);
 
-         if (current_primitive_topology != mesh.primitive_topology) {
-            dc.IASetPrimitiveTopology(mesh.primitive_topology);
-            current_primitive_topology = mesh.primitive_topology;
-         }
+            std::uint16_t current_input_layout =
+               std::numeric_limits<std::uint16_t>::max();
 
-         dc.VSSetConstantBuffers1(0, 1, &transform_cb, &first_constant, &num_constants);
+            for (std::size_t i = 0; i < meshes.size(); ++i) {
+               auto& mesh = meshes[i];
 
-         auto* srv = mesh.texture.get();
-         dc.PSSetShaderResources(0, 1, &srv);
+               if (current_input_layout != mesh.input_layout) {
+                  dc.IASetInputLayout(
+                     &vertex_shader.input_layouts.get(*_device, input_layout_descriptions,
+                                                      mesh.input_layout));
 
-         dc.DrawIndexedInstanced(mesh.index_count, 4, mesh.start_index,
-                                 mesh.base_vertex, 0);
-      }
+                  current_input_layout = mesh.input_layout;
+               }
 
-      transform_cb_offset += meshes.size();
-   };
+               dc.IASetIndexBuffer(mesh.index_buffer.get(), DXGI_FORMAT_R16_UINT,
+                                   mesh.index_buffer_offset);
 
-   dc.RSSetState(_rasterizer_doublesided_state.get());
+               auto* vertex_buffer = mesh.vertex_buffer.get();
 
-   draw_hardedged_meshes(meshes.zprepass_hardedged, _mesh_hardedged);
-   draw_hardedged_meshes(meshes.zprepass_hardedged_compressed,
-                         _mesh_hardedged_compressed);
-   draw_hardedged_meshes(meshes.zprepass_hardedged_skinned, _mesh_hardedged_skinned);
-   draw_hardedged_meshes(meshes.zprepass_hardedged_compressed_skinned,
-                         _mesh_hardedged_compressed_skinned);
+               dc.IASetVertexBuffers(0, 1, &vertex_buffer, &mesh.vertex_buffer_stride,
+                                     &mesh.vertex_buffer_offset);
+
+               auto* transform_cb = _transforms_cb_buffer.get();
+               UINT first_constant =
+                  (sizeof(Transform_cb) / 16) * (i + transform_cb_offset);
+               UINT num_constants = sizeof(Transform_cb) / 16;
+
+               if (current_primitive_topology != mesh.primitive_topology) {
+                  dc.IASetPrimitiveTopology(mesh.primitive_topology);
+                  current_primitive_topology = mesh.primitive_topology;
+               }
+
+               dc.VSSetConstantBuffers1(0, 1, &transform_cb, &first_constant,
+                                        &num_constants);
+
+               auto* srv = mesh.texture.get();
+               dc.PSSetShaderResources(0, 1, &srv);
+
+               dc.DrawIndexedInstanced(mesh.index_count, 4, mesh.start_index,
+                                       mesh.base_vertex, 0);
+            }
+
+            transform_cb_offset += meshes.size();
+         };
+
+      dc.RSSetState(_rasterizer_doublesided_state.get());
+
+      draw_hardedged_meshes(meshes.zprepass_hardedged, _mesh_hardedged);
+      draw_hardedged_meshes(meshes.zprepass_hardedged_skinned, _mesh_hardedged_skinned);
+
+      const auto draw_culled_hardedged_meshes =
+         [&](const std::vector<std::uint32_t>& visible,
+             const std::vector<Meshes::Zprepass_hardedged>& meshes,
+             Hardedged_vertex_shader& vertex_shader) {
+            if (visible.empty()) return;
+
+            dc.VSSetShader(vertex_shader.vs.get(), nullptr, 0);
+            dc.PSSetShader(_mesh_hardedged_ps.get(), nullptr, 0);
+
+            std::uint16_t current_input_layout =
+               std::numeric_limits<std::uint16_t>::max();
+
+            for (const std::size_t i : visible) {
+               auto& mesh = meshes[i];
+
+               if (current_input_layout != mesh.input_layout) {
+                  dc.IASetInputLayout(
+                     &vertex_shader.input_layouts.get(*_device, input_layout_descriptions,
+                                                      mesh.input_layout));
+
+                  current_input_layout = mesh.input_layout;
+               }
+
+               dc.IASetIndexBuffer(mesh.index_buffer.get(), DXGI_FORMAT_R16_UINT,
+                                   mesh.index_buffer_offset);
+
+               auto* vertex_buffer = mesh.vertex_buffer.get();
+
+               dc.IASetVertexBuffers(0, 1, &vertex_buffer, &mesh.vertex_buffer_stride,
+                                     &mesh.vertex_buffer_offset);
+
+               auto* transform_cb = _transforms_cb_buffer.get();
+               UINT first_constant =
+                  (sizeof(Transform_cb) / 16) * (i + transform_cb_offset);
+               UINT num_constants = sizeof(Transform_cb) / 16;
+
+               if (current_primitive_topology != mesh.primitive_topology) {
+                  dc.IASetPrimitiveTopology(mesh.primitive_topology);
+                  current_primitive_topology = mesh.primitive_topology;
+               }
+
+               dc.VSSetConstantBuffers1(0, 1, &transform_cb, &first_constant,
+                                        &num_constants);
+
+               auto* srv = mesh.texture.get();
+               dc.PSSetShaderResources(0, 1, &srv);
+
+               dc.DrawIndexedInstanced(mesh.index_count, 4, mesh.start_index,
+                                       mesh.base_vertex, 0);
+            }
+
+            transform_cb_offset += meshes.size();
+         };
+
+      draw_culled_hardedged_meshes(_visibility_lists.zprepass_hardedged_compressed,
+                                   meshes.zprepass_hardedged_compressed,
+                                   _mesh_hardedged_compressed);
+      draw_culled_hardedged_meshes(_visibility_lists.zprepass_hardedged_compressed_skinned,
+                                   meshes.zprepass_hardedged_compressed_skinned,
+                                   _mesh_hardedged_compressed_skinned);
+
+      ImGui::Text("z: %u, zs: %u, zh: %u, zhs: %u",
+                  _visibility_lists.zprepass_compressed.size(),
+                  _visibility_lists.zprepass_compressed_skinned.size(),
+                  _visibility_lists.zprepass_hardedged_compressed.size(),
+                  _visibility_lists.zprepass_hardedged_compressed_skinned.size());
+   }
 }
 
 void Shadows_provider::draw_to_target_map(ID3D11DeviceContext4& dc,
@@ -800,6 +864,55 @@ void Shadows_provider::draw_to_target_map(ID3D11DeviceContext4& dc,
    dc.PSSetShader(_draw_to_target_ps.get(), nullptr, 0);
 
    dc.Draw(3, 0);
+}
+
+void Shadows_provider::fill_visibility_lists(const glm::mat4& projection_matrix) noexcept
+{
+   _visibility_lists.clear();
+
+   shadows::Frustum frustum{glm::inverse(projection_matrix)};
+
+   _visibility_lists.zprepass_compressed.reserve(meshes.zprepass_compressed.size());
+   _visibility_lists.zprepass_compressed_skinned.reserve(
+      meshes.zprepass_compressed_skinned.size());
+   _visibility_lists.zprepass_hardedged_compressed.reserve(
+      meshes.zprepass_hardedged_compressed.size());
+   _visibility_lists.zprepass_hardedged_compressed_skinned.reserve(
+      meshes.zprepass_hardedged_compressed_skinned.size());
+
+   for (std::uint32_t i = 0; i < meshes.zprepass_compressed.size(); ++i) {
+      if (!shadows::intersects(frustum,
+                               make_bounding_sphere(meshes.zprepass_compressed[i])))
+         continue;
+
+      _visibility_lists.zprepass_compressed.push_back(i);
+   }
+
+   for (std::uint32_t i = 0; i < meshes.zprepass_compressed_skinned.size(); ++i) {
+      if (!shadows::intersects(frustum, make_bounding_sphere(
+                                           meshes.zprepass_compressed_skinned[i])))
+         continue;
+
+      _visibility_lists.zprepass_compressed_skinned.push_back(i);
+   }
+
+   for (std::uint32_t i = 0; i < meshes.zprepass_hardedged_compressed.size(); ++i) {
+      if (!shadows::intersects(frustum, make_bounding_sphere(
+                                           meshes.zprepass_hardedged_compressed[i])))
+         continue;
+
+      _visibility_lists.zprepass_hardedged_compressed.push_back(i);
+   }
+
+   for (std::uint32_t i = 0;
+        i < meshes.zprepass_hardedged_compressed_skinned.size(); ++i) {
+      if (!shadows::intersects(frustum,
+                               make_bounding_sphere(
+                                  meshes.zprepass_hardedged_compressed_skinned[i])))
+         continue;
+
+      _visibility_lists.zprepass_hardedged_compressed_skinned.push_back(i);
+   }
 }
 
 Shadows_provider::Hardedged_vertex_shader::Hardedged_vertex_shader(

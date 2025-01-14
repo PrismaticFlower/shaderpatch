@@ -46,9 +46,13 @@ struct Frustum {
    std::array<glm::vec4, frustum_plane_COUNT> planes;
 };
 
+struct Bounding_sphere {
+   glm::vec3 position;
+   float radius;
+};
+
 bool intersects(const Frustum& frustum, const Bounding_box& bbox) noexcept;
 
-bool intersects(const Frustum& frustum, const glm::vec3& position,
-                const float radius) noexcept;
+bool intersects(const Frustum& frustum, const Bounding_sphere& sphere) noexcept;
 
 }

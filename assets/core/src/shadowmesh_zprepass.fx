@@ -10,7 +10,7 @@ cbuffer TransformCB : register(b0)
 
 cbuffer CameraCB : register(b1)
 {
-   float4x4 view_proj_matrices[4];
+   float4x4 projection_matrix;
 }
 
 struct Skin {
@@ -96,16 +96,13 @@ float3 get_positionOS(Vertex_input input)
 
 // clang-format off
 
-float4 opaque_vs(Vertex_input input, uint instance : SV_InstanceID,
-                 out uint rendertarget : SV_RenderTargetArrayIndex) : SV_Position
+float4 opaque_vs(Vertex_input input) : SV_Position
 {
    // clang-format on
 
    float3 positionOS = get_positionOS(input);
    float3 positionWS = mul(float4(positionOS, 1.0), world_matrix);
-   float4 positionPS = mul(float4(positionWS, 1.0), view_proj_matrices[instance]);
-
-   rendertarget = instance;
+   float4 positionPS = mul(float4(positionWS, 1.0), projection_matrix);
 
    return positionPS;
 }
@@ -113,14 +110,13 @@ float4 opaque_vs(Vertex_input input, uint instance : SV_InstanceID,
 struct Vs_output {
    float2 texcoords : TEXCOORD;
    float4 positionPS : SV_Position;
-   uint rendertarget : SV_RenderTargetArrayIndex;
 };
 
-Vs_output hardedged_vs(Vertex_input input, uint instance : SV_InstanceID)
+Vs_output hardedged_vs(Vertex_input input)
 {
    float3 positionOS = get_positionOS(input);
    float3 positionWS = mul(float4(positionOS, 1.0), world_matrix);
-   float4 positionPS = mul(float4(positionWS, 1.0), view_proj_matrices[instance]);
+   float4 positionPS = mul(float4(positionWS, 1.0), projection_matrix);
 
    float2 texcoords =
       float2(dot(float4(input.texcoords(), 0.0, 1.0), x_texcoord_transform),
@@ -130,7 +126,6 @@ Vs_output hardedged_vs(Vertex_input input, uint instance : SV_InstanceID)
 
    output.positionPS = positionPS;
    output.texcoords = texcoords;
-   output.rendertarget = instance;
 
    return output;
 }

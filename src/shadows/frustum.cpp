@@ -134,10 +134,10 @@ bool intersects(const Frustum& frustum, const Bounding_box& bbox) noexcept
    return true;
 }
 
-bool intersects(const Frustum& frustum, const glm::vec3& position, const float radius) noexcept
+bool intersects(const Frustum& frustum, const Bounding_sphere& sphere) noexcept
 {
    for (const auto& plane : frustum.planes) {
-      if (outside_plane(plane, position, radius)) {
+      if (outside_plane(plane, sphere.position, sphere.radius)) {
          return false;
       }
    }

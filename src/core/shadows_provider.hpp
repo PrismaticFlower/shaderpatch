@@ -220,8 +220,6 @@ private:
 
    void upload_buffer_data(ID3D11DeviceContext4& dc, const Draw_args& args) noexcept;
 
-   void upload_camera_cb_buffer(ID3D11DeviceContext4& dc) noexcept;
-
    void upload_transform_cb_buffer(ID3D11DeviceContext4& dc) noexcept;
 
    void upload_skins_buffer(ID3D11DeviceContext4& dc) noexcept;
@@ -237,11 +235,29 @@ private:
 
    void create_shadow_map(const UINT length) noexcept;
 
-   void draw_shadow_maps_instanced(ID3D11DeviceContext4& dc,
-                                   const Input_layout_descriptions& input_layout_descriptions,
-                                   effects::Profiler& profiler) noexcept;
+   void draw_shadow_maps_cascades(ID3D11DeviceContext4& dc,
+                                  const Input_layout_descriptions& input_layout_descriptions) noexcept;
 
    void draw_to_target_map(ID3D11DeviceContext4& dc, const Draw_args& args) noexcept;
+
+   void fill_visibility_lists(const glm::mat4& projection_matrix) noexcept;
+
+   struct Visibility_lists {
+      std::vector<std::uint32_t> zprepass_compressed;
+      std::vector<std::uint32_t> zprepass_compressed_skinned;
+      std::vector<std::uint32_t> zprepass_hardedged_compressed;
+      std::vector<std::uint32_t> zprepass_hardedged_compressed_skinned;
+
+      void clear() noexcept
+      {
+         zprepass_compressed.clear();
+         zprepass_compressed_skinned.clear();
+         zprepass_hardedged_compressed.clear();
+         zprepass_hardedged_compressed_skinned.clear();
+      }
+   };
+
+   Visibility_lists _visibility_lists;
 
    struct Hardedged_vertex_shader {
       Hardedged_vertex_shader(
