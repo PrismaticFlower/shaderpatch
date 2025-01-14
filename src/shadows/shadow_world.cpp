@@ -189,6 +189,9 @@ struct Shadow_world {
             }
          }
 
+         _counter_total_draws = 0;
+         _counter_total_instances = 0;
+
          D3D11_MAPPED_SUBRESOURCE mapped_view_constants{};
 
          if (FAILED(dc.Map(_draw_resources.view_constants.get(), 0,
@@ -341,6 +344,13 @@ struct Shadow_world {
 
             start_instance += list.active_count;
          }
+
+         _counter_total_draws =
+            _active_world.active_opaque_instance_lists_count +
+            _active_world.active_doublesided_instance_lists_count +
+            _active_world.active_hardedged_instance_lists_count +
+            _active_world.active_hardedged_doublesided_instance_lists_count;
+         _counter_total_instances = start_instance;
 
          _active_world.reset();
       }
@@ -790,6 +800,11 @@ struct Shadow_world {
 
                ImGui::Text("Approximate GPU Memory Used: %.1f KB",
                            _active_world.metrics.used_gpu_memory / 1'000.0);
+
+               ImGui::SeparatorText("Draws");
+
+               ImGui::Text("Total Draw Calls %u", _counter_total_draws);
+               ImGui::Text("Total Instance Count %u", _counter_total_instances);
 
                ImGui::EndTabItem();
             }
@@ -1435,6 +1450,9 @@ private:
    Draw_resources _draw_resources;
 
    Name_table _name_table;
+
+   std::uint32_t _counter_total_draws = 0;
+   std::uint32_t _counter_total_instances = 0;
 
    Debug_model_draw _debug_model_draw{*_device};
    Debug_world_draw _debug_world_draw{*_device};
