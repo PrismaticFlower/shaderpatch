@@ -5,6 +5,7 @@
 #include "read/read_entity_class.hpp"
 #include "read/read_game_model.hpp"
 #include "read/read_model.hpp"
+#include "read/read_texture.hpp"
 #include "read/read_world.hpp"
 
 #include "../logger.hpp"
@@ -32,7 +33,9 @@ void load(const std::string& file_name) noexcept
          auto child = file.read_child();
 
          if (child.magic_number() == "tex_"_mn) {
-            // TODO: Handle Textures (will be needed for alpha cutouts)
+            // Special case, has multiple children so it will add to shadow_world directly.
+
+            read_texture(child);
          }
          else if (child.magic_number() == "skel"_mn) {
             // TODO: Handle Skeletons (will eventually be needed for attached leaf patches)

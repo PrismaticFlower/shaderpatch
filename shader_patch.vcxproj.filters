@@ -301,6 +301,8 @@
     <ClCompile Include="src\shadows\bounding_box.cpp" />
     <ClCompile Include="src\shadows\internal\draw_resources.cpp" />
     <ClCompile Include="src\shadows\internal\debug_world_aabb_draw.cpp" />
+    <ClCompile Include="src\shadows\texture_hasher.cpp" />
+    <ClCompile Include="src\shadows\read\read_texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\shader_constants.hpp">
@@ -753,6 +755,9 @@
     <ClInclude Include="src\shadows\internal\draw_resources.hpp" />
     <ClInclude Include="src\shadows\internal\draw_view_constants.hpp" />
     <ClInclude Include="src\shadows\internal\debug_world_aabb_draw.hpp" />
+    <ClInclude Include="src\shadows\texture_hasher.hpp" />
+    <ClInclude Include="src\shadows\read\read_texture.hpp" />
+    <ClInclude Include="src\shadows\internal\world\texture.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />

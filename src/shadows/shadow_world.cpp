@@ -14,6 +14,7 @@
 #include "internal/world/game_model.hpp"
 #include "internal/world/model.hpp"
 #include "internal/world/object_instance.hpp"
+#include "internal/world/texture.hpp"
 
 #include "../imgui/imgui.h"
 #include "../logger.hpp"
@@ -417,6 +418,10 @@ struct Shadow_world {
       _models.clear();
       _models_index.clear();
 
+      _textures.clear();
+      _textures_hash_index.clear();
+      _textures_name_index.clear();
+
       _game_models.clear();
       _game_models_index.clear();
 
@@ -428,6 +433,36 @@ struct Shadow_world {
       _active_world.clear();
 
       _active_rebuild_needed = false;
+   }
+
+   void add_texture(const Input_texture& input_texture) noexcept
+   {
+      std::scoped_lock lock{_mutex};
+
+      log_debug("Read texture '{}' (hash: "
+                "{:08x}{:08x}{:08x}{:08x}{:08x}{:08x}{:08x}{:08x})",
+                input_texture.name, input_texture.hash.words[0],
+                input_texture.hash.words[1], input_texture.hash.words[2],
+                input_texture.hash.words[3], input_texture.hash.words[4],
+                input_texture.hash.words[5], input_texture.hash.words[6],
+                input_texture.hash.words[7]);
+
+      const std::uint32_t name_hash = _name_table.add(input_texture.name);
+
+      auto existing_it = _textures_name_index.find(name_hash);
+
+      if (existing_it == _textures_name_index.end()) {
+         const std::size_t texture_index = _textures.size();
+
+         _textures_name_index.emplace(name_hash, texture_index);
+         _textures_hash_index.emplace(input_texture.hash, texture_index);
+         _textures.emplace_back();
+      }
+      else {
+         _textures_hash_index.emplace(input_texture.hash, existing_it->second);
+      }
+
+      // TODO Update SRV if needed.
    }
 
    void add_model(const Input_model& input_model) noexcept
@@ -779,8 +814,10 @@ struct Shadow_world {
                   return container.capacity() * sizeof(T::value_type);
                };
 
+               cpu_memory += get_bytes_capcity(_textures);
+               cpu_memory += get_bytes_capcity(_textures_name_index);
+               cpu_memory += get_bytes_capcity(_textures_hash_index);
                cpu_memory += get_bytes_capcity(_models);
-               cpu_memory += get_bytes_capcity(_models_index);
                cpu_memory += get_bytes_capcity(_models_index);
                cpu_memory += get_bytes_capcity(_game_models);
                cpu_memory += get_bytes_capcity(_game_models_index);
@@ -805,6 +842,93 @@ struct Shadow_world {
 
                ImGui::Text("Total Draw Calls %u", _counter_total_draws);
                ImGui::Text("Total Instance Count %u", _counter_total_instances);
+
+               ImGui::EndTabItem();
+            }
+
+            if (ImGui::BeginTabItem("Textures")) {
+               static std::uint32_t selected_texture_hash = 0;
+               std::uint32_t selected_texture_index = UINT32_MAX;
+
+               if (ImGui::BeginChild("##list",
+                                     {ImGui::GetContentRegionAvail().x * 0.4f, 0.0f},
+                                     ImGuiChildFlags_ResizeX |
+                                        ImGuiChildFlags_FrameStyle)) {
+                  for (const auto& [texture_name_hash, texture_index] :
+                       _textures_name_index) {
+                     const bool selected = selected_texture_hash == texture_name_hash;
+
+                     const char* name = _name_table.lookup(texture_name_hash);
+
+                     if (ImGui::Selectable(name, selected)) {
+                        selected_texture_hash = texture_name_hash;
+                     }
+
+                     ImGui::SetItemTooltip(name);
+
+                     if (selected) selected_texture_index = texture_index;
+                  }
+               }
+
+               ImGui::EndChild();
+
+               ImGui::SameLine();
+
+               if (ImGui::BeginChild("##texture") &&
+                   selected_texture_index < _textures.size()) {
+                  ImGui::SeparatorText("Texture Hashes");
+
+                  for (const auto& [texture_hash, texture_index] : _textures_hash_index) {
+                     if (selected_texture_index == texture_index) {
+                        ImGui::Text("%.8x%.8x%.8x%.8x%.8x%.8x%.8x%.8x",
+                                    texture_hash.words[0], texture_hash.words[1],
+                                    texture_hash.words[2], texture_hash.words[3],
+                                    texture_hash.words[4], texture_hash.words[5],
+                                    texture_hash.words[6], texture_hash.words[7]);
+                     }
+                  }
+
+                  ImGui::SeparatorText("Preview");
+
+                  const Texture& texture = _textures[selected_texture_index];
+
+                  if (texture.shader_resource_view) {
+                     Com_ptr<ID3D11Resource> resource;
+
+                     texture.shader_resource_view->GetResource(
+                        resource.clear_and_assign());
+
+                     Com_ptr<ID3D11Texture2D> texture2d;
+
+                     resource->QueryInterface(texture2d.clear_and_assign());
+
+                     D3D11_TEXTURE2D_DESC desc{};
+
+                     texture2d->GetDesc(&desc);
+
+                     ImGui::BeginChild("##container",
+                                       {
+                                          static_cast<float>(desc.Width) +
+                                             ImGui::GetStyle().WindowPadding.x * 2.0f,
+                                          static_cast<float>(desc.Height) +
+                                             ImGui::GetStyle().WindowPadding.y * 2.0f,
+                                       });
+
+                     const ImVec2 image_bottom_right = {
+                        ImGui::GetCursorScreenPos().x + static_cast<float>(desc.Width),
+                        ImGui::GetCursorScreenPos().y + static_cast<float>(desc.Height),
+                     };
+
+                     ImGui::GetWindowDrawList()
+                        ->AddImage(reinterpret_cast<ImTextureID>(
+                                      texture.shader_resource_view.get()),
+                                   ImGui::GetCursorScreenPos(), image_bottom_right);
+
+                     ImGui::EndChild();
+                  }
+               }
+
+               ImGui::EndChild();
 
                ImGui::EndTabItem();
             }
@@ -1434,6 +1558,10 @@ private:
 
    Mesh_copy_queue _mesh_copy_queue{*_device};
 
+   std::vector<Texture> _textures;
+   absl::flat_hash_map<Texture_hash, std::size_t> _textures_hash_index;
+   absl::flat_hash_map<std::uint32_t, std::size_t> _textures_name_index;
+
    std::vector<Model> _models;
    absl::flat_hash_map<std::uint32_t, std::size_t> _models_index;
 
@@ -1640,6 +1768,15 @@ void Shadow_world_interface::clear() noexcept
    if (!self) return;
 
    self->clear();
+}
+
+void Shadow_world_interface::add_texture(const Input_texture& texture) noexcept
+{
+   Shadow_world* self = shadow_world_ptr.load(std::memory_order_relaxed);
+
+   if (!self) return;
+
+   self->add_texture(texture);
 }
 
 void Shadow_world_interface::add_model(const Input_model& model) noexcept

@@ -42,6 +42,8 @@ struct Shadow_world_interface {
                                               ID3D11DepthStencilView* dsv) noexcept;
    static void clear() noexcept;
 
+   static void add_texture(const Input_texture& texture) noexcept;
+
    static void add_model(const Input_model& model) noexcept;
 
    static void add_game_model(const Input_game_model& game_model) noexcept;
