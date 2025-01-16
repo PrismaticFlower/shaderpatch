@@ -307,12 +307,13 @@ struct Shadow_world {
                current_topology = list.topology;
             }
 
-            // TODO: Bind texture.
-
             const UINT first_constant = list.constants_index * (256 / 16);
 
             dc.VSSetConstantBuffers1(0, 1, _active_world.constants_buffer.get_ptr(),
                                      &first_constant, &constants_count);
+
+            dc.PSSetShaderResources(0, 1, _texture_table.get_ptr(list.texture_index));
+
             dc.DrawIndexedInstanced(list.index_count, list.active_count, list.start_index,
                                     list.base_vertex, start_instance);
 
@@ -333,12 +334,12 @@ struct Shadow_world {
                current_topology = list.topology;
             }
 
-            // TODO: Bind texture.
-
             const UINT first_constant = list.constants_index * (256 / 16);
 
             dc.VSSetConstantBuffers1(0, 1, _active_world.constants_buffer.get_ptr(),
                                      &first_constant, &constants_count);
+
+            dc.PSSetShaderResources(0, 1, _texture_table.get_ptr(list.texture_index));
 
             dc.DrawIndexedInstanced(list.index_count, list.active_count, list.start_index,
                                     list.base_vertex, start_instance);
@@ -1599,7 +1600,7 @@ private:
          .start_index = index_buffer_byte_offset / sizeof(std::uint16_t),
          .base_vertex = static_cast<INT>(vertex_buffer_byte_offset / vertex_buffer_element_size),
 
-         .texture = nullptr,
+         .texture_index = _texture_table.acquire(merge_segment.texture_name_hash),
       });
    }
 

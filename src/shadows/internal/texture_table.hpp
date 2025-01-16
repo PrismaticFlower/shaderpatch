@@ -13,7 +13,6 @@
 
 namespace sp::shadows {
 
-/// @brief Stores a table to translate name hashes to strings for printing/UI.
 struct Texture_table {
    const static std::size_t null_index = 0xff'ff'ff'ff;
 

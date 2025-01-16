@@ -42,7 +42,7 @@ struct Model_segment_hardedged {
    UINT start_index;
    INT base_vertex;
 
-   Com_ptr<ID3D11Texture2D> texture;
+   std::uint32_t texture_index;
 };
 
 struct Model {

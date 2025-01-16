@@ -196,6 +196,8 @@ void Active_world::build(ID3D11Device2& device, std::span<const Model> models,
                .index_count = segment.index_count,
                .start_index = segment.start_index,
                .base_vertex = segment.base_vertex,
+
+               .texture_index = segment.texture_index,
             });
          }
 
@@ -208,6 +210,8 @@ void Active_world::build(ID3D11Device2& device, std::span<const Model> models,
                .index_count = segment.index_count,
                .start_index = segment.start_index,
                .base_vertex = segment.base_vertex,
+
+               .texture_index = segment.texture_index,
             });
          }
       }
