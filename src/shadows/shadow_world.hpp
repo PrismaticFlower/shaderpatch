@@ -52,6 +52,11 @@ struct Shadow_world_interface {
 
    static void add_object_instance(const Input_object_instance& instance) noexcept;
 
+   static void register_texture(ID3D11ShaderResourceView& srv,
+                                const Texture_hash& data_hash) noexcept;
+
+   static void unregister_texture(ID3D11ShaderResourceView& srv) noexcept;
+
    static void show_imgui(ID3D11DeviceContext2& dc) noexcept;
 };
 

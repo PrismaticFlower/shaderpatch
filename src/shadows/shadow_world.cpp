@@ -10,11 +10,11 @@
 #include "internal/mesh_buffer.hpp"
 #include "internal/mesh_copy_queue.hpp"
 #include "internal/name_table.hpp"
+#include "internal/texture_table.hpp"
 #include "internal/world/entity_class.hpp"
 #include "internal/world/game_model.hpp"
 #include "internal/world/model.hpp"
 #include "internal/world/object_instance.hpp"
-#include "internal/world/texture.hpp"
 
 #include "../imgui/imgui.h"
 #include "../logger.hpp"
@@ -418,10 +418,6 @@ struct Shadow_world {
       _models.clear();
       _models_index.clear();
 
-      _textures.clear();
-      _textures_hash_index.clear();
-      _textures_name_index.clear();
-
       _game_models.clear();
       _game_models_index.clear();
 
@@ -431,6 +427,8 @@ struct Shadow_world {
       _object_instances.clear();
 
       _active_world.clear();
+
+      _texture_table.clear();
 
       _active_rebuild_needed = false;
    }
@@ -447,22 +445,7 @@ struct Shadow_world {
                 input_texture.hash.words[5], input_texture.hash.words[6],
                 input_texture.hash.words[7]);
 
-      const std::uint32_t name_hash = _name_table.add(input_texture.name);
-
-      auto existing_it = _textures_name_index.find(name_hash);
-
-      if (existing_it == _textures_name_index.end()) {
-         const std::size_t texture_index = _textures.size();
-
-         _textures_name_index.emplace(name_hash, texture_index);
-         _textures_hash_index.emplace(input_texture.hash, texture_index);
-         _textures.emplace_back();
-      }
-      else {
-         _textures_hash_index.emplace(input_texture.hash, existing_it->second);
-      }
-
-      // TODO Update SRV if needed.
+      _texture_table.add(_name_table.add(input_texture.name), input_texture.hash);
    }
 
    void add_model(const Input_model& input_model) noexcept
@@ -793,6 +776,20 @@ struct Shadow_world {
       _active_rebuild_needed = true;
    }
 
+   void register_texture(ID3D11ShaderResourceView& srv, const Texture_hash& data_hash) noexcept
+   {
+      std::scoped_lock lock{_mutex};
+
+      _texture_table.register_(srv, data_hash);
+   }
+
+   void unregister_texture(ID3D11ShaderResourceView& srv) noexcept
+   {
+      std::scoped_lock lock{_mutex};
+
+      _texture_table.unregister(srv);
+   }
+
    void show_imgui(ID3D11DeviceContext2& dc) noexcept
    {
       if (ImGui::Begin("Shadow World")) {
@@ -814,9 +811,6 @@ struct Shadow_world {
                   return container.capacity() * sizeof(T::value_type);
                };
 
-               cpu_memory += get_bytes_capcity(_textures);
-               cpu_memory += get_bytes_capcity(_textures_name_index);
-               cpu_memory += get_bytes_capcity(_textures_hash_index);
                cpu_memory += get_bytes_capcity(_models);
                cpu_memory += get_bytes_capcity(_models_index);
                cpu_memory += get_bytes_capcity(_game_models);
@@ -826,6 +820,7 @@ struct Shadow_world {
                cpu_memory += get_bytes_capcity(_object_instances);
                cpu_memory += _active_world.metrics.used_cpu_memory;
 
+               cpu_memory += _texture_table.allocated_bytes();
                cpu_memory += _name_table.allocated_bytes();
 
                ImGui::Text("Approximate CPU Memory Used: %.1f KB", cpu_memory / 1'000.0);
@@ -842,93 +837,6 @@ struct Shadow_world {
 
                ImGui::Text("Total Draw Calls %u", _counter_total_draws);
                ImGui::Text("Total Instance Count %u", _counter_total_instances);
-
-               ImGui::EndTabItem();
-            }
-
-            if (ImGui::BeginTabItem("Textures")) {
-               static std::uint32_t selected_texture_hash = 0;
-               std::uint32_t selected_texture_index = UINT32_MAX;
-
-               if (ImGui::BeginChild("##list",
-                                     {ImGui::GetContentRegionAvail().x * 0.4f, 0.0f},
-                                     ImGuiChildFlags_ResizeX |
-                                        ImGuiChildFlags_FrameStyle)) {
-                  for (const auto& [texture_name_hash, texture_index] :
-                       _textures_name_index) {
-                     const bool selected = selected_texture_hash == texture_name_hash;
-
-                     const char* name = _name_table.lookup(texture_name_hash);
-
-                     if (ImGui::Selectable(name, selected)) {
-                        selected_texture_hash = texture_name_hash;
-                     }
-
-                     ImGui::SetItemTooltip(name);
-
-                     if (selected) selected_texture_index = texture_index;
-                  }
-               }
-
-               ImGui::EndChild();
-
-               ImGui::SameLine();
-
-               if (ImGui::BeginChild("##texture") &&
-                   selected_texture_index < _textures.size()) {
-                  ImGui::SeparatorText("Texture Hashes");
-
-                  for (const auto& [texture_hash, texture_index] : _textures_hash_index) {
-                     if (selected_texture_index == texture_index) {
-                        ImGui::Text("%.8x%.8x%.8x%.8x%.8x%.8x%.8x%.8x",
-                                    texture_hash.words[0], texture_hash.words[1],
-                                    texture_hash.words[2], texture_hash.words[3],
-                                    texture_hash.words[4], texture_hash.words[5],
-                                    texture_hash.words[6], texture_hash.words[7]);
-                     }
-                  }
-
-                  ImGui::SeparatorText("Preview");
-
-                  const Texture& texture = _textures[selected_texture_index];
-
-                  if (texture.shader_resource_view) {
-                     Com_ptr<ID3D11Resource> resource;
-
-                     texture.shader_resource_view->GetResource(
-                        resource.clear_and_assign());
-
-                     Com_ptr<ID3D11Texture2D> texture2d;
-
-                     resource->QueryInterface(texture2d.clear_and_assign());
-
-                     D3D11_TEXTURE2D_DESC desc{};
-
-                     texture2d->GetDesc(&desc);
-
-                     ImGui::BeginChild("##container",
-                                       {
-                                          static_cast<float>(desc.Width) +
-                                             ImGui::GetStyle().WindowPadding.x * 2.0f,
-                                          static_cast<float>(desc.Height) +
-                                             ImGui::GetStyle().WindowPadding.y * 2.0f,
-                                       });
-
-                     const ImVec2 image_bottom_right = {
-                        ImGui::GetCursorScreenPos().x + static_cast<float>(desc.Width),
-                        ImGui::GetCursorScreenPos().y + static_cast<float>(desc.Height),
-                     };
-
-                     ImGui::GetWindowDrawList()
-                        ->AddImage(reinterpret_cast<ImTextureID>(
-                                      texture.shader_resource_view.get()),
-                                   ImGui::GetCursorScreenPos(), image_bottom_right);
-
-                     ImGui::EndChild();
-                  }
-               }
-
-               ImGui::EndChild();
 
                ImGui::EndTabItem();
             }
@@ -1523,6 +1431,12 @@ struct Shadow_world {
                ImGui::EndTabItem();
             }
 
+            if (ImGui::BeginTabItem("Textures")) {
+               _texture_table.show_imgui_page(_name_table);
+
+               ImGui::EndTabItem();
+            }
+
             if (ImGui::BeginTabItem("Name Table")) {
                ImGui::PushItemWidth(ImGui::CalcTextSize("0x00000000").x * 2.0f);
 
@@ -1558,10 +1472,6 @@ private:
 
    Mesh_copy_queue _mesh_copy_queue{*_device};
 
-   std::vector<Texture> _textures;
-   absl::flat_hash_map<Texture_hash, std::size_t> _textures_hash_index;
-   absl::flat_hash_map<std::uint32_t, std::size_t> _textures_name_index;
-
    std::vector<Model> _models;
    absl::flat_hash_map<std::uint32_t, std::size_t> _models_index;
 
@@ -1576,6 +1486,8 @@ private:
    Active_world _active_world;
 
    Draw_resources _draw_resources;
+
+   Texture_table _texture_table;
 
    Name_table _name_table;
 
@@ -1813,6 +1725,25 @@ void Shadow_world_interface::add_object_instance(const Input_object_instance& in
    if (!self) return;
 
    self->add_object_instance(instance);
+}
+
+void Shadow_world_interface::register_texture(ID3D11ShaderResourceView& srv,
+                                              const Texture_hash& data_hash) noexcept
+{
+   Shadow_world* self = shadow_world_ptr.load(std::memory_order_relaxed);
+
+   if (!self) return;
+
+   self->register_texture(srv, data_hash);
+}
+
+void Shadow_world_interface::unregister_texture(ID3D11ShaderResourceView& srv) noexcept
+{
+   Shadow_world* self = shadow_world_ptr.load(std::memory_order_relaxed);
+
+   if (!self) return;
+
+   self->unregister_texture(srv);
 }
 
 void Shadow_world_interface::show_imgui(ID3D11DeviceContext2& dc) noexcept

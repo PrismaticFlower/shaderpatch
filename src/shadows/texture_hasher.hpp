@@ -10,7 +10,13 @@ namespace sp::shadows {
 struct Texture_hash {
    std::uint32_t words[8] = {};
 
-   bool operator==(const Texture_hash&) const noexcept = default;
+   bool operator==(const Texture_hash& other) const noexcept
+   {
+      return this->words[0] == other.words[0] && this->words[1] == other.words[1] &&
+             this->words[2] == other.words[2] && this->words[3] == other.words[3] &&
+             this->words[4] == other.words[4] && this->words[5] == other.words[5] &&
+             this->words[6] == other.words[6] && this->words[7] == other.words[7];
+   }
 
    template<typename H>
    friend H AbslHashValue(H h, const Texture_hash& hash)

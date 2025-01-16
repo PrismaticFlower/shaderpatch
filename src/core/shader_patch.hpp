@@ -126,6 +126,8 @@ public:
    auto create_game_dynamic_texture2d(const Game_texture& texture) noexcept
       -> Game_texture;
 
+   void destroying_game_texture2d(const Game_texture& texture) noexcept;
+
    auto create_game_texture3d(const UINT width, const UINT height, const UINT depth,
                               const UINT mip_levels, const DXGI_FORMAT format,
                               const std::span<const Mapped_texture> data) noexcept

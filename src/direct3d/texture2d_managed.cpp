@@ -34,6 +34,13 @@ Texture2d_managed::Texture2d_managed(core::Shader_patch& shader_patch,
    Expects(mip_levels != 0);
 }
 
+Texture2d_managed::~Texture2d_managed()
+{
+   if (std::holds_alternative<core::Game_texture>(resource)) {
+      _shader_patch.destroying_game_texture2d(std::get<core::Game_texture>(resource));
+   }
+}
+
 Com_ptr<Texture2d_managed> Texture2d_managed::create(
    core::Shader_patch& shader_patch, const UINT width, const UINT height,
    const UINT mip_levels, const DXGI_FORMAT format, const D3DFORMAT reported_format,

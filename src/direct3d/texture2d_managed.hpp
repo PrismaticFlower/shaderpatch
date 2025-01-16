@@ -62,8 +62,7 @@ public:
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
 
-   [[deprecated(
-      "unimplemented")]] DWORD __stdcall GetPriority() noexcept override
+   [[deprecated("unimplemented")]] DWORD __stdcall GetPriority() noexcept override
    {
       log_and_terminate("Unimplemented function \"" __FUNCSIG__ "\" called.");
    }
@@ -128,7 +127,7 @@ private:
                      const DXGI_FORMAT format, const D3DFORMAT reported_format,
                      std::unique_ptr<Format_patcher> format_patcher) noexcept;
 
-   ~Texture2d_managed() = default;
+   ~Texture2d_managed();
 
    std::unique_ptr<Format_patcher> _format_patcher;
    std::unique_ptr<Upload_texture> _upload_texture;
@@ -199,8 +198,7 @@ private:
             "Unimplemented function \"" __FUNCSIG__ "\" called.");
       }
 
-      [[deprecated(
-         "unimplemented")]] DWORD __stdcall GetPriority() noexcept override
+      [[deprecated("unimplemented")]] DWORD __stdcall GetPriority() noexcept override
       {
          log_and_terminate(
             "Unimplemented function \"" __FUNCSIG__ "\" called.");

@@ -510,6 +510,23 @@ auto Shader_patch::create_game_texture2d(const UINT width, const UINT height,
       }
    }
 
+   std::size_t hash_row_pitch = 0;
+   std::size_t hash_slice_pitch = 0;
+
+   DirectX::ComputePitch(format, width, height, hash_row_pitch, hash_slice_pitch);
+
+   std::size_t hash_data_rows = DirectX::ComputeScanlines(format, height);
+   std::size_t row_data_size = hash_row_pitch;
+
+   shadows::Texture_hasher hasher;
+
+   for (std::size_t i = 0; i < hash_data_rows; ++i) {
+      hasher.process_bytes(std::span{data[0].data, data[0].row_pitch * height}
+                              .subspan(data[0].row_pitch * i, row_data_size));
+   }
+
+   shadows::shadow_world.register_texture(*srv, hasher.result());
+
    const auto srgb_format = DirectX::MakeSRGB(format);
 
    if (format == srgb_format) return Game_texture{srv, srv};
@@ -531,6 +548,15 @@ auto Shader_patch::create_game_texture2d(const UINT width, const UINT height,
    }
 
    return Game_texture{std::move(srv), std::move(srgb_srv)};
+}
+
+void Shader_patch::destroying_game_texture2d(const Game_texture& texture) noexcept
+{
+   // This is only a notification of the texture being destroyed. It would be
+   // nice to refactor the way lifetimes are managed to provide more natural
+   // hooks for this but failing time to do that this will do for now.
+
+   shadows::shadow_world.unregister_texture(*texture.srv);
 }
 
 auto Shader_patch::create_game_dynamic_texture2d(const Game_texture& texture) noexcept
