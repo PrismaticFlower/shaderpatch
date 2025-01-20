@@ -307,8 +307,11 @@ void Shader_patch::present() noexcept
 {
    ImGui::DragFloat("shadow bias", &_shadows->config.shadow_bias, 0.0001f,
                     -1.0f, 1.0f, "%.5f");
+   ImGui::DragFloat("shadow range", &_shadows->config.end_depth, 1.0f,
+                    _shadows->config.end_depth, 100000.0f, "%.0f");
 
    ImGui::Checkbox("Preview Shadow World", &_preview_shadow_world);
+   ImGui::Checkbox("Preview Shadow World Textured", &_preview_shadow_world_textured);
    ImGui::Checkbox("Overlay Shadow World BBOXs", &_overlay_shadow_world_aabbs);
 
    ImGui::Text("zprepass meshes: %i", _shadows->meshes.zprepass.size());
@@ -1021,19 +1024,35 @@ void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
    if (source == get_back_buffer() &&
        glm::uvec2{dest_rt.width, dest_rt.height} == glm::uvec2{512, 256} &&
        source_rect == full_rect && dest_rect == full_rect) {
-      if (enable_intrusive_debug_tools && _preview_shadow_world) {
-         shadows::shadow_world.draw_shadow_world_preview(
-            *_device_context, _shadows->view_proj_matrix,
-            D3D11_VIEWPORT{
-               .TopLeftX = 0.0f,
+      if (enable_intrusive_debug_tools) {
+         if (_preview_shadow_world) {
+            shadows::shadow_world.draw_shadow_world_preview(
+               *_device_context, _shadows->view_proj_matrix,
+               D3D11_VIEWPORT{
+                  .TopLeftX = 0.0f,
 
-               .TopLeftY = 0.0f,
-               .Width = static_cast<float>(_game_rendertargets[0].width),
-               .Height = static_cast<float>(_game_rendertargets[0].height),
-               .MinDepth = 0.0f,
-               .MaxDepth = 1.0f,
-            },
-            _game_rendertargets[0].rtv.get(), _nearscene_depthstencil.dsv.get());
+                  .TopLeftY = 0.0f,
+                  .Width = static_cast<float>(_game_rendertargets[0].width),
+                  .Height = static_cast<float>(_game_rendertargets[0].height),
+                  .MinDepth = 0.0f,
+                  .MaxDepth = 1.0f,
+               },
+               _game_rendertargets[0].rtv.get(), _nearscene_depthstencil.dsv.get());
+         }
+         else if (_preview_shadow_world_textured) {
+            shadows::shadow_world.draw_shadow_world_textured_preview(
+               *_device_context, _shadows->view_proj_matrix,
+               D3D11_VIEWPORT{
+                  .TopLeftX = 0.0f,
+
+                  .TopLeftY = 0.0f,
+                  .Width = static_cast<float>(_game_rendertargets[0].width),
+                  .Height = static_cast<float>(_game_rendertargets[0].height),
+                  .MinDepth = 0.0f,
+                  .MaxDepth = 1.0f,
+               },
+               _game_rendertargets[0].rtv.get(), _nearscene_depthstencil.dsv.get());
+         }
       }
 
       if (_effects_active) {

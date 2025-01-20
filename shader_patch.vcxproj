@@ -283,6 +283,7 @@
     <ClCompile Include="src\shadows\internal\debug_model_draw.cpp" />
     <ClCompile Include="src\shadows\internal\debug_world_aabb_draw.cpp" />
     <ClCompile Include="src\shadows\internal\debug_world_draw.cpp" />
+    <ClCompile Include="src\shadows\internal\debug_world_textured_draw.cpp" />
     <ClCompile Include="src\shadows\internal\draw_resources.cpp" />
     <ClCompile Include="src\shadows\internal\mesh_buffer.cpp" />
     <ClCompile Include="src\shadows\internal\mesh_copy_queue.cpp" />
@@ -450,6 +451,7 @@
     <ClInclude Include="src\shadows\frustum.hpp" />
     <ClInclude Include="src\shadows\input.hpp" />
     <ClInclude Include="src\shadows\internal\debug_world_aabb_draw.hpp" />
+    <ClInclude Include="src\shadows\internal\debug_world_textured_draw.hpp" />
     <ClInclude Include="src\shadows\internal\draw_resources.hpp" />
     <ClInclude Include="src\shadows\internal\debug_world_draw.hpp" />
     <ClInclude Include="src\shadows\internal\debug_model_draw.hpp" />

@@ -408,6 +408,7 @@ private:
    bool _set_aspect_ratio_on_present = false;
 
    bool _preview_shadow_world = false;
+   bool _preview_shadow_world_textured = false;
    bool _overlay_shadow_world_aabbs = false;
    bool _aspect_ratio_hack_enabled = false;
    bool _imgui_enabled = false;

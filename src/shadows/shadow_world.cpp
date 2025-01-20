@@ -6,6 +6,7 @@
 #include "internal/debug_model_draw.hpp"
 #include "internal/debug_world_aabb_draw.hpp"
 #include "internal/debug_world_draw.hpp"
+#include "internal/debug_world_textured_draw.hpp"
 #include "internal/draw_resources.hpp"
 #include "internal/mesh_buffer.hpp"
 #include "internal/mesh_copy_queue.hpp"
@@ -381,6 +382,31 @@ struct Shadow_world {
                                 .picking_rtv = nullptr,
                                 .dsv = dsv,
                              });
+   }
+
+   void draw_shadow_world_textured_preview(ID3D11DeviceContext2& dc,
+                                           const glm::mat4& projection_matrix,
+                                           const D3D11_VIEWPORT& viewport,
+                                           ID3D11RenderTargetView* rtv,
+                                           ID3D11DepthStencilView* dsv) noexcept
+   {
+      std::scoped_lock lock{_mutex};
+
+      _debug_world_textured_draw.draw(dc,
+                                      {
+                                         .models = _models,
+                                         .game_models = _game_models,
+                                         .object_instances = _object_instances,
+                                         .texture_table = _texture_table,
+
+                                      },
+                                      projection_matrix, _index_buffer.get(),
+                                      _vertex_buffer.get(),
+                                      {
+                                         .viewport = viewport,
+                                         .rtv = rtv,
+                                         .dsv = dsv,
+                                      });
    }
 
    void draw_shadow_world_aabb_overlay(ID3D11DeviceContext2& dc,
@@ -1497,6 +1523,7 @@ private:
 
    Debug_model_draw _debug_model_draw{*_device};
    Debug_world_draw _debug_world_draw{*_device};
+   Debug_world_textured_draw _debug_world_textured_draw{*_device};
    Debug_world_aabb_draw _debug_world_aabb_draw{*_device};
 
    UINT _debug_model_preview_width = 0;
@@ -1660,6 +1687,18 @@ void Shadow_world_interface::draw_shadow_world_preview(
    if (!self) return;
 
    self->draw_shadow_world_preview(dc, projection_matrix, viewport, rtv, dsv);
+}
+
+void Shadow_world_interface::draw_shadow_world_textured_preview(
+   ID3D11DeviceContext2& dc, const glm::mat4& projection_matrix,
+   const D3D11_VIEWPORT& viewport, ID3D11RenderTargetView* rtv,
+   ID3D11DepthStencilView* dsv) noexcept
+{
+   Shadow_world* self = shadow_world_ptr.load(std::memory_order_relaxed);
+
+   if (!self) return;
+
+   self->draw_shadow_world_textured_preview(dc, projection_matrix, viewport, rtv, dsv);
 }
 
 void Shadow_world_interface::draw_shadow_world_aabb_overlay(
