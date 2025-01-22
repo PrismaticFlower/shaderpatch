@@ -643,8 +643,7 @@ void Shadows_provider::draw_shadow_maps_cascades(
             dc.VSSetConstantBuffers1(0, 1, &transform_cb, &first_constant,
                                      &num_constants);
 
-            dc.DrawIndexedInstanced(mesh.index_count, 4, mesh.start_index,
-                                    mesh.base_vertex, 0);
+            dc.DrawIndexed(mesh.index_count, mesh.start_index, mesh.base_vertex);
          }
 
          transform_cb_offset += meshes.size();
@@ -688,8 +687,7 @@ void Shadows_provider::draw_shadow_maps_cascades(
             dc.VSSetConstantBuffers1(0, 1, &transform_cb, &first_constant,
                                      &num_constants);
 
-            dc.DrawIndexedInstanced(mesh.index_count, 4, mesh.start_index,
-                                    mesh.base_vertex, 0);
+            dc.DrawIndexed(mesh.index_count, mesh.start_index, mesh.base_vertex);
          }
 
          transform_cb_offset += meshes.size();
@@ -749,8 +747,7 @@ void Shadows_provider::draw_shadow_maps_cascades(
                auto* srv = mesh.texture.get();
                dc.PSSetShaderResources(0, 1, &srv);
 
-               dc.DrawIndexedInstanced(mesh.index_count, 4, mesh.start_index,
-                                       mesh.base_vertex, 0);
+               dc.DrawIndexed(mesh.index_count, mesh.start_index, mesh.base_vertex);
             }
 
             transform_cb_offset += meshes.size();
@@ -808,8 +805,7 @@ void Shadows_provider::draw_shadow_maps_cascades(
                auto* srv = mesh.texture.get();
                dc.PSSetShaderResources(0, 1, &srv);
 
-               dc.DrawIndexedInstanced(mesh.index_count, 4, mesh.start_index,
-                                       mesh.base_vertex, 0);
+               dc.DrawIndexed(mesh.index_count, mesh.start_index, mesh.base_vertex);
             }
 
             transform_cb_offset += meshes.size();
