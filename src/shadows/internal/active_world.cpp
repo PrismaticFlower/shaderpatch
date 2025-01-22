@@ -525,9 +525,10 @@ void Active_world::upload_instance_buffer(ID3D11DeviceContext2& dc) noexcept
       }
    }
 
-   for (std::uint32_t i = 0; i < active_doublesided_instance_lists_count; ++i) {
-      Instance_list& list =
-         doublesided_instance_lists[active_doublesided_instance_lists[i]];
+   for (std::uint32_t list_index :
+        std::span{active_doublesided_instance_lists.get(),
+                  active_doublesided_instance_lists_count}) {
+      Instance_list& list = doublesided_instance_lists[list_index];
 
       for (std::uint32_t instance_index :
            std::span{list.active_instances.get(), list.active_count}) {
@@ -538,9 +539,9 @@ void Active_world::upload_instance_buffer(ID3D11DeviceContext2& dc) noexcept
       }
    }
 
-   for (std::uint32_t i = 0; i < active_hardedged_instance_lists_count; ++i) {
-      Instance_list_textured& list =
-         hardedged_instance_lists[active_hardedged_instance_lists[i]];
+   for (std::uint32_t list_index : std::span{active_hardedged_instance_lists.get(),
+                                             active_hardedged_instance_lists_count}) {
+      Instance_list_textured& list = hardedged_instance_lists[list_index];
 
       for (std::uint32_t instance_index :
            std::span{list.active_instances.get(), list.active_count}) {
@@ -551,10 +552,10 @@ void Active_world::upload_instance_buffer(ID3D11DeviceContext2& dc) noexcept
       }
    }
 
-   for (std::uint32_t i = 0;
-        i < active_hardedged_doublesided_instance_lists_count; ++i) {
-      Instance_list_textured& list =
-         hardedged_doublesided_instance_lists[active_hardedged_doublesided_instance_lists[i]];
+   for (std::uint32_t list_index :
+        std::span{active_hardedged_doublesided_instance_lists.get(),
+                  active_hardedged_doublesided_instance_lists_count}) {
+      Instance_list_textured& list = hardedged_doublesided_instance_lists[list_index];
 
       for (std::uint32_t instance_index :
            std::span{list.active_instances.get(), list.active_count}) {
@@ -570,30 +571,32 @@ void Active_world::upload_instance_buffer(ID3D11DeviceContext2& dc) noexcept
 
 void Active_world::reset() noexcept
 {
-   for (std::uint32_t i = 0; i < active_opaque_instance_lists_count; ++i) {
-      Instance_list& list = opaque_instance_lists[active_opaque_instance_lists[i]];
+   for (std::uint32_t list_index : std::span{active_opaque_instance_lists.get(),
+                                             active_opaque_instance_lists_count}) {
+      Instance_list& list = opaque_instance_lists[list_index];
 
       list.active_count = 0;
    }
 
-   for (std::uint32_t i = 0; i < active_doublesided_instance_lists_count; ++i) {
-      Instance_list& list =
-         doublesided_instance_lists[active_doublesided_instance_lists[i]];
+   for (std::uint32_t list_index :
+        std::span{active_doublesided_instance_lists.get(),
+                  active_doublesided_instance_lists_count}) {
+      Instance_list& list = doublesided_instance_lists[list_index];
 
       list.active_count = 0;
    }
 
-   for (std::uint32_t i = 0; i < active_hardedged_instance_lists_count; ++i) {
-      Instance_list_textured& list =
-         hardedged_instance_lists[active_hardedged_instance_lists[i]];
+   for (std::uint32_t list_index : std::span{active_hardedged_instance_lists.get(),
+                                             active_hardedged_instance_lists_count}) {
+      Instance_list_textured& list = hardedged_instance_lists[list_index];
 
       list.active_count = 0;
    }
 
-   for (std::uint32_t i = 0;
-        i < active_hardedged_doublesided_instance_lists_count; ++i) {
-      Instance_list_textured& list =
-         hardedged_doublesided_instance_lists[active_hardedged_doublesided_instance_lists[i]];
+   for (std::uint32_t list_index :
+        std::span{active_hardedged_doublesided_instance_lists.get(),
+                  active_hardedged_doublesided_instance_lists_count}) {
+      Instance_list_textured& list = hardedged_doublesided_instance_lists[list_index];
 
       list.active_count = 0;
    }
@@ -603,5 +606,4 @@ void Active_world::reset() noexcept
    active_hardedged_instance_lists_count = 0;
    active_hardedged_doublesided_instance_lists_count = 0;
 }
-
 }

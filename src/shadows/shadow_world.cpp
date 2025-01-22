@@ -293,14 +293,16 @@ struct Shadow_world {
          dc.IASetVertexBuffers(0, 1, &vertex_buffer, &vertex_buffer_textured_stride,
                                &vertex_buffer_offset);
 
+         dc.RSSetState(_draw_resources.rasterizer_state.get());
+
          dc.VSSetShader(_draw_resources.vertex_shader_textured.get(), nullptr, 0);
          dc.PSSetShader(_draw_resources.pixel_shader_hardedged.get(), nullptr, 0);
 
-         for (std::uint32_t list_index : std::span{
-                 _active_world.active_hardedged_doublesided_instance_lists.get(),
-                 _active_world.active_hardedged_doublesided_instance_lists_count}) {
+         for (std::uint32_t list_index :
+              std::span{_active_world.active_hardedged_instance_lists.get(),
+                        _active_world.active_hardedged_instance_lists_count}) {
             Instance_list_textured& list =
-               _active_world.hardedged_doublesided_instance_lists[list_index];
+               _active_world.hardedged_instance_lists[list_index];
 
             if (current_topology != list.topology) {
                dc.IASetPrimitiveTopology(list.topology);
@@ -321,13 +323,13 @@ struct Shadow_world {
             start_instance += list.active_count;
          }
 
-         dc.RSSetState(_draw_resources.rasterizer_state.get());
+         dc.RSSetState(_draw_resources.rasterizer_state_doublesided.get());
 
-         for (std::uint32_t list_index :
-              std::span{_active_world.active_hardedged_instance_lists.get(),
-                        _active_world.active_hardedged_instance_lists_count}) {
+         for (std::uint32_t list_index : std::span{
+                 _active_world.active_hardedged_doublesided_instance_lists.get(),
+                 _active_world.active_hardedged_doublesided_instance_lists_count}) {
             Instance_list_textured& list =
-               _active_world.hardedged_instance_lists[list_index];
+               _active_world.hardedged_doublesided_instance_lists[list_index];
 
             if (current_topology != list.topology) {
                dc.IASetPrimitiveTopology(list.topology);
