@@ -23,6 +23,8 @@ struct Bounding_sphere;
 namespace sp::core {
 
 struct Shadows_config {
+   bool disable_dynamic_hardedged_meshes = false;
+
    float start_depth = 0.5f;
    float end_depth = 256.0f;
    float shadow_bias = -0.0015f;

@@ -478,6 +478,14 @@ void Shadows_provider::add_mesh_hardedged(ID3D11DeviceContext4& dc,
    if (_drawn_shadow_maps) return;
    if (!_started_frame) begin_frame(dc);
 
+   if (config.disable_dynamic_hardedged_meshes) {
+      D3D11_BUFFER_DESC desc{};
+
+      mesh.vertex_buffer.GetDesc(&desc);
+
+      if (desc.Usage == D3D11_USAGE_DYNAMIC) return;
+   }
+
    const UINT constants_index =
       add_transform_cb(dc, {
                               .world_matrix = mesh.world_matrix,
@@ -513,6 +521,14 @@ void Shadows_provider::add_mesh_hardedged_compressed(
 {
    if (_drawn_shadow_maps) return;
    if (!_started_frame) begin_frame(dc);
+
+   if (config.disable_dynamic_hardedged_meshes) {
+      D3D11_BUFFER_DESC desc{};
+
+      mesh.vertex_buffer.GetDesc(&desc);
+
+      if (desc.Usage == D3D11_USAGE_DYNAMIC) return;
+   }
 
    const UINT constants_index =
       add_transform_cb(dc, {
@@ -557,6 +573,14 @@ void Shadows_provider::add_mesh_hardedged_skinned(
    if (_drawn_shadow_maps) return;
    if (!_started_frame) begin_frame(dc);
 
+   if (config.disable_dynamic_hardedged_meshes) {
+      D3D11_BUFFER_DESC desc{};
+
+      mesh.vertex_buffer.GetDesc(&desc);
+
+      if (desc.Usage == D3D11_USAGE_DYNAMIC) return;
+   }
+
    const UINT skin_index = add_skin(dc, bone_matrices);
    const UINT constants_index =
       add_transform_cb(dc, {
@@ -595,6 +619,14 @@ void Shadows_provider::add_mesh_hardedged_compressed_skinned(
 {
    if (_drawn_shadow_maps) return;
    if (!_started_frame) begin_frame(dc);
+
+   if (config.disable_dynamic_hardedged_meshes) {
+      D3D11_BUFFER_DESC desc{};
+
+      mesh.vertex_buffer.GetDesc(&desc);
+
+      if (desc.Usage == D3D11_USAGE_DYNAMIC) return;
+   }
 
    const UINT skin_index = add_skin(dc, bone_matrices);
    const UINT constants_index =
