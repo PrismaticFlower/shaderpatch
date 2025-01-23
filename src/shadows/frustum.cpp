@@ -96,7 +96,7 @@ Frustum::Frustum(const glm::mat4& inv_projection_matrix) noexcept
 {
 }
 
-bool intersects(const Frustum& frustum, const Bounding_box& bbox) noexcept
+bool intersects_full(const Frustum& frustum, const Bounding_box& bbox) noexcept
 {
    for (const auto& plane : frustum.planes) {
       if (outside_plane(plane, {bbox.min.x, bbox.min.y, bbox.min.z}) &
@@ -134,9 +134,42 @@ bool intersects(const Frustum& frustum, const Bounding_box& bbox) noexcept
    return true;
 }
 
-bool intersects(const Frustum& frustum, const Bounding_sphere& sphere) noexcept
+bool intersects_full(const Frustum& frustum, const Bounding_sphere& sphere) noexcept
 {
    for (const auto& plane : frustum.planes) {
+      if (outside_plane(plane, sphere.position, sphere.radius)) {
+         return false;
+      }
+   }
+
+   return true;
+}
+
+bool intersects(const Frustum& frustum, const Bounding_box& bbox) noexcept
+{
+   for (std::size_t i = frustum_plane_far; i < frustum.planes.size(); ++i) {
+      const glm::vec4& plane = frustum.planes[i];
+
+      if (outside_plane(plane, {bbox.min.x, bbox.min.y, bbox.min.z}) &
+          outside_plane(plane, {bbox.max.x, bbox.min.y, bbox.min.z}) &
+          outside_plane(plane, {bbox.min.x, bbox.max.y, bbox.min.z}) &
+          outside_plane(plane, {bbox.max.x, bbox.max.y, bbox.min.z}) &
+          outside_plane(plane, {bbox.min.x, bbox.min.y, bbox.max.z}) &
+          outside_plane(plane, {bbox.max.x, bbox.min.y, bbox.max.z}) &
+          outside_plane(plane, {bbox.min.x, bbox.max.y, bbox.max.z}) &
+          outside_plane(plane, {bbox.max.x, bbox.max.y, bbox.max.z})) {
+         return false;
+      }
+   }
+
+   return true;
+}
+
+bool intersects(const Frustum& frustum, const Bounding_sphere& sphere) noexcept
+{
+   for (std::size_t i = frustum_plane_far; i < frustum.planes.size(); ++i) {
+      const glm::vec4& plane = frustum.planes[i];
+
       if (outside_plane(plane, sphere.position, sphere.radius)) {
          return false;
       }

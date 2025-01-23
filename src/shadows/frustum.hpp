@@ -51,6 +51,10 @@ struct Bounding_sphere {
    float radius;
 };
 
+bool intersects_full(const Frustum& frustum, const Bounding_box& bbox) noexcept;
+
+bool intersects_full(const Frustum& frustum, const Bounding_sphere& sphere) noexcept;
+
 bool intersects(const Frustum& frustum, const Bounding_box& bbox) noexcept;
 
 bool intersects(const Frustum& frustum, const Bounding_sphere& sphere) noexcept;
