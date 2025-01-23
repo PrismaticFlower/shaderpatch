@@ -1185,8 +1185,8 @@ auto Shadows_provider::add_transform_cb(ID3D11DeviceContext4& dc,
 
       D3D11_MAPPED_SUBRESOURCE mapped{};
 
-      if (FAILED(dc.Map(_transforms_cb_buffer.get(), 0, D3D11_MAP_WRITE_DISCARD,
-                        0, &mapped))) {
+      if (FAILED(dc.Map(_transforms_cb_buffer.get(), 0,
+                        D3D11_MAP_WRITE_NO_OVERWRITE, 0, &mapped))) {
          log_and_terminate("Failed to map shadows transforms buffer!");
       }
 
@@ -1246,7 +1246,8 @@ auto Shadows_provider::add_skin(ID3D11DeviceContext4& dc,
 
       D3D11_MAPPED_SUBRESOURCE mapped{};
 
-      if (FAILED(dc.Map(_skins_buffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
+      if (FAILED(dc.Map(_skins_buffer.get(), 0, D3D11_MAP_WRITE_NO_OVERWRITE, 0,
+                        &mapped))) {
          log_and_terminate("Failed to map shadows transforms buffer!");
       }
 
