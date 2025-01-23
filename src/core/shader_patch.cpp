@@ -200,7 +200,8 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
      _bf2_log_monitor{user_config.developer.monitor_bfront2_log
                          ? std::make_unique<BF2_log_monitor>()
                          : nullptr},
-     _shadows{std::make_unique<Shadows_provider>(_device, _shader_database)}
+     _shadows{std::make_unique<Shadows_provider>(_device, _shader_database,
+                                                 _input_layout_descriptions)}
 {
    add_builtin_textures(*_device, _shader_resource_database);
    bind_static_resources();
@@ -314,6 +315,7 @@ void Shader_patch::present() noexcept
    ImGui::Checkbox("Preview Shadow World Textured", &_preview_shadow_world_textured);
    ImGui::Checkbox("Overlay Shadow World BBOXs", &_overlay_shadow_world_aabbs);
 
+#if 0
    ImGui::Text("zprepass meshes: %i", _shadows->meshes.zprepass.size());
    ImGui::Text("zprepass compressed meshes: %i",
                _shadows->meshes.zprepass_compressed.size());
@@ -332,6 +334,7 @@ void Shader_patch::present() noexcept
                _shadows->meshes.zprepass_hardedged_compressed_skinned.size());
 
    ImGui::Text("zprepass skins: %i", _shadows->meshes.skins.size());
+#endif
 
    _effects.profiler.end_frame(*_device_context);
    _game_postprocessing.end_frame();
@@ -364,7 +367,7 @@ void Shader_patch::present() noexcept
       update_material_resources();
    }
 
-   _shadows->end_frame();
+   _shadows->end_frame(*_device_context);
    shadows::shadow_world.process_mesh_copy_queue(*_device_context);
 
    if (_set_aspect_ratio_on_present) {
@@ -1557,39 +1560,218 @@ void Shader_patch::game_rendertype_changed() noexcept
             const bool skinned = (_game_shader->vertex_shader_flags &
                                   shader::Vertex_shader_flags::hard_skinned) ==
                                  shader::Vertex_shader_flags::hard_skinned;
-
-            auto& meshes = _shadows->meshes;
-            UINT skin_index = meshes.noskin;
+            const bool compressed = _game_input_layout.compressed;
 
             if (skinned) {
-               skin_index = meshes.skins.size();
+               if (hardedged) {
+                  if (compressed) {
+                     _shadows->add_mesh_hardedged_compressed_skinned(
+                        *_device_context,
+                        {
+                           .input_layout = _game_input_layout.layout_index,
 
-               meshes.skins.emplace_back(_cb_skin.bone_matrices);
-            }
+                           .primitive_topology = topology,
 
-            if (hardedged) {
-               meshes
-                  .select_zprepass_hardedged(_game_input_layout.compressed, skinned)
-                  .emplace_back(_game_input_layout.layout_index, topology,
-                                _game_index_buffer, _game_index_buffer_offset,
-                                _game_vertex_buffer, _game_vertex_buffer_offset,
-                                _game_vertex_buffer_stride, index_count,
-                                start_index, base_vertex,
-                                glm::vec3{_cb_draw.position_decompress_min},
-                                glm::vec3{_cb_draw.position_decompress_max},
-                                _cb_draw.world_matrix, skin_index,
-                                _cb_draw.custom_constants[0],
-                                _cb_draw.custom_constants[1], _game_textures[0].srv);
+                           .index_buffer = *_game_index_buffer,
+                           .index_buffer_offset = _game_index_buffer_offset,
+
+                           .vertex_buffer = *_game_vertex_buffer,
+                           .vertex_buffer_offset = _game_vertex_buffer_offset,
+                           .vertex_buffer_stride = _game_vertex_buffer_stride,
+
+                           .index_count = index_count,
+                           .start_index = start_index,
+                           .base_vertex = base_vertex,
+
+                           .world_matrix = _cb_draw.world_matrix,
+
+                           .x_texcoord_transform = _cb_draw.custom_constants[0],
+                           .y_texcoord_transform = _cb_draw.custom_constants[1],
+                           .texture = *_game_textures[0].srv,
+
+                           .position_decompress_mul = _cb_draw.position_decompress_min,
+                           .position_decompress_add = _cb_draw.position_decompress_max,
+                        },
+                        _cb_skin.bone_matrices);
+                  }
+                  else {
+                     _shadows->add_mesh_hardedged_skinned(
+                        *_device_context,
+                        {
+                           .input_layout = _game_input_layout.layout_index,
+
+                           .primitive_topology = topology,
+
+                           .index_buffer = *_game_index_buffer,
+                           .index_buffer_offset = _game_index_buffer_offset,
+
+                           .vertex_buffer = *_game_vertex_buffer,
+                           .vertex_buffer_offset = _game_vertex_buffer_offset,
+                           .vertex_buffer_stride = _game_vertex_buffer_stride,
+
+                           .index_count = index_count,
+                           .start_index = start_index,
+                           .base_vertex = base_vertex,
+
+                           .world_matrix = _cb_draw.world_matrix,
+
+                           .x_texcoord_transform = _cb_draw.custom_constants[0],
+                           .y_texcoord_transform = _cb_draw.custom_constants[1],
+                           .texture = *_game_textures[0].srv,
+                        },
+                        _cb_skin.bone_matrices);
+                  }
+               }
+               else {
+                  if (compressed) {
+                     _shadows->add_mesh_compressed_skinned(
+                        *_device_context,
+                        {
+                           .primitive_topology = topology,
+
+                           .index_buffer = *_game_index_buffer,
+                           .index_buffer_offset = _game_index_buffer_offset,
+
+                           .vertex_buffer = *_game_vertex_buffer,
+                           .vertex_buffer_offset = _game_vertex_buffer_offset,
+                           .vertex_buffer_stride = _game_vertex_buffer_stride,
+
+                           .index_count = index_count,
+                           .start_index = start_index,
+                           .base_vertex = base_vertex,
+
+                           .world_matrix = _cb_draw.world_matrix,
+
+                           .position_decompress_mul = _cb_draw.position_decompress_min,
+                           .position_decompress_add = _cb_draw.position_decompress_max,
+                        },
+                        _cb_skin.bone_matrices);
+                  }
+                  else {
+                     _shadows->add_mesh_skinned(
+                        *_device_context,
+                        {
+                           .primitive_topology = topology,
+
+                           .index_buffer = *_game_index_buffer,
+                           .index_buffer_offset = _game_index_buffer_offset,
+
+                           .vertex_buffer = *_game_vertex_buffer,
+                           .vertex_buffer_offset = _game_vertex_buffer_offset,
+                           .vertex_buffer_stride = _game_vertex_buffer_stride,
+
+                           .index_count = index_count,
+                           .start_index = start_index,
+                           .base_vertex = base_vertex,
+
+                           .world_matrix = _cb_draw.world_matrix,
+                        },
+                        _cb_skin.bone_matrices);
+                  }
+               }
             }
             else {
-               meshes.select_zprepass(_game_input_layout.compressed, skinned)
-                  .emplace_back(topology, _game_index_buffer,
-                                _game_index_buffer_offset, _game_vertex_buffer,
-                                _game_vertex_buffer_offset, _game_vertex_buffer_stride,
-                                index_count, start_index, base_vertex,
-                                glm::vec3{_cb_draw.position_decompress_min},
-                                glm::vec3{_cb_draw.position_decompress_max},
-                                _cb_draw.world_matrix, skin_index);
+               if (hardedged) {
+                  if (compressed) {
+                     _shadows->add_mesh_hardedged_compressed(
+                        *_device_context,
+                        {
+                           .input_layout = _game_input_layout.layout_index,
+
+                           .primitive_topology = topology,
+
+                           .index_buffer = *_game_index_buffer,
+                           .index_buffer_offset = _game_index_buffer_offset,
+
+                           .vertex_buffer = *_game_vertex_buffer,
+                           .vertex_buffer_offset = _game_vertex_buffer_offset,
+                           .vertex_buffer_stride = _game_vertex_buffer_stride,
+
+                           .index_count = index_count,
+                           .start_index = start_index,
+                           .base_vertex = base_vertex,
+
+                           .world_matrix = _cb_draw.world_matrix,
+
+                           .x_texcoord_transform = _cb_draw.custom_constants[0],
+                           .y_texcoord_transform = _cb_draw.custom_constants[1],
+                           .texture = *_game_textures[0].srv,
+
+                           .position_decompress_mul = _cb_draw.position_decompress_min,
+                           .position_decompress_add = _cb_draw.position_decompress_max,
+                        });
+                  }
+                  else {
+                     _shadows->add_mesh_hardedged(
+                        *_device_context,
+                        {
+                           .input_layout = _game_input_layout.layout_index,
+
+                           .primitive_topology = topology,
+
+                           .index_buffer = *_game_index_buffer,
+                           .index_buffer_offset = _game_index_buffer_offset,
+
+                           .vertex_buffer = *_game_vertex_buffer,
+                           .vertex_buffer_offset = _game_vertex_buffer_offset,
+                           .vertex_buffer_stride = _game_vertex_buffer_stride,
+
+                           .index_count = index_count,
+                           .start_index = start_index,
+                           .base_vertex = base_vertex,
+
+                           .world_matrix = _cb_draw.world_matrix,
+
+                           .x_texcoord_transform = _cb_draw.custom_constants[0],
+                           .y_texcoord_transform = _cb_draw.custom_constants[1],
+                           .texture = *_game_textures[0].srv,
+                        });
+                  }
+               }
+               else {
+                  if (compressed) {
+                     _shadows->add_mesh_compressed(
+                        *_device_context,
+                        {
+                           .primitive_topology = topology,
+
+                           .index_buffer = *_game_index_buffer,
+                           .index_buffer_offset = _game_index_buffer_offset,
+
+                           .vertex_buffer = *_game_vertex_buffer,
+                           .vertex_buffer_offset = _game_vertex_buffer_offset,
+                           .vertex_buffer_stride = _game_vertex_buffer_stride,
+
+                           .index_count = index_count,
+                           .start_index = start_index,
+                           .base_vertex = base_vertex,
+
+                           .world_matrix = _cb_draw.world_matrix,
+
+                           .position_decompress_mul = _cb_draw.position_decompress_min,
+                           .position_decompress_add = _cb_draw.position_decompress_max,
+                        });
+                  }
+                  else {
+                     _shadows->add_mesh(*_device_context,
+                                        {
+                                           .primitive_topology = topology,
+
+                                           .index_buffer = *_game_index_buffer,
+                                           .index_buffer_offset = _game_index_buffer_offset,
+
+                                           .vertex_buffer = *_game_vertex_buffer,
+                                           .vertex_buffer_offset = _game_vertex_buffer_offset,
+                                           .vertex_buffer_stride = _game_vertex_buffer_stride,
+
+                                           .index_count = index_count,
+                                           .start_index = start_index,
+                                           .base_vertex = base_vertex,
+
+                                           .world_matrix = _cb_draw.world_matrix,
+                                        });
+                  }
+               }
             }
          };
       }
@@ -1660,8 +1842,7 @@ void Shader_patch::game_rendertype_changed() noexcept
       if (use_alternative_shadows) {
          if (shadow_rt) {
             _shadows->draw_shadow_maps(*_device_context,
-                                       {.input_layout_descriptions = _input_layout_descriptions,
-                                        .scene_depth = *_nearscene_depthstencil.srv,
+                                       {.scene_depth = *_nearscene_depthstencil.srv,
                                         .scene_dsv = *_nearscene_depthstencil.dsv_readonly,
                                         .target_map = *shadow_rt->rtv,
                                         .target_width = shadow_rt->width,
