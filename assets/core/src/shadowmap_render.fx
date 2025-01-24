@@ -5,6 +5,9 @@ cbuffer Constants : register(b0)
    float4x4 shadow_matrices[4];
    float2 target_resolution;
    float shadow_bias;
+
+   float cascade_fade_distance;
+   float inv_cascade_fade_distance;
 }
 
 Texture2D<float> input_depth : register(t0);
@@ -87,6 +90,20 @@ float sample_cascaded_shadow_map(float3 positionWS)
    float shadow = shadow_map.SampleCmpLevelZero(shadow_sampler,
                                                 float3(positionLS.xy, cascade_index),
                                                 positionLS.z + shadow_bias);
+
+   [branch]
+   if (cascade_index != 3 && cascade_signed_distance >= cascade_fade_distance) {
+      const uint next_cascade_index = cascade_index + 1;
+      const float fade = cascade_signed_distance * inv_cascade_fade_distance;
+      
+      float3 next_positionLS = mul(float4(positionWS, 1.0), shadow_matrices[next_cascade_index]).xyz;
+
+      float next_shadow = shadow_map.SampleCmpLevelZero(shadow_sampler,
+                                                        float3(next_positionLS.xy, next_cascade_index),
+                                                        next_positionLS.z + shadow_bias);
+
+      shadow = lerp(next_shadow, shadow, saturate(fade));
+   }
 
    return shadow;
 }

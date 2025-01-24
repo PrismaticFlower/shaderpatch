@@ -36,10 +36,13 @@ struct alignas(256) Draw_to_target_cb {
    std::array<glm::mat4, 4> shadow_matrices;
    glm::vec2 target_resolution;
    float shadow_bias;
+   float cascade_fade_distance;
+   float inv_cascade_fade_distance;
 };
 
 static_assert(sizeof(Draw_to_target_cb) == 512);
 
+constexpr float cascade_fade_texels = 32.0f;
 constexpr UINT cascade_count = 4;
 constexpr UINT TEMP_shadow_map_length = 2048;
 
@@ -842,12 +845,14 @@ void Shadows_provider::upload_buffer_data(ID3D11DeviceContext4& dc,
 void Shadows_provider::upload_draw_to_target_buffer(ID3D11DeviceContext4& dc,
                                                     const Draw_args& args) noexcept
 {
-   const Draw_to_target_cb cb{.inv_view_proj_matrix =
-                                 glm::mat4{glm::inverse(glm::dmat4{view_proj_matrix})},
-                              .shadow_matrices = _cascade_texture_matrices,
-                              .target_resolution =
-                                 glm::vec2{args.target_width, args.target_height},
-                              .shadow_bias = config.shadow_bias};
+   const Draw_to_target_cb cb{
+      .inv_view_proj_matrix = glm::mat4{glm::inverse(glm::dmat4{view_proj_matrix})},
+      .shadow_matrices = _cascade_texture_matrices,
+      .target_resolution = glm::vec2{args.target_width, args.target_height},
+      .shadow_bias = config.shadow_bias,
+      .cascade_fade_distance = -cascade_fade_texels / _shadow_map_length_flt,
+      .inv_cascade_fade_distance = 1.0f / (-cascade_fade_texels / _shadow_map_length_flt),
+   };
 
    update_dynamic_buffer(dc, *_draw_to_target_cb, cb);
 }
