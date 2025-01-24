@@ -46,28 +46,41 @@ float shadow_cascade_signed_distance(float3 positionLS)
    return max(max(distance.x, distance.y), distance.z);
 }
 
-uint select_shadow_map_cascade(float3 positionWS)
+void select_shadow_map_cascade(float3 positionWS, 
+                               out uint out_cascade_index,
+                               out float out_cascade_signed_distance,
+                               out float3 out_positionLS)
 {
-   uint cascade_index = (shadow_cascade_count - 1);
+   uint cascade_index = shadow_cascade_count - 1;
 
-   [unroll] for (int i = (shadow_cascade_count - 1); i >= 0; --i)
+   for (int i = shadow_cascade_count - 2; i >= 0; --i)
    {
       float3 positionLS = mul(float4(positionWS, 1.0), shadow_matrices[i]).xyz;
 
       float cascade_signed_distance = shadow_cascade_signed_distance(positionLS);
 
-      if (shadow_cascade_signed_distance(positionLS) <= 0.0) cascade_index = i;
+      if (shadow_cascade_signed_distance(positionLS) <= 0.0) {
+         cascade_index = i;
+         out_cascade_signed_distance = cascade_signed_distance;
+         out_positionLS = positionLS;
+      }
    }
 
-   return cascade_index;
+   if (cascade_index == shadow_cascade_count - 1) {
+         out_cascade_signed_distance = -0.5;
+         out_positionLS = mul(float4(positionWS, 1.0), shadow_matrices[cascade_index]).xyz;
+   }
+
+   out_cascade_index = cascade_index;
 }
 
 float sample_cascaded_shadow_map(float3 positionWS)
 {
-   uint cascade_index = select_shadow_map_cascade(positionWS);
+   uint cascade_index;
+   float cascade_signed_distance;
+   float3 positionLS;
 
-   float3 positionLS =
-      mul(float4(positionWS, 1.0), shadow_matrices[cascade_index]).xyz;
+   select_shadow_map_cascade(positionWS, cascade_index, cascade_signed_distance, positionLS);
 
    // TODO: Offset UV by a half texel?
 
