@@ -234,9 +234,13 @@ Shadows_provider::Shadows_provider(Com_ptr<ID3D11Device5> device,
    _rasterizer_state = [&] {
       Com_ptr<ID3D11RasterizerState> rasterizer_state;
 
-      const D3D11_RASTERIZER_DESC desc{.FillMode = D3D11_FILL_SOLID,
-                                       .CullMode = D3D11_CULL_BACK,
-                                       .FrontCounterClockwise = true};
+      const D3D11_RASTERIZER_DESC desc{
+         .FillMode = D3D11_FILL_SOLID,
+         .CullMode = D3D11_CULL_BACK,
+         .FrontCounterClockwise = true,
+         .DepthBiasClamp = _current_depth_bias_clamp,
+         .SlopeScaledDepthBias = _current_slope_scaled_depth_bias,
+      };
 
       if (FAILED(device->CreateRasterizerState(&desc,
                                                rasterizer_state.clear_and_assign()))) {
@@ -249,9 +253,13 @@ Shadows_provider::Shadows_provider(Com_ptr<ID3D11Device5> device,
    _rasterizer_doublesided_state = [&] {
       Com_ptr<ID3D11RasterizerState> rasterizer_state;
 
-      const D3D11_RASTERIZER_DESC desc{.FillMode = D3D11_FILL_SOLID,
-                                       .CullMode = D3D11_CULL_NONE,
-                                       .FrontCounterClockwise = true};
+      const D3D11_RASTERIZER_DESC desc{
+         .FillMode = D3D11_FILL_SOLID,
+         .CullMode = D3D11_CULL_NONE,
+         .FrontCounterClockwise = true,
+         .DepthBiasClamp = _current_depth_bias_clamp,
+         .SlopeScaledDepthBias = _current_slope_scaled_depth_bias,
+      };
 
       if (FAILED(device->CreateRasterizerState(&desc,
                                                rasterizer_state.clear_and_assign()))) {
@@ -713,7 +721,13 @@ void Shadows_provider::draw_shadow_maps(ID3D11DeviceContext4& dc,
       },
    };
 
-   shadows::shadow_world.draw_shadow_views(dc, view_proj_matrix, shadow_views);
+   shadows::shadow_world.draw_shadow_views(dc,
+                                           {
+                                              .depth_bias_clamp = _current_depth_bias_clamp,
+                                              .slope_scaled_depth_bias =
+                                                 _current_slope_scaled_depth_bias,
+                                           },
+                                           shadow_views);
 
    draw_to_target_map(dc, args);
 
@@ -755,6 +769,35 @@ void Shadows_provider::begin_frame(ID3D11DeviceContext4& dc) noexcept
    }
 
    _skins_buffer_upload = static_cast<std::byte*>(mapped.pData);
+
+   if (config.hw_depth_bias != _current_depth_bias ||
+       config.hw_depth_bias_clamp != _current_depth_bias_clamp ||
+       config.hw_slope_scaled_depth_bias != _current_slope_scaled_depth_bias) {
+      _current_depth_bias = config.hw_depth_bias;
+      _current_depth_bias_clamp = config.hw_depth_bias_clamp;
+      _current_slope_scaled_depth_bias = config.hw_slope_scaled_depth_bias;
+
+      D3D11_RASTERIZER_DESC desc{
+         .FillMode = D3D11_FILL_SOLID,
+         .CullMode = D3D11_CULL_BACK,
+         .FrontCounterClockwise = true,
+         .DepthBias = _current_depth_bias,
+         .DepthBiasClamp = _current_depth_bias_clamp,
+         .SlopeScaledDepthBias = _current_slope_scaled_depth_bias,
+      };
+
+      if (FAILED(_device->CreateRasterizerState(&desc,
+                                                _rasterizer_state.clear_and_assign()))) {
+         log_and_terminate("Unable to create shadow rasterizer state!");
+      }
+
+      desc.CullMode = D3D11_CULL_NONE;
+
+      if (FAILED(_device->CreateRasterizerState(&desc, _rasterizer_doublesided_state
+                                                          .clear_and_assign()))) {
+         log_and_terminate("Unable to create shadow rasterizer state!");
+      }
+   }
 
    _started_frame = true;
 }

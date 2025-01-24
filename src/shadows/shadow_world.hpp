@@ -14,6 +14,12 @@ class Database;
 
 namespace sp::shadows {
 
+struct Shadow_draw_args {
+   INT depth_bias = 0;
+   float depth_bias_clamp = 0.0f;
+   float slope_scaled_depth_bias = 0.0f;
+};
+
 struct Shadow_draw_view {
    D3D11_VIEWPORT viewport;
    ID3D11DepthStencilView* dsv = nullptr;
@@ -25,8 +31,7 @@ struct Shadow_world_interface {
 
    static void process_mesh_copy_queue(ID3D11DeviceContext2& dc) noexcept;
 
-   static void draw_shadow_views(ID3D11DeviceContext2& dc,
-                                 const glm::mat4& view_proj_matrix,
+   static void draw_shadow_views(ID3D11DeviceContext2& dc, const Shadow_draw_args& args,
                                  std::span<const Shadow_draw_view> views) noexcept;
 
    static void draw_shadow_world_preview(ID3D11DeviceContext2& dc,

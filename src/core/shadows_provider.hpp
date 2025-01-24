@@ -25,6 +25,10 @@ namespace sp::core {
 struct Shadows_config {
    bool disable_dynamic_hardedged_meshes = false;
 
+   INT hw_depth_bias = 0;
+   float hw_depth_bias_clamp = 0.0f;
+   float hw_slope_scaled_depth_bias = 0.0f;
+
    float start_depth = 0.5f;
    float end_depth = 256.0f;
    float shadow_bias = -0.0015f;
@@ -308,6 +312,9 @@ private:
    std::array<Com_ptr<ID3D11DepthStencilView>, 4> _shadow_map_dsvs;
    Com_ptr<ID3D11ShaderResourceView> _shadow_map_srv;
 
+   INT _current_depth_bias = config.hw_depth_bias;
+   float _current_depth_bias_clamp = config.hw_depth_bias_clamp;
+   float _current_slope_scaled_depth_bias = config.hw_slope_scaled_depth_bias;
    float _shadow_map_length_flt = 0.0f;
 
    Com_ptr<ID3D11RasterizerState> _rasterizer_state;

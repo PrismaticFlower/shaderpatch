@@ -47,20 +47,21 @@ struct Shadow_world {
       _mesh_copy_queue.process(dc);
    }
 
-   void draw_shadow_views(ID3D11DeviceContext2& dc, const glm::mat4& view_proj_matrix,
+   void draw_shadow_views(ID3D11DeviceContext2& dc, const Shadow_draw_args& args,
                           std::span<const Shadow_draw_view> views) noexcept
    {
       std::scoped_lock lock{_mutex};
 
       if (_active_rebuild_needed) build_active_world();
 
+      _draw_resources.update(*_device, args.depth_bias, args.depth_bias_clamp,
+                             args.slope_scaled_depth_bias);
+
       dc.ClearState();
 
       dc.OMSetDepthStencilState(_draw_resources.depth_stencil_state.get(), 0xff);
 
       dc.PSSetSamplers(0, 1, _draw_resources.sampler_state.get_ptr());
-
-      Frustum view_frustum{glm::inverse(glm::dmat4{view_proj_matrix})};
 
       for (const Shadow_draw_view& view : views) {
          Frustum shadow_frustum{glm::inverse(glm::dmat4{view.shadow_projection_matrix})};
@@ -80,7 +81,6 @@ struct Shadow_world {
                           list.bbox_max_z.get()[instance_index]},
                };
 
-               // if (intersects(view_frustum, bbox)) continue;
                if (!intersects(shadow_frustum, bbox)) continue;
 
                list.active_instances[list.active_count] = instance_index;
@@ -111,7 +111,6 @@ struct Shadow_world {
                           list.bbox_max_z.get()[instance_index]},
                };
 
-               //  if (intersects(view_frustum, bbox)) continue;
                if (!intersects(shadow_frustum, bbox)) continue;
 
                list.active_instances[list.active_count] = instance_index;
@@ -143,7 +142,6 @@ struct Shadow_world {
                           list.bbox_max_z.get()[instance_index]},
                };
 
-               //   if (intersects(view_frustum, bbox)) continue;
                if (!intersects(shadow_frustum, bbox)) continue;
 
                list.active_instances[list.active_count] = instance_index;
@@ -175,7 +173,6 @@ struct Shadow_world {
                           list.bbox_max_z.get()[instance_index]},
                };
 
-               //  if (intersects(view_frustum, bbox)) continue;
                if (!intersects(shadow_frustum, bbox)) continue;
 
                list.active_instances[list.active_count] = instance_index;
@@ -1669,14 +1666,14 @@ void Shadow_world_interface::process_mesh_copy_queue(ID3D11DeviceContext2& dc) n
 }
 
 void Shadow_world_interface::draw_shadow_views(ID3D11DeviceContext2& dc,
-                                               const glm::mat4& view_proj_matrix,
+                                               const Shadow_draw_args& args,
                                                std::span<const Shadow_draw_view> views) noexcept
 {
    Shadow_world* self = shadow_world_ptr.load(std::memory_order_relaxed);
 
    if (!self) return;
 
-   self->draw_shadow_views(dc, view_proj_matrix, views);
+   self->draw_shadow_views(dc, args, views);
 }
 
 void Shadow_world_interface::draw_shadow_world_preview(
