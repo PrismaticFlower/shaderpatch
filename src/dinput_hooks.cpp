@@ -41,18 +41,18 @@ struct IDirectInputDevice8A_overlay : IDirectInputDevice8A {
 
    HRESULT __stdcall GetDeviceState(DWORD size, LPVOID data) noexcept override
    {
-      if (input_config.mode == Input_mode::imgui) {
-         std::memset(data, 0, size);
-
-         return DI_OK;
-      }
-
       const HRESULT result = _device->GetDeviceState(size, data);
 
       if (_type == Device_type::keyboard && size > DIK_SYSRQ && SUCCEEDED(result)) {
          // Fix print screen crash on some game versions.
 
          static_cast<char*>(data)[DIK_SYSRQ] = 0;
+      }
+
+      if (input_config.mode == Input_mode::imgui) {
+         std::memset(data, 0, size);
+
+         return DI_OK;
       }
 
       return result;
@@ -313,7 +313,7 @@ struct IDirectInput8A_overlay : IDirectInput8A {
          return _dinput->CreateDevice(guid, out_device, unknown_outer);
       }
 
-      if (out_device && guid == GUID_SysKeyboard || guid == GUID_SysMouse) {
+      if (out_device && (guid == GUID_SysKeyboard || guid == GUID_SysMouse)) {
          *out_device = IDirectInputDevice8A_overlay::create(guid, *_dinput).release();
 
          return DI_OK;
