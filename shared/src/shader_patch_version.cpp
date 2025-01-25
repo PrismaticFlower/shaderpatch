@@ -6,9 +6,9 @@
 
 namespace sp {
 
-const Shader_patch_version current_shader_patch_version{1, 7, 3,
-                                                        Shader_patch_prerelease_stage::none,
-                                                        0};
+const Shader_patch_version current_shader_patch_version{1, 8, 0,
+                                                        Shader_patch_prerelease_stage::preview,
+                                                        2};
 
 const std::string current_shader_patch_version_string =
    to_string(current_shader_patch_version);
@@ -32,6 +32,8 @@ auto to_string(const Shader_patch_version& version) noexcept -> std::string
    str += to_string(version.prerelease_stage);
    str += "."sv;
    str += std::to_string(version.prerelease);
+
+   str += " (shadows branch)";
 
    return str;
 }
