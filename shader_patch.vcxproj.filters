@@ -304,6 +304,7 @@
     <ClCompile Include="src\shadows\texture_hasher.cpp" />
     <ClCompile Include="src\shadows\read\read_texture.cpp" />
     <ClCompile Include="src\shadows\internal\texture_table.cpp" />
+    <ClCompile Include="src\shadows\internal\debug_world_textured_draw.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\shader_constants.hpp">
@@ -759,6 +760,7 @@
     <ClInclude Include="src\shadows\texture_hasher.hpp" />
     <ClInclude Include="src\shadows\read\read_texture.hpp" />
     <ClInclude Include="src\shadows\internal\texture_table.hpp" />
+    <ClInclude Include="src\shadows\internal\debug_world_textured_draw.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />
