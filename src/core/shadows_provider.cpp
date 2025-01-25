@@ -241,6 +241,7 @@ Shadows_provider::Shadows_provider(Com_ptr<ID3D11Device5> device,
          .FillMode = D3D11_FILL_SOLID,
          .CullMode = D3D11_CULL_BACK,
          .FrontCounterClockwise = true,
+         .DepthBias = _current_depth_bias,
          .DepthBiasClamp = _current_depth_bias_clamp,
          .SlopeScaledDepthBias = _current_slope_scaled_depth_bias,
       };
@@ -260,6 +261,7 @@ Shadows_provider::Shadows_provider(Com_ptr<ID3D11Device5> device,
          .FillMode = D3D11_FILL_SOLID,
          .CullMode = D3D11_CULL_NONE,
          .FrontCounterClockwise = true,
+         .DepthBias = _current_depth_bias,
          .DepthBiasClamp = _current_depth_bias_clamp,
          .SlopeScaledDepthBias = _current_slope_scaled_depth_bias,
       };
@@ -724,13 +726,15 @@ void Shadows_provider::draw_shadow_maps(ID3D11DeviceContext4& dc,
       },
    };
 
-   shadows::shadow_world.draw_shadow_views(dc,
-                                           {
-                                              .depth_bias_clamp = _current_depth_bias_clamp,
-                                              .slope_scaled_depth_bias =
-                                                 _current_slope_scaled_depth_bias,
-                                           },
-                                           shadow_views);
+   shadows::shadow_world.draw_shadow_views(
+      dc,
+      {
+         .rasterizer_state = config.force_doublesided_meshes
+                                ? _rasterizer_doublesided_state.get()
+                                : _rasterizer_state.get(),
+         .rasterizer_state_doublesided = _rasterizer_doublesided_state.get(),
+      },
+      shadow_views);
 
    draw_to_target_map(dc, args);
 
@@ -925,6 +929,12 @@ void Shadows_provider::create_shadow_map(const UINT length) noexcept
 
 void Shadows_provider::draw_shadow_maps_cascades(ID3D11DeviceContext4& dc) noexcept
 {
+   ID3D11RasterizerState* rasterizer_state =
+      config.force_doublesided_meshes ? _rasterizer_doublesided_state.get()
+                                      : _rasterizer_state.get();
+   ID3D11RasterizerState* rasterizer_state_doublesided =
+      _rasterizer_doublesided_state.get();
+
    const D3D11_VIEWPORT viewport{.Width = _shadow_map_length_flt,
                                  .Height = _shadow_map_length_flt,
                                  .MinDepth = 0.0f,
@@ -946,7 +956,7 @@ void Shadows_provider::draw_shadow_maps_cascades(ID3D11DeviceContext4& dc) noexc
 
       dc.VSSetConstantBuffers(1, 1, _camera_cb_buffer.get_ptr());
 
-      dc.RSSetState(_rasterizer_state.get());
+      dc.RSSetState(rasterizer_state);
 
       dc.OMSetRenderTargets(0, nullptr, _shadow_map_dsvs[view_index].get());
 
@@ -1076,7 +1086,7 @@ void Shadows_provider::draw_shadow_maps_cascades(ID3D11DeviceContext4& dc) noexc
          }
       };
 
-      dc.RSSetState(_rasterizer_doublesided_state.get());
+      dc.RSSetState(rasterizer_state_doublesided);
 
       draw_hardedged_meshes(_meshes.hardedged, _mesh_hardedged);
       draw_hardedged_meshes(_meshes.hardedged_skinned, _mesh_hardedged_skinned);

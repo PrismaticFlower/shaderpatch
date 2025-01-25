@@ -15,9 +15,8 @@ class Database;
 namespace sp::shadows {
 
 struct Shadow_draw_args {
-   INT depth_bias = 0;
-   float depth_bias_clamp = 0.0f;
-   float slope_scaled_depth_bias = 0.0f;
+   ID3D11RasterizerState* rasterizer_state = nullptr;
+   ID3D11RasterizerState* rasterizer_state_doublesided = nullptr;
 };
 
 struct Shadow_draw_view {

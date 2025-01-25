@@ -308,6 +308,11 @@ void Shader_patch::present() noexcept
 {
    ImGui::SeparatorText("Shadows");
 
+   ImGui::Checkbox("force doublesided meshes",
+                   &_shadows->config.force_doublesided_meshes);
+   ImGui::Checkbox("disable dynamic hardedged meshes",
+                   &_shadows->config.disable_dynamic_hardedged_meshes);
+
    ImGui::DragFloat("shadow bias", &_shadows->config.shadow_bias, 0.0001f,
                     -1.0f, 1.0f, "%.5f");
    ImGui::DragInt("HW shadow depth bias", &_shadows->config.hw_depth_bias);
@@ -317,8 +322,6 @@ void Shader_patch::present() noexcept
                     &_shadows->config.hw_slope_scaled_depth_bias, 0.0001f,
                     -1.0f, 1.0f, "%.5f");
 
-   ImGui::Checkbox("disable dynamic hardedged meshes",
-                   &_shadows->config.disable_dynamic_hardedged_meshes);
    ImGui::DragFloat("shadow range", &_shadows->config.end_depth, 1.0f,
                     _shadows->config.end_depth, 100000.0f, "%.0f");
 

@@ -143,24 +143,6 @@ Draw_resources::Draw_resources(ID3D11Device& device, shader::Database& shaders)
    vertex_shader = opaque_shader;
    vertex_shader_textured = hardedged_shader;
 
-   const D3D11_RASTERIZER_DESC rasterizer_desc{.FillMode = D3D11_FILL_SOLID,
-                                               .CullMode = D3D11_CULL_BACK,
-                                               .FrontCounterClockwise = true};
-
-   if (FAILED(device.CreateRasterizerState(&rasterizer_desc,
-                                           rasterizer_state.clear_and_assign()))) {
-      log_and_terminate("Unable to create shadow world rasterizer state!");
-   }
-
-   const D3D11_RASTERIZER_DESC rasterizer_doublesided_desc{.FillMode = D3D11_FILL_SOLID,
-                                                           .CullMode = D3D11_CULL_NONE,
-                                                           .FrontCounterClockwise = true};
-
-   if (FAILED(device.CreateRasterizerState(&rasterizer_doublesided_desc,
-                                           rasterizer_state_doublesided.clear_and_assign()))) {
-      log_and_terminate("Unable to create shadow world rasterizer state!");
-   }
-
    pixel_shader_hardedged = shaders.pixel("shadowmesh").entrypoint("hardedged_ps");
 
    const D3D11_SAMPLER_DESC sampler_desc{.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR,
@@ -177,37 +159,6 @@ Draw_resources::Draw_resources(ID3D11Device& device, shader::Database& shaders)
    if (FAILED(device.CreateSamplerState(&sampler_desc,
                                         sampler_state.clear_and_assign()))) {
       log_and_terminate("Unable to create shadow world sampler state!");
-   }
-}
-
-void Draw_resources::update(ID3D11Device& device, INT depth_bias,
-                            float depth_bias_clamp, float slope_scaled_depth_bias) noexcept
-{
-   if (depth_bias != _depth_bias || depth_bias_clamp != _depth_bias_clamp ||
-       slope_scaled_depth_bias != _slope_scaled_depth_bias) {
-      _depth_bias_clamp = depth_bias_clamp;
-      _slope_scaled_depth_bias = slope_scaled_depth_bias;
-
-      D3D11_RASTERIZER_DESC rasterizer_desc{
-         .FillMode = D3D11_FILL_SOLID,
-         .CullMode = D3D11_CULL_BACK,
-         .FrontCounterClockwise = true,
-         .DepthBias = _depth_bias,
-         .DepthBiasClamp = _depth_bias_clamp,
-         .SlopeScaledDepthBias = _slope_scaled_depth_bias,
-      };
-
-      if (FAILED(device.CreateRasterizerState(&rasterizer_desc,
-                                              rasterizer_state.clear_and_assign()))) {
-         log_and_terminate("Unable to create shadow world rasterizer state!");
-      }
-
-      rasterizer_desc.CullMode = D3D11_CULL_NONE;
-
-      if (FAILED(device.CreateRasterizerState(&rasterizer_desc,
-                                              rasterizer_state_doublesided.clear_and_assign()))) {
-         log_and_terminate("Unable to create shadow world rasterizer state!");
-      }
    }
 }
 

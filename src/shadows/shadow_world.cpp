@@ -54,9 +54,6 @@ struct Shadow_world {
 
       if (_active_rebuild_needed) build_active_world();
 
-      _draw_resources.update(*_device, args.depth_bias, args.depth_bias_clamp,
-                             args.slope_scaled_depth_bias);
-
       dc.ClearState();
 
       dc.OMSetDepthStencilState(_draw_resources.depth_stencil_state.get(), 0xff);
@@ -229,7 +226,7 @@ struct Shadow_world {
          dc.VSSetConstantBuffers(1, 1, _draw_resources.view_constants.get_ptr());
          dc.VSSetShader(_draw_resources.vertex_shader.get(), nullptr, 0);
 
-         dc.RSSetState(_draw_resources.rasterizer_state.get());
+         dc.RSSetState(args.rasterizer_state);
 
          dc.PSSetShader(nullptr, nullptr, 0);
 
@@ -260,7 +257,7 @@ struct Shadow_world {
             start_instance += list.active_count;
          }
 
-         dc.RSSetState(_draw_resources.rasterizer_state_doublesided.get());
+         dc.RSSetState(args.rasterizer_state_doublesided);
 
          for (std::uint32_t list_index :
               std::span{_active_world.active_doublesided_instance_lists.get(),
@@ -290,7 +287,7 @@ struct Shadow_world {
          dc.IASetVertexBuffers(0, 1, &vertex_buffer, &vertex_buffer_textured_stride,
                                &vertex_buffer_offset);
 
-         dc.RSSetState(_draw_resources.rasterizer_state.get());
+         dc.RSSetState(args.rasterizer_state);
 
          dc.VSSetShader(_draw_resources.vertex_shader_textured.get(), nullptr, 0);
          dc.PSSetShader(_draw_resources.pixel_shader_hardedged.get(), nullptr, 0);
@@ -320,7 +317,7 @@ struct Shadow_world {
             start_instance += list.active_count;
          }
 
-         dc.RSSetState(_draw_resources.rasterizer_state_doublesided.get());
+         dc.RSSetState(args.rasterizer_state_doublesided);
 
          for (std::uint32_t list_index : std::span{
                  _active_world.active_hardedged_doublesided_instance_lists.get(),

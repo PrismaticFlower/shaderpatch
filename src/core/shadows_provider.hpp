@@ -23,6 +23,7 @@ struct Bounding_sphere;
 namespace sp::core {
 
 struct Shadows_config {
+   bool force_doublesided_meshes = false;
    bool disable_dynamic_hardedged_meshes = false;
 
    INT hw_depth_bias = 0;
