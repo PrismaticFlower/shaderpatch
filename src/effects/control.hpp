@@ -47,6 +47,8 @@ public:
              _config.workaround_bugged_cloth;
    }
 
+   bool allow_scene_blur() const noexcept;
+
    void config(const Effects_control_config& config) noexcept
    {
       _config = config;

@@ -2059,7 +2059,7 @@ void Shader_patch::game_rendertype_changed() noexcept
       else if (_shader_rendertype == Rendertype::fixedfunc_scene_blur) {
          _discard_draw_calls = true;
 
-         if (user_config.graphics.enable_scene_blur) {
+         if (user_config.graphics.enable_scene_blur && _effects.allow_scene_blur()) {
             _game_postprocessing.apply_scene_blur(*_device_context,
                                                   _game_rendertargets[0],
                                                   _rendertarget_allocator);

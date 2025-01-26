@@ -19,12 +19,16 @@ enum class Hdr_state { hdr, stock };
 
 enum class Tonemapper { filmic, aces_fitted, filmic_heji2015, reinhard, none };
 
+enum class Bloom_mode { blended, threshold };
+
 struct Bloom_params {
    bool enabled = true;
+   Bloom_mode mode = Bloom_mode::blended;
 
    float threshold = 1.0f;
+   float blend_factor = 0.05f;
 
-   float intensity = 0.75f;
+   float intensity = 1.0f;
    glm::vec3 tint{1.0f, 1.0f, 1.0f};
 
    float inner_scale = 1.0f;
@@ -152,6 +156,30 @@ inline auto tonemapper_from_string(const std::string_view string) noexcept
    return Tonemapper::filmic;
 }
 
+inline auto to_string(const Bloom_mode bloom_mode) noexcept
+{
+   using namespace std::literals;
+
+   switch (bloom_mode) {
+   case Bloom_mode::blended:
+      return "Blended"s;
+   case Bloom_mode::threshold:
+      return "Threshold"s;
+   }
+
+   std::terminate();
+}
+
+inline auto bloom_mode_from_string(const std::string_view string) noexcept
+{
+   if (string == to_string(Bloom_mode::blended))
+      return Bloom_mode::blended;
+   else if (string == to_string(Bloom_mode::threshold))
+      return Bloom_mode::threshold;
+
+   return Bloom_mode::blended;
+}
+
 }
 
 namespace YAML {
@@ -172,6 +200,21 @@ struct convert<sp::effects::Tonemapper> {
 };
 
 template<>
+struct convert<sp::effects::Bloom_mode> {
+   static Node encode(const sp::effects::Bloom_mode bloom_mode)
+   {
+      return YAML::Node{to_string(bloom_mode)};
+   }
+
+   static bool decode(const Node& node, sp::effects::Bloom_mode& bloom_mode)
+   {
+      bloom_mode = sp::effects::bloom_mode_from_string(node.as<std::string>());
+
+      return true;
+   }
+};
+
+template<>
 struct convert<sp::effects::Bloom_params> {
    static Node encode(const sp::effects::Bloom_params& params)
    {
@@ -180,7 +223,9 @@ struct convert<sp::effects::Bloom_params> {
       YAML::Node node;
 
       node["Enable"s] = params.enabled;
+      node["Mode"s] = params.mode;
 
+      node["BlendFactor"s] = params.blend_factor;
       node["Threshold"s] = params.threshold;
       node["Intensity"s] = params.intensity;
 
@@ -230,9 +275,15 @@ struct convert<sp::effects::Bloom_params> {
       params = sp::effects::Bloom_params{};
 
       params.enabled = node["Enable"s].as<bool>(params.enabled);
+      params.mode =
+         node["Mode"s].as<sp::effects::Bloom_mode>(sp::effects::Bloom_mode::threshold);
 
-      params.threshold = node["Threshold"s].as<float>(params.threshold);
-      params.intensity = node["Intensity"s].as<float>(params.intensity);
+      if (params.mode == sp::effects::Bloom_mode::blended)
+         params.blend_factor = node["BlendFactor"s].as<float>(params.blend_factor);
+      else
+         params.threshold = node["Threshold"s].as<float>(params.threshold);
+
+      params.intensity = node["Intensity"s].as<float>(0.75f);
 
       params.tint[0] = node["Tint"s][0].as<float>(params.tint[0]);
       params.tint[1] = node["Tint"s][1].as<float>(params.tint[1]);
@@ -272,7 +323,10 @@ struct convert<sp::effects::Bloom_params> {
       params.outer_tint[2] = node["OuterTint"s][2].as<float>(params.outer_tint[2]);
 
       params.use_dirt = node["UseDirt"s].as<bool>(params.use_dirt);
-      params.dirt_scale = node["DirtScale"s].as<float>(params.dirt_scale);
+
+      if (params.mode == sp::effects::Bloom_mode::threshold)
+         params.dirt_scale = node["DirtScale"s].as<float>(params.dirt_scale);
+
       params.dirt_tint[0] = node["DirtTint"s][0].as<float>(params.dirt_tint[0]);
       params.dirt_tint[1] = node["DirtTint"s][1].as<float>(params.dirt_tint[1]);
       params.dirt_tint[2] = node["DirtTint"s][2].as<float>(params.dirt_tint[2]);
