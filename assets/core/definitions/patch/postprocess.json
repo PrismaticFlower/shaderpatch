@@ -12,6 +12,7 @@
 
       "defines": [
         [ "BLOOM_ACTIVE", "0" ],
+        [ "BLOOM_THRESHOLDED", "0" ],
         [ "BLOOM_USE_DIRT", "0" ],
         [ "VIGNETTE_ACTIVE", "0" ],
         [ "COLOR_GRADING_ACTIVE", "0" ],
@@ -38,6 +39,7 @@
 
       "static_flags": [
         "BLOOM_ACTIVE",
+        "BLOOM_THRESHOLDED",
         "BLOOM_USE_DIRT",
         "OUTPUT_CMAA2_LUMA"
       ],
@@ -55,6 +57,7 @@
 
       "defines": [
         [ "BLOOM_ACTIVE", "0" ],
+        [ "BLOOM_THRESHOLDED", "0" ],
         [ "BLOOM_USE_DIRT", "0" ],
         [ "CONVERT_TO_SRGB", "1" ],
         [ "COLOR_GRADING_ACTIVE", "0" ],
@@ -80,6 +83,7 @@
 
       "defines": [
         [ "BLOOM_ACTIVE", "0" ],
+        [ "BLOOM_THRESHOLDED", "0" ],
         [ "BLOOM_USE_DIRT", "0" ],
         [ "VIGNETTE_ACTIVE", "0" ],
         [ "COLOR_GRADING_ACTIVE", "0" ],

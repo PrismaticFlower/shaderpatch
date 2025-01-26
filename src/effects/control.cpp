@@ -67,6 +67,15 @@ bool Control::enabled() const noexcept
    return (_enabled || user_config.graphics.enable_user_effects_config);
 }
 
+bool Control::allow_scene_blur() const noexcept
+{
+   if (!_enabled) return true;
+
+   const Bloom_params& params = postprocess.bloom_params();
+
+   return !(params.enabled && params.mode == Bloom_mode::blended);
+}
+
 void Control::show_imgui(HWND game_window) noexcept
 {
    ImGui::SetNextWindowSize({533, 591}, ImGuiCond_FirstUseEver);
@@ -411,7 +420,48 @@ Bloom_params show_bloom_imgui(Bloom_params params) noexcept
    if (ImGui::CollapsingHeader("Basic Controls", ImGuiTreeNodeFlags_DefaultOpen)) {
       ImGui::Checkbox("Enabled", &params.enabled);
 
-      ImGui::DragFloat("Threshold", &params.threshold, 0.025f);
+      const ImVec2 pre_mode_cursor = ImGui::GetCursorPos();
+
+      if (ImGui::RadioButton("Blended", params.mode == Bloom_mode::blended)) {
+         params.mode = Bloom_mode::blended;
+      }
+
+      if (ImGui::IsItemHovered()) {
+         ImGui::SetTooltip(
+            "New blended bloom mode. It doesn't require configuring a "
+            "threshold and is easier to work with.\n\nHowever it can result in "
+            "everything having a very slightly \"softer\" look to it, "
+            "depending on how high the Blend Factor is.");
+      }
+
+      ImGui::SameLine();
+
+      if (ImGui::RadioButton("Threshold", params.mode == Bloom_mode::threshold)) {
+         params.mode = Bloom_mode::threshold;
+      }
+
+      if (ImGui::IsItemHovered()) {
+         ImGui::SetTooltip(
+            "Classic threshold bloom mode. What has been in SP "
+            "since v1.0, it can give nice results as well but "
+            "can require more tweaking to get right.\n\nHowever if you don't "
+            "like the softness of the blended mode and lowering the Blend "
+            "Factor doesn't help but you still want bloom this mode is likely "
+            "what you want.");
+      }
+
+      ImGui::SetCursorPos(pre_mode_cursor);
+
+      ImGui::LabelText("Mode", "");
+
+      if (params.mode == Bloom_mode::blended)
+         ImGui::DragFloat("Blend Factor", &params.blend_factor, 0.025f);
+      else
+         ImGui::DragFloat("Threshold", &params.threshold, 0.025f);
+
+      params.blend_factor = std::clamp(params.blend_factor, 0.0f, 1.0f);
+      params.threshold = std::clamp(params.threshold, 0.0f, 1.0f);
+
       ImGui::DragFloat("Intensity", &params.intensity, 0.025f, 0.0f,
                        std::numeric_limits<float>::max());
       ImGui::ColorEdit3("Tint", &params.tint.x, ImGuiColorEditFlags_Float);

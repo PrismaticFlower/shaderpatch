@@ -7,6 +7,7 @@
 
 #pragma warning(disable : 3571)
 
+const static bool bloom_thresholded = BLOOM_THRESHOLDED;
 const static bool vignette = VIGNETTE_ACTIVE;
 const static bool color_grading_active = COLOR_GRADING_ACTIVE;
 const static bool convert_to_srgb = CONVERT_TO_SRGB;
@@ -22,8 +23,15 @@ void apply_bloom(float2 texcoords, inout float3 color)
 
       bloom_color += (bloom_color * (dirt * bloom_dirt_scale));
    }
-   
-   color += (bloom_color * bloom_global_scale);
+
+   bloom_color *= bloom_global_scale;
+
+   if (bloom_thresholded) {
+      color += (bloom_color * bloom_global_scale);
+   }
+   else {
+      color = lerp(color, bloom_color, bloom_blend);
+   }
 }
 
 void apply_vignette(float2 texcoords, inout float3 color)
