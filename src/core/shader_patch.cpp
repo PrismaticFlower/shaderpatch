@@ -16,6 +16,7 @@
 #include "shadows_provider.hpp"
 #include "utility.hpp"
 
+#include "../game_support/game_memory.hpp"
 #include "../game_support/leaf_patches.hpp"
 
 #include "../imgui/imgui_impl_dx11.h"
@@ -308,52 +309,6 @@ void Shader_patch::set_expected_aspect_ratio(const float expected_aspect_ratio) 
 
 void Shader_patch::present() noexcept
 {
-   ImGui::SeparatorText("Shadows");
-
-   ImGui::Checkbox("force doublesided meshes",
-                   &_shadows->config.force_doublesided_meshes);
-   ImGui::Checkbox("disable dynamic hardedged meshes",
-                   &_shadows->config.disable_dynamic_hardedged_meshes);
-
-   ImGui::DragFloat("shadow bias", &_shadows->config.shadow_bias, 0.0001f,
-                    -1.0f, 1.0f, "%.5f");
-   ImGui::DragInt("HW shadow depth bias", &_shadows->config.hw_depth_bias);
-   ImGui::DragFloat("HW shadow depth bias clamp", &_shadows->config.hw_depth_bias_clamp,
-                    0.0001f, -1.0f, 1.0f, "%.5f");
-   ImGui::DragFloat("HW shadow slope scaled depth bias",
-                    &_shadows->config.hw_slope_scaled_depth_bias, 0.0001f,
-                    -1.0f, 1.0f, "%.5f");
-
-   ImGui::DragFloat("shadow range", &_shadows->config.end_depth, 1.0f,
-                    _shadows->config.end_depth, 100000.0f, "%.0f");
-
-   ImGui::Checkbox("Preview Shadow World", &_preview_shadow_world);
-   ImGui::Checkbox("Preview Shadow World Textured", &_preview_shadow_world_textured);
-   ImGui::Checkbox("Overlay Shadow World BBOXs", &_overlay_shadow_world_aabbs);
-   ImGui::Checkbox("Overlay Shadow World Leaf Patches",
-                   &_overlay_shadow_world_leaf_patches);
-
-#if 0
-   ImGui::Text("zprepass meshes: %i", _shadows->meshes.zprepass.size());
-   ImGui::Text("zprepass compressed meshes: %i",
-               _shadows->meshes.zprepass_compressed.size());
-   ImGui::Text("zprepass skinned meshes: %i",
-               _shadows->meshes.zprepass_skinned.size());
-   ImGui::Text("zprepass compressed skinned meshes: %i",
-               _shadows->meshes.zprepass_compressed_skinned.size());
-
-   ImGui::Text("zprepass hardedged meshes: %i",
-               _shadows->meshes.zprepass_hardedged.size());
-   ImGui::Text("zprepass hardedged compressed meshes: %i",
-               _shadows->meshes.zprepass_hardedged_compressed.size());
-   ImGui::Text("zprepass hardedged skinned meshes: %i",
-               _shadows->meshes.zprepass_hardedged_skinned.size());
-   ImGui::Text("zprepass hardedged compressed skinned meshes: %i",
-               _shadows->meshes.zprepass_hardedged_compressed_skinned.size());
-
-   ImGui::Text("zprepass skins: %i", _shadows->meshes.skins.size());
-#endif
-
    _effects.profiler.end_frame(*_device_context);
    _game_postprocessing.end_frame();
 
@@ -2364,6 +2319,69 @@ void Shader_patch::update_imgui() noexcept
 
          if (_pixel_inspector.enabled) {
             _pixel_inspector.show(*_device_context, _swapchain, _window);
+         }
+
+         ImGui::SeparatorText("Shadows");
+
+         ImGui::Checkbox("force doublesided meshes",
+                         &_shadows->config.force_doublesided_meshes);
+         ImGui::Checkbox("disable dynamic hardedged meshes",
+                         &_shadows->config.disable_dynamic_hardedged_meshes);
+
+         ImGui::DragFloat("shadow bias", &_shadows->config.shadow_bias, 0.0001f,
+                          -1.0f, 1.0f, "%.5f");
+         ImGui::DragInt("HW shadow depth bias", &_shadows->config.hw_depth_bias);
+         ImGui::DragFloat("HW shadow depth bias clamp",
+                          &_shadows->config.hw_depth_bias_clamp, 0.0001f, -1.0f,
+                          1.0f, "%.5f");
+         ImGui::DragFloat("HW shadow slope scaled depth bias",
+                          &_shadows->config.hw_slope_scaled_depth_bias, 0.0001f,
+                          -1.0f, 1.0f, "%.5f");
+
+         ImGui::DragFloat("shadow range", &_shadows->config.end_depth, 1.0f,
+                          _shadows->config.end_depth, 100000.0f, "%.0f");
+
+         ImGui::Checkbox("Preview Shadow World", &_preview_shadow_world);
+         ImGui::Checkbox("Preview Shadow World Textured",
+                         &_preview_shadow_world_textured);
+         ImGui::Checkbox("Overlay Shadow World BBOXs", &_overlay_shadow_world_aabbs);
+         ImGui::Checkbox("Overlay Shadow World Leaf Patches",
+                         &_overlay_shadow_world_leaf_patches);
+
+         ImGui::SeparatorText("Near/Far Scene Control");
+
+         const game_support::Game_memory& memory = game_support::get_game_memory();
+
+         if (memory.view_near_plane) {
+            ImGui::DragFloat("View Near Plane", memory.view_near_plane, 0.25f);
+
+            if (*memory.view_near_plane <= 0.0f)
+               *memory.view_near_plane = 0.0001f;
+         }
+
+         if (memory.near_scene_fade_start) {
+            ImGui::DragFloat2("Near Scene Fade Start", memory.near_scene_fade_start);
+         }
+
+         if (memory.near_scene_fade_end) {
+            ImGui::DragFloat2("Near Scene Fade End", memory.near_scene_fade_end);
+         }
+
+         if (memory.far_scene_range) {
+            ImGui::SliderFloat("Far Scene Range Min", &memory.far_scene_range[0],
+                               memory.near_scene_fade_start[0],
+                               memory.far_scene_range[1], "%.0f",
+                               ImGuiSliderFlags_AlwaysClamp);
+         }
+
+         if (memory.far_scene_range) {
+            ImGui::SliderFloat("Far Scene Range Max", &memory.far_scene_range[1],
+                               memory.far_scene_range[0], 20000.0f, "%.0f",
+                               ImGuiSliderFlags_AlwaysClamp);
+         }
+
+         if (memory.far_scene_enabled) {
+            ImGui::Checkbox("Far Scene Enabled", memory.far_scene_enabled);
          }
       }
 

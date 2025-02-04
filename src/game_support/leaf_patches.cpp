@@ -30,8 +30,7 @@ void acquire_leaf_patches(std::vector<Leaf_patch>& leaf_patches,
 
    const Game_memory& game_memory = get_game_memory();
 
-   LeafPatchListNode* leaf_patch_list =
-      static_cast<LeafPatchListNode*>(game_memory.leaf_patch_list);
+   LeafPatchListNode* leaf_patch_list = game_memory.leaf_patch_list;
 
    if (!leaf_patch_list) return;
 
@@ -84,8 +83,7 @@ void show_leaf_patches_imgui() noexcept
 {
    const Game_memory& game_memory = get_game_memory();
 
-   LeafPatchListNode* leaf_patch_list =
-      static_cast<LeafPatchListNode*>(game_memory.leaf_patch_list);
+   LeafPatchListNode* leaf_patch_list = game_memory.leaf_patch_list;
 
    if (!leaf_patch_list) return;
 

@@ -29,7 +29,7 @@ Vs_output skyfog_vs(Vs_input input)
    position *= skyfog_pos_scale;
 
    output.positionPS.xyw = position.xyz;
-   output.positionPS.z = dot(position, skyfog_z_transform);
+   output.positionPS.z = min(dot(position, skyfog_z_transform), skyfog_pos_scale.z);
 
    output.texcoords = 
       input.texcoords * skyfog_texcoords_transfrom.xy + skyfog_texcoords_transfrom.zw;
