@@ -410,6 +410,7 @@ private:
    bool _preview_shadow_world = false;
    bool _preview_shadow_world_textured = false;
    bool _overlay_shadow_world_aabbs = false;
+   bool _overlay_shadow_world_leaf_patches = false;
    bool _aspect_ratio_hack_enabled = false;
    bool _imgui_enabled = false;
    bool _screenshot_requested = false;

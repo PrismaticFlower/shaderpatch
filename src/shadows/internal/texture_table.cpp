@@ -89,7 +89,9 @@ auto Texture_table::get(std::size_t index) const noexcept -> ID3D11ShaderResourc
 auto Texture_table::get_ptr(std::size_t index) const noexcept
    -> ID3D11ShaderResourceView* const*
 {
-   if (index >= _textures.size()) return nullptr;
+   constexpr static ID3D11ShaderResourceView* null_srvs[1] = {nullptr};
+
+   if (index >= _textures.size()) return null_srvs;
 
    return _textures[index].get_ptr();
 }

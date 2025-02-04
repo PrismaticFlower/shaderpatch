@@ -231,6 +231,8 @@
     <ClCompile Include="src\file_hooks.cpp" />
     <ClCompile Include="src\freetype_helpers.cpp" />
     <ClCompile Include="src\game_support\font_declarations.cpp" />
+    <ClCompile Include="src\game_support\game_memory.cpp" />
+    <ClCompile Include="src\game_support\leaf_patches.cpp" />
     <ClCompile Include="src\game_support\memory_hacks.cpp" />
     <ClCompile Include="src\game_support\munged_shader_declarations.cpp" />
     <ClCompile Include="src\imgui\imgui.cpp">
@@ -285,6 +287,7 @@
     <ClCompile Include="src\shadows\internal\debug_world_draw.cpp" />
     <ClCompile Include="src\shadows\internal\debug_world_textured_draw.cpp" />
     <ClCompile Include="src\shadows\internal\draw_resources.cpp" />
+    <ClCompile Include="src\shadows\internal\leaf_patch_world.cpp" />
     <ClCompile Include="src\shadows\internal\mesh_buffer.cpp" />
     <ClCompile Include="src\shadows\internal\mesh_copy_queue.cpp" />
     <ClCompile Include="src\shadows\internal\name_table.cpp" />
@@ -296,7 +299,11 @@
     <ClCompile Include="src\shadows\read\read_texture.cpp" />
     <ClCompile Include="src\shadows\read\read_world.cpp" />
     <ClCompile Include="src\shadows\shadow_world.cpp" />
-    <ClCompile Include="src\shadows\texture_hasher.cpp" />
+    <ClCompile Include="src\shadows\texture_hasher.cpp">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">MaxSpeed</Optimization>
+      <IntrinsicFunctions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</IntrinsicFunctions>
+      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Default</BasicRuntimeChecks>
+    </ClCompile>
     <ClCompile Include="src\user_config.cpp" />
     <ClCompile Include="src\windows_fonts_folder.cpp" />
     <ClCompile Include="src\window_hooks.cpp" />
@@ -404,6 +411,9 @@
     <ClInclude Include="src\game_support\fixedfunc_shader_metadata.hpp" />
     <ClInclude Include="src\game_support\font_declarations.hpp" />
     <ClInclude Include="src\game_support\font_info.hpp" />
+    <ClInclude Include="src\game_support\game_memory.hpp" />
+    <ClInclude Include="src\game_support\leaf_patches.hpp" />
+    <ClInclude Include="src\game_support\leaf_patch_structures.hpp" />
     <ClInclude Include="src\game_support\memory_hacks.hpp" />
     <ClInclude Include="src\game_support\munged_shader_declarations.hpp" />
     <ClInclude Include="src\game_support\shader_declaration.hpp" />
@@ -456,6 +466,7 @@
     <ClInclude Include="src\shadows\internal\debug_world_draw.hpp" />
     <ClInclude Include="src\shadows\internal\debug_model_draw.hpp" />
     <ClInclude Include="src\shadows\internal\draw_view_constants.hpp" />
+    <ClInclude Include="src\shadows\internal\leaf_patch_world.hpp" />
     <ClInclude Include="src\shadows\internal\mesh_buffer.hpp" />
     <ClInclude Include="src\shadows\internal\mesh_copy_queue.hpp" />
     <ClInclude Include="src\shadows\internal\active_world.hpp" />

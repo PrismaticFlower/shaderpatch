@@ -8,6 +8,7 @@
 #include "internal/debug_world_draw.hpp"
 #include "internal/debug_world_textured_draw.hpp"
 #include "internal/draw_resources.hpp"
+#include "internal/leaf_patch_world.hpp"
 #include "internal/mesh_buffer.hpp"
 #include "internal/mesh_copy_queue.hpp"
 #include "internal/name_table.hpp"
@@ -53,6 +54,11 @@ struct Shadow_world {
       std::scoped_lock lock{_mutex};
 
       if (_active_rebuild_needed) build_active_world();
+
+      _leaf_patch_world.update_from_game(*_device, dc, _texture_table);
+
+      _counter_total_draws = 0;
+      _counter_total_instances = 0;
 
       dc.ClearState();
 
@@ -185,8 +191,44 @@ struct Shadow_world {
             }
          }
 
-         _counter_total_draws = 0;
-         _counter_total_instances = 0;
+         if (!_leaf_patch_world.classes.empty()) {
+            D3D11_MAPPED_SUBRESOURCE mapped_instances_buffer{};
+
+            if (FAILED(dc.Map(_leaf_patch_world.instances_buffer.get(), 0,
+                              D3D11_MAP_WRITE_DISCARD, 0, &mapped_instances_buffer))) {
+               log_and_terminate(
+                  "Mapping leaf patches instances buffer failed!");
+            }
+
+            std::array<glm::vec4, 3>* instance_upload =
+               static_cast<std::array<glm::vec4, 3>*>(mapped_instances_buffer.pData);
+
+            UINT global_start_instance = 0;
+
+            for (Leaf_patch_class& leaf_patch : _leaf_patch_world.classes) {
+               leaf_patch.instance_count = 0;
+
+               for (std::uint32_t instance_index = 0;
+                    instance_index < leaf_patch.bounding_spheres.size();
+                    ++instance_index) {
+
+                  if (!intersects(shadow_frustum,
+                                  leaf_patch.bounding_spheres[instance_index]))
+                     continue;
+
+                  std::memcpy(instance_upload, &leaf_patch.transforms[instance_index],
+                              sizeof(std::array<glm::vec4, 3>));
+
+                  leaf_patch.instance_count += 1;
+                  instance_upload += 1;
+               }
+
+               leaf_patch.start_instance = global_start_instance;
+               global_start_instance += leaf_patch.instance_count;
+            }
+
+            dc.Unmap(_leaf_patch_world.instances_buffer.get(), 0);
+         }
 
          D3D11_MAPPED_SUBRESOURCE mapped_view_constants{};
 
@@ -344,12 +386,47 @@ struct Shadow_world {
             start_instance += list.active_count;
          }
 
-         _counter_total_draws =
+         // Draw Leaf Patches
+
+         dc.IASetIndexBuffer(_leaf_patch_world.index_buffer.get(),
+                             DXGI_FORMAT_R16_UINT, 0);
+
+         dc.IASetVertexBuffers(
+            0, 2,
+            std::array<ID3D11Buffer*, 2>{_leaf_patch_world.vertex_buffer.get(),
+                                         _leaf_patch_world.instances_buffer.get()}
+               .data(),
+            std::array<UINT, 2>{vertex_buffer_textured_stride, instance_buffer_stride}
+               .data(),
+            std::array<UINT, 2>{vertex_buffer_offset, vertex_buffer_offset}.data());
+
+         if (current_topology != D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST) {
+            dc.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+            current_topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+         }
+
+         dc.VSSetConstantBuffers(0, 1, _leaf_patch_world.constants_buffer.get_ptr());
+
+         for (Leaf_patch_class& leaf_patch : _leaf_patch_world.classes) {
+            if (leaf_patch.instance_count == 0) continue;
+
+            dc.PSSetShaderResources(0, 1, _texture_table.get_ptr(leaf_patch.texture_index));
+
+            dc.DrawIndexedInstanced(leaf_patch.index_count, leaf_patch.instance_count,
+                                    0, leaf_patch.base_vertex,
+                                    leaf_patch.start_instance);
+
+            _counter_total_draws += 1;
+            _counter_total_instances += leaf_patch.instance_count;
+         }
+
+         _counter_total_draws +=
             _active_world.active_opaque_instance_lists_count +
             _active_world.active_doublesided_instance_lists_count +
             _active_world.active_hardedged_instance_lists_count +
             _active_world.active_hardedged_doublesided_instance_lists_count;
-         _counter_total_instances = start_instance;
+         _counter_total_instances += start_instance;
 
          _active_world.reset();
       }
@@ -425,6 +502,25 @@ struct Shadow_world {
                                      .rtv = rtv,
                                      .dsv = dsv,
                                   });
+   }
+
+   void draw_shadow_world_leaf_patch_overlay(ID3D11DeviceContext2& dc,
+                                             const glm::mat4& projection_matrix,
+                                             const D3D11_VIEWPORT& viewport,
+                                             ID3D11RenderTargetView* rtv,
+                                             ID3D11DepthStencilView* dsv) noexcept
+   {
+      std::scoped_lock lock{_mutex};
+
+      _leaf_patch_world.update_from_game(*_device, dc, _texture_table);
+
+      _debug_world_draw.draw_leaf_patch_overlay(dc, _leaf_patch_world, projection_matrix,
+                                                {
+                                                   .viewport = viewport,
+                                                   .rtv = rtv,
+                                                   .picking_rtv = nullptr,
+                                                   .dsv = dsv,
+                                                });
    }
 
    void clear() noexcept
@@ -1507,6 +1603,7 @@ private:
    std::vector<Object_instance> _object_instances;
 
    Active_world _active_world;
+   Leaf_patch_world _leaf_patch_world{*_device};
 
    Draw_resources _draw_resources;
 
@@ -1707,6 +1804,19 @@ void Shadow_world_interface::draw_shadow_world_aabb_overlay(
    if (!self) return;
 
    self->draw_shadow_world_aabb_overlay(dc, projection_matrix, viewport, rtv, dsv);
+}
+
+void Shadow_world_interface::draw_shadow_world_leaf_patch_overlay(
+   ID3D11DeviceContext2& dc, const glm::mat4& projection_matrix,
+   const D3D11_VIEWPORT& viewport, ID3D11RenderTargetView* rtv,
+   ID3D11DepthStencilView* dsv) noexcept
+{
+   Shadow_world* self = shadow_world_ptr.load(std::memory_order_relaxed);
+
+   if (!self) return;
+
+   self->draw_shadow_world_leaf_patch_overlay(dc, projection_matrix, viewport,
+                                              rtv, dsv);
 }
 
 void Shadow_world_interface::clear() noexcept

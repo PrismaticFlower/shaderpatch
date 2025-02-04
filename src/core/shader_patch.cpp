@@ -16,6 +16,8 @@
 #include "shadows_provider.hpp"
 #include "utility.hpp"
 
+#include "../game_support/leaf_patches.hpp"
+
 #include "../imgui/imgui_impl_dx11.h"
 #include "../imgui/imgui_impl_win32.h"
 
@@ -328,6 +330,8 @@ void Shader_patch::present() noexcept
    ImGui::Checkbox("Preview Shadow World", &_preview_shadow_world);
    ImGui::Checkbox("Preview Shadow World Textured", &_preview_shadow_world_textured);
    ImGui::Checkbox("Overlay Shadow World BBOXs", &_overlay_shadow_world_aabbs);
+   ImGui::Checkbox("Overlay Shadow World Leaf Patches",
+                   &_overlay_shadow_world_leaf_patches);
 
 #if 0
    ImGui::Text("zprepass meshes: %i", _shadows->meshes.zprepass.size());
@@ -1996,21 +2000,40 @@ void Shader_patch::game_rendertype_changed() noexcept
          _on_rendertype_changed = nullptr;
       };
 
-      if (enable_intrusive_debug_tools && _overlay_shadow_world_aabbs) {
-         shadows::shadow_world.draw_shadow_world_aabb_overlay(
-            *_device_context, _shadows->view_proj_matrix,
-            D3D11_VIEWPORT{
-               .TopLeftX = 0.0f,
+      if (enable_intrusive_debug_tools) {
+         if (_overlay_shadow_world_aabbs) {
+            shadows::shadow_world.draw_shadow_world_aabb_overlay(
+               *_device_context, _shadows->view_proj_matrix,
+               D3D11_VIEWPORT{
+                  .TopLeftX = 0.0f,
 
-               .TopLeftY = 0.0f,
-               .Width = static_cast<float>(_game_rendertargets[0].width),
-               .Height = static_cast<float>(_game_rendertargets[0].height),
-               .MinDepth = 0.0f,
-               .MaxDepth = 1.0f,
-            },
-            _game_rendertargets[0].rtv.get(), _nearscene_depthstencil.dsv.get());
+                  .TopLeftY = 0.0f,
+                  .Width = static_cast<float>(_game_rendertargets[0].width),
+                  .Height = static_cast<float>(_game_rendertargets[0].height),
+                  .MinDepth = 0.0f,
+                  .MaxDepth = 1.0f,
+               },
+               _game_rendertargets[0].rtv.get(), _nearscene_depthstencil.dsv.get());
 
-         restore_all_game_state();
+            restore_all_game_state();
+         }
+
+         if (_overlay_shadow_world_leaf_patches) {
+            shadows::shadow_world.draw_shadow_world_leaf_patch_overlay(
+               *_device_context, _shadows->view_proj_matrix,
+               D3D11_VIEWPORT{
+                  .TopLeftX = 0.0f,
+
+                  .TopLeftY = 0.0f,
+                  .Width = static_cast<float>(_game_rendertargets[0].width),
+                  .Height = static_cast<float>(_game_rendertargets[0].height),
+                  .MinDepth = 0.0f,
+                  .MaxDepth = 1.0f,
+               },
+               _game_rendertargets[0].rtv.get(), _nearscene_depthstencil.dsv.get());
+
+            restore_all_game_state();
+         }
       }
    }
 
@@ -2330,6 +2353,8 @@ void Shader_patch::update_imgui() noexcept
       shadows::shadow_world.show_imgui(*_device_context);
 
       if (_bf2_log_monitor) _bf2_log_monitor->show_imgui(true);
+
+      game_support::show_leaf_patches_imgui();
 
       // Dev Tools Window
       ImGui::SetNextWindowCollapsed(true, ImGuiCond_FirstUseEver);

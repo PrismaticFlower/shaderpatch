@@ -464,6 +464,76 @@ void Debug_world_draw::draw(ID3D11DeviceContext2& dc, const World_inputs& world,
    draw(dc, world, projection_matrix, index_buffer, vertex_buffer, target);
 }
 
+void Debug_world_draw::draw_leaf_patch_overlay(ID3D11DeviceContext2& dc,
+                                               const Leaf_patch_world& world,
+                                               const glm::mat4& projection_matrix,
+                                               const Target_inputs& target) noexcept
+{
+   if (!_input_layout) initialize();
+
+   push_info_filter(*_device);
+
+   dc.ClearState();
+
+   const UINT stride = 10;
+   const UINT offset = 0;
+
+   dc.IASetInputLayout(_input_layout.get());
+   dc.IASetIndexBuffer(world.index_buffer.get(), DXGI_FORMAT_R16_UINT, 0);
+   dc.IASetVertexBuffers(0, 1, world.vertex_buffer.get_ptr(), &stride, &offset);
+   dc.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+   dc.VSSetShader(_vertex_shader.get(), nullptr, 0);
+
+   dc.RSSetViewports(1, &target.viewport);
+   dc.RSSetState(_doublesided_rasterizer_state.get());
+
+   dc.PSSetShader(_pixel_shader.get(), nullptr, 0);
+
+   std::array<ID3D11RenderTargetView*, 2> rtvs = {target.rtv, target.picking_rtv};
+
+   dc.OMSetRenderTargets(rtvs.size(), rtvs.data(), target.dsv);
+   dc.OMSetBlendState(nullptr, nullptr, 0xff'ff'ff'ffu);
+   dc.OMSetDepthStencilState(nullptr, 0xffu);
+
+   int count = 0;
+
+   for (const Leaf_patch_class& leaf_patch_class : world.classes) {
+      for (const std::array<glm::vec4, 3>& instance : leaf_patch_class.transforms) {
+
+         const Constants constants =
+            {.position_decompress_mul =
+                glm::vec3{(50.0f - -50.0f) * (0.5f / INT16_MAX)},
+             .position_decompress_add = glm::vec3{(50.0f + -50.0f) * 0.5f},
+             .rotation_matrix = {glm::vec4{glm::vec3{instance[0]}, 0.0f},
+                                 glm::vec4{glm::vec3{instance[1]}, 0.0f},
+                                 glm::vec4{glm::vec3{instance[2]}, 0.0f}},
+             .translateWS = {instance[0].w, instance[1].w, instance[2].w},
+             .projection_matrix = projection_matrix,
+             .color = sample_color(count++)};
+
+         D3D11_MAPPED_SUBRESOURCE mapped = {};
+
+         if (FAILED(dc.Map(_constants.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
+            log_and_terminate("Failed to update constant buffer.");
+         }
+
+         std::memcpy(mapped.pData, &constants, sizeof(constants));
+
+         dc.Unmap(_constants.get(), 0);
+
+         ID3D11Buffer* constant_buffer = _constants.get();
+
+         dc.VSSetConstantBuffers(0, 1, &constant_buffer);
+         dc.PSSetConstantBuffers(0, 1, &constant_buffer);
+
+         dc.DrawIndexed(leaf_patch_class.index_count, 0, leaf_patch_class.base_vertex);
+      }
+   }
+
+   pop_info_filter(*_device);
+}
+
 void Debug_world_draw::initialize() noexcept
 {
    const D3D11_BUFFER_DESC constant_buffer_desc = {

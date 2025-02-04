@@ -50,6 +50,12 @@ struct Shadow_world_interface {
                                               const D3D11_VIEWPORT& viewport,
                                               ID3D11RenderTargetView* rtv,
                                               ID3D11DepthStencilView* dsv) noexcept;
+
+   static void draw_shadow_world_leaf_patch_overlay(
+      ID3D11DeviceContext2& dc, const glm::mat4& projection_matrix,
+      const D3D11_VIEWPORT& viewport, ID3D11RenderTargetView* rtv,
+      ID3D11DepthStencilView* dsv) noexcept;
+
    static void clear() noexcept;
 
    static void add_texture(const Input_texture& texture) noexcept;

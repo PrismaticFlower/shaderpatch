@@ -1,5 +1,6 @@
 #pragma once
 
+#include "leaf_patch_world.hpp"
 #include "world/game_model.hpp"
 #include "world/model.hpp"
 #include "world/object_instance.hpp"
@@ -34,6 +35,10 @@ struct Debug_world_draw {
              const float camera_yaw, const float camera_pitch,
              const glm::vec3& camera_positioWS, ID3D11Buffer* index_buffer,
              ID3D11Buffer* vertex_buffer, const Target_inputs& target) noexcept;
+
+   void draw_leaf_patch_overlay(ID3D11DeviceContext2& dc, const Leaf_patch_world& world,
+                                const glm::mat4& projection_matrix,
+                                const Target_inputs& target) noexcept;
 
 private:
    Com_ptr<ID3D11Device> _device;
