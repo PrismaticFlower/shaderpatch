@@ -436,7 +436,7 @@ Bloom_params show_bloom_imgui(Bloom_params params) noexcept
 
       ImGui::SameLine();
 
-      if (ImGui::RadioButton("Threshold", params.mode == Bloom_mode::threshold)) {
+      if (ImGui::RadioButton("Threshold##Mode", params.mode == Bloom_mode::threshold)) {
          params.mode = Bloom_mode::threshold;
       }
 
@@ -457,7 +457,7 @@ Bloom_params show_bloom_imgui(Bloom_params params) noexcept
       if (params.mode == Bloom_mode::blended)
          ImGui::DragFloat("Blend Factor", &params.blend_factor, 0.025f);
       else
-         ImGui::DragFloat("Threshold", &params.threshold, 0.025f);
+         ImGui::DragFloat("Threshold##Param", &params.threshold, 0.025f);
 
       params.blend_factor = std::clamp(params.blend_factor, 0.0f, 1.0f);
       params.threshold = std::clamp(params.threshold, 0.0f, 1.0f);
