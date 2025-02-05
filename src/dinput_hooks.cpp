@@ -2,6 +2,7 @@
 #include "com_ptr.hpp"
 #include "input_config.hpp"
 #include "logger.hpp"
+#include "user_config.hpp"
 
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
@@ -380,7 +381,7 @@ extern "C" HRESULT WINAPI DirectInput8Create_hook(HINSTANCE hinst, DWORD dwVersi
                                                   REFIID riidltf, LPVOID* ppvOut,
                                                   LPUNKNOWN punkOuter)
 {
-   if (ppvOut && !punkOuter && riidltf == IID_IDirectInput8A) {
+   if (sp::user_config.enabled && ppvOut && !punkOuter && riidltf == IID_IDirectInput8A) {
       *ppvOut = sp::IDirectInput8A_overlay::create(hinst, dwVersion).release();
 
       return DI_OK;
