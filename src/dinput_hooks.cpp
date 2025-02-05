@@ -24,9 +24,9 @@ struct IDirectInputDevice8A_overlay : IDirectInputDevice8A {
    IDirectInputDevice8A_overlay(const GUID& guid, IDirectInput8A& dinput)
    {
       if (guid == GUID_SysKeyboard)
-         _type = Device_type::mouse;
-      else if (guid == GUID_SysMouse)
          _type = Device_type::keyboard;
+      else if (guid == GUID_SysMouse)
+         _type = Device_type::mouse;
 
       if (FAILED(dinput.CreateDevice(guid, _device.clear_and_assign(), nullptr))) {
          log_and_terminate("Failed to create IDirectInputDevice8A interface.");
@@ -43,7 +43,7 @@ struct IDirectInputDevice8A_overlay : IDirectInputDevice8A {
    {
       const HRESULT result = _device->GetDeviceState(size, data);
 
-      if (_type == Device_type::keyboard && size > DIK_SYSRQ && SUCCEEDED(result)) {
+      if (_type == Device_type::keyboard && size > DIK_SYSRQ) {
          // Fix print screen crash on some game versions.
 
          static_cast<char*>(data)[DIK_SYSRQ] = 0;
