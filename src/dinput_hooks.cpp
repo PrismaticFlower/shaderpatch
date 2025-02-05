@@ -2,6 +2,7 @@
 #include "com_ptr.hpp"
 #include "input_config.hpp"
 #include "logger.hpp"
+#include "user_config.hpp"
 
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
@@ -24,9 +25,9 @@ struct IDirectInputDevice8A_overlay : IDirectInputDevice8A {
    IDirectInputDevice8A_overlay(const GUID& guid, IDirectInput8A& dinput)
    {
       if (guid == GUID_SysKeyboard)
-         _type = Device_type::mouse;
-      else if (guid == GUID_SysMouse)
          _type = Device_type::keyboard;
+      else if (guid == GUID_SysMouse)
+         _type = Device_type::mouse;
 
       if (FAILED(dinput.CreateDevice(guid, _device.clear_and_assign(), nullptr))) {
          log_and_terminate("Failed to create IDirectInputDevice8A interface.");
@@ -43,7 +44,7 @@ struct IDirectInputDevice8A_overlay : IDirectInputDevice8A {
    {
       const HRESULT result = _device->GetDeviceState(size, data);
 
-      if (_type == Device_type::keyboard && size > DIK_SYSRQ && SUCCEEDED(result)) {
+      if (_type == Device_type::keyboard && size > DIK_SYSRQ) {
          // Fix print screen crash on some game versions.
 
          static_cast<char*>(data)[DIK_SYSRQ] = 0;
@@ -380,7 +381,7 @@ extern "C" HRESULT WINAPI DirectInput8Create_hook(HINSTANCE hinst, DWORD dwVersi
                                                   REFIID riidltf, LPVOID* ppvOut,
                                                   LPUNKNOWN punkOuter)
 {
-   if (ppvOut && !punkOuter && riidltf == IID_IDirectInput8A) {
+   if (sp::user_config.enabled && ppvOut && !punkOuter && riidltf == IID_IDirectInput8A) {
       *ppvOut = sp::IDirectInput8A_overlay::create(hinst, dwVersion).release();
 
       return DI_OK;

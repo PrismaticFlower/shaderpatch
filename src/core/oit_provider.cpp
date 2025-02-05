@@ -69,6 +69,8 @@ void OIT_provider::resolve(ID3D11DeviceContext4& dc) const noexcept
    D3D11_TEXTURE2D_DESC texture_desc{};
    _opaque_texture->GetDesc(&texture_desc);
 
+   dc.ClearState();
+
    dc.OMSetRenderTargets(0, nullptr, nullptr);
 
    dc.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
