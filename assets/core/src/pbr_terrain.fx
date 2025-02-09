@@ -11,7 +11,7 @@
 
 const static bool pbr_terrain_use_shadow_map = PBR_TERRAIN_USE_SHADOW_MAP;
 
-Texture2D<float4> shadow_map : register(t3);
+Texture2D<float1> shadow_map : register(t3);
 Texture2DArray<float1> height_maps : register(t7);
 Texture2DArray<float4> albedo_ao_maps : register(t8);
 Texture2DArray<float4> normal_mr_maps : register(t9);
@@ -143,7 +143,7 @@ float4 main_ps(Vs_output input) : SV_Target0
    surface.metallicness = textures.metallicness * base_metallicness;
    surface.perceptual_roughness = textures.roughness * base_roughness;
    surface.base_color = textures.albedo * base_color;
-   surface.sun_shadow = pbr_terrain_use_shadow_map ? shadow_map[shadow_coords].a : 1.0;
+   surface.sun_shadow = pbr_terrain_use_shadow_map ? shadow_map[shadow_coords].r : 1.0;
    surface.ao = textures.ao;
    surface.use_ibl = false;
 

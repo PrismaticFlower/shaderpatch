@@ -13,7 +13,7 @@
 
 // Textures
 Texture2D<float3> projected_light_texture : register(ps, t2);
-Texture2D<float4> shadow_map : register(ps, t3);
+Texture2D<float1> shadow_map : register(ps, t3);
 Texture2D<float4> diffuse_map : register(ps, t7);
 Texture2D<float4> normal_map : register(ps, t8);
 Texture2D<float>  height_map : register(ps, t9);
@@ -315,7 +315,7 @@ Ps_output main_ps(Ps_input input)
 
    // Sample shadow map, if using.
    const float shadow = normal_ext_use_shadow_map
-                           ? shadow_map[(int2)input.positionSS.xy].a
+                           ? shadow_map[(int2)input.positionSS.xy].r
                            : 1.0;
    const float ao = use_ao_texture
                        ? ao_map.Sample(aniso_wrap_sampler, texcoords)

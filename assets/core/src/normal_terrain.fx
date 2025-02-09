@@ -165,7 +165,7 @@ struct Ps_detail_input
 float4 detailing_ps(Ps_detail_input input, 
                     Texture2D<float3> detail_maps[2] : register(t0),
                     Texture2D<float3> projected_texture : register(t2),
-                    Texture2D<float4> shadow_map : register(t3)) : SV_Target0
+                    Texture2D<float1> shadow_map : register(t3)) : SV_Target0
 {
    const float3 detail_color = detail_maps[0].Sample(aniso_wrap_sampler, input.detail_texcoords[0]);
 
@@ -180,7 +180,7 @@ float4 detailing_ps(Ps_detail_input input,
    float3 color = (lighting_factor.x > 0.0) ? lighting.color : lighting_scale.xxx;
 
    const float shadow_map_value = shadow_map.SampleLevel(linear_clamp_sampler,
-                                                         input.shadow_map_texcoords, 0.0).a;
+                                                         input.shadow_map_texcoords, 0.0).r;
    
    const float shadow = 1.0 - (lighting.intensity * (1.0 - shadow_map_value));
 

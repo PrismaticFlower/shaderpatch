@@ -30,7 +30,7 @@ using namespace std::literals;
 namespace sp::core {
 
 constexpr auto projtex_cube_slot = 4;
-constexpr auto shadow_texture_format = DXGI_FORMAT_A8_UNORM;
+constexpr auto shadow_texture_format = DXGI_FORMAT_R8_UNORM;
 constexpr auto flares_texture_format = DXGI_FORMAT_A8_UNORM;
 constexpr auto screenshots_folder = L"ScreenShots/";
 constexpr auto refraction_texture_name = "_SP_BUILTIN_refraction"sv;
@@ -1459,6 +1459,10 @@ void Shader_patch::game_rendertype_changed() noexcept
          _game_rendertargets[0] = *rt;
       }
 
+      _game_blend_state_override = _shadowquad_blend_state;
+
+      _om_blend_state_dirty = true;
+
       _on_stretch_rendertarget =
          [this, backup_rt = std::move(backup_rt)](Game_rendertarget&,
                                                   const Normalized_rect&,
@@ -1466,7 +1470,10 @@ void Shader_patch::game_rendertype_changed() noexcept
                                                   const Normalized_rect&) noexcept {
             _game_rendertargets[0] = std::move(backup_rt);
             _on_stretch_rendertarget = nullptr;
+            _game_blend_state_override = nullptr;
+
             _om_targets_dirty = true;
+            _om_blend_state_dirty = true;
 
             if (dest.type != Game_rt_type::shadow) {
                dest = Game_rendertarget{*_device,
@@ -1831,7 +1838,10 @@ void Shader_patch::update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primit
    }
 
    if (std::exchange(_om_blend_state_dirty, false)) {
-      _device_context->OMSetBlendState(_game_blend_state.get(), nullptr, 0xffffffff);
+      _device_context->OMSetBlendState(_game_blend_state_override
+                                          ? _game_blend_state_override.get()
+                                          : _game_blend_state.get(),
+                                       nullptr, 0xffffffff);
    }
 
    if (std::exchange(_cb_scene_dirty, false)) {

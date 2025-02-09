@@ -369,6 +369,7 @@ private:
    UINT _game_vertex_buffer_stride = 0;
    Com_ptr<ID3D11RasterizerState> _game_rs_state;
    Com_ptr<ID3D11DepthStencilState> _game_depthstencil_state;
+   Com_ptr<ID3D11BlendState1> _game_blend_state_override;
    Com_ptr<ID3D11BlendState1> _game_blend_state;
 
    bool _discard_draw_calls = false;
@@ -455,6 +456,32 @@ private:
       _device->CreateBuffer(&desc, &init_data, buffer.clear_and_assign());
 
       return buffer;
+   }();
+
+   const Com_ptr<ID3D11BlendState1> _shadowquad_blend_state = [this] {
+      Com_ptr<ID3D11BlendState1> blend_state;
+
+      const D3D11_BLEND_DESC1 desc{
+         .AlphaToCoverageEnable = false,
+         .IndependentBlendEnable = false,
+         .RenderTarget =
+            D3D11_RENDER_TARGET_BLEND_DESC1{
+               .BlendEnable = false,
+               .LogicOpEnable = false,
+               .SrcBlend = D3D11_BLEND_ONE,
+               .DestBlend = D3D11_BLEND_ZERO,
+               .BlendOp = D3D11_BLEND_OP_ADD,
+               .SrcBlendAlpha = D3D11_BLEND_ONE,
+               .DestBlendAlpha = D3D11_BLEND_ZERO,
+               .BlendOpAlpha = D3D11_BLEND_OP_ADD,
+               .LogicOp = D3D11_LOGIC_OP_CLEAR,
+               .RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_RED,
+            },
+      };
+
+      _device->CreateBlendState1(&desc, blend_state.clear_and_assign());
+
+      return blend_state;
    }();
 
    OIT_provider _oit_provider{_device, _shader_database};
