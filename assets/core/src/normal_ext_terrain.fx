@@ -11,7 +11,7 @@
 // clang-format off
 
 Texture2D<float3> projected_light_texture : register(t2);
-Texture2D<float4> shadow_map : register(t3);
+Texture2D<float1> shadow_map : register(t3);
 Texture2DArray<float1> height_maps : register(t7);
 Texture2DArray<float4> diffuse_ao_maps : register(t8);
 Texture2DArray<float3> normal_gloss_maps : register(t9);
@@ -144,7 +144,7 @@ float4 main_ps(Vs_output input) : SV_Target0
 
    const uint2 shadow_coords = (uint2)input.positionPS.xy;
    const float shadow =
-      normal_ext_use_shadow_map ? shadow_map[shadow_coords].a : 1.0;
+      normal_ext_use_shadow_map ? shadow_map[shadow_coords].r : 1.0;
    const float3 static_diffuse_lighting = input.static_diffuse_lighting;
    const float3 diffuse = textures.diffuse * diffuse_color;
    const float3 specular = textures.gloss * specular_color;

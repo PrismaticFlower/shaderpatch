@@ -12,7 +12,7 @@
 #pragma warning(disable : 3571)
 
 // Samplers
-Texture2D<float4> shadow_map : register(t3);
+Texture2D<float1> shadow_map : register(t3);
 Texture2D<float4> albedo_map : register(t7);
 Texture2D<float2> normal_map : register(t8);
 Texture2D<float2> metallic_roughness_map : register(t9);
@@ -168,7 +168,7 @@ Ps_output main_ps(Ps_input input)
    normalWS = normalize(mul(normalTS, tangent_to_world));
 
    const float shadow = 
-      use_shadow_map ? shadow_map.SampleLevel(linear_clamp_sampler, input.shadow_texcoords, 0).a : 1.0;
+      use_shadow_map ? shadow_map.SampleLevel(linear_clamp_sampler, input.shadow_texcoords, 0).r : 1.0;
    const float ao = ao_map.Sample(aniso_wrap_sampler, input.texcoords) * ao_strength;
 
    pbr::surface_info surface;

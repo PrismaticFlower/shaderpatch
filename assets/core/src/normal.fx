@@ -13,7 +13,7 @@
 Texture2D<float4> diffuse_map : register(t0);
 Texture2D<float3> detail_map : register(t1);
 Texture2D<float3> projected_texture : register(t2);
-Texture2D<float4> shadow_map : register(t3);
+Texture2D<float1> shadow_map : register(t3);
 
 const static float4 blend_constants = ps_custom_constants[0];
 const static float4 texture_transforms[4] = 
@@ -301,7 +301,7 @@ Ps_output main_ps(Ps_input input)
 
    if (use_shadow_map) {
       const float shadow_map_value =
-         use_shadow_map ? shadow_map.SampleLevel(linear_clamp_sampler, input.shadow_texcoords, 0).a
+         use_shadow_map ? shadow_map.SampleLevel(linear_clamp_sampler, input.shadow_texcoords, 0).r
                         : 1.0;
 
       float shadow = 1.0 - (lighting.intensity * (1.0 - shadow_map_value));
