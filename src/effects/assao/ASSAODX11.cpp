@@ -4,6 +4,7 @@
 // 
 // - Removed Compile* functions. 
 // - Add sp::shader::Database usage.
+// - Add ASSAO_InputsDX11::OverrideOutputBlendState
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Copyright (c) 2016, Intel Corporation
@@ -1131,6 +1132,11 @@ void           ASSAODX11::Draw( const ASSAO_Settings & settings, const ASSAO_Inp
 
             ID3D11BlendState * blendState = ( inputs->DrawOpaque ) ? ( m_blendStateOpaque ) : ( m_blendStateMultiply );
             
+            if ( inputs->OverrideOutputBlendState != nullptr)
+            {
+                blendState = inputs->OverrideOutputBlendState;
+            }
+
             if( settings.QualityLevel < 0 )
                 FullscreenPassDraw( dx11Context, m_pixelShaderNonSmartHalfApply, blendState );
             else if( settings.QualityLevel == 0 )

@@ -13,7 +13,7 @@
 
 // Textures
 Texture2D<float3> projected_light_texture : register(ps, t2);
-Texture2D<float1> shadow_map : register(ps, t3);
+Texture2D<float2> shadow_ao_map : register(ps, t3);
 Texture2D<float4> diffuse_map : register(ps, t7);
 Texture2D<float4> normal_map : register(ps, t8);
 Texture2D<float>  height_map : register(ps, t9);
@@ -314,12 +314,13 @@ Ps_output main_ps(Ps_input input)
    float3 color;
 
    // Sample shadow map, if using.
-   const float shadow = normal_ext_use_shadow_map
-                           ? shadow_map[(int2)input.positionSS.xy].r
-                           : 1.0;
+   const float2 shadow_ao_sample = normal_ext_use_shadow_map
+                           ? shadow_ao_map[(int2)input.positionSS.xy]
+                           : float2(1.0, 1.0);
+   const float shadow = shadow_ao_sample.r;
    const float ao = use_ao_texture
-                       ? ao_map.Sample(aniso_wrap_sampler, texcoords)
-                       : 1.0;
+                       ? min(ao_map.Sample(aniso_wrap_sampler, texcoords), shadow_ao_sample.g)
+                       : shadow_ao_sample.g;
 
    // Calculate Lighting
    if (use_specular) {

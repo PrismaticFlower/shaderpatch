@@ -660,6 +660,35 @@ SSAO_params show_ssao_imgui(SSAO_params params) noexcept
 {
    ImGui::Checkbox("Enabled", &params.enabled);
 
+   const ImVec2 pre_mode_cursor = ImGui::GetCursorPos();
+
+   if (ImGui::RadioButton("Ambient", params.mode == SSAO_mode::ambient)) {
+      params.mode = SSAO_mode::ambient;
+   }
+
+   if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip(
+         "SSAO will affect ambient and vertex lighting only. This is more "
+         "accurate. It produces a sublte effect in direct lighting and a more "
+         "pronounced effect in shadows.");
+   }
+
+   ImGui::SameLine();
+
+   if (ImGui::RadioButton("Global", params.mode == SSAO_mode::global)) {
+      params.mode = SSAO_mode::global;
+   }
+
+   if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip(
+         "SSAO will affect all lighting. This is less accurate "
+         "and was the default before the Ambient mode was added.");
+   }
+
+   ImGui::SetCursorPos(pre_mode_cursor);
+
+   ImGui::LabelText("Mode", "");
+
    ImGui::DragFloat("Radius", &params.radius, 0.1f, 0.1f, 2.0f);
    ImGui::DragFloat("Shadow Multiplier", &params.shadow_multiplier, 0.05f, 0.0f, 5.0f);
    ImGui::DragFloat("Shadow Power", &params.shadow_power, 0.05f, 0.0f, 5.0f);

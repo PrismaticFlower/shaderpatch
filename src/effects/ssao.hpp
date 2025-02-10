@@ -22,10 +22,13 @@ public:
 
    auto params() const noexcept -> SSAO_params;
 
-   bool enabled() const noexcept;
+   bool enabled_and_ambient() const noexcept;
+
+   bool enabled_and_global() const noexcept;
 
    void apply(effects::Profiler& profiler, ID3D11DeviceContext4& dc,
               ID3D11ShaderResourceView& depth_input, ID3D11RenderTargetView& output,
+              ID3D11BlendState* output_blend_state_override,
               const glm::mat4& proj_matrix) noexcept;
 
    void clear_resources() noexcept;

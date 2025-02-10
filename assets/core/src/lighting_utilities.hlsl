@@ -84,12 +84,12 @@ float intensity_spot(float3 normalWS, float3 positionWS)
 }
 
 Lighting calculate(float3 normalWS, float3 positionWS,
-                   float3 static_diffuse_lighting, bool use_projected_light = false,
-                   float3 projected_light_texture_color = 0.0)
+                   float3 static_diffuse_lighting, float ambient_occlusion,
+                   bool use_projected_light = false, float3 projected_light_texture_color = 0.0)
 {
    Lighting lighting;
 
-   float4 light = float4(ambient(normalWS) + static_diffuse_lighting, 0.0);
+   float4 light = float4((ambient(normalWS) + static_diffuse_lighting) * ambient_occlusion, 0.0);
 
    // clang-format off
 

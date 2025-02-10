@@ -8,7 +8,6 @@
 #include "../material/editor.hpp"
 #include "../message_hooks.hpp"
 #include "../user_config.hpp"
-#include "basic_builtin_textures.hpp"
 #include "patch_material_io.hpp"
 #include "patch_texture_io.hpp"
 #include "screenshot.hpp"
@@ -30,7 +29,7 @@ using namespace std::literals;
 namespace sp::core {
 
 constexpr auto projtex_cube_slot = 4;
-constexpr auto shadow_texture_format = DXGI_FORMAT_R8_UNORM;
+constexpr auto shadow_texture_format = DXGI_FORMAT_R8G8_UNORM;
 constexpr auto flares_texture_format = DXGI_FORMAT_A8_UNORM;
 constexpr auto screenshots_folder = L"ScreenShots/";
 constexpr auto refraction_texture_name = "_SP_BUILTIN_refraction"sv;
@@ -189,10 +188,11 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
                          ? std::make_unique<BF2_log_monitor>()
                          : nullptr}
 {
-   add_builtin_textures(*_device, _shader_resource_database);
    bind_static_resources();
    update_rendertargets();
    update_refraction_target();
+
+   _basic_builtin_textures.add_to_database(_shader_resource_database);
 
    _cb_scene.input_color_srgb = false;
    _cb_draw_ps.additive_blending = false;
@@ -1488,7 +1488,51 @@ void Shader_patch::game_rendertype_changed() noexcept
                _device_context->ResolveSubresource(dest.texture.get(), 0,
                                                    _shadow_msaa_rt.texture.get(),
                                                    0, shadow_texture_format);
+
+            if (_effects_active && _effects.ssao.enabled_and_ambient()) {
+               resolve_msaa_depthstencil<false>();
+
+               auto depth_srv = (_rt_sample_count != 1)
+                                   ? _farscene_depthstencil.srv.get()
+                                   : _nearscene_depthstencil.srv.get();
+
+               _effects.ssao.apply(_effects.profiler, *_device_context,
+                                   *depth_srv, *dest.rtv,
+                                   _ambient_occlusion_output_blend_state.get(),
+                                   _informal_projection_matrix);
+
+               restore_all_game_state();
+            }
          };
+
+      _frame_had_shadows = true;
+   }
+   else if (_shader_rendertype == Rendertype::perpixeldiffuselighting) {
+      if (_frame_had_shadows && _effects_active &&
+          _effects.ssao.enabled_and_ambient()) {
+         for (const Game_rendertarget& rt : _game_rendertargets) {
+            if (rt.type == Game_rt_type::shadow) {
+               _game_textures[5] = {rt.srv, rt.srv};
+
+               _ps_textures_dirty = true;
+
+               break;
+            }
+         }
+
+         _on_rendertype_changed = [this]() noexcept {
+            _game_textures[5] = {};
+
+            _ps_textures_dirty = true;
+            _on_rendertype_changed = nullptr;
+         };
+      }
+      else {
+         _game_textures[5] = {_basic_builtin_textures.white,
+                              _basic_builtin_textures.white};
+
+         _ps_textures_dirty = true;
+      }
    }
    else if (_shader_rendertype == Rendertype::refraction) {
       resolve_refraction_texture();
@@ -1709,7 +1753,8 @@ void Shader_patch::game_rendertype_changed() noexcept
    }
 
    if (_effects_active) {
-      if (_shader_rendertype == Rendertype::skyfog && _effects.ssao.enabled()) {
+      if (_shader_rendertype == Rendertype::skyfog &&
+          _effects.ssao.enabled_and_global()) {
          resolve_msaa_depthstencil<false>();
 
          auto depth_srv = (_rt_sample_count != 1)
@@ -1717,7 +1762,8 @@ void Shader_patch::game_rendertype_changed() noexcept
                              : _nearscene_depthstencil.srv.get();
 
          _effects.ssao.apply(_effects.profiler, *_device_context, *depth_srv,
-                             *_game_rendertargets[0].rtv, _informal_projection_matrix);
+                             *_game_rendertargets[0].rtv, nullptr,
+                             _informal_projection_matrix);
 
          restore_all_game_state();
       }
@@ -1920,6 +1966,7 @@ void Shader_patch::update_frame_state() noexcept
    _effects_postprocessing_applied = false;
    _override_viewport = false;
    _set_aspect_ratio_on_present = false;
+   _frame_had_shadows = false;
 }
 
 void Shader_patch::update_imgui() noexcept

@@ -21,6 +21,10 @@ enum class Tonemapper { filmic, aces_fitted, filmic_heji2015, reinhard, none };
 
 enum class Bloom_mode { blended, threshold };
 
+enum class SSAO_mode { ambient, global };
+
+enum class SSAO_method { assao };
+
 struct Bloom_params {
    bool enabled = true;
    Bloom_mode mode = Bloom_mode::blended;
@@ -106,6 +110,9 @@ struct Film_grain_params {
 struct SSAO_params {
    bool enabled = true;
 
+   SSAO_mode mode = SSAO_mode::ambient;
+   SSAO_method method = SSAO_method::assao;
+
    float radius = 1.5f;
    float shadow_multiplier = 0.75f;
    float shadow_power = 0.75f;
@@ -180,6 +187,49 @@ inline auto bloom_mode_from_string(const std::string_view string) noexcept
    return Bloom_mode::blended;
 }
 
+inline auto to_string(const SSAO_mode ssao_mode) noexcept
+{
+   using namespace std::literals;
+
+   switch (ssao_mode) {
+   case SSAO_mode::ambient:
+      return "Ambient"s;
+   case SSAO_mode::global:
+      return "Global"s;
+   }
+
+   std::terminate();
+}
+
+inline auto ssao_mode_from_string(const std::string_view string) noexcept
+{
+   if (string == to_string(SSAO_mode::ambient))
+      return SSAO_mode::ambient;
+   else if (string == to_string(SSAO_mode::global))
+      return SSAO_mode::global;
+
+   return SSAO_mode::ambient;
+}
+
+inline auto to_string(const SSAO_method ssao_type) noexcept
+{
+   using namespace std::literals;
+
+   switch (ssao_type) {
+   case SSAO_method::assao:
+      return "ASSAO"s;
+   }
+
+   std::terminate();
+}
+
+inline auto ssao_type_from_string(const std::string_view string) noexcept
+{
+   if (string == to_string(SSAO_method::assao)) return SSAO_method::assao;
+
+   return SSAO_method::assao;
+}
+
 }
 
 namespace YAML {
@@ -209,6 +259,36 @@ struct convert<sp::effects::Bloom_mode> {
    static bool decode(const Node& node, sp::effects::Bloom_mode& bloom_mode)
    {
       bloom_mode = sp::effects::bloom_mode_from_string(node.as<std::string>());
+
+      return true;
+   }
+};
+
+template<>
+struct convert<sp::effects::SSAO_mode> {
+   static Node encode(const sp::effects::SSAO_mode ssao_mode)
+   {
+      return YAML::Node{to_string(ssao_mode)};
+   }
+
+   static bool decode(const Node& node, sp::effects::SSAO_mode& ssao_mode)
+   {
+      ssao_mode = sp::effects::ssao_mode_from_string(node.as<std::string>());
+
+      return true;
+   }
+};
+
+template<>
+struct convert<sp::effects::SSAO_method> {
+   static Node encode(const sp::effects::SSAO_method ssao_type)
+   {
+      return YAML::Node{to_string(ssao_type)};
+   }
+
+   static bool decode(const Node& node, sp::effects::SSAO_method& ssao_type)
+   {
+      ssao_type = sp::effects::ssao_type_from_string(node.as<std::string>());
 
       return true;
    }
@@ -514,6 +594,8 @@ struct convert<sp::effects::SSAO_params> {
       YAML::Node node;
 
       node["Enable"s] = params.enabled;
+      node["Mode"s] = params.mode;
+      node["Method"s] = params.method;
       node["Radius"s] = params.radius;
       node["Shadow Multiplier"s] = params.shadow_multiplier;
       node["Shadow Power"s] = params.shadow_power;
@@ -531,6 +613,10 @@ struct convert<sp::effects::SSAO_params> {
       params = sp::effects::SSAO_params{};
 
       params.enabled = node["Enable"s].as<bool>(false);
+      params.mode =
+         node["Mode"s].as<sp::effects::SSAO_mode>(sp::effects::SSAO_mode::global);
+      params.method =
+         node["Method"s].as<sp::effects::SSAO_method>(sp::effects::SSAO_method::assao);
       params.radius = node["Radius"s].as<float>(params.radius);
       params.shadow_multiplier =
          node["Shadow Multiplier"s].as<float>(params.shadow_multiplier);

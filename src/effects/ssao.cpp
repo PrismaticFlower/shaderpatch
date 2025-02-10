@@ -37,14 +37,22 @@ auto SSAO::params() const noexcept -> SSAO_params
    return _params;
 }
 
-bool SSAO::enabled() const noexcept
+bool SSAO::enabled_and_ambient() const noexcept
 {
-   return _params.enabled && user_config.effects.ssao;
+   return _params.enabled && user_config.effects.ssao &&
+          _params.mode == SSAO_mode::ambient;
+}
+
+bool SSAO::enabled_and_global() const noexcept
+{
+   return _params.enabled && user_config.effects.ssao &&
+          _params.mode == SSAO_mode::global;
 }
 
 void SSAO::apply(effects::Profiler& profiler, ID3D11DeviceContext4& dc,
-                 ID3D11ShaderResourceView& depth_input,
-                 ID3D11RenderTargetView& output, const glm::mat4& proj_matrix) noexcept
+                 ID3D11ShaderResourceView& depth_input, ID3D11RenderTargetView& output,
+                 ID3D11BlendState* output_blend_state_override,
+                 const glm::mat4& proj_matrix) noexcept
 {
    if (&depth_input != _depth_srv || &output != _output_rtv ||
        update_quality_level() || update_proj_matrix(proj_matrix)) {
@@ -105,6 +113,7 @@ void SSAO::apply(effects::Profiler& profiler, ID3D11DeviceContext4& dc,
    inputs.DepthSRV = _depth_srv.get();
    inputs.OverrideOutputRTV = _output_rtv.get();
    inputs.NormalSRV = nullptr;
+   inputs.OverrideOutputBlendState = output_blend_state_override;
 
    dc.OMSetRenderTargets(0, nullptr, nullptr);
 
