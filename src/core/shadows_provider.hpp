@@ -328,6 +328,7 @@ private:
    Com_ptr<ID3D11PixelShader> _draw_to_target_ps;
    Com_ptr<ID3D11Buffer> _draw_to_target_cb;
    Com_ptr<ID3D11DepthStencilState> _draw_to_target_depthstencil_state;
+   Com_ptr<ID3D11BlendState> _draw_to_target_blend_state;
    Com_ptr<ID3D11SamplerState> _shadow_map_sampler;
 
    void begin_frame(ID3D11DeviceContext4& dc) noexcept;

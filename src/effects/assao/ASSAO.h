@@ -25,6 +25,7 @@ struct ID3D11Device;
 struct ID3D11DeviceContext;
 struct ID3D11ShaderResourceView;
 struct ID3D11RenderTargetView;
+struct ID3D11BlendState;
 
 #pragma pack( push, 8 ) // Make sure we have consistent structure packings
 
@@ -226,12 +227,17 @@ struct ASSAO_InputsDX11 : ASSAO_Inputs
     // to what it was originally after the Draw call.
     ID3D11RenderTargetView *        OverrideOutputRTV;
 
+    // If not NULL, instead writing into currently bound render target, Draw will use this. Current render target will be restored 
+    // to what it was originally after the Draw call.
+    ID3D11BlendState * OverrideOutputBlendState;
+
     ASSAO_InputsDX11( )
     {
-        DeviceContext       = nullptr;
-        DepthSRV            = nullptr;
-        NormalSRV           = nullptr;
-        OverrideOutputRTV   = nullptr;
+        DeviceContext              = nullptr;
+        DepthSRV                   = nullptr;
+        NormalSRV                  = nullptr;
+        OverrideOutputRTV          = nullptr;
+        OverrideOutputBlendState   = nullptr;
     }
 };
 

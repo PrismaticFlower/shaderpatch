@@ -289,6 +289,32 @@ Shadows_provider::Shadows_provider(Com_ptr<ID3D11Device5> device,
       return state;
    }();
 
+   _draw_to_target_blend_state = [&] {
+      Com_ptr<ID3D11BlendState> state;
+
+      const D3D11_BLEND_DESC desc{
+         .AlphaToCoverageEnable = false,
+         .IndependentBlendEnable = false,
+         .RenderTarget =
+            D3D11_RENDER_TARGET_BLEND_DESC{
+               .BlendEnable = false,
+               .SrcBlend = D3D11_BLEND_ONE,
+               .DestBlend = D3D11_BLEND_ZERO,
+               .BlendOp = D3D11_BLEND_OP_ADD,
+               .SrcBlendAlpha = D3D11_BLEND_ONE,
+               .DestBlendAlpha = D3D11_BLEND_ZERO,
+               .BlendOpAlpha = D3D11_BLEND_OP_ADD,
+               .RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_RED,
+            },
+      };
+
+      if (FAILED(device->CreateBlendState(&desc, state.clear_and_assign()))) {
+         log_and_terminate("Unable to create shadow depthstencil state!");
+      }
+
+      return state;
+   }();
+
    _shadow_map_sampler = [&] {
       Com_ptr<ID3D11SamplerState> state;
 
@@ -1180,6 +1206,7 @@ void Shadows_provider::draw_to_target_map(ID3D11DeviceContext4& dc,
 
    dc.OMSetDepthStencilState(_draw_to_target_depthstencil_state.get(), 0);
    dc.OMSetRenderTargets(1, &target_rtv, &args.scene_dsv);
+   dc.OMSetBlendState(_draw_to_target_blend_state.get(), nullptr, 0xff'ff'ff'ffu);
 
    dc.PSSetSamplers(0, 1, &shadow_sampler_state);
    dc.PSSetShaderResources(0, depth_srvs.size(), depth_srvs.data());

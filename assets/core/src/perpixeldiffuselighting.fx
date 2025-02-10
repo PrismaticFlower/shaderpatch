@@ -32,11 +32,16 @@ const static bool generate_texcoords = PERPIXEL_GENERATE_TEXCOORDS;
 const static bool generate_tangents = PERPIXEL_GENERATE_TANGENTS;
 const static uint light_count = PERPIXEL_LIGHT_COUNT;
 
+Texture2D<float3> normal_map : register(t0);
+Texture2D<float3> projection_map : register(t2);
+Texture2D<float2> shadow_ao_map : register(t5);
+
 struct Vs_perpixel_output {
    float3 positionWS : POSITIONWS;
    float3 normalWS : NORMALWS;
    float3 static_lighting : STATICLIGHT;
    float1 fog : FOG;
+   noperspective float2 shadow_texcoords : SHADOWTEXCOORDS;
 
    float4 positionPS : SV_Position;
 };
@@ -55,6 +60,7 @@ Vs_perpixel_output perpixel_vs(Vertex_input input)
    output.normalWS = transformer.normalWS();
    output.static_lighting = get_static_diffuse_color(input.color());
    output.fog = calculate_fog(positionWS, positionPS);
+   output.shadow_texcoords = transform_shadowmap_coords(positionPS);
 
    return output;
 }
@@ -64,6 +70,7 @@ struct Vs_normalmapped_output {
    float2 texcoords : TEXCOORD;
    float3 static_lighting : STATICLIGHT;
    float1 fog : FOG;
+   noperspective float2 shadow_texcoords : SHADOWTEXCOORDS;
 
    float3x3 TBN : TBN;
 
@@ -109,6 +116,7 @@ Vs_normalmapped_output normalmapped_vs(Vertex_input input)
 
    output.static_lighting = get_static_diffuse_color(input.color());
    output.fog = calculate_fog(positionWS, positionPS);
+   output.shadow_texcoords = transform_shadowmap_coords(positionPS);
 
    return output;
 }
@@ -131,6 +139,7 @@ struct Vs_perpixel_spotlight_output {
    float4 projection_coords : TEXCOORD;
    float3 static_lighting : STATICLIGHT;
    float1 fog : FOG;
+   noperspective float2 shadow_texcoords : SHADOWTEXCOORDS;
 
    float4 positionPS : SV_Position;
 };
@@ -150,6 +159,7 @@ Vs_perpixel_spotlight_output perpixel_spotlight_vs(Vertex_input input)
    output.projection_coords = transform_spotlight_projection(positionWS);
    output.static_lighting = get_static_diffuse_color(input.color());
    output.fog = calculate_fog(positionWS, positionPS);
+   output.shadow_texcoords = transform_shadowmap_coords(positionPS);
 
    return output;
 }
@@ -160,6 +170,7 @@ struct Vs_normalmapped_spotlight_output {
    float4 projection_coords : TEXCOORD1;
    float3 static_lighting : STATICLIGHT;
    float1 fog : FOG;
+   noperspective float2 shadow_texcoords : SHADOWTEXCOORDS;
 
    float3x3 TBN : TBN;
 
@@ -207,6 +218,7 @@ Vs_normalmapped_spotlight_output normalmapped_spotlight_vs(Vertex_input input)
 
    output.static_lighting = get_static_diffuse_color(input.color());
    output.fog = calculate_fog(positionWS, positionPS);
+   output.shadow_texcoords = transform_shadowmap_coords(positionPS);
 
    return output;
 }
@@ -239,13 +251,12 @@ struct Ps_normalmapped_input {
    float2 texcoords : TEXCOORD;
    float3 static_lighting : STATICLIGHT;
    float1 fog : FOG;
+   noperspective float2 shadow_texcoords : SHADOWTEXCOORDS;
 
    float3x3 TBN : TBN;
 };
 
-float4 normalmapped_ps(Ps_normalmapped_input input, Texture2D<float3> normal_map
-                       : register(t0))
-   : SV_Target0
+float4 normalmapped_ps(Ps_normalmapped_input input) : SV_Target0
 {
    const float3 normalTS =
       normal_map.Sample(aniso_wrap_sampler, input.texcoords).rgb * (255.0 / 127.0) -
@@ -256,6 +267,7 @@ float4 normalmapped_ps(Ps_normalmapped_input input, Texture2D<float3> normal_map
    float3 color = input.static_lighting;
    color += light::ambient(normalWS);
    color *= light_ambient_color_top.a;
+   color *= shadow_ao_map.Sample(linear_clamp_sampler, input.shadow_texcoords).g;
 
    [unroll] for (uint i = 0; i < light_count; ++i)
    {
@@ -273,6 +285,7 @@ struct Ps_perpixel_input {
    float3 normalWS : NORMALWS;
    float3 static_lighting : STATICLIGHT;
    float1 fog : FOG;
+   noperspective float2 shadow_texcoords : SHADOWTEXCOORDS;
 };
 
 float4 perpixel_ps(Ps_perpixel_input input) : SV_Target0
@@ -282,6 +295,7 @@ float4 perpixel_ps(Ps_perpixel_input input) : SV_Target0
    float3 color = input.static_lighting;
    color += light::ambient(normalWS);
    color *= light_ambient_color_top.a;
+   color *= shadow_ao_map.Sample(linear_clamp_sampler, input.shadow_texcoords).g;
 
    [unroll] for (uint i = 0; i < light_count; ++i)
    {
@@ -316,11 +330,10 @@ struct Ps_perpixel_spotlight_input {
    float4 projection_coords : TEXCOORD;
    float3 static_lighting : STATICLIGHT;
    float1 fog : FOG;
+   noperspective float2 shadow_texcoords : SHADOWTEXCOORDS;
 };
 
-float4 perpixel_spotlight_ps(Ps_perpixel_spotlight_input input, Texture2D<float3> projection_map
-                             : register(t2))
-   : SV_Target0
+float4 perpixel_spotlight_ps(Ps_perpixel_spotlight_input input) : SV_Target0
 {
    const float3 projection_color =
       sample_projected_light(projection_map, input.projection_coords);
@@ -330,6 +343,7 @@ float4 perpixel_spotlight_ps(Ps_perpixel_spotlight_input input, Texture2D<float3
    float3 color = input.static_lighting;
    color += light::ambient(normalWS);
    color *= light_ambient_color_top.a;
+   color *= shadow_ao_map.Sample(linear_clamp_sampler, input.shadow_texcoords).g;
 
    color += calculate_spotlight(input.positionWS, normalWS, spotlight_positionWS,
                                 spotlight_directionWS, spotlight_color,
@@ -346,15 +360,12 @@ struct Ps_normalmapped_spotlight_input {
    float4 projection_coords : TEXCOORD1;
    float3 static_lighting : STATICLIGHT;
    float1 fog : FOG;
+   noperspective float2 shadow_texcoords : SHADOWTEXCOORDS;
 
    float3x3 TBN : TBN;
 };
 
-float4 normalmapped_spotlight_ps(Ps_normalmapped_spotlight_input input,
-                                 Texture2D<float3> normal_map
-                                 : register(t0), Texture2D<float3> projection_map
-                                 : register(t2))
-   : SV_Target0
+float4 normalmapped_spotlight_ps(Ps_normalmapped_spotlight_input input) : SV_Target0
 {
    const float3 projection_color =
       sample_projected_light(projection_map, input.projection_coords);
@@ -368,6 +379,7 @@ float4 normalmapped_spotlight_ps(Ps_normalmapped_spotlight_input input,
    float3 color = input.static_lighting;
    color += light::ambient(normalWS);
    color *= light_ambient_color_top.a;
+   color *= shadow_ao_map.Sample(linear_clamp_sampler, input.shadow_texcoords).g;
 
    color += calculate_spotlight(input.positionWS, normalWS, spotlight_positionWS,
                                 spotlight_directionWS, spotlight_color,

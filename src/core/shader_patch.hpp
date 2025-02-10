@@ -9,6 +9,7 @@
 #include "../shader/database.hpp"
 #include "../user_config.hpp"
 #include "backbuffer_cmaa2_views.hpp"
+#include "basic_builtin_textures.hpp"
 #include "com_ptr.hpp"
 #include "constant_buffers.hpp"
 #include "d3d11_helpers.hpp"
@@ -407,6 +408,7 @@ private:
    bool _effects_postprocessing_applied = false;
    bool _override_viewport = false;
    bool _set_aspect_ratio_on_present = false;
+   bool _frame_had_shadows = false;
 
    bool _preview_shadow_world = false;
    bool _preview_shadow_world_textured = false;
@@ -493,6 +495,31 @@ private:
 
       return blend_state;
    }();
+   const Com_ptr<ID3D11BlendState1> _ambient_occlusion_output_blend_state = [this] {
+      Com_ptr<ID3D11BlendState1> blend_state;
+
+      const D3D11_BLEND_DESC1 desc{
+         .AlphaToCoverageEnable = false,
+         .IndependentBlendEnable = false,
+         .RenderTarget =
+            D3D11_RENDER_TARGET_BLEND_DESC1{
+               .BlendEnable = false,
+               .LogicOpEnable = false,
+               .SrcBlend = D3D11_BLEND_ONE,
+               .DestBlend = D3D11_BLEND_ZERO,
+               .BlendOp = D3D11_BLEND_OP_ADD,
+               .SrcBlendAlpha = D3D11_BLEND_ONE,
+               .DestBlendAlpha = D3D11_BLEND_ZERO,
+               .BlendOpAlpha = D3D11_BLEND_OP_ADD,
+               .LogicOp = D3D11_LOGIC_OP_CLEAR,
+               .RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_GREEN,
+            },
+      };
+
+      _device->CreateBlendState1(&desc, blend_state.clear_and_assign());
+
+      return blend_state;
+   }();
 
    OIT_provider _oit_provider{_device, _shader_database};
 
@@ -527,6 +554,8 @@ private:
    Refraction_quality _refraction_quality = Refraction_quality::medium;
 
    D3D11_VIEWPORT _viewport_override = {};
+
+   Basic_builtin_textures _basic_builtin_textures{*_device};
 
    std::unique_ptr<text::Font_atlas_builder> _font_atlas_builder =
       text::Font_atlas_builder::use_scalable_fonts()

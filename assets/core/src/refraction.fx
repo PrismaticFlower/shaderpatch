@@ -166,7 +166,7 @@ float4 nodistortion_ps(Ps_nodistortion_input input,
       diffuse_texture.Sample(aniso_wrap_sampler, input.texcoords) * input.material_color_fade;
    
    Lighting lighting = light::calculate(normalize(input.normalWS), input.positionWS,
-                                        input.static_lighting);
+                                        input.static_lighting, 1.0);
 
    float3 color = lighting.color * diffuse_color.rgb;
    color = apply_fog(color, input.fog);
@@ -231,7 +231,7 @@ float4 near_diffuse_ps(Ps_near_input input) : SV_Target0
       projection_texture.Sample(linear_wrap_sampler, projection_texcoords);
 
    Lighting lighting = light::calculate(normalize(input.normalWS), input.positionWS,
-                                        input.static_lighting, true,
+                                        input.static_lighting, 1.0, true,
                                         projection_texture_color);
 
    const float2 scene_texcoords = float2(input.scene_texcoords_x, input.scene_texcoords_y);
@@ -259,7 +259,7 @@ float4 near_ps(Ps_near_input input) : SV_Target0
       projection_texture.Sample(linear_wrap_sampler, projection_texcoords);
 
    Lighting lighting = light::calculate(normalize(input.normalWS), input.positionWS,
-                                        input.static_lighting, true,
+                                        input.static_lighting, 1.0, true,
                                         projection_texture_color);
    
    const float2 scene_texcoords = float2(input.scene_texcoords_x, input.scene_texcoords_y);
@@ -282,7 +282,7 @@ float4 near_diffuse_bump_ps(Ps_near_input input) : SV_Target0
       projection_texture.Sample(linear_wrap_sampler, projection_texcoords);
 
    Lighting lighting = light::calculate(normalize(input.normalWS), input.positionWS,
-                                        input.static_lighting, true,
+                                        input.static_lighting, 1.0, true,
                                         projection_texture_color);
 
    const float4 diffuse_color = diffuse_texture.Sample(aniso_wrap_sampler,
@@ -311,7 +311,7 @@ float4 near_bump_ps(Ps_near_input input) : SV_Target0
       projection_texture.Sample(linear_wrap_sampler, projection_texcoords);
 
    Lighting lighting = light::calculate(normalize(input.normalWS), input.positionWS,
-                                        input.static_lighting, true,
+                                        input.static_lighting, 1.0, true,
                                         projection_texture_color);
 
    float3 color = input.material_color_fade.rgb * lighting.color;
