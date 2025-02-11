@@ -13,8 +13,6 @@
 using namespace std::literals;
 using sp::shader::Vertex_shader_flags;
 
-#include "../imgui/imgui.h"
-
 namespace sp::core {
 
 using effects::Profile;
@@ -1160,12 +1158,6 @@ void Shadows_provider::draw_shadow_maps_cascades(ID3D11DeviceContext4& dc) noexc
       draw_culled_hardedged_meshes(_visibility_lists.hardedged_compressed_skinned,
                                    _meshes.hardedged_compressed_skinned,
                                    _mesh_hardedged_compressed_skinned);
-
-      ImGui::Text("z: %u, zs: %u, zh: %u, zhs: %u",
-                  _visibility_lists.compressed.size(),
-                  _visibility_lists.compressed_skinned.size(),
-                  _visibility_lists.hardedged_compressed.size(),
-                  _visibility_lists.hardedged_compressed_skinned.size());
    }
 }
 
