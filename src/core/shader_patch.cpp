@@ -1813,10 +1813,28 @@ void Shader_patch::game_rendertype_changed() noexcept
                                         Game_rt_type::shadow};
             }
 
-            if (_rt_sample_count > 1)
+            if (use_alternative_shadows) {
+               resolve_msaa_depthstencil<false>();
+
+               auto& depth_target = (_rt_sample_count != 1)
+                                       ? _farscene_depthstencil
+                                       : _nearscene_depthstencil;
+
+               _shadows->draw_shadow_maps(*_device_context,
+                                          {.scene_depth = *depth_target.srv,
+                                           .scene_dsv = *depth_target.dsv_readonly,
+                                           .target_map = *dest.rtv,
+                                           .target_width = dest.width,
+                                           .target_height = dest.height,
+                                           .profiler = _effects.profiler});
+
+               restore_all_game_state();
+            }
+            else if (_rt_sample_count > 1) {
                _device_context->ResolveSubresource(dest.texture.get(), 0,
                                                    _shadow_msaa_rt.texture.get(),
                                                    0, shadow_texture_format);
+            }
 
             if (_effects_active && _effects.ssao.enabled_and_ambient()) {
                resolve_msaa_depthstencil<false>();
@@ -1834,25 +1852,8 @@ void Shader_patch::game_rendertype_changed() noexcept
             }
          };
 
-      if (use_alternative_shadows) {
-         if (shadow_rt) {
-            _shadows->draw_shadow_maps(*_device_context,
-                                       {.scene_depth = *_nearscene_depthstencil.srv,
-                                        .scene_dsv = *_nearscene_depthstencil.dsv_readonly,
-                                        .target_map = *shadow_rt->rtv,
-                                        .target_width = shadow_rt->width,
-                                        .target_height = shadow_rt->height,
-                                        .profiler = _effects.profiler});
+      if (use_alternative_shadows) _discard_draw_calls = true;
 
-            restore_all_game_state();
-         }
-
-         _discard_draw_calls = true;
-      }
-      else {
-         _discard_draw_calls = false;
-      }
-      
       _frame_had_shadows = true;
    }
    else if (_shader_rendertype == Rendertype::perpixeldiffuselighting) {
