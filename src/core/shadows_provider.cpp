@@ -46,18 +46,6 @@ constexpr float cascade_fade_texels = 32.0f;
 constexpr UINT cascade_count = 4;
 constexpr UINT TEMP_shadow_map_length = 2048;
 
-// clang-format off
-
-
-template<typename T>
-concept Hardedged_mesh = requires(T mesh)
-{
-   { mesh.x_texcoord_transform } -> std::convertible_to<glm::vec4>;
-   { mesh.y_texcoord_transform } -> std::convertible_to<glm::vec4>;
-};
-
-// clang-format on
-
 auto make_input_layout(
    ID3D11Device5& device, std::initializer_list<D3D11_INPUT_ELEMENT_DESC> input_layout,
    std::tuple<Com_ptr<ID3D11VertexShader>, shader::Bytecode_blob, shader::Vertex_input_layout> shader) noexcept
@@ -709,6 +697,8 @@ void Shadows_provider::add_mesh_hardedged_compressed_skinned(
 void Shadows_provider::draw_shadow_maps(ID3D11DeviceContext4& dc,
                                         const Draw_args& args) noexcept
 {
+   if (!_started_frame) return;
+
    Profile profile{args.profiler, dc, "Shadow Maps - Draw Cascades"sv};
 
    prepare_draw_shadow_maps(dc, args);
