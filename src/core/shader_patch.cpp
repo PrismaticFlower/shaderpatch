@@ -2380,6 +2380,20 @@ void Shader_patch::update_imgui() noexcept
             _pixel_inspector.show(*_device_context, _swapchain, _window);
          }
 
+         ImGui::Checkbox("Preview Shadow World", &_preview_shadow_world);
+         ImGui::Checkbox("Preview Shadow World Textured",
+                         &_preview_shadow_world_textured);
+         ImGui::Checkbox("Overlay Shadow World BBOXs", &_overlay_shadow_world_aabbs);
+         ImGui::Checkbox("Overlay Shadow World Leaf Patches",
+                         &_overlay_shadow_world_leaf_patches);
+      }
+
+      ImGui::End();
+
+      ImGui::SetNextWindowCollapsed(true, ImGuiCond_FirstUseEver);
+
+      if (ImGui::Begin("Experimental Features", nullptr,
+                       ImGuiWindowFlags_AlwaysAutoResize)) {
          ImGui::SeparatorText("Shadow Mapss");
 
          ImGui::Checkbox("Use Shadow Maps", &_use_shadow_maps);
@@ -2401,13 +2415,6 @@ void Shader_patch::update_imgui() noexcept
          ImGui::DragFloat("HW shadow slope scaled depth bias",
                           &_shadows->config.hw_slope_scaled_depth_bias, 0.0001f,
                           -1.0f, 1.0f, "%.5f");
-
-         ImGui::Checkbox("Preview Shadow World", &_preview_shadow_world);
-         ImGui::Checkbox("Preview Shadow World Textured",
-                         &_preview_shadow_world_textured);
-         ImGui::Checkbox("Overlay Shadow World BBOXs", &_overlay_shadow_world_aabbs);
-         ImGui::Checkbox("Overlay Shadow World Leaf Patches",
-                         &_overlay_shadow_world_leaf_patches);
 
          ImGui::SeparatorText("Near/Far Scene Control");
 
