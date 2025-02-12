@@ -36,6 +36,7 @@ struct alignas(256) Draw_to_target_cb {
    float shadow_bias;
    float cascade_fade_distance;
    float inv_cascade_fade_distance;
+   float inv_game_intensity;
 };
 
 static_assert(sizeof(Draw_to_target_cb) == 512);
@@ -151,6 +152,8 @@ Shadows_provider::Shadows_provider(Com_ptr<ID3D11Device5> device,
       shaders.vertex("shadowmap render"sv).entrypoint("main_vs"sv, 0, Vertex_shader_flags::none));
 
    _draw_to_target_ps = shaders.pixel("shadowmap render"sv).entrypoint("main_ps"sv);
+   _draw_to_target_with_intensity_ps =
+      shaders.pixel("shadowmap render"sv).entrypoint("main_intensity_ps"sv);
 
    _camera_cb_buffer = [&] {
       Com_ptr<ID3D11Buffer> buffer;
@@ -870,6 +873,7 @@ void Shadows_provider::upload_draw_to_target_buffer(ID3D11DeviceContext4& dc,
       .shadow_bias = config.shadow_bias,
       .cascade_fade_distance = -cascade_fade_texels / _shadow_map_length_flt,
       .inv_cascade_fade_distance = 1.0f / (-cascade_fade_texels / _shadow_map_length_flt),
+      .inv_game_intensity = 1.0f - config.game_shadow_intensity,
    };
 
    update_dynamic_buffer(dc, *_draw_to_target_cb, cb);
@@ -1170,6 +1174,14 @@ void Shadows_provider::draw_to_target_map(ID3D11DeviceContext4& dc,
    auto* target_rtv = &args.target_map;
    auto* shadow_sampler_state = _shadow_map_sampler.get();
    auto* draw_to_target_cb = _draw_to_target_cb.get();
+   auto* pixel_shader = config.use_game_shadow_intensity
+                           ? _draw_to_target_with_intensity_ps.get()
+                           : _draw_to_target_ps.get();
+
+   const std::array<float, 4> blend_factor = {config.game_shadow_intensity,
+                                              config.game_shadow_intensity,
+                                              config.game_shadow_intensity,
+                                              config.game_shadow_intensity};
 
    const D3D11_VIEWPORT viewport{.TopLeftX = 0.0f,
                                  .TopLeftY = 0.0f,
@@ -1193,7 +1205,7 @@ void Shadows_provider::draw_to_target_map(ID3D11DeviceContext4& dc,
    dc.PSSetSamplers(0, 1, &shadow_sampler_state);
    dc.PSSetShaderResources(0, depth_srvs.size(), depth_srvs.data());
    dc.PSSetConstantBuffers(0, 1, &draw_to_target_cb);
-   dc.PSSetShader(_draw_to_target_ps.get(), nullptr, 0);
+   dc.PSSetShader(pixel_shader, nullptr, 0);
 
    dc.Draw(3, 0);
 }

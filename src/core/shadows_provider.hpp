@@ -25,6 +25,7 @@ namespace sp::core {
 struct Shadows_config {
    bool force_doublesided_meshes = true;
    bool disable_dynamic_hardedged_meshes = false;
+   bool use_game_shadow_intensity = false;
 
    INT hw_depth_bias = 0;
    float hw_depth_bias_clamp = 0.0f;
@@ -33,6 +34,8 @@ struct Shadows_config {
    float start_depth = 0.5f;
    float end_depth = 256.0f;
    float shadow_bias = -0.0015f;
+
+   float game_shadow_intensity = 1.0f;
 };
 
 class Shadows_provider {
@@ -326,6 +329,7 @@ private:
 
    Com_ptr<ID3D11VertexShader> _draw_to_target_vs;
    Com_ptr<ID3D11PixelShader> _draw_to_target_ps;
+   Com_ptr<ID3D11PixelShader> _draw_to_target_with_intensity_ps;
    Com_ptr<ID3D11Buffer> _draw_to_target_cb;
    Com_ptr<ID3D11DepthStencilState> _draw_to_target_depthstencil_state;
    Com_ptr<ID3D11BlendState> _draw_to_target_blend_state;

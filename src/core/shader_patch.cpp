@@ -1814,6 +1814,9 @@ void Shader_patch::game_rendertype_changed() noexcept
             }
 
             if (_use_shadow_maps) {
+               _shadows->config.game_shadow_intensity =
+                  _cb_draw_ps.ps_custom_constants[0].a;
+
                resolve_msaa_depthstencil<false>();
 
                auto& depth_target = (_rt_sample_count != 1)
@@ -2385,6 +2388,9 @@ void Shader_patch::update_imgui() noexcept
                          &_shadows->config.force_doublesided_meshes);
          ImGui::Checkbox("Disable Dynamic Hardedged Meshes",
                          &_shadows->config.disable_dynamic_hardedged_meshes);
+
+         ImGui::Checkbox("Use Game Shadow Intensity",
+                         &_shadows->config.use_game_shadow_intensity);
 
          ImGui::DragFloat("Shadow Bias", &_shadows->config.shadow_bias, 0.0001f,
                           -1.0f, 1.0f, "%.5f");

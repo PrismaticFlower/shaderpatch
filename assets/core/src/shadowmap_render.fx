@@ -8,6 +8,8 @@ cbuffer Constants : register(b0)
 
    float cascade_fade_distance;
    float inv_cascade_fade_distance;
+
+   float inv_game_intensity;
 }
 
 Texture2D<float> input_depth : register(t0);
@@ -128,4 +130,9 @@ float4 main_ps(float2 texcoords : TEXCOORD) : SV_Target0
    // if (index == 3) return float3(1.0, 1.0, 0.0);
 
    return shadow;
+}
+
+float4 main_intensity_ps(float2 texcoords : TEXCOORD) : SV_Target0
+{
+   return (1.0 - (1.0 - main_ps(texcoords)) *  inv_game_intensity);
 }

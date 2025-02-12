@@ -13,6 +13,10 @@
 
     "main_ps": {
       "stage": "pixel"
+    },
+
+    "main_intensity_ps": {
+      "stage": "pixel"
     }
   },
 
