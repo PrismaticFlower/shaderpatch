@@ -410,6 +410,7 @@ private:
    bool _set_aspect_ratio_on_present = false;
    bool _frame_had_shadows = false;
 
+   bool _use_shadow_maps = true;
    bool _preview_shadow_world = false;
    bool _preview_shadow_world_textured = false;
    bool _overlay_shadow_world_aabbs = false;

@@ -1517,13 +1517,11 @@ void Shader_patch::game_rendertype_changed() noexcept
 {
    if (_on_rendertype_changed) _on_rendertype_changed();
 
-   const bool use_alternative_shadows = true;
-
    if (_shader_rendertype == Rendertype::zprepass) {
       _shadows->view_proj_matrix =
          std::bit_cast<glm::mat4>(_cb_scene.projection_matrix);
 
-      if (use_alternative_shadows) {
+      if (_use_shadow_maps) {
          _on_draw_indexed = [&](const D3D11_PRIMITIVE_TOPOLOGY topology,
                                 const UINT index_count, const UINT start_index,
                                 const INT base_vertex) noexcept {
@@ -1756,7 +1754,7 @@ void Shader_patch::game_rendertype_changed() noexcept
    }
    else if (_shader_rendertype == Rendertype::stencilshadow) {
       _shadows->light_direction = _cb_draw.custom_constants[0];
-      _discard_draw_calls = use_alternative_shadows;
+      _discard_draw_calls = _use_shadow_maps;
 
       _on_rendertype_changed = [this]() noexcept {
          _discard_draw_calls = true;
@@ -1765,6 +1763,8 @@ void Shader_patch::game_rendertype_changed() noexcept
       };
    }
    else if (_shader_rendertype == Rendertype::shadowquad) {
+      _discard_draw_calls = _use_shadow_maps;
+
       const bool multisampled = _rt_sample_count > 1;
       auto* const shadow_rt = [&]() -> Game_rendertarget* {
          auto it =
@@ -1813,7 +1813,7 @@ void Shader_patch::game_rendertype_changed() noexcept
                                         Game_rt_type::shadow};
             }
 
-            if (use_alternative_shadows) {
+            if (_use_shadow_maps) {
                resolve_msaa_depthstencil<false>();
 
                auto& depth_target = (_rt_sample_count != 1)
@@ -1851,8 +1851,6 @@ void Shader_patch::game_rendertype_changed() noexcept
                restore_all_game_state();
             }
          };
-
-      if (use_alternative_shadows) _discard_draw_calls = true;
 
       _frame_had_shadows = true;
    }
@@ -2379,7 +2377,9 @@ void Shader_patch::update_imgui() noexcept
             _pixel_inspector.show(*_device_context, _swapchain, _window);
          }
 
-         ImGui::SeparatorText("Shadows");
+         ImGui::SeparatorText("Shadow Mapss");
+
+         ImGui::Checkbox("Use Shadow Maps", &_use_shadow_maps);
 
          ImGui::Checkbox("Force Doublesided Meshes",
                          &_shadows->config.force_doublesided_meshes);
