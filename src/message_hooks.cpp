@@ -54,11 +54,18 @@ LRESULT CALLBACK wnd_proc_hook(int code, WPARAM w_param, LPARAM l_param)
       return CallNextHookEx(wnd_proc_hhook, code, w_param, l_param);
    }
 
-   if (msg.message == WM_SETFOCUS) {
-      win32::clip_cursor_to_window(msg.hwnd);
+   if (msg.message == WM_ACTIVATE) {
+      if (msg.wParam == WA_INACTIVE) {
+         ClipCursor(nullptr);
+      }
+      else {
+         win32::clip_cursor_to_window(msg.hwnd);
+      }
    }
-   else if (msg.message == WM_KILLFOCUS) {
-      ClipCursor(nullptr);
+   else if (msg.message == WM_SIZE) {
+      if (GetActiveWindow() == game_window) {
+         win32::clip_cursor_to_window(msg.hwnd);
+      }
    }
 
    return CallNextHookEx(wnd_proc_hhook, code, w_param, l_param);

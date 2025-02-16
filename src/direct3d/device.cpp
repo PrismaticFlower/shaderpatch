@@ -362,8 +362,6 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
 
    _viewport = {0, 0, _perceived_width, _perceived_height, 0.0f, 1.0f};
 
-   if (GetFocus() == _window) win32::clip_cursor_to_window(_window);
-
    return S_OK;
 }
 
