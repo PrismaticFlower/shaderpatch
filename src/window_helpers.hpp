@@ -12,6 +12,8 @@ inline void make_borderless_window(const HWND window)
    Expects(IsWindow(window));
 
    SetWindowLongPtrA(window, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+   SetWindowLongPtrA(window, GWL_EXSTYLE, WS_EX_APPWINDOW);
+   ShowWindow(window, SW_NORMAL);
 }
 
 inline void resize_window(const HWND window, const UINT width, const UINT height)
