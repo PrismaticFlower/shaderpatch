@@ -764,10 +764,10 @@
     <ClInclude Include="src\shadows\read\read_texture.hpp" />
     <ClInclude Include="src\shadows\internal\texture_table.hpp" />
     <ClInclude Include="src\shadows\internal\debug_world_textured_draw.hpp" />
-    <ClInclude Include="src\game_support\leaf_patch_structures.hpp" />
     <ClInclude Include="src\game_support\leaf_patches.hpp" />
     <ClInclude Include="src\shadows\internal\leaf_patch_world.hpp" />
     <ClInclude Include="src\game_support\game_memory.hpp" />
+    <ClInclude Include="src\game_support\structures\leaf_patch.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />

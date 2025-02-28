@@ -413,12 +413,12 @@
     <ClInclude Include="src\game_support\font_info.hpp" />
     <ClInclude Include="src\game_support\game_memory.hpp" />
     <ClInclude Include="src\game_support\leaf_patches.hpp" />
-    <ClInclude Include="src\game_support\leaf_patch_structures.hpp" />
     <ClInclude Include="src\game_support\memory_hacks.hpp" />
     <ClInclude Include="src\game_support\munged_shader_declarations.hpp" />
     <ClInclude Include="src\game_support\shader_declaration.hpp" />
     <ClInclude Include="src\game_support\shader_declarations.hpp" />
     <ClInclude Include="src\game_support\shader_metadata.hpp" />
+    <ClInclude Include="src\game_support\structures\leaf_patch.hpp" />
     <ClInclude Include="src\imgui\imconfig.h" />
     <ClInclude Include="src\imgui\imgui.h" />
     <ClInclude Include="src\imgui\imgui_ext.hpp" />

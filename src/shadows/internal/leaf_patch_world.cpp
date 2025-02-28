@@ -1,6 +1,6 @@
 #include "leaf_patch_world.hpp"
 
-#include "../../game_support/leaf_patch_structures.hpp"
+#include "../../game_support/structures/leaf_patch.hpp"
 #include "../../logger.hpp"
 
 namespace sp::shadows {

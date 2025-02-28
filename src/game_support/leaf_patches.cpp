@@ -1,6 +1,6 @@
 #include "leaf_patches.hpp"
 #include "game_memory.hpp"
-#include "leaf_patch_structures.hpp"
+#include "structures/leaf_patch.hpp"
 
 #include "../imgui/imgui.h"
 
