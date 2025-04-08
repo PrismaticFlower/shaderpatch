@@ -57,6 +57,7 @@ auto apply_params_weight(Color_grading_params params, const float weight) noexce
 
 auto apply_params_weight(Bloom_params params, const float weight) noexcept
 {
+   params.blend_factor *= weight;
    params.threshold *= weight;
    params.intensity *= weight;
    params.tint *= weight;
@@ -112,6 +113,7 @@ void add_params(Color_grading_params& dest, const Color_grading_params& src,
 
 void add_params(Bloom_params& dest, const Bloom_params& src, const float src_weight) noexcept
 {
+   dest.blend_factor += (src.threshold * src_weight);
    dest.threshold += (src.threshold * src_weight);
    dest.intensity += (src.intensity * src_weight);
    dest.tint += (src.tint * src_weight);
@@ -169,7 +171,8 @@ void Color_grading_regions_blender::global_cg_params(const Color_grading_params&
    _global_cg_params = params;
 }
 
-auto Color_grading_regions_blender::global_bloom_params() const noexcept -> Bloom_params
+auto Color_grading_regions_blender::global_bloom_params() const noexcept
+   -> const Bloom_params&
 {
    return _global_bloom_params;
 }
@@ -179,7 +182,8 @@ void Color_grading_regions_blender::global_bloom_params(const Bloom_params& para
    _global_bloom_params = params;
 }
 
-auto Color_grading_regions_blender::global_cg_params() const noexcept -> Color_grading_params
+auto Color_grading_regions_blender::global_cg_params() const noexcept
+   -> const Color_grading_params&
 {
    return _global_cg_params;
 }

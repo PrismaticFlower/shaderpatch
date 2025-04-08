@@ -1,3 +1,11 @@
+// clang-format off
+//
+// Shader Patch Changes
+// 
+// - Removed Compile* functions. 
+// - Add sp::shader::Database usage.
+// - Add ASSAO_InputsDX11::OverrideOutputBlendState
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Copyright (c) 2016, Intel Corporation
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated 
@@ -21,13 +29,11 @@
 #include <d3d11.h>
 // #include <d3d11_1.h>
 // #include <d3d11_2.h>
-#include <d3dcompiler.h>
-
-#pragma comment( lib, "d3d11.lib" )
-#pragma comment( lib, "d3dcompiler.lib" )
 
 #include <assert.h>
 #include <math.h>
+
+#include "../../shader/database.hpp"
 
 #ifndef SAFE_RELEASE
 #define SAFE_RELEASE(p)      { if (p) { (p)->Release(); (p)=NULL; } }
@@ -515,53 +521,6 @@ ASSAODX11::~ASSAODX11( )
     assert( m_allocatedVRAM == 0 );
 }
 
-static HRESULT CompileShader( const ASSAO_CreateDescDX11 * createDesc, CONST D3D_SHADER_MACRO* pDefines, LPCSTR pFunctionName, LPCSTR pProfile, DWORD dwShaderFlags, ID3DBlob** ppShader )
-{
-    ID3DBlob* pErrorBlob = NULL;
-    HRESULT hr = D3DCompile( createDesc->ShaderData, createDesc->ShaderDataSize, NULL, pDefines, NULL/*D3D_COMPILE_STANDARD_FILE_INCLUDE*/, pFunctionName, pProfile, dwShaderFlags, 0, ppShader, &pErrorBlob );
-    if( FAILED( hr ) )
-    {
-        MessageBoxA( NULL, (LPCSTR)pErrorBlob->GetBufferPointer( ), "Pixel shader compilation error", MB_OK );
-
-        assert( false );
-    }
-    if( pErrorBlob != NULL ) pErrorBlob->Release( );
-    return hr;
-}
-
-static HRESULT CreateVertexShaderAndIL( const ASSAO_CreateDescDX11 * createDesc, CONST D3D_SHADER_MACRO* pDefines, LPCSTR pFunctionName, LPCSTR pProfile, DWORD dwShaderFlags, const D3D11_INPUT_ELEMENT_DESC *pInputElementDescs, UINT NumElements, ID3D11VertexShader ** ppShader, ID3D11InputLayout ** ppInputLayout )
-{
-    ID3DBlob * shaderBlob = NULL;
-
-    HRESULT hr = CompileShader( createDesc, pDefines, pFunctionName, pProfile, dwShaderFlags, &shaderBlob );
-    if( FAILED( hr ) ) { assert( false ); return hr; }
-
-    hr = createDesc->Device->CreateVertexShader( shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), NULL, ppShader );
-    if( FAILED( hr ) ) { SAFE_RELEASE( shaderBlob ); assert( false ); return hr; }
-
-    hr = createDesc->Device->CreateInputLayout( pInputElementDescs, NumElements, shaderBlob->GetBufferPointer( ), shaderBlob->GetBufferSize( ), ppInputLayout );
-    if( FAILED( hr ) ) { SAFE_RELEASE( shaderBlob ); SAFE_RELEASE( *ppInputLayout ); assert( false ); return hr; }
-
-    SAFE_RELEASE( shaderBlob );
-
-    return S_OK;
-}
-
-static HRESULT CreatePixelShader( const ASSAO_CreateDescDX11 * createDesc, CONST D3D_SHADER_MACRO* pDefines, LPCSTR pFunctionName, LPCSTR pProfile, DWORD dwShaderFlags, ID3D11PixelShader ** ppShader )
-{
-    ID3DBlob * shaderBlob = NULL;
-
-    HRESULT hr = CompileShader( createDesc, pDefines, pFunctionName, pProfile, dwShaderFlags, &shaderBlob );
-    if( FAILED( hr ) ) { assert( false ); return hr; }
-
-    hr = createDesc->Device->CreatePixelShader( shaderBlob->GetBufferPointer( ), shaderBlob->GetBufferSize( ), NULL, ppShader );
-    if( FAILED( hr ) ) { SAFE_RELEASE( shaderBlob ); assert( false ); return hr; }
-
-    SAFE_RELEASE( shaderBlob );
-
-    return S_OK;
-}
-
 bool ASSAODX11::InitializeDX( const ASSAO_CreateDescDX11 * createDesc )
 {
     HRESULT hr;
@@ -674,93 +633,52 @@ bool ASSAODX11::InitializeDX( const ASSAO_CreateDescDX11 * createDesc )
             { NULL, NULL }
         };
 
-        DWORD shaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
-#if defined( DEBUG ) || defined( _DEBUG )
-        // Set the D3D10_SHADER_DEBUG flag to embed debug information in the shaders.
-        // Setting this flag improves the shader debugging experience, but still allows 
-        // the shaders to be optimized and to run exactly the way they will run in 
-        // the release configuration of this program.
-        shaderFlags |= D3DCOMPILE_DEBUG;
-#endif
-        shaderFlags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
-        shaderFlags |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
-
 
         // vertex shader
         {
+           const auto [vertexShader, bytecode, _] =  createDesc->ShaderDatabase->vertex("ASSAO").entrypoint("VSMain");
+           
+           m_vertexShader = sp::Com_ptr{vertexShader}.release();
+
             D3D11_INPUT_ELEMENT_DESC inputElements[] = {    { "SV_Position", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
                                                             { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 } };
-            hr = CreateVertexShaderAndIL( createDesc, shaderMacros, "VSMain", "vs_5_0", shaderFlags, inputElements, _countof(inputElements), &m_vertexShader, &m_inputLayout );
+            
+            hr = createDesc->Device->CreateInputLayout(inputElements, _countof(inputElements), bytecode.data(), bytecode.size(), &m_inputLayout);
+            
             if( FAILED( hr ) ) { assert( false ); CleanupDX(); return false; }
         }
 
         // pixel shaders
         {
-            hr = CreatePixelShader( createDesc, shaderMacros, "PSPrepareDepths", "ps_5_0", shaderFlags, &m_pixelShaderPrepareDepths );
-            if( FAILED( hr ) ) { assert( false ); CleanupDX(); return false; }
+            sp::shader::Group_pixel& pixel = createDesc->ShaderDatabase->pixel("ASSAO");
 
-            hr = CreatePixelShader( createDesc, shaderMacros, "PSPrepareDepthsAndNormals", "ps_5_0", shaderFlags, &m_pixelShaderPrepareDepthsAndNormals );
-            if( FAILED( hr ) ) { assert( false ); CleanupDX(); return false; }
-
-            hr = CreatePixelShader( createDesc, shaderMacros, "PSPrepareDepthsHalf", "ps_5_0", shaderFlags, &m_pixelShaderPrepareDepthsHalf );
-            if( FAILED( hr ) ) { assert( false ); CleanupDX(); return false; }
-
-            hr = CreatePixelShader( createDesc, shaderMacros, "PSPrepareDepthsAndNormalsHalf", "ps_5_0", shaderFlags, &m_pixelShaderPrepareDepthsAndNormalsHalf );
-            if( FAILED( hr ) ) { assert( false ); CleanupDX(); return false; }
-
-            hr = CreatePixelShader( createDesc, shaderMacros, "PSPrepareDepthMip1", "ps_5_0", shaderFlags, &m_pixelShaderPrepareDepthMip[0] );
-            if( FAILED( hr ) ) { assert( false ); CleanupDX(); return false; }
-
-            hr = CreatePixelShader( createDesc, shaderMacros, "PSPrepareDepthMip2", "ps_5_0", shaderFlags, &m_pixelShaderPrepareDepthMip[1] );
-            if( FAILED( hr ) ) { assert( false ); CleanupDX(); return false; }
-
-            hr = CreatePixelShader( createDesc, shaderMacros, "PSPrepareDepthMip3", "ps_5_0", shaderFlags, &m_pixelShaderPrepareDepthMip[2] );
-            if( FAILED( hr ) ) { assert( false ); CleanupDX(); return false; }
-
-            hr = CreatePixelShader( createDesc, shaderMacros, "PSGenerateQ0", "ps_5_0", shaderFlags, &m_pixelShaderGenerate[0] );
-            if( FAILED( hr ) ) { assert( false ); CleanupDX(); return false; }
-
-            hr = CreatePixelShader( createDesc, shaderMacros, "PSGenerateQ1", "ps_5_0", shaderFlags, &m_pixelShaderGenerate[1] );
-            if( FAILED( hr ) ) { assert( false ); CleanupDX(); return false; }
-
-            hr = CreatePixelShader( createDesc, shaderMacros, "PSGenerateQ2", "ps_5_0", shaderFlags, &m_pixelShaderGenerate[2] );
-            if( FAILED( hr ) ) { assert( false ); CleanupDX(); return false; }
+            m_pixelShaderPrepareDepths = sp::Com_ptr{pixel.entrypoint("PSPrepareDepths")}.release();
+            m_pixelShaderPrepareDepthsAndNormals = sp::Com_ptr{pixel.entrypoint("PSPrepareDepthsAndNormals")}.release();
+            m_pixelShaderPrepareDepthsHalf = sp::Com_ptr{pixel.entrypoint("PSPrepareDepthsHalf")}.release();
+            m_pixelShaderPrepareDepthsAndNormalsHalf = sp::Com_ptr{pixel.entrypoint("PSPrepareDepthsAndNormalsHalf")}.release();
+            m_pixelShaderPrepareDepthMip[0] = sp::Com_ptr{pixel.entrypoint("PSPrepareDepthMip1")}.release();
+            m_pixelShaderPrepareDepthMip[1] = sp::Com_ptr{pixel.entrypoint("PSPrepareDepthMip2")}.release();
+            m_pixelShaderPrepareDepthMip[2] = sp::Com_ptr{pixel.entrypoint("PSPrepareDepthMip3")}.release();
+            m_pixelShaderGenerate[0] = sp::Com_ptr{pixel.entrypoint("PSGenerateQ0")}.release();
+            m_pixelShaderGenerate[1] = sp::Com_ptr{pixel.entrypoint("PSGenerateQ1")}.release();
+            m_pixelShaderGenerate[2] = sp::Com_ptr{pixel.entrypoint("PSGenerateQ2")}.release();
 
 #ifdef INTEL_SSAO_ENABLE_ADAPTIVE_QUALITY
-            hr = CreatePixelShader( createDesc, shaderMacros, "PSGenerateQ3", "ps_5_0", shaderFlags, &m_pixelShaderGenerate[3] );
-            if( FAILED( hr ) ) { assert( false ); CleanupDX(); return false; }
-
-            hr = CreatePixelShader( createDesc, shaderMacros, "PSGenerateQ3Base", "ps_5_0", shaderFlags, &m_pixelShaderGenerate[4] );
-            if( FAILED( hr ) ) { assert( false ); CleanupDX(); return false; }
+            m_pixelShaderGenerate[3] = sp::Com_ptr{pixel.entrypoint("PSGenerateQ3")}.release();
+            m_pixelShaderGenerate[4] = sp::Com_ptr{pixel.entrypoint("PSGenerateQ3Base")}.release();
 #endif
 
-            hr = CreatePixelShader( createDesc, shaderMacros, "PSSmartBlur", "ps_5_0", shaderFlags, &m_pixelShaderSmartBlur );
-            if( FAILED( hr ) ) { assert( false ); CleanupDX(); return false; }
-
-            hr = CreatePixelShader( createDesc, shaderMacros, "PSSmartBlurWide", "ps_5_0", shaderFlags, &m_pixelShaderSmartBlurWide );
-            if( FAILED( hr ) ) { assert( false ); CleanupDX(); return false; }
-
-            hr = CreatePixelShader( createDesc, shaderMacros, "PSNonSmartBlur", "ps_5_0", shaderFlags, &m_pixelShaderNonSmartBlur );
-            if( FAILED( hr ) ) { assert( false ); CleanupDX(); return false; }
-
-            hr = CreatePixelShader( createDesc, shaderMacros, "PSApply", "ps_5_0", shaderFlags, &m_pixelShaderApply );
-            if( FAILED( hr ) ) { assert( false ); CleanupDX(); return false; }
-
-            hr = CreatePixelShader( createDesc, shaderMacros, "PSNonSmartApply", "ps_5_0", shaderFlags, &m_pixelShaderNonSmartApply );
-            if( FAILED( hr ) ) { assert( false ); CleanupDX(); return false; }
-
-            hr = CreatePixelShader( createDesc, shaderMacros, "PSNonSmartHalfApply", "ps_5_0", shaderFlags, &m_pixelShaderNonSmartHalfApply );
-            if( FAILED( hr ) ) { assert( false ); CleanupDX(); return false; }
+            m_pixelShaderSmartBlur = sp::Com_ptr{pixel.entrypoint("PSSmartBlur")}.release();
+            m_pixelShaderSmartBlurWide = sp::Com_ptr{pixel.entrypoint("PSSmartBlurWide")}.release();
+            m_pixelShaderNonSmartBlur = sp::Com_ptr{pixel.entrypoint("PSNonSmartBlur")}.release();
+            m_pixelShaderApply = sp::Com_ptr{pixel.entrypoint("PSApply")}.release();
+            m_pixelShaderNonSmartApply = sp::Com_ptr{pixel.entrypoint("PSNonSmartApply")}.release();
+            m_pixelShaderNonSmartHalfApply = sp::Com_ptr{pixel.entrypoint("PSNonSmartHalfApply")}.release();
 
 #ifdef INTEL_SSAO_ENABLE_ADAPTIVE_QUALITY
-            hr = CreatePixelShader( createDesc, shaderMacros, "PSGenerateImportanceMap", "ps_5_0", shaderFlags, &m_pixelShaderGenerateImportanceMap );
-            if( FAILED( hr ) ) { assert( false ); CleanupDX(); return false; }
-
-            hr = CreatePixelShader( createDesc, shaderMacros, "PSPostprocessImportanceMapA", "ps_5_0", shaderFlags, &m_pixelShaderPostprocessImportanceMapA );
-            if( FAILED( hr ) ) { assert( false ); CleanupDX(); return false; }
-
-            hr = CreatePixelShader( createDesc, shaderMacros, "PSPostprocessImportanceMapB", "ps_5_0", shaderFlags, &m_pixelShaderPostprocessImportanceMapB );
-            if( FAILED( hr ) ) { assert( false ); CleanupDX(); return false; }
+            m_pixelShaderGenerateImportanceMap = sp::Com_ptr{pixel.entrypoint("PSGenerateImportanceMap")}.release();
+            m_pixelShaderPostprocessImportanceMapA = sp::Com_ptr{pixel.entrypoint("PSPostprocessImportanceMapA")}.release();
+            m_pixelShaderPostprocessImportanceMapB = sp::Com_ptr{pixel.entrypoint("PSPostprocessImportanceMapB")}.release();
 #endif
         }
 
@@ -1214,6 +1132,11 @@ void           ASSAODX11::Draw( const ASSAO_Settings & settings, const ASSAO_Inp
 
             ID3D11BlendState * blendState = ( inputs->DrawOpaque ) ? ( m_blendStateOpaque ) : ( m_blendStateMultiply );
             
+            if ( inputs->OverrideOutputBlendState != nullptr)
+            {
+                blendState = inputs->OverrideOutputBlendState;
+            }
+
             if( settings.QualityLevel < 0 )
                 FullscreenPassDraw( dx11Context, m_pixelShaderNonSmartHalfApply, blendState );
             else if( settings.QualityLevel == 0 )

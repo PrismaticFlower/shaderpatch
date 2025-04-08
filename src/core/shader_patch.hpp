@@ -9,6 +9,7 @@
 #include "../shader/database.hpp"
 #include "../user_config.hpp"
 #include "backbuffer_cmaa2_views.hpp"
+#include "basic_builtin_textures.hpp"
 #include "com_ptr.hpp"
 #include "constant_buffers.hpp"
 #include "d3d11_helpers.hpp"
@@ -64,6 +65,11 @@ struct Mapped_texture {
    std::byte* data;
 };
 
+struct Reset_flags {
+   bool legacy_fullscreen = false;
+   bool aspect_ratio_hack = false;
+};
+
 using Material_handle =
    std::unique_ptr<material::Material, Small_function<void(material::Material*) noexcept>>;
 
@@ -72,8 +78,9 @@ using Texture_handle =
 
 class Shader_patch {
 public:
-   Shader_patch(IDXGIAdapter4& adapter, const HWND window, const UINT width,
-                const UINT height) noexcept;
+   Shader_patch(IDXGIAdapter4& adapter, const HWND window,
+                const UINT render_width, const UINT render_height,
+                const UINT window_width, const UINT window_height) noexcept;
 
    ~Shader_patch();
 
@@ -83,9 +90,12 @@ public:
    Shader_patch(Shader_patch&&) = delete;
    Shader_patch& operator=(Shader_patch&&) = delete;
 
-   void reset(const UINT width, const UINT height) noexcept;
+   void reset(const Reset_flags flags, const UINT render_width, const UINT render_height,
+              const UINT window_width, const UINT window_height) noexcept;
 
    void set_text_dpi(const std::uint32_t dpi) noexcept;
+
+   void set_expected_aspect_ratio(const float expected_aspect_ratio) noexcept;
 
    void present() noexcept;
 
@@ -227,7 +237,7 @@ public:
              const UINT start_vertex) noexcept;
 
    void draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology, const UINT index_count,
-                     const UINT start_index, const UINT start_vertex) noexcept;
+                     const UINT start_index, const INT base_vertex) noexcept;
 
    void begin_query(ID3D11Query& query) noexcept;
 
@@ -274,8 +284,6 @@ private:
 
    void update_material_resources() noexcept;
 
-   void update_swapchain_scale() noexcept;
-
    void recreate_patch_backbuffer() noexcept;
 
    void set_linear_rendering(bool linear_rendering) noexcept;
@@ -311,6 +319,11 @@ private:
 
       return dc;
    }();
+   UINT _render_width = 0;
+   UINT _render_height = 0;
+   UINT _window_width = 0;
+   UINT _window_height = 0;
+   float _expected_aspect_ratio = 0.75f;
    Swapchain _swapchain;
 
    Input_layout_descriptions _input_layout_descriptions;
@@ -337,6 +350,7 @@ private:
 
    Depthstencil _nearscene_depthstencil;
    Depthstencil _farscene_depthstencil;
+   Depthstencil _interface_depthstencil;
    Depthstencil _reflectionscene_depthstencil;
    Game_depthstencil _current_depthstencil_id = Game_depthstencil::nearscene;
 
@@ -356,6 +370,7 @@ private:
    UINT _game_vertex_buffer_stride = 0;
    Com_ptr<ID3D11RasterizerState> _game_rs_state;
    Com_ptr<ID3D11DepthStencilState> _game_depthstencil_state;
+   Com_ptr<ID3D11BlendState1> _game_blend_state_override;
    Com_ptr<ID3D11BlendState1> _game_blend_state;
 
    bool _discard_draw_calls = false;
@@ -387,7 +402,11 @@ private:
    bool _stock_bloom_used = false;
    bool _stock_bloom_used_last_frame = false;
    bool _effects_postprocessing_applied = false;
+   bool _override_viewport = false;
+   bool _set_aspect_ratio_on_present = false;
+   bool _frame_had_shadows = false;
 
+   bool _aspect_ratio_hack_enabled = false;
    bool _imgui_enabled = false;
    bool _screenshot_requested = false;
 
@@ -441,6 +460,57 @@ private:
       return buffer;
    }();
 
+   const Com_ptr<ID3D11BlendState1> _shadowquad_blend_state = [this] {
+      Com_ptr<ID3D11BlendState1> blend_state;
+
+      const D3D11_BLEND_DESC1 desc{
+         .AlphaToCoverageEnable = false,
+         .IndependentBlendEnable = false,
+         .RenderTarget =
+            D3D11_RENDER_TARGET_BLEND_DESC1{
+               .BlendEnable = false,
+               .LogicOpEnable = false,
+               .SrcBlend = D3D11_BLEND_ONE,
+               .DestBlend = D3D11_BLEND_ZERO,
+               .BlendOp = D3D11_BLEND_OP_ADD,
+               .SrcBlendAlpha = D3D11_BLEND_ONE,
+               .DestBlendAlpha = D3D11_BLEND_ZERO,
+               .BlendOpAlpha = D3D11_BLEND_OP_ADD,
+               .LogicOp = D3D11_LOGIC_OP_CLEAR,
+               .RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_RED,
+            },
+      };
+
+      _device->CreateBlendState1(&desc, blend_state.clear_and_assign());
+
+      return blend_state;
+   }();
+   const Com_ptr<ID3D11BlendState1> _ambient_occlusion_output_blend_state = [this] {
+      Com_ptr<ID3D11BlendState1> blend_state;
+
+      const D3D11_BLEND_DESC1 desc{
+         .AlphaToCoverageEnable = false,
+         .IndependentBlendEnable = false,
+         .RenderTarget =
+            D3D11_RENDER_TARGET_BLEND_DESC1{
+               .BlendEnable = false,
+               .LogicOpEnable = false,
+               .SrcBlend = D3D11_BLEND_ONE,
+               .DestBlend = D3D11_BLEND_ZERO,
+               .BlendOp = D3D11_BLEND_OP_ADD,
+               .SrcBlendAlpha = D3D11_BLEND_ONE,
+               .DestBlendAlpha = D3D11_BLEND_ZERO,
+               .BlendOpAlpha = D3D11_BLEND_OP_ADD,
+               .LogicOp = D3D11_LOGIC_OP_CLEAR,
+               .RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_GREEN,
+            },
+      };
+
+      _device->CreateBlendState1(&desc, blend_state.clear_and_assign());
+
+      return blend_state;
+   }();
+
    OIT_provider _oit_provider{_device, _shader_database};
 
    const Image_stretcher _image_stretcher{*_device, _shader_database};
@@ -470,11 +540,15 @@ private:
    UINT _rt_sample_count = 1;
    Antialiasing_method _aa_method = Antialiasing_method::none;
    Refraction_quality _refraction_quality = Refraction_quality::medium;
-   UINT _swapchain_scale = user_config.display.resolution_scale;
-   UINT _window_width = 0;
-   UINT _window_height = 0;
 
-   text::Font_atlas_builder _font_atlas_builder{_device};
+   D3D11_VIEWPORT _viewport_override = {};
+
+   Basic_builtin_textures _basic_builtin_textures{*_device};
+
+   std::unique_ptr<text::Font_atlas_builder> _font_atlas_builder =
+      text::Font_atlas_builder::use_scalable_fonts()
+         ? std::make_unique<text::Font_atlas_builder>(_device)
+         : nullptr;
 
    std::unique_ptr<BF2_log_monitor> _bf2_log_monitor;
 

@@ -42,8 +42,8 @@ void show_tonemapping_curve(std::function<float(float)> tonemapper) noexcept;
 
 Control::Control(Com_ptr<ID3D11Device5> device, shader::Database& shaders) noexcept
    : postprocess{device, shaders},
-     cmaa2{device, shaders},
-     ssao{device},
+     cmaa2{device, shaders.compute("CMAA2"sv)},
+     ssao{device, shaders},
      ffx_cas{device, shaders},
      mask_nan{device, shaders},
      profiler{device}
@@ -65,6 +65,15 @@ bool Control::enabled(const bool enabled) noexcept
 bool Control::enabled() const noexcept
 {
    return (_enabled || user_config.graphics.enable_user_effects_config);
+}
+
+bool Control::allow_scene_blur() const noexcept
+{
+   if (!_enabled) return true;
+
+   const Bloom_params& params = postprocess.bloom_params();
+
+   return !(params.enabled && params.mode == Bloom_mode::blended);
 }
 
 void Control::show_imgui(HWND game_window) noexcept
@@ -411,7 +420,48 @@ Bloom_params show_bloom_imgui(Bloom_params params) noexcept
    if (ImGui::CollapsingHeader("Basic Controls", ImGuiTreeNodeFlags_DefaultOpen)) {
       ImGui::Checkbox("Enabled", &params.enabled);
 
-      ImGui::DragFloat("Threshold", &params.threshold, 0.025f);
+      const ImVec2 pre_mode_cursor = ImGui::GetCursorPos();
+
+      if (ImGui::RadioButton("Blended", params.mode == Bloom_mode::blended)) {
+         params.mode = Bloom_mode::blended;
+      }
+
+      if (ImGui::IsItemHovered()) {
+         ImGui::SetTooltip(
+            "New blended bloom mode. It doesn't require configuring a "
+            "threshold and is easier to work with.\n\nHowever it can result in "
+            "everything having a very slightly \"softer\" look to it, "
+            "depending on how high the Blend Factor is.");
+      }
+
+      ImGui::SameLine();
+
+      if (ImGui::RadioButton("Threshold##Mode", params.mode == Bloom_mode::threshold)) {
+         params.mode = Bloom_mode::threshold;
+      }
+
+      if (ImGui::IsItemHovered()) {
+         ImGui::SetTooltip(
+            "Classic threshold bloom mode. What has been in SP "
+            "since v1.0, it can give nice results as well but "
+            "can require more tweaking to get right.\n\nHowever if you don't "
+            "like the softness of the blended mode and lowering the Blend "
+            "Factor doesn't help but you still want bloom this mode is likely "
+            "what you want.");
+      }
+
+      ImGui::SetCursorPos(pre_mode_cursor);
+
+      ImGui::LabelText("Mode", "");
+
+      if (params.mode == Bloom_mode::blended)
+         ImGui::DragFloat("Blend Factor", &params.blend_factor, 0.025f);
+      else
+         ImGui::DragFloat("Threshold##Param", &params.threshold, 0.025f);
+
+      params.blend_factor = std::clamp(params.blend_factor, 0.0f, 1.0f);
+      params.threshold = std::clamp(params.threshold, 0.0f, 1.0f);
+
       ImGui::DragFloat("Intensity", &params.intensity, 0.025f, 0.0f,
                        std::numeric_limits<float>::max());
       ImGui::ColorEdit3("Tint", &params.tint.x, ImGuiColorEditFlags_Float);
@@ -610,6 +660,35 @@ SSAO_params show_ssao_imgui(SSAO_params params) noexcept
 {
    ImGui::Checkbox("Enabled", &params.enabled);
 
+   const ImVec2 pre_mode_cursor = ImGui::GetCursorPos();
+
+   if (ImGui::RadioButton("Ambient", params.mode == SSAO_mode::ambient)) {
+      params.mode = SSAO_mode::ambient;
+   }
+
+   if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip(
+         "SSAO will affect ambient and vertex lighting only. This is more "
+         "accurate. It produces a sublte effect in direct lighting and a more "
+         "pronounced effect in shadows.");
+   }
+
+   ImGui::SameLine();
+
+   if (ImGui::RadioButton("Global", params.mode == SSAO_mode::global)) {
+      params.mode = SSAO_mode::global;
+   }
+
+   if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip(
+         "SSAO will affect all lighting. This is less accurate "
+         "and was the default before the Ambient mode was added.");
+   }
+
+   ImGui::SetCursorPos(pre_mode_cursor);
+
+   ImGui::LabelText("Mode", "");
+
    ImGui::DragFloat("Radius", &params.radius, 0.1f, 0.1f, 2.0f);
    ImGui::DragFloat("Shadow Multiplier", &params.shadow_multiplier, 0.05f, 0.0f, 5.0f);
    ImGui::DragFloat("Shadow Power", &params.shadow_power, 0.05f, 0.0f, 5.0f);
@@ -625,18 +704,9 @@ FFX_cas_params show_ffx_cas_imgui(FFX_cas_params params) noexcept
 {
    ImGui::Checkbox("Enabled", &params.enabled);
 
-   // Out of corcern of people just seeing "sharpness" and  thinking "of course I want sharpness" then
-   // setting the value to the max without paying too much attention to the ringing that introduces
-   // the sharpness param is flipped and renamed to "Fidelity" in the UI.
-   //
-   // The hope is this has the effect of making people observe and consider the trade off of increased
-   // sharpness vs ringing when configuring CAS. Or maybe it won't and this is a waste of time.
+   ImGui::DragFloat("Sharpness", &params.sharpness, 0.01f, 0.0f, 1.0f);
 
-   float fidelity = 1.0f - std::clamp(params.sharpness, 0.0f, 1.0f);
-
-   ImGui::DragFloat("Fidelity", &fidelity, 0.01f, 0.0f, 1.0f);
-
-   params.sharpness = std::clamp(1.0f - fidelity, 0.0f, 1.0f);
+   params.sharpness = std::clamp(params.sharpness, 0.0f, 1.0f);
 
    return params;
 }

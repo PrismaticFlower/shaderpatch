@@ -128,10 +128,12 @@ struct alignas(16) Team_colors {
    alignas(16) glm::vec3 friend_corsshair_dot_color;
    alignas(16) glm::vec3 foe_color;
    alignas(16) glm::vec3 foe_text_color;
+   alignas(16) glm::vec3 foe_text_alt_color;
    alignas(16) glm::vec3 foe_health_color;
+   alignas(16) glm::vec3 foe_flag_color;
    alignas(16) glm::vec3 foe_crosshair_dot_color;
 };
 
-static_assert(sizeof(Team_colors) == 112);
+static_assert(sizeof(Team_colors) == 144);
 
 }

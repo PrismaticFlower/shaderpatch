@@ -19,12 +19,20 @@ enum class Hdr_state { hdr, stock };
 
 enum class Tonemapper { filmic, aces_fitted, filmic_heji2015, reinhard, none };
 
+enum class Bloom_mode { blended, threshold };
+
+enum class SSAO_mode { ambient, global };
+
+enum class SSAO_method { assao };
+
 struct Bloom_params {
    bool enabled = true;
+   Bloom_mode mode = Bloom_mode::blended;
 
    float threshold = 1.0f;
+   float blend_factor = 0.05f;
 
-   float intensity = 0.75f;
+   float intensity = 1.0f;
    glm::vec3 tint{1.0f, 1.0f, 1.0f};
 
    float inner_scale = 1.0f;
@@ -102,6 +110,9 @@ struct Film_grain_params {
 struct SSAO_params {
    bool enabled = true;
 
+   SSAO_mode mode = SSAO_mode::ambient;
+   SSAO_method method = SSAO_method::assao;
+
    float radius = 1.5f;
    float shadow_multiplier = 0.75f;
    float shadow_power = 0.75f;
@@ -152,6 +163,73 @@ inline auto tonemapper_from_string(const std::string_view string) noexcept
    return Tonemapper::filmic;
 }
 
+inline auto to_string(const Bloom_mode bloom_mode) noexcept
+{
+   using namespace std::literals;
+
+   switch (bloom_mode) {
+   case Bloom_mode::blended:
+      return "Blended"s;
+   case Bloom_mode::threshold:
+      return "Threshold"s;
+   }
+
+   std::terminate();
+}
+
+inline auto bloom_mode_from_string(const std::string_view string) noexcept
+{
+   if (string == to_string(Bloom_mode::blended))
+      return Bloom_mode::blended;
+   else if (string == to_string(Bloom_mode::threshold))
+      return Bloom_mode::threshold;
+
+   return Bloom_mode::blended;
+}
+
+inline auto to_string(const SSAO_mode ssao_mode) noexcept
+{
+   using namespace std::literals;
+
+   switch (ssao_mode) {
+   case SSAO_mode::ambient:
+      return "Ambient"s;
+   case SSAO_mode::global:
+      return "Global"s;
+   }
+
+   std::terminate();
+}
+
+inline auto ssao_mode_from_string(const std::string_view string) noexcept
+{
+   if (string == to_string(SSAO_mode::ambient))
+      return SSAO_mode::ambient;
+   else if (string == to_string(SSAO_mode::global))
+      return SSAO_mode::global;
+
+   return SSAO_mode::ambient;
+}
+
+inline auto to_string(const SSAO_method ssao_type) noexcept
+{
+   using namespace std::literals;
+
+   switch (ssao_type) {
+   case SSAO_method::assao:
+      return "ASSAO"s;
+   }
+
+   std::terminate();
+}
+
+inline auto ssao_type_from_string(const std::string_view string) noexcept
+{
+   if (string == to_string(SSAO_method::assao)) return SSAO_method::assao;
+
+   return SSAO_method::assao;
+}
+
 }
 
 namespace YAML {
@@ -172,6 +250,51 @@ struct convert<sp::effects::Tonemapper> {
 };
 
 template<>
+struct convert<sp::effects::Bloom_mode> {
+   static Node encode(const sp::effects::Bloom_mode bloom_mode)
+   {
+      return YAML::Node{to_string(bloom_mode)};
+   }
+
+   static bool decode(const Node& node, sp::effects::Bloom_mode& bloom_mode)
+   {
+      bloom_mode = sp::effects::bloom_mode_from_string(node.as<std::string>());
+
+      return true;
+   }
+};
+
+template<>
+struct convert<sp::effects::SSAO_mode> {
+   static Node encode(const sp::effects::SSAO_mode ssao_mode)
+   {
+      return YAML::Node{to_string(ssao_mode)};
+   }
+
+   static bool decode(const Node& node, sp::effects::SSAO_mode& ssao_mode)
+   {
+      ssao_mode = sp::effects::ssao_mode_from_string(node.as<std::string>());
+
+      return true;
+   }
+};
+
+template<>
+struct convert<sp::effects::SSAO_method> {
+   static Node encode(const sp::effects::SSAO_method ssao_type)
+   {
+      return YAML::Node{to_string(ssao_type)};
+   }
+
+   static bool decode(const Node& node, sp::effects::SSAO_method& ssao_type)
+   {
+      ssao_type = sp::effects::ssao_type_from_string(node.as<std::string>());
+
+      return true;
+   }
+};
+
+template<>
 struct convert<sp::effects::Bloom_params> {
    static Node encode(const sp::effects::Bloom_params& params)
    {
@@ -180,7 +303,9 @@ struct convert<sp::effects::Bloom_params> {
       YAML::Node node;
 
       node["Enable"s] = params.enabled;
+      node["Mode"s] = params.mode;
 
+      node["BlendFactor"s] = params.blend_factor;
       node["Threshold"s] = params.threshold;
       node["Intensity"s] = params.intensity;
 
@@ -230,9 +355,15 @@ struct convert<sp::effects::Bloom_params> {
       params = sp::effects::Bloom_params{};
 
       params.enabled = node["Enable"s].as<bool>(params.enabled);
+      params.mode =
+         node["Mode"s].as<sp::effects::Bloom_mode>(sp::effects::Bloom_mode::threshold);
 
-      params.threshold = node["Threshold"s].as<float>(params.threshold);
-      params.intensity = node["Intensity"s].as<float>(params.intensity);
+      if (params.mode == sp::effects::Bloom_mode::blended)
+         params.blend_factor = node["BlendFactor"s].as<float>(params.blend_factor);
+      else
+         params.threshold = node["Threshold"s].as<float>(params.threshold);
+
+      params.intensity = node["Intensity"s].as<float>(0.75f);
 
       params.tint[0] = node["Tint"s][0].as<float>(params.tint[0]);
       params.tint[1] = node["Tint"s][1].as<float>(params.tint[1]);
@@ -272,7 +403,10 @@ struct convert<sp::effects::Bloom_params> {
       params.outer_tint[2] = node["OuterTint"s][2].as<float>(params.outer_tint[2]);
 
       params.use_dirt = node["UseDirt"s].as<bool>(params.use_dirt);
-      params.dirt_scale = node["DirtScale"s].as<float>(params.dirt_scale);
+
+      if (params.mode == sp::effects::Bloom_mode::threshold)
+         params.dirt_scale = node["DirtScale"s].as<float>(params.dirt_scale);
+
       params.dirt_tint[0] = node["DirtTint"s][0].as<float>(params.dirt_tint[0]);
       params.dirt_tint[1] = node["DirtTint"s][1].as<float>(params.dirt_tint[1]);
       params.dirt_tint[2] = node["DirtTint"s][2].as<float>(params.dirt_tint[2]);
@@ -460,6 +594,8 @@ struct convert<sp::effects::SSAO_params> {
       YAML::Node node;
 
       node["Enable"s] = params.enabled;
+      node["Mode"s] = params.mode;
+      node["Method"s] = params.method;
       node["Radius"s] = params.radius;
       node["Shadow Multiplier"s] = params.shadow_multiplier;
       node["Shadow Power"s] = params.shadow_power;
@@ -477,6 +613,10 @@ struct convert<sp::effects::SSAO_params> {
       params = sp::effects::SSAO_params{};
 
       params.enabled = node["Enable"s].as<bool>(false);
+      params.mode =
+         node["Mode"s].as<sp::effects::SSAO_mode>(sp::effects::SSAO_mode::global);
+      params.method =
+         node["Method"s].as<sp::effects::SSAO_method>(sp::effects::SSAO_method::assao);
       params.radius = node["Radius"s].as<float>(params.radius);
       params.shadow_multiplier =
          node["Shadow Multiplier"s].as<float>(params.shadow_multiplier);

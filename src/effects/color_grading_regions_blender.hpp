@@ -17,11 +17,11 @@ class Color_grading_regions_blender {
 public:
    void global_cg_params(const Color_grading_params& params) noexcept;
 
-   auto global_cg_params() const noexcept -> Color_grading_params;
+   auto global_cg_params() const noexcept -> const Color_grading_params&;
 
    void global_bloom_params(const Bloom_params& params) noexcept;
 
-   auto global_bloom_params() const noexcept -> Bloom_params;
+   auto global_bloom_params() const noexcept -> const Bloom_params&;
 
    void regions(const Color_grading_regions& regions) noexcept;
 
@@ -102,11 +102,9 @@ private:
 
       auto weight(const glm::vec3 camera_position) const noexcept -> float
       {
-         return std::visit(
-            [camera_position](const auto& prim) noexcept->float {
-               return prim.weight(camera_position);
-            },
-            primitive);
+         return std::visit([camera_position](const auto& prim) noexcept
+                           -> float { return prim.weight(camera_position); },
+                           primitive);
       }
    };
 

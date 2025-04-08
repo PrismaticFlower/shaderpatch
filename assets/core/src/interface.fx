@@ -31,7 +31,9 @@ float4 get_interface_color()
    const uint3 friend_health_color_uint = {1, 76, 187};
    const uint3 foe_color_uint = {223, 32, 32}; // main foe colour
    const uint3 foe_text_color_uint = {150, 30, 30};
+   const uint3 foe_text_alt_color_uint = {133, 32, 32};
    const uint3 foe_health_color_uint = {168, 28, 28};
+   const uint3 foe_flag_color_uint = {150, 15, 25};
    
    const uint3 interface_color_uint = interface_color.rgb * 255.0;
 
@@ -47,8 +49,14 @@ float4 get_interface_color()
    else if (all(interface_color_uint == foe_text_color_uint)) {
       color = float4(foe_text_color, interface_color.a);
    }
+   else if (all(interface_color_uint == foe_text_alt_color_uint)) {
+      color = float4(foe_text_alt_color, interface_color.a);
+   }
    else if (all(interface_color_uint == foe_health_color_uint)) {
       color = float4(foe_health_color, interface_color.a);
+   }
+   else if (all(interface_color_uint == foe_flag_color_uint)) {
+      color = float4(foe_flag_color, interface_color.a);
    }
    else {
       color = interface_color;

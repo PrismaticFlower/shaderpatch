@@ -139,7 +139,7 @@ float4 diffuse_blendmap_ps(Ps_blendmap_input input,
    diffuse_color = (diffuse_color * detail_color) * 2.0;
 
    Lighting lighting = light::calculate(normalize(input.normalWS), input.positionWS,
-                                        input.static_lighting);
+                                        input.static_lighting, 1.0);
 
    float3 color = lighting.color * lighting_factor.x + lighting_factor.y;
    color *= diffuse_color;
@@ -165,22 +165,23 @@ struct Ps_detail_input
 float4 detailing_ps(Ps_detail_input input, 
                     Texture2D<float3> detail_maps[2] : register(t0),
                     Texture2D<float3> projected_texture : register(t2),
-                    Texture2D<float4> shadow_map : register(t3)) : SV_Target0
+                    Texture2D<float2> shadow_ao_map : register(t3)) : SV_Target0
 {
    const float3 detail_color = detail_maps[0].Sample(aniso_wrap_sampler, input.detail_texcoords[0]);
 
    const float3 projection_texture_color = sample_projected_light(projected_texture,
                                                                   input.projection_texcoords);
 
+   const float2 shadow_ao_sample = shadow_ao_map.Sample(linear_clamp_sampler, input.shadow_map_texcoords);
+
    // Calculate lighting.
    Lighting lighting = light::calculate(normalize(input.normalWS), input.positionWS,
-                                        input.static_lighting, true,
+                                        input.static_lighting, shadow_ao_sample.g, true,
                                         projection_texture_color);
 
    float3 color = (lighting_factor.x > 0.0) ? lighting.color : lighting_scale.xxx;
 
-   const float shadow_map_value = shadow_map.SampleLevel(linear_clamp_sampler,
-                                                         input.shadow_map_texcoords, 0.0).a;
+   const float shadow_map_value = shadow_ao_sample.r;
    
    const float shadow = 1.0 - (lighting.intensity * (1.0 - shadow_map_value));
 

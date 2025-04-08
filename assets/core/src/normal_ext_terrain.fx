@@ -11,7 +11,7 @@
 // clang-format off
 
 Texture2D<float3> projected_light_texture : register(t2);
-Texture2D<float4> shadow_map : register(t3);
+Texture2D<float2> shadow_ao_map : register(t3);
 Texture2DArray<float1> height_maps : register(t7);
 Texture2DArray<float4> diffuse_ao_maps : register(t8);
 Texture2DArray<float3> normal_gloss_maps : register(t9);
@@ -143,13 +143,13 @@ float4 main_ps(Vs_output input) : SV_Target0
    const Unpacked_textures textures = sample_textures(input, tangent_to_world);
 
    const uint2 shadow_coords = (uint2)input.positionPS.xy;
-   const float shadow =
-      normal_ext_use_shadow_map ? shadow_map[shadow_coords].a : 1.0;
+   const float2 shadow_ao_sample = normal_ext_use_shadow_map ? shadow_ao_map[shadow_coords] : float2(1.0, 1.0);
+   const float shadow = shadow_ao_sample.r;
    const float3 static_diffuse_lighting = input.static_diffuse_lighting;
    const float3 diffuse = textures.diffuse * diffuse_color;
    const float3 specular = textures.gloss * specular_color;
    const float  specular_exponent = textures.specular_exponent;
-   const float  ao = textures.ao;
+   const float  ao = min(textures.ao, shadow_ao_sample.g);
    const float3 normalWS = normalize(mul(textures.normalTS, tangent_to_world));
    const float3 viewWS = normalize(view_positionWS - input.positionWS);
 

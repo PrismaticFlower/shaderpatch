@@ -46,7 +46,7 @@ public:
 
    void bloom_params(const Bloom_params& params) noexcept;
 
-   auto bloom_params() const noexcept -> Bloom_params;
+   auto bloom_params() const noexcept -> const Bloom_params&;
 
    void vignette_params(const Vignette_params& params) noexcept;
 
@@ -54,7 +54,7 @@ public:
 
    void color_grading_params(const Color_grading_params& params) noexcept;
 
-   auto color_grading_params() const noexcept -> Color_grading_params;
+   auto color_grading_params() const noexcept -> const Color_grading_params&;
 
    void film_grain_params(const Film_grain_params& params) noexcept;
 

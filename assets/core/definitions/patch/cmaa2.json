@@ -1,70 +1,70 @@
 {
-   "group_name": "CMAA2",
-   "source_name": "CMAA2.hlsl",
+  "group_name": "CMAA2",
+  "source_name": "CMAA2.hlsl",
 
-   "entrypoints": {
-      "EdgesColor2x2CS": {
-         "stage": "compute",
+  "entrypoints": {
+    "EdgesColor2x2CS": {
+      "stage": "compute",
 
-         "defines": [
-            [ "CMAA2_UAV_STORE_TYPED_UNORM_FLOAT", "1" ],
-            [ "CMAA2_UAV_STORE_UNTYPED_FORMAT", "1" ]
-         ],
+      "defines": [
+        [ "CMAA2_UAV_STORE_TYPED_UNORM_FLOAT", "1" ],
+        [ "CMAA2_UAV_STORE_UNTYPED_FORMAT", "1" ],
+        [ "CMAA2_UAV_STORE_TYPED", "1" ],
+        [ "CMAA2_UAV_STORE_CONVERT_TO_SRGB", "1" ]
+      ],
 
-         "static_flags": [
-            "CMAA2_UAV_STORE_TYPED",
-            "CMAA2_UAV_STORE_CONVERT_TO_SRGB",
-            "CMAA2_EDGE_DETECTION_LUMA_SEPARATE_TEXTURE"
-         ]
-      },
+      "static_flags": [
+        "CMAA2_EDGE_DETECTION_LUMA_SEPARATE_TEXTURE"
+      ]
+    },
 
-      "ComputeDispatchArgsCS": {
-         "stage": "compute",
+    "ComputeDispatchArgsCS": {
+      "stage": "compute",
 
-         "defines": [
-            [ "CMAA2_UAV_STORE_TYPED_UNORM_FLOAT", "1" ],
-            [ "CMAA2_UAV_STORE_UNTYPED_FORMAT", "1" ]
-         ],
+      "defines": [
+        [ "CMAA2_UAV_STORE_TYPED_UNORM_FLOAT", "1" ],
+        [ "CMAA2_UAV_STORE_UNTYPED_FORMAT", "1" ],
+        [ "CMAA2_UAV_STORE_TYPED", "1" ],
+        [ "CMAA2_UAV_STORE_CONVERT_TO_SRGB", "1" ]
+      ],
 
-         "static_flags": [
-            "CMAA2_UAV_STORE_TYPED",
-            "CMAA2_UAV_STORE_CONVERT_TO_SRGB",
-            "CMAA2_EDGE_DETECTION_LUMA_SEPARATE_TEXTURE"
-         ]
-      },
+      "static_flags": [
+        "CMAA2_EDGE_DETECTION_LUMA_SEPARATE_TEXTURE"
+      ]
+    },
 
-      "ProcessCandidatesCS": {
-         "stage": "compute",
+    "ProcessCandidatesCS": {
+      "stage": "compute",
 
-         "defines": [
-            [ "CMAA2_UAV_STORE_TYPED_UNORM_FLOAT", "1" ],
-            [ "CMAA2_UAV_STORE_UNTYPED_FORMAT", "1" ]
-         ],
+      "defines": [
+        [ "CMAA2_UAV_STORE_TYPED_UNORM_FLOAT", "1" ],
+        [ "CMAA2_UAV_STORE_UNTYPED_FORMAT", "1" ],
+        [ "CMAA2_UAV_STORE_TYPED", "1" ],
+        [ "CMAA2_UAV_STORE_CONVERT_TO_SRGB", "1" ]
+      ],
 
-         "static_flags": [
-            "CMAA2_UAV_STORE_TYPED",
-            "CMAA2_UAV_STORE_CONVERT_TO_SRGB",
-            "CMAA2_EDGE_DETECTION_LUMA_SEPARATE_TEXTURE"
-         ]
-      },
+      "static_flags": [
+        "CMAA2_EDGE_DETECTION_LUMA_SEPARATE_TEXTURE"
+      ]
+    },
 
-      "DeferredColorApply2x2CS": {
-         "stage": "compute",
+    "DeferredColorApply2x2CS": {
+      "stage": "compute",
 
-         "defines": [
-            [ "CMAA2_UAV_STORE_TYPED_UNORM_FLOAT", "1" ],
-            [ "CMAA2_UAV_STORE_UNTYPED_FORMAT", "1" ]
-         ],
+      "defines": [
+        [ "CMAA2_UAV_STORE_TYPED_UNORM_FLOAT", "1" ],
+        [ "CMAA2_UAV_STORE_UNTYPED_FORMAT", "1" ],
+        [ "CMAA2_UAV_STORE_TYPED", "1" ],
+        [ "CMAA2_UAV_STORE_CONVERT_TO_SRGB", "1" ]
+      ],
 
-         "static_flags": [
-            "CMAA2_UAV_STORE_TYPED",
-            "CMAA2_UAV_STORE_CONVERT_TO_SRGB",
-            "CMAA2_EDGE_DETECTION_LUMA_SEPARATE_TEXTURE"
-         ]
-      }
-   },
+      "static_flags": [
+        "CMAA2_EDGE_DETECTION_LUMA_SEPARATE_TEXTURE"
+      ]
+    }
+  },
 
-   "rendertypes": {},
+  "rendertypes": {},
 
-   "states": {}
+  "states": {}
 }

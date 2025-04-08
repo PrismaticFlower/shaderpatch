@@ -15,11 +15,11 @@ auto windows_fonts_folder() noexcept -> const std::filesystem::path&
          if (c_str_path) CoTaskMemFree(c_str_path);
       });
 
-      if (FAILED(SHGetKnownFolderPath(FOLDERID_Fonts, 0x0, nullptr, &c_str_path))) {
+      if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_Fonts, 0x0, nullptr, &c_str_path))) {
          return c_str_path;
       }
 
-      return L"C:/Windows/Fonts";
+      return L"C:\\Windows\\Fonts";
    }();
 
    return path;

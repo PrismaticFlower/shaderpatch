@@ -84,7 +84,7 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <DiagnosticsFormat>Caret</DiagnosticsFormat>
       <AdditionalIncludeDirectories>$(SolutionDir)/shared/include;%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
-      <FloatingPointModel>Fast</FloatingPointModel>
+      <FloatingPointModel>Precise</FloatingPointModel>
       <ObjectFileName>$(IntDir)\%(RelativeDir)\%(Filename).obj</ObjectFileName>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
@@ -93,7 +93,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>d3d11.lib;DXGI.lib;dinput8.lib;Bcrypt.lib;dxguid.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3dcompiler.lib;d3d11.lib;DXGI.lib;dinput8.lib;Bcrypt.lib;dxguid.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>d3d9.def</ModuleDefinitionFile>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <DelayLoadDLLs>
@@ -131,7 +131,7 @@
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <DiagnosticsFormat>Caret</DiagnosticsFormat>
-      <FloatingPointModel>Fast</FloatingPointModel>
+      <FloatingPointModel>Precise</FloatingPointModel>
       <ObjectFileName>$(IntDir)\%(RelativeDir)\%(Filename).obj</ObjectFileName>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
@@ -142,7 +142,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>d3d11.lib;DXGI.lib;dinput8.lib;Bcrypt.lib;dxguid.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3dcompiler.lib;d3d11.lib;DXGI.lib;dinput8.lib;Bcrypt.lib;dxguid.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>d3d9.def</ModuleDefinitionFile>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <DelayLoadDLLs>
@@ -190,6 +190,7 @@
     <ClCompile Include="src\core\texture_loader.cpp" />
     <ClCompile Include="src\core\text\font_atlas_builder.cpp" />
     <ClCompile Include="src\core\tools\pixel_inspector.cpp" />
+    <ClCompile Include="src\dinput_hooks.cpp" />
     <ClCompile Include="src\direct3d\device.cpp" />
     <ClCompile Include="src\direct3d\format_patcher.cpp" />
     <ClCompile Include="src\direct3d\helpers.cpp" />
@@ -227,7 +228,9 @@
     <ClCompile Include="src\effects\profiler.cpp" />
     <ClCompile Include="src\effects\ssao.cpp" />
     <ClCompile Include="src\file_hooks.cpp" />
+    <ClCompile Include="src\freetype_helpers.cpp" />
     <ClCompile Include="src\game_support\font_declarations.cpp" />
+    <ClCompile Include="src\game_support\memory_hacks.cpp" />
     <ClCompile Include="src\game_support\munged_shader_declarations.cpp" />
     <ClCompile Include="src\imgui\imgui.cpp">
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5054;4275;4251;4127;4018</DisableSpecificWarnings>
@@ -252,7 +255,7 @@
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5054;4275;4251;4127;4018</DisableSpecificWarnings>
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5054;4275;4251;4127;4018</DisableSpecificWarnings>
     </ClCompile>
-    <ClCompile Include="src\input_hooker.cpp" />
+    <ClCompile Include="src\input_config.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\material\constant_buffer_builder.cpp" />
     <ClCompile Include="src\material\editor.cpp" />
@@ -264,6 +267,7 @@
     <ClCompile Include="src\material\shader_factory.cpp" />
     <ClCompile Include="src\material\shader_set.cpp" />
     <ClCompile Include="src\material\sol_create_usertypes.cpp" />
+    <ClCompile Include="src\message_hooks.cpp" />
     <ClCompile Include="src\shader\cache.cpp" />
     <ClCompile Include="src\shader\compiler.cpp" />
     <ClCompile Include="src\shader\database.cpp" />
@@ -306,6 +310,7 @@
     <ClInclude Include="src\core\texture_loader.hpp" />
     <ClInclude Include="src\core\text\font_atlas_builder.hpp" />
     <ClInclude Include="src\core\tools\pixel_inspector.hpp" />
+    <ClInclude Include="src\dinput_hooks.hpp" />
     <ClInclude Include="src\direct3d\format_patcher.hpp" />
     <ClInclude Include="src\direct3d\upload_texture.hpp" />
     <ClInclude Include="src\direct3d\upload_scratch_buffer.hpp" />
@@ -374,11 +379,11 @@
     <ClInclude Include="src\game_support\fixedfunc_shader_metadata.hpp" />
     <ClInclude Include="src\game_support\font_declarations.hpp" />
     <ClInclude Include="src\game_support\font_info.hpp" />
+    <ClInclude Include="src\game_support\memory_hacks.hpp" />
     <ClInclude Include="src\game_support\munged_shader_declarations.hpp" />
     <ClInclude Include="src\game_support\shader_declaration.hpp" />
     <ClInclude Include="src\game_support\shader_declarations.hpp" />
     <ClInclude Include="src\game_support\shader_metadata.hpp" />
-    <ClInclude Include="src\hook_vtable.hpp" />
     <ClInclude Include="src\imgui\imconfig.h" />
     <ClInclude Include="src\imgui\imgui.h" />
     <ClInclude Include="src\imgui\imgui_ext.hpp" />
@@ -390,7 +395,7 @@
     <ClInclude Include="src\imgui\imstb_rectpack.h" />
     <ClInclude Include="src\imgui\imstb_textedit.h" />
     <ClInclude Include="src\imgui\imstb_truetype.h" />
-    <ClInclude Include="src\input_hooker.hpp" />
+    <ClInclude Include="src\input_config.hpp" />
     <ClInclude Include="src\logger.hpp" />
     <ClInclude Include="src\material\constant_buffer_builder.hpp" />
     <ClInclude Include="src\material\editor.hpp" />
@@ -402,6 +407,7 @@
     <ClInclude Include="src\material\shader_set.hpp" />
     <ClInclude Include="src\material\sol_create_usertypes.hpp" />
     <ClInclude Include="src\material\resource_info_view.hpp" />
+    <ClInclude Include="src\message_hooks.hpp" />
     <ClInclude Include="src\shader\bytecode_blob.hpp" />
     <ClInclude Include="src\shader\cache.hpp" />
     <ClInclude Include="src\shader\common.hpp" />
@@ -430,19 +436,6 @@
     <ProjectReference Include="shared\shared.vcxproj">
       <Project>{cc4890f2-40e7-446f-8971-5114ea566c27}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <CustomBuild Include="src\effects\assao\ASSAO.hlsl">
-      <FileType>Document</FileType>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RelativeDir)assao_shader.hpp</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RelativeDir)assao_shader.hpp</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">powershell -Command  "./%(RelativeDir)assao_shader_package.ps1"  -OuputPath "%(Outputs)" -InputPath "%(Identity)"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">powershell -Command  "./%(RelativeDir)assao_shader_package.ps1"  -OuputPath "%(Outputs)" -InputPath "%(Identity)"</Command>
-    </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

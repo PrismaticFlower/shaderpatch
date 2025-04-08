@@ -2,6 +2,7 @@
 #include "terrain_save_material.hpp"
 #include "patch_material_io.hpp"
 #include "req_file_helpers.hpp"
+#include "string_utilities.hpp"
 #include "terrain_constants.hpp"
 
 #include <algorithm>
@@ -85,7 +86,12 @@ auto create_pbr_properties(const Terrain_materials_config& config,
    add_texture_transform_properties(properties, texture_transforms);
 
    for (auto i = 0; i < safe_min(textures_order.size(), std::size_t{16}); ++i) {
-      auto it = config.materials.find(textures_order[i]);
+      auto it =
+         std::ranges::find_if(config.materials,
+                              [texture_name = view_as_ci_string(textures_order[i])](
+                                 const std::pair<std::string, Terrain_material>& name_material) {
+                                 return name_material.first == texture_name;
+                              });
 
       if (it == config.materials.cend()) continue;
 
@@ -114,7 +120,12 @@ auto create_normal_ext_properties(const Terrain_materials_config& config,
    add_texture_transform_properties(properties, texture_transforms);
 
    for (auto i = 0; i < safe_min(textures_order.size(), std::size_t{16}); ++i) {
-      auto it = config.materials.find(textures_order[i]);
+      auto it =
+         std::ranges::find_if(config.materials,
+                              [texture_name = view_as_ci_string(textures_order[i])](
+                                 const std::pair<std::string, Terrain_material>& name_material) {
+                                 return name_material.first == texture_name;
+                              });
 
       if (it == config.materials.cend()) continue;
 

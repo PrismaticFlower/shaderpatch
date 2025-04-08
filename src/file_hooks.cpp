@@ -23,7 +23,6 @@
 #include <absl/container/inlined_vector.h>
 
 #include <Windows.h>
-#include <detours/detours.h>
 #include <io.h>
 
 namespace sp {
@@ -113,10 +112,20 @@ auto edit_core_lvl_fonts(ucfb::Editor& core_editor,
 
 auto edit_core_lvl() noexcept -> win32::Unique_handle
 {
-   auto replacement_fonts_future = std::async(std::launch::async, [] {
-      return game_support::create_font_declarations(
-         windows_fonts_folder() / user_config.developer.scalable_font_name);
-   });
+   const bool use_scalable_fonts =
+      user_config.display.scalable_fonts &&
+      std::filesystem::exists(windows_fonts_folder() /
+                              user_config.developer.scalable_font_name);
+
+   auto replacement_fonts_future =
+      use_scalable_fonts
+         ? std::async(std::launch::async,
+                      [] {
+                         return game_support::create_font_declarations(
+                            windows_fonts_folder() /
+                            user_config.developer.scalable_font_name);
+                      })
+         : std::future<game_support::Font_declarations>{};
 
    constexpr static auto is_parent = [](const Magic_number mn) noexcept {
       return mn == "font"_mn;
@@ -143,8 +152,15 @@ auto edit_core_lvl() noexcept -> win32::Unique_handle
    core_editor.insert(core_editor.end(), shader_declarations.begin(),
                       shader_declarations.end());
 
-   if (user_config.display.scalable_fonts) {
+   if (use_scalable_fonts) {
       edit_core_lvl_fonts(core_editor, replacement_fonts_future.get());
+   }
+   else if (user_config.display.scalable_fonts) {
+      log_fmt(Log_level::error,
+              "Scalable Fonts have been disabled as the font "
+              "'{}\\{}' is missing.",
+              windows_fonts_folder().string(),
+              user_config.developer.scalable_font_name.string());
    }
 
    auto [ostream, file_handle] = create_tmp_file();
@@ -269,7 +285,11 @@ print(string.format("Shader Patch Scripting API loaded. Shader Patch version is 
    return std::move(file_handle);
 }
 
-decltype(&CreateFileA) true_CreateFileA = CreateFileA;
+}
+
+}
+
+using namespace sp;
 
 extern "C" HANDLE WINAPI CreateFileA_hook(LPCSTR file_name,
                                           DWORD desired_access, DWORD share_mode,
@@ -285,28 +305,6 @@ extern "C" HANDLE WINAPI CreateFileA_hook(LPCSTR file_name,
          return get_sp_api_script().release();
    }
 
-   return true_CreateFileA(file_name, desired_access, share_mode,
-                           security_attributes, creation_disposition,
-                           flags_and_attributes, template_file);
-}
-
-}
-
-void install_file_hooks() noexcept
-{
-   bool failure = true;
-
-   if (DetourTransactionBegin() == NO_ERROR) {
-      if (DetourAttach(&reinterpret_cast<PVOID&>(true_CreateFileA),
-                       CreateFileA_hook) == NO_ERROR) {
-         if (DetourTransactionCommit() == NO_ERROR) {
-            failure = false;
-         }
-      }
-   }
-
-   if (failure) {
-      log_and_terminate("Failed to install file hooks."sv);
-   }
-}
+   return CreateFileA(file_name, desired_access, share_mode, security_attributes,
+                      creation_disposition, flags_and_attributes, template_file);
 }

@@ -41,27 +41,31 @@ struct user_config {
    bool_user_config_value enabled{L"Shader Patch Enabled", true, L"Yes", L"No"};
 
    user_config_value_vector display = {
-      percentage_user_config_value{L"Screen Percent", 100, 10},
-
-      percentage_user_config_value{L"Resolution Scale", 100, 50},
-      bool_user_config_value{L"Scale UI with Resolution Scale", true, L"Yes", L"No"},
-
       bool_user_config_value{L"Allow Tearing", false, L"Tearing Allowed",
                              L"Tearing Disallowed"},
 
-      bool_user_config_value{L"Centred", true, L"Centred", L"Uncentred"},
       bool_user_config_value{L"Treat 800x600 As Interface", true, L"Yes", L"No"},
-      bool_user_config_value{L"Windowed Interface", false, L"Yes", L"No"},
+      bool_user_config_value{L"Stretch Interface", false, L"Yes", L"No"},
 
       bool_user_config_value{L"Display Scaling Aware", true, L"Yes", L"No"},
       bool_user_config_value{L"Display Scaling", true, L"On", L"Off"},
+      bool_user_config_value{L"DSR-VSR Display Scaling", true, L"On", L"Off"},
 
       bool_user_config_value{L"Scalable Fonts", true, L"On", L"Off"},
+
+      bool_user_config_value{L"Aspect Ratio Hack", false, L"On", L"Off"},
+      enum_user_config_value{L"Aspect Ratio Hack HUD Handling",
+                             L"Centre 4_3",
+                             {L"Stretch 4_3", L"Centre 4_3", L"Stretch 16_9",
+                              L"Centre 16_9"}},
 
       bool_user_config_value{L"Enable Game Perceived Resolution Override", false},
       uint2_user_config_value{L"Game Perceived Resolution Override",
                               {1920, 1080},
                               {L"Width", L"Height"}},
+
+      bool_user_config_value{L"Override Resolution", false},
+      percentage_user_config_value{L"Override Resolution Screen Percent", 100, 50},
    };
 
    user_config_value_vector user_interface = {
@@ -113,6 +117,8 @@ struct user_config {
       bool_user_config_value{L"Enable User Effects Config", false, L"Enabled", L"Disabled"},
 
       string_user_config_value{L"User Effects Config", L"user.spfx"},
+
+      bool_user_config_value{L"Use Direct3D 11 on 12", false, L"Yes", L"No"},
    };
 
    user_config_value_vector effects = {

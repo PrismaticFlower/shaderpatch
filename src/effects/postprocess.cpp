@@ -118,8 +118,9 @@ private:
 
 enum class Postprocess_combine_flags {
    bloom_active = 0b1,
-   bloom_use_dirt = 0b10,
-   output_luma = 0b100
+   bloom_thresholded = 0b10,
+   bloom_use_dirt = 0b100,
+   output_luma = 0b1000
 };
 
 enum class Postprocess_finalize_flags {
@@ -218,13 +219,14 @@ public:
       _color_grading_regions_blender.global_bloom_params(params);
 
       _bloom_enabled = user_config.effects.bloom && params.enabled;
+      _bloom_thresholded = params.mode == Bloom_mode::threshold;
       _bloom_use_dirt = params.use_dirt;
       _bloom_dirt_texture_name = params.dirt_texture_name;
 
       _config_changed = true;
    }
 
-   auto bloom_params() const noexcept -> Bloom_params
+   auto bloom_params() const noexcept -> const Bloom_params&
    {
       return _color_grading_regions_blender.global_bloom_params();
    }
@@ -253,7 +255,7 @@ public:
       _config_changed = true;
    }
 
-   auto color_grading_params() const noexcept -> Color_grading_params
+   auto color_grading_params() const noexcept -> const Color_grading_params&
    {
       return _color_grading_regions_blender.global_cg_params();
    }
@@ -475,62 +477,116 @@ private:
                                       .height = input.height() / 32,
                                       .bind_flags = rendertarget_bind_srv_rtv});
 
-      // Bloom Threshold
-      {
-         Profile profile{profiler, dc, "Postprocessing - Bloom Threshold"};
+      if (_bloom_thresholded) {
+         // Bloom Threshold
+         {
+            Profile profile{profiler, dc, "Postprocessing - Bloom Threshold"};
 
-         dc.PSSetShader(_bloom_threshold_ps.get(), nullptr, 0);
+            dc.PSSetShader(_bloom_threshold_ps.get(), nullptr, 0);
 
-         bind_bloom_cb(dc, 0);
-         set_viewport(dc, input.width() / 2, input.height() / 2);
-         do_pass(dc, *input.srv(), *rt_a.rtv());
+            bind_bloom_cb(dc, 0);
+            set_viewport(dc, input.width() / 2, input.height() / 2);
+            do_pass(dc, *input.srv(), *rt_a.rtv());
+         }
+
+         // Bloom Downsample
+         {
+            Profile profile{profiler, dc, "Postprocessing - Bloom Downsample"};
+
+            dc.PSSetShader(_bloom_downsample_ps.get(), nullptr, 0);
+
+            bind_bloom_cb(dc, 1);
+            set_viewport(dc, input.width() / 4, input.height() / 4);
+            do_pass(dc, *rt_a.srv(), *rt_b.rtv());
+
+            bind_bloom_cb(dc, 2);
+            set_viewport(dc, input.width() / 8, input.height() / 8);
+            do_pass(dc, *rt_b.srv(), *rt_c.rtv());
+
+            bind_bloom_cb(dc, 3);
+            set_viewport(dc, input.width() / 16, input.height() / 16);
+            do_pass(dc, *rt_c.srv(), *rt_d.rtv());
+
+            bind_bloom_cb(dc, 4);
+            set_viewport(dc, input.width() / 32, input.height() / 32);
+            do_pass(dc, *rt_d.srv(), *rt_e.rtv());
+         }
+
+         // Bloom Upsample
+         {
+            Profile profile{profiler, dc, "Postprocessing - Bloom Upsample"};
+
+            dc.PSSetShader(_bloom_upsample_ps.get(), nullptr, 0);
+            dc.OMSetBlendState(_additive_blend_state.get(), nullptr, 0xffffffff);
+
+            bind_bloom_cb(dc, 5);
+            set_viewport(dc, input.width() / 16, input.height() / 16);
+            do_pass(dc, *rt_e.srv(), *rt_d.rtv());
+
+            bind_bloom_cb(dc, 4);
+            set_viewport(dc, input.width() / 8, input.height() / 8);
+            do_pass(dc, *rt_d.srv(), *rt_c.rtv());
+
+            bind_bloom_cb(dc, 3);
+            set_viewport(dc, input.width() / 4, input.height() / 4);
+            do_pass(dc, *rt_c.srv(), *rt_b.rtv());
+
+            bind_bloom_cb(dc, 2);
+            set_viewport(dc, input.width() / 2, input.height() / 2);
+            do_pass(dc, *rt_b.srv(), *rt_a.rtv());
+         }
       }
+      else {
+         // Bloom Downsample
+         {
+            Profile profile{profiler, dc, "Postprocessing - Bloom Downsample"};
 
-      // Bloom Downsample
-      {
-         Profile profile{profiler, dc, "Postprocessing - Bloom Downsample"};
+            dc.PSSetShader(_bloom_downsample_ps.get(), nullptr, 0);
 
-         dc.PSSetShader(_bloom_downsample_ps.get(), nullptr, 0);
+            bind_bloom_cb(dc, 0);
+            set_viewport(dc, input.width() / 2, input.height() / 2);
+            do_pass(dc, *input.srv(), *rt_a.rtv());
 
-         bind_bloom_cb(dc, 1);
-         set_viewport(dc, input.width() / 4, input.height() / 4);
-         do_pass(dc, *rt_a.srv(), *rt_b.rtv());
+            bind_bloom_cb(dc, 1);
+            set_viewport(dc, input.width() / 4, input.height() / 4);
+            do_pass(dc, *rt_a.srv(), *rt_b.rtv());
 
-         bind_bloom_cb(dc, 2);
-         set_viewport(dc, input.width() / 8, input.height() / 8);
-         do_pass(dc, *rt_b.srv(), *rt_c.rtv());
+            bind_bloom_cb(dc, 2);
+            set_viewport(dc, input.width() / 8, input.height() / 8);
+            do_pass(dc, *rt_b.srv(), *rt_c.rtv());
 
-         bind_bloom_cb(dc, 3);
-         set_viewport(dc, input.width() / 16, input.height() / 16);
-         do_pass(dc, *rt_c.srv(), *rt_d.rtv());
+            bind_bloom_cb(dc, 3);
+            set_viewport(dc, input.width() / 16, input.height() / 16);
+            do_pass(dc, *rt_c.srv(), *rt_d.rtv());
 
-         bind_bloom_cb(dc, 4);
-         set_viewport(dc, input.width() / 32, input.height() / 32);
-         do_pass(dc, *rt_d.srv(), *rt_e.rtv());
-      }
+            bind_bloom_cb(dc, 4);
+            set_viewport(dc, input.width() / 32, input.height() / 32);
+            do_pass(dc, *rt_d.srv(), *rt_e.rtv());
+         }
 
-      // Bloom Upsample
-      {
-         Profile profile{profiler, dc, "Postprocessing - Bloom Upsample"};
+         // Bloom Upsample
+         {
+            Profile profile{profiler, dc, "Postprocessing - Bloom Upsample"};
 
-         dc.PSSetShader(_bloom_upsample_ps.get(), nullptr, 0);
-         dc.OMSetBlendState(_additive_blend_state.get(), nullptr, 0xffffffff);
+            dc.PSSetShader(_bloom_upsample_ps.get(), nullptr, 0);
+            dc.OMSetBlendState(_additive_blend_state.get(), nullptr, 0xffffffff);
 
-         bind_bloom_cb(dc, 5);
-         set_viewport(dc, input.width() / 16, input.height() / 16);
-         do_pass(dc, *rt_e.srv(), *rt_d.rtv());
+            bind_bloom_cb(dc, 5);
+            set_viewport(dc, input.width() / 16, input.height() / 16);
+            do_pass(dc, *rt_e.srv(), *rt_d.rtv());
 
-         bind_bloom_cb(dc, 4);
-         set_viewport(dc, input.width() / 8, input.height() / 8);
-         do_pass(dc, *rt_d.srv(), *rt_c.rtv());
+            bind_bloom_cb(dc, 4);
+            set_viewport(dc, input.width() / 8, input.height() / 8);
+            do_pass(dc, *rt_d.srv(), *rt_c.rtv());
 
-         bind_bloom_cb(dc, 3);
-         set_viewport(dc, input.width() / 4, input.height() / 4);
-         do_pass(dc, *rt_c.srv(), *rt_b.rtv());
+            bind_bloom_cb(dc, 3);
+            set_viewport(dc, input.width() / 4, input.height() / 4);
+            do_pass(dc, *rt_c.srv(), *rt_b.rtv());
 
-         bind_bloom_cb(dc, 2);
-         set_viewport(dc, input.width() / 2, input.height() / 2);
-         do_pass(dc, *rt_b.srv(), *rt_a.rtv());
+            bind_bloom_cb(dc, 2);
+            set_viewport(dc, input.width() / 2, input.height() / 2);
+            do_pass(dc, *rt_b.srv(), *rt_a.rtv());
+         }
       }
 
       Profile profile{profiler, dc, "Postprocessing - Combine"};
@@ -643,16 +699,26 @@ private:
    {
       Profile profile{profiler, dc, "Postprocessing - Finalize Output"};
 
+      auto* const cb = _global_constant_buffer.get();
+
       dc.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+      dc.VSSetConstantBuffers(global_cb_slot, 1, &cb);
       dc.VSSetShader(_fullscreen_vs.get(), nullptr, 0);
 
       auto* const sampler = _linear_clamp_sampler.get();
-      auto* const cb = _global_constant_buffer.get();
       dc.PSSetSamplers(0, 1, &sampler);
       dc.PSSetConstantBuffers(global_cb_slot, 1, &cb);
       dc.PSSetShader(_postprocess_finalize_ps.get(), nullptr, 0);
 
-      set_viewport(dc, output.width, output.height);
+      const D3D11_VIEWPORT viewport{(output.width - input.width()) / 2.0f,
+                                    (output.height - input.height()) / 2.0f,
+                                    static_cast<float>(input.width()),
+                                    static_cast<float>(input.height()),
+                                    0.0f,
+                                    1.0f};
+
+      dc.RSSetViewports(1, &viewport);
+
       do_pass(dc, *input.srv(), output.rtv);
    }
 
@@ -683,6 +749,7 @@ private:
       const auto res = glm::uvec2{width, height};
       const auto flt_res = static_cast<glm::vec2>(res);
 
+      _global_constants.resolution = flt_res;
       _global_constants.scene_pixel_size = 1.0f / flt_res;
       _global_constants.film_grain_aspect = flt_res.x / flt_res.y;
       _global_constants.film_grain_size = flt_res / _film_grain_params.size;
@@ -702,6 +769,7 @@ private:
       }
 
       auto* const cb = _global_constant_buffer.get();
+      dc.VSSetConstantBuffers(global_cb_slot, 1, &cb);
       dc.PSSetConstantBuffers(global_cb_slot, 1, &cb);
    }
 
@@ -732,7 +800,9 @@ private:
          _color_grading_regions_blender.blend(camera_position);
 
       _global_constants.exposure = glm::exp2(cg_params.exposure) * cg_params.brightness;
-      _global_constants.bloom_threshold = bloom_params.threshold;
+      _global_constants.bloom_blend = bloom_params.mode == Bloom_mode::blended
+                                         ? bloom_params.blend_factor
+                                         : bloom_params.threshold;
       _global_constants.bloom_global_scale = bloom_params.tint * bloom_params.intensity;
       _global_constants.bloom_dirt_scale =
          bloom_params.dirt_scale * bloom_params.dirt_tint;
@@ -777,6 +847,9 @@ private:
       if (_bloom_enabled) {
          postprocess_combine_flags |= Postprocess_combine_flags::bloom_active;
 
+         if (_bloom_thresholded)
+            postprocess_combine_flags |= Postprocess_combine_flags::bloom_thresholded;
+
          if (_bloom_use_dirt)
             postprocess_combine_flags |= Postprocess_combine_flags::bloom_use_dirt;
       }
@@ -812,13 +885,11 @@ private:
    static_assert(sizeof(Resolve_constants) == 16);
 
    struct Global_constants {
+      glm::vec2 resolution;
       glm::vec2 scene_pixel_size;
 
-      float vignette_end;
-      float vignette_start;
-
       glm::vec3 bloom_global_scale;
-      float bloom_threshold;
+      float bloom_blend;
       glm::vec3 bloom_dirt_scale;
 
       float exposure;
@@ -829,7 +900,9 @@ private:
       float film_grain_luma_amount;
 
       glm::vec2 film_grain_size;
-      std::array<float, 2> _padding0;
+
+      float vignette_end;
+      float vignette_start;
 
       glm::vec4 randomness_flt;
       glm::uvec4 randomness_uint;
@@ -909,6 +982,7 @@ private:
 
    bool _config_changed = true;
    bool _bloom_enabled = true;
+   bool _bloom_thresholded = false;
    bool _bloom_use_dirt = false;
    bool _vignette_enabled = true;
    bool _film_grain_enabled = true;
@@ -917,7 +991,7 @@ private:
 
    std::mt19937 _random_engine{std::random_device{}()};
    std::uniform_real_distribution<float> _random_real_dist{0.0f, 256.0f};
-   std::uniform_int<int> _random_int_dist{0, 63};
+   std::uniform_int_distribution<int> _random_int_dist{0, 63};
 
    std::vector<Com_ptr<ID3D11ShaderResourceView>> _blue_noise_srvs;
 
@@ -947,7 +1021,7 @@ void Postprocess::bloom_params(const Bloom_params& params) noexcept
    _impl->bloom_params(params);
 }
 
-auto Postprocess::bloom_params() const noexcept -> Bloom_params
+auto Postprocess::bloom_params() const noexcept -> const Bloom_params&
 {
    return _impl->bloom_params();
 }
@@ -967,7 +1041,7 @@ void Postprocess::color_grading_params(const Color_grading_params& params) noexc
    _impl->color_grading_params(params);
 }
 
-auto Postprocess::color_grading_params() const noexcept -> Color_grading_params
+auto Postprocess::color_grading_params() const noexcept -> const Color_grading_params&
 {
    return _impl->color_grading_params();
 }

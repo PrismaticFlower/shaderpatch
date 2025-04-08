@@ -47,7 +47,6 @@ void OIT_provider::prepare_resources(ID3D11DeviceContext4& dc,
 {
    if (&opaque_texture != _opaque_texture) {
       update_resources(opaque_texture, opaque_rtv);
-      record_resolve_commandlist();
    }
 
    dc.ClearUnorderedAccessViewUint(_clear_uav.get(),
@@ -67,7 +66,30 @@ void OIT_provider::clear_resources() noexcept
 
 void OIT_provider::resolve(ID3D11DeviceContext4& dc) const noexcept
 {
-   dc.ExecuteCommandList(_resolve_commandlist.get(), true);
+   D3D11_TEXTURE2D_DESC texture_desc{};
+   _opaque_texture->GetDesc(&texture_desc);
+
+   dc.ClearState();
+
+   dc.OMSetRenderTargets(0, nullptr, nullptr);
+
+   dc.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+   dc.VSSetShader(_vs.get(), nullptr, 0);
+   dc.PSSetShader(_ps.get(), nullptr, 0);
+
+   const std::array srvs{_clear_srv.get(), _depth_srv.get(), _color_srv.get()};
+   dc.PSSetShaderResources(0, srvs.size(), srvs.data());
+
+   const CD3D11_VIEWPORT viewport{0.0f, 0.0f, static_cast<float>(texture_desc.Width),
+                                  static_cast<float>(texture_desc.Height)};
+
+   dc.RSSetViewports(1, &viewport);
+   dc.OMSetBlendState(_composite_blendstate.get(), nullptr, 0xffffffff);
+
+   auto* const rtv = _opaque_rtv.get();
+   dc.OMSetRenderTargets(1, &rtv, nullptr);
+
+   dc.Draw(3, 0);
 }
 
 auto OIT_provider::uavs() const noexcept -> std::array<ID3D11UnorderedAccessView*, 3>
@@ -163,33 +185,4 @@ void OIT_provider::update_resources(ID3D11Texture2D& opaque_texture,
    }
 }
 
-void OIT_provider::record_resolve_commandlist() noexcept
-{
-   Com_ptr<ID3D11DeviceContext3> dc;
-
-   _device->CreateDeferredContext3(0, dc.clear_and_assign());
-
-   D3D11_TEXTURE2D_DESC texture_desc{};
-   _opaque_texture->GetDesc(&texture_desc);
-
-   dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-   dc->VSSetShader(_vs.get(), nullptr, 0);
-   dc->PSSetShader(_ps.get(), nullptr, 0);
-
-   const std::array srvs{_clear_srv.get(), _depth_srv.get(), _color_srv.get()};
-   dc->PSSetShaderResources(0, srvs.size(), srvs.data());
-
-   const CD3D11_VIEWPORT viewport{0.0f, 0.0f, static_cast<float>(texture_desc.Width),
-                                  static_cast<float>(texture_desc.Height)};
-
-   dc->RSSetViewports(1, &viewport);
-   dc->OMSetBlendState(_composite_blendstate.get(), nullptr, 0xffffffff);
-
-   auto* const rtv = _opaque_rtv.get();
-   dc->OMSetRenderTargets(1, &rtv, nullptr);
-
-   dc->Draw(3, 0);
-
-   dc->FinishCommandList(false, _resolve_commandlist.clear_and_assign());
-}
 }

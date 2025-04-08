@@ -16,34 +16,8 @@ LR"(Settings for controlling the display of the game.)"sv
 },
 
 {
-L"Screen Percent"sv,      
-LR"(Precentage of the sceen the game's window will take up. Value from 10 to 100.)"sv
-},
-
-{
-L"Resolution Scale"sv,      
-LR"(Render resolution scale, as a percentage. This controls the resolution the game will be rendered at but does not affect window size.
-
-For instance if your desktop resolution is 3840 x 2160 (4K) setting this to 50 will render the game at 1920 x 1080. 
-
-The game will be upscaled back to 3840 x 2160 by the GPU when it is sent to the display.
-
-Lowering this can boost perforomance. Usage of an Anti-Aliasing Method with this option is highly reccomended.)"sv
-},
-
-{
-L"Scale UI with Resolution Scale"sv,      
-LR"(Keeps the game's UI and HUD from becoming illegible when Resolution Scale is used. This only has an effect if Display Scaling is 'yes'.)"sv
-},
-
-{
 L"Allow Tearing"sv,      
 LR"(Allow tearing when displaying frames. This can allow lower latency and is also required for variable refresh rate technologies to work.)"sv
-},
-
-{
-L"Centred"sv,      
-LR"(Whether to centre the window or not. If `ScreenPercent` is 100 there will be no difference between a centred and uncentred window.)"sv
 },
 
 {
@@ -52,8 +26,8 @@ LR"(Whether 800x600 will be treated as the resolution used by the game's main me
 },
 
 {
-L"Windowed Interface"sv,      
-LR"(When `Treat 800x600 As Interface` is `yes` controls whether the game's interface will be rendered fullscreen (which can lead to stretching on the UI) or if it'll be kept in a 800x600 window.)"sv
+L"Stretch Interface"sv,      
+LR"(When Treat 800x600 As Interface is enabled controls if the interface will be stretched across the screen or if it's 4:3 aspect ratio will be maintained using black bars.)"sv
 },
 
 {
@@ -67,8 +41,33 @@ LR"(When `Display Scaling Aware` is `yes` controls if the game's perceived resol
 },
 
 {
+L"DSR-VSR Display Scaling"sv,      
+LR"(When `Display Scaling Aware` is `yes` controls if the game's perceived resolution will be scaled based on if Shader Patch detects Dynamic Super Resolution/Virtual Super Resolution being used. The detection is based on if the game's resolution increases past the starting desktop resolution.)"sv
+},
+
+{
 L"Scalable Fonts"sv,      
 LR"(Whether to replace the game's core fonts with ones that can be scaled. If you have any mods installed that also replace the game's fonts when this setting is enabled then they will be superseded by Shader Patch's fonts.)"sv
+},
+
+{
+L"Aspect Ratio Hack"sv,      
+LR"(Enables a "hack" (or series of) to override the game's aspect ratio while keeping the HUD visible. It's not perfect but can make the game far more playable at ultrawide aspect ratios than it otherwise would be.
+
+This feature will search the memory around the "D3DPRESENT_PARAMETERS" it passes to "IDirect3DDevice9::Reset" for the aspect ratio. It is able to successfully find it on all versions of the game I have (DVD/GoG/Steam/Modtools) and no other values in the area seem to resemble anything looking like an aspect ratio. Which should make it quite reliable. But there is always the tiny chance it'll end up overwriting some random pointer and cause all sorts of fun (hopefully just a crash but who knows), so use at your own risk and all that. This is the only feature in SP to depend on reading or writing a value in the game's memory. And it will NEVER do it unless this is explicitly enabled.
+
+Loading screens will often appear distorted when using this.
+
+See and configure Aspect Ratio Hack HUD Handling below as well.)"sv
+},
+
+{
+L"Aspect Ratio Hack HUD Handling"sv,      
+LR"(How to handle the HUD when using the Aspect Ratio Hack. Can be "Stretch 4_3", "Centre 4_3", "Stretch 16_9" or "Centre 16_9".
+
+In Stretch mode the HUD will be stretched out across the entire screen. This can look acceptable depending on the amount of stretching, a 4:3 HUD stretched to 32:9 will look worse than a 16:9 HUD stretched to the same.
+
+In Centre mode the HUD will be drawn into the centre of the screen with the correct aspect ratio. Mostly, some elements like the crosshair ammo counter and weapon heat will be misaligned and potentially stretched.)"sv
 },
 
 {
@@ -84,6 +83,16 @@ If you're unsure what this is useful for then **leave** it set to "no".)"sv
 {
 L"Game Perceived Resolution Override"sv,      
 LR"(The override for the game's perceived resolution, for use with `Enable Game Perceived Resolution Override`.)"sv
+},
+
+{
+L"Override Resolution"sv,      
+LR"(Enables the overriding the resolution the game will be rendered at to a percentage of the monitor's resolution. This is mostly intended for use with modtools' debug .exe.)"sv
+},
+
+{
+L"Override Resolution Screen Percent"sv,      
+LR"(When Override Resolution is enabled the percentage of the screen the game's window will take up.)"sv
 },
 
 {
@@ -199,6 +208,11 @@ LR"(When a map or mod has not loaded an Effects Config Shader Patch can use a us
 {
 L"User Effects Config"sv,      
 LR"(The name of the Effects Config to load when `Enable User Effects Config` is true. The config should be in the same directory as the game's executable.)"sv
+},
+
+{
+L"Use Direct3D 11 on 12"sv,      
+LR"(Force using Direct3D 11 on 12 instead of the any native Direct3D 11 driver. This can workaround bugs in the D3D11 driver. It is likely that turning this on will cost some performance however. CMAA2 is also broken while using this (unsure why, there are no debug layer errors from D3D11 or D3D12 about it).)"sv
 },
 
 {

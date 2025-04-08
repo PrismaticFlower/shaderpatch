@@ -48,7 +48,9 @@ cbuffer TeamColorConstants : register(b2)
    float3 friend_corsshair_dot_color;
    float3 foe_color;
    float3 foe_text_color;
+   float3 foe_text_alt_color;
    float3 foe_health_color;
+   float3 foe_flag_color;
    float3 foe_crosshair_dot_color;
 }
 

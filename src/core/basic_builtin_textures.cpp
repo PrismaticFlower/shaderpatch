@@ -56,12 +56,15 @@ auto make_simple_texture(ID3D11Device5& device,
 }
 }
 
-void add_builtin_textures(ID3D11Device5& device, Shader_resource_database& resources) noexcept
+Basic_builtin_textures::Basic_builtin_textures(ID3D11Device5& device) noexcept
 {
-   const auto white = make_simple_texture(device, {0xff, 0xff, 0xff, 0xff});
-   const auto grey = make_simple_texture(device, {0x80, 0x80, 0x80, 0xff});
-   const auto normal = make_simple_texture(device, {0x80, 0x80, 0xff, 0xff});
+   white = make_simple_texture(device, {0xff, 0xff, 0xff, 0xff});
+   grey = make_simple_texture(device, {0x80, 0x80, 0x80, 0xff});
+   normal = make_simple_texture(device, {0x80, 0x80, 0xff, 0xff});
+}
 
+void Basic_builtin_textures::add_to_database(Shader_resource_database& resources) noexcept
+{
    resources.insert(white, "_SP_BUILTIN_white"sv);
    resources.insert(grey, "_SP_BUILTIN_grey"sv);
 

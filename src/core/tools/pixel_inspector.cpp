@@ -49,7 +49,7 @@ Pixel_inspector::Pixel_inspector(Com_ptr<ID3D11Device5> device, shader::Database
 }
 
 void Pixel_inspector::show(ID3D11DeviceContext1& dc, Swapchain& swapchain,
-                           const HWND window, const UINT swapchain_scale) noexcept
+                           const HWND window) noexcept
 {
    if (!ImGui::GetIO().WantCaptureMouse && (GetKeyState(VK_LBUTTON) & 0x8000)) {
       if (!GetCursorPos(&_window_pos)) return;
@@ -57,8 +57,6 @@ void Pixel_inspector::show(ID3D11DeviceContext1& dc, Swapchain& swapchain,
    }
 
    POINT pos = _window_pos;
-   pos.x = pos.x * swapchain_scale / 100;
-   pos.y = pos.y * swapchain_scale / 100;
 
    dc.ClearState();
 

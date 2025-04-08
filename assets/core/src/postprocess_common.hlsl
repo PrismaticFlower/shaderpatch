@@ -15,12 +15,11 @@ const static float bloom_radius_scale = 1.0;
 
 cbuffer PostprocessConstants : register(b0)
 {
+   float2 resolution;
    float2 scene_pixel_size;
-   float vignette_end;
-   float vignette_start;
 
    float3 bloom_global_scale;
-   float bloom_threshold;
+   float bloom_blend;
    float3 bloom_dirt_scale;
 
    float exposure;
@@ -32,6 +31,9 @@ cbuffer PostprocessConstants : register(b0)
 
    float2 film_grain_size;
 
+   float vignette_end;
+   float vignette_start;
+
    float4 randomness_flt;
    uint4 randomness_uint;
 }
@@ -41,6 +43,8 @@ cbuffer PostprocessBloomLocalConstants : register(b1)
    float3 bloom_local_scale;
    float2 bloom_texel_size;
 }
+
+const static float bloom_threshold = bloom_blend;
 
 const static bool bloom = BLOOM_ACTIVE;
 const static bool bloom_use_dirt = BLOOM_USE_DIRT;

@@ -5,24 +5,23 @@
 #pragma warning(disable : 4201)
 
 #include "assao/ASSAO.h"
-#include "assao/assao_shader.hpp"
 
 namespace sp::effects {
 
 using namespace std::literals;
 
 namespace {
-auto create_assao(ID3D11Device4& device)
+auto create_assao(ID3D11Device4& device, shader::Database& shaders)
    -> std::unique_ptr<ASSAO_Effect, std::add_pointer_t<void(ASSAO_Effect*)>>
 {
-   const ASSAO_CreateDescDX11 desc{&device, &assao_shader[0], sizeof(assao_shader)};
+   const ASSAO_CreateDescDX11 desc{&device, &shaders};
 
    return {ASSAO_Effect::CreateInstance(&desc), &ASSAO_Effect::DestroyInstance};
 }
 }
 
-SSAO::SSAO(Com_ptr<ID3D11Device4> device) noexcept
-   : _device{std::move(device)}, _assao_effect{create_assao(*_device)}
+SSAO::SSAO(Com_ptr<ID3D11Device4> device, shader::Database& shaders) noexcept
+   : _device{std::move(device)}, _assao_effect{create_assao(*_device, shaders)}
 {
 }
 
@@ -38,81 +37,29 @@ auto SSAO::params() const noexcept -> SSAO_params
    return _params;
 }
 
-bool SSAO::enabled() const noexcept
+bool SSAO::enabled_and_ambient() const noexcept
 {
-   return _params.enabled && user_config.effects.ssao;
+   return _params.enabled && user_config.effects.ssao &&
+          _params.mode == SSAO_mode::ambient;
+}
+
+bool SSAO::enabled_and_global() const noexcept
+{
+   return _params.enabled && user_config.effects.ssao &&
+          _params.mode == SSAO_mode::global;
 }
 
 void SSAO::apply(effects::Profiler& profiler, ID3D11DeviceContext4& dc,
-                 ID3D11ShaderResourceView& depth_input,
-                 ID3D11RenderTargetView& output, const glm::mat4& proj_matrix) noexcept
+                 ID3D11ShaderResourceView& depth_input, ID3D11RenderTargetView& output,
+                 ID3D11BlendState* output_blend_state_override,
+                 const glm::mat4& proj_matrix) noexcept
 {
    if (&depth_input != _depth_srv || &output != _output_rtv ||
        update_quality_level() || update_proj_matrix(proj_matrix)) {
       update_resources(depth_input, output);
-      record_commandlist();
    }
 
    Profile profile{profiler, dc, "ASSAO"sv};
-
-   dc.ExecuteCommandList(_commandlist.get(), false);
-}
-
-void SSAO::clear_resources() noexcept
-{
-   _depth_srv = nullptr;
-   _output_rtv = nullptr;
-   _commandlist = nullptr;
-   _assao_effect->DeleteAllocatedVideoMemory();
-}
-
-void SSAO::update_resources(ID3D11ShaderResourceView& depth_input,
-                            ID3D11RenderTargetView& output) noexcept
-{
-   _depth_srv = copy_raw_com_ptr(depth_input);
-   _output_rtv = copy_raw_com_ptr(output);
-}
-
-bool SSAO::update_quality_level() noexcept
-{
-   int new_quality = -1;
-
-   switch (user_config.effects.ssao_quality) {
-   case SSAO_quality::fastest:
-      new_quality = -1;
-      break;
-   case SSAO_quality::fast:
-      new_quality = 0;
-      break;
-   case SSAO_quality::medium:
-      new_quality = 1;
-      break;
-   case SSAO_quality::high:
-      new_quality = 2;
-      break;
-   case SSAO_quality::highest:
-      new_quality = 3;
-      break;
-   }
-
-   if (std::exchange(_quality_level, new_quality) == new_quality) return false;
-
-   return true;
-}
-
-bool SSAO::update_proj_matrix(const glm::mat4& new_proj_matrix) noexcept
-{
-   const bool changed = _proj_matrix != new_proj_matrix;
-
-   if (changed) _proj_matrix = new_proj_matrix;
-
-   return changed;
-}
-
-void SSAO::record_commandlist() noexcept
-{
-   Com_ptr<ID3D11DeviceContext3> dc;
-   _device->CreateDeferredContext3(0, dc.clear_and_assign());
 
    const auto input_desc = [&] {
       Com_ptr<ID3D11Resource> resource;
@@ -162,13 +109,65 @@ void SSAO::record_commandlist() noexcept
    inputs.NormalsUnpackAdd = 0.0f;
    inputs.DrawOpaque = false;
 
-   inputs.DeviceContext = dc.get();
+   inputs.DeviceContext = &dc;
    inputs.DepthSRV = _depth_srv.get();
    inputs.OverrideOutputRTV = _output_rtv.get();
    inputs.NormalSRV = nullptr;
+   inputs.OverrideOutputBlendState = output_blend_state_override;
+
+   dc.OMSetRenderTargets(0, nullptr, nullptr);
 
    _assao_effect->Draw(settings, &inputs);
-
-   dc->FinishCommandList(false, _commandlist.clear_and_assign());
 }
+
+void SSAO::clear_resources() noexcept
+{
+   _depth_srv = nullptr;
+   _output_rtv = nullptr;
+   _assao_effect->DeleteAllocatedVideoMemory();
+}
+
+void SSAO::update_resources(ID3D11ShaderResourceView& depth_input,
+                            ID3D11RenderTargetView& output) noexcept
+{
+   _depth_srv = copy_raw_com_ptr(depth_input);
+   _output_rtv = copy_raw_com_ptr(output);
+}
+
+bool SSAO::update_quality_level() noexcept
+{
+   int new_quality = -1;
+
+   switch (user_config.effects.ssao_quality) {
+   case SSAO_quality::fastest:
+      new_quality = -1;
+      break;
+   case SSAO_quality::fast:
+      new_quality = 0;
+      break;
+   case SSAO_quality::medium:
+      new_quality = 1;
+      break;
+   case SSAO_quality::high:
+      new_quality = 2;
+      break;
+   case SSAO_quality::highest:
+      new_quality = 3;
+      break;
+   }
+
+   if (std::exchange(_quality_level, new_quality) == new_quality) return false;
+
+   return true;
+}
+
+bool SSAO::update_proj_matrix(const glm::mat4& new_proj_matrix) noexcept
+{
+   const bool changed = _proj_matrix != new_proj_matrix;
+
+   if (changed) _proj_matrix = new_proj_matrix;
+
+   return changed;
+}
+
 }
