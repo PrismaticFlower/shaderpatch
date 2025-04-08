@@ -2,8 +2,8 @@
 
 #include "glm_yaml_adapters.hpp"
 
-#include <map>
 #include <string>
+#include <vector>
 
 #include <yaml-cpp/yaml.h>
 
@@ -53,7 +53,7 @@ struct Terrain_materials_config {
 
    glm::vec3 terrain_offset = {0.0f, 0.0f, 0.0f};
 
-   std::map<std::string, Terrain_material, std::less<>> materials;
+   std::vector<std::pair<std::string, Terrain_material>> materials;
 };
 }
 
@@ -155,8 +155,8 @@ struct convert<sp::Terrain_materials_config> {
          global["TerrainOffset"s].as<glm::vec3>(glm::vec3{0.f, 0.f, 0.f});
 
       for (auto& entry : node["Materials"s]) {
-         config.materials.emplace(entry.first.as<std::string>(),
-                                  entry.second.as<sp::Terrain_material>());
+         config.materials.emplace_back(entry.first.as<std::string>(),
+                                       entry.second.as<sp::Terrain_material>());
       }
 
       return true;
