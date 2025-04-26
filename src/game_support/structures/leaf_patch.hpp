@@ -1,26 +1,11 @@
 #pragma once
 
+#include "common.hpp"
+
 namespace sp::game_support::structures {
 
 // Partially reverse engineered game structures. Exported from Ghidra and partially cleaned up. Should probably
 // be tidied up properly at some point but this is good enough and these aren't going to be commonly used structures.
-
-typedef unsigned char undefined;
-typedef unsigned char undefined1;
-typedef unsigned short undefined2;
-typedef unsigned int undefined3;
-typedef unsigned int undefined4;
-
-typedef unsigned char byte;
-typedef unsigned int dword;
-
-typedef unsigned char uchar;
-typedef unsigned int uint;
-typedef unsigned long ulong;
-typedef unsigned long long undefined8;
-typedef unsigned short ushort;
-typedef unsigned short wchar16;
-typedef unsigned short word;
 
 template<typename class_Entity, typename class_EntityClass, typename struct_EntityDesc>
 struct Factory;
@@ -53,8 +38,6 @@ typedef struct EntityClass_data EntityClass_data, *PEntityClass_data;
 
 typedef struct LeafPatchClass_data LeafPatchClass_data, *PLeafPatchClass_data;
 
-typedef struct PblVector3 PblVector3, *PPblVector3;
-
 typedef enum LeafPatchType {
    LeafPatchType_Default = 0,
    LeafPatchType_Unknown = 1,
@@ -67,8 +50,6 @@ typedef struct LeafPatchParticle LeafPatchParticle, *PLeafPatchParticle;
 typedef struct LeafPatchRenderable LeafPatchRenderable, *PLeafPatchRenderable;
 
 typedef struct LeafPatchClassList LeafPatchClassList, *PLeafPatchClassList;
-
-typedef struct PblVector4 PblVector4, *PPblVector4;
 
 typedef struct LeafPatchRenderable_vftable LeafPatchRenderable_vftable,
    *PLeafPatchRenderable_vftable;
@@ -166,12 +147,6 @@ struct LeafPatchClass_vftable_for_EntityClass {
    char* (*vfunction6)(void);
    undefined (*vfunction7_for_EntityClass)(float, char*);
    undefined (*vfunction8)(void);
-};
-
-struct PblVector3 {
-   float x;
-   float y;
-   float z;
 };
 
 struct LeafPatchRenderable_data {
@@ -299,13 +274,6 @@ struct pcRedIndexBuffer_data {
 struct pcRedPrimitive_vftable {
    undefined (*vfunction1)(void);
    undefined4* (*vfunction2)(byte);
-};
-
-struct PblVector4 {
-   float x;
-   float y;
-   float z;
-   float w;
 };
 
 struct LeafPatchParticle {
@@ -663,10 +631,6 @@ struct CollisionObject {
    undefined field25_0x33;
    struct FoleyFXCollidee FoleyFXCollidee;
    struct CollisionObject_data CollisionObject_data;
-};
-
-struct PblMatrix {
-   struct PblVector4 rows[4];
 };
 
 struct DynDisplayable_data {

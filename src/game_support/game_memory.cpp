@@ -17,6 +17,8 @@ struct Executable_info {
 
    std::uintptr_t leaf_patch_list_ptr = 0;
 
+   std::uintptr_t light_list_ptr = 0;
+
    std::uintptr_t view_near_plane = 0;
 
    std::uintptr_t near_scene_fade_start_ptr = 0;
@@ -36,6 +38,8 @@ const Executable_info known_executables[] = {
       .signature_ptr = 0x007a0698,
 
       .leaf_patch_list_ptr = 0x007ecaa8,
+
+      .light_list_ptr = 0x007e0014,
 
       .view_near_plane = 0x008f826c,
 
@@ -134,6 +138,10 @@ auto init_game_memory() noexcept -> Game_memory
                   adjust_ptr<structures::LeafPatchListNode>(info.leaf_patch_list_ptr,
                                                             info.base_address,
                                                             executable_base),
+
+               .light_list = adjust_ptr<structures::RedLightList>(info.light_list_ptr,
+                                                                  info.base_address,
+                                                                  executable_base),
 
                .view_near_plane = adjust_ptr<float>(info.view_near_plane,
                                                     info.base_address, executable_base),

@@ -5,11 +5,13 @@ namespace sp::game_support {
 namespace structures {
 
 struct LeafPatchListNode;
+struct RedLightList;
 
 }
 
 struct Game_memory {
    structures::LeafPatchListNode* leaf_patch_list = nullptr;
+   structures::RedLightList* light_list = nullptr;
 
    /// @brief Pointer to float
    float* view_near_plane = nullptr;

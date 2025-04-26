@@ -308,6 +308,7 @@
     <ClCompile Include="src\game_support\leaf_patches.cpp" />
     <ClCompile Include="src\shadows\internal\leaf_patch_world.cpp" />
     <ClCompile Include="src\game_support\game_memory.cpp" />
+    <ClCompile Include="src\game_support\light_list.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\shader_constants.hpp">
@@ -768,6 +769,9 @@
     <ClInclude Include="src\shadows\internal\leaf_patch_world.hpp" />
     <ClInclude Include="src\game_support\game_memory.hpp" />
     <ClInclude Include="src\game_support\structures\leaf_patch.hpp" />
+    <ClInclude Include="src\game_support\structures\light_list.hpp" />
+    <ClInclude Include="src\game_support\light_list.hpp" />
+    <ClInclude Include="src\game_support\structures\common.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />
