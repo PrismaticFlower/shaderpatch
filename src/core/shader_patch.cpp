@@ -2327,10 +2327,11 @@ void Shader_patch::resolve_oit() noexcept
    Expects(_oit_active);
 
    _oit_active = false;
-   _om_targets_dirty = true;
    _on_stretch_rendertarget = nullptr;
 
    _oit_provider.resolve(*_device_context);
+
+   restore_all_game_state();
 }
 
 void Shader_patch::patch_backbuffer_resolve() noexcept
