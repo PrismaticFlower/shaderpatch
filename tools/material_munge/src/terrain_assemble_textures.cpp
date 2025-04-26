@@ -202,7 +202,12 @@ auto assemble_textures(Accessor&& accessor, const Terrain_materials_config& conf
 
    for (const auto& material_name : materials) {
       const auto& material = [&] {
-         const auto it = config.materials.find(view_as_ci_string(material_name));
+         const auto it =
+            std::ranges::find_if(config.materials,
+                                 [material_name = view_as_ci_string(material_name)](
+                                    const std::pair<std::string, Terrain_material>& name_material) {
+                                    return name_material.first == material_name;
+                                 });
 
          if (it == config.materials.cend()) {
             throw compose_exception<std::runtime_error>(

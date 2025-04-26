@@ -406,29 +406,45 @@ private:
 };
 
 struct Ci_char_traits : public std::char_traits<char> {
+   static_assert('A' == 65 and 'Z' == 90);
+   static_assert('a' == 97 and 'z' == 122);
+
+   // These functions ignore (A-Z and a-z but nothing else, this is good enough for our use case).
+
+   static char to_lower(const char c) noexcept
+   {
+      return (c >= 'A' && c <= 'Z') ? c + '\x20' : c;
+   }
+
    static bool eq(char l, char r)
    {
-      return std::tolower(l) == std::tolower(r);
+      return to_lower(l) == to_lower(r);
    }
 
    static bool lt(char l, char r)
    {
-      return std::tolower(l) < std::tolower(r);
+      return to_lower(l) < to_lower(r);
    }
 
-   static int compare(const char* l, const char* r, std::size_t size)
+   static int compare(const char* left, const char* right, std::size_t size)
    {
-      return _memicmp(l, r, size);
+      for (std::size_t i = 0; i < size; ++i) {
+         const char l = to_lower(left[i]);
+         const char r = to_lower(right[i]);
+
+         if (l < r) return -1;
+         if (l > r) return 1;
+      }
+
+      return 0;
    }
 
    static const char* find(const char* p, std::size_t count, const char& ch)
    {
-      const auto lower_ch = std::tolower(ch);
+      const char lower_ch = to_lower(ch);
 
       for (const auto& c : std::span{p, count}) {
-         if (std::tolower(c) == lower_ch) {
-            return &c;
-         }
+         if (to_lower(c) == lower_ch) return &c;
       }
 
       return nullptr;
@@ -463,56 +479,6 @@ inline bool operator==(const std::string_view& l, const Ci_String_view& r)
    return view_as_ci_string(l) == r;
 }
 
-inline bool operator!=(const Ci_String_view& l, const std::string_view& r)
-{
-   return l != view_as_ci_string(r);
-}
-
-inline bool operator!=(const std::string_view& l, const Ci_String_view& r)
-{
-   return view_as_ci_string(l) != r;
-}
-
-inline bool operator<(const Ci_String_view& l, const std::string_view& r)
-{
-   return l < view_as_ci_string(r);
-}
-
-inline bool operator<(const std::string_view& l, const Ci_String_view& r)
-{
-   return view_as_ci_string(l) < r;
-}
-
-inline bool operator<=(const Ci_String_view& l, const std::string_view& r)
-{
-   return l <= view_as_ci_string(r);
-}
-
-inline bool operator<=(const std::string_view& l, const Ci_String_view& r)
-{
-   return view_as_ci_string(l) <= r;
-}
-
-inline bool operator>(const Ci_String_view& l, const std::string_view& r)
-{
-   return l > view_as_ci_string(r);
-}
-
-inline bool operator>(const std::string_view& l, const Ci_String_view& r)
-{
-   return view_as_ci_string(l) > r;
-}
-
-inline bool operator>=(const Ci_String_view& l, const std::string_view& r)
-{
-   return l >= view_as_ci_string(r);
-}
-
-inline bool operator>=(const std::string_view& l, const Ci_String_view& r)
-{
-   return view_as_ci_string(l) >= r;
-}
-
 inline bool operator==(const Ci_String_view& l, const std::string& r)
 {
    return l == view_as_ci_string(r);
@@ -521,56 +487,6 @@ inline bool operator==(const Ci_String_view& l, const std::string& r)
 inline bool operator==(const std::string& l, const Ci_String_view& r)
 {
    return view_as_ci_string(l) == r;
-}
-
-inline bool operator!=(const Ci_String_view& l, const std::string& r)
-{
-   return l != view_as_ci_string(r);
-}
-
-inline bool operator!=(const std::string& l, const Ci_String_view& r)
-{
-   return view_as_ci_string(l) != r;
-}
-
-inline bool operator<(const Ci_String_view& l, const std::string& r)
-{
-   return l < view_as_ci_string(r);
-}
-
-inline bool operator<(const std::string& l, const Ci_String_view& r)
-{
-   return view_as_ci_string(l) < r;
-}
-
-inline bool operator<=(const Ci_String_view& l, const std::string& r)
-{
-   return l <= view_as_ci_string(r);
-}
-
-inline bool operator<=(const std::string& l, const Ci_String_view& r)
-{
-   return view_as_ci_string(l) <= r;
-}
-
-inline bool operator>(const Ci_String_view& l, const std::string& r)
-{
-   return l > view_as_ci_string(r);
-}
-
-inline bool operator>(const std::string& l, const Ci_String_view& r)
-{
-   return view_as_ci_string(l) > r;
-}
-
-inline bool operator>=(const Ci_String_view& l, const std::string& r)
-{
-   return l >= view_as_ci_string(r);
-}
-
-inline bool operator>=(const std::string& l, const Ci_String_view& r)
-{
-   return view_as_ci_string(l) >= r;
 }
 
 constexpr Ci_String_view operator""_svci(const char* chars, std::size_t size) noexcept
@@ -594,7 +510,7 @@ struct hash<sp::Ci_String_view> {
       std::uint64_t hash = offset_basis;
 
       for (auto c : arg) {
-         c = static_cast<char>(std::tolower(c));
+         c = sp::Ci_char_traits::to_lower(c);
 
          hash ^= c;
          hash *= FNV_prime;
