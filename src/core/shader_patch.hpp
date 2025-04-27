@@ -485,6 +485,32 @@ private:
 
       return blend_state;
    }();
+
+   const Com_ptr<ID3D11BlendState1> _shadow_particle_blend_state = [this] {
+      Com_ptr<ID3D11BlendState1> blend_state;
+
+      const D3D11_BLEND_DESC1 desc{
+         .AlphaToCoverageEnable = false,
+         .IndependentBlendEnable = false,
+         .RenderTarget =
+            D3D11_RENDER_TARGET_BLEND_DESC1{
+               .BlendEnable = true,
+               .LogicOpEnable = false,
+               .SrcBlend = D3D11_BLEND_ZERO,
+               .DestBlend = D3D11_BLEND_INV_SRC_ALPHA,
+               .BlendOp = D3D11_BLEND_OP_ADD,
+               .SrcBlendAlpha = D3D11_BLEND_ZERO,
+               .DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA,
+               .BlendOpAlpha = D3D11_BLEND_OP_ADD,
+               .LogicOp = D3D11_LOGIC_OP_CLEAR,
+               .RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_RED,
+            },
+      };
+
+      _device->CreateBlendState1(&desc, blend_state.clear_and_assign());
+
+      return blend_state;
+   }();
    const Com_ptr<ID3D11BlendState1> _ambient_occlusion_output_blend_state = [this] {
       Com_ptr<ID3D11BlendState1> blend_state;
 

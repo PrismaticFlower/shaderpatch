@@ -1463,6 +1463,11 @@ void Shader_patch::game_rendertype_changed() noexcept
 
       _om_blend_state_dirty = true;
 
+      _on_rendertype_changed = [this]() noexcept {
+         _game_blend_state_override = _shadow_particle_blend_state;
+         _om_blend_state_dirty = true;
+      };
+
       _on_stretch_rendertarget =
          [this, backup_rt = std::move(backup_rt)](Game_rendertarget&,
                                                   const Normalized_rect&,
@@ -1470,6 +1475,7 @@ void Shader_patch::game_rendertype_changed() noexcept
                                                   const Normalized_rect&) noexcept {
             _game_rendertargets[0] = std::move(backup_rt);
             _on_stretch_rendertarget = nullptr;
+            _on_rendertype_changed = nullptr;
             _game_blend_state_override = nullptr;
 
             _om_targets_dirty = true;
