@@ -6,9 +6,9 @@
 
 namespace sp {
 
-const Shader_patch_version current_shader_patch_version{1, 8, 0,
+const Shader_patch_version current_shader_patch_version{1, 9, 0,
                                                         Shader_patch_prerelease_stage::preview,
-                                                        3};
+                                                        0};
 
 const std::string current_shader_patch_version_string =
    to_string(current_shader_patch_version);
