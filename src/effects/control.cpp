@@ -69,11 +69,11 @@ bool Control::enabled() const noexcept
 
 bool Control::allow_scene_blur() const noexcept
 {
-   if (!_enabled) return true;
+   if (!enabled()) return true;
 
    const Bloom_params& params = postprocess.bloom_params();
 
-   return !(params.enabled && params.mode == Bloom_mode::blended);
+   return !(enabled() && params.mode == Bloom_mode::blended);
 }
 
 void Control::show_imgui(HWND game_window) noexcept
