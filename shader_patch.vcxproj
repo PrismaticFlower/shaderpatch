@@ -44,7 +44,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>bin\$(Configuration)\</OutDir>
+    <OutDir>D:\GOG Games\Star Wars - Battlefront 2\GameData\</OutDir>
     <IntDir>build\$(Configuration)\</IntDir>
     <TargetName>d3d9</TargetName>
     <TargetExt>.dll</TargetExt>
@@ -251,6 +251,7 @@
     <ClCompile Include="src\imgui\imgui_stdlib.cpp">
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5054;4275;4251;4127;4018</DisableSpecificWarnings>
     </ClCompile>
+    <ClCompile Include="src\imgui\imgui_tables.cpp" />
     <ClCompile Include="src\imgui\imgui_widgets.cpp">
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5054;4275;4251;4127;4018</DisableSpecificWarnings>
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5054;4275;4251;4127;4018</DisableSpecificWarnings>

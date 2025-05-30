@@ -282,6 +282,7 @@
     <ClCompile Include="src\input_config.cpp" />
     <ClCompile Include="src\dinput_hooks.cpp" />
     <ClCompile Include="src\message_hooks.cpp" />
+    <ClCompile Include="src\imgui\imgui_tables.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\shader_constants.hpp">
