@@ -1,0 +1,88 @@
+Overridden RenderType: normal
+Constant Buffer Name: normal_bf3
+
+Material Options:
+   Unlit: no
+
+Properties:
+   DiffuseColor:
+      Type: vec3
+      Default: [1.0, 1.0, 1.0]
+      Range: [0.0, 1.0]
+     
+   GlossMapWeight:
+      Type: float
+      Default: 1.0
+      Range: [0.0, 1.0]
+
+   SpecularColor:
+      Type: vec3
+      Default: [1.0, 1.0, 1.0]
+      Range: [0.0, 1.0]
+
+   SpecularExponent:
+      Type: float
+      Default: 64.0
+      Range: [1.0, 2048.0]
+ 
+   UseAAOMap:
+      Type: bool
+      Default: false
+
+   UseEmissiveMap:
+      Type: bool
+      Default: false
+
+   EmissiveTextureScale:
+      Type: float
+      Default: 1.0
+      Range: [0.0, 2048.0]
+
+   EmissivePower:
+      Type: float
+      Default: 0.0
+      Range: [-2048.0, 2048.0]
+      
+   UseEnvMap:
+      Type: bool
+      Default: false
+
+   EnvMapVisibility:
+      Type: float
+      Default: 1.0
+      Range: [0.0001, 1.0]
+
+   IsDynamic:
+      Type: bool
+      Default: false
+
+   DynamicNormalSign:
+      Type: float
+      Default: 1.0
+      Range: [-1.0, 1.0]
+
+   UseOutlineLight:
+      Type: bool
+      Default: false
+
+   OutlineLightWidth:
+      Type: float
+      Default: 0.25
+      Range: [0.0, 1.0]
+
+   OutlineLightFade:
+      Type: float
+      Default: 0.5
+      Range: [0.0, 1.0]
+
+   OutlineLightColor:
+      Type: vec3
+      Default: [1.0, 1.0, 1.0]
+      Range: [0.0, 1.0]
+
+Resource Properties:
+   DiffuseMap:
+   NormalMap: 
+   AOMap:
+   EmissiveMap:
+   EnvMap:
