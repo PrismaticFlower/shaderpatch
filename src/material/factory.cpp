@@ -157,4 +157,9 @@ void Factory::update_material(material::Material& material) noexcept
    }
 }
 
+auto Factory::shader_resource_database() const noexcept -> core::Shader_resource_database&
+{
+   return _shader_resource_database;
+}
+
 }
