@@ -28,7 +28,7 @@
 
       "defines": [
         [ "NORMAL_BF3_USE_TEXCOORDS_TRANSFORM", "1" ],
-        [ "NORMAL_BF3_USE_INTERIOR_MAPPING", "0" ],
+        [ "NORMAL_BF3_USE_SPECULAR_MAP", "0" ],
         [ "NORMAL_BF3_USE_HARDEDGED_TEST", "0" ],
         [ "NORMAL_BF3_USE_SHADOW_MAP", "0" ],
         [ "NORMAL_BF3_USE_PROJECTED_TEXTURE", "0" ]
@@ -40,6 +40,7 @@
 
       "static_flags": [
         "NORMAL_BF3_USE_DYNAMIC_TANGENTS",
+        "NORMAL_BF3_USE_SPECULAR_MAP",
         "NORMAL_BF3_USE_TRANSPARENCY",
         "NORMAL_BF3_USE_HARDEDGED_TEST",
         "NORMAL_BF3_USE_SHADOW_MAP",
@@ -56,6 +57,7 @@
 
       "static_flags": [
         "NORMAL_BF3_USE_DYNAMIC_TANGENTS",
+        "NORMAL_BF3_USE_SPECULAR_MAP",
         "NORMAL_BF3_USE_HARDEDGED_TEST",
         "NORMAL_BF3_USE_SHADOW_MAP",
         "NORMAL_BF3_USE_PROJECTED_TEXTURE"

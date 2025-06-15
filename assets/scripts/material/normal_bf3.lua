@@ -46,6 +46,7 @@ end
 function fill_resource_vec(props, resource_props, resources)
 
    resources:add(resource_props["DiffuseMap"] or "$grey")
+   resources:add(resource_props["SpecularMap"] or "")
    resources:add(resource_props["NormalMap"] or "$null_normalmap")
    resources:add(resource_props["AOMap"] or "$null_ao")
    resources:add(resource_props["EmissiveMap"] or "")
@@ -54,6 +55,9 @@ function fill_resource_vec(props, resource_props, resources)
 end
 
 function get_shader_flags(props, flags)
+   if props:get_bool("UseSpecularMap", false) then
+      flags:add("NORMAL_BF3_USE_SPECULAR_MAP")
+   end
 
    if props:get_bool("IsDynamic", false) then
       flags:add("NORMAL_BF3_USE_DYNAMIC_TANGENTS")

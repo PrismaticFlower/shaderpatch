@@ -12,13 +12,14 @@
 // clang-format off
 
 // Textures
-Texture2D<float3> projected_light_texture : register(ps, t2);
-Texture2D<float2> shadow_ao_map : register(ps, t3);
-Texture2D<float4> diffuse_map : register(ps, t7);
-Texture2D<float4> normal_map : register(ps, t8);
-Texture2D<float>  ao_map : register(ps, t9);
-Texture2D<float3> emissive_map : register(ps, t10);
-TextureCube<float3> env_map : register(ps, t11);
+Texture2D<float3>   projected_light_texture : register(ps, t2);
+Texture2D<float2>   shadow_ao_map : register(ps, t3);
+Texture2D<float4>   diffuse_map : register(ps, t7);
+Texture2D<float3>   specular_map : register(ps, t8);
+Texture2D<float4>   normal_map : register(ps, t9);
+Texture2D<float>    ao_map : register(ps, t10);
+Texture2D<float3>   emissive_map : register(ps, t11);
+TextureCube<float3> env_map : register(ps, t12);
 // Game Custom Constants
 
 const static float4 blend_constant = ps_custom_constants[0];
@@ -27,6 +28,7 @@ const static float4 y_diffuse_texcoords_transform = custom_constants[2];
 
 // Shader Feature Controls
 const static bool use_texcoords_transform = NORMAL_BF3_USE_TEXCOORDS_TRANSFORM;
+const static bool use_specular_map = NORMAL_BF3_USE_SPECULAR_MAP;
 const static bool use_transparency = NORMAL_BF3_USE_TRANSPARENCY;
 const static bool use_hardedged_test = NORMAL_BF3_USE_HARDEDGED_TEST;
 
@@ -207,11 +209,20 @@ Ps_output main_ps(Ps_input input)
    // Apply gloss map weight.
    gloss = lerp(1.0, gloss, gloss_map_weight);
 
+   float3 specular_color = base_specular_color ;
+
+   if (use_specular_map) {
+      specular_color *= specular_map.Sample(aniso_wrap_sampler, texcoords);
+   }
+   else { 
+      specular_color *= gloss;
+   }
+
    // Sample shadow map, if using.
    const float2 shadow_ao_sample = normal_bf3_use_shadow_map
                            ? shadow_ao_map[(int2)input.positionSS.xy]
                            : float2(1.0, 1.0);
-                    
+
    surface_info surface;
    
    surface.normalWS = normalWS;
@@ -219,7 +230,7 @@ Ps_output main_ps(Ps_input input)
    surface.viewWS = viewWS;
    surface.diffuse_color = diffuse_color;
    surface.static_diffuse_lighting = input.static_lighting;
-   surface.specular_color = base_specular_color * gloss;
+   surface.specular_color = specular_color;
    surface.shadow = shadow_ao_sample.r;
    surface.ao = use_ao_texture
                        ? min(ao_map.Sample(aniso_wrap_sampler, texcoords), shadow_ao_sample.g)
