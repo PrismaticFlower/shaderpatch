@@ -319,7 +319,16 @@ void User_config::show_imgui() noexcept
 {
    bool changed = false;
 
-   ImGui::Begin("User Config", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+   static const char* hovered_property = "";
+
+   const static auto MarkProperty = [](const char* str) {
+      if (ImGui::IsItemHovered()) hovered_property = str;
+   };
+
+   ImGui::SetNextWindowSize({680, 735}, ImGuiCond_Once);
+   ImGui::Begin("User Config", nullptr);
+
+   ImGui::BeginChild("#options", {450, -1.0f}, ImGuiChildFlags_ResizeX);
 
    if (ImGui::CollapsingHeader("User Interface", ImGuiTreeNodeFlags_DefaultOpen)) {
       const auto color_picker = [](const char* name, std::array<std::uint8_t, 3>& color) {
@@ -327,6 +336,8 @@ void User_config::show_imgui() noexcept
                                         color[2] / 255.f};
 
          const bool changed = ImGui::ColorEdit3(name, rgb_color.data());
+
+         MarkProperty(name);
 
          color = {static_cast<std::uint8_t>(rgb_color[0] * 255),
                   static_cast<std::uint8_t>(rgb_color[1] * 255),
@@ -341,6 +352,8 @@ void User_config::show_imgui() noexcept
 
    if (ImGui::CollapsingHeader("Display", ImGuiTreeNodeFlags_DefaultOpen)) {
       changed |= ImGui::Checkbox("V-Sync", &display.v_sync);
+
+      MarkProperty("V-Sync");
    }
 
    if (ImGui::CollapsingHeader("Graphics", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -359,8 +372,12 @@ void User_config::show_imgui() noexcept
          ImGui::EndCombo();
       }
 
+      MarkProperty("Anti-Aliasing Method");
+
       changed |= ImGui::Checkbox("Supersample Alpha Test",
                                  &graphics.supersample_alpha_test);
+
+      MarkProperty("Supersample Alpha Test");
 
       if (ImGui::BeginCombo("Anisotropic Filtering",
                             to_string_view(graphics.anisotropic_filtering).data())) {
@@ -378,6 +395,8 @@ void User_config::show_imgui() noexcept
          ImGui::EndCombo();
       }
 
+      MarkProperty("Anisotropic Filtering");
+
       if (ImGui::BeginCombo("Refraction Quality",
                             to_string_view(graphics.refraction_quality).data())) {
          for (const Refraction_quality quality :
@@ -393,37 +412,73 @@ void User_config::show_imgui() noexcept
          ImGui::EndCombo();
       }
 
+      MarkProperty("Refraction Quality");
+
       changed |= ImGui::Checkbox("Enable Order-Independent Transparency",
                                  &graphics.enable_oit);
+
+      MarkProperty("Enable Order-Independent Transparency");
 
       changed |= ImGui::Checkbox("Enable Alternative Post Processing",
                                  &graphics.enable_alternative_postprocessing);
 
+      MarkProperty("Enable Alternative Post Processing");
+
       changed |= ImGui::Checkbox("Allow Vertex Soft Skinning",
                                  &graphics.allow_vertex_soft_skinning);
 
+      MarkProperty("Allow Vertex Soft Skinning");
+
       changed |= ImGui::Checkbox("Enable Scene Blur", &graphics.enable_scene_blur);
+
+      MarkProperty("Enable Scene Blur");
 
       ImGui::Checkbox("Enable 16-Bit Color Channel Rendering",
                       &graphics.enable_16bit_color_rendering);
 
+      MarkProperty("Enable 16-Bit Color Channel Rendering");
+
       changed |= ImGui::Checkbox("Disable Light Brightness Rescaling",
                                  &graphics.disable_light_brightness_rescaling);
 
+      MarkProperty("Disable Light Brightness Rescaling");
+
       changed |= ImGui::Checkbox("Enable User Effects Config",
                                  &graphics.enable_user_effects_config);
+
+      MarkProperty("Enable User Effects Config");
+
       changed |= ImGui::InputText("User Effects Config", graphics.user_effects_config);
+
+      MarkProperty("User Effects Config");
+
       changed |= ImGui::Checkbox("Enable Auto User Effects Config",
                                  &graphics.enable_user_effects_auto_config);
+
+      MarkProperty("Enable Auto User Effects Config");
    }
 
    if (ImGui::CollapsingHeader("Effects", ImGuiTreeNodeFlags_DefaultOpen)) {
       changed |= ImGui::Checkbox("Bloom", &effects.bloom);
+
+      MarkProperty("Bloom");
+
       changed |= ImGui::Checkbox("Vignette", &effects.vignette);
+
+      MarkProperty("Vignette");
+
       changed |= ImGui::Checkbox("Film Grain", &effects.film_grain);
+
+      MarkProperty("Film Grain");
+
       changed |=
          ImGui::Checkbox("Allow Colored Film Grain", &effects.colored_film_grain);
+
+      MarkProperty("Allow Colored Film Grain");
+
       changed |= ImGui::Checkbox("SSAO", &effects.ssao);
+
+      MarkProperty("SSAO");
 
       if (ImGui::BeginCombo("SSAO Quality",
                             to_string_view(effects.ssao_quality).data())) {
@@ -444,7 +499,11 @@ void User_config::show_imgui() noexcept
          ImGui::EndCombo();
       }
 
+      MarkProperty("SSAO Quality");
+
       changed |= ImGui::Checkbox("Depth of Field", &effects.ssao);
+
+      MarkProperty("Depth of Field");
 
       if (ImGui::BeginCombo("Depth of Field Quality",
                             to_string_view(effects.dof_quality).data())) {
@@ -460,9 +519,32 @@ void User_config::show_imgui() noexcept
 
          ImGui::EndCombo();
       }
+
+      MarkProperty("Depth of Field Quality");
    }
 
+   ImGui::Separator();
+
    ImGui::Text("Shader Patch v%s", current_shader_patch_version_string.c_str());
+
+   ImGui::EndChild();
+
+   ImGui::SameLine();
+
+   ImGui::BeginChild("#description", {}, ImGuiChildFlags_Borders);
+
+   if (auto it = user_config_descriptions.find(hovered_property);
+       it != user_config_descriptions.end()) {
+      const std::string_view description = it->second;
+
+      ImGui::SeparatorText(hovered_property);
+      ImGui::PushTextWrapPos();
+      ImGui::TextUnformatted(description.data(),
+                             description.data() + description.size());
+      ImGui::PopTextWrapPos();
+   }
+
+   ImGui::EndChild();
 
    ImGui::End();
 
