@@ -58,7 +58,8 @@ inline bool DragFloatFormattedN(const char* label, float* v, int components,
 
    BeginGroup();
    PushID(label);
-   PushItemWidth(CalcItemWidth());
+   PushItemWidth(
+      (CalcItemWidth() - (GetStyle().ItemInnerSpacing.x * (components - 1))) / components);
 
    for (int i = 0; i < components; i++) {
       PushID(i);
