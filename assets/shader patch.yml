@@ -2,9 +2,8 @@ Shader Patch Enabled: yes
 
 Display: 
 
-   # Allow tearing when displaying frames. This can allow lower latency and is also required for
-   # variable refresh rate technologies to work.
-   Allow Tearing: no
+   # Turn V-Sync on or off. The game's own setting for this is currently ignored.
+   V-Sync: yes
 
    # Whether 800x600 will be treated as the resolution used by the game's main menu interface. When
    # enabled causes Shader Patch to override the game's resolution without informing the game it has done so.

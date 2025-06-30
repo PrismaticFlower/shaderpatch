@@ -44,6 +44,10 @@ void User_config::show_imgui() noexcept
       color_picker("Foe Color", ui.foe_color);
    }
 
+   if (ImGui::CollapsingHeader("Display", ImGuiTreeNodeFlags_DefaultOpen)) {
+      ImGui::Checkbox("V-Sync", &display.v_sync);
+   }
+
    if (ImGui::CollapsingHeader("Graphics", ImGuiTreeNodeFlags_DefaultOpen)) {
       graphics.antialiasing_method = aa_method_from_string(ImGui::StringPicker(
          "Anti-Aliasing Method", std::string{to_string(graphics.antialiasing_method)},
@@ -126,8 +130,7 @@ void User_config::parse_file(const std::string& path)
 
    enabled = config["Shader Patch Enabled"s].as<bool>(enabled);
 
-   display.allow_tearing =
-      config["Display"s]["Allow Tearing"s].as<bool>(display.allow_tearing);
+   display.v_sync = config["Display"s]["V-Sync"s].as<bool>(display.v_sync);
 
    display.treat_800x600_as_interface =
       config["Display"s]["Treat 800x600 As Interface"s].as<bool>(

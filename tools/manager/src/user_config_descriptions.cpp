@@ -16,8 +16,8 @@ LR"(Settings for controlling the display of the game.)"sv
 },
 
 {
-L"Allow Tearing"sv,      
-LR"(Allow tearing when displaying frames. This can allow lower latency and is also required for variable refresh rate technologies to work.)"sv
+L"V-Sync"sv,      
+LR"(Turn V-Sync on or off. The game's own setting for this is currently ignored.)"sv
 },
 
 {

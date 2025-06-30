@@ -41,8 +41,7 @@ struct user_config {
    bool_user_config_value enabled{L"Shader Patch Enabled", true, L"Yes", L"No"};
 
    user_config_value_vector display = {
-      bool_user_config_value{L"Allow Tearing", false, L"Tearing Allowed",
-                             L"Tearing Disallowed"},
+      bool_user_config_value{L"V-Sync", true, L"On", L"Off"},
 
       bool_user_config_value{L"Treat 800x600 As Interface", true, L"Yes", L"No"},
       bool_user_config_value{L"Stretch Interface", false, L"Yes", L"No"},

@@ -69,7 +69,7 @@ struct User_config {
    bool enabled = true;
 
    struct {
-      bool allow_tearing = false;
+      bool v_sync = true;
       bool dpi_aware = true;
       bool dpi_scaling = true;
       bool dsr_vsr_scaling = true;
