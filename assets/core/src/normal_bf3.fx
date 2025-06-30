@@ -82,6 +82,10 @@ Vs_output main_vs(Vertex_input input)
    output.static_lighting = get_static_diffuse_color(input.color());
    output.fog = calculate_fog(positionWS, positionPS);
 
+   if (use_transparency) {
+      output.material_color_fade.rgb *= output.material_color_fade.a;
+   }
+
    return output;
 }
 
