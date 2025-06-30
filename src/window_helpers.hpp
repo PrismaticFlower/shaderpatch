@@ -93,7 +93,21 @@ inline void clip_cursor_to_window(const HWND window)
    Expects(IsWindow(window));
 
    RECT rect = {};
-   if (!GetWindowRect(window, &rect)) return;
+   if (!GetClientRect(window, &rect)) return;
+
+   POINT points[2] = {
+      {.x = rect.left, .y = rect.top},
+      {.x = rect.right, .y = rect.bottom},
+   };
+
+   MapWindowPoints(window, nullptr, &points[0], 2);
+
+   rect = {
+      .left = points[0].x,
+      .top = points[0].y,
+      .right = points[1].x,
+      .bottom = points[1].y,
+   };
 
    ClipCursor(&rect);
 }
