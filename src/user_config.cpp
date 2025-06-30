@@ -501,7 +501,7 @@ void User_config::show_imgui() noexcept
 
       MarkProperty("SSAO Quality");
 
-      changed |= ImGui::Checkbox("Depth of Field", &effects.ssao);
+      changed |= ImGui::Checkbox("Depth of Field", &effects.dof);
 
       MarkProperty("Depth of Field");
 
