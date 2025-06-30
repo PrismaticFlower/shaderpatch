@@ -431,14 +431,18 @@ private:
    const Com_ptr<ID3D11Buffer> _cb_team_colors_buffer =
       create_dynamic_constant_buffer(*_device, sizeof(cb::Team_colors));
    const Com_ptr<ID3D11Buffer> _cb_skin_buffer =
-      create_dynamic_texture_buffer(*_device, sizeof(_cb_skin));
+      create_dynamic_structured_buffer(*_device, sizeof(_cb_skin),
+                                       sizeof(std::array<glm::vec4, 3>));
    const Com_ptr<ID3D11ShaderResourceView> _cb_skin_buffer_srv = [this] {
       Com_ptr<ID3D11ShaderResourceView> srv;
 
-      const auto desc =
-         CD3D11_SHADER_RESOURCE_VIEW_DESC{D3D11_SRV_DIMENSION_BUFFER,
-                                          DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
-                                          sizeof(_cb_skin) / sizeof(glm::vec4)};
+      const D3D11_SHADER_RESOURCE_VIEW_DESC desc =
+         {.Format = DXGI_FORMAT_UNKNOWN,
+          .ViewDimension = D3D11_SRV_DIMENSION_BUFFER,
+          .Buffer = {
+             .FirstElement = 0,
+             .NumElements = sizeof(_cb_skin) / sizeof(std::array<glm::vec4, 3>),
+          }};
 
       _device->CreateShaderResourceView(_cb_skin_buffer.get(), &desc,
                                         srv.clear_and_assign());
