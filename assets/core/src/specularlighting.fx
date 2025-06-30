@@ -1,4 +1,5 @@
 
+#include "adaptive_oit.hlsl"
 #include "constants_list.hlsl"
 #include "generic_vertex_input.hlsl"
 #include "lighting_utilities.hlsl"
@@ -15,6 +16,11 @@ const static float3 light_colors[3] = {ps_custom_constants[2].xyz,
 
 const static float4 x_texcoords_transform = custom_constants[0];
 const static float4 y_texcoords_transform = custom_constants[1];
+
+Texture2D<float4> diffuse_map : register(t0);
+Texture2D<float4> normal_map : register(t0);
+TextureCube<float3> envmap : register(t1);
+TextureCube<float3> envmap_normalmapped : register(t3);
 
 struct Vs_normalmapped_ouput {
    float3 positionWS : POSITIONWS;
@@ -112,9 +118,7 @@ struct Ps_normalmapped_input {
    float fog : FOG;
 };
 
-float4 normalmapped_ps(Ps_normalmapped_input input, uniform Texture2D<float4> normal_map
-                       : register(t0))
-   : SV_Target0
+float4 normalmapped_ps(Ps_normalmapped_input input) : SV_Target0
 {
    const float4 light_positionWS = custom_constants[2];
 
@@ -137,10 +141,16 @@ float4 normalmapped_ps(Ps_normalmapped_input input, uniform Texture2D<float4> no
    return float4(color, normal_map_gloss.a);
 }
 
-float4 normalmapped_envmap_ps(Ps_normalmapped_input input, uniform Texture2D<float4> normal_map
-                              : register(t0), uniform TextureCube<float3> envmap
-                              : register(t3))
-   : SV_Target0
+[earlydepthstencil] 
+void oit_normalmapped_ps(Ps_normalmapped_input input, float4 positionSS : SV_Position, uint coverage : SV_Coverage) 
+{
+   float4 color = normalmapped_ps(input);
+   color.a = 1.0;
+
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, color, coverage);
+}
+
+float4 normalmapped_envmap_ps(Ps_normalmapped_input input) : SV_Target0
 {
    float4 normal_map_gloss = normal_map.Sample(aniso_wrap_sampler, input.texcoords);
 
@@ -151,7 +161,7 @@ float4 normalmapped_envmap_ps(Ps_normalmapped_input input, uniform Texture2D<flo
    float3 view_normalWS = normalize(view_positionWS - input.positionWS);
    float3 reflectionWS = calculate_envmap_reflection(normalWS, view_normalWS);
 
-   float3 envmap_color = envmap.Sample(aniso_wrap_sampler, reflectionWS);
+   float3 envmap_color = envmap_normalmapped.Sample(aniso_wrap_sampler, reflectionWS);
 
    float gloss = lerp(1.0, normal_map_gloss.a, specular_color.a);
    float3 color = light_colors[0] * envmap_color * gloss;
@@ -159,6 +169,16 @@ float4 normalmapped_envmap_ps(Ps_normalmapped_input input, uniform Texture2D<flo
    color = apply_fog(color, input.fog);
 
    return float4(color, normal_map_gloss.a);
+}
+
+[earlydepthstencil] 
+void oit_normalmapped_envmap_ps(Ps_normalmapped_input input, 
+                                float4 positionSS : SV_Position, uint coverage : SV_Coverage) 
+{
+   float4 color = normalmapped_envmap_ps(input);
+   color.a = 1.0;
+
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, color, coverage);
 }
 
 struct Ps_blinn_phong_input {
@@ -169,10 +189,7 @@ struct Ps_blinn_phong_input {
    float fog : FOG;
 };
 
-float4 blinn_phong_ps(Ps_blinn_phong_input input, uniform Texture2D<float4> diffuse_map
-                      : register(t0), uniform TextureCube<float3> envmap
-                      : register(t1))
-   : SV_Target0
+float4 blinn_phong_ps(Ps_blinn_phong_input input) : SV_Target0
 {
    const float envmap_state = custom_constants[2].x;
    const float4 light_positionsWS[3] = {custom_constants[3], custom_constants[4],
@@ -208,6 +225,15 @@ float4 blinn_phong_ps(Ps_blinn_phong_input input, uniform Texture2D<float4> diff
    color = apply_fog(color, input.fog);
 
    return float4(color, alpha);
+}
+
+[earlydepthstencil] 
+void oit_blinn_phong_ps(Ps_blinn_phong_input input, float4 positionSS : SV_Position, uint coverage : SV_Coverage) 
+{
+   float4 color = blinn_phong_ps(input);
+   color.a = 1.0;
+
+   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, color, coverage);
 }
 
 float4 debug_vertexlit_ps() : SV_Target0

@@ -231,7 +231,7 @@ void write_pixel(const uint2 index, const float depth, const float4 color, const
    if ((coverage & 1) != 1) return;
 
    const float clamped_alpha = saturate(color.a);
-   const float clamped_depth = saturate(depth);
+   const float clamped_depth = asfloat(asuint(saturate(depth)) & 0xffffff00);
 
    const float3 premultiplied_color = color.rgb * clamped_alpha;
    const float transmittance = additive_blending ? 1.0 : 1.0 - clamped_alpha;
