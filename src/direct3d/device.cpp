@@ -62,7 +62,7 @@ Device::Device(IDirect3D9& parent, IDXGIAdapter4& adapter, const HWND window,
    win32::make_borderless_window(_window);
 
    MONITORINFO info{sizeof(MONITORINFO)};
-   GetMonitorInfoW(MonitorFromWindow(_window, MONITOR_DEFAULTTONEAREST), &info);
+   GetMonitorInfoW(MonitorFromWindow(_window, MONITOR_DEFAULTTOPRIMARY), &info);
 
    _monitor_width = info.rcMonitor.right - info.rcMonitor.left;
    _monitor_height = info.rcMonitor.bottom - info.rcMonitor.top;
@@ -166,7 +166,7 @@ HRESULT Device::GetDisplayMode(UINT swap_chain, D3DDISPLAYMODE* mode) noexcept
    if (swap_chain != 0) return D3DERR_INVALIDCALL;
    if (!mode) return D3DERR_INVALIDCALL;
 
-   const auto monitor = MonitorFromWindow(_window, MONITOR_DEFAULTTONEAREST);
+   const auto monitor = MonitorFromWindow(_window, MONITOR_DEFAULTTOPRIMARY);
    const auto monitor_info = [&] {
       MONITORINFOEXW info;
       info.cbSize = sizeof(MONITORINFOEXW);
@@ -346,8 +346,6 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
       reset_flags.legacy_fullscreen = false;
    }
 
-   win32::position_window(_window, window_width, window_height);
-
    _render_state_manager.reset();
    _texture_stage_manager.reset();
    _shader_patch.reset(reset_flags, _actual_width, _actual_height, window_width,
@@ -362,6 +360,11 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
                                                 _perceived_width, _perceived_height);
 
    _viewport = {0, 0, _perceived_width, _perceived_height, 0.0f, 1.0f};
+
+   if (!reset_flags.legacy_fullscreen) {
+      win32::position_window(_window, window_width, window_height);
+      win32::clip_cursor_to_window(_window);
+   }
 
    return S_OK;
 }

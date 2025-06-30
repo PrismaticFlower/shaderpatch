@@ -1,6 +1,7 @@
 
 #include "swapchain.hpp"
 #include "../user_config.hpp"
+#include "../window_helpers.hpp"
 
 #include <comdef.h>
 #include <dxgi1_6.h>
@@ -51,10 +52,16 @@ auto create_swapchain(ID3D11Device1& device, const HWND window, const UINT width
    swap_chain_desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
    swap_chain_desc.Flags = flags;
 
+   const DXGI_SWAP_CHAIN_FULLSCREEN_DESC fullscreen_desc =
+      {.RefreshRate = {},
+       .ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED,
+       .Scaling = DXGI_MODE_SCALING_UNSPECIFIED,
+       .Windowed = true};
+
    Com_ptr<IDXGISwapChain1> swapchain;
 
    if (const auto result =
-          factory->CreateSwapChainForHwnd(&device, window, &swap_chain_desc, nullptr,
+          factory->CreateSwapChainForHwnd(&device, window, &swap_chain_desc, &fullscreen_desc,
                                           nullptr, swapchain.clear_and_assign());
        FAILED(result)) {
       log_and_terminate_fmt("Failed to create DXGI swapchain! Reason: {}",
@@ -114,26 +121,67 @@ void Swapchain::reset(ID3D11DeviceContext& dc) noexcept
    dc.ClearState();
    dc.Flush();
 
-   resize(_fullscreen, _width, _height);
+   const bool want_fullscreen = _want_fullscreen;
+
+   resize(_switch_to_fullscreen ? true : _fullscreen, _width, _height);
+
+   _want_fullscreen = want_fullscreen;
+   _switch_to_fullscreen = false;
+}
+
+void Swapchain::restore_fullscreen()
+{
+   if (_want_fullscreen) _switch_to_fullscreen = true;
 }
 
 void Swapchain::resize(const bool fullscreen, const UINT width, const UINT height) noexcept
 {
+   const bool fullscreen_status_changed = _fullscreen != fullscreen;
+
    _width = width;
    _height = height;
    _fullscreen = fullscreen;
+   _want_fullscreen = fullscreen;
 
    _texture = nullptr;
    _rtv = nullptr;
    _srv = nullptr;
 
-   _swapchain->SetFullscreenState(_fullscreen, nullptr);
+   Com_ptr<IDXGIOutput> output;
+
+   _swapchain->GetContainingOutput(output.clear_and_assign());
+
+   const DXGI_MODE_DESC search_mode = {
+      .Width = _width,
+      .Height = _height,
+      .RefreshRate = {},
+      .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+      .ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED,
+      .Scaling = DXGI_MODE_SCALING_UNSPECIFIED,
+   };
+   DXGI_MODE_DESC mode = {};
+
+   if (_fullscreen) {
+      output->FindClosestMatchingMode(&search_mode, &mode, _device.get());
+   }
+   else {
+      mode = search_mode;
+   }
+
+   _swapchain->ResizeTarget(&mode);
+
+   if (fullscreen_status_changed) {
+      _swapchain->SetFullscreenState(_fullscreen, output.get());
+   }
+
    _swapchain->ResizeBuffers(swap_chain_buffers, _width, _height, format, _flags);
 
    _swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D),
                          _texture.void_clear_and_assign());
    _device->CreateRenderTargetView(_texture.get(), nullptr, _rtv.clear_and_assign());
    _device->CreateShaderResourceView(_texture.get(), nullptr, _srv.clear_and_assign());
+
+   win32::clip_cursor_to_window(_window);
 }
 
 auto Swapchain::present() noexcept -> Present_status
@@ -144,6 +192,9 @@ auto Swapchain::present() noexcept -> Present_status
    if ((fullscreen_state != 0) != _fullscreen) {
       _fullscreen = not _fullscreen;
 
+      return Present_status::needs_reset;
+   }
+   else if (_switch_to_fullscreen) {
       return Present_status::needs_reset;
    }
 

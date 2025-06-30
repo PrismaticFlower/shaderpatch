@@ -18,6 +18,7 @@ struct Input_config {
    unsigned int hotkey = 0;
    Small_function<void() noexcept> hotkey_func;
    Small_function<void() noexcept> screenshot_func;
+   Small_function<void() noexcept> activate_app_func;
 };
 
 extern Input_config input_config;

@@ -71,8 +71,8 @@ inline void position_window(const HWND window, const UINT width, const UINT heig
    const UINT offset_x = (monitor_width - width) / 2;
    const UINT offset_y = (monitor_height - height) / 2;
 
-   SetWindowPos(window, HWND_TOP, mon_area.left + offset_x, mon_area.top + offset_y,
-                width, height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSENDCHANGING);
+   SetWindowPos(window, HWND_TOP, mon_area.left + offset_x,
+                mon_area.top + offset_y, width, height, SWP_SHOWWINDOW);
 }
 
 inline void leftalign_window(const HWND window)

@@ -29,6 +29,8 @@ public:
 
    void resize(const bool fullscreen, const UINT width, const UINT height) noexcept;
 
+   void restore_fullscreen();
+
    auto present() noexcept -> Present_status;
 
    auto game_rendertarget() const noexcept -> Game_rendertarget;
@@ -50,6 +52,8 @@ private:
 
    const bool _supports_tearing;
 
+   bool _want_fullscreen = false;
+   bool _switch_to_fullscreen = false;
    bool _fullscreen = false;
    UINT _width = 0;
    UINT _height = 0;

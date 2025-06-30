@@ -213,6 +213,10 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
       _screenshot_requested = true;
    };
 
+   input_config.activate_app_func = [this]() noexcept {
+      _swapchain.restore_fullscreen();
+   };
+
    ImGui::CreateContext();
    ImGui::GetIO().MouseDrawCursor = true;
    ImGui::GetIO().ConfigFlags |=
@@ -247,6 +251,7 @@ void Shader_patch::reset(const Reset_flags flags, const UINT render_width,
    _game_rendertargets.emplace_back() = _swapchain.game_rendertarget();
    _nearscene_depthstencil = {*_device, _render_width, _render_height, _rt_sample_count};
    _farscene_depthstencil = {*_device, _render_width, _render_height, 1};
+   _interface_depthstencil = {*_device, _swapchain.width(), _swapchain.height(), 1};
    _refraction_rt = {};
    _farscene_refraction_rt = {};
    _current_game_rendertarget = _game_backbuffer_index;
@@ -2056,10 +2061,6 @@ void Shader_patch::update_effects() noexcept
 {
    if (std::exchange(_effects_active, _effects.enabled()) != _effects.enabled()) {
       _use_interface_depthstencil = false;
-      _interface_depthstencil =
-         _effects_active
-            ? Depthstencil{*_device, _swapchain.width(), _swapchain.height(), 1}
-            : Depthstencil{};
    }
 
    _effects_request_soft_skinning =
