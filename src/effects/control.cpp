@@ -704,7 +704,10 @@ DOF_params show_dof_imgui(DOF_params params) noexcept
 
    ImGui::Separator();
 
-   ImGui::TextUnformatted("Focal Length is controlled by ingame FOV.");
+   ImGui::TextWrapped(
+      "Focal Length is controlled by ingame FOV.\n\nBe aware as well that the "
+      "current Depth of Field implementation can interact poorly with "
+      "transparent surfaces/particles and also the far scene.");
 
    params.film_size_mm = std::max(params.film_size_mm, 1.0f);
    params.focus_distance = std::max(params.focus_distance, 0.0f);
