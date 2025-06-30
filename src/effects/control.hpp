@@ -88,6 +88,8 @@ private:
    void config_changed() noexcept;
 
    bool _enabled = false;
+   bool _enabled_from_user_config = false;
+   bool _has_auto_user_config = false;
    bool _open_failure = false;
    bool _save_failure = false;
 

@@ -117,6 +117,9 @@ struct user_config {
 
       string_user_config_value{L"User Effects Config", L"user.spfx"},
 
+      bool_user_config_value{L"Enable Auto User Effects Config", true,
+                             L"Enabled", L"Disabled"},
+
       bool_user_config_value{L"Use Direct3D 11 on 12", false, L"Yes", L"No"},
    };
 

@@ -240,6 +240,10 @@ void User_config::parse_file(const std::string& path)
       config["Graphics"s]["User Effects Config"s].as<std::string>(
          graphics.user_effects_config);
 
+   graphics.enable_user_effects_auto_config =
+      config["Graphics"s]["Enable Auto User Effects Config"s].as<bool>(
+         graphics.enable_user_effects_auto_config);
+
    graphics.use_d3d11on12 =
       config["Graphics"s]["Use Direct3D 11 on 12"s].as<bool>(graphics.use_d3d11on12);
 

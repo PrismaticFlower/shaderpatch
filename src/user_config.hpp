@@ -103,6 +103,7 @@ struct User_config {
       bool enable_16bit_color_rendering = false;
       bool disable_light_brightness_rescaling = false;
       bool enable_user_effects_config = false;
+      bool enable_user_effects_auto_config = true;
       bool supersample_alpha_test = false;
       bool allow_vertex_soft_skinning = false;
       bool use_d3d11on12 = false;

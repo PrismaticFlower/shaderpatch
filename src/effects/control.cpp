@@ -26,6 +26,8 @@ namespace fs = std::filesystem;
 
 namespace {
 
+constexpr std::wstring_view auto_user_config_name = L"shader patch.spfx";
+
 Bloom_params show_bloom_imgui(Bloom_params params) noexcept;
 
 Vignette_params show_vignette_imgui(Vignette_params params) noexcept;
@@ -53,8 +55,23 @@ Control::Control(Com_ptr<ID3D11Device5> device, shader::Database& shaders) noexc
      mask_nan{device, shaders},
      profiler{device}
 {
-   if (user_config.graphics.enable_user_effects_config)
+   if (user_config.graphics.enable_user_effects_config) {
       load_params_from_yaml_file(user_config.graphics.user_effects_config);
+   }
+   else if (user_config.graphics.enable_user_effects_auto_config) {
+      try {
+         _has_auto_user_config =
+            std::filesystem::exists(auto_user_config_name) &&
+            std::filesystem::is_regular_file(auto_user_config_name);
+
+         if (_has_auto_user_config) {
+            load_params_from_yaml_file(auto_user_config_name);
+         }
+      }
+      catch (std::exception&) {
+         _has_auto_user_config = false;
+      }
+   }
 }
 
 bool Control::enabled(const bool enabled) noexcept
@@ -63,13 +80,17 @@ bool Control::enabled(const bool enabled) noexcept
 
    if (!_enabled && user_config.graphics.enable_user_effects_config)
       load_params_from_yaml_file(user_config.graphics.user_effects_config);
+   else if (!_enabled && _has_auto_user_config)
+      load_params_from_yaml_file(auto_user_config_name);
 
-   return (_enabled || user_config.graphics.enable_user_effects_config);
+   return (_enabled || user_config.graphics.enable_user_effects_config ||
+           _has_auto_user_config);
 }
 
 bool Control::enabled() const noexcept
 {
-   return (_enabled || user_config.graphics.enable_user_effects_config);
+   return (_enabled || user_config.graphics.enable_user_effects_config ||
+           _has_auto_user_config);
 }
 
 bool Control::allow_scene_blur() const noexcept

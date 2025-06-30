@@ -211,6 +211,12 @@ LR"(The name of the Effects Config to load when `Enable User Effects Config` is 
 },
 
 {
+L"Enable Auto User Effects Config"sv,      
+LR"(Like Enable User Effects Config except SP will automatically check for a config named "shader patch.spfx". If it exists Shader Patch will load it and activate Effects.)"sv
+},
+
+
+{
 L"Use Direct3D 11 on 12"sv,      
 LR"(Force using Direct3D 11 on 12 instead of the any native Direct3D 11 driver. This can workaround bugs in the D3D11 driver. It is likely that turning this on will cost some performance however. CMAA2 is also broken while using this (unsure why, there are no debug layer errors from D3D11 or D3D12 about it).)"sv
 },
