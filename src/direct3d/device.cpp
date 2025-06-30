@@ -254,10 +254,11 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
 
             window_width = _monitor_width;
             window_height = _monitor_height;
-            text_dpi = text_dpi_from_resolution(_actual_width, _actual_height,
-                                                _perceived_width,
-                                                _perceived_height, base_dpi);
          }
+
+         text_dpi = text_dpi_from_resolution(_actual_width, _actual_height,
+                                             _perceived_width,
+                                             _perceived_height, base_dpi);
 
          reset_flags.legacy_fullscreen = false;
       }
