@@ -120,6 +120,9 @@
     <ClInclude Include="include\material_rendertype_property_mappings.hpp">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\user_config_descriptions.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\patch_texture_io.cpp">
@@ -160,6 +163,9 @@
     </ClCompile>
     <ClCompile Include="src\color_grading_regions_io.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\user_config_descriptions.cpp">
+      <Filter>include</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

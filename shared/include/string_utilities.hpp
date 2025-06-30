@@ -405,6 +405,86 @@ private:
    bool _is_end = false;
 };
 
+class Token_iterator {
+public:
+   using value_type = std::string_view;
+   using pointer = std::string_view*;
+   using reference = std::string_view&;
+   using iterator_category = std::input_iterator_tag;
+
+   explicit Token_iterator(std::string_view str) noexcept : _str{str}
+   {
+      advance();
+   }
+
+   Token_iterator() : _is_end{true} {}
+
+   auto operator++() noexcept -> Token_iterator&
+   {
+      advance();
+
+      return *this;
+   }
+
+   void operator++(int) noexcept
+   {
+      advance();
+   }
+
+   auto operator*() const noexcept -> const std::string_view&
+   {
+      return _token;
+   }
+
+   auto operator->() const noexcept -> const std::string_view&
+   {
+      return _token;
+   }
+
+   auto begin() noexcept -> Token_iterator
+   {
+      return *this;
+   }
+
+   auto end() noexcept -> Token_iterator
+   {
+      return {};
+   }
+
+   bool operator==(const Token_iterator&) const noexcept
+   {
+      return _is_end;
+   }
+
+   bool operator!=(const Token_iterator&) const noexcept
+   {
+      return !_is_end;
+   }
+
+private:
+   void advance() noexcept
+   {
+      using namespace std::literals;
+
+      if (_next_is_end) {
+         _is_end = true;
+
+         return;
+      }
+
+      auto [token, rest] = split_first_of_exclusive(_str, " "sv);
+      _str = rest;
+      _token = token;
+
+      _next_is_end = _str.empty();
+   }
+
+   std::string_view _str;
+   std::string_view _token;
+   bool _next_is_end = false;
+   bool _is_end = false;
+};
+
 struct Ci_char_traits : public std::char_traits<char> {
    static_assert('A' == 65 and 'Z' == 90);
    static_assert('a' == 97 and 'z' == 122);

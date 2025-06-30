@@ -223,14 +223,16 @@ auto make_config_ui(std::shared_ptr<user_config> config) -> config::ui_root
       auto& page = root.pages.emplace_back();
 
       page.name = name;
-      page.description = user_config_descriptions.at(name);
+      page.description =
+         winrt::to_hstring(user_config_descriptions.at(winrt::to_string(name)));
 
       auto& elements = page.elements;
 
       for (auto& setting : user_config_settings) {
          const auto init_common = [config](auto& control, auto& setting) {
             control.header = setting.name;
-            control.description = user_config_descriptions.at(setting.name);
+            control.description = winrt::to_hstring(
+               user_config_descriptions.at(winrt::to_string(setting.name)));
             control.value =
                std::shared_ptr<typename std::remove_reference_t<decltype(setting)>::value_type>{
                   config, &setting.value};

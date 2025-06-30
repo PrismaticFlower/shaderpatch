@@ -243,6 +243,7 @@
     <ClInclude Include="include\ucfb_reader.hpp" />
     <ClInclude Include="include\ucfb_tweaker.hpp" />
     <ClInclude Include="include\ucfb_writer.hpp" />
+    <ClInclude Include="include\user_config_descriptions.hpp" />
     <ClInclude Include="include\utility.hpp" />
     <ClInclude Include="include\volume_resource.hpp" />
   </ItemGroup>
@@ -259,6 +260,7 @@
     <ClCompile Include="src\req_file_helpers.cpp" />
     <ClCompile Include="src\shader_patch_version.cpp" />
     <ClCompile Include="src\ucfb_editor.cpp" />
+    <ClCompile Include="src\user_config_descriptions.cpp" />
     <ClCompile Include="src\volume_resource.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

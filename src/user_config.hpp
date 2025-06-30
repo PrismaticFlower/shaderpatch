@@ -66,6 +66,8 @@ struct User_config {
 
    explicit User_config(const std::string& path) noexcept;
 
+   ~User_config();
+
    bool enabled = true;
 
    struct {
@@ -136,46 +138,20 @@ struct User_config {
 
 private:
    void parse_file(const std::string& path);
+
+   void save_file(const std::string& path, const std::string& temp_path);
+
+   bool config_changed = false;
 };
 
 extern User_config user_config;
 
-auto gpu_selection_method_from_string(const std::string_view string) noexcept
-   -> GPU_selection_method;
-
-auto to_string(const Antialiasing_method quality) noexcept -> std::string;
-
 auto to_sample_count(const Antialiasing_method quality) noexcept -> std::size_t;
 
-auto aa_method_from_string(const std::string_view string) noexcept -> Antialiasing_method;
-
-auto to_string(const Anisotropic_filtering filtering) noexcept -> std::string;
-
 auto to_sample_count(const Anisotropic_filtering filtering) noexcept -> std::size_t;
-
-auto anisotropic_filtering_from_string(const std::string_view string) noexcept
-   -> Anisotropic_filtering;
-
-auto to_string(const SSAO_quality quality) noexcept -> std::string;
-
-auto ssao_quality_from_string(const std::string_view string) noexcept -> SSAO_quality;
-
-auto to_string(const DOF_quality quality) noexcept -> std::string;
-
-auto dof_quality_from_string(const std::string_view string) noexcept -> DOF_quality;
-
-auto to_string(const Refraction_quality quality) noexcept -> std::string;
-
-auto refraction_quality_from_string(const std::string_view string) noexcept
-   -> Refraction_quality;
 
 auto to_scale_factor(const Refraction_quality quality) noexcept -> int;
 
 bool use_depth_refraction_mask(const Refraction_quality quality) noexcept;
-
-auto to_string(const Aspect_ratio_hud hud) noexcept -> std::string;
-
-auto aspect_ratio_hud_from_string(const std::string_view string) noexcept
-   -> Aspect_ratio_hud;
 
 }
