@@ -19,7 +19,7 @@ void apply_bloom(float2 texcoords, inout float3 color)
    float3 bloom_color = bloom_tent9_upsample(bloom_texture, texcoords);
    
    if (bloom_use_dirt) {
-      const float3 dirt = dirt_texture.Sample(linear_clamp_sampler, texcoords);
+      const float3 dirt = dirt_texture.Sample(linear_border_sampler, texcoords);
 
       bloom_color += (bloom_color * (dirt * bloom_dirt_scale));
    }
