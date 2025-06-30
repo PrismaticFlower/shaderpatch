@@ -9,6 +9,8 @@
 #include "user_config_saver.hpp"
 #include "xaml_ui_helpers.hpp"
 
+#include <shader_patch_version.hpp>
+
 using namespace std::literals;
 using namespace winrt::Windows::UI;
 
@@ -154,10 +156,30 @@ private:
             contents_panel.Children().Append(button_desc);
          }
 
+         uninstall_panel.Padding(Xaml::Thickness{0.0, 8.0, 0.0, 16.0});
          uninstall_panel.Children().Append(contents_panel);
       }
 
       about_panel.Children().Append(uninstall_panel);
+
+      Xaml::Controls::StackPanel version_panel;
+      {
+         Xaml::Controls::TextBlock title;
+         title.Text(L"Version"sv);
+         apply_text_style(title, text_style::title);
+
+         version_panel.Children().Append(title);
+
+         Xaml::Controls::TextBlock text;
+         text.Text(L"Configurator from Shader Patch v" +
+                   winrt::to_hstring(sp::current_shader_patch_version_string));
+         text.IsTextSelectionEnabled(true);
+         text.Padding(Xaml::Thickness{0.0, 8.0, 0.0, 16.0});
+
+         version_panel.Children().Append(text);
+      }
+
+      about_panel.Children().Append(version_panel);
 
       about_scroll_viewer.Content(about_panel);
 

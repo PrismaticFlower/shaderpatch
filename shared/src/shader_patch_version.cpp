@@ -15,6 +15,8 @@ const std::string current_shader_patch_version_string =
 
 using namespace std::literals;
 
+bool Shader_patch_version::operator==(const Shader_patch_version&) const noexcept = default;
+
 auto to_string(const Shader_patch_version& version) noexcept -> std::string
 {
    std::string str;
