@@ -2083,11 +2083,13 @@ void Shader_patch::update_rendertargets() noexcept
    }();
 
    const auto new_aa_method = user_config.graphics.antialiasing_method;
+   const bool need_effects_patch_backbuffer = _effects_active && !_patch_backbuffer;
 
    if (const auto [old_format, old_aa_method] =
           std::pair{std::exchange(_current_rt_format, new_format),
                     std::exchange(_aa_method, new_aa_method)};
-       (old_format == new_format) && (old_aa_method == new_aa_method)) {
+       (old_format == new_format) && (old_aa_method == new_aa_method) &&
+       !need_effects_patch_backbuffer) {
       return;
    }
 
