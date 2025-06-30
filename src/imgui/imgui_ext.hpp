@@ -15,11 +15,11 @@ inline bool InputText(const char* label, std::string& string,
                       ImGuiInputTextCallback callback = nullptr,
                       void* user_data = nullptr)
 {
-   constexpr auto max_length = 4096;
+   constexpr auto max_length = 260;
 
    Expects(string.size() < max_length);
 
-   thread_local std::array<char, max_length> buffer{};
+   std::array<char, max_length> buffer{};
    *std::copy(std::cbegin(string), std::cend(string), std::begin(buffer)) = '\0';
 
    bool result =
@@ -66,8 +66,8 @@ inline bool DragFloatFormattedN(const char* label, float* v, int components,
                                   v_min, v_max, formats[i]);
       SameLine(0, GetStyle().ItemInnerSpacing.x);
       PopID();
-      PopItemWidth();
    }
+   PopItemWidth();
    PopID();
 
    TextUnformatted(label);

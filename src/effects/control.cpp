@@ -74,23 +74,25 @@ Control::Control(Com_ptr<ID3D11Device5> device, shader::Database& shaders) noexc
    }
 }
 
-bool Control::enabled(const bool enabled) noexcept
+bool Control::enabled(const bool enable) noexcept
 {
-   _enabled = enabled;
+   _enabled = enable;
 
    if (!_enabled && user_config.graphics.enable_user_effects_config)
       load_params_from_yaml_file(user_config.graphics.user_effects_config);
    else if (!_enabled && _has_auto_user_config)
       load_params_from_yaml_file(auto_user_config_name);
 
-   return (_enabled || user_config.graphics.enable_user_effects_config ||
-           _has_auto_user_config);
+   return enabled();
 }
 
 bool Control::enabled() const noexcept
 {
+   const bool enable_user_effects_auto_config =
+      _has_auto_user_config && user_config.graphics.enable_user_effects_auto_config;
+
    return (_enabled || user_config.graphics.enable_user_effects_config ||
-           _has_auto_user_config);
+           enable_user_effects_auto_config);
 }
 
 bool Control::allow_scene_blur() const noexcept
@@ -109,7 +111,15 @@ void Control::show_imgui(HWND game_window) noexcept
 
    if (ImGui::BeginTabBar("Effects Config")) {
       if (ImGui::BeginTabItem("Control")) {
+         ImGui::BeginDisabled(enabled() && !_enabled);
+
          ImGui::Checkbox("Enable Effects", &_enabled);
+
+         ImGui::EndDisabled();
+
+         if (enabled() && !_enabled) {
+            ImGui::Text("Effects are being enabled from the user config.");
+         }
 
          if (ImGui::CollapsingHeader("Effects Config", ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::Checkbox("HDR Rendering", &_config.hdr_rendering);

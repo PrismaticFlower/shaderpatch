@@ -90,6 +90,8 @@ void User_config::show_imgui() noexcept
 
       ImGui::Checkbox("Enable User Effects Config", &graphics.enable_user_effects_config);
       ImGui::InputText("User Effects Config", graphics.user_effects_config);
+      ImGui::Checkbox("Enable Auto User Effects Config",
+                      &graphics.enable_user_effects_auto_config);
    }
 
    if (ImGui::CollapsingHeader("Effects", ImGuiTreeNodeFlags_DefaultOpen)) {
