@@ -24,11 +24,14 @@ struct Postprocess_options {
 
 struct Postprocess_input {
    ID3D11ShaderResourceView& srv;
+   ID3D11ShaderResourceView& depth_srv;
 
    DXGI_FORMAT format;
    UINT width;
    UINT height;
    UINT sample_count;
+
+   glm::mat4 projection_from_view;
 };
 
 struct Postprocess_output {
@@ -59,6 +62,10 @@ public:
    void film_grain_params(const Film_grain_params& params) noexcept;
 
    auto film_grain_params() const noexcept -> const Film_grain_params&;
+
+   void dof_params(const DOF_params& params) noexcept;
+
+   auto dof_params() const noexcept -> const DOF_params&;
 
    void color_grading_regions(const Color_grading_regions& colorgrading_regions) noexcept;
 

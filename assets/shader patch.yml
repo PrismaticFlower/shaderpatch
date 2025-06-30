@@ -222,6 +222,18 @@ Effects:
    # is usually 1.5x-2.0x more expensive than the last setting.
    SSAO Quality: Medium
 
+   # Enable or disable a mod using the Depth of Field effect.
+   # 
+   # Has anywhere from a slight performance impact to significant performance impact depending on the
+   # quality setting.
+   Depth of Field: yes
+
+   # Quality of the Depth of Field effect when enabled.
+   # 
+   # Can be "Ultra Performance", "Performance", "Quality" or "Ultra Quality". Ultra Quality is
+   # significantly more expensive than Quality.
+   Depth of Field Quality: Quality
+
 Developer: 
 
    # Toggle key for the developer screen. Giving access to useful things for mod makers and Shader

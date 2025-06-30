@@ -223,6 +223,8 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
    ImGui_ImplDX11_NewFrame();
    ImGui_ImplWin32_NewFrame();
    ImGui::NewFrame();
+
+   _device_context->BeginEventInt(L"<pre render>", 0);
 }
 
 Shader_patch::~Shader_patch() = default;
@@ -954,11 +956,17 @@ void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
          _device_context->ClearDepthStencilView(_interface_depthstencil.dsv.get(),
                                                 D3D11_CLEAR_DEPTH, 1.0f, 0x0);
 
-         const effects::Postprocess_input postprocess_input{*_patch_backbuffer.srv,
-                                                            _patch_backbuffer.format,
-                                                            _patch_backbuffer.width,
-                                                            _patch_backbuffer.height,
-                                                            _patch_backbuffer.sample_count};
+         resolve_msaa_depthstencil<false>();
+
+         const effects::Postprocess_input postprocess_input{
+            *_patch_backbuffer.srv,
+            *((_rt_sample_count != 1) ? _farscene_depthstencil.srv.get()
+                                      : _nearscene_depthstencil.srv.get()),
+            _patch_backbuffer.format,
+            _patch_backbuffer.width,
+            _patch_backbuffer.height,
+            _patch_backbuffer.sample_count,
+            _postprocess_projection_matrix};
 
          _effects.postprocess.apply(*_device_context, _rendertarget_allocator,
                                     _effects.profiler, _shader_resource_database,
@@ -1058,6 +1066,15 @@ void Shader_patch::clear_depthstencil(const float depth, const UINT8 stencil,
                                       const bool clear_depth,
                                       const bool clear_stencil) noexcept
 {
+   if (clear_depth && _rt_sample_count == 1 &&
+       _current_depthstencil_id == Game_depthstencil::nearscene) {
+      _device_context->SetMarkerInt(L"Swapped Near/Far Depth Stencil", 0);
+
+      // This keeps the near scene depth around for Depth of Field to
+      // use post first person model being drawn.
+      std::swap(_nearscene_depthstencil, _farscene_depthstencil);
+   }
+
    auto* const dsv = current_depthstencil(false);
 
    if (!dsv) return;
@@ -1428,6 +1445,9 @@ void Shader_patch::game_rendertype_changed() noexcept
 {
    if (_on_rendertype_changed) _on_rendertype_changed();
 
+   _device_context->EndEvent();
+   _device_context->BeginEventInt(to_wcstring(_shader_rendertype), 0);
+
    if (_shader_rendertype == Rendertype::stencilshadow) {
       _on_rendertype_changed = [this]() noexcept {
          _discard_draw_calls = true;
@@ -1632,6 +1652,8 @@ void Shader_patch::game_rendertype_changed() noexcept
    else if (_shader_rendertype == Rendertype::skyfog) {
       _cb_scene.prev_near_scene_fade_scale = _cb_scene.near_scene_fade_scale;
       _cb_scene.prev_near_scene_fade_offset = _cb_scene.near_scene_fade_offset;
+
+      _postprocess_projection_matrix = _informal_projection_matrix;
 
       if (use_depth_refraction_mask(_refraction_quality)) {
          resolve_msaa_depthstencil<true>();

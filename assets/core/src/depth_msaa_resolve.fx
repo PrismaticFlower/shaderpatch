@@ -24,7 +24,7 @@ float main_ps(float4 positionSS : SV_Position) : SV_Depth
    float depth = depths[0];
 
    [unroll] for (i = 1; i < sample_count; ++i) {
-      depth = min(depths[i], depth);
+      depth = max(depths[i], depth);
    }
 
    return depth;

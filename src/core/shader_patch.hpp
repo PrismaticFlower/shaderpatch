@@ -555,6 +555,7 @@ private:
    std::vector<std::unique_ptr<material::Material>> _materials;
 
    glm::mat4 _informal_projection_matrix;
+   glm::mat4 _postprocess_projection_matrix;
 
    const HWND _window;
 

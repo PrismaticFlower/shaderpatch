@@ -135,6 +135,13 @@ struct user_config {
       enum_user_config_value{L"SSAO Quality",
                              L"Medium",
                              {L"Fastest", L"Fast", L"Medium", L"High", L"Highest"}},
+
+      bool_user_config_value{L"Depth of Field", true, L"Enabled", L"Disabled"},
+
+      enum_user_config_value{L"Depth of Field Quality",
+                             L"Quality",
+                             {L"Ultra Performance", L"Performance", L"Quality",
+                              L"Ultra Quality"}},
    };
 
    user_config_value_vector developer =

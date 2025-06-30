@@ -242,7 +242,7 @@ LR"(Enable or disable a mod using being allowed to use Colored Film Grain. Sligh
 
 {
 L"SSAO"sv,      
-LR"(Enable or disable a mod using Screen Space Ambient Occlusion. (Not actually true Ambient Occlusion as it is applied indiscriminately to opaque surfaces.)
+LR"(Enable or disable a mod using Screen Space Ambient Occlusion.
 
 Has anywhere from a slight performance impact to significant performance impact depending on the quality setting.)"sv
 },
@@ -250,6 +250,20 @@ Has anywhere from a slight performance impact to significant performance impact 
 {
 L"SSAO Quality"sv,      
 LR"(Quality of SSAO when enabled. Can be "Fastest", "Fast", Medium", "High" or "Highest". Each step up is usually 1.5x-2.0x more expensive than the last setting.)"sv
+},
+
+{
+L"Depth of Field"sv,      
+LR"(Enable or disable a mod using the Depth of Field effect.
+
+Has anywhere from a slight performance impact to significant performance impact depending on the quality setting.)"sv
+},
+
+{
+L"Depth of Field Quality"sv,      
+LR"(Quality of the Depth of Field effect when enabled. 
+
+Can be "Ultra Performance", "Performance", "Quality" or "Ultra Quality". Ultra Quality is significantly more expensive than Quality.)"sv
 },
 
 {

@@ -552,7 +552,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="src\normal_bf3.fx" />
+    <None Include="src\normal_bf3.fx">
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

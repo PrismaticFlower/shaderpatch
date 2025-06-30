@@ -11,8 +11,11 @@
 
 #include <fstream>
 #include <functional>
+#include <numbers>
 #include <sstream>
 #include <string_view>
+
+#include <fmt/format.h>
 
 #include "../imgui/imgui.h"
 
@@ -32,6 +35,8 @@ Color_grading_params show_color_grading_imgui(Color_grading_params params) noexc
 Color_grading_params show_tonemapping_imgui(Color_grading_params params) noexcept;
 
 Film_grain_params show_film_grain_imgui(Film_grain_params params) noexcept;
+
+DOF_params show_dof_imgui(DOF_params params) noexcept;
 
 SSAO_params show_ssao_imgui(SSAO_params params) noexcept;
 
@@ -202,6 +207,7 @@ void Control::read_config(YAML::Node config)
       config["Vignette"s].as<Vignette_params>(Vignette_params{}));
    postprocess.film_grain_params(
       config["FilmGrain"s].as<Film_grain_params>(Film_grain_params{}));
+   postprocess.dof_params(config["DOF"s].as<DOF_params>(DOF_params{}));
    ssao.params(config["SSAO"s].as<SSAO_params>(SSAO_params{false}));
    ffx_cas.params(config["ContrastAdaptiveSharpening"s].as<FFX_cas_params>(
       FFX_cas_params{false}));
@@ -216,6 +222,7 @@ auto Control::output_params_to_yaml_string() noexcept -> std::string
    config["Bloom"s] = postprocess.bloom_params();
    config["Vignette"s] = postprocess.vignette_params();
    config["FilmGrain"s] = postprocess.film_grain_params();
+   config["DOF"s] = postprocess.dof_params();
    config["SSAO"s] = ssao.params();
    config["ContrastAdaptiveSharpening"s] = ffx_cas.params();
 
@@ -388,6 +395,12 @@ void Control::show_post_processing_imgui() noexcept
       if (ImGui::BeginTabItem("Film Grain")) {
          postprocess.film_grain_params(
             show_film_grain_imgui(postprocess.film_grain_params()));
+
+         ImGui::EndTabItem();
+      }
+
+      if (ImGui::BeginTabItem("Depth of Field")) {
+         postprocess.dof_params(show_dof_imgui(postprocess.dof_params()));
 
          ImGui::EndTabItem();
       }
@@ -652,6 +665,50 @@ Film_grain_params show_film_grain_imgui(Film_grain_params params) noexcept
    ImGui::DragFloat("Size", &params.size, 0.05f, 1.6f, 3.0f);
    ImGui::DragFloat("Color Amount", &params.color_amount, 0.05f, 0.0f, 1.0f);
    ImGui::DragFloat("Luma Amount", &params.luma_amount, 0.05f, 0.0f, 1.0f);
+
+   return params;
+}
+
+DOF_params show_dof_imgui(DOF_params params) noexcept
+{
+   ImGui::Checkbox("Enabled", &params.enabled);
+
+   ImGui::DragFloat("Film Size", &params.film_size_mm, 1.0f, 1.0f, 256.0f);
+
+   ImGui::SetItemTooltip(
+      "Film/Sensor Size for the Depth of Field. Due to limitations in how "
+      "Shader Patch works this does not alter the FOV.");
+
+   ImGui::DragFloat("Focus Distance", &params.focus_distance, 1.0f, 0.0f, 1e10f);
+
+   ImGui::SetItemTooltip("Distance to the plane in focus.");
+
+   int f_stop_index = static_cast<int>(std::round(
+      std::log(double{params.f_stop}) / std::log(std::numbers::sqrt2_v<double>)));
+
+   if (ImGui::SliderInt("f-stop", &f_stop_index, 0, 10,
+                        fmt::format("f/{:.1f}", params.f_stop).c_str(),
+                        ImGuiSliderFlags_NoInput)) {
+      params.f_stop = static_cast<float>(
+         std::pow(std::numbers::sqrt2_v<double>, static_cast<double>(f_stop_index)));
+   }
+
+   ImGui::SetItemTooltip(
+      "f-stop/f-number for the lens. Higher numbers create "
+      "less blur, lower numbers cause more blur. This does not currently alter "
+      "the exposure either as it would on a real lens.");
+
+   ImGui::InputFloat("f-stop##raw", &params.f_stop, 1.0f, 1.0f, "f/%.1f");
+
+   ImGui::SetItemTooltip("Manual input for the f-stop.");
+
+   ImGui::Separator();
+
+   ImGui::TextUnformatted("Focal Length is controlled by ingame FOV.");
+
+   params.film_size_mm = std::max(params.film_size_mm, 1.0f);
+   params.focus_distance = std::max(params.focus_distance, 0.0f);
+   params.f_stop = std::max(params.f_stop, 1.0f);
 
    return params;
 }

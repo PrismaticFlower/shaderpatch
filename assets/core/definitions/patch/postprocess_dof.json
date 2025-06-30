@@ -1,0 +1,214 @@
+{
+  "group_name": "postprocess_dof",
+  "source_name": "postprocess_dof.fx",
+
+  "entrypoints": {
+    "prepare_ps": {
+      "stage": "pixel"
+    },
+
+    "prepare_downsample_2x_ps": {
+      "stage": "pixel"
+    },
+
+    "prepare_downsample_4x_ps": {
+      "stage": "pixel"
+    },
+
+    "gather_ps": {
+      "stage": "pixel"
+    },
+
+    "gather_downsampled_2x_ps": {
+      "stage": "pixel",    
+      "function_name": "gather_ps",
+
+      "defines": [
+        [ "GATHER_HALF_RESOLUTION", "1" ]
+      ]
+    },
+
+    "gather_downsampled_4x_ps": {
+      "stage": "pixel",    
+      "function_name": "gather_ps",
+
+      "defines": [
+        [ "GATHER_QUARTER_RESOLUTION", "1" ]
+      ]
+    },
+
+    "gather_downsampled_4x_fast_ps": {
+      "stage": "pixel",    
+      "function_name": "gather_ps",
+
+      "defines": [
+        [ "GATHER_QUARTER_RESOLUTION", "1" ],
+        [ "GATHER_FAST", "1" ]
+      ]
+    },
+
+    "gather_near_ps": {
+      "stage": "pixel"
+    },
+
+    "gather_far_ps": {
+      "stage": "pixel"
+    },
+
+    "gather_near_downsampled_2x_ps": {
+      "stage": "pixel",
+      "function_name": "gather_near_ps",
+
+      "defines": [
+        [ "GATHER_HALF_RESOLUTION", "1" ]
+      ]
+    },
+
+    "gather_far_downsampled_2x_ps": {
+      "stage": "pixel",
+      "function_name": "gather_far_ps",
+
+      "defines": [
+        [ "GATHER_HALF_RESOLUTION", "1" ]
+      ]
+    },
+
+    "gather_near_downsampled_4x_ps": {
+      "stage": "pixel",
+      "function_name": "gather_near_ps",
+
+      "defines": [
+        [ "GATHER_QUARTER_RESOLUTION", "1" ]
+      ]
+    },
+
+    "gather_far_downsampled_4x_ps": {
+      "stage": "pixel",
+      "function_name": "gather_far_ps",
+
+      "defines": [
+        [ "GATHER_QUARTER_RESOLUTION", "1" ]
+      ]
+    },
+
+    "gather_near_downsampled_4x_fast_ps": {
+      "stage": "pixel",
+      "function_name": "gather_near_ps",
+
+      "defines": [
+        [ "GATHER_QUARTER_RESOLUTION", "1" ],
+        [ "GATHER_FAST", "1" ]
+      ]
+    },
+
+    "gather_far_downsampled_4x_fast_ps": {
+      "stage": "pixel",
+      "function_name": "gather_far_ps",
+
+      "defines": [
+        [ "GATHER_QUARTER_RESOLUTION", "1" ],
+        [ "GATHER_FAST", "1" ]
+      ]
+    },
+
+    "downsample_16x_near_mask_cs": {
+      "stage": "compute",
+      "function_name": "downsample_near_mask_cs",
+
+      "defines": [
+        [ "DOF_NEAR_MASK_TILE_SIZE", "16" ]
+      ]
+    },
+
+    "downsample_8x_near_mask_cs": {
+      "stage": "compute",
+      "function_name": "downsample_near_mask_cs",
+
+      "defines": [
+        [ "DOF_NEAR_MASK_TILE_SIZE", "8" ]
+      ]
+    },
+
+    "downsample_4x_near_mask_cs": {
+      "stage": "compute",
+      "function_name": "downsample_near_mask_cs",
+
+      "defines": [
+        [ "DOF_NEAR_MASK_TILE_SIZE", "4" ]
+      ]
+    },
+
+    "blur_x_near_mask_ps": {
+      "stage": "pixel"
+    },
+
+    "blur_y_near_mask_ps": {
+      "stage": "pixel"
+    },
+
+    "blur_x_near_mask_downsampled_2x_ps": {
+      "stage": "pixel",
+      "function_name": "blur_x_near_mask_ps",
+
+      "defines": [
+        [ "BLUR_NEAR_MASK_HALF", "1" ]
+      ]
+    },
+
+    "blur_y_near_mask_downsampled_2x_ps": {
+      "stage": "pixel",
+      "function_name": "blur_y_near_mask_ps",
+
+      "defines": [
+        [ "BLUR_NEAR_MASK_HALF", "1" ]
+      ]
+    },
+
+    "blur_x_near_mask_downsampled_4x_ps": {
+      "stage": "pixel",
+      "function_name": "blur_x_near_mask_ps",
+
+      "defines": [
+        [ "BLUR_NEAR_MASK_QUARTER", "1" ]
+      ]
+    },
+
+    "blur_y_near_mask_downsampled_4x_ps": {
+      "stage": "pixel",
+      "function_name": "blur_y_near_mask_ps",
+
+      "defines": [
+        [ "BLUR_NEAR_MASK_QUARTER", "1" ]
+      ]
+    },
+
+    "floodfill_ps": {
+      "stage": "pixel"
+    },
+
+    "compose_ps": {
+      "stage": "pixel"
+    },
+
+    "compose_upsample_2x_ps": {
+      "stage": "pixel"
+    },
+
+    "compose_upsample_4x_ps": {
+      "stage": "pixel"
+    },
+
+    "compose_upsample_4x_fast_ps": {
+      "stage": "pixel",
+      "function_name": "compose_upsample_4x_ps",
+
+      "defines": [
+        [ "COMPOSE_FAST", "1" ]
+      ]
+    }
+  },
+
+  "rendertypes": {},
+
+  "states": {}
+}
