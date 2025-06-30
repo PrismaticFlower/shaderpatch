@@ -176,6 +176,14 @@ void do_pass(ID3D11DeviceContext1& dc, std::span<ID3D11ShaderResourceView*> inpu
    dc.Draw(3, 0);
 }
 
+template<UINT count>
+void clear_ps_srvs(ID3D11DeviceContext1& dc) noexcept
+{
+   std::array<ID3D11ShaderResourceView*, count> null_srvs = {};
+
+   dc.PSSetShaderResources(0, null_srvs.size(), null_srvs.data());
+}
+
 }
 
 using namespace std::literals;
@@ -711,6 +719,8 @@ private:
 
          dc.PSSetShader(blur_y_near_mask_ps, nullptr, 0);
 
+         clear_ps_srvs<1>(dc);
+
          do_pass(dc, srvs, *near_mask.rtv());
       }
 
@@ -751,6 +761,8 @@ private:
 
       dc.PSSetShader(_dof_floodfill_ps.get(), nullptr, 0);
 
+      clear_ps_srvs<3>(dc);
+
       do_pass(dc, srvs, {floodfill_near.rtv(), floodfill_far.rtv()});
 
       auto compose_target =
@@ -764,6 +776,8 @@ private:
       srvs = {floodfill_near.srv(), floodfill_far.srv(), input.srv(), &input_depth};
 
       dc.PSSetShader(compose_ps, nullptr, 0);
+
+      clear_ps_srvs<2>(dc);
 
       set_viewport(dc, compose_target.width(), compose_target.height());
       do_pass(dc, srvs, *compose_target.rtv());

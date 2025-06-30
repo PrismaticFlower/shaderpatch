@@ -96,7 +96,7 @@ float calc_coc(float camera_distance)
    return coc;
 }
 
-Output prepare_ps(float4 positionSS : SV_Position)
+Output prepare_ps(float2 vs_texcoords : TEXCOORD, float4 positionSS : SV_Position)
 {
    const float camera_distance = proj_from_view_m43 / (depth_input[positionSS.xy] - proj_from_view_m33);
    const float coc = calc_coc(camera_distance);
@@ -114,7 +114,7 @@ Output prepare_ps(float4 positionSS : SV_Position)
    return output;
 }
 
-Output prepare_downsample_2x_ps(float4 positionSS : SV_Position)
+Output prepare_downsample_2x_ps(float2 vs_texcoords : TEXCOORD, float4 positionSS : SV_Position)
 {
    const float2 texcoords = positionSS.xy * inv_target_size;
 
@@ -138,7 +138,7 @@ Output prepare_downsample_2x_ps(float4 positionSS : SV_Position)
    return output;
 }
 
-Output prepare_downsample_4x_ps(float4 positionSS : SV_Position)
+Output prepare_downsample_4x_ps(float2 vs_texcoords : TEXCOORD, float4 positionSS : SV_Position)
 {
    const float2 texcoords = positionSS.xy * inv_target_size;
 
@@ -239,13 +239,13 @@ float blur_near_mask_ps(float2 texcoords, float2 direction) : SV_Target0
    return coc;
 }
 
-float blur_x_near_mask_ps(float4 positionSS : SV_Position) : SV_Target0
+float blur_x_near_mask_ps(float2 vs_texcoords : TEXCOORD, float4 positionSS : SV_Position) : SV_Target0
 {
    return max(blur_near_mask_input[positionSS.xy], 
               blur_near_mask_ps(positionSS.xy * inv_near_mask_size, float2(inv_near_mask_size.x, 0.0)));
 }
 
-float blur_y_near_mask_ps(float4 positionSS : SV_Position) : SV_Target0
+float blur_y_near_mask_ps(float2 vs_texcoords : TEXCOORD, float4 positionSS : SV_Position) : SV_Target0
 {
    return max(blur_near_mask_input[positionSS.xy], 
               blur_near_mask_ps(positionSS.xy * inv_near_mask_size, float2(0.0, inv_near_mask_size.y)));
@@ -325,7 +325,7 @@ float sample_near_mask(float2 texcoord)
 
 }
 
-Output gather_ps(float4 positionSS : SV_Position)
+Output gather_ps(float2 vs_texcoords : TEXCOORD, float4 positionSS : SV_Position)
 {
    float4 far = 0.0;
    const float4 pixel_far = far_input[positionSS.xy];
@@ -340,7 +340,7 @@ Output gather_ps(float4 positionSS : SV_Position)
          for (uint x = 0; x < gather_size; ++x) {
             float2 sample_offset = concentric_sample_disk(float2(x, y) / (gather_size - 1.0)) * far_radius;
             float4 sample = far_input.Sample(linear_sample, (positionSS.xy + sample_offset) * inv_target_size);
-
+ 
             far += sample * saturate(1.0 + (sample.w - far_coc));
          }
       }
@@ -388,7 +388,7 @@ Output gather_ps(float4 positionSS : SV_Position)
    return output;
 }
 
-float4 gather_far_ps(float4 positionSS : SV_Position) : SV_Target0
+float4 gather_far_ps(float2 vs_texcoords : TEXCOORD, float4 positionSS : SV_Position) : SV_Target0
 {
    float4 far = 0.0;
    const float4 pixel_far = far_input[positionSS.xy];
@@ -417,7 +417,7 @@ float4 gather_far_ps(float4 positionSS : SV_Position) : SV_Target0
    return far;
 }
 
-float4 gather_near_ps(float4 positionSS : SV_Position) : SV_Target0
+float4 gather_near_ps(float2 vs_texcoords : TEXCOORD, float4 positionSS : SV_Position) : SV_Target0
 {
    float4 near = 0.0;
 
@@ -451,7 +451,7 @@ float4 gather_near_ps(float4 positionSS : SV_Position) : SV_Target0
    return near;
 }
 
-Output floodfill_ps(float4 positionSS : SV_Position)
+Output floodfill_ps(float2 vs_texcoords : TEXCOORD, float4 positionSS : SV_Position)
 {
    float4 near = 0.0;
    float4 far = 0.0;
@@ -476,7 +476,7 @@ Output floodfill_ps(float4 positionSS : SV_Position)
    return output;
 }
 
-float4 compose_ps(float4 positionSS : SV_Position) : SV_Target0
+float4 compose_ps(float2 texcoords : TEXCOORD, float4 positionSS : SV_Position) : SV_Target0
 {
    int2 position = positionSS.xy;
 
