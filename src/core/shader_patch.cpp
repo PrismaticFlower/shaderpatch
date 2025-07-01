@@ -2046,6 +2046,7 @@ void Shader_patch::update_frame_state() noexcept
    _cb_scene.time = duration<float>{(time % 3600s)}.count();
    _cb_draw_ps.time_seconds = duration_cast<duration<float>>((time % 3600s)).count();
    _cb_draw_ps.supersample_alpha_test = user_config.graphics.supersample_alpha_test;
+   _cb_draw_ps.ssao_enabled = _effects_active && _effects.ssao.enabled_and_ambient();
 
    _refraction_farscene_texture_resolve = false;
    _refraction_nearscene_texture_resolve = false;

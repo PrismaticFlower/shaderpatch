@@ -78,6 +78,7 @@ cbuffer PSDrawConstants : register(b0)
    bool limit_normal_shader_bright_lights;
    bool ps_input_color_srgb;
    bool supersample_alpha_test;
+   bool ssao_enabled;
    float time_seconds;
 }
 

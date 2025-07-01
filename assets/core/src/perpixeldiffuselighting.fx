@@ -267,7 +267,7 @@ float4 normalmapped_ps(Ps_normalmapped_input input) : SV_Target0
    float3 color = input.static_lighting;
    color += light::ambient(normalWS);
    color *= light_ambient_color_top.a;
-   color *= shadow_ao_map.Sample(linear_clamp_sampler, input.shadow_texcoords).g;
+   [branch] if (ssao_enabled) color *= shadow_ao_map.Sample(linear_clamp_sampler, input.shadow_texcoords).g;
 
    [unroll] for (uint i = 0; i < light_count; ++i)
    {
@@ -295,7 +295,7 @@ float4 perpixel_ps(Ps_perpixel_input input) : SV_Target0
    float3 color = input.static_lighting;
    color += light::ambient(normalWS);
    color *= light_ambient_color_top.a;
-   color *= shadow_ao_map.Sample(linear_clamp_sampler, input.shadow_texcoords).g;
+   [branch] if (ssao_enabled) color *= shadow_ao_map.Sample(linear_clamp_sampler, input.shadow_texcoords).g;
 
    [unroll] for (uint i = 0; i < light_count; ++i)
    {
@@ -343,7 +343,7 @@ float4 perpixel_spotlight_ps(Ps_perpixel_spotlight_input input) : SV_Target0
    float3 color = input.static_lighting;
    color += light::ambient(normalWS);
    color *= light_ambient_color_top.a;
-   color *= shadow_ao_map.Sample(linear_clamp_sampler, input.shadow_texcoords).g;
+   [branch] if (ssao_enabled) color *= shadow_ao_map.Sample(linear_clamp_sampler, input.shadow_texcoords).g;
 
    color += calculate_spotlight(input.positionWS, normalWS, spotlight_positionWS,
                                 spotlight_directionWS, spotlight_color,
@@ -379,7 +379,7 @@ float4 normalmapped_spotlight_ps(Ps_normalmapped_spotlight_input input) : SV_Tar
    float3 color = input.static_lighting;
    color += light::ambient(normalWS);
    color *= light_ambient_color_top.a;
-   color *= shadow_ao_map.Sample(linear_clamp_sampler, input.shadow_texcoords).g;
+   [branch] if (ssao_enabled) color *= shadow_ao_map.Sample(linear_clamp_sampler, input.shadow_texcoords).g;
 
    color += calculate_spotlight(input.positionWS, normalWS, spotlight_positionWS,
                                 spotlight_directionWS, spotlight_color,

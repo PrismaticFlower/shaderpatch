@@ -111,8 +111,9 @@ struct alignas(16) Draw_ps {
    std::uint32_t limit_normal_shader_bright_lights;
    std::uint32_t input_color_srgb;
    std::uint32_t supersample_alpha_test;
+   std::uint32_t ssao_enabled;
    float time_seconds;
-   std::array<uint32_t, 2> padding;
+   std::array<uint32_t, 1> padding;
 };
 
 constexpr auto draw_ps_game_count = CB_MAX_GAME_CONSTANTS(Draw_ps, ps_view_positionWS);
