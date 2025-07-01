@@ -270,6 +270,10 @@ private:
 
    void restore_all_game_state() noexcept;
 
+   void record_draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
+                            const UINT index_count, const UINT start_index,
+                            const INT base_vertex) noexcept;
+
    void game_rendertype_changed() noexcept;
 
    void update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primitive_topology) noexcept;
@@ -382,6 +386,7 @@ private:
    Com_ptr<ID3D11BlendState1> _game_blend_state_override;
    Com_ptr<ID3D11BlendState1> _game_blend_state;
 
+   bool _record_draw_indexed = false;
    bool _discard_draw_calls = false;
    bool _shader_rendertype_changed = false;
    bool _shader_dirty = true;
@@ -433,8 +438,6 @@ private:
    bool _imgui_enabled = false;
    bool _screenshot_requested = false;
 
-   Small_function<void(const D3D11_PRIMITIVE_TOPOLOGY, const UINT, const UINT) noexcept> _on_draw;
-   Small_function<void(const D3D11_PRIMITIVE_TOPOLOGY, const UINT, const UINT, const INT) noexcept> _on_draw_indexed;
    Small_function<void(Game_rendertarget&, const Normalized_rect&,
                        Game_rendertarget&, const Normalized_rect&) noexcept>
       _on_stretch_rendertarget;

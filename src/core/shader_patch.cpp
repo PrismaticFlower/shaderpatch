@@ -1455,8 +1455,6 @@ void Shader_patch::draw(const D3D11_PRIMITIVE_TOPOLOGY topology,
 {
    update_dirty_state(topology);
 
-   if (_on_draw) _on_draw(topology, vertex_count, start_vertex);
-
    if (_discard_draw_calls) return;
 
    _device_context->Draw(vertex_count, start_vertex);
@@ -1468,8 +1466,8 @@ void Shader_patch::draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
 {
    update_dirty_state(topology);
 
-   if (_on_draw_indexed)
-      _on_draw_indexed(topology, index_count, start_index, base_vertex);
+   if (_record_draw_indexed)
+      record_draw_indexed(topology, index_count, start_index, base_vertex);
 
    if (_discard_draw_calls) return;
 
@@ -1572,6 +1570,341 @@ void Shader_patch::bind_static_resources() noexcept
    _device_context->PSSetSamplers(0, ps_samplers.size(), ps_samplers.data());
 }
 
+void Shader_patch::record_draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
+                                       const UINT index_count, const UINT start_index,
+                                       const INT base_vertex) noexcept
+{
+   // there's only one other state for zprepass, so we can take a shortcut here
+   const bool hardedged =
+      _game_shader->shader_name.size() == "near opaque hardedged"sv.size();
+   const bool skinned = (_game_shader->vertex_shader_flags &
+                         shader::Vertex_shader_flags::hard_skinned) ==
+                        shader::Vertex_shader_flags::hard_skinned;
+   const bool compressed = _game_input_layout.compressed;
+   const bool soft_skinned = _game_input_layout.has_vertex_weights;
+
+   if (skinned) {
+      if (hardedged) {
+         if (compressed) {
+            if (soft_skinned) {
+               _shadows->add_mesh_hardedged_compressed_soft_skinned(
+                  *_device_context,
+                  {
+                     .input_layout = _game_input_layout.layout_index,
+
+                     .primitive_topology = topology,
+
+                     .index_buffer = *_game_index_buffer,
+                     .index_buffer_offset = _game_index_buffer_offset,
+
+                     .vertex_buffer = *_game_vertex_buffer,
+                     .vertex_buffer_offset = _game_vertex_buffer_offset,
+                     .vertex_buffer_stride = _game_vertex_buffer_stride,
+
+                     .index_count = index_count,
+                     .start_index = start_index,
+                     .base_vertex = base_vertex,
+
+                     .world_matrix = _cb_draw.world_matrix,
+
+                     .x_texcoord_transform = _cb_draw.custom_constants[0],
+                     .y_texcoord_transform = _cb_draw.custom_constants[1],
+                     .texture = *_game_textures[0].srv,
+
+                     .position_decompress_mul = _cb_draw.position_decompress_min,
+                     .position_decompress_add = _cb_draw.position_decompress_max,
+                  },
+                  _cb_skin.bone_matrices);
+            }
+            else {
+               _shadows->add_mesh_hardedged_compressed_skinned(
+                  *_device_context,
+                  {
+                     .input_layout = _game_input_layout.layout_index,
+
+                     .primitive_topology = topology,
+
+                     .index_buffer = *_game_index_buffer,
+                     .index_buffer_offset = _game_index_buffer_offset,
+
+                     .vertex_buffer = *_game_vertex_buffer,
+                     .vertex_buffer_offset = _game_vertex_buffer_offset,
+                     .vertex_buffer_stride = _game_vertex_buffer_stride,
+
+                     .index_count = index_count,
+                     .start_index = start_index,
+                     .base_vertex = base_vertex,
+
+                     .world_matrix = _cb_draw.world_matrix,
+
+                     .x_texcoord_transform = _cb_draw.custom_constants[0],
+                     .y_texcoord_transform = _cb_draw.custom_constants[1],
+                     .texture = *_game_textures[0].srv,
+
+                     .position_decompress_mul = _cb_draw.position_decompress_min,
+                     .position_decompress_add = _cb_draw.position_decompress_max,
+                  },
+                  _cb_skin.bone_matrices);
+            }
+         }
+         else {
+            if (soft_skinned) {
+               _shadows->add_mesh_hardedged_soft_skinned(
+                  *_device_context,
+                  {
+                     .input_layout = _game_input_layout.layout_index,
+
+                     .primitive_topology = topology,
+
+                     .index_buffer = *_game_index_buffer,
+                     .index_buffer_offset = _game_index_buffer_offset,
+
+                     .vertex_buffer = *_game_vertex_buffer,
+                     .vertex_buffer_offset = _game_vertex_buffer_offset,
+                     .vertex_buffer_stride = _game_vertex_buffer_stride,
+
+                     .index_count = index_count,
+                     .start_index = start_index,
+                     .base_vertex = base_vertex,
+
+                     .world_matrix = _cb_draw.world_matrix,
+
+                     .x_texcoord_transform = _cb_draw.custom_constants[0],
+                     .y_texcoord_transform = _cb_draw.custom_constants[1],
+                     .texture = *_game_textures[0].srv,
+                  },
+                  _cb_skin.bone_matrices);
+            }
+            else {
+               _shadows->add_mesh_hardedged_skinned(
+                  *_device_context,
+                  {
+                     .input_layout = _game_input_layout.layout_index,
+
+                     .primitive_topology = topology,
+
+                     .index_buffer = *_game_index_buffer,
+                     .index_buffer_offset = _game_index_buffer_offset,
+
+                     .vertex_buffer = *_game_vertex_buffer,
+                     .vertex_buffer_offset = _game_vertex_buffer_offset,
+                     .vertex_buffer_stride = _game_vertex_buffer_stride,
+
+                     .index_count = index_count,
+                     .start_index = start_index,
+                     .base_vertex = base_vertex,
+
+                     .world_matrix = _cb_draw.world_matrix,
+
+                     .x_texcoord_transform = _cb_draw.custom_constants[0],
+                     .y_texcoord_transform = _cb_draw.custom_constants[1],
+                     .texture = *_game_textures[0].srv,
+                  },
+                  _cb_skin.bone_matrices);
+            }
+         }
+      }
+      else {
+         if (compressed) {
+            if (soft_skinned) {
+               _shadows->add_mesh_compressed_soft_skinned(
+                  *_device_context,
+                  {
+                     .primitive_topology = topology,
+
+                     .index_buffer = *_game_index_buffer,
+                     .index_buffer_offset = _game_index_buffer_offset,
+
+                     .vertex_buffer = *_game_vertex_buffer,
+                     .vertex_buffer_offset = _game_vertex_buffer_offset,
+                     .vertex_buffer_stride = _game_vertex_buffer_stride,
+
+                     .index_count = index_count,
+                     .start_index = start_index,
+                     .base_vertex = base_vertex,
+
+                     .world_matrix = _cb_draw.world_matrix,
+
+                     .position_decompress_mul = _cb_draw.position_decompress_min,
+                     .position_decompress_add = _cb_draw.position_decompress_max,
+                  },
+                  _cb_skin.bone_matrices);
+            }
+            else {
+               _shadows->add_mesh_compressed_skinned(
+                  *_device_context,
+                  {
+                     .primitive_topology = topology,
+
+                     .index_buffer = *_game_index_buffer,
+                     .index_buffer_offset = _game_index_buffer_offset,
+
+                     .vertex_buffer = *_game_vertex_buffer,
+                     .vertex_buffer_offset = _game_vertex_buffer_offset,
+                     .vertex_buffer_stride = _game_vertex_buffer_stride,
+
+                     .index_count = index_count,
+                     .start_index = start_index,
+                     .base_vertex = base_vertex,
+
+                     .world_matrix = _cb_draw.world_matrix,
+
+                     .position_decompress_mul = _cb_draw.position_decompress_min,
+                     .position_decompress_add = _cb_draw.position_decompress_max,
+                  },
+                  _cb_skin.bone_matrices);
+            }
+         }
+         else {
+            if (soft_skinned) {
+               _shadows->add_mesh_soft_skinned(
+                  *_device_context,
+                  {
+                     .primitive_topology = topology,
+
+                     .index_buffer = *_game_index_buffer,
+                     .index_buffer_offset = _game_index_buffer_offset,
+
+                     .vertex_buffer = *_game_vertex_buffer,
+                     .vertex_buffer_offset = _game_vertex_buffer_offset,
+                     .vertex_buffer_stride = _game_vertex_buffer_stride,
+
+                     .index_count = index_count,
+                     .start_index = start_index,
+                     .base_vertex = base_vertex,
+
+                     .world_matrix = _cb_draw.world_matrix,
+                  },
+                  _cb_skin.bone_matrices);
+            }
+            else {
+               _shadows->add_mesh_skinned(*_device_context,
+                                          {
+                                             .primitive_topology = topology,
+
+                                             .index_buffer = *_game_index_buffer,
+                                             .index_buffer_offset = _game_index_buffer_offset,
+
+                                             .vertex_buffer = *_game_vertex_buffer,
+                                             .vertex_buffer_offset = _game_vertex_buffer_offset,
+                                             .vertex_buffer_stride = _game_vertex_buffer_stride,
+
+                                             .index_count = index_count,
+                                             .start_index = start_index,
+                                             .base_vertex = base_vertex,
+
+                                             .world_matrix = _cb_draw.world_matrix,
+                                          },
+                                          _cb_skin.bone_matrices);
+            }
+         }
+      }
+   }
+   else {
+      if (hardedged) {
+         if (compressed) {
+            _shadows->add_mesh_hardedged_compressed(
+               *_device_context,
+               {
+                  .input_layout = _game_input_layout.layout_index,
+
+                  .primitive_topology = topology,
+
+                  .index_buffer = *_game_index_buffer,
+                  .index_buffer_offset = _game_index_buffer_offset,
+
+                  .vertex_buffer = *_game_vertex_buffer,
+                  .vertex_buffer_offset = _game_vertex_buffer_offset,
+                  .vertex_buffer_stride = _game_vertex_buffer_stride,
+
+                  .index_count = index_count,
+                  .start_index = start_index,
+                  .base_vertex = base_vertex,
+
+                  .world_matrix = _cb_draw.world_matrix,
+
+                  .x_texcoord_transform = _cb_draw.custom_constants[0],
+                  .y_texcoord_transform = _cb_draw.custom_constants[1],
+                  .texture = *_game_textures[0].srv,
+
+                  .position_decompress_mul = _cb_draw.position_decompress_min,
+                  .position_decompress_add = _cb_draw.position_decompress_max,
+               });
+         }
+         else {
+            _shadows->add_mesh_hardedged(
+               *_device_context,
+               {
+                  .input_layout = _game_input_layout.layout_index,
+
+                  .primitive_topology = topology,
+
+                  .index_buffer = *_game_index_buffer,
+                  .index_buffer_offset = _game_index_buffer_offset,
+
+                  .vertex_buffer = *_game_vertex_buffer,
+                  .vertex_buffer_offset = _game_vertex_buffer_offset,
+                  .vertex_buffer_stride = _game_vertex_buffer_stride,
+
+                  .index_count = index_count,
+                  .start_index = start_index,
+                  .base_vertex = base_vertex,
+
+                  .world_matrix = _cb_draw.world_matrix,
+
+                  .x_texcoord_transform = _cb_draw.custom_constants[0],
+                  .y_texcoord_transform = _cb_draw.custom_constants[1],
+                  .texture = *_game_textures[0].srv,
+               });
+         }
+      }
+      else {
+         if (compressed) {
+            _shadows->add_mesh_compressed(
+               *_device_context,
+               {
+                  .primitive_topology = topology,
+
+                  .index_buffer = *_game_index_buffer,
+                  .index_buffer_offset = _game_index_buffer_offset,
+
+                  .vertex_buffer = *_game_vertex_buffer,
+                  .vertex_buffer_offset = _game_vertex_buffer_offset,
+                  .vertex_buffer_stride = _game_vertex_buffer_stride,
+
+                  .index_count = index_count,
+                  .start_index = start_index,
+                  .base_vertex = base_vertex,
+
+                  .world_matrix = _cb_draw.world_matrix,
+
+                  .position_decompress_mul = _cb_draw.position_decompress_min,
+                  .position_decompress_add = _cb_draw.position_decompress_max,
+               });
+         }
+         else {
+            _shadows->add_mesh(*_device_context,
+                               {
+                                  .primitive_topology = topology,
+
+                                  .index_buffer = *_game_index_buffer,
+                                  .index_buffer_offset = _game_index_buffer_offset,
+
+                                  .vertex_buffer = *_game_vertex_buffer,
+                                  .vertex_buffer_offset = _game_vertex_buffer_offset,
+                                  .vertex_buffer_stride = _game_vertex_buffer_stride,
+
+                                  .index_count = index_count,
+                                  .start_index = start_index,
+                                  .base_vertex = base_vertex,
+
+                                  .world_matrix = _cb_draw.world_matrix,
+                               });
+         }
+      }
+   }
+}
+
 void Shader_patch::game_rendertype_changed() noexcept
 {
    if (_on_rendertype_changed) _on_rendertype_changed();
@@ -1583,345 +1916,10 @@ void Shader_patch::game_rendertype_changed() noexcept
       _shadows->view_proj_matrix =
          std::bit_cast<glm::mat4>(_cb_scene.projection_matrix);
 
-      if (_use_shadow_maps) {
-         _on_draw_indexed = [&](const D3D11_PRIMITIVE_TOPOLOGY topology,
-                                const UINT index_count, const UINT start_index,
-                                const INT base_vertex) noexcept {
-            // there's only one other state for zprepass, so we can take a shortcut here
-            const bool hardedged = _game_shader->shader_name.size() ==
-                                   "near opaque hardedged"sv.size();
-            const bool skinned = (_game_shader->vertex_shader_flags &
-                                  shader::Vertex_shader_flags::hard_skinned) ==
-                                 shader::Vertex_shader_flags::hard_skinned;
-            const bool compressed = _game_input_layout.compressed;
-            const bool soft_skinned = _game_input_layout.has_vertex_weights;
-
-            if (skinned) {
-               if (hardedged) {
-                  if (compressed) {
-                     if (soft_skinned) {
-                        _shadows->add_mesh_hardedged_compressed_soft_skinned(
-                           *_device_context,
-                           {
-                              .input_layout = _game_input_layout.layout_index,
-
-                              .primitive_topology = topology,
-
-                              .index_buffer = *_game_index_buffer,
-                              .index_buffer_offset = _game_index_buffer_offset,
-
-                              .vertex_buffer = *_game_vertex_buffer,
-                              .vertex_buffer_offset = _game_vertex_buffer_offset,
-                              .vertex_buffer_stride = _game_vertex_buffer_stride,
-
-                              .index_count = index_count,
-                              .start_index = start_index,
-                              .base_vertex = base_vertex,
-
-                              .world_matrix = _cb_draw.world_matrix,
-
-                              .x_texcoord_transform = _cb_draw.custom_constants[0],
-                              .y_texcoord_transform = _cb_draw.custom_constants[1],
-                              .texture = *_game_textures[0].srv,
-
-                              .position_decompress_mul = _cb_draw.position_decompress_min,
-                              .position_decompress_add = _cb_draw.position_decompress_max,
-                           },
-                           _cb_skin.bone_matrices);
-                     }
-                     else {
-                        _shadows->add_mesh_hardedged_compressed_skinned(
-                           *_device_context,
-                           {
-                              .input_layout = _game_input_layout.layout_index,
-
-                              .primitive_topology = topology,
-
-                              .index_buffer = *_game_index_buffer,
-                              .index_buffer_offset = _game_index_buffer_offset,
-
-                              .vertex_buffer = *_game_vertex_buffer,
-                              .vertex_buffer_offset = _game_vertex_buffer_offset,
-                              .vertex_buffer_stride = _game_vertex_buffer_stride,
-
-                              .index_count = index_count,
-                              .start_index = start_index,
-                              .base_vertex = base_vertex,
-
-                              .world_matrix = _cb_draw.world_matrix,
-
-                              .x_texcoord_transform = _cb_draw.custom_constants[0],
-                              .y_texcoord_transform = _cb_draw.custom_constants[1],
-                              .texture = *_game_textures[0].srv,
-
-                              .position_decompress_mul = _cb_draw.position_decompress_min,
-                              .position_decompress_add = _cb_draw.position_decompress_max,
-                           },
-                           _cb_skin.bone_matrices);
-                     }
-                  }
-                  else {
-                     if (soft_skinned) {
-                        _shadows->add_mesh_hardedged_soft_skinned(
-                           *_device_context,
-                           {
-                              .input_layout = _game_input_layout.layout_index,
-
-                              .primitive_topology = topology,
-
-                              .index_buffer = *_game_index_buffer,
-                              .index_buffer_offset = _game_index_buffer_offset,
-
-                              .vertex_buffer = *_game_vertex_buffer,
-                              .vertex_buffer_offset = _game_vertex_buffer_offset,
-                              .vertex_buffer_stride = _game_vertex_buffer_stride,
-
-                              .index_count = index_count,
-                              .start_index = start_index,
-                              .base_vertex = base_vertex,
-
-                              .world_matrix = _cb_draw.world_matrix,
-
-                              .x_texcoord_transform = _cb_draw.custom_constants[0],
-                              .y_texcoord_transform = _cb_draw.custom_constants[1],
-                              .texture = *_game_textures[0].srv,
-                           },
-                           _cb_skin.bone_matrices);
-                     }
-                     else {
-                        _shadows->add_mesh_hardedged_skinned(
-                           *_device_context,
-                           {
-                              .input_layout = _game_input_layout.layout_index,
-
-                              .primitive_topology = topology,
-
-                              .index_buffer = *_game_index_buffer,
-                              .index_buffer_offset = _game_index_buffer_offset,
-
-                              .vertex_buffer = *_game_vertex_buffer,
-                              .vertex_buffer_offset = _game_vertex_buffer_offset,
-                              .vertex_buffer_stride = _game_vertex_buffer_stride,
-
-                              .index_count = index_count,
-                              .start_index = start_index,
-                              .base_vertex = base_vertex,
-
-                              .world_matrix = _cb_draw.world_matrix,
-
-                              .x_texcoord_transform = _cb_draw.custom_constants[0],
-                              .y_texcoord_transform = _cb_draw.custom_constants[1],
-                              .texture = *_game_textures[0].srv,
-                           },
-                           _cb_skin.bone_matrices);
-                     }
-                  }
-               }
-               else {
-                  if (compressed) {
-                     if (soft_skinned) {
-                        _shadows->add_mesh_compressed_soft_skinned(
-                           *_device_context,
-                           {
-                              .primitive_topology = topology,
-
-                              .index_buffer = *_game_index_buffer,
-                              .index_buffer_offset = _game_index_buffer_offset,
-
-                              .vertex_buffer = *_game_vertex_buffer,
-                              .vertex_buffer_offset = _game_vertex_buffer_offset,
-                              .vertex_buffer_stride = _game_vertex_buffer_stride,
-
-                              .index_count = index_count,
-                              .start_index = start_index,
-                              .base_vertex = base_vertex,
-
-                              .world_matrix = _cb_draw.world_matrix,
-
-                              .position_decompress_mul = _cb_draw.position_decompress_min,
-                              .position_decompress_add = _cb_draw.position_decompress_max,
-                           },
-                           _cb_skin.bone_matrices);
-                     }
-                     else {
-                        _shadows->add_mesh_compressed_skinned(
-                           *_device_context,
-                           {
-                              .primitive_topology = topology,
-
-                              .index_buffer = *_game_index_buffer,
-                              .index_buffer_offset = _game_index_buffer_offset,
-
-                              .vertex_buffer = *_game_vertex_buffer,
-                              .vertex_buffer_offset = _game_vertex_buffer_offset,
-                              .vertex_buffer_stride = _game_vertex_buffer_stride,
-
-                              .index_count = index_count,
-                              .start_index = start_index,
-                              .base_vertex = base_vertex,
-
-                              .world_matrix = _cb_draw.world_matrix,
-
-                              .position_decompress_mul = _cb_draw.position_decompress_min,
-                              .position_decompress_add = _cb_draw.position_decompress_max,
-                           },
-                           _cb_skin.bone_matrices);
-                     }
-                  }
-                  else {
-                     if (soft_skinned) {
-                        _shadows->add_mesh_soft_skinned(
-                           *_device_context,
-                           {
-                              .primitive_topology = topology,
-
-                              .index_buffer = *_game_index_buffer,
-                              .index_buffer_offset = _game_index_buffer_offset,
-
-                              .vertex_buffer = *_game_vertex_buffer,
-                              .vertex_buffer_offset = _game_vertex_buffer_offset,
-                              .vertex_buffer_stride = _game_vertex_buffer_stride,
-
-                              .index_count = index_count,
-                              .start_index = start_index,
-                              .base_vertex = base_vertex,
-
-                              .world_matrix = _cb_draw.world_matrix,
-                           },
-                           _cb_skin.bone_matrices);
-                     }
-                     else {
-                        _shadows->add_mesh_skinned(
-                           *_device_context,
-                           {
-                              .primitive_topology = topology,
-
-                              .index_buffer = *_game_index_buffer,
-                              .index_buffer_offset = _game_index_buffer_offset,
-
-                              .vertex_buffer = *_game_vertex_buffer,
-                              .vertex_buffer_offset = _game_vertex_buffer_offset,
-                              .vertex_buffer_stride = _game_vertex_buffer_stride,
-
-                              .index_count = index_count,
-                              .start_index = start_index,
-                              .base_vertex = base_vertex,
-
-                              .world_matrix = _cb_draw.world_matrix,
-                           },
-                           _cb_skin.bone_matrices);
-                     }
-                  }
-               }
-            }
-            else {
-               if (hardedged) {
-                  if (compressed) {
-                     _shadows->add_mesh_hardedged_compressed(
-                        *_device_context,
-                        {
-                           .input_layout = _game_input_layout.layout_index,
-
-                           .primitive_topology = topology,
-
-                           .index_buffer = *_game_index_buffer,
-                           .index_buffer_offset = _game_index_buffer_offset,
-
-                           .vertex_buffer = *_game_vertex_buffer,
-                           .vertex_buffer_offset = _game_vertex_buffer_offset,
-                           .vertex_buffer_stride = _game_vertex_buffer_stride,
-
-                           .index_count = index_count,
-                           .start_index = start_index,
-                           .base_vertex = base_vertex,
-
-                           .world_matrix = _cb_draw.world_matrix,
-
-                           .x_texcoord_transform = _cb_draw.custom_constants[0],
-                           .y_texcoord_transform = _cb_draw.custom_constants[1],
-                           .texture = *_game_textures[0].srv,
-
-                           .position_decompress_mul = _cb_draw.position_decompress_min,
-                           .position_decompress_add = _cb_draw.position_decompress_max,
-                        });
-                  }
-                  else {
-                     _shadows->add_mesh_hardedged(
-                        *_device_context,
-                        {
-                           .input_layout = _game_input_layout.layout_index,
-
-                           .primitive_topology = topology,
-
-                           .index_buffer = *_game_index_buffer,
-                           .index_buffer_offset = _game_index_buffer_offset,
-
-                           .vertex_buffer = *_game_vertex_buffer,
-                           .vertex_buffer_offset = _game_vertex_buffer_offset,
-                           .vertex_buffer_stride = _game_vertex_buffer_stride,
-
-                           .index_count = index_count,
-                           .start_index = start_index,
-                           .base_vertex = base_vertex,
-
-                           .world_matrix = _cb_draw.world_matrix,
-
-                           .x_texcoord_transform = _cb_draw.custom_constants[0],
-                           .y_texcoord_transform = _cb_draw.custom_constants[1],
-                           .texture = *_game_textures[0].srv,
-                        });
-                  }
-               }
-               else {
-                  if (compressed) {
-                     _shadows->add_mesh_compressed(
-                        *_device_context,
-                        {
-                           .primitive_topology = topology,
-
-                           .index_buffer = *_game_index_buffer,
-                           .index_buffer_offset = _game_index_buffer_offset,
-
-                           .vertex_buffer = *_game_vertex_buffer,
-                           .vertex_buffer_offset = _game_vertex_buffer_offset,
-                           .vertex_buffer_stride = _game_vertex_buffer_stride,
-
-                           .index_count = index_count,
-                           .start_index = start_index,
-                           .base_vertex = base_vertex,
-
-                           .world_matrix = _cb_draw.world_matrix,
-
-                           .position_decompress_mul = _cb_draw.position_decompress_min,
-                           .position_decompress_add = _cb_draw.position_decompress_max,
-                        });
-                  }
-                  else {
-                     _shadows->add_mesh(*_device_context,
-                                        {
-                                           .primitive_topology = topology,
-
-                                           .index_buffer = *_game_index_buffer,
-                                           .index_buffer_offset = _game_index_buffer_offset,
-
-                                           .vertex_buffer = *_game_vertex_buffer,
-                                           .vertex_buffer_offset = _game_vertex_buffer_offset,
-                                           .vertex_buffer_stride = _game_vertex_buffer_stride,
-
-                                           .index_count = index_count,
-                                           .start_index = start_index,
-                                           .base_vertex = base_vertex,
-
-                                           .world_matrix = _cb_draw.world_matrix,
-                                        });
-                  }
-               }
-            }
-         };
-      }
+      if (_use_shadow_maps) _record_draw_indexed = true;
 
       _on_rendertype_changed = [&]() noexcept {
-         _on_draw_indexed = nullptr;
+         _record_draw_indexed = false;
          _on_rendertype_changed = nullptr;
       };
    }
@@ -1931,7 +1929,6 @@ void Shader_patch::game_rendertype_changed() noexcept
 
       _on_rendertype_changed = [this]() noexcept {
          _discard_draw_calls = true;
-         _on_draw_indexed = nullptr;
          _on_rendertype_changed = nullptr;
       };
    }
