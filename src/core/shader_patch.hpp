@@ -364,7 +364,8 @@ private:
    Rendertype _previous_shader_rendertype = Rendertype::invalid;
    Rendertype _shader_rendertype = Rendertype::invalid;
 
-   std::array<Game_texture, 6> _game_textures;
+   std::array<Game_texture, 4> _game_textures;
+   std::array<Game_texture, 2> _extra_game_textures;
    material::Material* _patch_material = nullptr;
 
    Com_ptr<ID3D11Buffer> _game_index_buffer;
@@ -393,6 +394,7 @@ private:
    bool _ps_textures_dirty = true;
    bool _ps_textures_material_wants_depthstencil = false;
    bool _ps_textures_shader_wants_depthstencil = false;
+   bool _ps_extra_textures_dirty = true;
    bool _ps_textures_material_wants_refraction = false;
    bool _ps_textures_shader_wants_refraction = false;
    bool _cb_scene_dirty = true;
