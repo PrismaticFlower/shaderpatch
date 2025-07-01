@@ -416,6 +416,8 @@ private:
    bool _override_viewport = false;
    bool _set_aspect_ratio_on_present = false;
    bool _frame_had_shadows = false;
+   bool _frame_had_skyfog = false;
+   bool _frame_swapped_depthstencil = false;
 
    bool _aspect_ratio_hack_enabled = false;
    bool _imgui_enabled = false;

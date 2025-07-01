@@ -963,8 +963,9 @@ void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
 
          const effects::Postprocess_input postprocess_input{
             *_patch_backbuffer.srv,
-            *((_rt_sample_count != 1) ? _farscene_depthstencil.srv.get()
-                                      : _nearscene_depthstencil.srv.get()),
+            *((_rt_sample_count != 1 || _frame_swapped_depthstencil)
+                 ? _farscene_depthstencil.srv.get()
+                 : _nearscene_depthstencil.srv.get()),
             _patch_backbuffer.format,
             _patch_backbuffer.width,
             _patch_backbuffer.height,
@@ -1070,8 +1071,10 @@ void Shader_patch::clear_depthstencil(const float depth, const UINT8 stencil,
                                       const bool clear_stencil) noexcept
 {
    if (clear_depth && _rt_sample_count == 1 &&
-       _current_depthstencil_id == Game_depthstencil::nearscene) {
+       _current_depthstencil_id == Game_depthstencil::nearscene && _frame_had_skyfog) {
       _device_context->SetMarkerInt(L"Swapped Near/Far Depth Stencil", 0);
+
+      _frame_swapped_depthstencil = true;
 
       // This keeps the near scene depth around for Depth of Field to
       // use post first person model being drawn.
@@ -1680,6 +1683,7 @@ void Shader_patch::game_rendertype_changed() noexcept
    else if (_shader_rendertype == Rendertype::skyfog) {
       _cb_scene.prev_near_scene_fade_scale = _cb_scene.near_scene_fade_scale;
       _cb_scene.prev_near_scene_fade_offset = _cb_scene.near_scene_fade_offset;
+      _frame_had_skyfog = true;
 
       _postprocess_projection_matrix = _informal_projection_matrix;
 
@@ -2059,6 +2063,8 @@ void Shader_patch::update_frame_state() noexcept
    _override_viewport = false;
    _set_aspect_ratio_on_present = false;
    _frame_had_shadows = false;
+   _frame_had_skyfog = false;
+   _frame_swapped_depthstencil = false;
 }
 
 void Shader_patch::update_imgui() noexcept
