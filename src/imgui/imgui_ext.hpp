@@ -1,7 +1,6 @@
 #pragma once
 
 #include "imgui.h"
-#include "imgui_internal.h"
 
 #include <algorithm>
 #include <array>
@@ -16,11 +15,11 @@ inline bool InputText(const char* label, std::string& string,
                       ImGuiInputTextCallback callback = nullptr,
                       void* user_data = nullptr)
 {
-   constexpr auto max_length = 4096;
+   constexpr auto max_length = 260;
 
    Expects(string.size() < max_length);
 
-   thread_local std::array<char, max_length> buffer{};
+   std::array<char, max_length> buffer{};
    *std::copy(std::cbegin(string), std::cend(string), std::begin(buffer)) = '\0';
 
    bool result =
@@ -55,27 +54,26 @@ inline bool DragFloatFormattedN(const char* label, float* v, int components,
                                 float v_speed, const float* v_min,
                                 const float* v_max, const char** formats)
 {
-   ImGuiWindow* window = GetCurrentWindow();
-   if (window->SkipItems) return false;
-
-   ImGuiContext& g = *GImGui;
    bool value_changed = false;
+
    BeginGroup();
    PushID(label);
-   PushMultiItemsWidths(components, CalcItemWidth());
+   PushItemWidth(
+      (CalcItemWidth() - (GetStyle().ItemInnerSpacing.x * (components - 1))) / components);
 
    for (int i = 0; i < components; i++) {
       PushID(i);
       value_changed |= DragScalar("##v", ImGuiDataType_Float, &v[i], v_speed,
                                   v_min, v_max, formats[i]);
-      SameLine(0, g.Style.ItemInnerSpacing.x);
+      SameLine(0, GetStyle().ItemInnerSpacing.x);
       PopID();
-      PopItemWidth();
    }
+   PopItemWidth();
    PopID();
 
-   TextUnformatted(label, FindRenderedTextEnd(label));
+   TextUnformatted(label);
    EndGroup();
+
    return value_changed;
 }
 

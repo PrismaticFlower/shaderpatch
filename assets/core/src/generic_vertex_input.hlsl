@@ -108,9 +108,9 @@ struct Vertex_input
    {
 #  ifdef __VERTEX_INPUT_TANGENTS__
 #     ifdef __VERTEX_INPUT_IS_COMPRESSED__
-      return _bitangent.xyz * (255.0 / 127.0) - (128.0 / 127.0);
+      return _tangent.xyz * (255.0 / 127.0) - (128.0 / 127.0);
 #else
-      return _bitangent;
+      return _tangent;
 #endif
 #  else
       return float3(0.0, 0.0, 0.0);
@@ -121,9 +121,9 @@ struct Vertex_input
    {
 #  ifdef __VERTEX_INPUT_TANGENTS__
 #     ifdef __VERTEX_INPUT_IS_COMPRESSED__
-      return sign(_bitangent.w - 0.5);
+      return sign(_tangent.w - 0.5);
 #else
-      return _tangent.z;
+      return _bitangent.z;
 #endif
 #  else
       return 0.0f;
@@ -169,8 +169,8 @@ struct Vertex_input
 #endif
 
 #ifdef __VERTEX_INPUT_TANGENTS__
-   detail::vi::Normal_vec _bitangent : TANGENT;
-   detail::vi::Normal_vec _tangent   : BINORMAL;
+   detail::vi::Normal_vec _tangent : TANGENT;
+   detail::vi::Normal_vec _bitangent   : BINORMAL;
 #endif
 
 #ifdef __VERTEX_INPUT_COLOR__

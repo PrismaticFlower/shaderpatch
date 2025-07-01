@@ -121,6 +121,7 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\ucfb_file_reader.hpp">
+    <ClInclude Include="include\user_config_descriptions.hpp">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
@@ -163,6 +164,9 @@
     </ClCompile>
     <ClCompile Include="src\color_grading_regions_io.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\user_config_descriptions.cpp">
+      <Filter>include</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

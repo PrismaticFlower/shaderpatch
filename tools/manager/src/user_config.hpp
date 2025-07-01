@@ -41,8 +41,7 @@ struct user_config {
    bool_user_config_value enabled{L"Shader Patch Enabled", true, L"Yes", L"No"};
 
    user_config_value_vector display = {
-      bool_user_config_value{L"Allow Tearing", false, L"Tearing Allowed",
-                             L"Tearing Disallowed"},
+      bool_user_config_value{L"V-Sync", true, L"On", L"Off"},
 
       bool_user_config_value{L"Treat 800x600 As Interface", true, L"Yes", L"No"},
       bool_user_config_value{L"Stretch Interface", false, L"Yes", L"No"},
@@ -118,6 +117,9 @@ struct user_config {
 
       string_user_config_value{L"User Effects Config", L"user.spfx"},
 
+      bool_user_config_value{L"Enable Auto User Effects Config", true,
+                             L"Enabled", L"Disabled"},
+
       bool_user_config_value{L"Use Direct3D 11 on 12", false, L"Yes", L"No"},
    };
 
@@ -135,6 +137,13 @@ struct user_config {
       enum_user_config_value{L"SSAO Quality",
                              L"Medium",
                              {L"Fastest", L"Fast", L"Medium", L"High", L"Highest"}},
+
+      bool_user_config_value{L"Depth of Field", true, L"Enabled", L"Disabled"},
+
+      enum_user_config_value{L"Depth of Field Quality",
+                             L"Quality",
+                             {L"Ultra Performance", L"Performance", L"Quality",
+                              L"Ultra Quality"}},
    };
 
    user_config_value_vector developer =

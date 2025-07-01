@@ -12,6 +12,8 @@ inline void make_borderless_window(const HWND window)
    Expects(IsWindow(window));
 
    SetWindowLongPtrA(window, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+   SetWindowLongPtrA(window, GWL_EXSTYLE, WS_EX_APPWINDOW);
+   ShowWindow(window, SW_NORMAL);
 }
 
 inline void resize_window(const HWND window, const UINT width, const UINT height)
@@ -69,8 +71,8 @@ inline void position_window(const HWND window, const UINT width, const UINT heig
    const UINT offset_x = (monitor_width - width) / 2;
    const UINT offset_y = (monitor_height - height) / 2;
 
-   SetWindowPos(window, HWND_TOP, mon_area.left + offset_x, mon_area.top + offset_y,
-                width, height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSENDCHANGING);
+   SetWindowPos(window, HWND_TOP, mon_area.left + offset_x,
+                mon_area.top + offset_y, width, height, SWP_SHOWWINDOW);
 }
 
 inline void leftalign_window(const HWND window)
@@ -91,7 +93,21 @@ inline void clip_cursor_to_window(const HWND window)
    Expects(IsWindow(window));
 
    RECT rect = {};
-   if (!GetWindowRect(window, &rect)) return;
+   if (!GetClientRect(window, &rect)) return;
+
+   POINT points[2] = {
+      {.x = rect.left, .y = rect.top},
+      {.x = rect.right, .y = rect.bottom},
+   };
+
+   MapWindowPoints(window, nullptr, &points[0], 2);
+
+   rect = {
+      .left = points[0].x,
+      .top = points[0].y,
+      .right = points[1].x,
+      .bottom = points[1].y,
+   };
 
    ClipCursor(&rect);
 }

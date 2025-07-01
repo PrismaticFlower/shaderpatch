@@ -309,6 +309,7 @@
     <ClCompile Include="src\shadows\internal\leaf_patch_world.cpp" />
     <ClCompile Include="src\game_support\game_memory.cpp" />
     <ClCompile Include="src\game_support\light_list.cpp" />
+    <ClCompile Include="src\imgui\imgui_tables.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\shader_constants.hpp">

@@ -259,8 +259,12 @@ private:
    auto current_depthstencil() const noexcept -> ID3D11DepthStencilView*
    {
       return current_depthstencil(_om_depthstencil_readonly |
+                                  _om_depthstencil_material_force_readonly |
                                   _om_depthstencil_force_readonly);
    }
+
+   auto current_nearscene_depthstencil_srv() const noexcept
+      -> ID3D11ShaderResourceView*;
 
    void bind_static_resources() noexcept;
 
@@ -364,7 +368,8 @@ private:
    Rendertype _previous_shader_rendertype = Rendertype::invalid;
    Rendertype _shader_rendertype = Rendertype::invalid;
 
-   std::array<Game_texture, 7> _game_textures;
+   std::array<Game_texture, 4> _game_textures;
+   std::array<Game_texture, 2> _extra_game_textures;
    material::Material* _patch_material = nullptr;
 
    Com_ptr<ID3D11Buffer> _game_index_buffer;
@@ -387,9 +392,15 @@ private:
    UINT8 _game_stencil_ref = 0xff;
    bool _om_depthstencil_readonly = true;
    bool _om_depthstencil_force_readonly = false;
+   bool _om_depthstencil_material_force_readonly = false;
    bool _om_depthstencil_state_dirty = true;
    bool _om_blend_state_dirty = true;
    bool _ps_textures_dirty = true;
+   bool _ps_textures_material_wants_depthstencil = false;
+   bool _ps_textures_shader_wants_depthstencil = false;
+   bool _ps_extra_textures_dirty = true;
+   bool _ps_textures_material_wants_refraction = false;
+   bool _ps_textures_shader_wants_refraction = false;
    bool _cb_scene_dirty = true;
    bool _cb_draw_dirty = true;
    bool _cb_skin_dirty = true;
@@ -409,6 +420,8 @@ private:
    bool _override_viewport = false;
    bool _set_aspect_ratio_on_present = false;
    bool _frame_had_shadows = false;
+   bool _frame_had_skyfog = false;
+   bool _frame_swapped_depthstencil = false;
 
    bool _use_shadow_maps = true;
    bool _preview_shadow_world = false;
@@ -442,14 +455,18 @@ private:
    const Com_ptr<ID3D11Buffer> _cb_team_colors_buffer =
       create_dynamic_constant_buffer(*_device, sizeof(cb::Team_colors));
    const Com_ptr<ID3D11Buffer> _cb_skin_buffer =
-      create_dynamic_texture_buffer(*_device, sizeof(_cb_skin));
+      create_dynamic_structured_buffer(*_device, sizeof(_cb_skin),
+                                       sizeof(std::array<glm::vec4, 3>));
    const Com_ptr<ID3D11ShaderResourceView> _cb_skin_buffer_srv = [this] {
       Com_ptr<ID3D11ShaderResourceView> srv;
 
-      const auto desc =
-         CD3D11_SHADER_RESOURCE_VIEW_DESC{D3D11_SRV_DIMENSION_BUFFER,
-                                          DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
-                                          sizeof(_cb_skin) / sizeof(glm::vec4)};
+      const D3D11_SHADER_RESOURCE_VIEW_DESC desc =
+         {.Format = DXGI_FORMAT_UNKNOWN,
+          .ViewDimension = D3D11_SRV_DIMENSION_BUFFER,
+          .Buffer = {
+             .FirstElement = 0,
+             .NumElements = sizeof(_cb_skin) / sizeof(std::array<glm::vec4, 3>),
+          }};
 
       _device->CreateShaderResourceView(_cb_skin_buffer.get(), &desc,
                                         srv.clear_and_assign());
@@ -486,6 +503,32 @@ private:
                .BlendOp = D3D11_BLEND_OP_ADD,
                .SrcBlendAlpha = D3D11_BLEND_ONE,
                .DestBlendAlpha = D3D11_BLEND_ZERO,
+               .BlendOpAlpha = D3D11_BLEND_OP_ADD,
+               .LogicOp = D3D11_LOGIC_OP_CLEAR,
+               .RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_RED,
+            },
+      };
+
+      _device->CreateBlendState1(&desc, blend_state.clear_and_assign());
+
+      return blend_state;
+   }();
+
+   const Com_ptr<ID3D11BlendState1> _shadow_particle_blend_state = [this] {
+      Com_ptr<ID3D11BlendState1> blend_state;
+
+      const D3D11_BLEND_DESC1 desc{
+         .AlphaToCoverageEnable = false,
+         .IndependentBlendEnable = false,
+         .RenderTarget =
+            D3D11_RENDER_TARGET_BLEND_DESC1{
+               .BlendEnable = true,
+               .LogicOpEnable = false,
+               .SrcBlend = D3D11_BLEND_ZERO,
+               .DestBlend = D3D11_BLEND_INV_SRC_ALPHA,
+               .BlendOp = D3D11_BLEND_OP_ADD,
+               .SrcBlendAlpha = D3D11_BLEND_ZERO,
+               .DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA,
                .BlendOpAlpha = D3D11_BLEND_OP_ADD,
                .LogicOp = D3D11_LOGIC_OP_CLEAR,
                .RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_RED,
@@ -542,6 +585,7 @@ private:
    std::unique_ptr<Shadows_provider> _shadows;
 
    glm::mat4 _informal_projection_matrix;
+   glm::mat4 _postprocess_projection_matrix;
 
    const HWND _window;
 

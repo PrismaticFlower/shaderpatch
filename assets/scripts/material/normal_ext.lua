@@ -7,7 +7,7 @@ function make_constant_buffer(props, resources_desc_view)
       float3 base_diffuse_color;
       float  gloss_map_weight;
       float3 base_specular_color;
-      float  specular_exponent;
+      float  base_specular_exponent;
       float  height_scale;
       bool   use_detail_textures;
       float  detail_texture_scale;
@@ -31,7 +31,7 @@ function make_constant_buffer(props, resources_desc_view)
    cb:set("gloss_map_weight", props:get_float("GlossMapWeight", 1.0))
    cb:set("base_specular_color",
           props:get_float3("SpecularColor", float3.new(1.0, 1.0, 1.0)))
-   cb:set("specular_exponent", props:get_float("SpecularExponent", 64.0))
+   cb:set("base_specular_exponent", props:get_float("SpecularExponent", 64.0))
    cb:set("height_scale", props:get_float("HeightScale", 0.1))
    cb:set("use_detail_textures", props:get_bool("UseDetailMaps", false))
    cb:set("detail_texture_scale", props:get_float("DetailTextureScale", 1.0))
@@ -61,6 +61,7 @@ end
 function fill_resource_vec(props, resource_props, resources)
 
    resources:add(resource_props["DiffuseMap"] or "$grey")
+   resources:add(resource_props["SpecularMap"] or "")
    resources:add(resource_props["NormalMap"] or "$null_normalmap")
    resources:add(resource_props["HeightMap"] or "")
    resources:add(resource_props["DetailMap"] or "$null_detailmap")
@@ -78,6 +79,18 @@ function get_shader_flags(props, flags)
 
    if props:get_bool("UseSpecularLighting", false) then
       flags:add("NORMAL_EXT_USE_SPECULAR")
+
+      if props:get_bool("UseSpecularMap", false) then
+         flags:add("NORMAL_EXT_USE_SPECULAR_MAP")
+      end
+   
+      if props:get_bool("UseTrueGlossMap", false) then
+         flags:add("NORMAL_EXT_USE_SPECULAR_TRUE_GLOSS")
+      end
+   
+      if props:get_bool("UseSpecularLightingNormalized", false) then
+         flags:add("NORMAL_EXT_USE_SPECULAR_NORMALIZED")
+      end
    end
 
    if props:get_bool("UseParallaxOcclusionMapping", false) then

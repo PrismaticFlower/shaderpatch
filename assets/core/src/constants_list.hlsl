@@ -60,10 +60,7 @@ cbuffer FixedfuncConstants : register(b3)
    float2 ff_inv_resolution;
 }
 
-tbuffer SkinConstants : register(t0)
-{
-   float4x3 bone_matrices[15];
-}
+StructuredBuffer<float4x3> bone_matrices : register(t0);
 
 cbuffer PSDrawConstants : register(b0)
 {
@@ -81,6 +78,7 @@ cbuffer PSDrawConstants : register(b0)
    bool limit_normal_shader_bright_lights;
    bool ps_input_color_srgb;
    bool supersample_alpha_test;
+   bool ssao_enabled;
    float time_seconds;
 }
 

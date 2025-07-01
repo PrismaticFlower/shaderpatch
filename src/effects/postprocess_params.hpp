@@ -127,6 +127,14 @@ struct FFX_cas_params {
    float sharpness = 0.0f;
 };
 
+struct DOF_params {
+   bool enabled = false;
+
+   float film_size_mm = 35.0f;
+   float focus_distance = 10.0f;
+   float f_stop = 16.0f;
+};
+
 inline auto to_string(const Tonemapper tonemapper) noexcept
 {
    using namespace std::literals;
@@ -652,6 +660,41 @@ struct convert<sp::effects::FFX_cas_params> {
 
       params.enabled = node["Enable"s].as<bool>(params.enabled);
       params.sharpness = node["Sharpness"s].as<float>(params.sharpness);
+
+      return true;
+   }
+};
+
+template<>
+struct convert<sp::effects::DOF_params> {
+   static Node encode(const sp::effects::DOF_params& params)
+   {
+      using namespace std::literals;
+
+      YAML::Node node;
+
+      node["Enable"s] = params.enabled;
+      node["FilmSize"s] = params.film_size_mm;
+      node["FocusDistance"s] = params.focus_distance;
+      node["FStop"s] = params.f_stop;
+
+      return node;
+   }
+
+   static bool decode(const Node& node, sp::effects::DOF_params& params)
+   {
+      using namespace std::literals;
+
+      params = sp::effects::DOF_params{};
+
+      params.enabled = node["Enable"s].as<bool>(params.enabled);
+      params.film_size_mm = node["FilmSize"s].as<float>(params.film_size_mm);
+      params.focus_distance = node["FocusDistance"s].as<float>(params.focus_distance);
+      params.f_stop = node["FStop"s].as<float>(params.f_stop);
+
+      params.film_size_mm = std::max(params.film_size_mm, 1.0f);
+      params.focus_distance = std::max(params.focus_distance, 0.0f);
+      params.f_stop = std::max(params.f_stop, 1.0f);
 
       return true;
    }

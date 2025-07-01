@@ -11,8 +11,11 @@
 
 #include <fstream>
 #include <functional>
+#include <numbers>
 #include <sstream>
 #include <string_view>
+
+#include <fmt/format.h>
 
 #include "../imgui/imgui.h"
 
@@ -23,6 +26,8 @@ namespace fs = std::filesystem;
 
 namespace {
 
+constexpr std::wstring_view auto_user_config_name = L"shader patch.spfx";
+
 Bloom_params show_bloom_imgui(Bloom_params params) noexcept;
 
 Vignette_params show_vignette_imgui(Vignette_params params) noexcept;
@@ -32,6 +37,8 @@ Color_grading_params show_color_grading_imgui(Color_grading_params params) noexc
 Color_grading_params show_tonemapping_imgui(Color_grading_params params) noexcept;
 
 Film_grain_params show_film_grain_imgui(Film_grain_params params) noexcept;
+
+DOF_params show_dof_imgui(DOF_params params) noexcept;
 
 SSAO_params show_ssao_imgui(SSAO_params params) noexcept;
 
@@ -48,32 +55,53 @@ Control::Control(Com_ptr<ID3D11Device5> device, shader::Database& shaders) noexc
      mask_nan{device, shaders},
      profiler{device}
 {
-   if (user_config.graphics.enable_user_effects_config)
+   if (user_config.graphics.enable_user_effects_config) {
       load_params_from_yaml_file(user_config.graphics.user_effects_config);
+   }
+   else if (user_config.graphics.enable_user_effects_auto_config) {
+      try {
+         _has_auto_user_config =
+            std::filesystem::exists(auto_user_config_name) &&
+            std::filesystem::is_regular_file(auto_user_config_name);
+
+         if (_has_auto_user_config) {
+            load_params_from_yaml_file(auto_user_config_name);
+         }
+      }
+      catch (std::exception&) {
+         _has_auto_user_config = false;
+      }
+   }
 }
 
-bool Control::enabled(const bool enabled) noexcept
+bool Control::enabled(const bool enable) noexcept
 {
-   _enabled = enabled;
+   _enabled = enable;
 
    if (!_enabled && user_config.graphics.enable_user_effects_config)
       load_params_from_yaml_file(user_config.graphics.user_effects_config);
+   else if (!_enabled && _has_auto_user_config)
+      load_params_from_yaml_file(auto_user_config_name);
 
-   return (_enabled || user_config.graphics.enable_user_effects_config);
+   return enabled();
 }
 
 bool Control::enabled() const noexcept
 {
-   return (_enabled || user_config.graphics.enable_user_effects_config);
+   const bool enable_user_effects_auto_config =
+      _has_auto_user_config && user_config.graphics.enable_user_effects_auto_config;
+
+   return (_enabled || user_config.graphics.enable_user_effects_config ||
+           enable_user_effects_auto_config);
 }
 
 bool Control::allow_scene_blur() const noexcept
 {
-   if (!_enabled) return true;
+   if (!enabled()) return true;
 
    const Bloom_params& params = postprocess.bloom_params();
 
-   return !(params.enabled && params.mode == Bloom_mode::blended);
+   return !(enabled() && params.mode == Bloom_mode::blended);
 }
 
 void Control::show_imgui(HWND game_window) noexcept
@@ -83,7 +111,15 @@ void Control::show_imgui(HWND game_window) noexcept
 
    if (ImGui::BeginTabBar("Effects Config")) {
       if (ImGui::BeginTabItem("Control")) {
+         ImGui::BeginDisabled(enabled() && !_enabled);
+
          ImGui::Checkbox("Enable Effects", &_enabled);
+
+         ImGui::EndDisabled();
+
+         if (enabled() && !_enabled) {
+            ImGui::Text("Effects are being enabled from the user config.");
+         }
 
          if (ImGui::CollapsingHeader("Effects Config", ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::Checkbox("HDR Rendering", &_config.hdr_rendering);
@@ -202,6 +238,7 @@ void Control::read_config(YAML::Node config)
       config["Vignette"s].as<Vignette_params>(Vignette_params{}));
    postprocess.film_grain_params(
       config["FilmGrain"s].as<Film_grain_params>(Film_grain_params{}));
+   postprocess.dof_params(config["DOF"s].as<DOF_params>(DOF_params{}));
    ssao.params(config["SSAO"s].as<SSAO_params>(SSAO_params{false}));
    ffx_cas.params(config["ContrastAdaptiveSharpening"s].as<FFX_cas_params>(
       FFX_cas_params{false}));
@@ -216,6 +253,7 @@ auto Control::output_params_to_yaml_string() noexcept -> std::string
    config["Bloom"s] = postprocess.bloom_params();
    config["Vignette"s] = postprocess.vignette_params();
    config["FilmGrain"s] = postprocess.film_grain_params();
+   config["DOF"s] = postprocess.dof_params();
    config["SSAO"s] = ssao.params();
    config["ContrastAdaptiveSharpening"s] = ffx_cas.params();
 
@@ -388,6 +426,12 @@ void Control::show_post_processing_imgui() noexcept
       if (ImGui::BeginTabItem("Film Grain")) {
          postprocess.film_grain_params(
             show_film_grain_imgui(postprocess.film_grain_params()));
+
+         ImGui::EndTabItem();
+      }
+
+      if (ImGui::BeginTabItem("Depth of Field")) {
+         postprocess.dof_params(show_dof_imgui(postprocess.dof_params()));
 
          ImGui::EndTabItem();
       }
@@ -652,6 +696,53 @@ Film_grain_params show_film_grain_imgui(Film_grain_params params) noexcept
    ImGui::DragFloat("Size", &params.size, 0.05f, 1.6f, 3.0f);
    ImGui::DragFloat("Color Amount", &params.color_amount, 0.05f, 0.0f, 1.0f);
    ImGui::DragFloat("Luma Amount", &params.luma_amount, 0.05f, 0.0f, 1.0f);
+
+   return params;
+}
+
+DOF_params show_dof_imgui(DOF_params params) noexcept
+{
+   ImGui::Checkbox("Enabled", &params.enabled);
+
+   ImGui::DragFloat("Film Size", &params.film_size_mm, 1.0f, 1.0f, 256.0f);
+
+   ImGui::SetItemTooltip(
+      "Film/Sensor Size for the Depth of Field. Due to limitations in how "
+      "Shader Patch works this does not alter the FOV.");
+
+   ImGui::DragFloat("Focus Distance", &params.focus_distance, 1.0f, 0.0f, 1e10f);
+
+   ImGui::SetItemTooltip("Distance to the plane in focus.");
+
+   int f_stop_index = static_cast<int>(std::round(
+      std::log(double{params.f_stop}) / std::log(std::numbers::sqrt2_v<double>)));
+
+   if (ImGui::SliderInt("f-stop", &f_stop_index, 0, 10,
+                        fmt::format("f/{:.1f}", params.f_stop).c_str(),
+                        ImGuiSliderFlags_NoInput)) {
+      params.f_stop = static_cast<float>(
+         std::pow(std::numbers::sqrt2_v<double>, static_cast<double>(f_stop_index)));
+   }
+
+   ImGui::SetItemTooltip(
+      "f-stop/f-number for the lens. Higher numbers create "
+      "less blur, lower numbers cause more blur. This does not currently alter "
+      "the exposure either as it would on a real lens.");
+
+   ImGui::InputFloat("f-stop##raw", &params.f_stop, 1.0f, 1.0f, "f/%.1f");
+
+   ImGui::SetItemTooltip("Manual input for the f-stop.");
+
+   ImGui::Separator();
+
+   ImGui::TextWrapped(
+      "Focal Length is controlled by ingame FOV.\n\nBe aware as well that the "
+      "current Depth of Field implementation can interact poorly with "
+      "transparent surfaces/particles and also the far scene.");
+
+   params.film_size_mm = std::max(params.film_size_mm, 1.0f);
+   params.focus_distance = std::max(params.focus_distance, 0.0f);
+   params.f_stop = std::max(params.f_stop, 1.0f);
 
    return params;
 }

@@ -36,6 +36,20 @@ public:
       return _script_env["fail_safe_texture_index"];
    }
 
+   auto get_want_depth_buffer_input() -> bool
+   {
+      return _script_env["want_depth_buffer_input"] != nullptr
+                ? _script_env["want_depth_buffer_input"]
+                : false;
+   }
+
+   auto get_want_refraction_buffer_input() -> bool
+   {
+      return _script_env["want_refraction_buffer_input"] != nullptr
+                ? _script_env["want_refraction_buffer_input"]
+                : false;
+   }
+
    bool has_constant_buffer() const noexcept
    {
       return _script_env["make_constant_buffer"] != nullptr;

@@ -1,6 +1,6 @@
 {
-  "group_name": "normal_ext",
-  "source_name": "normal_ext.fx",
+  "group_name": "normal_bf3",
+  "source_name": "normal_bf3.fx",
 
   "entrypoints": {
     "main_vs": {
@@ -22,22 +22,16 @@
       },
 
       "static_flags": [
-        "NORMAL_EXT_USE_DYNAMIC_TANGENTS",
-        "NORMAL_EXT_USE_TRANSPARENCY"
+        "NORMAL_BF3_USE_DYNAMIC_TANGENTS",
+        "NORMAL_BF3_USE_TRANSPARENCY"
       ],
 
       "defines": [
-        [ "NORMAL_EXT_USE_TEXCOORDS_TRANSFORM", "1" ],
-        [ "NORMAL_EXT_USE_SPECULAR", "0" ],
-        [ "NORMAL_EXT_USE_SPECULAR_MAP", "0" ],
-        [ "NORMAL_EXT_USE_SPECULAR_TRUE_GLOSS", "0" ],
-        [ "NORMAL_EXT_USE_SPECULAR_NORMALIZED", "0" ],
-        [ "NORMAL_EXT_USE_PARALLAX_OCCLUSION_MAPPING", "0" ],
-        [ "NORMAL_EXT_USE_VERTEX_COLOR_FOR_EMISSIVE", "0" ],
-        [ "NORMAL_EXT_USE_INTERIOR_MAPPING", "0" ],
-        [ "NORMAL_EXT_USE_HARDEDGED_TEST", "0" ],
-        [ "NORMAL_EXT_USE_SHADOW_MAP", "0" ],
-        [ "NORMAL_EXT_USE_PROJECTED_TEXTURE", "0" ]
+        [ "NORMAL_BF3_USE_TEXCOORDS_TRANSFORM", "1" ],
+        [ "NORMAL_BF3_USE_SPECULAR_MAP", "0" ],
+        [ "NORMAL_BF3_USE_HARDEDGED_TEST", "0" ],
+        [ "NORMAL_BF3_USE_SHADOW_MAP", "0" ],
+        [ "NORMAL_BF3_USE_PROJECTED_TEXTURE", "0" ]
       ]
     },
 
@@ -45,22 +39,16 @@
       "stage": "pixel",
 
       "static_flags": [
-        "NORMAL_EXT_USE_SPECULAR",
-        "NORMAL_EXT_USE_SPECULAR_MAP",
-        "NORMAL_EXT_USE_SPECULAR_TRUE_GLOSS",
-        "NORMAL_EXT_USE_SPECULAR_NORMALIZED",
-        "NORMAL_EXT_USE_PARALLAX_OCCLUSION_MAPPING",
-        "NORMAL_EXT_USE_DYNAMIC_TANGENTS",
-        "NORMAL_EXT_USE_VERTEX_COLOR_FOR_EMISSIVE",
-        "NORMAL_EXT_USE_INTERIOR_MAPPING",
-        "NORMAL_EXT_USE_TRANSPARENCY",
-        "NORMAL_EXT_USE_HARDEDGED_TEST",
-        "NORMAL_EXT_USE_SHADOW_MAP",
-        "NORMAL_EXT_USE_PROJECTED_TEXTURE"
+        "NORMAL_BF3_USE_DYNAMIC_TANGENTS",
+        "NORMAL_BF3_USE_SPECULAR_MAP",
+        "NORMAL_BF3_USE_TRANSPARENCY",
+        "NORMAL_BF3_USE_HARDEDGED_TEST",
+        "NORMAL_BF3_USE_SHADOW_MAP",
+        "NORMAL_BF3_USE_PROJECTED_TEXTURE"
       ],
 
       "defines": [
-        [ "NORMAL_EXT_USE_TEXCOORDS_TRANSFORM", "1" ]
+        [ "NORMAL_BF3_USE_TEXCOORDS_TRANSFORM", "1" ]
       ]
     },
 
@@ -68,27 +56,21 @@
       "stage": "pixel",
 
       "static_flags": [
-        "NORMAL_EXT_USE_SPECULAR",
-        "NORMAL_EXT_USE_SPECULAR_MAP",
-        "NORMAL_EXT_USE_SPECULAR_TRUE_GLOSS",
-        "NORMAL_EXT_USE_SPECULAR_NORMALIZED",
-        "NORMAL_EXT_USE_PARALLAX_OCCLUSION_MAPPING",
-        "NORMAL_EXT_USE_DYNAMIC_TANGENTS",
-        "NORMAL_EXT_USE_VERTEX_COLOR_FOR_EMISSIVE",
-        "NORMAL_EXT_USE_INTERIOR_MAPPING",
-        "NORMAL_EXT_USE_HARDEDGED_TEST",
-        "NORMAL_EXT_USE_SHADOW_MAP",
-        "NORMAL_EXT_USE_PROJECTED_TEXTURE"
+        "NORMAL_BF3_USE_DYNAMIC_TANGENTS",
+        "NORMAL_BF3_USE_SPECULAR_MAP",
+        "NORMAL_BF3_USE_HARDEDGED_TEST",
+        "NORMAL_BF3_USE_SHADOW_MAP",
+        "NORMAL_BF3_USE_PROJECTED_TEXTURE"
       ],
 
       "defines": [
-        [ "NORMAL_EXT_USE_TEXCOORDS_TRANSFORM", "1" ],
-        [ "NORMAL_EXT_USE_TRANSPARENCY", "1" ]
+        [ "NORMAL_BF3_USE_TEXCOORDS_TRANSFORM", "1" ],
+        [ "NORMAL_BF3_USE_TRANSPARENCY", "1" ]
       ]
     }
   },
 
-  "rendertypes": { "normal_ext": {} },
+  "rendertypes": { "normal_bf3": {} },
 
   "states": {
     "unlit opaque": {
@@ -114,7 +96,7 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_HARDEDGED_TEST": true
+          "NORMAL_BF3_USE_HARDEDGED_TEST": true
         }
       }
     },
@@ -126,7 +108,7 @@
         "entrypoint": "main_vs",
 
         "static_flags": {
-          "NORMAL_EXT_USE_TRANSPARENCY": true
+          "NORMAL_BF3_USE_TRANSPARENCY": true
         }
       },
 
@@ -134,7 +116,7 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_TRANSPARENCY": true
+          "NORMAL_BF3_USE_TRANSPARENCY": true
         }
       },
 
@@ -150,7 +132,7 @@
         "entrypoint": "main_vs",
 
         "static_flags": {
-          "NORMAL_EXT_USE_TRANSPARENCY": true
+          "NORMAL_BF3_USE_TRANSPARENCY": true
         }
       },
 
@@ -158,8 +140,8 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_TRANSPARENCY": true,
-          "NORMAL_EXT_USE_HARDEDGED_TEST": true
+          "NORMAL_BF3_USE_TRANSPARENCY": true,
+          "NORMAL_BF3_USE_HARDEDGED_TEST": true
         }
       },
 
@@ -167,7 +149,7 @@
         "entrypoint": "oit_main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_HARDEDGED_TEST": true
+          "NORMAL_BF3_USE_HARDEDGED_TEST": true
         }
       }
     },
@@ -195,7 +177,7 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_HARDEDGED_TEST": true
+          "NORMAL_BF3_USE_HARDEDGED_TEST": true
         }
       }
     },
@@ -207,7 +189,7 @@
         "entrypoint": "main_vs",
 
         "static_flags": {
-          "NORMAL_EXT_USE_TRANSPARENCY": true
+          "NORMAL_BF3_USE_TRANSPARENCY": true
         }
       },
 
@@ -215,7 +197,7 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_TRANSPARENCY": true
+          "NORMAL_BF3_USE_TRANSPARENCY": true
         }
       },
 
@@ -231,7 +213,7 @@
         "entrypoint": "main_vs",
 
         "static_flags": {
-          "NORMAL_EXT_USE_TRANSPARENCY": true
+          "NORMAL_BF3_USE_TRANSPARENCY": true
         }
       },
 
@@ -239,8 +221,8 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_TRANSPARENCY": true,
-          "NORMAL_EXT_USE_HARDEDGED_TEST": true
+          "NORMAL_BF3_USE_TRANSPARENCY": true,
+          "NORMAL_BF3_USE_HARDEDGED_TEST": true
         }
       },
 
@@ -248,7 +230,7 @@
         "entrypoint": "oit_main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_HARDEDGED_TEST": true
+          "NORMAL_BF3_USE_HARDEDGED_TEST": true
         }
       }
     },
@@ -264,7 +246,7 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "NORMAL_BF3_USE_PROJECTED_TEXTURE": true
         }
       }
     },
@@ -280,8 +262,8 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_HARDEDGED_TEST": true,
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "NORMAL_BF3_USE_HARDEDGED_TEST": true,
+          "NORMAL_BF3_USE_PROJECTED_TEXTURE": true
         }
       }
     },
@@ -293,7 +275,7 @@
         "entrypoint": "main_vs",
 
         "static_flags": {
-          "NORMAL_EXT_USE_TRANSPARENCY": true
+          "NORMAL_BF3_USE_TRANSPARENCY": true
         }
       },
 
@@ -301,8 +283,8 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_TRANSPARENCY": true,
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "NORMAL_BF3_USE_TRANSPARENCY": true,
+          "NORMAL_BF3_USE_PROJECTED_TEXTURE": true
         }
       },
 
@@ -310,7 +292,7 @@
         "entrypoint": "oit_main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "NORMAL_BF3_USE_PROJECTED_TEXTURE": true
         }
       }
     },
@@ -322,7 +304,7 @@
         "entrypoint": "main_vs",
 
         "static_flags": {
-          "NORMAL_EXT_USE_TRANSPARENCY": true
+          "NORMAL_BF3_USE_TRANSPARENCY": true
         }
       },
 
@@ -330,9 +312,9 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_TRANSPARENCY": true,
-          "NORMAL_EXT_USE_HARDEDGED_TEST": true,
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "NORMAL_BF3_USE_TRANSPARENCY": true,
+          "NORMAL_BF3_USE_HARDEDGED_TEST": true,
+          "NORMAL_BF3_USE_PROJECTED_TEXTURE": true
         }
       },
 
@@ -340,8 +322,8 @@
         "entrypoint": "oit_main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_HARDEDGED_TEST": true,
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "NORMAL_BF3_USE_HARDEDGED_TEST": true,
+          "NORMAL_BF3_USE_PROJECTED_TEXTURE": true
         }
       }
     },
@@ -357,7 +339,7 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_SHADOW_MAP": true
+          "NORMAL_BF3_USE_SHADOW_MAP": true
         }
       }
     },
@@ -373,8 +355,8 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_HARDEDGED_TEST": true,
-          "NORMAL_EXT_USE_SHADOW_MAP": true
+          "NORMAL_BF3_USE_HARDEDGED_TEST": true,
+          "NORMAL_BF3_USE_SHADOW_MAP": true
         }
       }
     },
@@ -390,8 +372,8 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_SHADOW_MAP": true,
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "NORMAL_BF3_USE_SHADOW_MAP": true,
+          "NORMAL_BF3_USE_PROJECTED_TEXTURE": true
         }
       }
     },
@@ -407,9 +389,9 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_HARDEDGED_TEST": true,
-          "NORMAL_EXT_USE_SHADOW_MAP": true,
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "NORMAL_BF3_USE_HARDEDGED_TEST": true,
+          "NORMAL_BF3_USE_SHADOW_MAP": true,
+          "NORMAL_BF3_USE_PROJECTED_TEXTURE": true
         }
       }
     },
@@ -421,7 +403,7 @@
         "entrypoint": "main_vs",
 
         "static_flags": {
-          "NORMAL_EXT_USE_TRANSPARENCY": true
+          "NORMAL_BF3_USE_TRANSPARENCY": true
         }
       },
 
@@ -429,8 +411,8 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_TRANSPARENCY": true,
-          "NORMAL_EXT_USE_SHADOW_MAP": true
+          "NORMAL_BF3_USE_TRANSPARENCY": true,
+          "NORMAL_BF3_USE_SHADOW_MAP": true
         }
       },
 
@@ -438,7 +420,7 @@
         "entrypoint": "oit_main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_SHADOW_MAP": true
+          "NORMAL_BF3_USE_SHADOW_MAP": true
         }
       }
     },
@@ -450,7 +432,7 @@
         "entrypoint": "main_vs",
 
         "static_flags": {
-          "NORMAL_EXT_USE_TRANSPARENCY": true
+          "NORMAL_BF3_USE_TRANSPARENCY": true
         }
       },
 
@@ -458,9 +440,9 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_TRANSPARENCY": true,
-          "NORMAL_EXT_USE_HARDEDGED_TEST": true,
-          "NORMAL_EXT_USE_SHADOW_MAP": true
+          "NORMAL_BF3_USE_TRANSPARENCY": true,
+          "NORMAL_BF3_USE_HARDEDGED_TEST": true,
+          "NORMAL_BF3_USE_SHADOW_MAP": true
         }
       },
 
@@ -468,8 +450,8 @@
         "entrypoint": "oit_main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_HARDEDGED_TEST": true,
-          "NORMAL_EXT_USE_SHADOW_MAP": true
+          "NORMAL_BF3_USE_HARDEDGED_TEST": true,
+          "NORMAL_BF3_USE_SHADOW_MAP": true
         }
       }
     },
@@ -481,7 +463,7 @@
         "entrypoint": "main_vs",
 
         "static_flags": {
-          "NORMAL_EXT_USE_TRANSPARENCY": true
+          "NORMAL_BF3_USE_TRANSPARENCY": true
         }
       },
 
@@ -489,9 +471,9 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_TRANSPARENCY": true,
-          "NORMAL_EXT_USE_SHADOW_MAP": true,
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "NORMAL_BF3_USE_TRANSPARENCY": true,
+          "NORMAL_BF3_USE_SHADOW_MAP": true,
+          "NORMAL_BF3_USE_PROJECTED_TEXTURE": true
         }
       },
 
@@ -499,8 +481,8 @@
         "entrypoint": "oit_main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_SHADOW_MAP": true,
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "NORMAL_BF3_USE_SHADOW_MAP": true,
+          "NORMAL_BF3_USE_PROJECTED_TEXTURE": true
         }
       }
     },
@@ -512,7 +494,7 @@
         "entrypoint": "main_vs",
 
         "static_flags": {
-          "NORMAL_EXT_USE_TRANSPARENCY": true
+          "NORMAL_BF3_USE_TRANSPARENCY": true
         }
       },
 
@@ -520,10 +502,10 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_TRANSPARENCY": true,
-          "NORMAL_EXT_USE_HARDEDGED_TEST": true,
-          "NORMAL_EXT_USE_SHADOW_MAP": true,
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "NORMAL_BF3_USE_TRANSPARENCY": true,
+          "NORMAL_BF3_USE_HARDEDGED_TEST": true,
+          "NORMAL_BF3_USE_SHADOW_MAP": true,
+          "NORMAL_BF3_USE_PROJECTED_TEXTURE": true
         }
       },
 
@@ -531,9 +513,9 @@
         "entrypoint": "oit_main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_HARDEDGED_TEST": true,
-          "NORMAL_EXT_USE_SHADOW_MAP": true,
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "NORMAL_BF3_USE_HARDEDGED_TEST": true,
+          "NORMAL_BF3_USE_SHADOW_MAP": true,
+          "NORMAL_BF3_USE_PROJECTED_TEXTURE": true
         }
       }
     }

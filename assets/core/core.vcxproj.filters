@@ -425,6 +425,12 @@
     <None Include="src\ASSAO.hlsl">
       <Filter>src</Filter>
     </None>
+    <None Include="definitions\patch\normal_bf3.json">
+      <Filter>definitions\patch</Filter>
+    </None>
+    <None Include="src\normal_bf3.fx">
+      <Filter>src</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="definitions">
