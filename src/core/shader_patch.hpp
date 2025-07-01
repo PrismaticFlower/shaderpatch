@@ -393,6 +393,8 @@ private:
    bool _ps_textures_dirty = true;
    bool _ps_textures_material_wants_depthstencil = false;
    bool _ps_textures_shader_wants_depthstencil = false;
+   bool _ps_textures_material_wants_refraction = false;
+   bool _ps_textures_shader_wants_refraction = false;
    bool _cb_scene_dirty = true;
    bool _cb_draw_dirty = true;
    bool _cb_skin_dirty = true;

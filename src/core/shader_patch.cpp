@@ -32,7 +32,6 @@ constexpr auto projtex_cube_slot = 4;
 constexpr auto shadow_texture_format = DXGI_FORMAT_R8G8_UNORM;
 constexpr auto flares_texture_format = DXGI_FORMAT_A8_UNORM;
 constexpr auto screenshots_folder = L"ScreenShots/";
-constexpr auto refraction_texture_name = "_SP_BUILTIN_refraction"sv;
 
 namespace {
 
@@ -1256,12 +1255,20 @@ void Shader_patch::set_projtex_cube(const Game_texture& texture) noexcept
 
 void Shader_patch::set_patch_material(material::Material* material) noexcept
 {
-   if (_patch_material && _patch_material->want_depth_buffer_input) {
-      _ps_textures_material_wants_depthstencil = false;
-      _om_depthstencil_material_force_readonly = false;
+   if (_patch_material) {
+      if (_patch_material->want_depth_buffer_input) {
+         _ps_textures_material_wants_depthstencil = false;
+         _ps_textures_material_wants_refraction = false;
+         _om_depthstencil_material_force_readonly = false;
 
-      _om_targets_dirty = true;
-      _ps_textures_dirty = true;
+         _om_targets_dirty = true;
+         _ps_textures_dirty = true;
+      }
+
+      if (_patch_material->want_refraction_buffer_input) {
+         _ps_textures_material_wants_refraction = false;
+         _ps_textures_dirty = true;
+      }
    }
 
    _patch_material = material;
@@ -1278,6 +1285,8 @@ void Shader_patch::set_patch_material(material::Material* material) noexcept
       }
 
       _ps_textures_dirty = true;
+      _ps_textures_material_wants_refraction =
+         _patch_material->want_refraction_buffer_input;
 
       _patch_material->bind_constant_buffers(*_device_context);
       _patch_material->bind_shader_resources(*_device_context);
@@ -1593,15 +1602,10 @@ void Shader_patch::game_rendertype_changed() noexcept
    else if (_shader_rendertype == Rendertype::refraction) {
       resolve_refraction_texture();
 
-      const bool far_scene = (_current_depthstencil_id == Game_depthstencil::farscene);
-
-      const auto& refraction_src = far_scene ? _farscene_refraction_rt : _refraction_rt;
-
-      _game_textures[4] = {refraction_src.srv, refraction_src.srv};
-
       _om_targets_dirty = true;
       _om_depthstencil_force_readonly = true;
       _ps_textures_shader_wants_depthstencil = true;
+      _ps_textures_shader_wants_refraction = true;
       _ps_textures_dirty = true;
 
       _on_rendertype_changed = [this]() noexcept {
@@ -1610,6 +1614,7 @@ void Shader_patch::game_rendertype_changed() noexcept
          _om_targets_dirty = true;
          _om_depthstencil_force_readonly = false;
          _ps_textures_shader_wants_depthstencil = false;
+         _ps_textures_shader_wants_refraction = false;
          _ps_textures_dirty = true;
          _on_rendertype_changed = nullptr;
       };
@@ -1617,18 +1622,14 @@ void Shader_patch::game_rendertype_changed() noexcept
    else if (_shader_rendertype == Rendertype::water) {
       resolve_refraction_texture();
 
-      const bool far_scene = (_current_depthstencil_id == Game_depthstencil::farscene);
-
       auto water_srv = _shader_resource_database.at_if("$water"sv);
 
-      const auto& refraction_src = far_scene ? _farscene_refraction_rt : _refraction_rt;
-
       _game_textures[4] = {water_srv, water_srv};
-      _game_textures[5] = {refraction_src.srv, refraction_src.srv};
 
       _om_targets_dirty = true;
       _om_depthstencil_force_readonly = true;
       _ps_textures_shader_wants_depthstencil = true;
+      _ps_textures_shader_wants_refraction = true;
       _ps_textures_dirty = true;
       _lock_projtex_cube_slot = true;
 
@@ -1636,6 +1637,7 @@ void Shader_patch::game_rendertype_changed() noexcept
          _om_targets_dirty = true;
          _om_depthstencil_force_readonly = false;
          _ps_textures_shader_wants_depthstencil = false;
+         _ps_textures_shader_wants_refraction = false;
          _ps_textures_dirty = true;
          _lock_projtex_cube_slot = false;
          _on_rendertype_changed = nullptr;
@@ -1868,6 +1870,8 @@ void Shader_patch::update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primit
           _ps_textures_material_wants_depthstencil) &&
          (_current_depthstencil_id == Game_depthstencil::nearscene) &&
          use_depth_refraction_mask(_refraction_quality);
+      const bool want_refraction_input = (_ps_textures_shader_wants_refraction ||
+                                          _ps_textures_material_wants_refraction);
 
       if (_linear_rendering) {
          const auto& srgb = _game_shader->srgb_state;
@@ -1880,7 +1884,12 @@ void Shader_patch::update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primit
                                srgb[3] ? _game_textures[3].srgb_srv.get()
                                        : _game_textures[3].srv.get(),
                                _game_textures[4].srv.get(),
-                               _game_textures[5].srv.get(),
+                               want_refraction_input
+                                  ? (_current_depthstencil_id == Game_depthstencil::farscene
+                                        ? _farscene_refraction_rt
+                                        : _refraction_rt)
+                                       .srv.get()
+                                  : nullptr,
                                want_depthstencil_input
                                   ? current_nearscene_depthstencil_srv()
                                   : _basic_builtin_textures.white.get()};
@@ -1893,7 +1902,12 @@ void Shader_patch::update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primit
                                _game_textures[2].srv.get(),
                                _game_textures[3].srv.get(),
                                _game_textures[4].srv.get(),
-                               _game_textures[5].srv.get(),
+                               want_refraction_input
+                                  ? (_current_depthstencil_id == Game_depthstencil::farscene
+                                        ? _farscene_refraction_rt
+                                        : _refraction_rt)
+                                       .srv.get()
+                                  : nullptr,
                                want_depthstencil_input
                                   ? current_nearscene_depthstencil_srv()
                                   : _basic_builtin_textures.white.get()};
@@ -2167,10 +2181,6 @@ void Shader_patch::update_refraction_target() noexcept
                                       _render_height / scale_factor};
    _farscene_refraction_rt = Game_rendertarget{*_device, _current_rt_format,
                                                _render_width / 8, _render_height / 8};
-
-   _shader_resource_database.insert(_refraction_rt.srv, refraction_texture_name);
-
-   update_material_resources();
 }
 
 void Shader_patch::update_samplers() noexcept

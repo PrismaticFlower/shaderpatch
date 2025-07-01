@@ -177,7 +177,7 @@ float4 nodistortion_ps(Ps_nodistortion_input input,
 Texture2D<float2> bump_texture : register(t0);
 Texture2D<float4> diffuse_texture : register(t2);
 Texture2D<float3> projection_texture : register(t3);
-Texture2D<float3> refraction_buffer : register(t4);
+Texture2D<float3> refraction_buffer : register(t5);
 Texture2D<float> depth_buffer : register(t6);
 
 struct Ps_near_input
