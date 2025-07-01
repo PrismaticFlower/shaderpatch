@@ -140,7 +140,7 @@ public:
       return _pointer;
    }
 
-   Class* const* get_ptr_ptr() const noexcept
+   Class* const* get_ptr() const noexcept
    {
       return &_pointer;
    }

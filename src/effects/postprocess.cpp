@@ -661,7 +661,7 @@ private:
       srvs = {input.srv(), &input_depth};
 
       dc.PSSetShader(prepare_ps, nullptr, 0);
-      dc.PSSetConstantBuffers(1, 1, _dof_constant_buffer.get_ptr_ptr());
+      dc.PSSetConstantBuffers(1, 1, _dof_constant_buffer.get_ptr());
 
       auto prepare_near =
          allocator.allocate({.format = DXGI_FORMAT_R16G16B16A16_FLOAT,
