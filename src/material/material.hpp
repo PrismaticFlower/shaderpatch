@@ -47,6 +47,9 @@ struct Material {
    Constant_buffer_bind cb_bind;
    Com_ptr<ID3D11Buffer> constant_buffer;
 
+   bool want_depth_buffer_input = false;
+   bool want_refraction_buffer_input = false;
+
    std::vector<Com_ptr<ID3D11ShaderResourceView>> vs_shader_resources;
    std::vector<Com_ptr<ID3D11ShaderResourceView>> ps_shader_resources;
 

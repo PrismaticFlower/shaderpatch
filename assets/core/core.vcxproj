@@ -180,6 +180,7 @@
     <None Include="definitions\patch\gaussian_blur.json" />
     <None Include="definitions\patch\late_backbuffer_resolve.json" />
     <None Include="definitions\patch\mask_nan.json" />
+    <None Include="definitions\patch\normal_bf3.json" />
     <None Include="definitions\patch\normal_ext_terrain.json" />
     <None Include="definitions\patch\particle_ext.json" />
     <None Include="definitions\patch\pbr_terrain.json" />
@@ -547,6 +548,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\ASSAO.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\normal_bf3.fx">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

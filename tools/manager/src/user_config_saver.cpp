@@ -69,7 +69,7 @@ void save_user_config(const std::filesystem::path& path, const user_config& conf
    constexpr static auto max_comment_line_size = 100;
 
    const auto write_value = [&](const auto& setting) {
-      auto description = to_utf8(user_config_descriptions.at(setting.name));
+      auto description = user_config_descriptions.at(to_utf8(setting.name));
 
       for (std::string_view line : lines_iterator{description}) {
          out << indention << "#"sv;

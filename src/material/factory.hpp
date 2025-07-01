@@ -34,6 +34,8 @@ public:
 
    void update_material(material::Material& material) noexcept;
 
+   auto shader_resource_database() const noexcept -> core::Shader_resource_database&;
+
 private:
    Com_ptr<ID3D11Device5> _device;
    Shader_factory _shader_factory;

@@ -19,6 +19,18 @@ Properties:
       Type: bool
       Default: false
 
+   UseSpecularMap:
+      Type: bool
+      Default: false
+
+   UseTrueGlossMap:
+      Type: bool
+      Default: false
+
+   UseSpecularLightingNormalized:
+      Type: bool
+      Default: false
+
    SpecularColor:
       Type: vec3
       Default: [1.0, 1.0, 1.0]
@@ -116,6 +128,7 @@ Properties:
 
 Resource Properties:
    DiffuseMap:
+   SpecularMap:
    NormalMap: 
    HeightMap:
    DetailMap:

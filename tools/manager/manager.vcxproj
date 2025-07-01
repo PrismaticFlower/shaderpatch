@@ -83,6 +83,7 @@
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>$(SolutionDir)/shared/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -107,6 +108,7 @@
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>$(SolutionDir)/shared/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -133,7 +135,6 @@
     <ClInclude Include="src\config_ui.hpp" />
     <ClInclude Include="src\app_ui_mode.hpp" />
     <ClInclude Include="src\user_config.hpp" />
-    <ClInclude Include="src\user_config_descriptions.hpp" />
     <ClInclude Include="src\user_config_loader.hpp" />
     <ClInclude Include="src\user_config_saver.hpp" />
     <ClInclude Include="src\xaml_ui_helpers.hpp" />
@@ -158,13 +159,17 @@
     <ClCompile Include="src\installer.cpp" />
     <ClCompile Include="src\install_manifest.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\user_config_descriptions.cpp" />
     <ClCompile Include="src\user_config_loader.cpp" />
     <ClCompile Include="src\user_config_saver.cpp" />
     <ClCompile Include="src\xml_install_manifest.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="manager.exe.manifest" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\shared\shared.vcxproj">
+      <Project>{cc4890f2-40e7-446f-8971-5114ea566c27}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

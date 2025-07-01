@@ -62,6 +62,21 @@ void property_editor(const std::string& name, Material_var<Var_type>& var) noexc
    var.value = glm::clamp(var.value, var.min, var.max);
 }
 
+void property_editor(const std::string& name, Material_var<glm::vec3>& var) noexcept
+{
+   if (name.find("Color") != name.npos) {
+      ImGui::ColorEdit3(name.c_str(), &var.value[0], ImGuiColorEditFlags_Float);
+   }
+   else {
+      using Traits = Property_traits<glm::vec3>;
+
+      ImGui::DragScalarN(name.c_str(), Traits::data_type, &var.value,
+                         Traits::length, Traits::speed, &var.min, &var.max);
+   }
+
+   var.value = glm::clamp(var.value, var.min, var.max);
+}
+
 void property_editor(const std::string& name, Material_var<bool>& var) noexcept
 {
    ImGui::Checkbox(name.c_str(), &var.value);
@@ -81,7 +96,16 @@ void material_editor(Factory& factory, Material& material) noexcept
    if (!material.resource_properties.empty() &&
        ImGui::TreeNode("Shader Resources")) {
       for (auto& [key, value] : material.resource_properties) {
-         ImGui::InputText(key.c_str(), &value);
+         if (ImGui::BeginCombo(key.c_str(), value.data(), ImGuiComboFlags_HeightLargest)) {
+            const core::Shader_resource_database::Imgui_pick_result picked =
+               factory.shader_resource_database().imgui_resource_picker();
+
+            if (picked.srv) {
+               value = picked.name;
+            }
+
+            ImGui::EndCombo();
+         }
       }
 
       ImGui::TreePop();

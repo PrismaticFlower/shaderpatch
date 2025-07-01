@@ -2,9 +2,8 @@ Shader Patch Enabled: yes
 
 Display: 
 
-   # Allow tearing when displaying frames. This can allow lower latency and is also required for
-   # variable refresh rate technologies to work.
-   Allow Tearing: no
+   # Turn V-Sync on or off. The game's own setting for this is currently ignored.
+   V-Sync: yes
 
    # Whether 800x600 will be treated as the resolution used by the game's main menu interface. When
    # enabled causes Shader Patch to override the game's resolution without informing the game it has done so.
@@ -189,6 +188,10 @@ Graphics:
    # should be in the same directory as the game's executable.
    User Effects Config: user.spfx
 
+   # Like Enable User Effects Config except SP will automatically check for a config named "shader
+   # patch.spfx". If it exists Shader Patch will load it and activate Effects.
+   Enable Auto User Effects Config: yes
+
    # Force using Direct3D 11 on 12 instead of the any native Direct3D 11 driver. This can workaround
    # bugs in the D3D11 driver. It is likely that turning this on will cost some performance however. CMAA2
    # is also broken while using this (unsure why, there are no debug layer errors from D3D11 or D3D12
@@ -221,6 +224,18 @@ Effects:
    # Quality of SSAO when enabled. Can be "Fastest", "Fast", Medium", "High" or "Highest". Each step up
    # is usually 1.5x-2.0x more expensive than the last setting.
    SSAO Quality: Medium
+
+   # Enable or disable a mod using the Depth of Field effect.
+   # 
+   # Has anywhere from a slight performance impact to significant performance impact depending on the
+   # quality setting.
+   Depth of Field: yes
+
+   # Quality of the Depth of Field effect when enabled.
+   # 
+   # Can be "Ultra Performance", "Performance", "Quality" or "Ultra Quality". Ultra Quality is
+   # significantly more expensive than Quality.
+   Depth of Field Quality: Quality
 
 Developer: 
 

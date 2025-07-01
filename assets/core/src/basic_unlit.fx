@@ -56,6 +56,10 @@ Vs_output main_vs(Vertex_input input)
                          calculate_near_fade(positionPS);
    output.fog = calculate_fog(positionWS, positionPS);
 
+   if (use_transparency) {
+      output.color.rgb *= color.a;
+   }
+
    return output;
 }
 

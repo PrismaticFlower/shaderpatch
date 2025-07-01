@@ -127,6 +127,45 @@ inline auto to_string_view(const Rendertype rendertype) noexcept -> std::string_
    std::terminate();
 }
 
+inline auto to_wcstring(const Rendertype rendertype) noexcept -> const wchar_t*
+{
+   // clang-format off
+   switch (rendertype) {
+      case Rendertype::decal: return L"decal";
+      case Rendertype::filtercopy: return L"filtercopy";
+      case Rendertype::flare: return L"flare";
+      case Rendertype::hdr: return L"hdr";
+      case Rendertype::_interface: return L"interface";
+      case Rendertype::normal: return L"normal";
+      case Rendertype::normalmapadder: return L"normalmapadder";
+      case Rendertype::lightbeam: return L"lightbeam";
+      case Rendertype::ocean: return L"ocean";
+      case Rendertype::particle: return L"particle";
+      case Rendertype::perpixeldiffuselighting: return L"perpixeldiffuselighting";
+      case Rendertype::prereflection: return L"prereflection";
+      case Rendertype::rain: return L"rain";
+      case Rendertype::refraction: return L"refraction";
+      case Rendertype::sample: return L"sample";
+      case Rendertype::shadowquad: return L"shadowquad";
+      case Rendertype::shield: return L"shield";
+      case Rendertype::skyfog: return L"skyfog";
+      case Rendertype::specularlighting: return L"specularlighting";
+      case Rendertype::sprite: return L"sprite";
+      case Rendertype::stencilshadow: return L"stencilshadow";
+      case Rendertype::Terrain2: return L"Terrain2";
+      case Rendertype::water: return L"water";
+      case Rendertype::zprepass: return L"zprepass";
+      case Rendertype::fixedfunc_color_fill: return L"fixedfunc_color_fill";
+      case Rendertype::fixedfunc_damage_overlay: return L"fixedfunc_damage_overlay";
+      case Rendertype::fixedfunc_plain_texture: return L"fixedfunc_plain_texture";
+      case Rendertype::fixedfunc_scene_blur: return L"fixedfunc_scene_blur";
+      case Rendertype::fixedfunc_zoom_blur: return L"fixedfunc_zoom_blur";
+   }
+   // clang-format on
+
+   std::terminate();
+}
+
 inline auto to_string(const Rendertype rendertype) noexcept -> std::string
 {
    return std::string{to_string_view(rendertype)};

@@ -22,6 +22,7 @@
 #include <limits>
 #include <optional>
 #include <random>
+#include <span>
 #include <string>
 
 #include <glm/glm.hpp>
@@ -154,7 +155,7 @@ void do_pass(ID3D11DeviceContext1& dc, ID3D11ShaderResourceView& input,
    dc.Draw(3, 0);
 }
 
-void do_pass(ID3D11DeviceContext1& dc, std::array<ID3D11ShaderResourceView*, 5> inputs,
+void do_pass(ID3D11DeviceContext1& dc, std::span<ID3D11ShaderResourceView*> inputs,
              ID3D11RenderTargetView& output) noexcept
 {
    auto* const rtv = &output;
@@ -165,7 +166,7 @@ void do_pass(ID3D11DeviceContext1& dc, std::array<ID3D11ShaderResourceView*, 5> 
    dc.Draw(3, 0);
 }
 
-void do_pass(ID3D11DeviceContext1& dc, std::array<ID3D11ShaderResourceView*, 5> inputs,
+void do_pass(ID3D11DeviceContext1& dc, std::span<ID3D11ShaderResourceView*> inputs,
              std::array<ID3D11RenderTargetView*, 2> outputs) noexcept
 {
    dc.OMSetRenderTargets(outputs.size(), outputs.data(), nullptr);
@@ -173,6 +174,14 @@ void do_pass(ID3D11DeviceContext1& dc, std::array<ID3D11ShaderResourceView*, 5> 
    dc.PSSetShaderResources(0, inputs.size(), inputs.data());
 
    dc.Draw(3, 0);
+}
+
+template<UINT count>
+void clear_ps_srvs(ID3D11DeviceContext1& dc) noexcept
+{
+   std::array<ID3D11ShaderResourceView*, count> null_srvs = {};
+
+   dc.PSSetShaderResources(0, null_srvs.size(), null_srvs.data());
 }
 
 }
@@ -206,6 +215,61 @@ public:
            shaders.pixel("postprocess_bloom"sv).entrypoint("upsample_ps"sv)},
         _bloom_threshold_ps{
            shaders.pixel("postprocess_bloom"sv).entrypoint("threshold_ps"sv)},
+        _dof_prepare_ps{shaders.pixel("postprocess_dof"sv).entrypoint("prepare_ps"sv)},
+        _dof_prepare_downsample_2x_ps{
+           shaders.pixel("postprocess_dof"sv).entrypoint("prepare_downsample_2x_ps"sv)},
+        _dof_prepare_downsample_4x_ps{
+           shaders.pixel("postprocess_dof"sv).entrypoint("prepare_downsample_4x_ps"sv)},
+        _dof_near_mask_16x_cs{
+           shaders.compute("postprocess_dof"sv).entrypoint("downsample_16x_near_mask_cs"sv)},
+        _dof_near_mask_8x_cs{
+           shaders.compute("postprocess_dof"sv).entrypoint("downsample_8x_near_mask_cs"sv)},
+        _dof_near_mask_4x_cs{
+           shaders.compute("postprocess_dof"sv).entrypoint("downsample_4x_near_mask_cs"sv)},
+        _dof_blur_x_near_mask_ps{
+           shaders.pixel("postprocess_dof"sv).entrypoint("blur_x_near_mask_ps"sv)},
+        _dof_blur_y_near_mask_ps{
+           shaders.pixel("postprocess_dof"sv).entrypoint("blur_y_near_mask_ps"sv)},
+        _dof_blur_x_near_mask_downsampled_2x_ps{
+           shaders.pixel("postprocess_dof"sv).entrypoint("blur_x_near_mask_downsampled_2x_ps"sv)},
+        _dof_blur_y_near_mask_downsampled_2x_ps{
+           shaders.pixel("postprocess_dof"sv).entrypoint("blur_y_near_mask_downsampled_2x_ps"sv)},
+        _dof_blur_x_near_mask_downsampled_4x_ps{
+           shaders.pixel("postprocess_dof"sv).entrypoint("blur_x_near_mask_downsampled_4x_ps"sv)},
+        _dof_blur_y_near_mask_downsampled_4x_ps{
+           shaders.pixel("postprocess_dof"sv).entrypoint("blur_y_near_mask_downsampled_4x_ps"sv)},
+        _dof_gather_ps{shaders.pixel("postprocess_dof"sv).entrypoint("gather_ps"sv)},
+        _dof_gather_downsampled_2x_ps{
+           shaders.pixel("postprocess_dof"sv).entrypoint("gather_downsampled_2x_ps"sv)},
+        _dof_gather_downsampled_4x_ps{
+           shaders.pixel("postprocess_dof"sv).entrypoint("gather_downsampled_4x_ps"sv)},
+        _dof_gather_downsampled_4x_fast_ps{
+           shaders.pixel("postprocess_dof"sv).entrypoint("gather_downsampled_4x_fast_ps"sv)},
+        _dof_gather_near_ps{
+           shaders.pixel("postprocess_dof"sv).entrypoint("gather_near_ps"sv)},
+        _dof_gather_far_ps{
+           shaders.pixel("postprocess_dof"sv).entrypoint("gather_far_ps"sv)},
+        _dof_gather_near_downsampled_2x_ps{
+           shaders.pixel("postprocess_dof"sv).entrypoint("gather_near_downsampled_2x_ps"sv)},
+        _dof_gather_far_downsampled_2x_ps{
+           shaders.pixel("postprocess_dof"sv).entrypoint("gather_far_downsampled_2x_ps"sv)},
+        _dof_gather_near_downsampled_4x_ps{
+           shaders.pixel("postprocess_dof"sv).entrypoint("gather_near_downsampled_4x_ps"sv)},
+        _dof_gather_far_downsampled_4x_ps{
+           shaders.pixel("postprocess_dof"sv).entrypoint("gather_far_downsampled_4x_ps"sv)},
+        _dof_gather_near_downsampled_4x_fast_ps{
+           shaders.pixel("postprocess_dof"sv).entrypoint("gather_near_downsampled_4x_fast_ps"sv)},
+        _dof_gather_far_downsampled_4x_fast_ps{
+           shaders.pixel("postprocess_dof"sv).entrypoint("gather_far_downsampled_4x_fast_ps"sv)},
+        _dof_floodfill_ps{
+           shaders.pixel("postprocess_dof"sv).entrypoint("floodfill_ps"sv)},
+        _dof_compose_ps{shaders.pixel("postprocess_dof"sv).entrypoint("compose_ps"sv)},
+        _dof_compose_upsample_2x_ps{
+           shaders.pixel("postprocess_dof"sv).entrypoint("compose_upsample_2x_ps"sv)},
+        _dof_compose_upsample_4x_ps{
+           shaders.pixel("postprocess_dof"sv).entrypoint("compose_upsample_4x_ps"sv)},
+        _dof_compose_upsample_4x_fast_ps{
+           shaders.pixel("postprocess_dof"sv).entrypoint("compose_upsample_4x_fast_ps"sv)},
         _color_grading_lut_baker{_device, shaders}
    {
       bloom_params(Bloom_params{});
@@ -280,6 +344,16 @@ public:
       return _film_grain_params;
    }
 
+   void dof_params(const DOF_params& params) noexcept
+   {
+      _dof_params = params;
+   }
+
+   auto dof_params() const noexcept -> const DOF_params&
+   {
+      return _dof_params;
+   }
+
    void color_grading_regions(const Color_grading_regions& colorgrading_regions) noexcept
    {
       _color_grading_regions_blender.regions(colorgrading_regions);
@@ -310,6 +384,7 @@ public:
       const bool resolve_msaa = input.sample_count != 1;
       const bool cas_enabled = ffx_cas.params().enabled;
       const bool cmaa2_enabled = options.apply_cmaa2;
+      const bool dof_enabled = _dof_params.enabled && user_config.effects.dof;
       const bool output_luma = cmaa2_enabled;
       const bool compute_stages_active = cas_enabled || cmaa2_enabled;
 
@@ -332,6 +407,12 @@ public:
       if (stock_hdr && !resolve_msaa) {
          work_texture = do_linearize_input(dc, work_texture, rt_allocator,
                                            process_format, profiler);
+      }
+
+      if (dof_enabled) {
+         work_texture = do_depth_of_field(dc, rt_allocator, input.depth_srv,
+                                          input.projection_from_view,
+                                          work_texture, profiler);
       }
 
       std::optional luma_target =
@@ -381,8 +462,9 @@ private:
       dc.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
       dc.VSSetShader(_fullscreen_vs.get(), nullptr, 0);
 
-      auto* const sampler = _linear_clamp_sampler.get();
-      dc.PSSetSamplers(0, 1, &sampler);
+      const std::array samplers = {_linear_border_sampler.get(),
+                                   _linear_clamp_sampler.get()};
+      dc.PSSetSamplers(0, samplers.size(), samplers.data());
    }
 
    auto do_msaa_resolve_input(ID3D11DeviceContext1& dc, const Work_texture& input,
@@ -448,6 +530,259 @@ private:
       dc.Draw(3, 0);
 
       return std::move(output);
+   }
+
+   auto do_depth_of_field(ID3D11DeviceContext1& dc, Rendertarget_allocator& allocator,
+                          ID3D11ShaderResourceView& input_depth,
+                          const glm::mat4& projection_from_view,
+                          const Work_texture& input, Profiler& profiler) noexcept
+      -> Work_texture
+   {
+      Profile profile{profiler, dc, "Postprocessing - Depth of Field"};
+
+      const float tan_fov_x = 1.0f / projection_from_view[0][0];
+      const float film_size_mm = _dof_params.film_size_mm;
+      const float film_size = film_size_mm / 1000.0f;
+      const float focal_length = 2.0f * (film_size * 0.5f) / tan_fov_x;
+      const float focus_distance = _dof_params.focus_distance;
+      const float f_stop = _dof_params.f_stop;
+      const float aperture_diameter = (focal_length / f_stop) * 0.5f;
+      const bool separate_gather = true;
+
+      ID3D11PixelShader* prepare_ps = nullptr;
+      ID3D11ComputeShader* near_mask_cs = nullptr;
+      ID3D11PixelShader* blur_x_near_mask_ps = nullptr;
+      ID3D11PixelShader* blur_y_near_mask_ps = nullptr;
+      ID3D11PixelShader* gather_ps = nullptr;
+      ID3D11PixelShader* gather_near_ps = nullptr;
+      ID3D11PixelShader* gather_far_ps = nullptr;
+      ID3D11PixelShader* compose_ps = nullptr;
+      UINT process_factor = 1;
+      UINT near_mask_factor = 1;
+
+      switch (user_config.effects.dof_quality) {
+      case DOF_quality::ultra_performance: {
+         prepare_ps = _dof_prepare_downsample_4x_ps.get();
+
+         near_mask_cs = _dof_near_mask_4x_cs.get();
+         blur_x_near_mask_ps = _dof_blur_x_near_mask_downsampled_4x_ps.get();
+         blur_y_near_mask_ps = _dof_blur_y_near_mask_downsampled_4x_ps.get();
+
+         gather_ps = _dof_gather_downsampled_4x_fast_ps.get();
+         gather_near_ps = _dof_gather_near_downsampled_4x_fast_ps.get();
+         gather_far_ps = _dof_gather_far_downsampled_4x_fast_ps.get();
+
+         compose_ps = _dof_compose_upsample_4x_fast_ps.get();
+
+         process_factor = 4;
+         near_mask_factor = 4;
+      } break;
+      case DOF_quality::performance: {
+         prepare_ps = _dof_prepare_downsample_4x_ps.get();
+
+         near_mask_cs = _dof_near_mask_4x_cs.get();
+         blur_x_near_mask_ps = _dof_blur_x_near_mask_downsampled_4x_ps.get();
+         blur_y_near_mask_ps = _dof_blur_y_near_mask_downsampled_4x_ps.get();
+
+         gather_ps = _dof_gather_downsampled_4x_ps.get();
+         gather_near_ps = _dof_gather_near_downsampled_4x_ps.get();
+         gather_far_ps = _dof_gather_far_downsampled_4x_ps.get();
+
+         compose_ps = _dof_compose_upsample_4x_ps.get();
+
+         process_factor = 4;
+         near_mask_factor = 4;
+      } break;
+      case DOF_quality::quality: {
+         prepare_ps = _dof_prepare_downsample_2x_ps.get();
+
+         near_mask_cs = _dof_near_mask_8x_cs.get();
+         blur_x_near_mask_ps = _dof_blur_x_near_mask_downsampled_2x_ps.get();
+         blur_y_near_mask_ps = _dof_blur_y_near_mask_downsampled_2x_ps.get();
+
+         gather_ps = _dof_gather_downsampled_2x_ps.get();
+         gather_near_ps = _dof_gather_near_downsampled_2x_ps.get();
+         gather_far_ps = _dof_gather_far_downsampled_2x_ps.get();
+
+         compose_ps = _dof_compose_upsample_2x_ps.get();
+
+         process_factor = 2;
+         near_mask_factor = 8;
+      } break;
+      case DOF_quality::ultra_quality: {
+         prepare_ps = _dof_prepare_ps.get();
+
+         near_mask_cs = _dof_near_mask_16x_cs.get();
+         blur_x_near_mask_ps = _dof_blur_x_near_mask_ps.get();
+         blur_y_near_mask_ps = _dof_blur_y_near_mask_ps.get();
+
+         gather_ps = _dof_gather_ps.get();
+         gather_near_ps = _dof_gather_near_ps.get();
+         gather_far_ps = _dof_gather_far_ps.get();
+
+         compose_ps = _dof_compose_ps.get();
+
+         process_factor = 1;
+         near_mask_factor = 16;
+      } break;
+      }
+
+      const UINT process_width = input.width() / process_factor;
+      const UINT process_height = input.height() / process_factor;
+
+      const UINT near_mask_width =
+         (process_width + near_mask_factor - 1) / near_mask_factor;
+      const UINT near_mask_height =
+         (process_height + near_mask_factor - 1) / near_mask_factor;
+
+      const float inv_film_size = 1.0f / film_size;
+      const float inv_focal_range = 1.0f / (focus_distance - focal_length);
+      const float coc_mul = focal_length * inv_focal_range *
+                            -aperture_diameter * inv_film_size * process_width;
+
+      core::update_dynamic_buffer(
+         dc, *_dof_constant_buffer,
+         Depth_of_field_constants{
+            .proj_from_view_m33 = projection_from_view[2][2],
+            .proj_from_view_m43 = projection_from_view[3][2],
+            .focus_distance = focus_distance,
+            .coc_mul = coc_mul,
+            .target_size = {static_cast<float>(process_width),
+                            static_cast<float>(process_height)},
+            .inv_target_size = {1.0f / process_width, 1.0f / process_height},
+            .near_mask_size = {static_cast<float>(near_mask_width),
+                               static_cast<float>(near_mask_height)},
+            .inv_near_mask_size = {1.0f / near_mask_width, 1.0f / near_mask_height},
+         });
+
+      std::array<ID3D11ShaderResourceView*, 4> srvs{};
+      set_viewport(dc, process_width, process_height);
+
+      srvs = {input.srv(), &input_depth};
+
+      dc.PSSetShader(prepare_ps, nullptr, 0);
+      dc.PSSetConstantBuffers(1, 1, _dof_constant_buffer.get_ptr_ptr());
+
+      auto prepare_near =
+         allocator.allocate({.format = DXGI_FORMAT_R16G16B16A16_FLOAT,
+                             .width = process_width,
+                             .height = process_height,
+                             .bind_flags = rendertarget_bind_srv_rtv});
+      auto prepare_far =
+         allocator.allocate({.format = DXGI_FORMAT_R16G16B16A16_FLOAT,
+                             .width = process_width,
+                             .height = process_height,
+                             .bind_flags = rendertarget_bind_srv_rtv});
+
+      do_pass(dc, srvs, {prepare_near.rtv(), prepare_far.rtv()});
+
+      auto near_mask =
+         allocator.allocate({.format = DXGI_FORMAT_R8_UNORM,
+                             .width = near_mask_width,
+                             .height = near_mask_height,
+                             .bind_flags = rendertarget_bind_srv_rtv_uav});
+
+      {
+         dc.OMSetRenderTargets(0, nullptr, nullptr);
+
+         srvs = {prepare_near.srv()};
+
+         auto* uav = near_mask.uav();
+
+         dc.CSSetShaderResources(0, srvs.size(), srvs.data());
+         dc.CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
+         dc.CSSetShader(near_mask_cs, nullptr, 0);
+
+         dc.Dispatch(near_mask_width, near_mask_height, 1);
+
+         uav = nullptr;
+         srvs = {};
+
+         dc.CSSetShaderResources(0, srvs.size(), srvs.data());
+         dc.CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
+
+         srvs = {near_mask.srv()};
+
+         auto near_mask_blur_x =
+            allocator.allocate({.format = DXGI_FORMAT_R8_UNORM,
+                                .width = near_mask_width,
+                                .height = near_mask_height,
+                                .bind_flags = rendertarget_bind_srv_rtv});
+
+         srvs = {near_mask.srv()};
+
+         dc.PSSetShader(blur_x_near_mask_ps, nullptr, 0);
+
+         do_pass(dc, srvs, *near_mask_blur_x.rtv());
+
+         srvs = {near_mask_blur_x.srv()};
+
+         dc.PSSetShader(blur_y_near_mask_ps, nullptr, 0);
+
+         clear_ps_srvs<1>(dc);
+
+         do_pass(dc, srvs, *near_mask.rtv());
+      }
+
+      set_viewport(dc, process_width, process_height);
+
+      srvs = {prepare_near.srv(), near_mask.srv(), prepare_far.srv()};
+
+      auto gather_near =
+         allocator.allocate({.format = DXGI_FORMAT_R16G16B16A16_FLOAT,
+                             .width = process_width,
+                             .height = process_height,
+                             .bind_flags = rendertarget_bind_srv_rtv});
+      auto gather_far =
+         allocator.allocate({.format = DXGI_FORMAT_R16G16B16A16_FLOAT,
+                             .width = process_width,
+                             .height = process_height,
+                             .bind_flags = rendertarget_bind_srv_rtv});
+
+      if (separate_gather) {
+         dc.PSSetShader(gather_near_ps, nullptr, 0);
+
+         do_pass(dc, srvs, *gather_near.rtv());
+
+         dc.PSSetShader(gather_far_ps, nullptr, 0);
+
+         do_pass(dc, srvs, *gather_far.rtv());
+      }
+      else {
+         dc.PSSetShader(gather_ps, nullptr, 0);
+
+         do_pass(dc, srvs, {gather_near.rtv(), gather_far.rtv()});
+      }
+
+      auto floodfill_near = std::move(prepare_near);
+      auto floodfill_far = std::move(prepare_far);
+
+      srvs = {gather_near.srv(), gather_far.srv()};
+
+      dc.PSSetShader(_dof_floodfill_ps.get(), nullptr, 0);
+
+      clear_ps_srvs<3>(dc);
+
+      do_pass(dc, srvs, {floodfill_near.rtv(), floodfill_far.rtv()});
+
+      auto compose_target =
+         process_factor == 1
+            ? std::move(gather_near)
+            : allocator.allocate({.format = DXGI_FORMAT_R16G16B16A16_FLOAT,
+                                  .width = input.width(),
+                                  .height = input.height(),
+                                  .bind_flags = rendertarget_bind_srv_rtv});
+
+      srvs = {floodfill_near.srv(), floodfill_far.srv(), input.srv(), &input_depth};
+
+      dc.PSSetShader(compose_ps, nullptr, 0);
+
+      clear_ps_srvs<2>(dc);
+
+      set_viewport(dc, compose_target.width(), compose_target.height());
+      do_pass(dc, srvs, *compose_target.rtv());
+
+      return std::move(compose_target);
    }
 
    auto do_bloom_and_color_grading(
@@ -919,23 +1254,54 @@ private:
 
    static_assert(sizeof(Bloom_constants) == 32);
 
+   struct Depth_of_field_constants {
+      float proj_from_view_m33;
+      float proj_from_view_m43;
+      float focus_distance;
+      float coc_mul;
+      glm::vec2 target_size;
+      glm::vec2 inv_target_size;
+      glm::vec2 near_mask_size;
+      glm::vec2 inv_near_mask_size;
+   };
+
+   static_assert(sizeof(Depth_of_field_constants) == 48);
+
    Global_constants _global_constants;
    std::array<Bloom_constants, 6> _bloom_constants;
 
    const Com_ptr<ID3D11Device1> _device;
    const Com_ptr<ID3D11BlendState> _additive_blend_state =
       create_additive_blend_state(*_device);
+   const Com_ptr<ID3D11SamplerState> _linear_border_sampler = [this] {
+      const D3D11_SAMPLER_DESC desc{.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT,
+                                    .AddressU = D3D11_TEXTURE_ADDRESS_BORDER,
+                                    .AddressV = D3D11_TEXTURE_ADDRESS_BORDER,
+                                    .AddressW = D3D11_TEXTURE_ADDRESS_BORDER,
+                                    .MipLODBias = 0.0f,
+                                    .MaxAnisotropy = 1,
+                                    .ComparisonFunc = D3D11_COMPARISON_NEVER,
+                                    .BorderColor = {0.0f, 0.0f, 0.0f, 0.0f},
+                                    .MinLOD = 0.0f,
+                                    .MaxLOD = FLT_MAX};
+
+      Com_ptr<ID3D11SamplerState> state;
+
+      _device->CreateSamplerState(&desc, state.clear_and_assign());
+
+      return state;
+   }();
    const Com_ptr<ID3D11SamplerState> _linear_clamp_sampler = [this] {
-      const CD3D11_SAMPLER_DESC desc{D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT,
-                                     D3D11_TEXTURE_ADDRESS_CLAMP,
-                                     D3D11_TEXTURE_ADDRESS_CLAMP,
-                                     D3D11_TEXTURE_ADDRESS_CLAMP,
-                                     0.0f,
-                                     1,
-                                     D3D11_COMPARISON_NEVER,
-                                     nullptr,
-                                     0.0f,
-                                     std::numeric_limits<float>::max()};
+      const D3D11_SAMPLER_DESC desc{.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT,
+                                    .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+                                    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
+                                    .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+                                    .MipLODBias = 0.0f,
+                                    .MaxAnisotropy = 1,
+                                    .ComparisonFunc = D3D11_COMPARISON_NEVER,
+                                    .BorderColor = {0.0f, 0.0f, 0.0f, 0.0f},
+                                    .MinLOD = 0.0f,
+                                    .MaxLOD = FLT_MAX};
 
       Com_ptr<ID3D11SamplerState> state;
 
@@ -955,6 +1321,8 @@ private:
       core::create_dynamic_constant_buffer(*_device, sizeof(Bloom_constants)),
       core::create_dynamic_constant_buffer(*_device, sizeof(Bloom_constants)),
       core::create_dynamic_constant_buffer(*_device, sizeof(Bloom_constants))};
+   const Com_ptr<ID3D11Buffer> _dof_constant_buffer =
+      core::create_dynamic_constant_buffer(*_device, sizeof(Depth_of_field_constants));
 
    shader::Group_pixel& _shaders;
 
@@ -969,6 +1337,35 @@ private:
    const Com_ptr<ID3D11PixelShader> _bloom_downsample_ps;
    const Com_ptr<ID3D11PixelShader> _bloom_upsample_ps;
    const Com_ptr<ID3D11PixelShader> _bloom_threshold_ps;
+   const Com_ptr<ID3D11PixelShader> _dof_prepare_ps;
+   const Com_ptr<ID3D11PixelShader> _dof_prepare_downsample_2x_ps;
+   const Com_ptr<ID3D11PixelShader> _dof_prepare_downsample_4x_ps;
+   const Com_ptr<ID3D11ComputeShader> _dof_near_mask_16x_cs;
+   const Com_ptr<ID3D11ComputeShader> _dof_near_mask_8x_cs;
+   const Com_ptr<ID3D11ComputeShader> _dof_near_mask_4x_cs;
+   const Com_ptr<ID3D11PixelShader> _dof_blur_x_near_mask_ps;
+   const Com_ptr<ID3D11PixelShader> _dof_blur_y_near_mask_ps;
+   const Com_ptr<ID3D11PixelShader> _dof_blur_x_near_mask_downsampled_2x_ps;
+   const Com_ptr<ID3D11PixelShader> _dof_blur_y_near_mask_downsampled_2x_ps;
+   const Com_ptr<ID3D11PixelShader> _dof_blur_x_near_mask_downsampled_4x_ps;
+   const Com_ptr<ID3D11PixelShader> _dof_blur_y_near_mask_downsampled_4x_ps;
+   const Com_ptr<ID3D11PixelShader> _dof_gather_ps;
+   const Com_ptr<ID3D11PixelShader> _dof_gather_downsampled_2x_ps;
+   const Com_ptr<ID3D11PixelShader> _dof_gather_downsampled_4x_ps;
+   const Com_ptr<ID3D11PixelShader> _dof_gather_downsampled_4x_fast_ps;
+   const Com_ptr<ID3D11PixelShader> _dof_gather_near_ps;
+   const Com_ptr<ID3D11PixelShader> _dof_gather_far_ps;
+   const Com_ptr<ID3D11PixelShader> _dof_gather_near_downsampled_2x_ps;
+   const Com_ptr<ID3D11PixelShader> _dof_gather_far_downsampled_2x_ps;
+   const Com_ptr<ID3D11PixelShader> _dof_gather_near_downsampled_4x_ps;
+   const Com_ptr<ID3D11PixelShader> _dof_gather_far_downsampled_4x_ps;
+   const Com_ptr<ID3D11PixelShader> _dof_gather_near_downsampled_4x_fast_ps;
+   const Com_ptr<ID3D11PixelShader> _dof_gather_far_downsampled_4x_fast_ps;
+   const Com_ptr<ID3D11PixelShader> _dof_floodfill_ps;
+   const Com_ptr<ID3D11PixelShader> _dof_compose_ps;
+   const Com_ptr<ID3D11PixelShader> _dof_compose_upsample_2x_ps;
+   const Com_ptr<ID3D11PixelShader> _dof_compose_upsample_4x_ps;
+   const Com_ptr<ID3D11PixelShader> _dof_compose_upsample_4x_fast_ps;
    Com_ptr<ID3D11PixelShader> _postprocess_combine_ps;
    Com_ptr<ID3D11PixelShader> _postprocess_finalize_ps;
 
@@ -977,6 +1374,7 @@ private:
 
    Vignette_params _vignette_params{};
    Film_grain_params _film_grain_params{};
+   DOF_params _dof_params{};
 
    Hdr_state _hdr_state = Hdr_state::hdr;
 
@@ -987,7 +1385,6 @@ private:
    bool _vignette_enabled = true;
    bool _film_grain_enabled = true;
    bool _colored_film_grain_enabled = true;
-   bool _mask_nans = false;
 
    std::mt19937 _random_engine{std::random_device{}()};
    std::uniform_real_distribution<float> _random_real_dist{0.0f, 256.0f};
@@ -1054,6 +1451,16 @@ void Postprocess::film_grain_params(const Film_grain_params& params) noexcept
 auto Postprocess::film_grain_params() const noexcept -> const Film_grain_params&
 {
    return _impl->film_grain_params();
+}
+
+void Postprocess::dof_params(const DOF_params& params) noexcept
+{
+   _impl->dof_params(params);
+}
+
+auto Postprocess::dof_params() const noexcept -> const DOF_params&
+{
+   return _impl->dof_params();
 }
 
 void Postprocess::color_grading_regions(const Color_grading_regions& colorgrading_regions) noexcept

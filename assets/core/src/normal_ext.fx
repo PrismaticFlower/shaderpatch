@@ -15,16 +15,17 @@
 Texture2D<float3> projected_light_texture : register(ps, t2);
 Texture2D<float2> shadow_ao_map : register(ps, t3);
 Texture2D<float4> diffuse_map : register(ps, t7);
-Texture2D<float4> normal_map : register(ps, t8);
-Texture2D<float>  height_map : register(ps, t9);
-Texture2D<float3> detail_map : register(ps, t10);
-Texture2D<float2> detail_normal_map : register(ps, t11);
-Texture2D<float3> emissive_map : register(ps, t12);
-Texture2D<float4> overlay_diffuse_map : register(ps, t13);
-Texture2D<float4> overlay_normal_map : register(ps, t14);
-Texture2D<float> ao_map : register(ps, t15);
-TextureCube<float3> env_map : register(ps, t16);
-TextureCubeArray<float3> interior_map_array : register(ps, t17);
+Texture2D<float4> specular_map : register(ps, t8);
+Texture2D<float4> normal_map : register(ps, t9);
+Texture2D<float>  height_map : register(ps, t10);
+Texture2D<float3> detail_map : register(ps, t11);
+Texture2D<float2> detail_normal_map : register(ps, t12);
+Texture2D<float3> emissive_map : register(ps, t13);
+Texture2D<float4> overlay_diffuse_map : register(ps, t14);
+Texture2D<float4> overlay_normal_map : register(ps, t15);
+Texture2D<float> ao_map : register(ps, t16);
+TextureCube<float3> env_map : register(ps, t17);
+TextureCubeArray<float3> interior_map_array : register(ps, t18);
 // Game Custom Constants
 
 const static float4 blend_constant = ps_custom_constants[0];
@@ -39,7 +40,7 @@ cbuffer MaterialConstants : register(MATERIAL_CB_INDEX)
    float3 base_diffuse_color;
    float  gloss_map_weight;
    float3 base_specular_color;
-   float  specular_exponent;
+   float  base_specular_exponent;
    float  height_scale;
    bool   use_detail_textures;
    float  detail_texture_scale;
@@ -61,6 +62,9 @@ cbuffer MaterialConstants : register(MATERIAL_CB_INDEX)
 // Shader Feature Controls
 const static bool use_texcoords_transform = NORMAL_EXT_USE_TEXCOORDS_TRANSFORM;
 const static bool use_specular = NORMAL_EXT_USE_SPECULAR;
+const static bool use_specular_map = NORMAL_EXT_USE_SPECULAR_MAP;
+const static bool use_specular_true_gloss = NORMAL_EXT_USE_SPECULAR_TRUE_GLOSS;
+const static bool use_specular_normalized = NORMAL_EXT_USE_SPECULAR_NORMALIZED;
 const static bool use_parallax_occlusion_mapping = NORMAL_EXT_USE_PARALLAX_OCCLUSION_MAPPING;
 const static bool use_vertex_color_for_emissive = NORMAL_EXT_USE_VERTEX_COLOR_FOR_EMISSIVE;
 const static bool use_transparency = NORMAL_EXT_USE_TRANSPARENCY;
@@ -114,6 +118,11 @@ Vs_output main_vs(Vertex_input input)
    output.material_color_fade.a *=
       use_transparency ? calculate_near_fade_transparent(positionPS) : 
                          calculate_near_fade(positionPS);
+
+   if (use_transparency) {
+      output.material_color_fade.rgb *= output.material_color_fade.a;
+   }
+
    output.static_lighting = get_static_diffuse_color(input.color());
    output.fog = calculate_fog(positionWS, positionPS);
 
@@ -321,12 +330,44 @@ Ps_output main_ps(Ps_input input)
    const float ao = use_ao_texture
                        ? min(ao_map.Sample(aniso_wrap_sampler, texcoords), shadow_ao_sample.g)
                        : shadow_ao_sample.g;
+   float specular_exponent = base_specular_exponent;
 
    // Calculate Lighting
    if (use_specular) {
-      color = do_lighting(normalWS, input.positionWS, viewWS, diffuse_color,
-                          input.static_lighting, base_specular_color * gloss, specular_exponent,
-                          shadow, ao, projected_light_texture);
+      float3 specular_color = base_specular_color;
+
+      if (use_specular_map) {
+         const float4 specular_map_color = specular_map.Sample(aniso_wrap_sampler, texcoords);
+
+         specular_color *= specular_map_color.rgb;
+         gloss = specular_map_color.a;
+      }
+      else {
+         specular_color *= gloss;
+      }
+
+      if (use_specular_true_gloss) {
+         // Christian Schüler's Glossniess Anti-Aliasing - http://www.thetenthplanet.de/archives/3401
+         const float3 ddx_normalWS = ddx(normalWS);
+         const float3 ddy_normalWS = ddy(normalWS);
+         const float curvature_sq = max(dot(ddx_normalWS, ddx_normalWS), dot(ddy_normalWS, ddy_normalWS));
+         const float max_gloss = -0.0909 - 0.0909 * log2(0.5 * curvature_sq);
+
+         gloss = min(gloss, max_gloss);
+
+         specular_exponent = exp2(1.0 + gloss * 11.0);
+      }
+
+      if (use_specular_normalized) {
+         color = do_lighting_normalized(normalWS, input.positionWS, viewWS, diffuse_color,
+                                        input.static_lighting, specular_color, specular_exponent,
+                                        shadow, ao, projected_light_texture);
+      }
+      else {
+         color = do_lighting(normalWS, input.positionWS, viewWS, diffuse_color,
+                             input.static_lighting, specular_color, specular_exponent,
+                             shadow, ao, projected_light_texture);
+      }
    }
    else {
       color = do_lighting_diffuse(normalWS, input.positionWS, diffuse_color, 

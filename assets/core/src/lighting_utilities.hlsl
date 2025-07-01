@@ -234,7 +234,6 @@ void calculate_spot(inout float4 in_out_diffuse, inout float4 in_out_specular,
                   view_normalWS, exponent, ignore.x, ignore.y);
 }
 }
-
 }
 
 #endif

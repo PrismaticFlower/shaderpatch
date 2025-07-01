@@ -38,9 +38,6 @@
     <ClInclude Include="src\user_config.hpp">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\user_config_descriptions.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="src\user_config_saver.hpp">
       <Filter>src</Filter>
     </ClInclude>
@@ -92,9 +89,6 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\config_ui.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\user_config_descriptions.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\user_config_saver.cpp">

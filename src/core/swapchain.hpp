@@ -29,6 +29,8 @@ public:
 
    void resize(const bool fullscreen, const UINT width, const UINT height) noexcept;
 
+   void restore_fullscreen();
+
    auto present() noexcept -> Present_status;
 
    auto game_rendertarget() const noexcept -> Game_rendertarget;
@@ -46,19 +48,22 @@ public:
    auto srv() const noexcept -> ID3D11ShaderResourceView*;
 
 private:
+   const HWND _window;
+
+   const bool _supports_tearing;
+
+   bool _want_fullscreen = false;
+   bool _switch_to_fullscreen = false;
+   bool _fullscreen = false;
+   UINT _width = 0;
+   UINT _height = 0;
+   UINT _flags = 0;
+
    const Com_ptr<ID3D11Device1> _device;
    const Com_ptr<IDXGISwapChain1> _swapchain;
    Com_ptr<ID3D11Texture2D> _texture;
    Com_ptr<ID3D11RenderTargetView> _rtv;
    Com_ptr<ID3D11ShaderResourceView> _srv;
-
-   const HWND _window;
-
-   const bool _allow_tearing;
-
-   bool _fullscreen = false;
-   UINT _width = 0;
-   UINT _height = 0;
 };
 
 }
