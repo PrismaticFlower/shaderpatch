@@ -57,7 +57,7 @@ Vs_output main_vs(Vertex_input input)
    output.fog = calculate_fog(positionWS, positionPS);
 
    if (use_transparency) {
-      output.color.rgb *= color.a;
+      output.color.rgb *= output.color.a;
    }
 
    return output;
