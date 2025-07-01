@@ -146,6 +146,7 @@ void Factory::update_material(material::Material& material) noexcept
    material.fail_safe_game_texture =
       make_fail_safe_texture(material_type->fail_safe_texture_index(),
                              material.ps_shader_resources);
+   material.want_depth_buffer_input = material_type->get_want_depth_buffer_input();
 
    if (material_type->has_constant_buffer()) {
       Resource_info_views resource_info_views{.vs = {material.vs_shader_resources},

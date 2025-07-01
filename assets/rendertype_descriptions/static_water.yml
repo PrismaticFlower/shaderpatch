@@ -83,5 +83,4 @@ Properties:
 Resource Properties:
    NormalMap:
    ReflectionMap:
-   DepthBuffer:
    RefractionMap:

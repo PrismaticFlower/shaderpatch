@@ -255,8 +255,11 @@ private:
    auto current_depthstencil() const noexcept -> ID3D11DepthStencilView*
    {
       return current_depthstencil(_om_depthstencil_readonly |
+                                  _om_depthstencil_material_force_readonly |
                                   _om_depthstencil_force_readonly);
    }
+
+   auto current_depthstencil_srv() const noexcept -> ID3D11ShaderResourceView*;
 
    void bind_static_resources() noexcept;
 
@@ -383,9 +386,11 @@ private:
    UINT8 _game_stencil_ref = 0xff;
    bool _om_depthstencil_readonly = true;
    bool _om_depthstencil_force_readonly = false;
+   bool _om_depthstencil_material_force_readonly = false;
    bool _om_depthstencil_state_dirty = true;
    bool _om_blend_state_dirty = true;
    bool _ps_textures_dirty = true;
+   bool _ps_textures_material_wants_depthstencil = false;
    bool _cb_scene_dirty = true;
    bool _cb_draw_dirty = true;
    bool _cb_skin_dirty = true;

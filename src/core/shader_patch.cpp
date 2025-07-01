@@ -1257,12 +1257,27 @@ void Shader_patch::set_projtex_cube(const Game_texture& texture) noexcept
 
 void Shader_patch::set_patch_material(material::Material* material) noexcept
 {
+   if (_patch_material && _patch_material->want_depth_buffer_input) {
+      _ps_textures_material_wants_depthstencil = false;
+      _om_depthstencil_material_force_readonly = false;
+
+      _om_targets_dirty = true;
+      _ps_textures_dirty = true;
+   }
+
    _patch_material = material;
    _shader_dirty = true;
 
    if (_patch_material) {
       _game_textures[0] = {_patch_material->fail_safe_game_texture,
                            _patch_material->fail_safe_game_texture};
+
+      if (_patch_material->want_depth_buffer_input) {
+         _ps_textures_material_wants_depthstencil = true;
+         _om_depthstencil_material_force_readonly = true;
+         _om_targets_dirty = true;
+      }
+
       _ps_textures_dirty = true;
 
       _patch_material->bind_constant_buffers(*_device_context);
@@ -1407,6 +1422,25 @@ auto Shader_patch::current_depthstencil(const bool readonly) const noexcept
    if (!depthstencil) return nullptr;
 
    return readonly ? depthstencil->dsv_readonly.get() : depthstencil->dsv.get();
+}
+
+auto Shader_patch::current_depthstencil_srv() const noexcept -> ID3D11ShaderResourceView*
+{
+   const auto depthstencil = [this]() -> const Depthstencil* {
+      if (_current_depthstencil_id == Game_depthstencil::nearscene)
+         return &(_use_interface_depthstencil ? _interface_depthstencil
+                                              : _nearscene_depthstencil);
+      else if (_current_depthstencil_id == Game_depthstencil::farscene)
+         return &_farscene_depthstencil;
+      else if (_current_depthstencil_id == Game_depthstencil::reflectionscene)
+         return &_reflectionscene_depthstencil;
+      else
+         return nullptr;
+   }();
+
+   if (!depthstencil) return nullptr;
+
+   return depthstencil->srv.get();
 }
 
 void Shader_patch::bind_static_resources() noexcept
@@ -1843,6 +1877,10 @@ void Shader_patch::update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primit
    }
 
    if (std::exchange(_ps_textures_dirty, false)) {
+      const bool want_depthstencil =
+         _ps_textures_material_wants_depthstencil &
+         (_current_depthstencil_id == Game_depthstencil::nearscene);
+
       if (_linear_rendering) {
          const auto& srgb = _game_shader->srgb_state;
          const std::array srvs{srgb[0] ? _game_textures[0].srgb_srv.get()
@@ -1855,7 +1893,8 @@ void Shader_patch::update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primit
                                        : _game_textures[3].srv.get(),
                                _game_textures[4].srv.get(),
                                _game_textures[5].srv.get(),
-                               _game_textures[6].srv.get()};
+                               want_depthstencil ? current_depthstencil_srv()
+                                                 : _game_textures[6].srv.get()};
 
          _device_context->PSSetShaderResources(0, srvs.size(), srvs.data());
       }
@@ -1866,7 +1905,8 @@ void Shader_patch::update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primit
                                _game_textures[3].srv.get(),
                                _game_textures[4].srv.get(),
                                _game_textures[5].srv.get(),
-                               _game_textures[6].srv.get()};
+                               want_depthstencil ? current_depthstencil_srv()
+                                                 : _game_textures[6].srv.get()};
 
          _device_context->PSSetShaderResources(0, srvs.size(), srvs.data());
       }

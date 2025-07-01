@@ -1,6 +1,7 @@
 
 constant_buffer_bind = constant_buffer_bind_flag.ps
 fail_safe_texture_index = 0
+want_depth_buffer_input = true
 
 function make_constant_buffer(props)
    local cb = constant_buffer_builder.new([[
@@ -51,7 +52,6 @@ function fill_resource_vec(props, resource_props, resources)
 
    resources:add(resource_props["NormalMap"] or "$null_normalmap")
    resources:add(resource_props["ReflectionMap"] or "")
-   resources:add(resource_props["DepthBuffer"] or "$depth")
    resources:add(resource_props["RefractionMap"] or "$refraction")
    
 end

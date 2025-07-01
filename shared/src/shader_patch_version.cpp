@@ -6,7 +6,7 @@
 
 namespace sp {
 
-const Shader_patch_version current_shader_patch_version{1, 8, 3,
+const Shader_patch_version current_shader_patch_version{1, 9, 0,
                                                         Shader_patch_prerelease_stage::none,
                                                         0};
 
