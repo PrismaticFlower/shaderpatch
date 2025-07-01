@@ -259,7 +259,8 @@ private:
                                   _om_depthstencil_force_readonly);
    }
 
-   auto current_depthstencil_srv() const noexcept -> ID3D11ShaderResourceView*;
+   auto current_nearscene_depthstencil_srv() const noexcept
+      -> ID3D11ShaderResourceView*;
 
    void bind_static_resources() noexcept;
 
@@ -363,7 +364,7 @@ private:
    Rendertype _previous_shader_rendertype = Rendertype::invalid;
    Rendertype _shader_rendertype = Rendertype::invalid;
 
-   std::array<Game_texture, 7> _game_textures;
+   std::array<Game_texture, 6> _game_textures;
    material::Material* _patch_material = nullptr;
 
    Com_ptr<ID3D11Buffer> _game_index_buffer;
@@ -391,6 +392,7 @@ private:
    bool _om_blend_state_dirty = true;
    bool _ps_textures_dirty = true;
    bool _ps_textures_material_wants_depthstencil = false;
+   bool _ps_textures_shader_wants_depthstencil = false;
    bool _cb_scene_dirty = true;
    bool _cb_draw_dirty = true;
    bool _cb_skin_dirty = true;
