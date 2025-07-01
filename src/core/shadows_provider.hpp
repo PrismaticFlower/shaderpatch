@@ -147,6 +147,13 @@ public:
       ID3D11DeviceContext4& dc, const Input_mesh_compressed& mesh,
       const std::array<std::array<glm::vec4, 3>, 15>& bone_matrices);
 
+   void add_mesh_soft_skinned(ID3D11DeviceContext4& dc, const Input_mesh& mesh,
+                              const std::array<std::array<glm::vec4, 3>, 15>& bone_matrices);
+
+   void add_mesh_compressed_soft_skinned(
+      ID3D11DeviceContext4& dc, const Input_mesh_compressed& mesh,
+      const std::array<std::array<glm::vec4, 3>, 15>& bone_matrices);
+
    void add_mesh_hardedged(ID3D11DeviceContext4& dc, const Input_hardedged_mesh& mesh);
 
    void add_mesh_hardedged_compressed(ID3D11DeviceContext4& dc,
@@ -157,6 +164,14 @@ public:
                                    const std::array<std::array<glm::vec4, 3>, 15>& bone_matrices);
 
    void add_mesh_hardedged_compressed_skinned(
+      ID3D11DeviceContext4& dc, const Input_mesh_hardedged_compressed& mesh,
+      const std::array<std::array<glm::vec4, 3>, 15>& bone_matrices);
+
+   void add_mesh_hardedged_soft_skinned(
+      ID3D11DeviceContext4& dc, const Input_hardedged_mesh& mesh,
+      const std::array<std::array<glm::vec4, 3>, 15>& bone_matrices);
+
+   void add_mesh_hardedged_compressed_soft_skinned(
       ID3D11DeviceContext4& dc, const Input_mesh_hardedged_compressed& mesh,
       const std::array<std::array<glm::vec4, 3>, 15>& bone_matrices);
 
@@ -178,7 +193,7 @@ private:
       glm::vec3 position_decompress_mul;
       std::uint32_t skin_index;
       glm::vec3 position_decompress_add;
-      std::uint32_t padding;
+      std::uint32_t use_soft_skinning;
       std::array<glm::vec4, 3> world_matrix;
       glm::vec4 x_texcoord_transform;
       glm::vec4 y_texcoord_transform;
@@ -228,11 +243,15 @@ private:
       std::vector<Mesh> compressed;
       std::vector<Mesh> skinned;
       std::vector<Mesh> compressed_skinned;
+      std::vector<Mesh> soft_skinned;
+      std::vector<Mesh> compressed_soft_skinned;
 
       std::vector<Mesh_hardedged> hardedged;
       std::vector<Mesh_hardedged> hardedged_compressed;
       std::vector<Mesh_hardedged> hardedged_skinned;
       std::vector<Mesh_hardedged> hardedged_compressed_skinned;
+      std::vector<Mesh_hardedged> hardedged_soft_skinned;
+      std::vector<Mesh_hardedged> hardedged_compressed_soft_skinned;
 
       void clear() noexcept;
    };
@@ -244,8 +263,10 @@ private:
 
       std::vector<shadows::Bounding_sphere> compressed;
       std::vector<shadows::Bounding_sphere> compressed_skinned;
+      std::vector<shadows::Bounding_sphere> compressed_soft_skinned;
       std::vector<shadows::Bounding_sphere> hardedged_compressed;
       std::vector<shadows::Bounding_sphere> hardedged_compressed_skinned;
+      std::vector<shadows::Bounding_sphere> hardedged_compressed_soft_skinned;
 
       void clear() noexcept;
    };
@@ -253,8 +274,10 @@ private:
    struct Visibility_lists {
       std::vector<std::uint32_t> compressed;
       std::vector<std::uint32_t> compressed_skinned;
+      std::vector<std::uint32_t> compressed_soft_skinned;
       std::vector<std::uint32_t> hardedged_compressed;
       std::vector<std::uint32_t> hardedged_compressed_skinned;
+      std::vector<std::uint32_t> hardedged_compressed_soft_skinned;
 
       void clear() noexcept;
    };
@@ -273,7 +296,7 @@ private:
 
    Com_ptr<ID3D11Device5> _device;
 
-   Com_ptr<ID3D11Buffer> _camera_cb_buffer;
+   Com_ptr<ID3D11Buffer> _global_cb_buffer;
 
    Com_ptr<ID3D11Buffer> _transforms_cb_buffer;
    std::size_t _transforms_cb_space = 1024;
@@ -293,12 +316,15 @@ private:
    Com_ptr<ID3D11InputLayout> _mesh_compressed_il;
    Com_ptr<ID3D11InputLayout> _mesh_skinned_il;
    Com_ptr<ID3D11InputLayout> _mesh_compressed_skinned_il;
-   Com_ptr<ID3D11InputLayout> _mesh_stencilshadow_skinned_il;
+   Com_ptr<ID3D11InputLayout> _mesh_soft_skinned_il;
+   Com_ptr<ID3D11InputLayout> _mesh_compressed_soft_skinned_il;
 
    Com_ptr<ID3D11VertexShader> _mesh_vs;
    Com_ptr<ID3D11VertexShader> _mesh_compressed_vs;
    Com_ptr<ID3D11VertexShader> _mesh_skinned_vs;
    Com_ptr<ID3D11VertexShader> _mesh_compressed_skinned_vs;
+   Com_ptr<ID3D11VertexShader> _mesh_soft_skinned_vs;
+   Com_ptr<ID3D11VertexShader> _mesh_compressed_soft_skinned_vs;
 
    const Input_layout_descriptions& _input_layout_descriptions;
 
@@ -306,6 +332,8 @@ private:
    Hardedged_vertex_shader _mesh_hardedged_compressed;
    Hardedged_vertex_shader _mesh_hardedged_skinned;
    Hardedged_vertex_shader _mesh_hardedged_compressed_skinned;
+   Hardedged_vertex_shader _mesh_hardedged_soft_skinned;
+   Hardedged_vertex_shader _mesh_hardedged_compressed_soft_skinned;
 
    Com_ptr<ID3D11PixelShader> _mesh_hardedged_ps;
 

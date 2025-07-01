@@ -19,11 +19,11 @@ using effects::Profile;
 
 namespace {
 
-struct alignas(16) Camera_cb {
+struct alignas(16) Global_cb {
    glm::mat4 projection_matrix;
 };
 
-static_assert(sizeof(Camera_cb) == 64);
+static_assert(sizeof(Global_cb) == 64);
 
 using Skin_buffer = std::array<std::array<glm::vec4, 3>, 15>;
 
@@ -90,6 +90,14 @@ Shadows_provider::Shadows_provider(Com_ptr<ID3D11Device5> device,
      _mesh_hardedged_compressed_skinned{
         shaders.vertex("shadowmesh_zprepass"sv)
            .entrypoint("hardedged_vs"sv, 0,
+                       Vertex_shader_flags::compressed |
+                          Vertex_shader_flags::hard_skinned)},
+     _mesh_hardedged_soft_skinned{shaders.vertex("shadowmesh_zprepass"sv)
+                                     .entrypoint("hardedged_soft_skinned_vs"sv, 0,
+                                                 Vertex_shader_flags::hard_skinned)},
+     _mesh_hardedged_compressed_soft_skinned{
+        shaders.vertex("shadowmesh_zprepass"sv)
+           .entrypoint("hardedged_soft_skinned_vs"sv, 0,
                        Vertex_shader_flags::compressed | Vertex_shader_flags::hard_skinned)}
 {
    create_shadow_map(TEMP_shadow_map_length);
@@ -111,7 +119,7 @@ Shadows_provider::Shadows_provider(Com_ptr<ID3D11Device5> device,
       make_input_layout(*device,
                         {{.SemanticName = "POSITION", .Format = DXGI_FORMAT_R32G32B32_FLOAT},
                          {.SemanticName = "BLENDINDICES",
-                          .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+                          .Format = DXGI_FORMAT_B8G8R8A8_UNORM,
                           .AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT}},
                         shader.entrypoint("opaque_vs"sv, 0,
                                           Vertex_shader_flags::hard_skinned));
@@ -119,18 +127,32 @@ Shadows_provider::Shadows_provider(Com_ptr<ID3D11Device5> device,
       make_input_layout(*device,
                         {{.SemanticName = "POSITION", .Format = DXGI_FORMAT_R16G16B16A16_SINT},
                          {.SemanticName = "BLENDINDICES",
-                          .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+                          .Format = DXGI_FORMAT_B8G8R8A8_UNORM,
                           .AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT}},
                         shader.entrypoint("opaque_vs"sv, 0,
                                           Vertex_shader_flags::compressed |
                                              Vertex_shader_flags::hard_skinned));
-   _mesh_stencilshadow_skinned_il =
+   _mesh_soft_skinned_il =
+      make_input_layout(*device,
+                        {{.SemanticName = "POSITION", .Format = DXGI_FORMAT_R32G32B32_FLOAT},
+                         {.SemanticName = "BLENDWEIGHT",
+                          .Format = DXGI_FORMAT_R32G32_FLOAT,
+                          .AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT},
+                         {.SemanticName = "BLENDINDICES",
+                          .Format = DXGI_FORMAT_B8G8R8A8_UNORM,
+                          .AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT}},
+                        shader.entrypoint("soft_skinned_vs"sv, 0,
+                                          Vertex_shader_flags::hard_skinned));
+   _mesh_compressed_soft_skinned_il =
       make_input_layout(*device,
                         {{.SemanticName = "POSITION", .Format = DXGI_FORMAT_R16G16B16A16_SINT},
+                         {.SemanticName = "BLENDWEIGHT",
+                          .Format = DXGI_FORMAT_B8G8R8A8_UNORM,
+                          .AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT},
                          {.SemanticName = "BLENDINDICES",
-                          .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
-                          .AlignedByteOffset = 12}},
-                        shader.entrypoint("opaque_vs"sv, 0,
+                          .Format = DXGI_FORMAT_B8G8R8A8_UNORM,
+                          .AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT}},
+                        shader.entrypoint("soft_skinned_vs"sv, 0,
                                           Vertex_shader_flags::compressed |
                                              Vertex_shader_flags::hard_skinned));
 
@@ -144,6 +166,12 @@ Shadows_provider::Shadows_provider(Com_ptr<ID3D11Device5> device,
       shader.entrypoint("opaque_vs"sv, 0,
                         Vertex_shader_flags::compressed |
                            Vertex_shader_flags::hard_skinned));
+   _mesh_soft_skinned_vs = std::get<Com_ptr<ID3D11VertexShader>>(
+      shader.entrypoint("soft_skinned_vs"sv, 0, Vertex_shader_flags::hard_skinned));
+   _mesh_compressed_soft_skinned_vs = std::get<Com_ptr<ID3D11VertexShader>>(
+      shader.entrypoint("soft_skinned_vs"sv, 0,
+                        Vertex_shader_flags::compressed |
+                           Vertex_shader_flags::hard_skinned));
 
    _mesh_hardedged_ps =
       shaders.pixel("shadowmesh_zprepass"sv).entrypoint("hardedged_ps"sv);
@@ -155,10 +183,10 @@ Shadows_provider::Shadows_provider(Com_ptr<ID3D11Device5> device,
    _draw_to_target_with_intensity_ps =
       shaders.pixel("shadowmap render"sv).entrypoint("main_intensity_ps"sv);
 
-   _camera_cb_buffer = [&] {
+   _global_cb_buffer = [&] {
       Com_ptr<ID3D11Buffer> buffer;
 
-      const D3D11_BUFFER_DESC desc{.ByteWidth = sizeof(Camera_cb),
+      const D3D11_BUFFER_DESC desc{.ByteWidth = sizeof(Global_cb),
                                    .Usage = D3D11_USAGE_DYNAMIC,
                                    .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
                                    .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE};
@@ -500,6 +528,76 @@ void Shadows_provider::add_mesh_compressed_skinned(
    _bounding_spheres.compressed_skinned.emplace_back(make_bounding_sphere(mesh));
 }
 
+void Shadows_provider::add_mesh_soft_skinned(
+   ID3D11DeviceContext4& dc, const Input_mesh& mesh,
+   const std::array<std::array<glm::vec4, 3>, 15>& bone_matrices)
+{
+   if (_drawn_shadow_maps) return;
+   if (!_started_frame) begin_frame(dc);
+
+   const UINT skin_index = add_skin(dc, bone_matrices);
+   const UINT constants_index =
+      add_transform_cb(dc, {
+                              .skin_index = skin_index,
+
+                              .world_matrix = mesh.world_matrix,
+                           });
+
+   _meshes.soft_skinned.push_back({
+      .primitive_topology = mesh.primitive_topology,
+
+      .index_buffer = copy_raw_com_ptr(mesh.index_buffer),
+      .index_buffer_offset = mesh.index_buffer_offset,
+
+      .vertex_buffer = copy_raw_com_ptr(mesh.vertex_buffer),
+      .vertex_buffer_offset = mesh.vertex_buffer_offset,
+      .vertex_buffer_stride = mesh.vertex_buffer_stride,
+
+      .index_count = mesh.index_count,
+      .start_index = mesh.start_index,
+      .base_vertex = mesh.base_vertex,
+
+      .constants_index = constants_index,
+   });
+}
+
+void Shadows_provider::add_mesh_compressed_soft_skinned(
+   ID3D11DeviceContext4& dc, const Input_mesh_compressed& mesh,
+   const std::array<std::array<glm::vec4, 3>, 15>& bone_matrices)
+{
+   if (_drawn_shadow_maps) return;
+   if (!_started_frame) begin_frame(dc);
+
+   const UINT skin_index = add_skin(dc, bone_matrices);
+   const UINT constants_index =
+      add_transform_cb(dc, {
+                              .position_decompress_mul = mesh.position_decompress_mul,
+                              .skin_index = skin_index,
+                              .position_decompress_add = mesh.position_decompress_add,
+
+                              .world_matrix = mesh.world_matrix,
+                           });
+
+   _meshes.compressed_soft_skinned.push_back({
+      .primitive_topology = mesh.primitive_topology,
+
+      .index_buffer = copy_raw_com_ptr(mesh.index_buffer),
+      .index_buffer_offset = mesh.index_buffer_offset,
+
+      .vertex_buffer = copy_raw_com_ptr(mesh.vertex_buffer),
+      .vertex_buffer_offset = mesh.vertex_buffer_offset,
+      .vertex_buffer_stride = mesh.vertex_buffer_stride,
+
+      .index_count = mesh.index_count,
+      .start_index = mesh.start_index,
+      .base_vertex = mesh.base_vertex,
+
+      .constants_index = constants_index,
+   });
+
+   _bounding_spheres.compressed_soft_skinned.emplace_back(make_bounding_sphere(mesh));
+}
+
 void Shadows_provider::add_mesh_hardedged(ID3D11DeviceContext4& dc,
                                           const Input_hardedged_mesh& mesh)
 {
@@ -695,6 +793,107 @@ void Shadows_provider::add_mesh_hardedged_compressed_skinned(
       make_bounding_sphere(mesh));
 }
 
+void Shadows_provider::add_mesh_hardedged_soft_skinned(
+   ID3D11DeviceContext4& dc, const Input_hardedged_mesh& mesh,
+   const std::array<std::array<glm::vec4, 3>, 15>& bone_matrices)
+{
+   if (_drawn_shadow_maps) return;
+   if (!_started_frame) begin_frame(dc);
+
+   if (config.disable_dynamic_hardedged_meshes) {
+      D3D11_BUFFER_DESC desc{};
+
+      mesh.vertex_buffer.GetDesc(&desc);
+
+      if (desc.Usage == D3D11_USAGE_DYNAMIC) return;
+   }
+
+   const UINT skin_index = add_skin(dc, bone_matrices);
+   const UINT constants_index =
+      add_transform_cb(dc, {
+                              .skin_index = skin_index,
+
+                              .world_matrix = mesh.world_matrix,
+
+                              .x_texcoord_transform = mesh.x_texcoord_transform,
+                              .y_texcoord_transform = mesh.y_texcoord_transform,
+                           });
+
+   _meshes.hardedged_soft_skinned.push_back({
+      .input_layout =
+         &_mesh_hardedged_soft_skinned.input_layouts.get(*_device, _input_layout_descriptions,
+                                                         mesh.input_layout),
+      .primitive_topology = mesh.primitive_topology,
+
+      .index_buffer = copy_raw_com_ptr(mesh.index_buffer),
+      .index_buffer_offset = mesh.index_buffer_offset,
+
+      .vertex_buffer = copy_raw_com_ptr(mesh.vertex_buffer),
+      .vertex_buffer_offset = mesh.vertex_buffer_offset,
+      .vertex_buffer_stride = mesh.vertex_buffer_stride,
+
+      .index_count = mesh.index_count,
+      .start_index = mesh.start_index,
+      .base_vertex = mesh.base_vertex,
+
+      .constants_index = constants_index,
+      .texture = copy_raw_com_ptr(mesh.texture),
+   });
+}
+
+void Shadows_provider::add_mesh_hardedged_compressed_soft_skinned(
+   ID3D11DeviceContext4& dc, const Input_mesh_hardedged_compressed& mesh,
+   const std::array<std::array<glm::vec4, 3>, 15>& bone_matrices)
+{
+   if (_drawn_shadow_maps) return;
+   if (!_started_frame) begin_frame(dc);
+
+   if (config.disable_dynamic_hardedged_meshes) {
+      D3D11_BUFFER_DESC desc{};
+
+      mesh.vertex_buffer.GetDesc(&desc);
+
+      if (desc.Usage == D3D11_USAGE_DYNAMIC) return;
+   }
+
+   const UINT skin_index = add_skin(dc, bone_matrices);
+   const UINT constants_index =
+      add_transform_cb(dc, {
+                              .position_decompress_mul = mesh.position_decompress_mul,
+                              .skin_index = skin_index,
+                              .position_decompress_add = mesh.position_decompress_add,
+
+                              .world_matrix = mesh.world_matrix,
+
+                              .x_texcoord_transform = mesh.x_texcoord_transform,
+                              .y_texcoord_transform = mesh.y_texcoord_transform,
+                           });
+
+   _meshes.hardedged_compressed_soft_skinned.push_back({
+      .input_layout = &_mesh_hardedged_compressed_soft_skinned.input_layouts
+                          .get(*_device, _input_layout_descriptions, mesh.input_layout),
+
+      .primitive_topology = mesh.primitive_topology,
+
+      .index_buffer = copy_raw_com_ptr(mesh.index_buffer),
+      .index_buffer_offset = mesh.index_buffer_offset,
+
+      .vertex_buffer = copy_raw_com_ptr(mesh.vertex_buffer),
+      .vertex_buffer_offset = mesh.vertex_buffer_offset,
+      .vertex_buffer_stride = mesh.vertex_buffer_stride,
+
+      .index_count = mesh.index_count,
+      .start_index = mesh.start_index,
+      .base_vertex = mesh.base_vertex,
+
+      .constants_index = constants_index,
+      .texture = copy_raw_com_ptr(mesh.texture),
+   });
+
+   _bounding_spheres.hardedged_compressed_soft_skinned.emplace_back(
+      make_bounding_sphere(mesh));
+}
+
 void Shadows_provider::draw_shadow_maps(ID3D11DeviceContext4& dc,
                                         const Draw_args& args) noexcept
 {
@@ -881,11 +1080,18 @@ void Shadows_provider::upload_draw_to_target_buffer(ID3D11DeviceContext4& dc,
 
 auto Shadows_provider::count_active_meshes() const noexcept -> std::size_t
 {
-   return _meshes.uncompressed.size() + _meshes.compressed.size() +
-          _meshes.skinned.size() + _meshes.compressed_skinned.size() +
-          _meshes.hardedged.size() + _meshes.hardedged_compressed.size() +
-          _meshes.hardedged_skinned.size() +
-          _meshes.hardedged_compressed_skinned.size();
+   return _meshes.uncompressed.size() +            //
+          _meshes.compressed.size() +              //
+          _meshes.skinned.size() +                 //
+          _meshes.compressed_skinned.size() +      //
+          _meshes.soft_skinned.size() +            //
+          _meshes.compressed_soft_skinned.size() + //
+          _meshes.hardedged.size() +               //
+          _meshes.hardedged_compressed.size() +    //
+          _meshes.hardedged_skinned.size() +       //
+          _meshes.hardedged_compressed_skinned.size() +
+          _meshes.hardedged_soft_skinned.size() + //
+          _meshes.hardedged_compressed_soft_skinned.size();
 }
 
 void Shadows_provider::create_shadow_map(const UINT length) noexcept
@@ -968,11 +1174,11 @@ void Shadows_provider::draw_shadow_maps_cascades(ID3D11DeviceContext4& dc) noexc
         ++view_index) {
       fill_visibility_lists(_cascade_view_proj_matrices[view_index]);
 
-      update_dynamic_buffer(dc, *_camera_cb_buffer,
-                            Camera_cb{.projection_matrix =
+      update_dynamic_buffer(dc, *_global_cb_buffer,
+                            Global_cb{.projection_matrix =
                                          _cascade_view_proj_matrices[view_index]});
 
-      dc.VSSetConstantBuffers(1, 1, _camera_cb_buffer.get_ptr());
+      dc.VSSetConstantBuffers(1, 1, _global_cb_buffer.get_ptr());
 
       dc.RSSetState(rasterizer_state);
 
@@ -1017,6 +1223,8 @@ void Shadows_provider::draw_shadow_maps_cascades(ID3D11DeviceContext4& dc) noexc
 
       draw_meshes(_meshes.uncompressed, _mesh_il.get(), _mesh_vs.get());
       draw_meshes(_meshes.skinned, _mesh_skinned_il.get(), _mesh_skinned_vs.get());
+      draw_meshes(_meshes.soft_skinned, _mesh_soft_skinned_il.get(),
+                  _mesh_soft_skinned_vs.get());
 
       const auto draw_culled_meshes = [&](const std::vector<std::uint32_t>& visible,
                                           const std::vector<Mesh>& meshes,
@@ -1060,6 +1268,10 @@ void Shadows_provider::draw_shadow_maps_cascades(ID3D11DeviceContext4& dc) noexc
       draw_culled_meshes(_visibility_lists.compressed_skinned, _meshes.compressed_skinned,
                          _mesh_compressed_skinned_il.get(),
                          _mesh_compressed_skinned_vs.get());
+      draw_culled_meshes(_visibility_lists.compressed_soft_skinned,
+                         _meshes.compressed_soft_skinned,
+                         _mesh_compressed_soft_skinned_il.get(),
+                         _mesh_compressed_soft_skinned_vs.get());
 
       const auto draw_hardedged_meshes = [&](const std::vector<Mesh_hardedged>& meshes,
                                              Hardedged_vertex_shader& vertex_shader) {
@@ -1108,6 +1320,7 @@ void Shadows_provider::draw_shadow_maps_cascades(ID3D11DeviceContext4& dc) noexc
 
       draw_hardedged_meshes(_meshes.hardedged, _mesh_hardedged);
       draw_hardedged_meshes(_meshes.hardedged_skinned, _mesh_hardedged_skinned);
+      draw_hardedged_meshes(_meshes.hardedged_soft_skinned, _mesh_hardedged_soft_skinned);
 
       const auto draw_culled_hardedged_meshes =
          [&](const std::vector<std::uint32_t>& visible,
@@ -1162,6 +1375,9 @@ void Shadows_provider::draw_shadow_maps_cascades(ID3D11DeviceContext4& dc) noexc
       draw_culled_hardedged_meshes(_visibility_lists.hardedged_compressed_skinned,
                                    _meshes.hardedged_compressed_skinned,
                                    _mesh_hardedged_compressed_skinned);
+      draw_culled_hardedged_meshes(_visibility_lists.hardedged_compressed_soft_skinned,
+                                   _meshes.hardedged_compressed_soft_skinned,
+                                   _mesh_hardedged_compressed_soft_skinned);
    }
 }
 
@@ -1217,10 +1433,14 @@ void Shadows_provider::fill_visibility_lists(const glm::mat4& projection_matrix)
    shadows::Frustum frustum{glm::inverse(projection_matrix)};
 
    _visibility_lists.compressed.reserve(_meshes.compressed.size());
+   _visibility_lists.compressed_soft_skinned.reserve(
+      _meshes.compressed_soft_skinned.size());
    _visibility_lists.compressed_skinned.reserve(_meshes.compressed_skinned.size());
    _visibility_lists.hardedged_compressed.reserve(_meshes.hardedged_compressed.size());
    _visibility_lists.hardedged_compressed_skinned.reserve(
       _meshes.hardedged_compressed_skinned.size());
+   _visibility_lists.hardedged_compressed_soft_skinned.reserve(
+      _meshes.hardedged_compressed_soft_skinned.size());
 
    for (std::uint32_t i = 0; i < _meshes.compressed.size(); ++i) {
       if (!shadows::intersects(frustum, _bounding_spheres.compressed[i]))
@@ -1236,6 +1456,13 @@ void Shadows_provider::fill_visibility_lists(const glm::mat4& projection_matrix)
       _visibility_lists.compressed_skinned.push_back(i);
    }
 
+   for (std::uint32_t i = 0; i < _meshes.compressed_soft_skinned.size(); ++i) {
+      if (!shadows::intersects(frustum, _bounding_spheres.compressed_soft_skinned[i]))
+         continue;
+
+      _visibility_lists.compressed_soft_skinned.push_back(i);
+   }
+
    for (std::uint32_t i = 0; i < _meshes.hardedged_compressed.size(); ++i) {
       if (!shadows::intersects(frustum, _bounding_spheres.hardedged_compressed[i]))
          continue;
@@ -1249,6 +1476,15 @@ void Shadows_provider::fill_visibility_lists(const glm::mat4& projection_matrix)
          continue;
 
       _visibility_lists.hardedged_compressed_skinned.push_back(i);
+   }
+
+   for (std::uint32_t i = 0;
+        i < _meshes.hardedged_compressed_soft_skinned.size(); ++i) {
+      if (!shadows::intersects(frustum,
+                               _bounding_spheres.hardedged_compressed_soft_skinned[i]))
+         continue;
+
+      _visibility_lists.hardedged_compressed_soft_skinned.push_back(i);
    }
 }
 
@@ -1394,26 +1630,34 @@ void Shadows_provider::Meshes::clear() noexcept
    compressed.clear();
    skinned.clear();
    compressed_skinned.clear();
+   soft_skinned.clear();
+   compressed_soft_skinned.clear();
    hardedged.clear();
    hardedged_compressed.clear();
    hardedged_skinned.clear();
    hardedged_compressed_skinned.clear();
+   hardedged_soft_skinned.clear();
+   hardedged_compressed_soft_skinned.clear();
 }
 
 void Shadows_provider::Bounding_spheres::clear() noexcept
 {
    compressed.clear();
    compressed_skinned.clear();
+   compressed_soft_skinned.clear();
    hardedged_compressed.clear();
    hardedged_compressed_skinned.clear();
+   hardedged_compressed_soft_skinned.clear();
 }
 
 void Shadows_provider::Visibility_lists::clear() noexcept
 {
    compressed.clear();
    compressed_skinned.clear();
+   compressed_soft_skinned.clear();
    hardedged_compressed.clear();
    hardedged_compressed_skinned.clear();
+   hardedged_compressed_soft_skinned.clear();
 }
 
 }

@@ -21,6 +21,29 @@
       }
     },
 
+    "soft_skinned_vs": {
+      "stage": "vertex",
+      "function_name": "opaque_vs",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": true,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
+        }
+      },
+
+      "defines": [
+        [ "SOFT_SKINNED", "1" ]
+      ]
+    },
+
     "hardedged_vs": {
       "stage": "vertex",
 
@@ -39,37 +62,36 @@
       }
     },
 
+
+    "hardedged_soft_skinned_vs": {
+      "stage": "vertex",
+      "function_name": "hardedged_vs",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": true,
+          "normal": false,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
+        }
+      },
+    
+      "defines": [
+        [ "SOFT_SKINNED", "1" ]
+      ]
+    },
+
     "hardedged_ps": {
       "stage": "pixel"
     }
   },
 
-  "rendertypes": { "shadowmesh_zprepass": {} },
+  "rendertypes": {},
 
-  "states": {
-    "opaque": {
-      "type": "standard",
-
-      "vertex_shader": {
-        "entrypoint": "opaque_vs"
-      },
-
-      "pixel_shader": {
-        "comment": "unused",
-        "entrypoint": "hardedged_ps"
-      }
-    },
-
-    "hardedged": {
-      "type": "standard",
-
-      "vertex_shader": {
-        "entrypoint": "hardedged_vs"
-      },
-
-      "pixel_shader": {
-        "entrypoint": "hardedged_ps"
-      }
-    }
-  }
+  "states": {}
 }

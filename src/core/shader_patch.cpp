@@ -1205,9 +1205,7 @@ void Shader_patch::set_input_layout(const Game_input_layout& input_layout) noexc
       _cb_scene_dirty = true;
    }
 
-   const std::uint32_t soft_skin = (input_layout.has_vertex_weights &
-                                    user_config.graphics.allow_vertex_soft_skinning) |
-                                   _effects_request_soft_skinning;
+   const std::uint32_t soft_skin = _use_soft_skinning & input_layout.has_vertex_weights;
 
    if (soft_skin != _cb_scene.vs_use_soft_skinning) {
       _cb_scene.vs_use_soft_skinning = soft_skin;
@@ -1580,7 +1578,7 @@ void Shader_patch::game_rendertype_changed() noexcept
 
    _device_context->EndEvent();
    _device_context->BeginEventInt(to_wcstring(_shader_rendertype), 0);
-   
+
    if (_shader_rendertype == Rendertype::zprepass) {
       _shadows->view_proj_matrix =
          std::bit_cast<glm::mat4>(_cb_scene.projection_matrix);
@@ -1596,112 +1594,223 @@ void Shader_patch::game_rendertype_changed() noexcept
                                   shader::Vertex_shader_flags::hard_skinned) ==
                                  shader::Vertex_shader_flags::hard_skinned;
             const bool compressed = _game_input_layout.compressed;
+            const bool soft_skinned = _game_input_layout.has_vertex_weights;
 
             if (skinned) {
                if (hardedged) {
                   if (compressed) {
-                     _shadows->add_mesh_hardedged_compressed_skinned(
-                        *_device_context,
-                        {
-                           .input_layout = _game_input_layout.layout_index,
+                     if (soft_skinned) {
+                        _shadows->add_mesh_hardedged_compressed_soft_skinned(
+                           *_device_context,
+                           {
+                              .input_layout = _game_input_layout.layout_index,
 
-                           .primitive_topology = topology,
+                              .primitive_topology = topology,
 
-                           .index_buffer = *_game_index_buffer,
-                           .index_buffer_offset = _game_index_buffer_offset,
+                              .index_buffer = *_game_index_buffer,
+                              .index_buffer_offset = _game_index_buffer_offset,
 
-                           .vertex_buffer = *_game_vertex_buffer,
-                           .vertex_buffer_offset = _game_vertex_buffer_offset,
-                           .vertex_buffer_stride = _game_vertex_buffer_stride,
+                              .vertex_buffer = *_game_vertex_buffer,
+                              .vertex_buffer_offset = _game_vertex_buffer_offset,
+                              .vertex_buffer_stride = _game_vertex_buffer_stride,
 
-                           .index_count = index_count,
-                           .start_index = start_index,
-                           .base_vertex = base_vertex,
+                              .index_count = index_count,
+                              .start_index = start_index,
+                              .base_vertex = base_vertex,
 
-                           .world_matrix = _cb_draw.world_matrix,
+                              .world_matrix = _cb_draw.world_matrix,
 
-                           .x_texcoord_transform = _cb_draw.custom_constants[0],
-                           .y_texcoord_transform = _cb_draw.custom_constants[1],
-                           .texture = *_game_textures[0].srv,
+                              .x_texcoord_transform = _cb_draw.custom_constants[0],
+                              .y_texcoord_transform = _cb_draw.custom_constants[1],
+                              .texture = *_game_textures[0].srv,
 
-                           .position_decompress_mul = _cb_draw.position_decompress_min,
-                           .position_decompress_add = _cb_draw.position_decompress_max,
-                        },
-                        _cb_skin.bone_matrices);
+                              .position_decompress_mul = _cb_draw.position_decompress_min,
+                              .position_decompress_add = _cb_draw.position_decompress_max,
+                           },
+                           _cb_skin.bone_matrices);
+                     }
+                     else {
+                        _shadows->add_mesh_hardedged_compressed_skinned(
+                           *_device_context,
+                           {
+                              .input_layout = _game_input_layout.layout_index,
+
+                              .primitive_topology = topology,
+
+                              .index_buffer = *_game_index_buffer,
+                              .index_buffer_offset = _game_index_buffer_offset,
+
+                              .vertex_buffer = *_game_vertex_buffer,
+                              .vertex_buffer_offset = _game_vertex_buffer_offset,
+                              .vertex_buffer_stride = _game_vertex_buffer_stride,
+
+                              .index_count = index_count,
+                              .start_index = start_index,
+                              .base_vertex = base_vertex,
+
+                              .world_matrix = _cb_draw.world_matrix,
+
+                              .x_texcoord_transform = _cb_draw.custom_constants[0],
+                              .y_texcoord_transform = _cb_draw.custom_constants[1],
+                              .texture = *_game_textures[0].srv,
+
+                              .position_decompress_mul = _cb_draw.position_decompress_min,
+                              .position_decompress_add = _cb_draw.position_decompress_max,
+                           },
+                           _cb_skin.bone_matrices);
+                     }
                   }
                   else {
-                     _shadows->add_mesh_hardedged_skinned(
-                        *_device_context,
-                        {
-                           .input_layout = _game_input_layout.layout_index,
+                     if (soft_skinned) {
+                        _shadows->add_mesh_hardedged_soft_skinned(
+                           *_device_context,
+                           {
+                              .input_layout = _game_input_layout.layout_index,
 
-                           .primitive_topology = topology,
+                              .primitive_topology = topology,
 
-                           .index_buffer = *_game_index_buffer,
-                           .index_buffer_offset = _game_index_buffer_offset,
+                              .index_buffer = *_game_index_buffer,
+                              .index_buffer_offset = _game_index_buffer_offset,
 
-                           .vertex_buffer = *_game_vertex_buffer,
-                           .vertex_buffer_offset = _game_vertex_buffer_offset,
-                           .vertex_buffer_stride = _game_vertex_buffer_stride,
+                              .vertex_buffer = *_game_vertex_buffer,
+                              .vertex_buffer_offset = _game_vertex_buffer_offset,
+                              .vertex_buffer_stride = _game_vertex_buffer_stride,
 
-                           .index_count = index_count,
-                           .start_index = start_index,
-                           .base_vertex = base_vertex,
+                              .index_count = index_count,
+                              .start_index = start_index,
+                              .base_vertex = base_vertex,
 
-                           .world_matrix = _cb_draw.world_matrix,
+                              .world_matrix = _cb_draw.world_matrix,
 
-                           .x_texcoord_transform = _cb_draw.custom_constants[0],
-                           .y_texcoord_transform = _cb_draw.custom_constants[1],
-                           .texture = *_game_textures[0].srv,
-                        },
-                        _cb_skin.bone_matrices);
+                              .x_texcoord_transform = _cb_draw.custom_constants[0],
+                              .y_texcoord_transform = _cb_draw.custom_constants[1],
+                              .texture = *_game_textures[0].srv,
+                           },
+                           _cb_skin.bone_matrices);
+                     }
+                     else {
+                        _shadows->add_mesh_hardedged_skinned(
+                           *_device_context,
+                           {
+                              .input_layout = _game_input_layout.layout_index,
+
+                              .primitive_topology = topology,
+
+                              .index_buffer = *_game_index_buffer,
+                              .index_buffer_offset = _game_index_buffer_offset,
+
+                              .vertex_buffer = *_game_vertex_buffer,
+                              .vertex_buffer_offset = _game_vertex_buffer_offset,
+                              .vertex_buffer_stride = _game_vertex_buffer_stride,
+
+                              .index_count = index_count,
+                              .start_index = start_index,
+                              .base_vertex = base_vertex,
+
+                              .world_matrix = _cb_draw.world_matrix,
+
+                              .x_texcoord_transform = _cb_draw.custom_constants[0],
+                              .y_texcoord_transform = _cb_draw.custom_constants[1],
+                              .texture = *_game_textures[0].srv,
+                           },
+                           _cb_skin.bone_matrices);
+                     }
                   }
                }
                else {
                   if (compressed) {
-                     _shadows->add_mesh_compressed_skinned(
-                        *_device_context,
-                        {
-                           .primitive_topology = topology,
+                     if (soft_skinned) {
+                        _shadows->add_mesh_compressed_soft_skinned(
+                           *_device_context,
+                           {
+                              .primitive_topology = topology,
 
-                           .index_buffer = *_game_index_buffer,
-                           .index_buffer_offset = _game_index_buffer_offset,
+                              .index_buffer = *_game_index_buffer,
+                              .index_buffer_offset = _game_index_buffer_offset,
 
-                           .vertex_buffer = *_game_vertex_buffer,
-                           .vertex_buffer_offset = _game_vertex_buffer_offset,
-                           .vertex_buffer_stride = _game_vertex_buffer_stride,
+                              .vertex_buffer = *_game_vertex_buffer,
+                              .vertex_buffer_offset = _game_vertex_buffer_offset,
+                              .vertex_buffer_stride = _game_vertex_buffer_stride,
 
-                           .index_count = index_count,
-                           .start_index = start_index,
-                           .base_vertex = base_vertex,
+                              .index_count = index_count,
+                              .start_index = start_index,
+                              .base_vertex = base_vertex,
 
-                           .world_matrix = _cb_draw.world_matrix,
+                              .world_matrix = _cb_draw.world_matrix,
 
-                           .position_decompress_mul = _cb_draw.position_decompress_min,
-                           .position_decompress_add = _cb_draw.position_decompress_max,
-                        },
-                        _cb_skin.bone_matrices);
+                              .position_decompress_mul = _cb_draw.position_decompress_min,
+                              .position_decompress_add = _cb_draw.position_decompress_max,
+                           },
+                           _cb_skin.bone_matrices);
+                     }
+                     else {
+                        _shadows->add_mesh_compressed_skinned(
+                           *_device_context,
+                           {
+                              .primitive_topology = topology,
+
+                              .index_buffer = *_game_index_buffer,
+                              .index_buffer_offset = _game_index_buffer_offset,
+
+                              .vertex_buffer = *_game_vertex_buffer,
+                              .vertex_buffer_offset = _game_vertex_buffer_offset,
+                              .vertex_buffer_stride = _game_vertex_buffer_stride,
+
+                              .index_count = index_count,
+                              .start_index = start_index,
+                              .base_vertex = base_vertex,
+
+                              .world_matrix = _cb_draw.world_matrix,
+
+                              .position_decompress_mul = _cb_draw.position_decompress_min,
+                              .position_decompress_add = _cb_draw.position_decompress_max,
+                           },
+                           _cb_skin.bone_matrices);
+                     }
                   }
                   else {
-                     _shadows->add_mesh_skinned(
-                        *_device_context,
-                        {
-                           .primitive_topology = topology,
+                     if (soft_skinned) {
+                        _shadows->add_mesh_soft_skinned(
+                           *_device_context,
+                           {
+                              .primitive_topology = topology,
 
-                           .index_buffer = *_game_index_buffer,
-                           .index_buffer_offset = _game_index_buffer_offset,
+                              .index_buffer = *_game_index_buffer,
+                              .index_buffer_offset = _game_index_buffer_offset,
 
-                           .vertex_buffer = *_game_vertex_buffer,
-                           .vertex_buffer_offset = _game_vertex_buffer_offset,
-                           .vertex_buffer_stride = _game_vertex_buffer_stride,
+                              .vertex_buffer = *_game_vertex_buffer,
+                              .vertex_buffer_offset = _game_vertex_buffer_offset,
+                              .vertex_buffer_stride = _game_vertex_buffer_stride,
 
-                           .index_count = index_count,
-                           .start_index = start_index,
-                           .base_vertex = base_vertex,
+                              .index_count = index_count,
+                              .start_index = start_index,
+                              .base_vertex = base_vertex,
 
-                           .world_matrix = _cb_draw.world_matrix,
-                        },
-                        _cb_skin.bone_matrices);
+                              .world_matrix = _cb_draw.world_matrix,
+                           },
+                           _cb_skin.bone_matrices);
+                     }
+                     else {
+                        _shadows->add_mesh_skinned(
+                           *_device_context,
+                           {
+                              .primitive_topology = topology,
+
+                              .index_buffer = *_game_index_buffer,
+                              .index_buffer_offset = _game_index_buffer_offset,
+
+                              .vertex_buffer = *_game_vertex_buffer,
+                              .vertex_buffer_offset = _game_vertex_buffer_offset,
+                              .vertex_buffer_stride = _game_vertex_buffer_stride,
+
+                              .index_count = index_count,
+                              .start_index = start_index,
+                              .base_vertex = base_vertex,
+
+                              .world_matrix = _cb_draw.world_matrix,
+                           },
+                           _cb_skin.bone_matrices);
+                     }
                   }
                }
             }
@@ -2450,6 +2559,8 @@ void Shader_patch::update_frame_state() noexcept
    _frame_had_shadows = false;
    _frame_had_skyfog = false;
    _frame_swapped_depthstencil = false;
+   _use_soft_skinning = _effects_request_soft_skinning |
+                        user_config.graphics.allow_vertex_soft_skinning;
 }
 
 void Shader_patch::update_imgui() noexcept

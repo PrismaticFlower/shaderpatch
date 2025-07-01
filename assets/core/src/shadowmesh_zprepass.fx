@@ -33,13 +33,26 @@ struct Vertex_input {
 #endif
    }
 
-   int bone_index()
+   int3 bone_index()
    {
 #ifdef __VERTEX_INPUT_BLEND_INDICES__
-      return int(_blend_indices.x * 255);
+      return int3(_blend_indices.xyz * 255);
 #else
       return 0;
 #endif
+   }
+
+   float3 blend_weights()
+   {
+#     ifdef SOFT_SKINNED
+#        ifdef __VERTEX_INPUT_BLEND_WEIGHT__
+               return float3(_blend_weights.x, _blend_weights.y, 1.0 - _blend_weights.x - _blend_weights.y);
+#        else
+            return float3(1.0, 0.0, 0.0);
+#        endif
+#     else
+         return float3(1.0, 0.0, 0.0);
+#     endif
    }
 
    float2 texcoords()
@@ -61,6 +74,20 @@ struct Vertex_input {
    int4 _position : POSITION;
 #else
    float3 _position : POSITION;
+#endif
+
+#endif
+
+#ifdef SOFT_SKINNED
+
+#ifdef __VERTEX_INPUT_BLEND_WEIGHT__
+
+#ifdef __VERTEX_INPUT_IS_COMPRESSED__
+   unorm float4 _blend_weights : BLENDWEIGHT;
+#else
+   float2 _blend_weights : BLENDWEIGHT;
+#endif
+
 #endif
 
 #endif
@@ -87,8 +114,21 @@ SamplerState texture_sampler : register(s0);
 float3 get_positionOS(Vertex_input input)
 {
 #ifdef __VERTEX_INPUT_BLEND_INDICES__
-   return mul(float4(input.position(), 1.0),
-              skins[skin_index].matrices[input.bone_index()]);
+   #ifdef SOFT_SKINNED
+      int3 bone_index = input.bone_index();
+      float3 weights = input.blend_weights();
+   
+      float4x3 skin_matrix;
+   
+      skin_matrix = skins[skin_index].matrices[bone_index.x] * weights.x;
+      skin_matrix += skins[skin_index].matrices[bone_index.y] * weights.y;
+      skin_matrix += skins[skin_index].matrices[bone_index.z] * weights.z;
+   
+      return mul(float4(input.position(), 1.0), skin_matrix);
+   #else
+      return mul(float4(input.position(), 1.0),
+                 skins[skin_index].matrices[input.bone_index().x]);
+   #endif
 #else
    return input.position();
 #endif
