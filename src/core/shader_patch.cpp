@@ -1950,9 +1950,11 @@ void Shader_patch::game_rendertype_changed() noexcept
       auto backup_rt = _game_rendertargets[0];
 
       if (rt) {
-         _device_context
-            ->ClearRenderTargetView(rt->rtv.get(),
-                                    std::array{1.0f, 1.0f, 1.0f, 1.0f}.data());
+         if (!_use_shadow_maps) {
+            _device_context
+               ->ClearRenderTargetView(rt->rtv.get(),
+                                       std::array{1.0f, 1.0f, 1.0f, 1.0f}.data());
+         }
 
          _game_rendertargets[0] = *rt;
       }
@@ -1987,6 +1989,11 @@ void Shader_patch::game_rendertype_changed() noexcept
                                         _render_height,
                                         1,
                                         Game_rt_type::shadow};
+            }
+
+            if (_use_shadow_maps) {
+               _device_context->ClearRenderTargetView(
+                  dest.rtv.get(), std::array{1.0f, 1.0f, 1.0f, 1.0f}.data());
             }
 
             if (_use_shadow_maps) {
