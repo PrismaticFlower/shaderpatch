@@ -5,8 +5,8 @@
 
 // clang-format off
 
-TextureCube<float3> skybox_map : register(ps, t7);
-TextureCube<float3> skybox_emissive_map : register(ps, t8);
+TextureCube<float3> skybox_map : PS_MATERIAL_REGISTER(0);
+TextureCube<float3> skybox_emissive_map : PS_MATERIAL_REGISTER(1);
 
 const static bool use_emissive_map = SKYBOX_USE_EMISSIVE_MAP;
 

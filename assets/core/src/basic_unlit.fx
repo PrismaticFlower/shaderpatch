@@ -9,8 +9,8 @@
 // clang-format off
 
 // Textures
-Texture2D<float4> color_map : register(ps, t7);
-Texture2D<float3> emissive_map : register(ps, t8);
+Texture2D<float4> color_map : PS_MATERIAL_REGISTER(0);
+Texture2D<float3> emissive_map : PS_MATERIAL_REGISTER(1);
 
 // Game Constants
 

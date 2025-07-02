@@ -5,9 +5,9 @@
 #include "lighting_occlusion.hlsl"
 #include "pixel_sampler_states.hlsl"
 
-Texture2D<float2> ibl_dfg : register(t12);
-TextureCube<float3> ibl_specular : register(t13);
-TextureCube<float3> ibl_diffuse : register(t14);
+Texture2D<float2> ibl_dfg : PS_MATERIAL_REGISTER(5);
+TextureCube<float3> ibl_specular : PS_MATERIAL_REGISTER(6);
+TextureCube<float3> ibl_diffuse : PS_MATERIAL_REGISTER(7);
 
 namespace pbr {
 

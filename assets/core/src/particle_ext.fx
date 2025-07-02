@@ -10,7 +10,7 @@
 
 // Textures
 Texture2D<float3> blur_buffer : register(t1);
-Texture2D<float4> color_map : register(t7);
+Texture2D<float4> color_map : PS_MATERIAL_REGISTER(0);
 
 // Game Custom Constants
 

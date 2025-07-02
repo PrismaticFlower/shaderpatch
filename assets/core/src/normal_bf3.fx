@@ -14,12 +14,12 @@
 // Textures
 Texture2D<float3>   projected_light_texture : register(ps, t2);
 Texture2D<float2>   shadow_ao_map : register(ps, t3);
-Texture2D<float4>   diffuse_map : register(ps, t7);
-Texture2D<float3>   specular_map : register(ps, t8);
-Texture2D<float4>   normal_map : register(ps, t9);
-Texture2D<float>    ao_map : register(ps, t10);
-Texture2D<float3>   emissive_map : register(ps, t11);
-TextureCube<float3> env_map : register(ps, t12);
+Texture2D<float4>   diffuse_map : PS_MATERIAL_REGISTER(0);
+Texture2D<float3>   specular_map : PS_MATERIAL_REGISTER(1);
+Texture2D<float4>   normal_map : PS_MATERIAL_REGISTER(2);
+Texture2D<float>    ao_map : PS_MATERIAL_REGISTER(3);
+Texture2D<float3>   emissive_map : PS_MATERIAL_REGISTER(4);
+TextureCube<float3> env_map : PS_MATERIAL_REGISTER(5);
 // Game Custom Constants
 
 const static float4 blend_constant = ps_custom_constants[0];

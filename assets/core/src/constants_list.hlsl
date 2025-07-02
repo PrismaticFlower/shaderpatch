@@ -143,4 +143,7 @@ static const float4 light_spot_params = light_packed_constants[light_spot_offset
 #define MATERIAL_CB_INDEX b0
 #endif
 
+#define VS_MATERIAL_REGISTER(i) register(vs, t[1 + i])
+#define PS_MATERIAL_REGISTER(i) register(ps, t[7 + i])
+
 #endif

@@ -13,11 +13,11 @@
 
 // Samplers
 Texture2D<float2> shadow_ao_map : register(t3);
-Texture2D<float4> albedo_map : register(t7);
-Texture2D<float2> normal_map : register(t8);
-Texture2D<float2> metallic_roughness_map : register(t9);
-Texture2D<float> ao_map : register(t10);
-Texture2D<float3> emissive_map : register(t11);
+Texture2D<float4> albedo_map : PS_MATERIAL_REGISTER(0);
+Texture2D<float2> normal_map : PS_MATERIAL_REGISTER(1);
+Texture2D<float2> metallic_roughness_map : PS_MATERIAL_REGISTER(2);
+Texture2D<float> ao_map : PS_MATERIAL_REGISTER(3);
+Texture2D<float3> emissive_map : PS_MATERIAL_REGISTER(4);
 
 // Game Custom Constants
 const static float4 blend_constant = ps_custom_constants[0];

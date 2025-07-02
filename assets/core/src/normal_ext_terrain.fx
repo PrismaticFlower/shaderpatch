@@ -12,10 +12,10 @@
 
 Texture2D<float3> projected_light_texture : register(t2);
 Texture2D<float2> shadow_ao_map : register(t3);
-Texture2DArray<float1> height_maps : register(t7);
-Texture2DArray<float4> diffuse_ao_maps : register(t8);
-Texture2DArray<float3> normal_gloss_maps : register(t9);
-TextureCube<float3> envmap : register(t10);
+Texture2DArray<float1> height_maps : PS_MATERIAL_REGISTER(0);
+Texture2DArray<float4> diffuse_ao_maps : PS_MATERIAL_REGISTER(1);
+Texture2DArray<float3> normal_gloss_maps : PS_MATERIAL_REGISTER(2);
+TextureCube<float3> envmap : PS_MATERIAL_REGISTER(3);
 
 struct Texture_vars {
    float height_scale;

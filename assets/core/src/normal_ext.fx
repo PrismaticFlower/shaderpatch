@@ -14,18 +14,18 @@
 // Textures
 Texture2D<float3> projected_light_texture : register(ps, t2);
 Texture2D<float2> shadow_ao_map : register(ps, t3);
-Texture2D<float4> diffuse_map : register(ps, t7);
-Texture2D<float4> specular_map : register(ps, t8);
-Texture2D<float4> normal_map : register(ps, t9);
-Texture2D<float>  height_map : register(ps, t10);
-Texture2D<float3> detail_map : register(ps, t11);
-Texture2D<float2> detail_normal_map : register(ps, t12);
-Texture2D<float3> emissive_map : register(ps, t13);
-Texture2D<float4> overlay_diffuse_map : register(ps, t14);
-Texture2D<float4> overlay_normal_map : register(ps, t15);
-Texture2D<float> ao_map : register(ps, t16);
-TextureCube<float3> env_map : register(ps, t17);
-TextureCubeArray<float3> interior_map_array : register(ps, t18);
+Texture2D<float4> diffuse_map : PS_MATERIAL_REGISTER(0);
+Texture2D<float4> specular_map : PS_MATERIAL_REGISTER(1);
+Texture2D<float4> normal_map : PS_MATERIAL_REGISTER(2);
+Texture2D<float>  height_map : PS_MATERIAL_REGISTER(3);
+Texture2D<float3> detail_map : PS_MATERIAL_REGISTER(4);
+Texture2D<float2> detail_normal_map : PS_MATERIAL_REGISTER(5);
+Texture2D<float3> emissive_map : PS_MATERIAL_REGISTER(6);
+Texture2D<float4> overlay_diffuse_map : PS_MATERIAL_REGISTER(7);
+Texture2D<float4> overlay_normal_map : PS_MATERIAL_REGISTER(8);
+Texture2D<float> ao_map : PS_MATERIAL_REGISTER(9);
+TextureCube<float3> env_map : PS_MATERIAL_REGISTER(10);
+TextureCubeArray<float3> interior_map_array : PS_MATERIAL_REGISTER(11);
 // Game Custom Constants
 
 const static float4 blend_constant = ps_custom_constants[0];

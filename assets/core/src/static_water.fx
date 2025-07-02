@@ -15,8 +15,8 @@
 Texture2D<float3> projected_light_texture : register(ps, t3);
 Texture2D<float3> refraction_map : register(ps, t5);
 Texture2D<float> depth_buffer : register(ps, t6);
-Texture2D<float2> normal_map : register(ps, t7);
-TextureCube<float3> reflection_map : register(ps, t8);
+Texture2D<float2> normal_map : PS_MATERIAL_REGISTER(0);
+TextureCube<float3> reflection_map : PS_MATERIAL_REGISTER(1);
 
 // Game Custom Constants
 

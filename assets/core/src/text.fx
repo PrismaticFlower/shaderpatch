@@ -16,8 +16,8 @@ const static float4 interface_scale_offset = custom_constants[0];
 const static float4 interface_color = input_color_srgb ? srgb_to_linear(ps_custom_constants[0]) : 
                                                          ps_custom_constants[0];
 
-ByteAddressBuffer glyph_atlas_index : register(t1);
-Texture2D glyph_atlas : register(t7);
+ByteAddressBuffer glyph_atlas_index : VS_MATERIAL_REGISTER(0);
+Texture2D glyph_atlas : PS_MATERIAL_REGISTER(0);
 
 float4 transform_interface_position(float3 position)
 {
