@@ -8,7 +8,7 @@
 #include "vertex_transformer.hlsl"
 
 const static float4 specular_color = ps_custom_constants[0];
-static const float specular_exponent = 64.0;
+static const float specular_exponent = 32.0;
 const static uint light_count = SPECULAR_LIGHT_COUNT;
 const static float3 light_colors[3] = {ps_custom_constants[2].xyz,
                                        ps_custom_constants[3].xyz,
