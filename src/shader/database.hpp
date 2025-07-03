@@ -67,7 +67,7 @@ public:
    auto operator=(const Database&) -> Database& = delete;
 
    Database(Database&&) = delete;
-   auto operator=(Database &&) -> Database& = delete;
+   auto operator=(Database&&) -> Database& = delete;
 
    auto compute(const std::string_view name) noexcept -> Group_compute&;
 
@@ -120,7 +120,7 @@ public:
    auto operator=(const Group&) -> Group& = delete;
 
    Group(Group&&) = delete;
-   auto operator=(Group &&) -> Group& = delete;
+   auto operator=(Group&&) -> Group& = delete;
 
    using shader_interface = T;
 
@@ -159,7 +159,7 @@ public:
    auto operator=(const Group_vertex&) -> Group_vertex& = delete;
 
    Group_vertex(Group_vertex&&) = delete;
-   auto operator=(Group_vertex &&) -> Group_vertex& = delete;
+   auto operator=(Group_vertex&&) -> Group_vertex& = delete;
 
    using shader_interface = ID3D11VertexShader;
 
@@ -200,7 +200,7 @@ public:
    auto operator=(const Rendertypes_database&) -> Rendertypes_database& = delete;
 
    Rendertypes_database(Rendertypes_database&&) = delete;
-   auto operator=(Rendertypes_database &&) -> Rendertypes_database& = delete;
+   auto operator=(Rendertypes_database&&) -> Rendertypes_database& = delete;
 
    auto operator[](const std::string_view rendertype) noexcept -> Rendertype&;
 
@@ -225,7 +225,7 @@ public:
    auto operator=(const Rendertype&) -> Rendertype& = delete;
 
    Rendertype(Rendertype&&) = delete;
-   auto operator=(Rendertype &&) -> Rendertype& = delete;
+   auto operator=(Rendertype&&) -> Rendertype& = delete;
 
    auto state(const std::string_view state) noexcept -> Rendertype_state&;
 
@@ -273,14 +273,18 @@ public:
    auto operator=(const Rendertype_state&) -> Rendertype_state& = delete;
 
    Rendertype_state(Rendertype_state&&) = delete;
-   auto operator=(Rendertype_state &&) -> Rendertype_state& = delete;
+   auto operator=(Rendertype_state&&) -> Rendertype_state& = delete;
 
    auto vertex(const Vertex_shader_flags game_flags) noexcept
       -> std::tuple<Com_ptr<ID3D11VertexShader>, Bytecode_blob, Vertex_input_layout>;
 
    auto pixel() noexcept -> Com_ptr<ID3D11PixelShader>;
 
+   auto pixel_al() noexcept -> Com_ptr<ID3D11PixelShader>;
+
    auto pixel_oit() noexcept -> Com_ptr<ID3D11PixelShader>;
+
+   auto pixel_al_oit() noexcept -> Com_ptr<ID3D11PixelShader>;
 
    auto vertex(const Vertex_shader_flags game_flags,
                std::span<const std::string> extra_flags) noexcept
@@ -300,7 +304,13 @@ public:
    auto pixel(std::span<const std::string> extra_flags) noexcept
       -> Com_ptr<ID3D11PixelShader>;
 
+   auto pixel_al(std::span<const std::string> extra_flags) noexcept
+      -> Com_ptr<ID3D11PixelShader>;
+
    auto pixel_oit(std::span<const std::string> extra_flags) noexcept
+      -> Com_ptr<ID3D11PixelShader>;
+
+   auto pixel_al_oit(std::span<const std::string> extra_flags) noexcept
       -> Com_ptr<ID3D11PixelShader>;
 
 private:

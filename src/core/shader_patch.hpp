@@ -418,6 +418,7 @@ private:
    bool _refraction_nearscene_texture_resolve = false;
    bool _msaa_depthstencil_resolve = false;
    bool _linear_rendering = false;
+   bool _advanced_lighting_active = false;
    bool _oit_active = false;
    bool _stock_bloom_used = false;
    bool _stock_bloom_used_last_frame = false;

@@ -139,6 +139,107 @@
       "defines": [
         [ "SPECULAR_LIGHT_COUNT", "0" ]
       ]
+    },
+
+    "al_blinn_phong_3lights_ps": {
+      "stage": "pixel",
+      "function_name": "blinn_phong_ps",
+
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "3" ],
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_blinn_phong_2lights_ps": {
+      "stage": "pixel",
+      "function_name": "blinn_phong_ps",
+
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "2" ],
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_blinn_phong_1lights_ps": {
+      "stage": "pixel",
+      "function_name": "blinn_phong_ps",
+
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "1" ],
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_oit_blinn_phong_3lights_ps": {
+      "stage": "pixel",
+      "function_name": "oit_blinn_phong_ps",
+
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "3" ],
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_oit_blinn_phong_2lights_ps": {
+      "stage": "pixel",
+      "function_name": "oit_blinn_phong_ps",
+
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "2" ],
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_oit_blinn_phong_1lights_ps": {
+      "stage": "pixel",
+      "function_name": "oit_blinn_phong_ps",
+
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "1" ],
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_normalmapped_ps": {
+      "stage": "pixel",
+      "function_name": "normalmapped_ps",
+
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "0" ],
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_oit_normalmapped_ps": {
+      "stage": "pixel",
+      "function_name": "oit_normalmapped_ps",
+
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "0" ],
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_normalmapped_envmap_ps": {
+      "stage": "pixel",
+      "function_name": "normalmapped_envmap_ps",
+
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "0" ],
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_oit_normalmapped_envmap_ps": {
+      "stage": "pixel",
+      "function_name": "oit_normalmapped_envmap_ps",
+      
+
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "0" ],
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
     }
   },
 
@@ -165,11 +266,13 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "blinn_phong_3lights_ps"
+        "entrypoint": "blinn_phong_3lights_ps",
+        "al_entrypoint": "al_blinn_phong_3lights_ps"
       },
       
       "pixel_oit_shader": {
-        "entrypoint": "oit_blinn_phong_3lights_ps"
+        "entrypoint": "oit_blinn_phong_3lights_ps",
+        "al_entrypoint": "al_oit_blinn_phong_3lights_ps"
       }
     },
 
@@ -181,11 +284,13 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "blinn_phong_2lights_ps"
+        "entrypoint": "blinn_phong_2lights_ps",
+        "al_entrypoint": "al_blinn_phong_2lights_ps"
       },
       
       "pixel_oit_shader": {
-        "entrypoint": "oit_blinn_phong_2lights_ps"
+        "entrypoint": "oit_blinn_phong_2lights_ps",
+        "al_entrypoint": "al_oit_blinn_phong_2lights_ps"
       }
     },
 
@@ -197,11 +302,13 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "blinn_phong_1lights_ps"
+        "entrypoint": "blinn_phong_1lights_ps",
+        "al_entrypoint": "al_blinn_phong_1lights_ps"
       },
       
       "pixel_oit_shader": {
-        "entrypoint": "oit_blinn_phong_1lights_ps"
+        "entrypoint": "oit_blinn_phong_1lights_ps",
+        "al_entrypoint": "al_oit_blinn_phong_1lights_ps"
       }
     },
 
@@ -213,11 +320,13 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "normalmapped_ps"
+        "entrypoint": "normalmapped_ps",
+        "al_entrypoint": "al_normalmapped_ps"
       },
       
       "pixel_oit_shader": {
-        "entrypoint": "oit_normalmapped_ps"
+        "entrypoint": "oit_normalmapped_ps",
+        "al_entrypoint": "al_oit_normalmapped_ps"
       }
     },
 
@@ -229,11 +338,13 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "normalmapped_envmap_ps"
+        "entrypoint": "normalmapped_envmap_ps",
+        "al_entrypoint": "al_normalmapped_envmap_ps"
       },
       
       "pixel_oit_shader": {
-        "entrypoint": "oit_normalmapped_envmap_ps"
+        "entrypoint": "oit_normalmapped_envmap_ps",
+        "al_entrypoint": "al_oit_normalmapped_envmap_ps"
       }
     }
   }

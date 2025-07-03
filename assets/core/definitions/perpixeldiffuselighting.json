@@ -283,6 +283,102 @@
         [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
         [ "PERPIXEL_LIGHT_COUNT", "0" ]
       ]
+    },
+
+    "al_perpixel_3lights_ps": {
+      "stage": "pixel",
+      "function_name": "perpixel_ps",
+
+      "defines": [
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "3" ],
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_perpixel_2lights_ps": {
+      "stage": "pixel",
+      "function_name": "perpixel_ps",
+
+      "defines": [
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "2" ],
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_perpixel_1lights_ps": {
+      "stage": "pixel",
+      "function_name": "perpixel_ps",
+
+      "defines": [
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "1" ],
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_normalmapped_3lights_ps": {
+      "stage": "pixel",
+      "function_name": "normalmapped_ps",
+
+      "defines": [
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "3" ],
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_normalmapped_2lights_ps": {
+      "stage": "pixel",
+      "function_name": "normalmapped_ps",
+
+      "defines": [
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "2" ],
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_normalmapped_1lights_ps": {
+      "stage": "pixel",
+      "function_name": "normalmapped_ps",
+
+      "defines": [
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "1" ],
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_perpixel_spotlight_ps": {
+      "stage": "pixel",
+      "function_name": "perpixel_spotlight_ps",
+
+      "defines": [
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "0" ],
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_normalmapped_spotlight_ps": {
+      "stage": "pixel",
+      "function_name": "normalmapped_spotlight_ps",
+
+      "defines": [
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "0" ],
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
     }
   },
 
@@ -297,7 +393,8 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "perpixel_3lights_ps"
+        "entrypoint": "perpixel_3lights_ps",
+        "al_entrypoint": "al_perpixel_3lights_ps"
       }
     },
 
@@ -309,7 +406,8 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "perpixel_2lights_ps"
+        "entrypoint": "perpixel_2lights_ps",
+        "al_entrypoint": "al_perpixel_2lights_ps"
       }
     },
 
@@ -321,7 +419,8 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "perpixel_1lights_ps"
+        "entrypoint": "perpixel_1lights_ps",
+        "al_entrypoint": "al_perpixel_1lights_ps"
       }
     },
 
@@ -333,7 +432,8 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "perpixel_spotlight_ps"
+        "entrypoint": "perpixel_spotlight_ps",
+        "al_entrypoint": "al_perpixel_spotlight_ps"
       }
     },
 
@@ -345,7 +445,8 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "normalmapped_3lights_ps"
+        "entrypoint": "normalmapped_3lights_ps",
+        "al_entrypoint": "al_normalmapped_3lights_ps"
       }
     },
 
@@ -357,7 +458,8 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "normalmapped_2lights_ps"
+        "entrypoint": "normalmapped_2lights_ps",
+        "al_entrypoint": "al_normalmapped_2lights_ps"
       }
     },
 
@@ -369,7 +471,8 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "normalmapped_1lights_ps"
+        "entrypoint": "normalmapped_1lights_ps",
+        "al_entrypoint": "al_normalmapped_1lights_ps"
       }
     },
 
@@ -381,7 +484,8 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "normalmapped_3lights_ps"
+        "entrypoint": "normalmapped_3lights_ps",
+        "al_entrypoint": "al_normalmapped_3lights_ps"
       }
     },
 
@@ -393,7 +497,8 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "normalmapped_2lights_ps"
+        "entrypoint": "normalmapped_2lights_ps",
+        "al_entrypoint": "al_normalmapped_2lights_ps"
       }
     },
 
@@ -405,7 +510,8 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "normalmapped_1lights_ps"
+        "entrypoint": "normalmapped_1lights_ps",
+        "al_entrypoint": "al_normalmapped_1lights_ps"
       }
     },
 
@@ -417,7 +523,8 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "normalmapped_3lights_ps"
+        "entrypoint": "normalmapped_3lights_ps",
+        "al_entrypoint": "al_normalmapped_3lights_ps"
       }
     },
 
@@ -429,7 +536,8 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "normalmapped_2lights_ps"
+        "entrypoint": "normalmapped_2lights_ps",
+        "al_entrypoint": "al_normalmapped_2lights_ps"
       }
     },
 
@@ -441,7 +549,8 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "normalmapped_1lights_ps"
+        "entrypoint": "normalmapped_1lights_ps",
+        "al_entrypoint": "al_normalmapped_1lights_ps"
       }
     },
 
@@ -458,7 +567,8 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "normalmapped_spotlight_ps"
+        "entrypoint": "normalmapped_spotlight_ps",
+        "al_entrypoint": "al_normalmapped_spotlight_ps"
       }
     },
 
@@ -470,7 +580,8 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "normalmapped_spotlight_ps"
+        "entrypoint": "normalmapped_spotlight_ps",
+        "al_entrypoint": "al_normalmapped_spotlight_ps"
       }
     },
 
@@ -482,7 +593,8 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "normalmapped_spotlight_ps"
+        "entrypoint": "normalmapped_spotlight_ps",
+        "al_entrypoint": "al_normalmapped_spotlight_ps"
       }
     }
   }

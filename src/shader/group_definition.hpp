@@ -40,9 +40,11 @@ struct Group_definition {
       absl::flat_hash_map<std::string, bool> vs_static_flags;
 
       std::string ps_entrypoint;
+      std::optional<std::string> ps_al_entrypoint;
       absl::flat_hash_map<std::string, bool> ps_static_flags;
 
       std::optional<std::string> ps_oit_entrypoint;
+      std::optional<std::string> ps_al_oit_entrypoint;
       absl::flat_hash_map<std::string, bool> ps_oit_static_flags;
    };
 

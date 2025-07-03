@@ -184,6 +184,7 @@ auto create_rendertype_state_descs(const Group_definition& definition,
                Static_flags{definition.entrypoints.at(state.vs_entrypoint).static_flags},
 
             .ps_entrypoint = state.ps_entrypoint,
+            .ps_al_entrypoint = state.ps_al_entrypoint,
             .ps_static_flags = eval_rendertype_state_static_flags(
                definition.entrypoints.at(state.ps_entrypoint).static_flags,
                rendertype.static_flags, state.ps_static_flags),
@@ -191,6 +192,7 @@ auto create_rendertype_state_descs(const Group_definition& definition,
                Static_flags{definition.entrypoints.at(state.ps_entrypoint).static_flags},
 
             .ps_oit_entrypoint = state.ps_oit_entrypoint,
+            .ps_al_oit_entrypoint = state.ps_al_oit_entrypoint,
             .ps_oit_static_flags =
                state.ps_oit_entrypoint
                   ? eval_rendertype_state_static_flags(
@@ -584,11 +586,27 @@ auto Rendertype_state::pixel() noexcept -> Com_ptr<ID3D11PixelShader>
                                            _desc.ps_static_flags);
 }
 
+auto Rendertype_state::pixel_al() noexcept -> Com_ptr<ID3D11PixelShader>
+{
+   if (!_desc.ps_al_entrypoint) return nullptr;
+
+   return _database.get<ID3D11PixelShader>(_desc.group_name, *_desc.ps_al_entrypoint,
+                                           _desc.ps_static_flags);
+}
+
 auto Rendertype_state::pixel_oit() noexcept -> Com_ptr<ID3D11PixelShader>
 {
    if (!_oit_capable || !_desc.ps_oit_entrypoint) return nullptr;
 
    return _database.get<ID3D11PixelShader>(_desc.group_name, *_desc.ps_oit_entrypoint,
+                                           _desc.ps_oit_static_flags);
+}
+
+auto Rendertype_state::pixel_al_oit() noexcept -> Com_ptr<ID3D11PixelShader>
+{
+   if (!_desc.ps_al_oit_entrypoint) return nullptr;
+
+   return _database.get<ID3D11PixelShader>(_desc.group_name, *_desc.ps_al_oit_entrypoint,
                                            _desc.ps_oit_static_flags);
 }
 
@@ -615,6 +633,18 @@ auto Rendertype_state::pixel(std::span<const std::string> extra_flags) noexcept
                                            _desc.ps_static_flags | extra_static_flags);
 }
 
+auto Rendertype_state::pixel_al(std::span<const std::string> extra_flags) noexcept
+   -> Com_ptr<ID3D11PixelShader>
+{
+   if (!_desc.ps_al_entrypoint) return nullptr;
+
+   const auto extra_static_flags =
+      eval_static_flags(_desc.ps_static_flag_names.as_span(), extra_flags);
+
+   return _database.get<ID3D11PixelShader>(_desc.group_name, *_desc.ps_al_entrypoint,
+                                           _desc.ps_static_flags | extra_static_flags);
+}
+
 auto Rendertype_state::pixel_oit(std::span<const std::string> extra_flags) noexcept
    -> Com_ptr<ID3D11PixelShader>
 {
@@ -624,6 +654,18 @@ auto Rendertype_state::pixel_oit(std::span<const std::string> extra_flags) noexc
       eval_static_flags(_desc.ps_oit_static_flag_names.as_span(), extra_flags);
 
    return _database.get<ID3D11PixelShader>(_desc.group_name, *_desc.ps_oit_entrypoint,
+                                           _desc.ps_oit_static_flags | extra_static_flags);
+}
+
+auto Rendertype_state::pixel_al_oit(std::span<const std::string> extra_flags) noexcept
+   -> Com_ptr<ID3D11PixelShader>
+{
+   if (!_oit_capable || !_desc.ps_al_oit_entrypoint) return nullptr;
+
+   const auto extra_static_flags =
+      eval_static_flags(_desc.ps_oit_static_flag_names.as_span(), extra_flags);
+
+   return _database.get<ID3D11PixelShader>(_desc.group_name, *_desc.ps_al_oit_entrypoint,
                                            _desc.ps_oit_static_flags | extra_static_flags);
 }
 

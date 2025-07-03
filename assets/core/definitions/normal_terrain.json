@@ -71,6 +71,24 @@
 
     "detailing_ps": {
       "stage": "pixel"
+    },
+
+    "al_diffuse_blendmap_ps": {
+      "stage": "pixel",
+      "function_name": "diffuse_blendmap_ps",
+
+      "defines": [
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_detailing_ps": {
+      "stage": "pixel",
+      "function_name": "detailing_ps",
+
+      "defines": [
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
     }
   },
 
@@ -85,7 +103,8 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "diffuse_blendmap_ps"
+        "entrypoint": "diffuse_blendmap_ps",
+        "al_entrypoint": "al_diffuse_blendmap_ps"
       }
     },
 
@@ -109,7 +128,8 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "detailing_ps"
+        "entrypoint": "detailing_ps",
+        "al_entrypoint": "al_detailing_ps"
       }
     }
   }

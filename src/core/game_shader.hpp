@@ -17,7 +17,9 @@ struct Game_shader {
    const Com_ptr<ID3D11VertexShader> vs;
    const Com_ptr<ID3D11VertexShader> vs_compressed;
    const Com_ptr<ID3D11PixelShader> ps;
+   const Com_ptr<ID3D11PixelShader> ps_al;
    const Com_ptr<ID3D11PixelShader> ps_oit;
+   const Com_ptr<ID3D11PixelShader> ps_al_oit;
 
    const bool light_active;
    const std::uint8_t light_active_point_count;

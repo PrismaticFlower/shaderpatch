@@ -18,10 +18,12 @@ struct Rendertype_state_description {
    Static_flags vs_static_flag_names;
 
    std::string ps_entrypoint;
+   std::optional<std::string> ps_al_entrypoint;
    std::uint64_t ps_static_flags;
    Static_flags ps_static_flag_names;
 
    std::optional<std::string> ps_oit_entrypoint;
+   std::optional<std::string> ps_al_oit_entrypoint;
    std::uint64_t ps_oit_static_flags;
    Static_flags ps_oit_static_flag_names;
 };

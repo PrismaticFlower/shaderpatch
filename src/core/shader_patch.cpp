@@ -2534,9 +2534,16 @@ void Shader_patch::update_shader() noexcept
       _device_context->VSSetShader(_game_shader->vs.get(), nullptr, 0);
    }
 
-   _device_context->PSSetShader(_oit_active ? _game_shader->ps_oit.get()
-                                            : _game_shader->ps.get(),
-                                nullptr, 0);
+   if (_advanced_lighting_active) {
+      _device_context->PSSetShader(_oit_active ? _game_shader->ps_al_oit.get()
+                                               : _game_shader->ps_al.get(),
+                                   nullptr, 0);
+   }
+   else {
+      _device_context->PSSetShader(_oit_active ? _game_shader->ps_oit.get()
+                                               : _game_shader->ps.get(),
+                                   nullptr, 0);
+   }
 }
 
 void Shader_patch::update_frame_state() noexcept
@@ -2627,6 +2634,10 @@ void Shader_patch::update_imgui() noexcept
          ImGui::DragFloat("HW shadow slope scaled depth bias",
                           &_shadows->config.hw_slope_scaled_depth_bias, 0.0001f,
                           -1.0f, 1.0f, "%.5f");
+
+         ImGui::SeparatorText("Advanced Lighting");
+
+         ImGui::Checkbox("Use Advanced Lighting", &_advanced_lighting_active);
 
          ImGui::SeparatorText("Near/Far Scene Control");
 

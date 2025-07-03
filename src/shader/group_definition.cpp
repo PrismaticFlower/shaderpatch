@@ -144,11 +144,22 @@ void from_json(const nlohmann::json& j, Group_definition::State& state)
          get_to_if(j.at(name), "static_flags"s, static_flags);
       };
 
+   const auto read_state_ps_entrypoint =
+      [&](const std::string& name, std::string& entrypoint,
+          std::optional<std::string>& al_entrypoint,
+          absl::flat_hash_map<std::string, bool>& static_flags) {
+         j.at(name).at("entrypoint"s).get_to(entrypoint);
+         get_to_if(j.at(name), "al_entrypoint"s, al_entrypoint);
+         get_to_if(j.at(name), "static_flags"s, static_flags);
+      };
+
    const auto read_state_entrypoint_optional =
       [&](const std::string& name, std::optional<std::string>& entrypoint,
+          std::optional<std::string>& al_entrypoint,
           absl::flat_hash_map<std::string, bool>& static_flags) {
          if (j.contains(name)) {
-            read_state_entrypoint(name, entrypoint.emplace(), static_flags);
+            read_state_ps_entrypoint(name, entrypoint.emplace(), al_entrypoint,
+                                     static_flags);
          }
          else {
             entrypoint = std::nullopt;
@@ -156,9 +167,11 @@ void from_json(const nlohmann::json& j, Group_definition::State& state)
       };
 
    read_state_entrypoint("vertex_shader"s, state.vs_entrypoint, state.vs_static_flags);
-   read_state_entrypoint("pixel_shader"s, state.ps_entrypoint, state.ps_static_flags);
+   read_state_ps_entrypoint("pixel_shader"s, state.ps_entrypoint,
+                            state.ps_al_entrypoint, state.ps_static_flags);
 
    read_state_entrypoint_optional("pixel_oit_shader"s, state.ps_oit_entrypoint,
+                                  state.ps_al_oit_entrypoint,
                                   state.ps_oit_static_flags);
 }
 

@@ -21,10 +21,20 @@ auto make_game_shader(shader::Rendertypes_database& database,
       log_and_terminate("Game shader has no vertex shader!"sv);
    }
 
+   Com_ptr<ID3D11PixelShader> ps = state.pixel();
+   Com_ptr<ID3D11PixelShader> ps_al = state.pixel_al();
+   Com_ptr<ID3D11PixelShader> ps_oit = state.pixel_oit();
+   Com_ptr<ID3D11PixelShader> ps_al_oit = state.pixel_al_oit();
+
+   if (!ps_al) ps_al = ps;
+   if (!ps_al_oit) ps_al_oit = ps_oit;
+
    return Game_shader{.vs = std::move(vs),
                       .vs_compressed = std::move(vs_compressed),
-                      .ps = state.pixel(),
-                      .ps_oit = state.pixel_oit(),
+                      .ps = std::move(ps),
+                      .ps_al = std::move(ps_al),
+                      .ps_oit = std::move(ps_oit),
+                      .ps_al_oit = std::move(ps_al_oit),
                       .light_active = metadata.light_active,
                       .light_active_point_count = metadata.light_active_point_count,
                       .light_active_spot = metadata.light_active_spot,

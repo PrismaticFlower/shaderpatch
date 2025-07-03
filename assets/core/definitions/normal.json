@@ -98,11 +98,43 @@
       ]
     },
 
+    "al_main_ps": {
+      "stage": "pixel",
+      "function_name": "main_ps",
+
+      "static_flags": [
+        "NORMAL_USE_TRANSPARENCY",
+        "NORMAL_USE_HARDEDGED_TEST",
+        "NORMAL_USE_SHADOW_MAP",
+        "NORMAL_USE_PROJECTED_TEXTURE"
+      ],
+
+      "defines": [
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
     "oit_main_ps": {
       "stage": "pixel",
 
       "defines": [
         [ "NORMAL_USE_TRANSPARENCY", "1" ]
+      ],
+
+      "static_flags": [
+        "NORMAL_USE_HARDEDGED_TEST",
+        "NORMAL_USE_SHADOW_MAP",
+        "NORMAL_USE_PROJECTED_TEXTURE"
+      ]
+    },
+
+    "al_oit_main_ps": {
+      "stage": "pixel",
+      "function_name": "oit_main_ps",
+
+      "defines": [
+        [ "NORMAL_USE_TRANSPARENCY", "1" ],
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
       ],
 
       "static_flags": [
@@ -232,6 +264,7 @@
 
       "pixel_shader": {
         "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps",
 
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": false,
@@ -255,6 +288,7 @@
 
       "pixel_shader": {
         "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps",
 
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": false,
@@ -278,6 +312,7 @@
 
       "pixel_shader": {
         "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps",
 
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": true,
@@ -289,6 +324,7 @@
 
       "pixel_oit_shader": {
         "entrypoint": "oit_main_ps",
+        "al_entrypoint": "al_oit_main_ps",
 
         "static_flags": {
           "NORMAL_USE_HARDEDGED_TEST": false,
@@ -311,6 +347,7 @@
 
       "pixel_shader": {
         "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps",
 
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": true,
@@ -322,6 +359,7 @@
 
       "pixel_oit_shader": {
         "entrypoint": "oit_main_ps",
+        "al_entrypoint": "al_oit_main_ps",
 
         "static_flags": {
           "NORMAL_USE_HARDEDGED_TEST": true,
@@ -344,6 +382,7 @@
 
       "pixel_shader": {
         "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps",
 
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": false,
@@ -367,6 +406,7 @@
 
       "pixel_shader": {
         "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps",
 
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": false,
@@ -400,7 +440,8 @@
       },
 
       "pixel_oit_shader": {
-        "entrypoint": "oit_main_ps",
+        "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps",
 
         "static_flags": {
           "NORMAL_USE_HARDEDGED_TEST": false,
@@ -433,7 +474,8 @@
       },
 
       "pixel_oit_shader": {
-        "entrypoint": "oit_main_ps",
+        "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps",
 
         "static_flags": {
           "NORMAL_USE_HARDEDGED_TEST": true,
@@ -456,6 +498,7 @@
 
       "pixel_shader": {
         "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps",
 
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": false,
@@ -479,6 +522,7 @@
 
       "pixel_shader": {
         "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps",
 
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": false,
@@ -502,6 +546,7 @@
 
       "pixel_shader": {
         "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps",
 
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": false,
@@ -525,6 +570,7 @@
 
       "pixel_shader": {
         "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps",
 
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": false,
@@ -548,6 +594,7 @@
 
       "pixel_shader": {
         "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps",
 
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": true,
@@ -559,6 +606,7 @@
 
       "pixel_oit_shader": {
         "entrypoint": "oit_main_ps",
+        "al_entrypoint": "al_oit_main_ps",
 
         "static_flags": {
           "NORMAL_USE_HARDEDGED_TEST": false,
@@ -581,6 +629,7 @@
 
       "pixel_shader": {
         "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps",
 
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": true,
@@ -592,6 +641,7 @@
 
       "pixel_oit_shader": {
         "entrypoint": "oit_main_ps",
+        "al_entrypoint": "al_oit_main_ps",
 
         "static_flags": {
           "NORMAL_USE_HARDEDGED_TEST": true,
@@ -614,6 +664,7 @@
 
       "pixel_shader": {
         "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps",
 
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": true,
@@ -625,6 +676,7 @@
 
       "pixel_oit_shader": {
         "entrypoint": "oit_main_ps",
+        "al_entrypoint": "al_oit_main_ps",
 
         "static_flags": {
           "NORMAL_USE_HARDEDGED_TEST": false,
@@ -647,6 +699,7 @@
 
       "pixel_shader": {
         "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps",
 
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": true,
@@ -658,6 +711,7 @@
 
       "pixel_oit_shader": {
         "entrypoint": "oit_main_ps",
+        "al_entrypoint": "al_oit_main_ps",
 
         "static_flags": {
           "NORMAL_USE_HARDEDGED_TEST": true,

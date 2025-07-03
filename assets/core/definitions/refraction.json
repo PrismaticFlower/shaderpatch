@@ -95,6 +95,96 @@
 
     "oit_near_diffuse_bump_ps": {
       "stage": "pixel"
+    },
+
+    "al_nodistortion_ps": {
+      "stage": "pixel",
+      "function_name": "nodistortion_ps",
+      
+      "defines": [
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_near_ps": {
+      "stage": "pixel",
+      "function_name": "near_ps",
+      
+      "defines": [
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_near_bump_ps": {
+      "stage": "pixel",
+      "function_name": "near_bump_ps",
+      
+      "defines": [
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_near_diffuse_ps": {
+      "stage": "pixel",
+      "function_name": "near_diffuse_ps",
+      
+      "defines": [
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_near_diffuse_bump_ps": {
+      "stage": "pixel",
+      "function_name": "near_diffuse_bump_ps",
+      
+      "defines": [
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_oit_nodistortion_ps": {
+      "stage": "pixel",
+      "function_name": "oit_nodistortion_ps",
+      
+      "defines": [
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_oit_near_ps": {
+      "stage": "pixel",
+      "function_name": "oit_near_ps",
+      
+      "defines": [
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_oit_near_bump_ps": {
+      "stage": "pixel",
+      "function_name": "oit_near_bump_ps",
+      
+      "defines": [
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_oit_near_diffuse_ps": {
+      "stage": "pixel",
+      "function_name": "oit_near_diffuse_ps",
+      
+      "defines": [
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_oit_near_diffuse_bump_ps": {
+      "stage": "pixel",
+      "function_name": "oit_near_diffuse_bump_ps",
+      
+      "defines": [
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
     }
   },
 
@@ -109,11 +199,13 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "nodistortion_ps"
+        "entrypoint": "nodistortion_ps",
+        "al_entrypoint": "al_nodistortion_ps"
       },
 
       "pixel_oit_shader": {
-        "entrypoint": "oit_nodistortion_ps"
+        "entrypoint": "oit_nodistortion_ps",
+        "al_entrypoint": "al_oit_nodistortion_ps"
       }
     },
 
@@ -125,11 +217,13 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "nodistortion_ps"
+        "entrypoint": "nodistortion_ps",
+        "al_entrypoint": "al_nodistortion_ps"
       },
 
       "pixel_oit_shader": {
-        "entrypoint": "oit_nodistortion_ps"
+        "entrypoint": "oit_nodistortion_ps",
+        "al_entrypoint": "al_oit_nodistortion_ps"
       }
     },
 
@@ -141,11 +235,13 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "near_ps"
+        "entrypoint": "near_ps",
+        "al_entrypoint": "al_near_ps"
       },
 
       "pixel_oit_shader": {
-        "entrypoint": "oit_near_ps"
+        "entrypoint": "oit_near_ps",
+        "al_entrypoint": "al_oit_near_ps"
       }
     },
 
@@ -157,11 +253,13 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "near_bump_ps"
+        "entrypoint": "near_bump_ps",
+        "al_entrypoint": "al_near_bump_ps"
       },
 
       "pixel_oit_shader": {
-        "entrypoint": "oit_near_bump_ps"
+        "entrypoint": "oit_near_bump_ps",
+        "al_entrypoint": "al_oit_near_bump_ps"
       }
     },
 
@@ -173,11 +271,13 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "near_diffuse_ps"
+        "entrypoint": "near_diffuse_ps",
+        "al_entrypoint": "al_near_diffuse_ps"
       },
 
       "pixel_oit_shader": {
-        "entrypoint": "oit_near_diffuse_ps"
+        "entrypoint": "oit_near_diffuse_ps",
+        "al_entrypoint": "al_oit_near_diffuse_ps"
       }
     },
 
@@ -189,11 +289,13 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "near_diffuse_bump_ps"
+        "entrypoint": "near_diffuse_bump_ps",
+        "al_entrypoint": "al_near_diffuse_bump_ps"
       },
 
       "pixel_oit_shader": {
-        "entrypoint": "oit_near_diffuse_bump_ps"
+        "entrypoint": "oit_near_diffuse_bump_ps",
+        "al_entrypoint": "al_oit_near_diffuse_bump_ps"
       }
     }
   }
