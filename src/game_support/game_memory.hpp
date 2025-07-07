@@ -6,12 +6,16 @@ namespace structures {
 
 struct LeafPatchListNode;
 struct RedLightList;
+struct RedDirectionalLight;
 
 }
 
 struct Game_memory {
    structures::LeafPatchListNode* leaf_patch_list = nullptr;
    structures::RedLightList* light_list = nullptr;
+
+   /// @brief Pointer to structures::RedDirectionalLight*[2];
+   structures::RedDirectionalLight** global_dir_lights = nullptr;
 
    /// @brief Pointer to float
    float* view_near_plane = nullptr;
