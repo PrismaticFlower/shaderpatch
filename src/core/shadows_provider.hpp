@@ -184,9 +184,17 @@ public:
       effects::Profiler& profiler;
    };
 
-   void draw_shadow_maps(ID3D11DeviceContext4& dc, const Draw_args& args) noexcept;
+   void draw_shadow_maps(ID3D11DeviceContext4& dc, effects::Profiler& profiler) noexcept;
+
+   void draw_shadow_maps_to_target(ID3D11DeviceContext4& dc,
+                                   const Draw_args& args) noexcept;
 
    void end_frame(ID3D11DeviceContext4& dc) noexcept;
+
+   auto shadow_srv() const noexcept -> ID3D11ShaderResourceView*;
+
+   auto shadow_cascade_texture_matrices() const noexcept
+      -> const std::array<glm::mat4, 4>&;
 
 private:
    struct alignas(256) Transform_cb {
@@ -365,11 +373,9 @@ private:
 
    void begin_frame(ID3D11DeviceContext4& dc) noexcept;
 
-   void prepare_draw_shadow_maps(ID3D11DeviceContext4& dc, const Draw_args& args) noexcept;
+   void prepare_draw_shadow_maps(ID3D11DeviceContext4& dc) noexcept;
 
    void build_cascade_info() noexcept;
-
-   void upload_buffer_data(ID3D11DeviceContext4& dc, const Draw_args& args) noexcept;
 
    void upload_draw_to_target_buffer(ID3D11DeviceContext4& dc,
                                      const Draw_args& args) noexcept;

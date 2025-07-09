@@ -18,7 +18,7 @@ Texture2D<float2> shadow_ao_map : register(t3);
 const static float4 blend_constants = ps_custom_constants[0];
 const static float4 texture_transforms[4] = 
    {custom_constants[1], custom_constants[2], custom_constants[3], custom_constants[4]};
-const static bool lighting_pass = custom_constants[0].x >= 1.0;
+const static bool light_detailing_pass = custom_constants[0].x < 1.0;
 
 
 const static bool use_transparency = NORMAL_USE_TRANSPARENCY;
@@ -294,23 +294,25 @@ Ps_output main_ps(Ps_input input)
       use_shadow_map ? shadow_ao_map.Sample(linear_clamp_sampler, input.shadow_texcoords) 
                      : float2(1.0, 1.0);
 
+   Lighting_input lighting_input;
+
+   lighting_input.normalWS = normalize(input.normalWS);
+   lighting_input.positionWS = input.positionWS;
+
+   lighting_input.static_diffuse_lighting = input.static_lighting;
    
-   // Calculate lighting.
-   Lighting lighting = light::calculate(normalize(input.normalWS), input.positionWS,
-                                        input.static_lighting, shadow_ao_sample.g,
-                                        use_projected_texture, projection_texture_color);
+   lighting_input.ambient_occlusion = shadow_ao_sample.g;
 
-   float3 color = lighting_pass ? lighting.color : lighting_scale.xxx;
+   lighting_input.use_projected_light = use_projected_texture;
+   lighting_input.projected_light_texture_color = projection_texture_color;
 
-   color *= diffuse_color; 
+   lighting_input.use_shadow = use_shadow_map;
+   lighting_input.shadow = shadow_ao_sample.r;
 
-   if (use_shadow_map) {
-      const float shadow_map_value = shadow_ao_sample.r;
+   lighting_input.detailing_pass = light_detailing_pass;
+   lighting_input.detailing_pass_intensity = lighting_scale;
 
-      float shadow = 1.0 - (lighting.intensity * (1.0 - shadow_map_value));
-
-      color = color * shadow;
-   }
+   float3 color = light::calculate(lighting_input) * diffuse_color;
 
    float alpha;
 

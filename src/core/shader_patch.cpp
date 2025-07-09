@@ -17,6 +17,7 @@
 
 #include "../game_support/game_memory.hpp"
 #include "../game_support/leaf_patches.hpp"
+#include "../game_support/light_list.hpp"
 
 #include "../imgui/imgui_impl_dx11.h"
 #include "../imgui/imgui_impl_win32.h"
@@ -34,6 +35,7 @@ using namespace std::literals;
 namespace sp::core {
 
 constexpr UINT extra_textures_start = 4;
+constexpr UINT advanced_lighting_resources_start = 7;
 constexpr auto shadow_texture_format = DXGI_FORMAT_R8G8_UNORM;
 constexpr auto flares_texture_format = DXGI_FORMAT_A8_UNORM;
 constexpr auto screenshots_folder = L"ScreenShots/";
@@ -1309,11 +1311,11 @@ void Shader_patch::set_projtex_mode(const Projtex_mode mode) noexcept
 {
    if (mode == Projtex_mode::clamp) {
       auto* const sampler = _sampler_states.linear_clamp_sampler.get();
-      _device_context->PSSetSamplers(5, 1, &sampler);
+      _device_context->PSSetSamplers(6, 1, &sampler);
    }
    else if (mode == Projtex_mode::wrap) {
       auto* const sampler = _sampler_states.linear_wrap_sampler.get();
-      _device_context->PSSetSamplers(5, 1, &sampler);
+      _device_context->PSSetSamplers(6, 1, &sampler);
    }
 }
 
@@ -1411,6 +1413,7 @@ void Shader_patch::set_constants(const cb::Draw_tag, const UINT offset,
                                  const std::span<const std::array<float, 4>> constants) noexcept
 {
    _cb_draw_dirty = true;
+   _cb_advanced_lighting_dirty = true;
 
    std::memcpy(bit_cast<std::byte*>(&_cb_draw) +
                   (offset * sizeof(std::array<float, 4>)),
@@ -1565,7 +1568,7 @@ void Shader_patch::bind_static_resources() noexcept
                                        _sampler_states.linear_wrap_sampler.get(),
                                        _sampler_states.linear_mirror_sampler.get(),
                                        _sampler_states.text_sampler.get(),
-                                       _sampler_states.linear_clamp_sampler.get()};
+                                       _sampler_states.shadow_map_sampler.get()};
 
    _device_context->PSSetSamplers(0, ps_samplers.size(), ps_samplers.data());
 }
@@ -1918,13 +1921,25 @@ void Shader_patch::game_rendertype_changed() noexcept
 
       if (_use_shadow_maps) _record_draw_indexed = true;
 
+      if (_use_advanced_lighting) {
+         _advanced_lighting.update();
+
+         _advanced_lighting_active = true;
+      }
+
       _on_rendertype_changed = [&]() noexcept {
          _record_draw_indexed = false;
          _on_rendertype_changed = nullptr;
       };
    }
    else if (_shader_rendertype == Rendertype::stencilshadow) {
-      _shadows->light_direction = _cb_draw.custom_constants[0];
+      if (_advanced_lighting_active) {
+         _shadows->light_direction = _advanced_lighting.global_light1_dir;
+      }
+      else {
+         _shadows->light_direction = _cb_draw.custom_constants[0];
+      }
+
       _discard_draw_calls = _use_shadow_maps;
 
       _on_rendertype_changed = [this]() noexcept {
@@ -1968,35 +1983,42 @@ void Shader_patch::game_rendertype_changed() noexcept
          _om_blend_state_dirty = true;
       };
 
-      _on_stretch_rendertarget =
-         [this, backup_rt = std::move(backup_rt)](Game_rendertarget&,
-                                                  const Normalized_rect&,
-                                                  Game_rendertarget& dest,
-                                                  const Normalized_rect&) noexcept {
-            _game_rendertargets[0] = backup_rt;
-            _on_stretch_rendertarget = nullptr;
-            _on_rendertype_changed = nullptr;
-            _game_blend_state_override = nullptr;
+      _on_stretch_rendertarget = [this, backup_rt = std::move(
+                                           backup_rt)](Game_rendertarget&,
+                                                       const Normalized_rect&,
+                                                       Game_rendertarget& dest,
+                                                       const Normalized_rect&) noexcept {
+         _game_rendertargets[0] = backup_rt;
+         _on_stretch_rendertarget = nullptr;
+         _on_rendertype_changed = nullptr;
+         _game_blend_state_override = nullptr;
 
-            _om_targets_dirty = true;
-            _om_blend_state_dirty = true;
-            _discard_draw_calls = false;
+         _om_targets_dirty = true;
+         _om_blend_state_dirty = true;
+         _discard_draw_calls = false;
 
-            if (dest.type != Game_rt_type::shadow) {
-               dest = Game_rendertarget{*_device,
-                                        shadow_texture_format,
-                                        _render_width,
-                                        _render_height,
-                                        1,
-                                        Game_rt_type::shadow};
+         if (dest.type != Game_rt_type::shadow) {
+            dest = Game_rendertarget{*_device,
+                                     shadow_texture_format,
+                                     _render_width,
+                                     _render_height,
+                                     1,
+                                     Game_rt_type::shadow};
+         }
+
+         if (_use_shadow_maps and not _advanced_lighting_active) {
+            _device_context
+               ->ClearRenderTargetView(dest.rtv.get(),
+                                       std::array{1.0f, 1.0f, 1.0f, 1.0f}.data());
+         }
+
+         if (_use_shadow_maps) {
+            if (_advanced_lighting_active) {
+               _shadows->draw_shadow_maps(*_device_context, _effects.profiler);
+
+               restore_all_game_state();
             }
-
-            if (_use_shadow_maps) {
-               _device_context->ClearRenderTargetView(
-                  dest.rtv.get(), std::array{1.0f, 1.0f, 1.0f, 1.0f}.data());
-            }
-
-            if (_use_shadow_maps) {
+            else {
                _shadows->config.game_shadow_intensity =
                   _cb_draw_ps.ps_custom_constants[0].a;
 
@@ -2006,37 +2028,39 @@ void Shader_patch::game_rendertype_changed() noexcept
                                        ? _farscene_depthstencil
                                        : _nearscene_depthstencil;
 
-               _shadows->draw_shadow_maps(*_device_context,
-                                          {.scene_depth = *depth_target.srv,
-                                           .scene_dsv = *depth_target.dsv_readonly,
-                                           .target_map = *dest.rtv,
-                                           .target_width = dest.width,
-                                           .target_height = dest.height,
-                                           .profiler = _effects.profiler});
+               _shadows->draw_shadow_maps_to_target(*_device_context,
+                                                    {.scene_depth =
+                                                        *depth_target.srv,
+                                                     .scene_dsv = *depth_target.dsv_readonly,
+                                                     .target_map = *dest.rtv,
+                                                     .target_width = dest.width,
+                                                     .target_height = dest.height,
+                                                     .profiler = _effects.profiler});
 
                restore_all_game_state();
             }
-            else if (_rt_sample_count > 1) {
-               _device_context->ResolveSubresource(dest.texture.get(), 0,
-                                                   _shadow_msaa_rt.texture.get(),
-                                                   0, shadow_texture_format);
-            }
+         }
+         else if (_rt_sample_count > 1) {
+            _device_context->ResolveSubresource(dest.texture.get(), 0,
+                                                _shadow_msaa_rt.texture.get(),
+                                                0, shadow_texture_format);
+         }
 
-            if (_effects_active && _effects.ssao.enabled_and_ambient()) {
-               resolve_msaa_depthstencil<false>();
+         if (_effects_active && _effects.ssao.enabled_and_ambient()) {
+            resolve_msaa_depthstencil<false>();
 
-               auto depth_srv = (_rt_sample_count != 1)
-                                   ? _farscene_depthstencil.srv.get()
-                                   : _nearscene_depthstencil.srv.get();
+            auto depth_srv = (_rt_sample_count != 1)
+                                ? _farscene_depthstencil.srv.get()
+                                : _nearscene_depthstencil.srv.get();
 
-               _effects.ssao.apply(_effects.profiler, *_device_context,
-                                   *depth_srv, *dest.rtv,
-                                   _ambient_occlusion_output_blend_state.get(),
-                                   _informal_projection_matrix);
+            _effects.ssao.apply(_effects.profiler, *_device_context, *depth_srv,
+                                *dest.rtv,
+                                _ambient_occlusion_output_blend_state.get(),
+                                _informal_projection_matrix);
 
-               restore_all_game_state();
-            }
-         };
+            restore_all_game_state();
+         }
+      };
 
       _frame_had_shadows = true;
    }
@@ -2498,6 +2522,45 @@ void Shader_patch::update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primit
    if (std::exchange(_cb_draw_ps_dirty, false)) {
       update_dynamic_buffer(*_device_context, *_cb_draw_ps_buffer, _cb_draw_ps);
    }
+
+   if (_advanced_lighting_active) {
+      if (std::exchange(_cb_advanced_lighting_dirty, false)) {
+         bool directional_light_0_has_shadow = false;
+
+         if (_shader_rendertype == Rendertype::normal) {
+            directional_light_0_has_shadow =
+               glm::vec3{_cb_draw.light_directional_0_dir} ==
+               _advanced_lighting.global_light1_dir;
+         }
+
+         if (directional_light_0_has_shadow !=
+             _cb_advanced_lighting.directional_light_0_has_shadow) {
+            _cb_advanced_lighting.directional_light_0_has_shadow =
+               directional_light_0_has_shadow;
+            _cb_advanced_lighting.directional_light_0_shadow_matrices =
+               _shadows->shadow_cascade_texture_matrices();
+            _cb_advanced_lighting.directional_light_0_shadow_texel_size = 1.0f / 2048.0f;
+            _cb_advanced_lighting.directional_light_0_shadow_bias =
+               _shadows->config.shadow_bias;
+
+            _cb_advanced_lighting.cascade_fade_distance = 0.0f;
+            _cb_advanced_lighting.inv_cascade_fade_distance = 0.0f;
+         }
+
+         update_dynamic_buffer(*_device_context, *_cb_advanced_lighting_buffer,
+                               _cb_advanced_lighting);
+      }
+
+      if (_ps_advanced_lighting_resources_dirty) {
+         _device_context->PSSetConstantBuffers(3, 1,
+                                               _cb_advanced_lighting_buffer.get_ptr());
+
+         std::array<ID3D11ShaderResourceView*, 1> srvs = {_shadows->shadow_srv()};
+
+         _device_context->PSSetShaderResources(advanced_lighting_resources_start,
+                                               srvs.size(), srvs.data());
+      }
+   }
 }
 
 void Shader_patch::update_shader() noexcept
@@ -2562,6 +2625,7 @@ void Shader_patch::update_frame_state() noexcept
    _msaa_depthstencil_resolve = false;
    _use_interface_depthstencil = false;
    _lock_projtex_cube_slot = false;
+   _advanced_lighting_active = false;
    _oit_active = false;
    _stock_bloom_used_last_frame = std::exchange(_stock_bloom_used, false);
    _effects_postprocessing_applied = false;
@@ -2588,6 +2652,7 @@ void Shader_patch::update_imgui() noexcept
       if (_bf2_log_monitor) _bf2_log_monitor->show_imgui(true);
 
       game_support::show_leaf_patches_imgui();
+      game_support::show_light_list_imgui();
 
       // Dev Tools Window
       ImGui::SetNextWindowCollapsed(true, ImGuiCond_FirstUseEver);
@@ -2637,7 +2702,7 @@ void Shader_patch::update_imgui() noexcept
 
          ImGui::SeparatorText("Advanced Lighting");
 
-         ImGui::Checkbox("Use Advanced Lighting", &_advanced_lighting_active);
+         ImGui::Checkbox("Use Advanced Lighting", &_use_advanced_lighting);
 
          ImGui::SeparatorText("Near/Far Scene Control");
 
@@ -3050,10 +3115,12 @@ void Shader_patch::restore_all_game_state() noexcept
    _om_blend_state_dirty = true;
    _ps_textures_dirty = true;
    _ps_extra_textures_dirty = true;
+   _ps_advanced_lighting_resources_dirty = true;
    _cb_scene_dirty = true;
    _cb_draw_dirty = true;
    _cb_skin_dirty = true;
    _cb_draw_ps_dirty = true;
+   _cb_advanced_lighting_dirty = true;
    _primitive_topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
 
    bind_static_resources();

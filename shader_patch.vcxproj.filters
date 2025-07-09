@@ -310,6 +310,7 @@
     <ClCompile Include="src\game_support\game_memory.cpp" />
     <ClCompile Include="src\game_support\light_list.cpp" />
     <ClCompile Include="src\imgui\imgui_tables.cpp" />
+    <ClCompile Include="src\core\advanced_lighting.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\shader_constants.hpp">
@@ -773,6 +774,7 @@
     <ClInclude Include="src\game_support\structures\light_list.hpp" />
     <ClInclude Include="src\game_support\light_list.hpp" />
     <ClInclude Include="src\game_support\structures\common.hpp" />
+    <ClInclude Include="src\core\advanced_lighting.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />

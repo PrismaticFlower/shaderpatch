@@ -82,6 +82,18 @@ cbuffer PSDrawConstants : register(b0)
    float time_seconds;
 }
 
+cbuffer PSAdvancedLightingConstants : register(b3)
+{
+   bool directional_light_0_has_shadow;
+   float directional_light_0_shadow_texel_size;
+   float directional_light_0_shadow_bias;
+
+   float cascade_fade_distance;
+   float inv_cascade_fade_distance;
+
+   float4x4 directional_light0_shadow_matrices[4];
+}
+
 #ifdef __PIXEL_SHADER__
 static const float3 view_positionWS = ps_view_positionWS;
 static const float lighting_scale = ps_lighting_scale;
@@ -138,12 +150,12 @@ static const float4 light_spot_params = light_packed_constants[light_spot_offset
 #ifdef __VERTEX_SHADER__
 #define MATERIAL_CB_INDEX b4
 #elif defined(__PIXEL_SHADER__)
-#define MATERIAL_CB_INDEX b3
+#define MATERIAL_CB_INDEX b4
 #else
 #define MATERIAL_CB_INDEX b0
 #endif
 
 #define VS_MATERIAL_REGISTER(i) register(vs, t[1 + i])
-#define PS_MATERIAL_REGISTER(i) register(ps, t[7 + i])
+#define PS_MATERIAL_REGISTER(i) register(ps, t[8 + i])
 
 #endif

@@ -9,11 +9,11 @@
 // Disbale forced loop unroll warning.
 #pragma warning(disable : 3550)
 
-const static float4 lighting_factor = custom_constants[0];
 const static float4 x_texcoords_tranforms[4] = {custom_constants[1], custom_constants[3],
                                                 custom_constants[5], custom_constants[7]};
 const static float4 y_texcoords_tranforms[4] = {custom_constants[2], custom_constants[4],
                                                 custom_constants[6], custom_constants[8]};
+const static bool light_detailing_pass = custom_constants[0].x < 1.0;
 
 struct Vs_input {
    int4 position : POSITION;
@@ -55,7 +55,7 @@ Vs_blendmap_output diffuse_blendmap_vs(Vs_input input)
    }
 
    output.blend_values.x = input.normal.w;
-   output.blend_values.y = (float)input.position.w * lighting_factor.w;
+   output.blend_values.y = (float)input.position.w * (1.0 / 255.0);
 
    output.static_lighting = get_static_diffuse_color(input.color);
    output.fade = calculate_near_fade(positionPS);
@@ -138,11 +138,25 @@ float4 diffuse_blendmap_ps(Ps_blendmap_input input,
 
    diffuse_color = (diffuse_color * detail_color) * 2.0;
 
-   Lighting lighting = light::calculate(normalize(input.normalWS), input.positionWS,
-                                        input.static_lighting, 1.0);
+   Lighting_input lighting_input;
 
-   float3 color = lighting.color * lighting_factor.x + lighting_factor.y;
-   color *= diffuse_color;
+   lighting_input.normalWS = normalize(input.normalWS);
+   lighting_input.positionWS = input.positionWS;
+
+   lighting_input.static_diffuse_lighting = input.static_lighting;
+   
+   lighting_input.ambient_occlusion = 1.0;
+
+   lighting_input.use_projected_light = false;
+   lighting_input.projected_light_texture_color = 0.0;
+
+   lighting_input.use_shadow = false;
+   lighting_input.shadow = 1.0;
+
+   lighting_input.detailing_pass = light_detailing_pass;
+   lighting_input.detailing_pass_intensity = 1.0;
+
+   float3 color = light::calculate(lighting_input) * diffuse_color;
 
    color = apply_fog(color, input.fog);
 
@@ -174,18 +188,28 @@ float4 detailing_ps(Ps_detail_input input,
 
    const float2 shadow_ao_sample = shadow_ao_map.Sample(linear_clamp_sampler, input.shadow_map_texcoords);
 
-   // Calculate lighting.
-   Lighting lighting = light::calculate(normalize(input.normalWS), input.positionWS,
-                                        input.static_lighting, shadow_ao_sample.g, true,
-                                        projection_texture_color);
+   Lighting_input lighting_input;
 
-   float3 color = (lighting_factor.x > 0.0) ? lighting.color : lighting_scale.xxx;
+   lighting_input.normalWS = normalize(input.normalWS);
+   lighting_input.positionWS = input.positionWS;
 
-   const float shadow_map_value = shadow_ao_sample.r;
+   lighting_input.static_diffuse_lighting = input.static_lighting;
    
-   const float shadow = 1.0 - (lighting.intensity * (1.0 - shadow_map_value));
+   lighting_input.ambient_occlusion = shadow_ao_sample.g;
 
-   color = detail_color * shadow  * 2.0 * color;
+   lighting_input.use_projected_light = true;
+   lighting_input.projected_light_texture_color = projection_texture_color;
+
+   lighting_input.use_shadow = true;
+   lighting_input.shadow = shadow_ao_sample.r;
+
+   lighting_input.detailing_pass = light_detailing_pass;
+   lighting_input.detailing_pass_intensity = lighting_scale;
+
+   // Calculate lighting.
+   float3 color = light::calculate(lighting_input);
+
+   color = detail_color * color * 2.0;
    color = apply_fog(color, input.fog);
 
    return float4(color, 1.0);

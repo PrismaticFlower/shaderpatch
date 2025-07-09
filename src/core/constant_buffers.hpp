@@ -137,4 +137,18 @@ struct alignas(16) Team_colors {
 
 static_assert(sizeof(Team_colors) == 144);
 
+struct alignas(16) Advanced_lighting {
+   bool directional_light_0_has_shadow;
+   float directional_light_0_shadow_texel_size;
+   float directional_light_0_shadow_bias;
+
+   float cascade_fade_distance;
+   float inv_cascade_fade_distance;
+   std::array<uint32_t, 3> padding;
+
+   std::array<glm::mat4, 4> directional_light_0_shadow_matrices;
+};
+
+static_assert(sizeof(Advanced_lighting) == 288);
+
 }

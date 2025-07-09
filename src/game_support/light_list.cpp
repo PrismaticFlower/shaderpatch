@@ -10,6 +10,27 @@ namespace sp::game_support {
 
 using namespace structures;
 
+void acquire_global_lights(glm::vec3& global_light1_dir, glm::vec3& global_light2_dir) noexcept
+{
+   const Game_memory& game_memory = get_game_memory();
+
+   if (!game_memory.global_dir_lights) return;
+
+   if (game_memory.global_dir_lights[0]) {
+      global_light1_dir =
+         {game_memory.global_dir_lights[0]->RedDirectionalLight_data.direction.x,
+          game_memory.global_dir_lights[0]->RedDirectionalLight_data.direction.y,
+          game_memory.global_dir_lights[0]->RedDirectionalLight_data.direction.z};
+   }
+
+   if (game_memory.global_dir_lights[1]) {
+      global_light2_dir =
+         {game_memory.global_dir_lights[1]->RedDirectionalLight_data.direction.x,
+          game_memory.global_dir_lights[1]->RedDirectionalLight_data.direction.y,
+          game_memory.global_dir_lights[1]->RedDirectionalLight_data.direction.z};
+   }
+}
+
 void acquire_light_list(std::vector<Point_light>& point_lights) noexcept
 {
    point_lights.clear();

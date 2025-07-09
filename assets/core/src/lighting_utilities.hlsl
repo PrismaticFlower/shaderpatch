@@ -3,12 +3,26 @@
 
 #include "constants_list.hlsl"
 #include "vertex_utilities.hlsl"
+#include "shadow_map_utilities.hlsl"
 
 #pragma warning(disable : 3078) // **sigh**...: loop control variable conflicts with a previous declaration in the outer scope
 
-struct Lighting {
-   float3 color;
-   float intensity;
+struct Lighting_input {
+   float3 normalWS;
+   float3 positionWS;
+
+   float3 static_diffuse_lighting;
+   
+   float ambient_occlusion;
+
+   bool use_projected_light;
+   float3 projected_light_texture_color;
+
+   bool use_shadow;
+   float shadow;
+
+   bool detailing_pass;
+   float detailing_pass_intensity;
 };
 
 namespace light {
@@ -83,20 +97,18 @@ float intensity_spot(float3 normalWS, float3 positionWS)
    return intensity * attenuation;
 }
 
-Lighting calculate(float3 normalWS, float3 positionWS,
-                   float3 static_diffuse_lighting, float ambient_occlusion,
-                   bool use_projected_light = false, float3 projected_light_texture_color = 0.0)
+float3 calculate_normal(Lighting_input input)
 {
-   Lighting lighting;
+   const float3 normalWS = input.normalWS;
+   const float3 positionWS = input.positionWS;
 
-   float4 light = float4((ambient(normalWS) + static_diffuse_lighting) * ambient_occlusion, 0.0);
+   float4 light = float4((ambient(normalWS) + input.static_diffuse_lighting) * input.ambient_occlusion, 0.0);
 
    // clang-format off
 
    [branch]
    if (light_active) { 
       float3 proj_light_intensities = light.rgb;
-      float intensity = 0.0;
 
       [loop]
       for (uint i = 0; i < 2; ++i) {
@@ -122,11 +134,11 @@ Lighting calculate(float3 normalWS, float3 positionWS,
          proj_light_intensities[2] = intensity;
       }
 
-      if (use_projected_light) {
+      if (input.use_projected_light) {
          const float proj_light_intensity = dot(light_proj_selector.xyz, proj_light_intensities);
 
          light.rgb -= (light_proj_color.rgb * proj_light_intensity);
-         light.rgb += (projected_light_texture_color * light_proj_color.rgb *
+         light.rgb += (input.projected_light_texture_color * light_proj_color.rgb *
                        proj_light_intensity);
       }
 
@@ -136,19 +148,100 @@ Lighting calculate(float3 normalWS, float3 positionWS,
       }
 
       light.rgb *= lighting_scale;
-
-      lighting.color = light.rgb;
-      lighting.intensity = light.a;
    }
-   else
-   {
-      lighting.color = lighting_scale;
-      lighting.intensity = 0.0;
+   else {
+      light = float4(lighting_scale.xxx, 0.0);
+   }
+
+   if (input.detailing_pass) light.rgb = input.detailing_pass_intensity;
+         
+   if (input.use_shadow) {
+      const float shadow = 1.0 - (light.a * (1.0 - input.shadow));
+
+      light.rgb *= shadow;
    }
 
    // clang-format on
 
-   return lighting;
+   return light.rgb;
+}
+
+float3 calculate_advanced(Lighting_input input)
+{
+   const float3 normalWS = input.normalWS;
+   const float3 positionWS = input.positionWS;
+
+   float4 light = float4((ambient(normalWS) + input.static_diffuse_lighting) * input.ambient_occlusion, 0.0);
+
+   // clang-format off
+
+   [branch]
+   if (light_active) { 
+         float3 proj_light_intensities = light.rgb;
+
+         // Directional Light 0
+         {
+            float intensity = intensity_directional(normalWS, light_directional_dir(0));
+
+            [branch]
+            if (directional_light_0_has_shadow) {
+               intensity *= sample_cascaded_shadow_map(directional_light0_shadow_map, positionWS, 
+                                                       directional_light_0_shadow_texel_size,
+                                                       directional_light_0_shadow_bias, 
+                                                       directional_light0_shadow_matrices);
+            }
+
+            light += intensity * light_directional_color(0);
+
+            proj_light_intensities[0] = intensity;
+         }
+
+         light += intensity_directional(normalWS, light_directional_dir(1)) * light_directional_color(1);
+
+         [loop]
+         for (uint i = 0; i < light_active_point_count; ++i) {
+            const float intensity = intensity_point(normalWS, positionWS, light_point_pos(i),
+                                                    light_point_inv_range_sqr(i));
+            light += intensity * light_point_color(i);
+
+            if (i == 0) proj_light_intensities[1] = intensity;
+         }
+
+         if (light_active_spot) {
+            const float intensity = intensity_spot(normalWS, positionWS);
+            light += intensity * light_spot_color;
+
+            proj_light_intensities[2] = intensity;
+         }
+
+         if (input.use_projected_light) {
+            const float proj_light_intensity = dot(light_proj_selector.xyz, proj_light_intensities);
+
+            light.rgb -= (light_proj_color.rgb * proj_light_intensity);
+            light.rgb += (input.projected_light_texture_color * light_proj_color.rgb *
+                          proj_light_intensity);
+         }
+
+         light.rgb *= lighting_scale;
+   }
+   else {
+      light = float4(lighting_scale.xxx, 0.0);
+   }
+
+   if (input.detailing_pass) light.rgb = input.detailing_pass_intensity;
+
+   // clang-format on
+
+   return light.rgb;
+}
+
+float3 calculate(Lighting_input input)
+{
+#  ifdef SP_USE_ADVANCED_LIGHTING
+      return calculate_advanced(input);
+#  else
+      return calculate_normal(input);
+#  endif
 }
 
 namespace blinnphong {

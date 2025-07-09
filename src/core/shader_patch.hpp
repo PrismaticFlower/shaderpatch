@@ -8,6 +8,7 @@
 #include "../material/shader_factory.hpp"
 #include "../shader/database.hpp"
 #include "../user_config.hpp"
+#include "advanced_lighting.hpp"
 #include "backbuffer_cmaa2_views.hpp"
 #include "basic_builtin_textures.hpp"
 #include "com_ptr.hpp"
@@ -406,10 +407,12 @@ private:
    bool _ps_extra_textures_dirty = true;
    bool _ps_textures_material_wants_refraction = false;
    bool _ps_textures_shader_wants_refraction = false;
+   bool _ps_advanced_lighting_resources_dirty = true;
    bool _cb_scene_dirty = true;
    bool _cb_draw_dirty = true;
    bool _cb_skin_dirty = true;
    bool _cb_draw_ps_dirty = true;
+   bool _cb_advanced_lighting_dirty = true;
 
    // Frame State
    bool _use_interface_depthstencil = false;
@@ -430,6 +433,7 @@ private:
    bool _frame_swapped_depthstencil = false;
    bool _use_soft_skinning = false;
 
+   bool _use_advanced_lighting = false;
    bool _use_shadow_maps = true;
    bool _preview_shadow_world = false;
    bool _preview_shadow_world_textured = false;
@@ -448,6 +452,7 @@ private:
    cb::Draw _cb_draw{};
    cb::Skin _cb_skin{};
    cb::Draw_ps _cb_draw_ps{};
+   cb::Advanced_lighting _cb_advanced_lighting{};
 
    const Com_ptr<ID3D11Buffer> _cb_scene_buffer =
       create_dynamic_constant_buffer(*_device, sizeof(_cb_scene));
@@ -459,6 +464,8 @@ private:
       create_dynamic_constant_buffer(*_device, sizeof(_cb_draw_ps));
    const Com_ptr<ID3D11Buffer> _cb_team_colors_buffer =
       create_dynamic_constant_buffer(*_device, sizeof(cb::Team_colors));
+   const Com_ptr<ID3D11Buffer> _cb_advanced_lighting_buffer =
+      create_dynamic_constant_buffer(*_device, sizeof(cb::Advanced_lighting));
    const Com_ptr<ID3D11Buffer> _cb_skin_buffer =
       create_dynamic_structured_buffer(*_device, sizeof(_cb_skin),
                                        sizeof(std::array<glm::vec4, 3>));
@@ -587,6 +594,7 @@ private:
                                        _shader_resource_database};
    std::vector<std::unique_ptr<material::Material>> _materials;
 
+   Advanced_lighting _advanced_lighting;
    std::unique_ptr<Shadows_provider> _shadows;
 
    glm::mat4 _informal_projection_matrix;

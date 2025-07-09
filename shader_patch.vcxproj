@@ -167,6 +167,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\bf2_log_monitor.cpp" />
+    <ClCompile Include="src\core\advanced_lighting.cpp" />
     <ClCompile Include="src\core\backbuffer_cmaa2_views.cpp" />
     <ClCompile Include="src\core\basic_builtin_textures.cpp" />
     <ClCompile Include="src\core\d3d11_helpers.cpp" />
@@ -311,6 +312,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\bf2_log_monitor.hpp" />
+    <ClInclude Include="src\core\advanced_lighting.hpp" />
     <ClInclude Include="src\core\backbuffer_cmaa2_views.hpp" />
     <ClInclude Include="src\core\basic_builtin_textures.hpp" />
     <ClInclude Include="src\core\constant_buffers.hpp" />

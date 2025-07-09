@@ -12,6 +12,12 @@ struct Point_light {
    glm::vec3 color;
 };
 
+/// @brief Acquire the directions of the global lights from the game.
+/// @param global_light1_dir The output for the direction of the first global light.
+/// @param global_light2_dir The output for the direction of the second global light.
+void acquire_global_lights(glm::vec3& global_light1_dir,
+                           glm::vec3& global_light2_dir) noexcept;
+
 /// @brief Acquire a list of light entities from the game. This directly reads the game's data structures and is **NOT** thread safe.
 /// @param point_lights The output list of point lights.
 void acquire_light_list(std::vector<Point_light>& point_lights) noexcept;

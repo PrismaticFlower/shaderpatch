@@ -895,13 +895,13 @@ void Shadows_provider::add_mesh_hardedged_compressed_soft_skinned(
 }
 
 void Shadows_provider::draw_shadow_maps(ID3D11DeviceContext4& dc,
-                                        const Draw_args& args) noexcept
+                                        effects::Profiler& profiler) noexcept
 {
    if (!_started_frame) return;
 
-   Profile profile{args.profiler, dc, "Shadow Maps - Draw Cascades"sv};
+   Profile profile{profiler, dc, "Shadow Maps - Draw Cascades"sv};
 
-   prepare_draw_shadow_maps(dc, args);
+   prepare_draw_shadow_maps(dc);
 
    dc.ClearState();
 
@@ -952,11 +952,23 @@ void Shadows_provider::draw_shadow_maps(ID3D11DeviceContext4& dc,
       },
       shadow_views);
 
+   _drawn_shadow_maps = true;
+}
+
+void Shadows_provider::draw_shadow_maps_to_target(ID3D11DeviceContext4& dc,
+                                                  const Draw_args& args) noexcept
+{
+   if (!_started_frame) return;
+
+   draw_shadow_maps(dc, args.profiler);
+
+   Profile profile{args.profiler, dc, "Shadow Maps - Draw Cascades"sv};
+
+   upload_draw_to_target_buffer(dc, args);
+
    draw_to_target_map(dc, args);
 
    dc.DiscardResource(_shadow_map_texture.get());
-
-   _drawn_shadow_maps = true;
 }
 
 void Shadows_provider::end_frame(ID3D11DeviceContext4& dc) noexcept
@@ -968,6 +980,17 @@ void Shadows_provider::end_frame(ID3D11DeviceContext4& dc) noexcept
 
    _drawn_shadow_maps = false;
    _started_frame = false;
+}
+
+auto Shadows_provider::shadow_srv() const noexcept -> ID3D11ShaderResourceView*
+{
+   return _shadow_map_srv.get();
+}
+
+auto Shadows_provider::shadow_cascade_texture_matrices() const noexcept
+   -> const std::array<glm::mat4, 4>&
+{
+   return _cascade_texture_matrices;
 }
 
 void Shadows_provider::begin_frame(ID3D11DeviceContext4& dc) noexcept
@@ -1025,12 +1048,9 @@ void Shadows_provider::begin_frame(ID3D11DeviceContext4& dc) noexcept
    _started_frame = true;
 }
 
-void Shadows_provider::prepare_draw_shadow_maps(ID3D11DeviceContext4& dc,
-                                                const Draw_args& args) noexcept
+void Shadows_provider::prepare_draw_shadow_maps(ID3D11DeviceContext4& dc) noexcept
 {
    build_cascade_info();
-
-   upload_buffer_data(dc, args);
 
    _transforms_cb_upload = nullptr;
    dc.Unmap(_transforms_cb_buffer.get(), 0);
@@ -1054,12 +1074,6 @@ void Shadows_provider::build_cascade_info() noexcept
                                 cascades[1].texture_matrix(),
                                 cascades[2].texture_matrix(),
                                 cascades[3].texture_matrix()};
-}
-
-void Shadows_provider::upload_buffer_data(ID3D11DeviceContext4& dc,
-                                          const Draw_args& args) noexcept
-{
-   upload_draw_to_target_buffer(dc, args);
 }
 
 void Shadows_provider::upload_draw_to_target_buffer(ID3D11DeviceContext4& dc,
