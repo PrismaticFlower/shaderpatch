@@ -122,8 +122,8 @@ public:
       for (auto index = 0; index < array_size; ++index) {
          for (auto mip = 0; mip < mip_levels; ++mip) {
             patch_subimage(glm::max(width >> mip, 1u), glm::max(height >> mip, 1u),
-                           input_texture.subresource(mip, 0),
-                           patched_texture->subresource(mip, 0));
+                           input_texture.subresource(mip, index),
+                           patched_texture->subresource(mip, index));
          }
       }
 
