@@ -19,6 +19,8 @@ function make_constant_buffer(props, resources_desc_view)
       float3 outline_light_color;
       float  outline_light_width; 
       float  outline_light_fade;
+      float  height_scale;
+      float  parallax_scale_x;
    ]])
 
    cb:set("base_diffuse_color",
@@ -39,6 +41,8 @@ function make_constant_buffer(props, resources_desc_view)
    cb:set("outline_light_color", props:get_float3("OutlineLightColor", float3.new(1.0, 1.0, 1.0)))
    cb:set("outline_light_width", props:get_float("OutlineLightWidth", 0.25))
    cb:set("outline_light_fade", props:get_float("OutlineLightFade", 0.5))
+   cb:set("height_scale", props:get_float("HeightScale", 0.1))
+   cb:set("parallax_scale_x", props:get_float("ParallaxScaleX", 1.0))
 
    return cb:complete()
 end
@@ -51,6 +55,7 @@ function fill_resource_vec(props, resource_props, resources)
    resources:add(resource_props["AOMap"] or "$null_ao")
    resources:add(resource_props["EmissiveMap"] or "")
    resources:add(resource_props["EnvMap"] or "")
+   resources:add(resource_props["HeightMap"] or "")
 
 end
 
@@ -61,6 +66,10 @@ function get_shader_flags(props, flags)
 
    if props:get_bool("IsDynamic", false) then
       flags:add("NORMAL_BF3_USE_DYNAMIC_TANGENTS")
+   end
+
+   if props:get_bool("UseParallaxMapping", false) then
+      flags:add("NORMAL_BF3_USE_PARALLAX_MAPPING")
    end
 
 end

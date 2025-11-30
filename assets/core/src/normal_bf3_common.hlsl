@@ -22,6 +22,8 @@ cbuffer MaterialConstants : register(MATERIAL_CB_INDEX)
    float3 outline_light_color;
    float  outline_light_width; 
    float  outline_light_fade;
+   float  height_scale;
+   float  parallax_scale_x;
 };
 
 // clang-format off
