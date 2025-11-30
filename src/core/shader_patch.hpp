@@ -377,6 +377,7 @@ private:
    Com_ptr<ID3D11DepthStencilState> _game_depthstencil_state;
    Com_ptr<ID3D11BlendState1> _game_blend_state_override;
    Com_ptr<ID3D11BlendState1> _game_blend_state;
+   Projtex_mode _projtex_mode = Projtex_mode::wrap;
 
    bool _discard_draw_calls = false;
    bool _shader_rendertype_changed = false;
@@ -401,6 +402,7 @@ private:
    bool _cb_draw_dirty = true;
    bool _cb_skin_dirty = true;
    bool _cb_draw_ps_dirty = true;
+   bool _projtex_mode_dirty = true;
 
    // Frame State
    bool _use_interface_depthstencil = false;
@@ -416,6 +418,8 @@ private:
    bool _override_viewport = false;
    bool _set_aspect_ratio_on_present = false;
    bool _frame_had_shadows = false;
+   bool _frame_had_skyfog = false;
+   bool _frame_swapped_depthstencil = false;
 
    bool _aspect_ratio_hack_enabled = false;
    bool _imgui_enabled = false;

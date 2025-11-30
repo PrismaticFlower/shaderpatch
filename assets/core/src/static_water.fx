@@ -12,7 +12,7 @@
 // clang-format off
 
 // Textures
-Texture2D<float3> projected_light_texture : register(ps, t3);
+Texture2D<float3> projected_light_texture : register(ps, t2);
 Texture2D<float3> refraction_map : register(ps, t5);
 Texture2D<float> depth_buffer : register(ps, t6);
 Texture2D<float2> normal_map : register(ps, t7);
@@ -59,6 +59,7 @@ const static float2x2 large_tex_transform = tex_transform_matrix(large_tex_angle
 
 // Shader Feature Controls
 const static bool static_water_use_specular = STATIC_WATER_USE_SPECULAR;
+const static bool sp_use_projected_texture = SP_USE_PROJECTED_TEXTURE;
 
 struct Vs_output {
    float3 positionWS : POSITIONWS;
@@ -208,33 +209,63 @@ float3 get_specular(float3 normalWS, float3 viewWS, float3 positionWS)
    
    [branch]
    if (light_active) {
-      [loop]
-      for (uint i = 0; i < 2; ++i) {
-         light::blinnphong::calculate(throwaway_diffuse, specular, normalWS, viewWS, -light_directional_dir(i), 
-                                      specular_strength_dir_lights, light_directional_color(i), 
-                                      specular_exponent_dir_lights);
+      const float3 projected_light_texture_color = 
+         sp_use_projected_texture ? sample_projected_light(projected_light_texture, 
+                                                           mul(float4(positionWS, 1.0), light_proj_matrix)) 
+                                  : 0.0;
+
+      Lights_context context = acquire_lights_context();
+
+      while (!context.directional_lights_end()) {
+         Directional_light directional_light = context.next_directional_light();
+
+         float3 light_color = directional_light.color;
+
+         if (directional_light.use_projected_texture()) {
+            light_color *= projected_light_texture_color;
+         }
+
+         light::blinnphong::calculate(throwaway_diffuse, specular, normalWS, viewWS,
+                                      -directional_light.directionWS, specular_strength_dir_lights, light_color, 
+                                      directional_light.stencil_shadow_factor(), specular_exponent_dir_lights);
       }
 
-      [loop]
-      for (uint i = 0; i < light_active_point_count; ++i) {
+      while (!context.point_lights_end()) {
+         Point_light point_light = context.next_point_light();
+
+         float3 light_color = point_light.color;
+
+         if (point_light.use_projected_texture()) {
+            light_color *= projected_light_texture_color;
+         }
+
          float3 light_dirWS;
          float attenuation;
       
-         pbr::point_params(positionWS, light_point_pos(i), light_point_inv_range_sqr(i), light_dirWS, attenuation);
+         pbr::point_params(positionWS, point_light.positionWS, point_light.inv_range_sq, light_dirWS, attenuation);
 
-         light::blinnphong::calculate(throwaway_diffuse, specular, normalWS, viewWS, light_dirWS, 
-                                      attenuation, light_point_color(i), specular_exponent);
+         light::blinnphong::calculate(throwaway_diffuse, specular, normalWS, viewWS,
+                                      light_dirWS, attenuation, light_color, 
+                                      point_light.stencil_shadow_factor(), specular_exponent_dir_lights);
       }
+      
+      while (!context.spot_lights_end()) {
+         Spot_light spot_light = context.next_spot_light();
 
-      [branch]
-      if (light_active_spot) {
+         float3 light_color = spot_light.color;
+
+         if (spot_light.use_projected_texture()) {
+            light_color *= projected_light_texture_color;
+         }
+
          float3 light_dirWS;
          float attenuation;
 
-         pbr::spot_params(positionWS, attenuation, light_dirWS);
+         pbr::spot_params(positionWS, spot_light, attenuation, light_dirWS);
          
-         light::blinnphong::calculate(throwaway_diffuse, specular, normalWS, viewWS, light_dirWS, 
-                                      attenuation, light_spot_color, specular_exponent);
+         light::blinnphong::calculate(throwaway_diffuse, specular, normalWS, viewWS,
+                                      light_dirWS, attenuation, light_color, 
+                                      spot_light.stencil_shadow_factor(), specular_exponent_dir_lights);
       }
    }
 

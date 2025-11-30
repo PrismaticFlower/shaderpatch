@@ -5,6 +5,7 @@
 #include "lighting_brdf.hlsl"
 #include "lighting_ibl.hlsl"
 #include "lighting_utilities.hlsl"
+#include "pixel_utilities.hlsl"
 
 #pragma warning(disable : 3078) // **sigh**...: loop control variable conflicts with a previous declaration in the outer scope
 
@@ -27,6 +28,7 @@ struct surface_info {
 
 static const float min_roughness = 0.045;
 static const float dielectric_reflectance = 0.04;
+static const bool  sp_use_projected_texture = SP_USE_PROJECTED_TEXTURE;
 
 float attenuation_point_smooth(float distance_sqr, float inv_range_sqr)
 {
@@ -51,6 +53,17 @@ void point_params(float3 position, float3 light_position, float inv_range_sqr,
 
    light_dir = normalize(unnormalized_light_vector);
    light_attenuation = attenuation_point(unnormalized_light_vector, inv_range_sqr);
+}
+
+void spot_params(float3 positionWS, Spot_light light, out float attenuation, out float3 light_dirWS)
+{
+   point_params(positionWS, light.positionWS, light.inv_range_sq,
+                light_dirWS, attenuation);
+
+   const float theta = max(dot(-light_dirWS, light.directionWS), 0.0);
+   const float cone_falloff = saturate((theta - light.cone_outer_param) * light.cone_inner_param);
+
+   attenuation *= cone_falloff;
 }
 
 void spot_params(float3 positionWS, out float attenuation, out float3 light_dirWS)
@@ -106,50 +119,80 @@ brdf_params get_params(surface_info surface)
    return params;
 }
 
-float3 calculate(surface_info surface)
+float3 calculate(surface_info surface, Texture2D<float3> projected_light_texture)
 {
    brdf_params params = get_params(surface);
 
+   const float3 positionWS = surface.positionWS;
+   const float3 normalWS = surface.normalWS;
+
    float3 light = 0.0;
 
-   [branch] if (light_active)
-   {
+   [branch] 
+   if (light_active) {
+      Lights_context context = acquire_lights_context();
 
-      [loop] for (uint i = 0; i < 2; ++i)
-      {
-         light += brdf_light(params, -light_directional_dir(i), 1.0,
-                             light_directional_color(i).rgb);
+      const float3 projected_light_texture_color = 
+         sp_use_projected_texture ? sample_projected_light(projected_light_texture, 
+                                                           mul(float4(positionWS, 1.0), light_proj_matrix)) 
+                                  : 0.0;
+
+      while (!context.directional_lights_end()) {
+         Directional_light directional_light = context.next_directional_light();
+
+         float3 light_color = directional_light.color;
+
+         if (directional_light.use_projected_texture()) {
+            light_color *= projected_light_texture_color;
+         }
+
+         light += brdf_light(params, -directional_light.directionWS, 1.0, light_color);
       }
 
       light *= surface.sun_shadow;
 
-      [loop] for (uint i = 0; i < light_active_point_count; ++i)
-      {
+      while (!context.point_lights_end()) {
+         Point_light point_light = context.next_point_light();
+
+         const float intensity = light::intensity_point(normalWS, positionWS, point_light);
+         float3 light_color = point_light.color;
+
+         if (point_light.use_projected_texture()) {
+            light_color *= projected_light_texture_color;
+         }
+
          float3 light_dirWS;
          float attenuation;
 
-         point_params(surface.positionWS, light_point_pos(i),
-                      light_point_inv_range_sqr(i), light_dirWS, attenuation);
+         point_params(positionWS, point_light.positionWS,
+                      point_light.inv_range_sq, light_dirWS, attenuation);
 
-         light +=
-            brdf_light(params, light_dirWS, attenuation, light_point_color(i).rgb);
+         light += brdf_light(params, light_dirWS, attenuation, light_color);
       }
 
-      [branch] if (light_active_spot)
-      {
+      while (!context.spot_lights_end()) {
+         Spot_light spot_light = context.next_spot_light();
+
+         const float intensity = light::intensity_spot(normalWS, positionWS, spot_light);
+         float3 light_color = spot_light.color;
+
+         if (spot_light.use_projected_texture()) {
+            light_color *= projected_light_texture_color;
+         }
+
          float3 light_dirWS;
          float attenuation;
 
-         spot_params(surface.positionWS, attenuation, light_dirWS);
+         spot_params(positionWS, spot_light, attenuation, light_dirWS);
 
-         light += brdf_light(params, light_dirWS, attenuation, light_spot_color.rgb);
+         light += brdf_light(params, light_dirWS, attenuation, light_color);
       }
 
       if (surface.use_ibl) {
          light += evaluate_ibl(params, surface.ao, surface.perceptual_roughness);
       }
       else {
-         light += (light::ambient(surface.normalWS) * params.diffuse_color *
+         light += (light::ambient(normalWS) * params.diffuse_color *
                    diffuse_lambert() * surface.ao);
       }
    }

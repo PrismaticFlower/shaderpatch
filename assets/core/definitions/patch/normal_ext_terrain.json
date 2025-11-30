@@ -55,8 +55,8 @@
         [ "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING", "0" ],
         [ "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING", "0" ],
         [ "TERRAIN_COMMON_BASIC_BLENDING", "0" ],
-        [ "NORMAL_EXT_USE_SHADOW_MAP", "0" ],
-        [ "NORMAL_EXT_USE_PROJECTED_TEXTURE", "0" ]
+        [ "SP_USE_STENCIL_SHADOW_MAP", "0" ],
+        [ "SP_USE_PROJECTED_TEXTURE", "0" ]
       ]
     },
 
@@ -68,8 +68,8 @@
         "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING",
         "TERRAIN_COMMON_BASIC_BLENDING",
         "TERRAIN_COMMON_LOW_DETAIL",
-        "NORMAL_EXT_USE_SHADOW_MAP",
-        "NORMAL_EXT_USE_PROJECTED_TEXTURE"
+        "SP_USE_STENCIL_SHADOW_MAP",
+        "SP_USE_PROJECTED_TEXTURE"
       ],
 
       "static_flags_ops": {
@@ -140,7 +140,7 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       }
     },
@@ -156,7 +156,7 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_SHADOW_MAP": true
+          "SP_USE_STENCIL_SHADOW_MAP": true
         }
       }
     },
@@ -172,8 +172,8 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_SHADOW_MAP": true,
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "SP_USE_STENCIL_SHADOW_MAP": true,
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       }
     },
@@ -201,7 +201,7 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       }
     },
@@ -217,7 +217,7 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_SHADOW_MAP": true
+          "SP_USE_STENCIL_SHADOW_MAP": true
         }
       }
     },
@@ -233,8 +233,8 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_SHADOW_MAP": true,
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "SP_USE_STENCIL_SHADOW_MAP": true,
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       }
     }

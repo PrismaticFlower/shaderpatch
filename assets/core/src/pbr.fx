@@ -12,6 +12,7 @@
 #pragma warning(disable : 3571)
 
 // Samplers
+Texture2D<float3> projected_light_texture : register(ps, t2);
 Texture2D<float2> shadow_ao_map : register(t3);
 Texture2D<float4> albedo_map : register(t7);
 Texture2D<float2> normal_map : register(t8);
@@ -38,7 +39,7 @@ const static bool use_metallic_roughness_map = PBR_USE_METALLIC_ROUGHNESS_MAP;
 const static bool use_emissive_map = PBR_USE_EMISSIVE_MAP;
 const static bool use_transparency = PBR_USE_TRANSPARENCY;
 const static bool use_hardedged_test = PBR_USE_HARDEDGED_TEST;
-const static bool use_shadow_map = PBR_USE_SHADOW_MAP;
+const static bool use_shadow_map = SP_USE_STENCIL_SHADOW_MAP;
 const static bool use_ibl = PBR_USE_IBL;
 
 struct Vs_output
@@ -185,7 +186,7 @@ Ps_output main_ps(Ps_input input)
    surface.ao = ao;
    surface.use_ibl = use_ibl;
 
-   float3 color = pbr::calculate(surface);
+   float3 color = pbr::calculate(surface, projected_light_texture);
 
    if (use_emissive_map) {
       color += 
