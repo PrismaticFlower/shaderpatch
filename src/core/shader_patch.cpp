@@ -48,7 +48,7 @@ constexpr bool enable_intrusive_debug_tools = true;
 
 #else
 
-constexpr bool enable_intrusive_debug_tools = false;
+constexpr bool enable_intrusive_debug_tools = true;
 
 #endif
 
@@ -203,7 +203,8 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
                          ? std::make_unique<BF2_log_monitor>()
                          : nullptr},
      _shadows{std::make_unique<Shadows_provider>(_device, _shader_database,
-                                                 _input_layout_descriptions)}
+                                                 _input_layout_descriptions)},
+     _advanced_lighting{*_device}
 {
    bind_static_resources();
    update_rendertargets();
@@ -1448,7 +1449,12 @@ void Shader_patch::set_constants(const cb::Draw_ps_tag, const UINT offset,
                constants.data(), constants.size_bytes());
 }
 
-void Shader_patch::set_informal_projection_matrix(const glm::mat4 matrix) noexcept
+void Shader_patch::set_informal_view_matrix(const glm::mat4& matrix) noexcept
+{
+   _informal_view_matrix = matrix;
+}
+
+void Shader_patch::set_informal_projection_matrix(const glm::mat4& matrix) noexcept
 {
    _informal_projection_matrix = matrix;
 }
@@ -1922,9 +1928,17 @@ void Shader_patch::game_rendertype_changed() noexcept
       if (_use_shadow_maps) _record_draw_indexed = true;
 
       if (_use_advanced_lighting) {
-         _advanced_lighting.update();
+         const glm::mat4 view_martix = glm::transpose(_informal_view_matrix);
+
+         _advanced_lighting.update(*_device_context,
+                                   {.view_matrix = view_martix,
+                                    .proj_matrix = glm::transpose(_informal_projection_matrix),
+                                    .view_proj_matrix = std::bit_cast<glm::mat4>(
+                                       _cb_scene.projection_matrix)});
 
          _advanced_lighting_active = true;
+
+         _cb_advanced_lighting.view_matrix_z = view_martix[2];
       }
 
       _on_rendertype_changed = [&]() noexcept {
@@ -2532,6 +2546,24 @@ void Shader_patch::update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primit
                glm::vec3{_cb_draw.light_directional_0_dir} ==
                _advanced_lighting.global_light1_dir;
          }
+         else if (_shader_rendertype == Rendertype::specularlighting) {
+            // Simple trick: Use the size of the shader name to identify which constant the light is in.
+            if (_game_shader->shader_name.size() == "specular 1 lights"sv.size()) {
+               directional_light_0_has_shadow =
+                  -glm::vec3{_cb_draw.custom_constants[3]} ==
+                  _advanced_lighting.global_light1_dir;
+            }
+            else {
+               directional_light_0_has_shadow =
+                  -glm::vec3{_cb_draw.custom_constants[2]} ==
+                  _advanced_lighting.global_light1_dir;
+            }
+         }
+         else if (_shader_rendertype == Rendertype::perpixeldiffuselighting) {
+            directional_light_0_has_shadow =
+               glm::vec3{_cb_draw.light_directional_0_color} ==
+               _advanced_lighting.global_light1_dir;
+         }
 
          if (directional_light_0_has_shadow !=
              _cb_advanced_lighting.directional_light_0_has_shadow) {
@@ -2555,7 +2587,14 @@ void Shader_patch::update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primit
          _device_context->PSSetConstantBuffers(3, 1,
                                                _cb_advanced_lighting_buffer.get_ptr());
 
-         std::array<ID3D11ShaderResourceView*, 1> srvs = {_shadows->shadow_srv()};
+         std::array<ID3D11ShaderResourceView*, 4> lights_srvs =
+            _advanced_lighting.get_srvs();
+
+         std::array<ID3D11ShaderResourceView*, 5> srvs = {_shadows->shadow_srv(),
+                                                          lights_srvs[0],
+                                                          lights_srvs[1],
+                                                          lights_srvs[2],
+                                                          lights_srvs[3]};
 
          _device_context->PSSetShaderResources(advanced_lighting_resources_start,
                                                srvs.size(), srvs.data());
@@ -2575,7 +2614,7 @@ void Shader_patch::update_shader() noexcept
          _patch_material->shader->update(*_device_context, _input_layout_descriptions,
                                          _game_input_layout.layout_index,
                                          _game_shader->shader_name, vs_flags,
-                                         _oit_active);
+                                         _oit_active, _advanced_lighting_active);
          return;
       }
    }

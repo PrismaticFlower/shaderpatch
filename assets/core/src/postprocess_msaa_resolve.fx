@@ -40,6 +40,8 @@ static const float filter_radius = (float)resolve_radius;
 
 Texture2DMS<float3> input;
 
+#pragma warning(disable : 4000) // False positive?
+
 float filter_bspline(float x_unscaled)
 {
    const float B = 1.0;

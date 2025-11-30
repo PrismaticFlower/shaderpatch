@@ -92,6 +92,8 @@ cbuffer PSAdvancedLightingConstants : register(b3)
    float inv_cascade_fade_distance;
 
    float4x4 directional_light0_shadow_matrices[4];
+
+   float4 view_matrix_z;
 }
 
 #ifdef __PIXEL_SHADER__
@@ -156,6 +158,6 @@ static const float4 light_spot_params = light_packed_constants[light_spot_offset
 #endif
 
 #define VS_MATERIAL_REGISTER(i) register(vs, t[1 + i])
-#define PS_MATERIAL_REGISTER(i) register(ps, t[8 + i])
+#define PS_MATERIAL_REGISTER(i) register(ps, t[12 + i])
 
 #endif

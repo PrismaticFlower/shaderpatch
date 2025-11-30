@@ -147,8 +147,10 @@ struct alignas(16) Advanced_lighting {
    std::array<uint32_t, 3> padding;
 
    std::array<glm::mat4, 4> directional_light_0_shadow_matrices;
+
+   glm::vec4 view_matrix_z;
 };
 
-static_assert(sizeof(Advanced_lighting) == 288);
+static_assert(sizeof(Advanced_lighting) == 304);
 
 }

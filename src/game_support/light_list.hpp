@@ -10,6 +10,19 @@ struct Point_light {
    glm::vec3 positionWS;
    float inv_range_sq;
    glm::vec3 color;
+   float range;
+};
+
+struct Spot_light {
+   glm::vec3 positionWS;
+   float inv_range_sq;
+   glm::vec3 directionWS;
+   float range;
+   glm::vec3 color;
+   float cos_half_outer_angle;
+   float cos_half_inner_angle;
+   float outer_angle;
+   float cone_radius;
 };
 
 /// @brief Acquire the directions of the global lights from the game.
@@ -20,7 +33,8 @@ void acquire_global_lights(glm::vec3& global_light1_dir,
 
 /// @brief Acquire a list of light entities from the game. This directly reads the game's data structures and is **NOT** thread safe.
 /// @param point_lights The output list of point lights.
-void acquire_light_list(std::vector<Point_light>& point_lights) noexcept;
+void acquire_light_list(std::vector<Point_light>& point_lights,
+                        std::vector<Spot_light>& spot_lights) noexcept;
 
 /// @brief Show a window that allows exploring the game's lights. This directly reads the game's data structures and is **NOT** thread safe.
 void show_light_list_imgui() noexcept;

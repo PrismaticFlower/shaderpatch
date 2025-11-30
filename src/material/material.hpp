@@ -34,7 +34,7 @@ struct Material {
    void bind_shader_resources(ID3D11DeviceContext1& dc) noexcept;
 
    static constexpr auto vs_resources_offset = 1;
-   static constexpr auto ps_resources_offset = 8;
+   static constexpr auto ps_resources_offset = 12;
 
    static constexpr auto vs_cb_offset = 4;
    static constexpr auto ps_cb_offset = 4;

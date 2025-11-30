@@ -22,6 +22,8 @@ struct surface_info {
    float ao;
    float sun_shadow;
 
+   float4 positionSS;
+
    bool use_ibl;
 };
 
@@ -106,7 +108,7 @@ brdf_params get_params(surface_info surface)
    return params;
 }
 
-float3 calculate(surface_info surface)
+float3 calculate_normal(surface_info surface)
 {
    brdf_params params = get_params(surface);
 
@@ -159,6 +161,84 @@ float3 calculate(surface_info surface)
    }
 
    return light;
+}
+
+float3 calculate_advanced(surface_info surface)
+{
+   brdf_params params = get_params(surface);
+
+   float3 light = 0.0;
+
+   [branch] if (light_active)
+   {
+      // Directional Light 0
+      {
+         light += brdf_light(params, -light_directional_dir(0), 1.0,
+                             light_directional_color(0).rgb);
+
+         [branch]
+         if (directional_light_0_has_shadow) {
+            light *= sample_cascaded_shadow_map(directional_light0_shadow_map, surface.positionWS, 
+                                                directional_light_0_shadow_texel_size,
+                                                directional_light_0_shadow_bias, 
+                                                directional_light0_shadow_matrices);
+         }
+      }
+
+      light += brdf_light(params, -light_directional_dir(1), 1.0, light_directional_color(1).rgb);
+
+      const ::light::Cluster_index cluster = ::light::load_cluster(surface.positionWS, surface.positionSS);
+   
+      for (uint i = cluster.point_lights_start; i < cluster.point_lights_end; ++i) {
+         ::light::Point_light point_light = ::light::light_clusters_point_lights[::light::light_clusters_lists[i]];
+         
+         float3 light_dirWS;
+         float attenuation;
+
+         point_params(surface.positionWS, point_light.positionWS,
+                      point_light.inv_range_sq, light_dirWS, attenuation);
+
+         light +=
+            brdf_light(params, light_dirWS, attenuation, point_light.color);
+      }
+
+      for (uint i = cluster.spot_lights_start; i < cluster.spot_lights_end; ++i) {
+         ::light::Spot_light spot_light = ::light::light_clusters_spot_lights[::light::light_clusters_lists[i]];
+
+         const float3 unorma_light_dirWS = spot_light.positionWS - surface.positionWS;
+         const float3 light_dirWS = normalize(unorma_light_dirWS);
+         const float attenuation = light::attenuation_point(unorma_light_dirWS, spot_light.inv_range_sq);
+
+         const float theta = max(dot(-light_dirWS, spot_light.directionWS), 0.0);
+         const float cone_falloff = saturate((theta - spot_light.cone_outer_param) * spot_light.cone_inner_param);
+
+         light += brdf_light(params, light_dirWS, attenuation * cone_falloff, spot_light.color);
+      }
+
+      if (surface.use_ibl) {
+         light += evaluate_ibl(params, surface.ao, surface.perceptual_roughness);
+      }
+      else {
+         light += (light::ambient(surface.normalWS) * params.diffuse_color *
+                   diffuse_lambert() * surface.ao);
+      }
+   }
+   else
+   {
+      light = 0.0;
+   }
+
+   return light;
+}
+
+
+float3 calculate(surface_info surface)
+{
+#  ifdef SP_USE_ADVANCED_LIGHTING
+      return calculate_advanced(surface);
+#  else
+      return calculate_normal(surface);
+#  endif
 }
 
 }

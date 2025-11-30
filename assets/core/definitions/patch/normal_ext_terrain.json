@@ -87,6 +87,40 @@
           "TERRAIN_COMMON_BASIC_BLENDING": "set"
         }
       }
+    },
+
+    "al_main_ps": {
+      "stage": "pixel",
+      "function_name": "main_ps",
+
+      "static_flags": [
+        "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING",
+        "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING",
+        "TERRAIN_COMMON_BASIC_BLENDING",
+        "TERRAIN_COMMON_LOW_DETAIL",
+        "NORMAL_EXT_USE_SHADOW_MAP",
+        "NORMAL_EXT_USE_PROJECTED_TEXTURE"
+      ],
+
+      "static_flags_ops": {
+        "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": {
+          "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": "clear"
+        },
+
+        "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": {
+          "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": "clear"
+        },
+
+        "TERRAIN_COMMON_LOW_DETAIL": {
+          "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": "clear",
+          "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": "clear",
+          "TERRAIN_COMMON_BASIC_BLENDING": "set"
+        }
+      },
+
+      "defines": [
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
     }
   },
 
@@ -101,7 +135,8 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "main_ps"
+        "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps"
       }
     },
 
@@ -113,7 +148,8 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "main_ps"
+        "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps"
       }
     },
 
@@ -125,7 +161,8 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "main_ps"
+        "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps"
       }
     },
 
@@ -138,6 +175,7 @@
 
       "pixel_shader": {
         "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps",
 
         "static_flags": {
           "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
@@ -154,6 +192,7 @@
 
       "pixel_shader": {
         "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps",
 
         "static_flags": {
           "NORMAL_EXT_USE_SHADOW_MAP": true
@@ -170,6 +209,7 @@
 
       "pixel_shader": {
         "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps",
 
         "static_flags": {
           "NORMAL_EXT_USE_SHADOW_MAP": true,
@@ -186,7 +226,8 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "main_ps"
+        "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps"
       }
     },
 
@@ -199,6 +240,7 @@
 
       "pixel_shader": {
         "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps",
 
         "static_flags": {
           "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
@@ -215,6 +257,7 @@
 
       "pixel_shader": {
         "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps",
 
         "static_flags": {
           "NORMAL_EXT_USE_SHADOW_MAP": true
@@ -231,6 +274,7 @@
 
       "pixel_shader": {
         "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps",
 
         "static_flags": {
           "NORMAL_EXT_USE_SHADOW_MAP": true,

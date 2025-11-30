@@ -21,7 +21,9 @@ auto flags_to_bitstring(const Enum flags) -> std::string
 
 Shader_set::Shader_set(Com_ptr<ID3D11Device1> device, shader::Rendertype& rendertype,
                        std::span<const std::string> extra_flags, std::string name) noexcept
-   : _device{std::move(device)}, _shaders{init_shaders(rendertype, extra_flags)}, _name{std::move(name)}
+   : _device{std::move(device)},
+     _shaders{init_shaders(rendertype, extra_flags)},
+     _name{std::move(name)}
 {
 }
 
@@ -29,7 +31,7 @@ void Shader_set::update(ID3D11DeviceContext1& dc,
                         const core::Input_layout_descriptions& layout_descriptions,
                         const std::uint16_t layout_index, const std::string& state_name,
                         const shader::Vertex_shader_flags vertex_shader_flags,
-                        const bool oit_active) noexcept
+                        const bool oit_active, const bool advanced_lighting_active) noexcept
 {
    auto& state = get_state(state_name);
 
@@ -41,7 +43,10 @@ void Shader_set::update(ID3D11DeviceContext1& dc,
    dc.IASetInputLayout(&input_layout);
    dc.VSSetShader(vs.vs.get(), nullptr, 0);
 
-   dc.PSSetShader((oit_active ? state.pixel_oit : state.pixel).get(), nullptr, 0);
+   dc.PSSetShader(advanced_lighting_active
+                     ? (oit_active ? state.pixel_al_oit : state.pixel_al).get()
+                     : (oit_active ? state.pixel_oit : state.pixel).get(),
+                  nullptr, 0);
 }
 
 auto Shader_set::Material_shader_state::get_vs(const shader::Vertex_shader_flags flags,
@@ -86,8 +91,19 @@ auto Shader_set::init_state(shader::Rendertype_state& state,
                             std::span<const std::string> extra_flags) noexcept
    -> Material_shader_state
 {
-   return {init_vs_entrypoint(state, extra_flags), state.pixel(extra_flags),
-           state.pixel_oit(extra_flags)};
+   Material_shader_state shader_state = {.vertex = init_vs_entrypoint(state, extra_flags),
+                                         .pixel = state.pixel(extra_flags),
+                                         .pixel_al = state.pixel_al(extra_flags),
+                                         .pixel_oit = state.pixel_oit(extra_flags),
+                                         .pixel_al_oit =
+                                            state.pixel_al_oit(extra_flags)};
+
+   if (!shader_state.pixel_al) shader_state.pixel_al = shader_state.pixel;
+   if (!shader_state.pixel_al_oit) {
+      shader_state.pixel_al_oit = shader_state.pixel_oit;
+   }
+
+   return shader_state;
 }
 
 auto Shader_set::init_vs_entrypoint(shader::Rendertype_state& state,

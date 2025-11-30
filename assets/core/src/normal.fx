@@ -272,6 +272,8 @@ struct Ps_input
    float3 static_lighting : STATICLIGHT;
 
    float fog : FOG;
+
+   float4 positionSS : SV_Position;
 };
 
 Ps_output main_ps(Ps_input input)
@@ -298,6 +300,7 @@ Ps_output main_ps(Ps_input input)
 
    lighting_input.normalWS = normalize(input.normalWS);
    lighting_input.positionWS = input.positionWS;
+   lighting_input.positionSS = input.positionSS;
 
    lighting_input.static_diffuse_lighting = input.static_lighting;
    
@@ -369,9 +372,9 @@ void oit_unlit_main_ps(Ps_input_unlit input, float4 positionSS : SV_Position, ui
 }
 
 [earlydepthstencil]
-void oit_main_ps(Ps_input input, float4 positionSS : SV_Position, uint coverage : SV_Coverage)
+void oit_main_ps(Ps_input input, uint coverage : SV_Coverage)
 {
    Ps_output result = main_ps(input);
    
-   aoit::write_pixel((uint2)positionSS.xy, positionSS.z, result.out_color, coverage);
+   aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, result.out_color, coverage);
 }

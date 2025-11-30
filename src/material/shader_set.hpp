@@ -20,7 +20,7 @@ public:
                const core::Input_layout_descriptions& layout_descriptions,
                const std::uint16_t layout_index, const std::string& state_name,
                const shader::Vertex_shader_flags vertex_shader_flags,
-               const bool oit_active) noexcept;
+               const bool oit_active, const bool advanced_lighting_active) noexcept;
 
 private:
    struct Material_vertex_shader {
@@ -32,7 +32,9 @@ private:
    struct Material_shader_state {
       absl::flat_hash_map<shader::Vertex_shader_flags, Material_vertex_shader> vertex;
       Com_ptr<ID3D11PixelShader> pixel;
+      Com_ptr<ID3D11PixelShader> pixel_al;
       Com_ptr<ID3D11PixelShader> pixel_oit;
+      Com_ptr<ID3D11PixelShader> pixel_al_oit;
 
       auto get_vs(const shader::Vertex_shader_flags flags,
                   const std::string& state_name, const std::string& shader_name) noexcept

@@ -152,10 +152,26 @@ float4 main_ps(Vs_output input) : SV_Target0
    const float  ao = min(textures.ao, shadow_ao_sample.g);
    const float3 normalWS = normalize(mul(textures.normalTS, tangent_to_world));
    const float3 viewWS = normalize(view_positionWS - input.positionWS);
+      
+   Normal_ext_lighting_input lighting_input;
 
-   float3 color = do_lighting(normalWS, input.positionWS, viewWS, diffuse,
-                              static_diffuse_lighting, specular, specular_exponent,
-                              shadow, ao, projected_light_texture);
+   lighting_input.normalWS = normalWS;
+   lighting_input.positionWS = input.positionWS;
+
+   lighting_input.positionSS = input.positionPS;
+
+   lighting_input.viewWS = viewWS;
+
+   lighting_input.diffuse_color = diffuse;
+   lighting_input.static_diffuse_lighting = static_diffuse_lighting; 
+
+   lighting_input.specular_color = specular;
+   lighting_input.specular_exponent = specular_exponent;
+
+   lighting_input.shadow = shadow;
+   lighting_input.ao = ao;
+
+   float3 color = do_lighting(lighting_input, projected_light_texture);
 
    [branch] if (use_envmap) {
       const float3 env_coords = calculate_envmap_reflection(normalWS, viewWS);

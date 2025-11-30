@@ -31,9 +31,11 @@ void acquire_global_lights(glm::vec3& global_light1_dir, glm::vec3& global_light
    }
 }
 
-void acquire_light_list(std::vector<Point_light>& point_lights) noexcept
+void acquire_light_list(std::vector<Point_light>& point_lights,
+                        std::vector<Spot_light>& spot_lights) noexcept
 {
    point_lights.clear();
+   spot_lights.clear();
 
    const Game_memory& game_memory = get_game_memory();
 
@@ -56,6 +58,24 @@ void acquire_light_list(std::vector<Point_light>& point_lights) noexcept
                            omni_data.position.z},
             .inv_range_sq = omni_data.invRangeSq,
             .color = {base_data.color.r, base_data.color.g, base_data.color.b},
+            .range = omni_data.range,
+         });
+      }
+      else if (base_data.type == RedLightType::Spot) {
+         RedSpotLight_data& spot_data = ((RedSpotLight*)light_base)->RedSpotLight_data;
+
+         spot_lights.push_back({
+            .positionWS = {spot_data.position.x, spot_data.position.y,
+                           spot_data.position.z},
+            .inv_range_sq = spot_data.invRangeSq,
+            .directionWS = {spot_data.direction.x, spot_data.direction.y,
+                            spot_data.direction.z},
+            .range = spot_data.range,
+            .color = {base_data.color.r, base_data.color.g, base_data.color.b},
+            .cos_half_outer_angle = spot_data.cosHalfOuterAngle,
+            .cos_half_inner_angle = spot_data.cosHalfInnerAngle,
+            .outer_angle = spot_data.d3dLight.Phi,
+            .cone_radius = spot_data.range * spot_data.tanHalfOuterAngle,
          });
       }
 
@@ -282,18 +302,18 @@ void show_light_list_imgui() noexcept
                 ImGui::TreeNode("RedSpotLight")) {
                RedSpotLight_data& data = ((RedSpotLight*)light_base)->RedSpotLight_data;
 
-               ImGui::LabelText("Inner Angle Tan", "%f", data.innerAngleTan);
-               ImGui::LabelText("Outer Angle Tan", "%f", data.outerAngleTan);
-               ImGui::LabelText("Inner Angle Tan", "%f", data.innerAngleCos);
-               ImGui::LabelText("Outer Angle Tan", "%f", data.outerAngleCos);
+               ImGui::LabelText("Inner Angle Tan", "%f", data.tanHalfInnerAngle);
+               ImGui::LabelText("Outer Angle Tan", "%f", data.tanHalfOuterAngle);
+               ImGui::LabelText("Inner Angle Tan", "%f", data.cosHalfInnerAngle);
+               ImGui::LabelText("Outer Angle Tan", "%f", data.cosHalfOuterAngle);
 
                ImGui::DragFloat("Falloff", &data.falloff);
 
                if (ImGui::DragFloat("Range", &data.range)) {
                   const float inv_range = 1.0f / data.range;
                   data.invRangeSq = inv_range * inv_range;
-                  data.coneRadius =
-                     data.range * std::tan(std::atan(data.outerAngleTan) * 0.5f);
+                  data.rangeCosHalfAngleRatio =
+                     data.range * std::tan(std::atan(data.tanHalfOuterAngle) * 0.5f);
                }
 
                ImGui::DragFloat3("Direction", &data.direction.x);
@@ -309,7 +329,7 @@ void show_light_list_imgui() noexcept
                ImGui::Checkbox("Bidirectional", &data.textureMatrixDirty);
 
                ImGui::LabelText("Inv Range Sq", "%f", data.invRangeSq);
-               ImGui::LabelText("Cone Radius", "%f", data.coneRadius);
+               ImGui::LabelText("Cone Radius", "%f", data.rangeCosHalfAngleRatio);
 
                ImGui::TreePop();
             }

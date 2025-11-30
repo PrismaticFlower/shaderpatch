@@ -143,7 +143,7 @@
 
     "al_blinn_phong_3lights_ps": {
       "stage": "pixel",
-      "function_name": "blinn_phong_ps",
+      "function_name": "al_blinn_phong_ps",
 
       "defines": [
         [ "SPECULAR_LIGHT_COUNT", "3" ],
@@ -153,7 +153,7 @@
 
     "al_blinn_phong_2lights_ps": {
       "stage": "pixel",
-      "function_name": "blinn_phong_ps",
+      "function_name": "al_blinn_phong_ps",
 
       "defines": [
         [ "SPECULAR_LIGHT_COUNT", "2" ],
@@ -163,7 +163,7 @@
 
     "al_blinn_phong_1lights_ps": {
       "stage": "pixel",
-      "function_name": "blinn_phong_ps",
+      "function_name": "al_blinn_phong_ps",
 
       "defines": [
         [ "SPECULAR_LIGHT_COUNT", "1" ],
@@ -173,7 +173,7 @@
 
     "al_oit_blinn_phong_3lights_ps": {
       "stage": "pixel",
-      "function_name": "oit_blinn_phong_ps",
+      "function_name": "al_oit_blinn_phong_ps",
 
       "defines": [
         [ "SPECULAR_LIGHT_COUNT", "3" ],
@@ -183,7 +183,7 @@
 
     "al_oit_blinn_phong_2lights_ps": {
       "stage": "pixel",
-      "function_name": "oit_blinn_phong_ps",
+      "function_name": "al_oit_blinn_phong_ps",
 
       "defines": [
         [ "SPECULAR_LIGHT_COUNT", "2" ],
@@ -193,7 +193,7 @@
 
     "al_oit_blinn_phong_1lights_ps": {
       "stage": "pixel",
-      "function_name": "oit_blinn_phong_ps",
+      "function_name": "al_oit_blinn_phong_ps",
 
       "defines": [
         [ "SPECULAR_LIGHT_COUNT", "1" ],
@@ -203,7 +203,6 @@
 
     "al_normalmapped_ps": {
       "stage": "pixel",
-      "function_name": "normalmapped_ps",
 
       "defines": [
         [ "SPECULAR_LIGHT_COUNT", "0" ],
@@ -213,7 +212,6 @@
 
     "al_oit_normalmapped_ps": {
       "stage": "pixel",
-      "function_name": "oit_normalmapped_ps",
 
       "defines": [
         [ "SPECULAR_LIGHT_COUNT", "0" ],

@@ -4,12 +4,16 @@
 #include "constants_list.hlsl"
 #include "vertex_utilities.hlsl"
 #include "shadow_map_utilities.hlsl"
+#include "lighting_clusters.hlsl"
+
 
 #pragma warning(disable : 3078) // **sigh**...: loop control variable conflicts with a previous declaration in the outer scope
 
 struct Lighting_input {
    float3 normalWS;
    float3 positionWS;
+
+   float4 positionSS;
 
    float3 static_diffuse_lighting;
    
@@ -97,6 +101,23 @@ float intensity_spot(float3 normalWS, float3 positionWS)
    return intensity * attenuation;
 }
 
+float intensity_spot(float3 normalWS, float3 positionWS, float3 light_positionWS, float inv_range_sqr,
+                     float3 light_directionWS, float outer_spot_param, float inner_spot_param)
+{
+   const float3 unnormalized_light_vectorWS = light_positionWS - positionWS;
+
+   const float3 light_vectorWS = normalize(unnormalized_light_vectorWS);
+
+   const float theta = max(dot(-light_vectorWS, light_directionWS), 0.0);
+   const float cone_falloff = saturate((theta - outer_spot_param) * inner_spot_param);
+
+   const float attenuation = 
+      attenuation_point(unnormalized_light_vectorWS, inv_range_sqr) * cone_falloff;
+   const float intensity = saturate(dot(normalWS, light_vectorWS));
+
+   return intensity * attenuation;
+}
+
 float3 calculate_normal(Lighting_input input)
 {
    const float3 normalWS = input.normalWS;
@@ -105,7 +126,6 @@ float3 calculate_normal(Lighting_input input)
    float4 light = float4((ambient(normalWS) + input.static_diffuse_lighting) * input.ambient_occlusion, 0.0);
 
    // clang-format off
-
    [branch]
    if (light_active) { 
       float3 proj_light_intensities = light.rgb;
@@ -177,52 +197,56 @@ float3 calculate_advanced(Lighting_input input)
 
    [branch]
    if (light_active) { 
-         float3 proj_light_intensities = light.rgb;
+      float3 proj_light_intensities = light.rgb;
 
-         // Directional Light 0
-         {
-            float intensity = intensity_directional(normalWS, light_directional_dir(0));
+      // Directional Light 0
+      {
+         float intensity = intensity_directional(normalWS, light_directional_dir(0));
 
-            [branch]
-            if (directional_light_0_has_shadow) {
-               intensity *= sample_cascaded_shadow_map(directional_light0_shadow_map, positionWS, 
-                                                       directional_light_0_shadow_texel_size,
-                                                       directional_light_0_shadow_bias, 
-                                                       directional_light0_shadow_matrices);
-            }
-
-            light += intensity * light_directional_color(0);
-
-            proj_light_intensities[0] = intensity;
+         [branch]
+         if (directional_light_0_has_shadow) {
+            intensity *= sample_cascaded_shadow_map(directional_light0_shadow_map, positionWS, 
+                                                    directional_light_0_shadow_texel_size,
+                                                    directional_light_0_shadow_bias, 
+                                                    directional_light0_shadow_matrices);
          }
 
-         light += intensity_directional(normalWS, light_directional_dir(1)) * light_directional_color(1);
+         light += intensity * light_directional_color(0);
+         proj_light_intensities[0] = intensity;
+      }
 
-         [loop]
-         for (uint i = 0; i < light_active_point_count; ++i) {
-            const float intensity = intensity_point(normalWS, positionWS, light_point_pos(i),
-                                                    light_point_inv_range_sqr(i));
-            light += intensity * light_point_color(i);
+      light += intensity_directional(normalWS, light_directional_dir(1)) * light_directional_color(1);
 
-            if (i == 0) proj_light_intensities[1] = intensity;
-         }
+      const Cluster_index cluster = load_cluster(positionWS, input.positionSS);
+   
+      for (uint i = cluster.point_lights_start; i < cluster.point_lights_end; ++i) {
+         Point_light point_light = light_clusters_point_lights[light_clusters_lists[i]];
+         
+         const float intensity = intensity_point(normalWS, positionWS, point_light.positionWS,
+                                                 point_light.inv_range_sq);
 
-         if (light_active_spot) {
-            const float intensity = intensity_spot(normalWS, positionWS);
-            light += intensity * light_spot_color;
+         light.rgb += intensity * point_light.color;
+      }
 
-            proj_light_intensities[2] = intensity;
-         }
+      for (uint i = cluster.spot_lights_start; i < cluster.spot_lights_end; ++i) {
+         Spot_light spot_light = light_clusters_spot_lights[light_clusters_lists[i]];
+         
+         const float intensity = intensity_spot(normalWS, positionWS, spot_light.positionWS,
+                                                spot_light.inv_range_sq, spot_light.directionWS, 
+                                                spot_light.cone_outer_param, spot_light.cone_inner_param);
 
-         if (input.use_projected_light) {
-            const float proj_light_intensity = dot(light_proj_selector.xyz, proj_light_intensities);
+         light.rgb += intensity * spot_light.color;
+      }
 
-            light.rgb -= (light_proj_color.rgb * proj_light_intensity);
-            light.rgb += (input.projected_light_texture_color * light_proj_color.rgb *
-                          proj_light_intensity);
-         }
+      if (input.use_projected_light) {
+         const float proj_light_intensity = dot(light_proj_selector.xyz, proj_light_intensities);
 
-         light.rgb *= lighting_scale;
+         light.rgb -= (light_proj_color.rgb * proj_light_intensity);
+         light.rgb += (input.projected_light_texture_color * light_proj_color.rgb *
+                       proj_light_intensity);
+      }
+      
+      light.rgb *= lighting_scale;
    }
    else {
       light = float4(lighting_scale.xxx, 0.0);
@@ -245,6 +269,53 @@ float3 calculate(Lighting_input input)
 }
 
 namespace blinnphong {
+
+void calculate(inout float3 in_out_diffuse, inout float3 in_out_specular,
+               float3 N, float3 V, float3 L, float attenuation,
+               float3 light_color, float exponent)
+{
+   const float3 H = normalize(L + V);
+   const float NdotH = saturate(dot(N, H));
+   const float specular = pow(NdotH, exponent) * attenuation;
+   const float diffuse = saturate(dot(N, L)) * attenuation;
+
+   in_out_diffuse += (diffuse * light_color);
+   in_out_specular += (specular * light_color);
+}
+
+void calculate_point(inout float3 in_out_diffuse, inout float3 in_out_specular,
+                     float3 normal, float3 position, float3 view_normal,
+                     float3 light_position, float inv_range_sqr, float3 light_color,
+                     float exponent)
+{
+   const float3 unnormalized_light_vector = light_position - position;
+   const float3 light_dir = normalize(unnormalized_light_vector);
+   const float attenuation =
+      attenuation_point(unnormalized_light_vector, inv_range_sqr);
+
+   calculate(in_out_diffuse, in_out_specular, normal, view_normal, light_dir,
+             attenuation, light_color, exponent);
+}
+
+void calculate_spot(inout float3 in_out_diffuse, inout float3 in_out_specular,
+                    float3 normalWS, float3 positionWS, float3 view_normalWS, float3 light_positionWS, 
+                    float inv_range_sqr, float3 light_directionWS, float outer_spot_param, float inner_spot_param, 
+                    float3 light_color, float exponent)
+{
+   const float3 unnormalized_light_vectorWS = light_positionWS - positionWS;
+
+   const float3 light_vectorWS = normalize(unnormalized_light_vectorWS);
+
+   const float theta = max(dot(-light_vectorWS, light_directionWS), 0.0);
+   const float cone_falloff = saturate((theta - outer_spot_param) * inner_spot_param);
+
+   const float attenuation = 
+      attenuation_point(unnormalized_light_vectorWS, inv_range_sqr) * cone_falloff;
+
+
+   calculate(in_out_diffuse, in_out_specular, normalWS, view_normalWS,
+             light_vectorWS, attenuation, light_color, exponent);
+}
 
 void calculate(inout float4 in_out_diffuse, inout float4 in_out_specular,
                float3 N, float3 V, float3 L, float attenuation,

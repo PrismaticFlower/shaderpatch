@@ -183,6 +183,7 @@ Ps_output main_ps(Ps_input input)
    surface.perceptual_roughness = perceptual_roughness;
    surface.sun_shadow = shadow;
    surface.ao = ao;
+   surface.positionSS = input.positionSS;
    surface.use_ibl = use_ibl;
 
    float3 color = pbr::calculate(surface);

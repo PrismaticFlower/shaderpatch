@@ -389,3 +389,125 @@ float4 normalmapped_spotlight_ps(Ps_normalmapped_spotlight_input input) : SV_Tar
 
    return float4(color, 1.0);
 }
+
+// Advanced Lighting Shaders
+
+float4 al_normalmapped_ps(Ps_normalmapped_input input, float4 positionSS : SV_Position) : SV_Target0
+{
+   if (light_positionsWS[0].w != 0) discard;
+
+   const float3 normalTS =
+      normal_map.Sample(aniso_wrap_sampler, input.texcoords).rgb * (255.0 / 127.0) -
+      (128.0 / 127.0);
+
+   const float3 normalWS = normalize(mul(input.TBN, normalTS));
+   const float3 positionWS = input.positionWS;
+
+   float3 color = input.static_lighting;
+   color += light::ambient(normalWS);
+   color *= light_ambient_color_top.a;
+   [branch] if (ssao_enabled) color *= shadow_ao_map.Sample(linear_clamp_sampler, input.shadow_texcoords).g;
+
+   const float3 global_light_directionWS = -light_positionsWS[0].xyz;
+   float global_light = saturate(dot(normalWS, global_light_directionWS));
+
+   [branch]
+   if (directional_light_0_has_shadow) {
+      global_light *= sample_cascaded_shadow_map(directional_light0_shadow_map, positionWS, 
+                                                 directional_light_0_shadow_texel_size,
+                                                 directional_light_0_shadow_bias, 
+                                                 directional_light0_shadow_matrices);
+   }
+
+   color += global_light * light_colors[0];
+
+   const light::Cluster_index cluster = light::load_cluster(positionWS, positionSS);
+
+   for (uint i = cluster.point_lights_start; i < cluster.point_lights_end; ++i) {
+      light::Point_light point_light = light::light_clusters_point_lights[light::light_clusters_lists[i]];
+
+      const float3 unorma_light_dirWS = point_light.positionWS - positionWS;
+      const float3 light_dirWS = normalize(unorma_light_dirWS);
+      const float attenuation = light::attenuation_point(unorma_light_dirWS, point_light.inv_range_sq);
+      const float diffuse = saturate(dot(normalWS, light_dirWS));
+
+      color += attenuation * diffuse * point_light.color;
+   }
+   
+   for (uint i = cluster.spot_lights_start; i < cluster.spot_lights_end; ++i) {
+      light::Spot_light spot_light = light::light_clusters_spot_lights[light::light_clusters_lists[i]];
+      
+      const float3 unorma_light_dirWS = spot_light.positionWS - positionWS;
+      const float3 light_dirWS = normalize(unorma_light_dirWS);
+      const float attenuation = light::attenuation_point(unorma_light_dirWS, spot_light.inv_range_sq);
+      const float diffuse = saturate(dot(normalWS, light_dirWS));
+
+      const float theta = max(dot(-light_dirWS, spot_light.directionWS), 0.0);
+      const float cone_falloff = saturate((theta - spot_light.cone_outer_param) * spot_light.cone_inner_param);
+
+      color += attenuation * cone_falloff * diffuse * spot_light.color;
+   }
+
+   color = apply_fog(color, input.fog);
+
+   return float4(color, 1.0);
+}
+
+float4 al_perpixel_ps(Ps_perpixel_input input, float4 positionSS : SV_Position) : SV_Target0
+{
+   if (light_positionsWS[0].w != 0) discard;
+
+   const float3 normalWS = normalize(input.normalWS);
+   const float3 positionWS = input.positionWS;
+
+   float3 color = input.static_lighting;
+   color += light::ambient(normalWS);
+   color *= light_ambient_color_top.a;
+   [branch] if (ssao_enabled) color *= shadow_ao_map.Sample(linear_clamp_sampler, input.shadow_texcoords).g;
+
+   const float3 global_light_directionWS = -light_positionsWS[0].xyz;
+   float global_light = saturate(dot(normalWS, global_light_directionWS));
+
+   [branch]
+   if (directional_light_0_has_shadow) {
+      global_light *= sample_cascaded_shadow_map(directional_light0_shadow_map, positionWS, 
+                                                 directional_light_0_shadow_texel_size,
+                                                 directional_light_0_shadow_bias, 
+                                                 directional_light0_shadow_matrices);
+   }
+
+   color += global_light * light_colors[0];
+
+   const light::Cluster_index cluster = light::load_cluster(positionWS, positionSS);
+
+   for (uint i = cluster.point_lights_start; i < cluster.point_lights_end; ++i) {
+      light::Point_light point_light = light::light_clusters_point_lights[light::light_clusters_lists[i]];
+
+      const float3 unorma_light_dirWS = point_light.positionWS - positionWS;
+      const float3 light_dirWS = normalize(unorma_light_dirWS);
+      const float attenuation = light::attenuation_point(unorma_light_dirWS, point_light.inv_range_sq);
+      const float diffuse = saturate(dot(normalWS, light_dirWS));
+
+      color += attenuation * diffuse * point_light.color;
+   }
+   
+   for (uint i = cluster.spot_lights_start; i < cluster.spot_lights_end; ++i) {
+      light::Spot_light spot_light = light::light_clusters_spot_lights[light::light_clusters_lists[i]];
+      
+      const float3 unorma_light_dirWS = spot_light.positionWS - positionWS;
+      const float3 light_dirWS = normalize(unorma_light_dirWS);
+      const float attenuation = light::attenuation_point(unorma_light_dirWS, spot_light.inv_range_sq);
+      const float diffuse = saturate(dot(normalWS, light_dirWS));
+
+      const float theta = max(dot(-light_dirWS, spot_light.directionWS), 0.0);
+      const float cone_falloff = saturate((theta - spot_light.cone_outer_param) * spot_light.cone_inner_param);
+
+      color += attenuation * cone_falloff * diffuse * spot_light.color;
+   }
+
+   color = apply_fog(color, input.fog);
+
+   return float4(color, 1.0);
+}
+
+void discard_ps() {}

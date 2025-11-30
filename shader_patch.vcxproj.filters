@@ -311,6 +311,8 @@
     <ClCompile Include="src\game_support\light_list.cpp" />
     <ClCompile Include="src\imgui\imgui_tables.cpp" />
     <ClCompile Include="src\core\advanced_lighting.cpp" />
+    <ClCompile Include="src\core\lighting\clusters.cpp" />
+    <ClCompile Include="src\core\lighting\debug\cone_aabb_draw.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\shader_constants.hpp">
@@ -775,6 +777,9 @@
     <ClInclude Include="src\game_support\light_list.hpp" />
     <ClInclude Include="src\game_support\structures\common.hpp" />
     <ClInclude Include="src\core\advanced_lighting.hpp" />
+    <ClInclude Include="src\core\lighting\clusters.hpp" />
+    <ClInclude Include="src\core\lighting\matrices.hpp" />
+    <ClInclude Include="src\core\lighting\debug\cone_aabb_draw.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />

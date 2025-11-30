@@ -117,6 +117,8 @@ struct Ps_blendmap_input
    float fog : FOG;
    float2 blend_values : BLENDVALUES;
    float fade : FADE;
+
+   float4 positionSS : SV_Position;
 };
 
 float4 diffuse_blendmap_ps(Ps_blendmap_input input, 
@@ -142,6 +144,7 @@ float4 diffuse_blendmap_ps(Ps_blendmap_input input,
 
    lighting_input.normalWS = normalize(input.normalWS);
    lighting_input.positionWS = input.positionWS;
+   lighting_input.positionSS = input.positionSS;
 
    lighting_input.static_diffuse_lighting = input.static_lighting;
    
@@ -174,6 +177,8 @@ struct Ps_detail_input
 
    float3 static_lighting : STATICLIGHT;
    float fog : FOG;
+
+   float4 positionSS : SV_Position;
 };
 
 float4 detailing_ps(Ps_detail_input input, 
@@ -192,6 +197,7 @@ float4 detailing_ps(Ps_detail_input input,
 
    lighting_input.normalWS = normalize(input.normalWS);
    lighting_input.positionWS = input.positionWS;
+   lighting_input.positionSS = input.positionSS;
 
    lighting_input.static_diffuse_lighting = input.static_lighting;
    

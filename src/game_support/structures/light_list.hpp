@@ -93,10 +93,10 @@ struct RedLight { /* class RedLight */
 };
 
 struct RedSpotLight_data {
-   float innerAngleTan;
-   float outerAngleTan;
-   float innerAngleCos;
-   float outerAngleCos;
+   float tanHalfInnerAngle;
+   float tanHalfOuterAngle;
+   float cosHalfInnerAngle;
+   float cosHalfOuterAngle;
    float falloff;
    float range;
    PblVector3 direction;
@@ -112,7 +112,7 @@ struct RedSpotLight_data {
    undefined field16_0xde;
    undefined field17_0xdf;
    float invRangeSq;
-   float coneRadius;
+   float rangeCosHalfAngleRatio;
 };
 
 struct RedSpotLight { /* class RedSpotLight : RedLight */

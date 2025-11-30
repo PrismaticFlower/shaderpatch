@@ -287,7 +287,7 @@
 
     "al_perpixel_3lights_ps": {
       "stage": "pixel",
-      "function_name": "perpixel_ps",
+      "function_name": "al_perpixel_ps",
 
       "defines": [
         [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
@@ -299,7 +299,7 @@
 
     "al_perpixel_2lights_ps": {
       "stage": "pixel",
-      "function_name": "perpixel_ps",
+      "function_name": "al_perpixel_ps",
 
       "defines": [
         [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
@@ -311,7 +311,7 @@
 
     "al_perpixel_1lights_ps": {
       "stage": "pixel",
-      "function_name": "perpixel_ps",
+      "function_name": "al_perpixel_ps",
 
       "defines": [
         [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
@@ -323,7 +323,7 @@
 
     "al_normalmapped_3lights_ps": {
       "stage": "pixel",
-      "function_name": "normalmapped_ps",
+      "function_name": "al_normalmapped_ps",
 
       "defines": [
         [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
@@ -335,7 +335,7 @@
 
     "al_normalmapped_2lights_ps": {
       "stage": "pixel",
-      "function_name": "normalmapped_ps",
+      "function_name": "al_normalmapped_ps",
 
       "defines": [
         [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
@@ -347,7 +347,7 @@
 
     "al_normalmapped_1lights_ps": {
       "stage": "pixel",
-      "function_name": "normalmapped_ps",
+      "function_name": "al_normalmapped_ps",
 
       "defines": [
         [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
@@ -357,27 +357,13 @@
       ]
     },
 
-    "al_perpixel_spotlight_ps": {
+    "discard_ps": {
       "stage": "pixel",
-      "function_name": "perpixel_spotlight_ps",
 
       "defines": [
         [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
         [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
-        [ "PERPIXEL_LIGHT_COUNT", "0" ],
-        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
-      ]
-    },
-
-    "al_normalmapped_spotlight_ps": {
-      "stage": "pixel",
-      "function_name": "normalmapped_spotlight_ps",
-
-      "defines": [
-        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
-        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
-        [ "PERPIXEL_LIGHT_COUNT", "0" ],
-        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+        [ "PERPIXEL_LIGHT_COUNT", "0" ]
       ]
     }
   },
@@ -433,7 +419,7 @@
 
       "pixel_shader": {
         "entrypoint": "perpixel_spotlight_ps",
-        "al_entrypoint": "al_perpixel_spotlight_ps"
+        "al_entrypoint": "discard_ps"
       }
     },
 
@@ -568,7 +554,7 @@
 
       "pixel_shader": {
         "entrypoint": "normalmapped_spotlight_ps",
-        "al_entrypoint": "al_normalmapped_spotlight_ps"
+        "al_entrypoint": "discard_ps"
       }
     },
 
@@ -581,7 +567,7 @@
 
       "pixel_shader": {
         "entrypoint": "normalmapped_spotlight_ps",
-        "al_entrypoint": "al_normalmapped_spotlight_ps"
+        "al_entrypoint": "discard_ps"
       }
     },
 
@@ -594,7 +580,7 @@
 
       "pixel_shader": {
         "entrypoint": "normalmapped_spotlight_ps",
-        "al_entrypoint": "al_normalmapped_spotlight_ps"
+        "al_entrypoint": "discard_ps"
       }
     }
   }

@@ -776,7 +776,10 @@ HRESULT Device::SetTransform(D3DTRANSFORMSTATETYPE type, const D3DMATRIX* matrix
 {
    Debug_trace::func(__FUNCSIG__);
 
-   if (type == D3DTS_PROJECTION) {
+   if (type == D3DTS_VIEW) {
+      _shader_patch.set_informal_view_matrix(bit_cast<glm::mat4>(*matrix));
+   }
+   else if (type == D3DTS_PROJECTION) {
       _shader_patch.set_informal_projection_matrix(bit_cast<glm::mat4>(*matrix));
    }
 

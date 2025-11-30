@@ -358,21 +358,51 @@ Ps_output main_ps(Ps_input input)
          specular_exponent = exp2(1.0 + gloss * 11.0);
       }
 
+      Normal_ext_lighting_input lighting_input;
+
+      lighting_input.normalWS = normalWS;
+      lighting_input.positionWS = input.positionWS;
+
+      lighting_input.positionSS = input.positionSS;
+
+      lighting_input.viewWS = viewWS;
+
+      lighting_input.diffuse_color = diffuse_color;
+      lighting_input.static_diffuse_lighting = input.static_lighting; 
+
+      lighting_input.specular_color = specular_color;
+      lighting_input.specular_exponent = specular_exponent;
+
+      lighting_input.shadow = shadow;
+      lighting_input.ao = ao;
+
       if (use_specular_normalized) {
-         color = do_lighting_normalized(normalWS, input.positionWS, viewWS, diffuse_color,
-                                        input.static_lighting, specular_color, specular_exponent,
-                                        shadow, ao, projected_light_texture);
+         color = do_lighting_normalized(lighting_input, projected_light_texture);
       }
       else {
-         color = do_lighting(normalWS, input.positionWS, viewWS, diffuse_color,
-                             input.static_lighting, specular_color, specular_exponent,
-                             shadow, ao, projected_light_texture);
+         color = do_lighting(lighting_input, projected_light_texture);
       }
    }
-   else {
-      color = do_lighting_diffuse(normalWS, input.positionWS, diffuse_color, 
-                                  input.static_lighting, shadow, ao,
-                                  projected_light_texture);
+   else {      
+      Normal_ext_lighting_input lighting_input;
+
+      lighting_input.normalWS = normalWS;
+      lighting_input.positionWS = input.positionWS;
+
+      lighting_input.positionSS = input.positionSS;
+
+      lighting_input.viewWS = viewWS;
+
+      lighting_input.diffuse_color = diffuse_color;
+      lighting_input.static_diffuse_lighting = input.static_lighting; 
+
+      lighting_input.specular_color = 0.0;
+      lighting_input.specular_exponent = 0.0;
+
+      lighting_input.shadow = shadow;
+      lighting_input.ao = ao;
+
+      color = do_lighting_diffuse(lighting_input, projected_light_texture);
    }
 
    // Apply emissive map, if using.

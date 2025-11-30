@@ -157,6 +157,8 @@ struct Ps_nodistortion_input
    float3 static_lighting : STATICLIGHT;
 
    float fog : FOG;
+
+   float4 positionSS : SV_Position;
 };
 
 float4 nodistortion_ps(Ps_nodistortion_input input,
@@ -169,6 +171,7 @@ float4 nodistortion_ps(Ps_nodistortion_input input,
 
    lighting_input.normalWS = normalize(input.normalWS);
    lighting_input.positionWS = input.positionWS;
+   lighting_input.positionSS = input.positionSS;
 
    lighting_input.static_diffuse_lighting = input.static_lighting;
    
@@ -249,6 +252,7 @@ float4 near_diffuse_ps(Ps_near_input input) : SV_Target0
 
    lighting_input.normalWS = normalize(input.normalWS);
    lighting_input.positionWS = input.positionWS;
+   lighting_input.positionSS = input.positionSS;
 
    lighting_input.static_diffuse_lighting = input.static_lighting;
    
@@ -293,6 +297,7 @@ float4 near_ps(Ps_near_input input) : SV_Target0
 
    lighting_input.normalWS = normalize(input.normalWS);
    lighting_input.positionWS = input.positionWS;
+   lighting_input.positionSS = input.positionSS;
 
    lighting_input.static_diffuse_lighting = input.static_lighting;
    
@@ -332,6 +337,7 @@ float4 near_diffuse_bump_ps(Ps_near_input input) : SV_Target0
 
    lighting_input.normalWS = normalize(input.normalWS);
    lighting_input.positionWS = input.positionWS;
+   lighting_input.positionSS = input.positionSS;
 
    lighting_input.static_diffuse_lighting = input.static_lighting;
    
@@ -377,6 +383,7 @@ float4 near_bump_ps(Ps_near_input input) : SV_Target0
 
    lighting_input.normalWS = normalize(input.normalWS);
    lighting_input.positionWS = input.positionWS;
+   lighting_input.positionSS = input.positionSS;
 
    lighting_input.static_diffuse_lighting = input.static_lighting;
    
