@@ -26,8 +26,8 @@ cbuffer MaterialConstants : register(MATERIAL_CB_INDEX)
 
 // clang-format off
 
-const static bool normal_bf3_use_shadow_map = NORMAL_BF3_USE_SHADOW_MAP;
-const static bool normal_bf3_use_projected_texture = NORMAL_BF3_USE_PROJECTED_TEXTURE;
+const static bool normal_bf3_use_shadow_map = SP_USE_STENCIL_SHADOW_MAP;
+const static bool normal_bf3_use_projected_texture = SP_USE_PROJECTED_TEXTURE;
 
 struct surface_info {
    float3 normalWS;
@@ -42,63 +42,65 @@ struct surface_info {
 
 float3 do_lighting(surface_info surface, Texture2D<float3> projected_light_texture)
 {
-   float4 diffuse_lighting = {(light::ambient(surface.normalWS) + surface.static_diffuse_lighting) * surface.ao, 0.0};
+   const float3 positionWS = surface.positionWS;
+   const float3 normalWS = surface.normalWS;
+   const float3 viewWS = surface.viewWS;
+
+   float4 diffuse_lighting = {(light::ambient(normalWS) + surface.static_diffuse_lighting) * surface.ao, 0.0};
    float4 specular_lighting = 0.0;
 
    [branch]
    if (light_active) {
-      float3 proj_intensities_diffuse = 0.0;
-      float3 proj_intensities_specular = 0.0;
-      float proj_diffuse_intensity;
-      float proj_specular_intensity;
+      const float3 projected_light_texture_color = 
+         normal_bf3_use_projected_texture ? sample_projected_light(projected_light_texture, 
+                                                               mul(float4(positionWS, 1.0), light_proj_matrix)) 
+                                          : 0.0;
 
-      [loop]
-      for (uint i = 0; i < 2; ++i) {
-         light::blinnphong::calculate(diffuse_lighting, specular_lighting, surface.normalWS, surface.viewWS,
-                                      -light_directional_dir(i).xyz, 1.0, light_directional_color(i), specular_exponent,
-                                      proj_diffuse_intensity, proj_specular_intensity);
+      Lights_context context = acquire_lights_context();
 
-         if (i == 0) {
-            proj_intensities_diffuse[0] = proj_diffuse_intensity;
-            proj_intensities_specular[0] = proj_specular_intensity;
+      while (!context.directional_lights_end()) {
+         Directional_light directional_light = context.next_directional_light();
+
+         float3 light_color = directional_light.color;
+
+         if (directional_light.use_projected_texture()) {
+            light_color *= projected_light_texture_color;
          }
+
+         light::blinnphong::calculate(diffuse_lighting, specular_lighting, normalWS, viewWS,
+                                      -directional_light.directionWS, 1.0, light_color, 
+                                      directional_light.stencil_shadow_factor(), specular_exponent);
       }
 
-      [loop]
-      for (uint i = 0; i < light_active_point_count; ++i) {
-         light::blinnphong::calculate_point(diffuse_lighting, specular_lighting, surface.normalWS,
-                                            surface.positionWS, surface.viewWS, light_point_pos(i), 
-                                            light_point_inv_range_sqr(i), light_point_color(i), specular_exponent,
-                                            proj_intensities_diffuse[1], proj_intensities_specular[1]);
+      while (!context.point_lights_end()) {
+         Point_light point_light = context.next_point_light();
 
-         if (i == 0) {
-            proj_intensities_diffuse[1] = proj_diffuse_intensity;
-            proj_intensities_specular[1] = proj_specular_intensity;
+         float3 light_color = point_light.color;
+
+         if (point_light.use_projected_texture()) {
+            light_color *= projected_light_texture_color;
          }
+
+         light::blinnphong::calculate_point(diffuse_lighting, specular_lighting, normalWS,
+                                            positionWS, viewWS, point_light.positionWS, 
+                                            point_light.inv_range_sq, light_color, 
+                                            point_light.stencil_shadow_factor(), specular_exponent);
       }
+      
+      while (!context.spot_lights_end()) {
+         Spot_light spot_light = context.next_spot_light();
 
-      [branch]
-      if (light_active_spot) {
-         light::blinnphong::calculate_spot(diffuse_lighting, specular_lighting, surface.normalWS,
-                                           surface.positionWS, surface.viewWS, specular_exponent,
-                                           proj_intensities_diffuse[2], proj_intensities_specular[2]);
-      }
+         float3 light_color = spot_light.color;
 
-      if (normal_bf3_use_projected_texture) {
-         const float3 light_texture = sample_projected_light(projected_light_texture, 
-                                                             mul(float4(surface.positionWS, 1.0), light_proj_matrix));
+         if (spot_light.use_projected_texture()) {
+            light_color *= projected_light_texture_color;
+         }
 
-         const float3 masked_light_color = (light_proj_color.rgb * light_texture);
-
-         const float diffuse_proj_intensity = dot(light_proj_selector.xyz, proj_intensities_diffuse);
-
-         diffuse_lighting.rgb -= (light_proj_color.rgb * diffuse_proj_intensity);
-         diffuse_lighting.rgb += masked_light_color * diffuse_proj_intensity;
-
-         const float specular_proj_intensity = dot(light_proj_selector.xyz, proj_intensities_specular);
-
-         specular_lighting.rgb -= light_proj_color.rgb * specular_proj_intensity;
-         specular_lighting.rgb += masked_light_color * specular_proj_intensity;
+         light::blinnphong::calculate_spot(diffuse_lighting, specular_lighting, normalWS,
+                                           positionWS, viewWS, spot_light.positionWS, 
+                                           spot_light.inv_range_sq, spot_light.directionWS,
+                                           spot_light.cone_outer_param, spot_light.cone_inner_param, 
+                                           light_color, spot_light.stencil_shadow_factor(), specular_exponent);
       }
 
       if (normal_bf3_use_shadow_map) {
@@ -130,6 +132,8 @@ float3 do_lighting(surface_info surface, Texture2D<float3> projected_light_textu
    else {
       return surface.diffuse_color * lighting_scale;
    }
+   
+   return 0.0;
 }
 
 

@@ -30,7 +30,8 @@
       "stage": "pixel",
 
       "static_flags": [
-        "STATIC_WATER_USE_SPECULAR"
+        "STATIC_WATER_USE_SPECULAR",
+        "SP_USE_PROJECTED_TEXTURE"
       ]
     },
 
@@ -38,7 +39,8 @@
       "stage": "pixel",
 
       "static_flags": [
-        "STATIC_WATER_USE_SPECULAR"
+        "STATIC_WATER_USE_SPECULAR",
+        "SP_USE_PROJECTED_TEXTURE"
       ]
     }
   },
@@ -98,11 +100,19 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "main_ps"
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "SP_USE_PROJECTED_TEXTURE": true
+        }
       },
 
       "pixel_oit_shader": {
-        "entrypoint": "oit_main_ps"
+        "entrypoint": "oit_main_ps",
+
+        "static_flags": {
+          "SP_USE_PROJECTED_TEXTURE": true
+        }
       }
     },
 
@@ -130,11 +140,19 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "main_ps"
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "SP_USE_PROJECTED_TEXTURE": true
+        }
       },
 
       "pixel_oit_shader": {
-        "entrypoint": "oit_main_ps"
+        "entrypoint": "oit_main_ps",
+
+        "static_flags": {
+          "SP_USE_PROJECTED_TEXTURE": true
+        }
       }
     }
   }

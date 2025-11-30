@@ -23,8 +23,8 @@ const static bool lighting_pass = custom_constants[0].x >= 1.0;
 
 const static bool use_transparency = NORMAL_USE_TRANSPARENCY;
 const static bool use_hardedged_test = NORMAL_USE_HARDEDGED_TEST;
-const static bool use_shadow_map = NORMAL_USE_SHADOW_MAP;
-const static bool use_projected_texture = NORMAL_USE_PROJECTED_TEXTURE;
+const static bool use_shadow_map = SP_USE_STENCIL_SHADOW_MAP;
+const static bool use_projected_texture = SP_USE_PROJECTED_TEXTURE;
 
 float4 get_normal_material_diffuse_color()
 {
