@@ -1,0 +1,3 @@
+[submodule "third_party/AGS_SDK"]
+	path = third_party/AGS_SDK
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/AGS_SDK.git

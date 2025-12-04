@@ -11,6 +11,7 @@
 #include "patch_material_io.hpp"
 #include "patch_texture_io.hpp"
 #include "screenshot.hpp"
+#include "shader_patch_version.hpp"
 #include "utility.hpp"
 
 #include "../imgui/imgui_impl_dx11.h"
@@ -23,6 +24,8 @@
 
 #include <d3d11on12.h>
 #include <d3d12.h>
+
+#include <amd_ags.h>
 
 using namespace std::literals;
 
@@ -40,7 +43,39 @@ constexpr std::array supported_feature_levels{D3D_FEATURE_LEVEL_12_1,
                                               D3D_FEATURE_LEVEL_11_1,
                                               D3D_FEATURE_LEVEL_11_0};
 
-auto create_device(IDXGIAdapter4& adapater) noexcept -> Com_ptr<ID3D11Device5>
+auto create_ags_context(IDXGIAdapter4& adapater) noexcept
+   -> std::unique_ptr<AGSContext, void (*)(AGSContext*)>
+{
+   DXGI_ADAPTER_DESC3 desc{};
+
+   if (FAILED(adapater.GetDesc3(&desc))) {
+      log(Log_level::warning, "Failed to get DXGI adapter description.");
+   }
+
+   const UINT amd_vendor_id = 0x1002;
+
+   if (desc.VendorId != amd_vendor_id) return {nullptr, [](AGSContext*) {}};
+
+   AGSContext* context;
+
+   if (agsInitialize(AGS_CURRENT_VERSION, nullptr, &context, nullptr) != AGS_SUCCESS) {
+      log(Log_level::warning, "Failed to initialize AMD GPU Services.");
+
+      return {nullptr, [](AGSContext*) {}};
+   }
+
+   log(Log_level::info, "Initialized AMD GPU Services.");
+
+   return {context, [](AGSContext* context) {
+              if (agsDeInitialize(context) != AGS_SUCCESS) {
+                 log(Log_level::warning,
+                     "Failed deinitialize AMD GPU Services .");
+              }
+           }};
+}
+
+auto create_device(IDXGIAdapter4& adapater, AGSDX11_state& ags_state) noexcept
+   -> Com_ptr<ID3D11Device5>
 {
    Com_ptr<ID3D11Device> device;
 
@@ -51,14 +86,56 @@ auto create_device(IDXGIAdapter4& adapater) noexcept -> Com_ptr<ID3D11Device5>
    if (d3d_debug) create_flags |= D3D11_CREATE_DEVICE_DEBUG;
 
    if (!user_config.graphics.use_d3d11on12) {
-      if (const auto result =
-             D3D11CreateDevice(&adapater, D3D_DRIVER_TYPE_UNKNOWN, nullptr,
-                               create_flags, supported_feature_levels.data(),
-                               supported_feature_levels.size(), D3D11_SDK_VERSION,
-                               device.clear_and_assign(), nullptr, nullptr);
-          FAILED(result)) {
-         log_and_terminate("Failed to create Direct3D 11 device! Reason: ",
-                           _com_error{result}.ErrorMessage());
+      if (ags_state.context) {
+         const std::uint32_t version =
+            ((current_shader_patch_version.major & 0xffu) << 24u) |
+            ((current_shader_patch_version.major & 0xfffu) << 12u) |
+            (current_shader_patch_version.minor & 0xfffu);
+
+         const AGSDX11DeviceCreationParams params{.pAdapter = &adapater,
+                                                  .DriverType = D3D_DRIVER_TYPE_UNKNOWN,
+                                                  .Flags = create_flags,
+                                                  .pFeatureLevels =
+                                                     supported_feature_levels.data(),
+                                                  .FeatureLevels =
+                                                     supported_feature_levels.size(),
+                                                  .SDKVersion = D3D11_SDK_VERSION};
+
+         const AGSDX11ExtensionParams extension_params = {
+            .pAppName = L"Star Wars Battlefront II (2005, with Shader Patch)",
+            .pEngineName = L"Unnamed Star Wars Battlefront II Engine",
+            .appVersion = version,
+            .engineVersion = version,
+         };
+
+         AGSDX11ReturnedParams returned_params;
+
+         if (agsDriverExtensionsDX11_CreateDevice(ags_state.context.get(),
+                                                  &params, &extension_params,
+                                                  &returned_params) != AGS_SUCCESS) {
+            log_and_terminate(
+               "Failed to create D3D11 device through AMD GPU Services.");
+         }
+
+         log(Log_level::info, "Created D3D11 device through AMD GPU Services.");
+
+         returned_params.pImmediateContext->Release();
+
+         device = copy_raw_com_ptr(returned_params.pDevice);
+
+         ags_state.device = returned_params.pDevice;
+         ags_state.immediate_context = returned_params.pImmediateContext;
+      }
+      else {
+         if (const auto result =
+                D3D11CreateDevice(&adapater, D3D_DRIVER_TYPE_UNKNOWN, nullptr,
+                                  create_flags, supported_feature_levels.data(),
+                                  supported_feature_levels.size(), D3D11_SDK_VERSION,
+                                  device.clear_and_assign(), nullptr, nullptr);
+             FAILED(result)) {
+            log_and_terminate("Failed to create Direct3D 11 device! Reason: ",
+                              _com_error{result}.ErrorMessage());
+         }
       }
    }
    else {
@@ -171,7 +248,8 @@ auto create_device(IDXGIAdapter4& adapater) noexcept -> Com_ptr<ID3D11Device5>
 Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
                            const UINT render_width, const UINT render_height,
                            const UINT window_width, const UINT window_height) noexcept
-   : _device{create_device(adapter)},
+   : _ags_state{adapter},
+     _device{create_device(adapter, _ags_state)},
      _render_width{render_width},
      _render_height{render_height},
      _window_width{window_width},
@@ -2477,4 +2555,20 @@ void Shader_patch::restore_all_game_state() noexcept
       _patch_material->bind_shader_resources(*_device_context);
    }
 }
+
+AGSDX11_state::AGSDX11_state(IDXGIAdapter4& adapter)
+   : context{create_ags_context(adapter)}
+{
+}
+
+AGSDX11_state::~AGSDX11_state()
+{
+   if (!device) return;
+
+   if (agsDriverExtensionsDX11_DestroyDevice(context.get(), device, nullptr,
+                                             immediate_context, nullptr) != AGS_SUCCESS) {
+      log(Log_level::warning, "Failed deinitialize AMD GPU Services .");
+   }
+}
+
 }

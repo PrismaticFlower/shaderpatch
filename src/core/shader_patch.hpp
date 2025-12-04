@@ -44,6 +44,9 @@
 #include <d3d11_4.h>
 #include <dxgi1_6.h>
 
+// AMD AGS Context
+struct AGSContext;
+
 namespace sp {
 class BF2_log_monitor;
 
@@ -75,6 +78,17 @@ using Material_handle =
 
 using Texture_handle =
    std::unique_ptr<ID3D11ShaderResourceView, Small_function<void(ID3D11ShaderResourceView*) noexcept>>;
+
+struct AGSDX11_state {
+   explicit AGSDX11_state(IDXGIAdapter4& adapter);
+
+   ~AGSDX11_state();
+
+   const std::unique_ptr<AGSContext, void (*)(AGSContext*)> context;
+
+   ID3D11Device* device = nullptr;
+   ID3D11DeviceContext* immediate_context = nullptr;
+};
 
 class Shader_patch {
 public:
@@ -311,6 +325,7 @@ private:
 
    constexpr static auto _game_backbuffer_index = Game_rendertarget_id{0};
 
+   AGSDX11_state _ags_state;
    const Com_ptr<ID3D11Device5> _device;
    const Com_ptr<ID3D11DeviceContext4> _device_context = [this] {
       Com_ptr<ID3D11DeviceContext3> dc3;

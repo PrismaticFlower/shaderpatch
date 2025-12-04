@@ -31,6 +31,7 @@ copy '.\assets\core\*.lvl' .\packages\shaderpatch\data\shaderpatch\
 copy '.\assets\core\definitions\' .\packages\shaderpatch\data\shaderpatch\shaders\definitions\ -Recurse
 copy '.\assets\core\src\' .\packages\shaderpatch\data\shaderpatch\shaders\src\ -Recurse
 copy '.\assets\scripts\' .\packages\shaderpatch\data\shaderpatch\scripts\ -Recurse
+copy '.\third_party\AGS_SDK\ags_lib\lib\amd_ags_x86.dll' .\packages\shaderpatch\
 
 # Package tools.
 md .\packages\shaderpatch-tools
