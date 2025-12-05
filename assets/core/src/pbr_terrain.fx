@@ -9,8 +9,9 @@
 
 // clang-format off
 
-const static bool pbr_terrain_use_shadow_map = PBR_TERRAIN_USE_SHADOW_MAP;
+const static bool pbr_terrain_use_shadow_map = SP_USE_STENCIL_SHADOW_MAP;
 
+Texture2D<float3> projected_light_texture : register(ps, t2);
 Texture2D<float2> shadow_ao_map : register(t3);
 Texture2DArray<float1> height_maps : PS_MATERIAL_REGISTER(0);
 Texture2DArray<float4> albedo_ao_maps : PS_MATERIAL_REGISTER(1);
@@ -148,7 +149,7 @@ float4 main_ps(Vs_output input) : SV_Target0
    surface.ao = min(shadow_ao_sample.g, textures.ao);
    surface.use_ibl = false;
 
-   float3 color = pbr::calculate(surface);
+   float3 color = pbr::calculate(surface, projected_light_texture);
 
    color += (input.static_lighting * surface.ao * (surface.base_color / pbr::PI));
 

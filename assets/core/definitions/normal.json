@@ -26,8 +26,8 @@
 
       "defines": [
         [ "NORMAL_USE_HARDEDGED_TEST", "false" ],
-        [ "NORMAL_USE_SHADOW_MAP", "false" ],
-        [ "NORMAL_USE_PROJECTED_TEXTURE", "false" ]
+        [ "SP_USE_STENCIL_SHADOW_MAP", "false" ],
+        [ "SP_USE_PROJECTED_TEXTURE", "false" ]
       ]
     },
 
@@ -40,8 +40,8 @@
       ],
 
       "defines": [
-        [ "NORMAL_USE_SHADOW_MAP", "false" ],
-        [ "NORMAL_USE_PROJECTED_TEXTURE", "false" ]
+        [ "SP_USE_STENCIL_SHADOW_MAP", "false" ],
+        [ "SP_USE_PROJECTED_TEXTURE", "false" ]
       ]
     },
 
@@ -50,8 +50,8 @@
 
       "defines": [
         [ "NORMAL_USE_TRANSPARENCY", "1" ],
-        [ "NORMAL_USE_SHADOW_MAP", "false" ],
-        [ "NORMAL_USE_PROJECTED_TEXTURE", "false" ]
+        [ "SP_USE_STENCIL_SHADOW_MAP", "false" ],
+        [ "SP_USE_PROJECTED_TEXTURE", "false" ]
       ],
 
       "static_flags": [
@@ -82,8 +82,8 @@
 
       "defines": [
         [ "NORMAL_USE_HARDEDGED_TEST", "false" ],
-        [ "NORMAL_USE_SHADOW_MAP", "false" ],
-        [ "NORMAL_USE_PROJECTED_TEXTURE", "false" ]
+        [ "SP_USE_STENCIL_SHADOW_MAP", "false" ],
+        [ "SP_USE_PROJECTED_TEXTURE", "false" ]
       ]
     },
 
@@ -93,8 +93,8 @@
       "static_flags": [
         "NORMAL_USE_TRANSPARENCY",
         "NORMAL_USE_HARDEDGED_TEST",
-        "NORMAL_USE_SHADOW_MAP",
-        "NORMAL_USE_PROJECTED_TEXTURE"
+        "SP_USE_STENCIL_SHADOW_MAP",
+        "SP_USE_PROJECTED_TEXTURE"
       ]
     },
 
@@ -123,8 +123,8 @@
 
       "static_flags": [
         "NORMAL_USE_HARDEDGED_TEST",
-        "NORMAL_USE_SHADOW_MAP",
-        "NORMAL_USE_PROJECTED_TEXTURE"
+        "SP_USE_STENCIL_SHADOW_MAP",
+        "SP_USE_PROJECTED_TEXTURE"
       ]
     },
 
@@ -269,8 +269,8 @@
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": false,
           "NORMAL_USE_HARDEDGED_TEST": false,
-          "NORMAL_USE_SHADOW_MAP": false,
-          "NORMAL_USE_PROJECTED_TEXTURE": false
+          "SP_USE_STENCIL_SHADOW_MAP": false,
+          "SP_USE_PROJECTED_TEXTURE": false
         }
       }
     },
@@ -293,8 +293,8 @@
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": false,
           "NORMAL_USE_HARDEDGED_TEST": true,
-          "NORMAL_USE_SHADOW_MAP": false,
-          "NORMAL_USE_PROJECTED_TEXTURE": false
+          "SP_USE_STENCIL_SHADOW_MAP": false,
+          "SP_USE_PROJECTED_TEXTURE": false
         }
       }
     },
@@ -317,8 +317,8 @@
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": true,
           "NORMAL_USE_HARDEDGED_TEST": false,
-          "NORMAL_USE_SHADOW_MAP": false,
-          "NORMAL_USE_PROJECTED_TEXTURE": false
+          "SP_USE_STENCIL_SHADOW_MAP": false,
+          "SP_USE_PROJECTED_TEXTURE": false
         }
       },
 
@@ -328,8 +328,8 @@
 
         "static_flags": {
           "NORMAL_USE_HARDEDGED_TEST": false,
-          "NORMAL_USE_SHADOW_MAP": false,
-          "NORMAL_USE_PROJECTED_TEXTURE": false
+          "SP_USE_STENCIL_SHADOW_MAP": false,
+          "SP_USE_PROJECTED_TEXTURE": false
         }
       }
     },
@@ -352,8 +352,8 @@
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": true,
           "NORMAL_USE_HARDEDGED_TEST": true,
-          "NORMAL_USE_SHADOW_MAP": false,
-          "NORMAL_USE_PROJECTED_TEXTURE": false
+          "SP_USE_STENCIL_SHADOW_MAP": false,
+          "SP_USE_PROJECTED_TEXTURE": false
         }
       },
 
@@ -363,8 +363,8 @@
 
         "static_flags": {
           "NORMAL_USE_HARDEDGED_TEST": true,
-          "NORMAL_USE_SHADOW_MAP": false,
-          "NORMAL_USE_PROJECTED_TEXTURE": false
+          "SP_USE_STENCIL_SHADOW_MAP": false,
+          "SP_USE_PROJECTED_TEXTURE": false
         }
       }
     },
@@ -387,8 +387,8 @@
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": false,
           "NORMAL_USE_HARDEDGED_TEST": false,
-          "NORMAL_USE_SHADOW_MAP": false,
-          "NORMAL_USE_PROJECTED_TEXTURE": true
+          "SP_USE_STENCIL_SHADOW_MAP": false,
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       }
     },
@@ -411,8 +411,8 @@
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": false,
           "NORMAL_USE_HARDEDGED_TEST": true,
-          "NORMAL_USE_SHADOW_MAP": false,
-          "NORMAL_USE_PROJECTED_TEXTURE": true
+          "SP_USE_STENCIL_SHADOW_MAP": false,
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       }
     },
@@ -434,8 +434,8 @@
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": true,
           "NORMAL_USE_HARDEDGED_TEST": false,
-          "NORMAL_USE_SHADOW_MAP": false,
-          "NORMAL_USE_PROJECTED_TEXTURE": true
+          "SP_USE_STENCIL_SHADOW_MAP": false,
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       },
 
@@ -445,8 +445,8 @@
 
         "static_flags": {
           "NORMAL_USE_HARDEDGED_TEST": false,
-          "NORMAL_USE_SHADOW_MAP": false,
-          "NORMAL_USE_PROJECTED_TEXTURE": true
+          "SP_USE_STENCIL_SHADOW_MAP": false,
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       }
     },
@@ -468,8 +468,8 @@
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": true,
           "NORMAL_USE_HARDEDGED_TEST": true,
-          "NORMAL_USE_SHADOW_MAP": false,
-          "NORMAL_USE_PROJECTED_TEXTURE": true
+          "SP_USE_STENCIL_SHADOW_MAP": false,
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       },
 
@@ -479,8 +479,8 @@
 
         "static_flags": {
           "NORMAL_USE_HARDEDGED_TEST": true,
-          "NORMAL_USE_SHADOW_MAP": false,
-          "NORMAL_USE_PROJECTED_TEXTURE": true
+          "SP_USE_STENCIL_SHADOW_MAP": false,
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       }
     },
@@ -503,8 +503,8 @@
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": false,
           "NORMAL_USE_HARDEDGED_TEST": false,
-          "NORMAL_USE_SHADOW_MAP": true,
-          "NORMAL_USE_PROJECTED_TEXTURE": false
+          "SP_USE_STENCIL_SHADOW_MAP": true,
+          "SP_USE_PROJECTED_TEXTURE": false
         }
       }
     },
@@ -527,8 +527,8 @@
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": false,
           "NORMAL_USE_HARDEDGED_TEST": true,
-          "NORMAL_USE_SHADOW_MAP": true,
-          "NORMAL_USE_PROJECTED_TEXTURE": false
+          "SP_USE_STENCIL_SHADOW_MAP": true,
+          "SP_USE_PROJECTED_TEXTURE": false
         }
       }
     },
@@ -551,8 +551,8 @@
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": false,
           "NORMAL_USE_HARDEDGED_TEST": false,
-          "NORMAL_USE_SHADOW_MAP": true,
-          "NORMAL_USE_PROJECTED_TEXTURE": true
+          "SP_USE_STENCIL_SHADOW_MAP": true,
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       }
     },
@@ -575,8 +575,8 @@
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": false,
           "NORMAL_USE_HARDEDGED_TEST": true,
-          "NORMAL_USE_SHADOW_MAP": true,
-          "NORMAL_USE_PROJECTED_TEXTURE": true
+          "SP_USE_STENCIL_SHADOW_MAP": true,
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       }
     },
@@ -599,8 +599,8 @@
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": true,
           "NORMAL_USE_HARDEDGED_TEST": false,
-          "NORMAL_USE_SHADOW_MAP": true,
-          "NORMAL_USE_PROJECTED_TEXTURE": false
+          "SP_USE_STENCIL_SHADOW_MAP": true,
+          "SP_USE_PROJECTED_TEXTURE": false
         }
       },
 
@@ -610,8 +610,8 @@
 
         "static_flags": {
           "NORMAL_USE_HARDEDGED_TEST": false,
-          "NORMAL_USE_SHADOW_MAP": true,
-          "NORMAL_USE_PROJECTED_TEXTURE": false
+          "SP_USE_STENCIL_SHADOW_MAP": true,
+          "SP_USE_PROJECTED_TEXTURE": false
         }
       }
     },
@@ -634,8 +634,8 @@
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": true,
           "NORMAL_USE_HARDEDGED_TEST": true,
-          "NORMAL_USE_SHADOW_MAP": true,
-          "NORMAL_USE_PROJECTED_TEXTURE": false
+          "SP_USE_STENCIL_SHADOW_MAP": true,
+          "SP_USE_PROJECTED_TEXTURE": false
         }
       },
 
@@ -645,8 +645,8 @@
 
         "static_flags": {
           "NORMAL_USE_HARDEDGED_TEST": true,
-          "NORMAL_USE_SHADOW_MAP": true,
-          "NORMAL_USE_PROJECTED_TEXTURE": false
+          "SP_USE_STENCIL_SHADOW_MAP": true,
+          "SP_USE_PROJECTED_TEXTURE": false
         }
       }
     },
@@ -669,8 +669,8 @@
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": true,
           "NORMAL_USE_HARDEDGED_TEST": false,
-          "NORMAL_USE_SHADOW_MAP": true,
-          "NORMAL_USE_PROJECTED_TEXTURE": true
+          "SP_USE_STENCIL_SHADOW_MAP": true,
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       },
 
@@ -680,8 +680,8 @@
 
         "static_flags": {
           "NORMAL_USE_HARDEDGED_TEST": false,
-          "NORMAL_USE_SHADOW_MAP": true,
-          "NORMAL_USE_PROJECTED_TEXTURE": true
+          "SP_USE_STENCIL_SHADOW_MAP": true,
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       }
     },
@@ -704,8 +704,8 @@
         "static_flags": {
           "NORMAL_USE_TRANSPARENCY": true,
           "NORMAL_USE_HARDEDGED_TEST": true,
-          "NORMAL_USE_SHADOW_MAP": true,
-          "NORMAL_USE_PROJECTED_TEXTURE": true
+          "SP_USE_STENCIL_SHADOW_MAP": true,
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       },
 
@@ -715,8 +715,8 @@
 
         "static_flags": {
           "NORMAL_USE_HARDEDGED_TEST": true,
-          "NORMAL_USE_SHADOW_MAP": true,
-          "NORMAL_USE_PROJECTED_TEXTURE": true
+          "SP_USE_STENCIL_SHADOW_MAP": true,
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       }
     }

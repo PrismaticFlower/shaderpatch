@@ -106,6 +106,7 @@ static const float lighting_scale = vs_lighting_scale;
 static const bool input_color_srgb = vs_input_color_srgb;
 #endif
 
+const static uint light_directional_count = 2;
 const static uint light_directional_color_offset = 0;
 const static uint light_directional_dir_offset = 1;
 const static uint light_point_color_offset = 4;

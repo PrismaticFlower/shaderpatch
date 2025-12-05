@@ -55,7 +55,8 @@
         [ "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING", "0" ],
         [ "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING", "0" ],
         [ "TERRAIN_COMMON_BASIC_BLENDING", "0" ],
-        [ "PBR_TERRAIN_USE_SHADOW_MAP", "0" ]
+        [ "SP_USE_STENCIL_SHADOW_MAP", "0" ],
+        [ "SP_USE_PROJECTED_TEXTURE", "0" ]
       ]
     },
 
@@ -67,7 +68,8 @@
         "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING",
         "TERRAIN_COMMON_BASIC_BLENDING",
         "TERRAIN_COMMON_LOW_DETAIL",
-        "PBR_TERRAIN_USE_SHADOW_MAP"
+        "SP_USE_STENCIL_SHADOW_MAP",
+        "SP_USE_PROJECTED_TEXTURE"
       ],
 
       "static_flags_ops": {
@@ -135,7 +137,11 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "main_ps"
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "SP_USE_PROJECTED_TEXTURE": true
+        }
       }
     },
 
@@ -150,7 +156,7 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "PBR_TERRAIN_USE_SHADOW_MAP": true
+          "SP_USE_STENCIL_SHADOW_MAP": true
         }
       }
     },
@@ -166,7 +172,8 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "PBR_TERRAIN_USE_SHADOW_MAP": true
+          "SP_USE_STENCIL_SHADOW_MAP": true,
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       }
     },
@@ -191,7 +198,11 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "main_ps"
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "SP_USE_PROJECTED_TEXTURE": true
+        }
       }
     },
 
@@ -206,7 +217,7 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "PBR_TERRAIN_USE_SHADOW_MAP": true
+          "SP_USE_STENCIL_SHADOW_MAP": true
         }
       }
     },
@@ -222,7 +233,8 @@
         "entrypoint": "main_ps",
 
         "static_flags": {
-          "PBR_TERRAIN_USE_SHADOW_MAP": true
+          "SP_USE_STENCIL_SHADOW_MAP": true,
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       }
     }

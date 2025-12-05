@@ -20,6 +20,7 @@ Texture2D<float4>   normal_map : PS_MATERIAL_REGISTER(2);
 Texture2D<float>    ao_map : PS_MATERIAL_REGISTER(3);
 Texture2D<float3>   emissive_map : PS_MATERIAL_REGISTER(4);
 TextureCube<float3> env_map : PS_MATERIAL_REGISTER(5);
+Texture2D<float>    height_map : PS_MATERIAL_REGISTER(6);
 // Game Custom Constants
 
 const static float4 blend_constant = ps_custom_constants[0];
@@ -31,6 +32,7 @@ const static bool use_texcoords_transform = NORMAL_BF3_USE_TEXCOORDS_TRANSFORM;
 const static bool use_specular_map = NORMAL_BF3_USE_SPECULAR_MAP;
 const static bool use_transparency = NORMAL_BF3_USE_TRANSPARENCY;
 const static bool use_hardedged_test = NORMAL_BF3_USE_HARDEDGED_TEST;
+const static bool use_parallax_mapping = NORMAL_BF3_USE_PARALLAX_MAPPING;
 
 struct Vs_output
 {
@@ -172,7 +174,18 @@ Ps_output main_ps(Ps_input input)
 
    const float3 viewWS = normalize(view_positionWS - input.positionWS);
 
-   const float2 texcoords = input.texcoords;
+   float2 texcoords = input.texcoords;
+
+   if (use_parallax_mapping) {
+      const float3 viewTS = normalize(mul(tangent_to_world, -viewWS));
+      const float  height = height_map.Sample(aniso_wrap_sampler, texcoords) * height_scale - height_scale * 0.5;
+
+      float2 offset = viewTS.xy * height;
+
+      offset.x *= parallax_scale_x;
+
+      texcoords += offset;
+   }
 
    const float4 diffuse_map_color = 
       diffuse_map.Sample(aniso_wrap_sampler, texcoords);

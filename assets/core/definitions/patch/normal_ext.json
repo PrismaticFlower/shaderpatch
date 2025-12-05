@@ -36,8 +36,8 @@
         [ "NORMAL_EXT_USE_VERTEX_COLOR_FOR_EMISSIVE", "0" ],
         [ "NORMAL_EXT_USE_INTERIOR_MAPPING", "0" ],
         [ "NORMAL_EXT_USE_HARDEDGED_TEST", "0" ],
-        [ "NORMAL_EXT_USE_SHADOW_MAP", "0" ],
-        [ "NORMAL_EXT_USE_PROJECTED_TEXTURE", "0" ]
+        [ "SP_USE_STENCIL_SHADOW_MAP", "0" ],
+        [ "SP_USE_PROJECTED_TEXTURE", "0" ]
       ]
     },
 
@@ -55,8 +55,8 @@
         "NORMAL_EXT_USE_INTERIOR_MAPPING",
         "NORMAL_EXT_USE_TRANSPARENCY",
         "NORMAL_EXT_USE_HARDEDGED_TEST",
-        "NORMAL_EXT_USE_SHADOW_MAP",
-        "NORMAL_EXT_USE_PROJECTED_TEXTURE"
+        "SP_USE_STENCIL_SHADOW_MAP",
+        "SP_USE_PROJECTED_TEXTURE"
       ],
 
       "defines": [
@@ -77,8 +77,8 @@
         "NORMAL_EXT_USE_VERTEX_COLOR_FOR_EMISSIVE",
         "NORMAL_EXT_USE_INTERIOR_MAPPING",
         "NORMAL_EXT_USE_HARDEDGED_TEST",
-        "NORMAL_EXT_USE_SHADOW_MAP",
-        "NORMAL_EXT_USE_PROJECTED_TEXTURE"
+        "SP_USE_STENCIL_SHADOW_MAP",
+        "SP_USE_PROJECTED_TEXTURE"
       ],
 
       "defines": [
@@ -327,7 +327,7 @@
         "al_entrypoint": "al_main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       }
     },
@@ -345,7 +345,7 @@
 
         "static_flags": {
           "NORMAL_EXT_USE_HARDEDGED_TEST": true,
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       }
     },
@@ -367,7 +367,7 @@
 
         "static_flags": {
           "NORMAL_EXT_USE_TRANSPARENCY": true,
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       },
 
@@ -376,7 +376,7 @@
         "al_entrypoint": "al_oit_main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       }
     },
@@ -399,7 +399,7 @@
         "static_flags": {
           "NORMAL_EXT_USE_TRANSPARENCY": true,
           "NORMAL_EXT_USE_HARDEDGED_TEST": true,
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       },
 
@@ -409,7 +409,7 @@
 
         "static_flags": {
           "NORMAL_EXT_USE_HARDEDGED_TEST": true,
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       }
     },
@@ -426,7 +426,7 @@
         "al_entrypoint": "al_main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_SHADOW_MAP": true
+          "SP_USE_STENCIL_SHADOW_MAP": true
         }
       }
     },
@@ -444,7 +444,7 @@
 
         "static_flags": {
           "NORMAL_EXT_USE_HARDEDGED_TEST": true,
-          "NORMAL_EXT_USE_SHADOW_MAP": true
+          "SP_USE_STENCIL_SHADOW_MAP": true
         }
       }
     },
@@ -461,8 +461,8 @@
         "al_entrypoint": "al_main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_SHADOW_MAP": true,
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "SP_USE_STENCIL_SHADOW_MAP": true,
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       }
     },
@@ -480,8 +480,8 @@
 
         "static_flags": {
           "NORMAL_EXT_USE_HARDEDGED_TEST": true,
-          "NORMAL_EXT_USE_SHADOW_MAP": true,
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "SP_USE_STENCIL_SHADOW_MAP": true,
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       }
     },
@@ -503,7 +503,7 @@
 
         "static_flags": {
           "NORMAL_EXT_USE_TRANSPARENCY": true,
-          "NORMAL_EXT_USE_SHADOW_MAP": true
+          "SP_USE_STENCIL_SHADOW_MAP": true
         }
       },
 
@@ -512,7 +512,7 @@
         "al_entrypoint": "al_oit_main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_SHADOW_MAP": true
+          "SP_USE_STENCIL_SHADOW_MAP": true
         }
       }
     },
@@ -535,7 +535,7 @@
         "static_flags": {
           "NORMAL_EXT_USE_TRANSPARENCY": true,
           "NORMAL_EXT_USE_HARDEDGED_TEST": true,
-          "NORMAL_EXT_USE_SHADOW_MAP": true
+          "SP_USE_STENCIL_SHADOW_MAP": true
         }
       },
 
@@ -545,7 +545,7 @@
 
         "static_flags": {
           "NORMAL_EXT_USE_HARDEDGED_TEST": true,
-          "NORMAL_EXT_USE_SHADOW_MAP": true
+          "SP_USE_STENCIL_SHADOW_MAP": true
         }
       }
     },
@@ -567,8 +567,8 @@
 
         "static_flags": {
           "NORMAL_EXT_USE_TRANSPARENCY": true,
-          "NORMAL_EXT_USE_SHADOW_MAP": true,
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "SP_USE_STENCIL_SHADOW_MAP": true,
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       },
 
@@ -577,8 +577,8 @@
         "al_entrypoint": "al_oit_main_ps",
 
         "static_flags": {
-          "NORMAL_EXT_USE_SHADOW_MAP": true,
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "SP_USE_STENCIL_SHADOW_MAP": true,
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       }
     },
@@ -601,8 +601,8 @@
         "static_flags": {
           "NORMAL_EXT_USE_TRANSPARENCY": true,
           "NORMAL_EXT_USE_HARDEDGED_TEST": true,
-          "NORMAL_EXT_USE_SHADOW_MAP": true,
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "SP_USE_STENCIL_SHADOW_MAP": true,
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       },
 
@@ -612,8 +612,8 @@
 
         "static_flags": {
           "NORMAL_EXT_USE_HARDEDGED_TEST": true,
-          "NORMAL_EXT_USE_SHADOW_MAP": true,
-          "NORMAL_EXT_USE_PROJECTED_TEXTURE": true
+          "SP_USE_STENCIL_SHADOW_MAP": true,
+          "SP_USE_PROJECTED_TEXTURE": true
         }
       }
     }

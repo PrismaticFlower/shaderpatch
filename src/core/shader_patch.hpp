@@ -388,6 +388,7 @@ private:
    Com_ptr<ID3D11DepthStencilState> _game_depthstencil_state;
    Com_ptr<ID3D11BlendState1> _game_blend_state_override;
    Com_ptr<ID3D11BlendState1> _game_blend_state;
+   Projtex_mode _projtex_mode = Projtex_mode::wrap;
 
    bool _record_draw_indexed = false;
    bool _discard_draw_calls = false;
@@ -415,6 +416,7 @@ private:
    bool _cb_skin_dirty = true;
    bool _cb_draw_ps_dirty = true;
    bool _cb_advanced_lighting_dirty = true;
+   bool _projtex_mode_dirty = true;
 
    // Frame State
    bool _use_interface_depthstencil = false;

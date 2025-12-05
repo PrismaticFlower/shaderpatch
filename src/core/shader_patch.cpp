@@ -1310,14 +1310,8 @@ void Shader_patch::set_texture(const UINT slot,
 
 void Shader_patch::set_projtex_mode(const Projtex_mode mode) noexcept
 {
-   if (mode == Projtex_mode::clamp) {
-      auto* const sampler = _sampler_states.linear_clamp_sampler.get();
-      _device_context->PSSetSamplers(6, 1, &sampler);
-   }
-   else if (mode == Projtex_mode::wrap) {
-      auto* const sampler = _sampler_states.linear_wrap_sampler.get();
-      _device_context->PSSetSamplers(6, 1, &sampler);
-   }
+   _projtex_mode_dirty = true;
+   _projtex_mode = mode;
 }
 
 void Shader_patch::set_projtex_type(const Projtex_type type) noexcept
@@ -2600,6 +2594,17 @@ void Shader_patch::update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primit
                                                srvs.size(), srvs.data());
       }
    }
+
+   if (std::exchange(_projtex_mode_dirty, false)) {
+      if (_projtex_mode == Projtex_mode::clamp) {
+         auto* const sampler = _sampler_states.linear_clamp_sampler.get();
+         _device_context->PSSetSamplers(5, 1, &sampler);
+      }
+      else if (_projtex_mode == Projtex_mode::wrap) {
+         auto* const sampler = _sampler_states.linear_wrap_sampler.get();
+         _device_context->PSSetSamplers(5, 1, &sampler);
+      }
+   }
 }
 
 void Shader_patch::update_shader() noexcept
@@ -3160,6 +3165,7 @@ void Shader_patch::restore_all_game_state() noexcept
    _cb_skin_dirty = true;
    _cb_draw_ps_dirty = true;
    _cb_advanced_lighting_dirty = true;
+   _projtex_mode_dirty = true;
    _primitive_topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
 
    bind_static_resources();
