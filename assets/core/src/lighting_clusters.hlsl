@@ -47,7 +47,7 @@ Cluster_index load_cluster(float3 positionWS, float4 positionSS)
 
    uint3 positionCS;
 
-   positionCS.xy = (uint2)(positionSS.xy / float2(160, 180)); // FIXME: Hard coded resolution.
+   positionCS.xy = (uint2)(positionSS.xy * inv_cluster_xy_length);
    positionCS.z = log2(position_zVS / near_cluster_z) / log2(far_cluster_z / near_cluster_z) * z_mul;
    positionCS.z = min(positionCS.z, z_clusters -1);
 

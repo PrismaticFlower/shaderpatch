@@ -28,6 +28,9 @@ struct Advanced_lighting {
    std::vector<game_support::Spot_light> spot_lights;
    std::vector<game_support::Spot_light> visible_spot_lights;
 
+   constexpr static float x_clusters = 16.0f;
+   constexpr static float y_clusters = 8.0f;
+
    void update(ID3D11DeviceContext4& dc, const Light_cluster_matrices& matrices);
 
    auto get_srvs() const noexcept -> std::array<ID3D11ShaderResourceView*, 4>;

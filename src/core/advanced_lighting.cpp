@@ -48,6 +48,7 @@ void Advanced_lighting::update(ID3D11DeviceContext4& dc,
    game_support::acquire_global_lights(global_light1_dir, global_light2_dir);
    game_support::acquire_light_list(point_lights, spot_lights);
 
+#if 0
    static std::vector<game_support::Point_light> extra_lights;
 
    if (extra_lights.empty()) {
@@ -114,7 +115,7 @@ void Advanced_lighting::update(ID3D11DeviceContext4& dc,
    }
 
    point_lights.insert(point_lights.end(), extra_lights.begin(), extra_lights.end());
-
+#endif
    visible_point_lights.clear();
    visible_point_lights.reserve(point_lights.size());
 
@@ -128,6 +129,7 @@ void Advanced_lighting::update(ID3D11DeviceContext4& dc,
       }
    }
 
+#if 0
    static std::vector<game_support::Spot_light> extra_spot_lights;
 
    if (extra_spot_lights.empty()) {
@@ -210,6 +212,7 @@ void Advanced_lighting::update(ID3D11DeviceContext4& dc,
 
    spot_lights.insert(spot_lights.end(), extra_spot_lights.begin(),
                       extra_spot_lights.end());
+#endif
 
    visible_spot_lights.clear();
    visible_spot_lights.reserve(spot_lights.size());

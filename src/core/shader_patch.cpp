@@ -1933,6 +1933,10 @@ void Shader_patch::game_rendertype_changed() noexcept
 
          _advanced_lighting_active = true;
 
+         _cb_advanced_lighting.inv_cluster_xy_length =
+            1.0f /
+            glm::vec2{_game_rendertargets[0].width / _advanced_lighting.x_clusters,
+                      _game_rendertargets[0].height / _advanced_lighting.y_clusters};
          _cb_advanced_lighting.view_matrix_z = view_martix[2];
       }
 

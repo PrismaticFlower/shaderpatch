@@ -84,6 +84,9 @@ cbuffer PSDrawConstants : register(b0)
 
 cbuffer PSAdvancedLightingConstants : register(b3)
 {
+   float2 inv_cluster_xy_length;
+   float4 view_matrix_z;
+
    bool directional_light_0_has_shadow;
    float directional_light_0_shadow_texel_size;
    float directional_light_0_shadow_bias;
@@ -93,7 +96,6 @@ cbuffer PSAdvancedLightingConstants : register(b3)
 
    float4x4 directional_light0_shadow_matrices[4];
 
-   float4 view_matrix_z;
 }
 
 #ifdef __PIXEL_SHADER__
