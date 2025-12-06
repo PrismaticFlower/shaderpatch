@@ -70,7 +70,11 @@
     },
 
     "detailing_ps": {
-      "stage": "pixel"
+      "stage": "pixel",
+
+      "defines": [
+        [ "SP_USE_STENCIL_SHADOW_MAP", "1" ]
+      ]
     }
   },
 
