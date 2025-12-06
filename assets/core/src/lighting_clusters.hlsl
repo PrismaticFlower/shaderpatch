@@ -12,14 +12,14 @@ struct Cluster_index {
    uint spot_lights_end;
 };
 
-struct Point_light {
+struct Cluster_point_light {
    float3 positionWS;
    float inv_range_sq;
    float3 color;
    uint padding;
 };
 
-struct Spot_light {
+struct Cluster_spot_light {
    float3 positionWS;
    float inv_range_sq;
    float3 directionWS;
@@ -30,8 +30,8 @@ struct Spot_light {
 
 StructuredBuffer<Cluster_index> light_clusters_index : register(t8);
 StructuredBuffer<uint> light_clusters_lists : register(t9);
-StructuredBuffer<Point_light> light_clusters_point_lights : register(t10);
-StructuredBuffer<Spot_light> light_clusters_spot_lights : register(t11);
+StructuredBuffer<Cluster_point_light> light_clusters_point_lights : register(t10);
+StructuredBuffer<Cluster_spot_light> light_clusters_spot_lights : register(t11);
 
 Cluster_index load_cluster(float3 positionWS, float4 positionSS)
 {
@@ -47,7 +47,7 @@ Cluster_index load_cluster(float3 positionWS, float4 positionSS)
 
    uint3 positionCS;
 
-   positionCS.xy = (uint2)(positionSS.xy / float2(160, 180));
+   positionCS.xy = (uint2)(positionSS.xy / float2(160, 180)); // FIXME: Hard coded resolution.
    positionCS.z = log2(position_zVS / near_cluster_z) / log2(far_cluster_z / near_cluster_z) * z_mul;
    positionCS.z = min(positionCS.z, z_clusters -1);
 

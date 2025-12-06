@@ -34,6 +34,7 @@ const static bool normal_bf3_use_projected_texture = SP_USE_PROJECTED_TEXTURE;
 struct surface_info {
    float3 normalWS;
    float3 positionWS;
+   float4 positionSS;
    float3 viewWS;
    float3 diffuse_color; 
    float3 static_diffuse_lighting; 
@@ -58,7 +59,7 @@ float3 do_lighting(surface_info surface, Texture2D<float3> projected_light_textu
                                                                mul(float4(positionWS, 1.0), light_proj_matrix)) 
                                           : 0.0;
 
-      Lights_context context = acquire_lights_context();
+      Lights_context context = acquire_lights_context(positionWS, surface.positionSS);
 
       while (!context.directional_lights_end()) {
          Directional_light directional_light = context.next_directional_light();
@@ -69,8 +70,14 @@ float3 do_lighting(surface_info surface, Texture2D<float3> projected_light_textu
             light_color *= projected_light_texture_color;
          }
 
+         float shadowing = 1.0;
+
+         if (directional_light.use_sun_shadow_map()) {
+            shadowing = sample_sun_shadow_map(positionWS);
+         }
+
          light::blinnphong::calculate(diffuse_lighting, specular_lighting, normalWS, viewWS,
-                                      -directional_light.directionWS, 1.0, light_color, 
+                                      -directional_light.directionWS, shadowing, light_color, 
                                       directional_light.stencil_shadow_factor(), specular_exponent);
       }
 

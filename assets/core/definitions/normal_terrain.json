@@ -70,7 +70,11 @@
     },
 
     "detailing_ps": {
-      "stage": "pixel"
+      "stage": "pixel",
+
+      "defines": [
+        [ "SP_USE_STENCIL_SHADOW_MAP", "1" ]
+      ]
     },
 
     "al_diffuse_blendmap_ps": {
@@ -87,6 +91,7 @@
       "function_name": "detailing_ps",
 
       "defines": [
+        [ "SP_USE_STENCIL_SHADOW_MAP", "1" ],
         [ "SP_USE_ADVANCED_LIGHTING", "1" ]
       ]
     }

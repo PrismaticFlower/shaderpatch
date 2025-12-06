@@ -271,10 +271,7 @@ float4 al_blinn_phong_ps(Ps_blinn_phong_input input, float4 positionSS : SV_Posi
 
    [branch]
    if (directional_light_0_has_shadow) {
-      global_light_specular *= sample_cascaded_shadow_map(directional_light0_shadow_map, positionWS, 
-                                                          directional_light_0_shadow_texel_size,
-                                                          directional_light_0_shadow_bias, 
-                                                          directional_light0_shadow_matrices);
+      global_light_specular *= sample_sun_shadow_map(positionWS);
    }
 
    float3 lighting = global_light_specular * light_colors[0];
@@ -282,7 +279,7 @@ float4 al_blinn_phong_ps(Ps_blinn_phong_input input, float4 positionSS : SV_Posi
    const light::Cluster_index cluster = light::load_cluster(positionWS, positionSS);
 
    for (uint i = cluster.point_lights_start; i < cluster.point_lights_end; ++i) {
-      light::Point_light point_light = light::light_clusters_point_lights[light::light_clusters_lists[i]];
+      light::Cluster_point_light point_light = light::light_clusters_point_lights[light::light_clusters_lists[i]];
 
       const float3 unorma_light_dirWS = point_light.positionWS - positionWS;
       const float3 light_dirWS = normalize(unorma_light_dirWS);
@@ -293,7 +290,7 @@ float4 al_blinn_phong_ps(Ps_blinn_phong_input input, float4 positionSS : SV_Posi
    }
    
    for (uint i = cluster.spot_lights_start; i < cluster.spot_lights_end; ++i) {
-      light::Spot_light spot_light = light::light_clusters_spot_lights[light::light_clusters_lists[i]];
+      light::Cluster_spot_light spot_light = light::light_clusters_spot_lights[light::light_clusters_lists[i]];
       
       const float3 unorma_light_dirWS = spot_light.positionWS - positionWS;
       const float3 light_dirWS = normalize(unorma_light_dirWS);
@@ -347,10 +344,7 @@ float4 al_normalmapped_ps(Ps_normalmapped_input input, float4 positionSS : SV_Po
 
    [branch]
    if (directional_light_0_has_shadow) {
-      global_light_specular *= sample_cascaded_shadow_map(directional_light0_shadow_map, positionWS, 
-                                                          directional_light_0_shadow_texel_size,
-                                                          directional_light_0_shadow_bias, 
-                                                          directional_light0_shadow_matrices);
+      global_light_specular *= sample_sun_shadow_map(positionWS);
    }
 
    float3 lighting = global_light_specular * light_colors[0];
@@ -358,7 +352,7 @@ float4 al_normalmapped_ps(Ps_normalmapped_input input, float4 positionSS : SV_Po
    const light::Cluster_index cluster = light::load_cluster(positionWS, positionSS);
 
    for (uint i = cluster.point_lights_start; i < cluster.point_lights_end; ++i) {
-      light::Point_light point_light = light::light_clusters_point_lights[light::light_clusters_lists[i]];
+      light::Cluster_point_light point_light = light::light_clusters_point_lights[light::light_clusters_lists[i]];
 
       const float3 unorma_light_dirWS = point_light.positionWS - positionWS;
       const float3 light_dirWS = normalize(unorma_light_dirWS);
@@ -369,7 +363,7 @@ float4 al_normalmapped_ps(Ps_normalmapped_input input, float4 positionSS : SV_Po
    }
    
    for (uint i = cluster.spot_lights_start; i < cluster.spot_lights_end; ++i) {
-      light::Spot_light spot_light = light::light_clusters_spot_lights[light::light_clusters_lists[i]];
+      light::Cluster_spot_light spot_light = light::light_clusters_spot_lights[light::light_clusters_lists[i]];
       
       const float3 unorma_light_dirWS = spot_light.positionWS - positionWS;
       const float3 light_dirWS = normalize(unorma_light_dirWS);

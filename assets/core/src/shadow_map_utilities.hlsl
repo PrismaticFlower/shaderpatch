@@ -111,5 +111,12 @@ float sample_cascaded_shadow_map(Texture2DArray<float> shadow_map, float3 positi
    return shadow;
 }
 
+float sample_sun_shadow_map(float3 positionWS)
+{
+   return sample_cascaded_shadow_map(directional_light0_shadow_map, positionWS, 
+                                     directional_light_0_shadow_texel_size,
+                                     directional_light_0_shadow_bias, 
+                                     directional_light0_shadow_matrices);;
+}
 
 #endif

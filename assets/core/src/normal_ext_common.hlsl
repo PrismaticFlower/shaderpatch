@@ -11,12 +11,32 @@
 const static bool normal_ext_use_shadow_map = SP_USE_STENCIL_SHADOW_MAP;
 const static bool normal_ext_projected_texture = SP_USE_PROJECTED_TEXTURE;
 
-float3 do_lighting_diffuse(float3 normalWS, float3 positionWS, float3 diffuse_color,
-                           float3 static_diffuse_lighting, float shadow,
-                           float ao, Texture2D<float3> projected_light_texture)
+struct Normal_ext_lighting_input 
 {
+   float3 normalWS;
+   float3 positionWS;
+
+   float4 positionSS;
+
+   float3 viewWS;
+
+   float3 diffuse_color;
+   float3 static_diffuse_lighting; 
+
+   float3 specular_color;
+   float specular_exponent;
+
+   float shadow;
+   float ao;
+};
+
+float3 do_lighting_diffuse(Normal_ext_lighting_input input, Texture2D<float3> projected_light_texture)
+{
+   const float3 normalWS = input.normalWS;
+   const float3 positionWS = input.positionWS;
+
    float4 diffuse_lighting = 0.0;
-   diffuse_lighting.rgb = (light::ambient(normalWS) + static_diffuse_lighting) * ao;
+   diffuse_lighting.rgb = (light::ambient(normalWS) + input.static_diffuse_lighting) * input.ao;
    
    [branch]
    if (light_active) {
@@ -25,12 +45,17 @@ float3 do_lighting_diffuse(float3 normalWS, float3 positionWS, float3 diffuse_co
                                                                mul(float4(positionWS, 1.0), light_proj_matrix)) 
                                       : 0.0;
 
-      Lights_context context = acquire_lights_context();
+      Lights_context context = acquire_lights_context(positionWS, input.positionSS);
 
       while (!context.directional_lights_end()) {
          Directional_light directional_light = context.next_directional_light();
 
-         const float intensity = light::intensity_directional(normalWS, directional_light.directionWS);
+         float intensity = light::intensity_directional(normalWS, directional_light.directionWS);
+
+         if (directional_light.use_sun_shadow_map()) {
+            intensity *= sample_sun_shadow_map(positionWS);
+         }
+
          float3 light_color = directional_light.color;
 
          if (directional_light.use_projected_texture()) {
@@ -67,28 +92,32 @@ float3 do_lighting_diffuse(float3 normalWS, float3 positionWS, float3 diffuse_co
       }
 
       if (normal_ext_use_shadow_map) {
+         const float shadow = input.shadow;
          const float shadow_mask = saturate(diffuse_lighting.a);
 
          diffuse_lighting.rgb *= (1.0 - (shadow_mask * (1.0 - shadow)));
       }
 
-      float3 color = diffuse_lighting.rgb * diffuse_color;
+      float3 color = diffuse_lighting.rgb * input.diffuse_color;
 
       color *= lighting_scale;
 
       return color;
    }
    else {
-      return diffuse_color * lighting_scale;
+      return input.diffuse_color * lighting_scale;
    }
 }
 
-float3 do_lighting(float3 normalWS, float3 positionWS, float3 viewWS,
-                   float3 diffuse_color, float3 static_diffuse_lighting, 
-                   float3 specular_color, float specular_exponent, float shadow,
-                   float ao, Texture2D<float3> projected_light_texture)
+float3 do_lighting(Normal_ext_lighting_input input, Texture2D<float3> projected_light_texture)
 {
-   float4 diffuse_lighting = {(light::ambient(normalWS) + static_diffuse_lighting) * ao, 0.0};
+   const float3 normalWS = input.normalWS;
+   const float3 positionWS = input.positionWS;
+   const float3 viewWS = input.viewWS;
+
+   const float specular_exponent = input.specular_exponent;
+
+   float4 diffuse_lighting = {(light::ambient(normalWS) + input.static_diffuse_lighting) * input.ao, 0.0};
    float4 specular_lighting = 0.0;
 
    [branch]
@@ -98,7 +127,7 @@ float3 do_lighting(float3 normalWS, float3 positionWS, float3 viewWS,
                                                                mul(float4(positionWS, 1.0), light_proj_matrix)) 
                                       : 0.0;
 
-      Lights_context context = acquire_lights_context();
+      Lights_context context = acquire_lights_context(positionWS, input.positionSS);
 
       while (!context.directional_lights_end()) {
          Directional_light directional_light = context.next_directional_light();
@@ -109,8 +138,14 @@ float3 do_lighting(float3 normalWS, float3 positionWS, float3 viewWS,
             light_color *= projected_light_texture_color;
          }
 
+         float shadowing = 1.0;
+
+         if (directional_light.use_sun_shadow_map()) {
+            shadowing = sample_sun_shadow_map(positionWS);
+         }
+
          light::blinnphong::calculate(diffuse_lighting, specular_lighting, normalWS, viewWS,
-                                      -directional_light.directionWS, 1.0, light_color, 
+                                      -directional_light.directionWS, shadowing, light_color, 
                                       directional_light.stencil_shadow_factor(), specular_exponent);
       }
 
@@ -146,6 +181,8 @@ float3 do_lighting(float3 normalWS, float3 positionWS, float3 viewWS,
       }
 
       if (normal_ext_use_shadow_map) {
+         const float shadow = input.shadow;
+
          const float shadow_diffuse_mask = saturate(diffuse_lighting.a);
          diffuse_lighting.rgb *= saturate((1.0 - (shadow_diffuse_mask * (1.0 - shadow))));
 
@@ -154,23 +191,26 @@ float3 do_lighting(float3 normalWS, float3 positionWS, float3 viewWS,
       }
 
       float3 color = 
-         (diffuse_lighting.rgb * diffuse_color) + (specular_lighting.rgb * specular_color);
+         (diffuse_lighting.rgb * input.diffuse_color) + (specular_lighting.rgb * input.specular_color);
 
       color *= lighting_scale;
 
       return color;
    }
    else {
-      return diffuse_color * lighting_scale;
+      return input.diffuse_color * lighting_scale;
    }
 }
 
-float3 do_lighting_normalized(float3 normalWS, float3 positionWS, float3 viewWS,
-                              float3 diffuse_color, float3 static_diffuse_lighting, 
-                              float3 specular_color, float specular_exponent, float shadow,
-                              float ao, Texture2D<float3> projected_light_texture)
+float3 do_lighting_normalized(Normal_ext_lighting_input input, Texture2D<float3> projected_light_texture)
 {
-   float4 diffuse_lighting = {(light::ambient(normalWS) + static_diffuse_lighting) * ao, 0.0};
+   const float3 normalWS = input.normalWS;
+   const float3 positionWS = input.positionWS;
+   const float3 viewWS = input.viewWS;
+
+   const float specular_exponent = input.specular_exponent;
+
+   float4 diffuse_lighting = {(light::ambient(normalWS) + input.static_diffuse_lighting) * input.ao, 0.0};
    float4 specular_lighting = 0.0;
 
    [branch]
@@ -180,7 +220,7 @@ float3 do_lighting_normalized(float3 normalWS, float3 positionWS, float3 viewWS,
                                                                mul(float4(positionWS, 1.0), light_proj_matrix)) 
                                       : 0.0;
 
-      Lights_context context = acquire_lights_context();
+      Lights_context context = acquire_lights_context(positionWS, input.positionSS);
 
       while (!context.directional_lights_end()) {
          Directional_light directional_light = context.next_directional_light();
@@ -191,8 +231,14 @@ float3 do_lighting_normalized(float3 normalWS, float3 positionWS, float3 viewWS,
             light_color *= projected_light_texture_color;
          }
 
+         float shadowing = 1.0;
+
+         if (directional_light.use_sun_shadow_map()) {
+            shadowing = sample_sun_shadow_map(positionWS);
+         }
+
          light::blinnphong_normalized::calculate(diffuse_lighting, specular_lighting, normalWS, viewWS,
-                                                 -directional_light.directionWS, 1.0, light_color, 
+                                                 -directional_light.directionWS, shadowing, light_color, 
                                                  directional_light.stencil_shadow_factor(), specular_exponent);
       }
 
@@ -228,6 +274,8 @@ float3 do_lighting_normalized(float3 normalWS, float3 positionWS, float3 viewWS,
       }
 
       if (normal_ext_use_shadow_map) {
+         const float shadow = input.shadow;
+
          const float shadow_diffuse_mask = saturate(diffuse_lighting.a);
          diffuse_lighting.rgb *= saturate((1.0 - (shadow_diffuse_mask * (1.0 - shadow))));
 
@@ -236,14 +284,14 @@ float3 do_lighting_normalized(float3 normalWS, float3 positionWS, float3 viewWS,
       }
 
       float3 color = 
-         (diffuse_lighting.rgb * diffuse_color) + (specular_lighting.rgb * specular_color);
+         (diffuse_lighting.rgb * input.diffuse_color) + (specular_lighting.rgb * input.specular_color);
 
       color *= lighting_scale;
 
       return color;
    }
    else {
-      return diffuse_color * lighting_scale;
+      return input.diffuse_color * lighting_scale;
    }
 }
 

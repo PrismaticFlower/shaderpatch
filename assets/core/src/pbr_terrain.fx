@@ -147,6 +147,7 @@ float4 main_ps(Vs_output input) : SV_Target0
    surface.base_color = textures.albedo * base_color;
    surface.sun_shadow = shadow_ao_sample.r;
    surface.ao = min(shadow_ao_sample.g, textures.ao);
+   surface.positionSS = input.positionPS;
    surface.use_ibl = false;
 
    float3 color = pbr::calculate(surface, projected_light_texture);

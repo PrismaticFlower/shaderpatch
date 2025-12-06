@@ -75,11 +75,11 @@
         "PBR_USE_EMISSIVE_MAP",
         "PBR_USE_IBL",
         "PBR_USE_TRANSPARENCY",
-        "PBR_USE_HARDEDGED_TEST",
-        "PBR_USE_SHADOW_MAP"
+        "PBR_USE_HARDEDGED_TEST"
       ],
 
       "defines": [
+        [ "SP_USE_STENCIL_SHADOW_MAP", "0" ],
         [ "SP_USE_ADVANCED_LIGHTING", "1" ]
       ]
     },
@@ -92,12 +92,12 @@
         "PBR_USE_METALLIC_ROUGHNESS_MAP",
         "PBR_USE_EMISSIVE_MAP",
         "PBR_USE_IBL",
-        "PBR_USE_HARDEDGED_TEST",
-        "PBR_USE_SHADOW_MAP"
+        "PBR_USE_HARDEDGED_TEST"
       ],
 
       "defines": [
         [ "PBR_USE_TRANSPARENCY", "1" ],
+        [ "SP_USE_STENCIL_SHADOW_MAP", "0" ],
         [ "SP_USE_ADVANCED_LIGHTING", "1" ]
       ]
     }

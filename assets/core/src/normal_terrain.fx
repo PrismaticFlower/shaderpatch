@@ -140,7 +140,7 @@ float4 diffuse_blendmap_ps(Ps_blendmap_input input,
 
    diffuse_color = (diffuse_color * detail_color) * 2.0;
 
-   Lighting_input lighting_input;
+   light::Calculate_inputs lighting_input;
 
    lighting_input.normalWS = normalize(input.normalWS);
    lighting_input.positionWS = input.positionWS;
@@ -149,8 +149,6 @@ float4 diffuse_blendmap_ps(Ps_blendmap_input input,
    lighting_input.static_diffuse_lighting = input.static_lighting;
    
    lighting_input.ambient_occlusion = 1.0;
-
-   lighting_input.use_projected_light = false;
    lighting_input.projected_light_texture_color = 0.0;
 
    lighting_input.use_shadow = false;
@@ -193,7 +191,7 @@ float4 detailing_ps(Ps_detail_input input,
 
    const float2 shadow_ao_sample = shadow_ao_map.Sample(linear_clamp_sampler, input.shadow_map_texcoords);
 
-   Lighting_input lighting_input;
+   light::Calculate_inputs lighting_input;
 
    lighting_input.normalWS = normalize(input.normalWS);
    lighting_input.positionWS = input.positionWS;
@@ -203,7 +201,6 @@ float4 detailing_ps(Ps_detail_input input,
    
    lighting_input.ambient_occlusion = shadow_ao_sample.g;
 
-   lighting_input.use_projected_light = true;
    lighting_input.projected_light_texture_color = projection_texture_color;
 
    lighting_input.use_shadow = true;

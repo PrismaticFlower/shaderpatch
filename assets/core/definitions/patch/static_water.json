@@ -42,6 +42,34 @@
         "STATIC_WATER_USE_SPECULAR",
         "SP_USE_PROJECTED_TEXTURE"
       ]
+    },
+
+    "al_main_ps": {
+      "stage": "pixel",
+      "function_name": "main_ps",
+
+      "static_flags": [
+        "STATIC_WATER_USE_SPECULAR",
+        "SP_USE_PROJECTED_TEXTURE"
+      ],
+
+      "defines": [
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
+    },
+
+    "al_oit_main_ps": {
+      "stage": "pixel",
+      "function_name": "oit_main_ps",
+
+      "static_flags": [
+        "STATIC_WATER_USE_SPECULAR",
+        "SP_USE_PROJECTED_TEXTURE"
+      ],
+
+      "defines": [
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+      ]
     }
   },
 
@@ -56,7 +84,8 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "main_ps"
+        "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps"
       }
     },
 
@@ -68,11 +97,13 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "main_ps"
+        "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps"
       },
 
       "pixel_oit_shader": {
-        "entrypoint": "oit_main_ps"
+        "entrypoint": "oit_main_ps",
+        "al_entrypoint": "al_oit_main_ps"
       }
     },
 
@@ -84,11 +115,13 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "main_ps"
+        "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps"
       },
 
       "pixel_oit_shader": {
-        "entrypoint": "oit_main_ps"
+        "entrypoint": "oit_main_ps",
+        "al_entrypoint": "al_oit_main_ps"
       }
     },
 
@@ -101,6 +134,7 @@
 
       "pixel_shader": {
         "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps",
 
         "static_flags": {
           "SP_USE_PROJECTED_TEXTURE": true
@@ -109,6 +143,7 @@
 
       "pixel_oit_shader": {
         "entrypoint": "oit_main_ps",
+        "al_entrypoint": "al_oit_main_ps",
 
         "static_flags": {
           "SP_USE_PROJECTED_TEXTURE": true
@@ -124,11 +159,13 @@
       },
 
       "pixel_shader": {
-        "entrypoint": "main_ps"
+        "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps"
       },
 
       "pixel_oit_shader": {
-        "entrypoint": "oit_main_ps"
+        "entrypoint": "oit_main_ps",
+        "al_entrypoint": "al_oit_main_ps"
       }
     },
 
@@ -141,6 +178,7 @@
 
       "pixel_shader": {
         "entrypoint": "main_ps",
+        "al_entrypoint": "al_main_ps",
 
         "static_flags": {
           "SP_USE_PROJECTED_TEXTURE": true
@@ -149,6 +187,7 @@
 
       "pixel_oit_shader": {
         "entrypoint": "oit_main_ps",
+        "al_entrypoint": "al_oit_main_ps",
 
         "static_flags": {
           "SP_USE_PROJECTED_TEXTURE": true

@@ -244,6 +244,7 @@ Ps_output main_ps(Ps_input input)
    
    surface.normalWS = normalWS;
    surface.positionWS = input.positionWS;
+   surface.positionSS = input.positionSS;
    surface.viewWS = viewWS;
    surface.diffuse_color = diffuse_color;
    surface.static_diffuse_lighting = input.static_lighting;

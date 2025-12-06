@@ -105,11 +105,11 @@
       "static_flags": [
         "NORMAL_USE_TRANSPARENCY",
         "NORMAL_USE_HARDEDGED_TEST",
-        "NORMAL_USE_SHADOW_MAP",
-        "NORMAL_USE_PROJECTED_TEXTURE"
+        "SP_USE_PROJECTED_TEXTURE"
       ],
 
       "defines": [
+        [ "SP_USE_STENCIL_SHADOW_MAP", "0" ],
         [ "SP_USE_ADVANCED_LIGHTING", "1" ]
       ]
     },
@@ -134,13 +134,13 @@
 
       "defines": [
         [ "NORMAL_USE_TRANSPARENCY", "1" ],
-        [ "SP_USE_ADVANCED_LIGHTING", "1" ]
+        [ "SP_USE_ADVANCED_LIGHTING", "1" ],
+        [ "SP_USE_STENCIL_SHADOW_MAP", "0" ]
       ],
 
       "static_flags": [
         "NORMAL_USE_HARDEDGED_TEST",
-        "NORMAL_USE_SHADOW_MAP",
-        "NORMAL_USE_PROJECTED_TEXTURE"
+        "SP_USE_PROJECTED_TEXTURE"
       ]
     }
 

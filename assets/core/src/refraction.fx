@@ -167,7 +167,7 @@ float4 nodistortion_ps(Ps_nodistortion_input input,
    const float4 diffuse_color = 
       diffuse_texture.Sample(aniso_wrap_sampler, input.texcoords) * input.material_color_fade;
    
-   Lighting_input lighting_input;
+   light::Calculate_inputs lighting_input;
 
    lighting_input.normalWS = normalize(input.normalWS);
    lighting_input.positionWS = input.positionWS;
@@ -177,7 +177,6 @@ float4 nodistortion_ps(Ps_nodistortion_input input,
    
    lighting_input.ambient_occlusion = 1.0;
 
-   lighting_input.use_projected_light = false;
    lighting_input.projected_light_texture_color = 0.0;
 
    lighting_input.use_shadow = false;
@@ -248,7 +247,7 @@ float4 near_diffuse_ps(Ps_near_input input) : SV_Target0
    const float3 projection_texture_color = 
       projection_texture.Sample(linear_wrap_sampler, projection_texcoords);
 
-   Lighting_input lighting_input;
+   light::Calculate_inputs lighting_input;
 
    lighting_input.normalWS = normalize(input.normalWS);
    lighting_input.positionWS = input.positionWS;
@@ -258,7 +257,6 @@ float4 near_diffuse_ps(Ps_near_input input) : SV_Target0
    
    lighting_input.ambient_occlusion = 1.0;
 
-   lighting_input.use_projected_light = true;
    lighting_input.projected_light_texture_color = projection_texture_color;
 
    lighting_input.use_shadow = false;
@@ -293,7 +291,7 @@ float4 near_ps(Ps_near_input input) : SV_Target0
    const float3 projection_texture_color = 
       projection_texture.Sample(linear_wrap_sampler, projection_texcoords);
 
-   Lighting_input lighting_input;
+   light::Calculate_inputs lighting_input;
 
    lighting_input.normalWS = normalize(input.normalWS);
    lighting_input.positionWS = input.positionWS;
@@ -303,7 +301,6 @@ float4 near_ps(Ps_near_input input) : SV_Target0
    
    lighting_input.ambient_occlusion = 1.0;
 
-   lighting_input.use_projected_light = true;
    lighting_input.projected_light_texture_color = projection_texture_color;
 
    lighting_input.use_shadow = false;
@@ -333,7 +330,7 @@ float4 near_diffuse_bump_ps(Ps_near_input input) : SV_Target0
    const float3 projection_texture_color = 
       projection_texture.Sample(linear_wrap_sampler, projection_texcoords);
 
-   Lighting_input lighting_input;
+   light::Calculate_inputs lighting_input;
 
    lighting_input.normalWS = normalize(input.normalWS);
    lighting_input.positionWS = input.positionWS;
@@ -343,7 +340,6 @@ float4 near_diffuse_bump_ps(Ps_near_input input) : SV_Target0
    
    lighting_input.ambient_occlusion = 1.0;
 
-   lighting_input.use_projected_light = true;
    lighting_input.projected_light_texture_color = projection_texture_color;
 
    lighting_input.use_shadow = false;
@@ -379,7 +375,7 @@ float4 near_bump_ps(Ps_near_input input) : SV_Target0
    const float3 projection_texture_color = 
       projection_texture.Sample(linear_wrap_sampler, projection_texcoords);
 
-   Lighting_input lighting_input;
+   light::Calculate_inputs lighting_input;
 
    lighting_input.normalWS = normalize(input.normalWS);
    lighting_input.positionWS = input.positionWS;
@@ -389,7 +385,6 @@ float4 near_bump_ps(Ps_near_input input) : SV_Target0
    
    lighting_input.ambient_occlusion = 1.0;
 
-   lighting_input.use_projected_light = true;
    lighting_input.projected_light_texture_color = projection_texture_color;
 
    lighting_input.use_shadow = false;

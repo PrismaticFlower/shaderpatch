@@ -15,6 +15,7 @@ struct surface_info {
    float3 normalWS;
    float3 viewWS;
    float3 positionWS;
+   float4 positionSS;
 
    float3 base_color;
    float metallicness;
@@ -130,7 +131,7 @@ float3 calculate(surface_info surface, Texture2D<float3> projected_light_texture
 
    [branch] 
    if (light_active) {
-      Lights_context context = acquire_lights_context();
+      Lights_context context = acquire_lights_context(positionWS, surface.positionSS);
 
       const float3 projected_light_texture_color = 
          sp_use_projected_texture ? sample_projected_light(projected_light_texture, 
@@ -146,7 +147,13 @@ float3 calculate(surface_info surface, Texture2D<float3> projected_light_texture
             light_color *= projected_light_texture_color;
          }
 
-         light += brdf_light(params, -directional_light.directionWS, 1.0, light_color);
+         float shadowing = 1.0;
+
+         if (directional_light.use_sun_shadow_map()) {
+            shadowing = sample_sun_shadow_map(positionWS);
+         }
+
+         light += brdf_light(params, -directional_light.directionWS, shadowing, light_color);
       }
 
       light *= surface.sun_shadow;

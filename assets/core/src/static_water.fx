@@ -158,7 +158,7 @@ void sample_refraction_map(float2 texcoords, float3 normalTS, float depth,
    back_refraction = scene * back_refraction_color;
 }
 
-float3 get_specular(float3 normalWS, float3 viewWS, float3 positionWS);
+float3 get_specular(float3 normalWS, float3 viewWS, float3 positionWS, float4 positionSS);
 
 float4 main_ps(Ps_input input) : SV_Target0
 {
@@ -181,7 +181,7 @@ float4 main_ps(Ps_input input) : SV_Target0
    float3 color = lerp(refraction, reflection, fresnel);
 
    if (static_water_use_specular) {
-      color += get_specular(normalWS, viewWS, input.positionWS);
+      color += get_specular(normalWS, viewWS, input.positionWS, input.positionSS);
    }
 
    [flatten]
@@ -202,7 +202,7 @@ void oit_main_ps(Ps_input input, uint coverage : SV_Coverage) {
    aoit::write_pixel((uint2)input.positionSS.xy, input.positionSS.z, color, coverage);
 }
 
-float3 get_specular(float3 normalWS, float3 viewWS, float3 positionWS)
+float3 get_specular(float3 normalWS, float3 viewWS, float3 positionWS, float4 positionSS)
 {
    float4 specular = 0.0;
    float4 throwaway_diffuse = 0.0;
@@ -214,7 +214,7 @@ float3 get_specular(float3 normalWS, float3 viewWS, float3 positionWS)
                                                            mul(float4(positionWS, 1.0), light_proj_matrix)) 
                                   : 0.0;
 
-      Lights_context context = acquire_lights_context();
+      Lights_context context = acquire_lights_context(positionWS, positionSS);
 
       while (!context.directional_lights_end()) {
          Directional_light directional_light = context.next_directional_light();
@@ -225,9 +225,16 @@ float3 get_specular(float3 normalWS, float3 viewWS, float3 positionWS)
             light_color *= projected_light_texture_color;
          }
 
+         float shadowing = 1.0;
+
+         if (directional_light.use_sun_shadow_map()) {
+            shadowing = sample_sun_shadow_map(positionWS);
+         }
+
          light::blinnphong::calculate(throwaway_diffuse, specular, normalWS, viewWS,
-                                      -directional_light.directionWS, specular_strength_dir_lights, light_color, 
-                                      directional_light.stencil_shadow_factor(), specular_exponent_dir_lights);
+                                      -directional_light.directionWS, shadowing * specular_strength_dir_lights, 
+                                      light_color, directional_light.stencil_shadow_factor(), 
+                                      specular_exponent_dir_lights);
       }
 
       while (!context.point_lights_end()) {

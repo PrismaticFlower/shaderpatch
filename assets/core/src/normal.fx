@@ -296,7 +296,7 @@ Ps_output main_ps(Ps_input input)
       use_shadow_map ? shadow_ao_map.Sample(linear_clamp_sampler, input.shadow_texcoords) 
                      : float2(1.0, 1.0);
 
-   Lighting_input lighting_input;
+   light::Calculate_inputs lighting_input;
 
    lighting_input.normalWS = normalize(input.normalWS);
    lighting_input.positionWS = input.positionWS;
@@ -306,7 +306,6 @@ Ps_output main_ps(Ps_input input)
    
    lighting_input.ambient_occlusion = shadow_ao_sample.g;
 
-   lighting_input.use_projected_light = use_projected_texture;
    lighting_input.projected_light_texture_color = projection_texture_color;
 
    lighting_input.use_shadow = use_shadow_map;

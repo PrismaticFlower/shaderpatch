@@ -98,7 +98,6 @@
         "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING",
         "TERRAIN_COMMON_BASIC_BLENDING",
         "TERRAIN_COMMON_LOW_DETAIL",
-        "NORMAL_EXT_USE_SHADOW_MAP",
         "NORMAL_EXT_USE_PROJECTED_TEXTURE"
       ],
 
@@ -119,6 +118,7 @@
       },
 
       "defines": [
+        [ "SP_USE_STENCIL_SHADOW_MAP", "0" ],
         [ "SP_USE_ADVANCED_LIGHTING", "1" ]
       ]
     }
