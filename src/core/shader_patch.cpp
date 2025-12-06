@@ -35,6 +35,7 @@ using namespace std::literals;
 namespace sp::core {
 
 constexpr UINT extra_textures_start = 4;
+constexpr UINT proj_texture_sampler_index = 6;
 constexpr UINT advanced_lighting_resources_start = 7;
 constexpr auto shadow_texture_format = DXGI_FORMAT_R8G8_UNORM;
 constexpr auto flares_texture_format = DXGI_FORMAT_A8_UNORM;
@@ -2598,11 +2599,11 @@ void Shader_patch::update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primit
    if (std::exchange(_projtex_mode_dirty, false)) {
       if (_projtex_mode == Projtex_mode::clamp) {
          auto* const sampler = _sampler_states.linear_clamp_sampler.get();
-         _device_context->PSSetSamplers(5, 1, &sampler);
+         _device_context->PSSetSamplers(proj_texture_sampler_index, 1, &sampler);
       }
       else if (_projtex_mode == Projtex_mode::wrap) {
          auto* const sampler = _sampler_states.linear_wrap_sampler.get();
-         _device_context->PSSetSamplers(5, 1, &sampler);
+         _device_context->PSSetSamplers(proj_texture_sampler_index, 1, &sampler);
       }
    }
 }
