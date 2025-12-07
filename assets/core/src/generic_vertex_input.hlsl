@@ -120,7 +120,7 @@ struct Vertex_input
    float2 texcoords()
    {
 #  ifdef __VERTEX_INPUT_TEXCOORDS__
-      if (compressed_position) {
+      if (compressed_texcoords) {
          return (float2)_texcoords * normaltex_decompress.z;
       }
       else {
