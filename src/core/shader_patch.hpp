@@ -145,7 +145,8 @@ public:
       -> Patch_effects_config_handle;
 
    auto create_game_input_layout(const std::span<const Input_layout_element> layout,
-                                 const bool compressed, const bool particle_texture_scale,
+                                 const bool compressed_position,
+                                 const bool compressed_texcoords,
                                  const bool vertex_weights) noexcept -> Game_input_layout;
 
    auto create_ia_buffer(const UINT size, const bool vertex_buffer,

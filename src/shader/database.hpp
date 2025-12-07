@@ -67,7 +67,7 @@ public:
    auto operator=(const Database&) -> Database& = delete;
 
    Database(Database&&) = delete;
-   auto operator=(Database &&) -> Database& = delete;
+   auto operator=(Database&&) -> Database& = delete;
 
    auto compute(const std::string_view name) noexcept -> Group_compute&;
 
@@ -120,7 +120,7 @@ public:
    auto operator=(const Group&) -> Group& = delete;
 
    Group(Group&&) = delete;
-   auto operator=(Group &&) -> Group& = delete;
+   auto operator=(Group&&) -> Group& = delete;
 
    using shader_interface = T;
 
@@ -159,7 +159,7 @@ public:
    auto operator=(const Group_vertex&) -> Group_vertex& = delete;
 
    Group_vertex(Group_vertex&&) = delete;
-   auto operator=(Group_vertex &&) -> Group_vertex& = delete;
+   auto operator=(Group_vertex&&) -> Group_vertex& = delete;
 
    using shader_interface = ID3D11VertexShader;
 
@@ -200,7 +200,7 @@ public:
    auto operator=(const Rendertypes_database&) -> Rendertypes_database& = delete;
 
    Rendertypes_database(Rendertypes_database&&) = delete;
-   auto operator=(Rendertypes_database &&) -> Rendertypes_database& = delete;
+   auto operator=(Rendertypes_database&&) -> Rendertypes_database& = delete;
 
    auto operator[](const std::string_view rendertype) noexcept -> Rendertype&;
 
@@ -225,7 +225,7 @@ public:
    auto operator=(const Rendertype&) -> Rendertype& = delete;
 
    Rendertype(Rendertype&&) = delete;
-   auto operator=(Rendertype &&) -> Rendertype& = delete;
+   auto operator=(Rendertype&&) -> Rendertype& = delete;
 
    auto state(const std::string_view state) noexcept -> Rendertype_state&;
 
@@ -273,7 +273,7 @@ public:
    auto operator=(const Rendertype_state&) -> Rendertype_state& = delete;
 
    Rendertype_state(Rendertype_state&&) = delete;
-   auto operator=(Rendertype_state &&) -> Rendertype_state& = delete;
+   auto operator=(Rendertype_state&&) -> Rendertype_state& = delete;
 
    auto vertex(const Vertex_shader_flags game_flags) noexcept
       -> std::tuple<Com_ptr<ID3D11VertexShader>, Bytecode_blob, Vertex_input_layout>;
@@ -329,40 +329,19 @@ private:
          base_flags |= Vertex_shader_flags::texcoords;
       }
 
-      if (!input_state.always_compressed) {
-         callback(base_flags);
+      callback(base_flags);
 
-         if (input_state.skinned) {
-            callback(base_flags | Vertex_shader_flags::hard_skinned);
-         }
-
-         if (input_state.color) {
-            callback(base_flags | Vertex_shader_flags::color);
-         }
-
-         if (input_state.skinned && input_state.color) {
-            callback(base_flags | Vertex_shader_flags::hard_skinned |
-                     Vertex_shader_flags::color);
-         }
+      if (input_state.skinned) {
+         callback(base_flags | Vertex_shader_flags::hard_skinned);
       }
 
-      if (input_state.dynamic_compression || input_state.always_compressed) {
-         callback(base_flags | Vertex_shader_flags::compressed);
+      if (input_state.color) {
+         callback(base_flags | Vertex_shader_flags::color);
+      }
 
-         if (input_state.skinned) {
-            callback(base_flags | Vertex_shader_flags::hard_skinned |
-                     Vertex_shader_flags::compressed);
-         }
-
-         if (input_state.color) {
-            callback(base_flags | Vertex_shader_flags::color |
-                     Vertex_shader_flags::compressed);
-         }
-
-         if (input_state.skinned && input_state.color) {
-            callback(base_flags | Vertex_shader_flags::hard_skinned |
-                     Vertex_shader_flags::color | Vertex_shader_flags::compressed);
-         }
+      if (input_state.skinned && input_state.color) {
+         callback(base_flags | Vertex_shader_flags::hard_skinned |
+                  Vertex_shader_flags::color);
       }
    }
 

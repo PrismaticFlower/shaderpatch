@@ -153,7 +153,8 @@ auto create_device(IDXGIAdapter4& adapater) noexcept -> Com_ptr<ID3D11Device5>
             infoqueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
 
             std::array hide{D3D11_MESSAGE_ID_DEVICE_DRAW_VIEW_DIMENSION_MISMATCH,
-                            D3D11_MESSAGE_ID_QUERY_BEGIN_ABANDONING_PREVIOUS_RESULTS};
+                            D3D11_MESSAGE_ID_QUERY_BEGIN_ABANDONING_PREVIOUS_RESULTS,
+                            D3D11_MESSAGE_ID_CREATEINPUTLAYOUT_TYPE_MISMATCH};
 
             D3D11_INFO_QUEUE_FILTER filter{};
             filter.DenyList.NumIDs = hide.size();
@@ -837,11 +838,12 @@ auto Shader_patch::create_patch_effects_config(const std::span<const std::byte> 
 }
 
 auto Shader_patch::create_game_input_layout(
-   const std::span<const Input_layout_element> layout, const bool compressed,
-   const bool particle_texture_scale, const bool vertex_weights) noexcept -> Game_input_layout
+   const std::span<const Input_layout_element> layout,
+   const bool compressed_position, const bool compressed_texcoords,
+   const bool vertex_weights) noexcept -> Game_input_layout
 {
-   return {_input_layout_descriptions.try_add(layout), compressed,
-           particle_texture_scale, vertex_weights};
+   return {_input_layout_descriptions.try_add(layout), compressed_position,
+           compressed_texcoords, vertex_weights};
 }
 
 auto Shader_patch::create_ia_buffer(const UINT size, const bool vertex_buffer,
@@ -1116,10 +1118,14 @@ void Shader_patch::set_input_layout(const Game_input_layout& input_layout) noexc
    _game_input_layout = input_layout;
    _shader_dirty = true;
 
-   if (std::uint32_t{input_layout.particle_texture_scale} !=
-       _cb_scene.particle_texture_scale) {
-      _cb_scene.particle_texture_scale = input_layout.particle_texture_scale;
-      _cb_scene_dirty = true;
+   if (std::uint32_t{input_layout.compressed_position} != _cb_draw.compressed_position) {
+      _cb_draw.compressed_position = input_layout.compressed_position;
+      _cb_draw_dirty = true;
+   }
+
+   if (std::uint32_t{input_layout.compressed_texcoords} != _cb_draw.compressed_texcoords) {
+      _cb_draw.compressed_texcoords = input_layout.compressed_texcoords;
+      _cb_draw_dirty = true;
    }
 
    const std::uint32_t soft_skin = (input_layout.has_vertex_weights &
@@ -1328,6 +1334,12 @@ void Shader_patch::set_constants(const cb::Draw_tag, const UINT offset,
    std::memcpy(bit_cast<std::byte*>(&_cb_draw) +
                   (offset * sizeof(std::array<float, 4>)),
                constants.data(), constants.size_bytes());
+
+   if (offset < (offsetof(cb::Draw, normaltex_decompress) / sizeof(glm::vec4)) or
+       offset < (offsetof(cb::Draw, position_decompress_min) / sizeof(glm::vec4))) {
+      _cb_draw.compressed_position = _game_input_layout.compressed_position;
+      _cb_draw.compressed_texcoords = _game_input_layout.compressed_texcoords;
+   }
 }
 
 void Shader_patch::set_constants(const cb::Fixedfunction_tag,
@@ -2012,9 +2024,6 @@ void Shader_patch::update_shader() noexcept
    if (_patch_material) {
       auto vs_flags = _game_shader->vertex_shader_flags;
 
-      if (_game_input_layout.compressed)
-         vs_flags |= shader::Vertex_shader_flags::compressed;
-
       if (_shader_rendertype == _patch_material->overridden_rendertype) {
          _patch_material->shader->update(*_device_context, _input_layout_descriptions,
                                          _game_input_layout.layout_index,
@@ -2024,22 +2033,12 @@ void Shader_patch::update_shader() noexcept
       }
    }
 
-   if (_game_input_layout.compressed) {
-      auto& input_layout =
-         _game_shader->input_layouts_compressed.get(*_device, _input_layout_descriptions,
-                                                    _game_input_layout.layout_index);
+   auto& input_layout =
+      _game_shader->input_layouts.get(*_device, _input_layout_descriptions,
+                                      _game_input_layout.layout_index);
 
-      _device_context->IASetInputLayout(&input_layout);
-      _device_context->VSSetShader(_game_shader->vs_compressed.get(), nullptr, 0);
-   }
-   else {
-      auto& input_layout =
-         _game_shader->input_layouts.get(*_device, _input_layout_descriptions,
-                                         _game_input_layout.layout_index);
-
-      _device_context->IASetInputLayout(&input_layout);
-      _device_context->VSSetShader(_game_shader->vs.get(), nullptr, 0);
-   }
+   _device_context->IASetInputLayout(&input_layout);
+   _device_context->VSSetShader(_game_shader->vs.get(), nullptr, 0);
 
    _device_context->PSSetShader(_oit_active ? _game_shader->ps_oit.get()
                                             : _game_shader->ps.get(),

@@ -12,8 +12,6 @@
 namespace sp::shader {
 
 struct Vertex_generic_input_state {
-   bool dynamic_compression : 1 = false;
-   bool always_compressed : 1 = false;
    bool position : 1 = false;
    bool skinned : 1 = false;
    bool normal : 1 = false;

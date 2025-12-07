@@ -36,7 +36,6 @@
         "input_layout": "packed_input",
 
         "generic_input": {
-          "always_compressed": true,
           "position": true,
           "skinned": false,
           "normal": true,

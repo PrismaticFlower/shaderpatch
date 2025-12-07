@@ -112,21 +112,12 @@ auto input_type_to_dxgi_format(const Vertex_input_type type) noexcept -> DXGI_FO
 auto get_vertex_input_layout(const Vertex_generic_input_state state,
                              const Vertex_shader_flags flags) -> Vertex_input_layout
 {
-   const bool compressed =
-      (state.always_compressed ||
-       ((flags & Vertex_shader_flags::compressed) != Vertex_shader_flags::none)) &&
-      state.dynamic_compression;
-
-   const auto position_type =
-      compressed ? Vertex_input_type::sint4 : Vertex_input_type::float3;
-   const auto blendweight_type =
-      compressed ? Vertex_input_type::float4 : Vertex_input_type::float2;
+   const auto position_type = Vertex_input_type::sint4;
+   const auto blendweight_type = Vertex_input_type::float4;
    const auto blendindices_type = Vertex_input_type::float4;
-   const auto normal_type =
-      compressed ? Vertex_input_type::float4 : Vertex_input_type::float3;
+   const auto normal_type = Vertex_input_type::float4;
    const auto color_type = Vertex_input_type::float4;
-   const auto texcoords_type =
-      compressed ? Vertex_input_type::sint2 : Vertex_input_type::float2;
+   const auto texcoords_type = Vertex_input_type::sint2;
 
    const bool color = state.color && (flags & Vertex_shader_flags::color) !=
                                         Vertex_shader_flags::none;

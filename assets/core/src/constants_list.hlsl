@@ -19,15 +19,16 @@ cbuffer SceneConstants : register(b0)
    bool vs_input_color_srgb;
    bool vs_use_soft_skinning;
    float time;
-   bool particle_texture_scale;
    float prev_near_fade_scale;
    float prev_near_fade_offset;
 }
 
 cbuffer DrawConstants : register(b1)
 {
-   float4 normaltex_decompress;
-   float4 position_decompress_min;
+   float3 normaltex_decompress;
+   bool   compressed_position;
+   float3 position_decompress_min;
+   bool   compressed_texcoords;
    float4 position_decompress_max;
    float4 color_state; // whether vertex colors are lighting or material colors (0, 1, 1, 0) or (0, 1, 1, 0)
    float4x3 world_matrix;

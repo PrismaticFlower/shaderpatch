@@ -40,7 +40,6 @@ struct alignas(16) Scene {
    std::uint32_t input_color_srgb;
    std::uint32_t vs_use_soft_skinning;
    float time;
-   std::uint32_t particle_texture_scale;
    float prev_near_scene_fade_scale;
    float prev_near_scene_fade_offset;
 };
@@ -51,8 +50,10 @@ static_assert(sizeof(Scene) == 192);
 static_assert(scene_game_count == 10);
 
 struct alignas(16) Draw {
-   glm::vec4 normaltex_decompress;
-   glm::vec4 position_decompress_min;
+   glm::vec3 normaltex_decompress;
+   std::uint32_t compressed_position;
+   glm::vec3 position_decompress_min;
+   std::uint32_t compressed_texcoords;
    glm::vec4 position_decompress_max;
    glm::vec4 color_state;
    std::array<glm::vec4, 3> world_matrix;

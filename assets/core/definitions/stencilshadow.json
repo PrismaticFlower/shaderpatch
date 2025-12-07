@@ -205,7 +205,6 @@
         "input_layout": "preextended_input",
 
         "generic_input": {
-          "always_compressed": false,
           "position": false,
           "skinned": false,
           "normal": false,
@@ -223,7 +222,6 @@
         "input_layout": "extend_input",
 
         "generic_input": {
-          "always_compressed": true,
           "position": false,
           "skinned": false,
           "normal": false,
@@ -241,7 +239,6 @@
         "input_layout": "extend_hardskin_input",
 
         "generic_input": {
-          "always_compressed": true,
           "position": false,
           "skinned": false,
           "normal": false,
@@ -259,7 +256,6 @@
         "input_layout": "extend_hardskin_gen_normal_input",
 
         "generic_input": {
-          "always_compressed": true,
           "position": false,
           "skinned": false,
           "normal": false,
@@ -277,7 +273,6 @@
         "input_layout": "extend_softskin_input",
 
         "generic_input": {
-          "always_compressed": true,
           "position": false,
           "skinned": false,
           "normal": false,
@@ -295,7 +290,6 @@
         "input_layout": "extend_softskin_gen_normal_input",
 
         "generic_input": {
-          "always_compressed": true,
           "position": false,
           "skinned": false,
           "normal": false,
@@ -313,7 +307,6 @@
         "input_layout": "extend_input",
 
         "generic_input": {
-          "always_compressed": true,
           "position": false,
           "skinned": false,
           "normal": false,
@@ -331,7 +324,6 @@
         "input_layout": "extend_hardskin_input",
 
         "generic_input": {
-          "always_compressed": true,
           "position": false,
           "skinned": false,
           "normal": false,
@@ -349,7 +341,6 @@
         "input_layout": "extend_hardskin_gen_normal_input",
 
         "generic_input": {
-          "always_compressed": true,
           "position": false,
           "skinned": false,
           "normal": false,
@@ -367,7 +358,6 @@
         "input_layout": "extend_softskin_input",
 
         "generic_input": {
-          "always_compressed": true,
           "position": false,
           "skinned": false,
           "normal": false,
@@ -385,7 +375,6 @@
         "input_layout": "extend_softskin_gen_normal_input",
 
         "generic_input": {
-          "always_compressed": true,
           "position": false,
           "skinned": false,
           "normal": false,

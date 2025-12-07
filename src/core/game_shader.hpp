@@ -15,7 +15,6 @@ namespace sp::core {
 
 struct Game_shader {
    const Com_ptr<ID3D11VertexShader> vs;
-   const Com_ptr<ID3D11VertexShader> vs_compressed;
    const Com_ptr<ID3D11PixelShader> ps;
    const Com_ptr<ID3D11PixelShader> ps_oit;
 
@@ -29,7 +28,6 @@ struct Game_shader {
    const shader::Vertex_shader_flags vertex_shader_flags;
 
    Shader_input_layouts input_layouts;
-   Shader_input_layouts input_layouts_compressed;
 };
 
 class Game_shader_store {
