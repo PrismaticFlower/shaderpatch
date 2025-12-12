@@ -10,7 +10,6 @@
         "input_layout": "$auto",
 
         "generic_input": {
-          "dynamic_compression": true,
           "position": true,
           "skinned": true,
           "normal": false,
@@ -29,7 +28,6 @@
         "input_layout": "$auto",
 
         "generic_input": {
-          "dynamic_compression": true,
           "position": true,
           "skinned": true,
           "normal": false,
@@ -51,7 +49,6 @@
         "input_layout": "$auto",
 
         "generic_input": {
-          "dynamic_compression": true,
           "position": true,
           "skinned": true,
           "normal": false,
@@ -71,7 +68,6 @@
         "input_layout": "$auto",
 
         "generic_input": {
-          "dynamic_compression": true,
           "position": true,
           "skinned": true,
           "normal": false,

@@ -1,7 +1,7 @@
 cbuffer TransformCB : register(b0)
 {
    float3 position_decompress_min;
-   uint skin_index;
+   uint   skin_index_flags_packed;
    float3 position_decompress_max;
    float4x3 world_matrix;
    float4 x_texcoord_transform;
@@ -17,20 +17,29 @@ struct Skin {
    float4x3 matrices[15];
 };
 
+
+const static uint vertex_position_is_compressed = 0x40000000u;
+const static uint vertex_texcoords_is_compressed = 0x80000000u;
+
+const static uint skin_index = skin_index_flags_packed & 0x3FFFFFFFu;
+const static bool compressed_position = (skin_index_flags_packed & vertex_position_is_compressed) != 0;
+const static bool compressed_texcoords = (skin_index_flags_packed & vertex_texcoords_is_compressed) != 0;
+
 struct Vertex_input {
    float3 position()
    {
-#ifdef __VERTEX_INPUT_POSITION__
-#ifdef __VERTEX_INPUT_IS_COMPRESSED__
-      const float3 position = float3(_position.xyz);
+#  ifdef __VERTEX_INPUT_POSITION__
+      if (compressed_position) {
+         const float3 position = float3(_position.xyz);
 
-      return position_decompress_max.xyz + (position_decompress_min.xyz * position);
-#else
-      return _position;
-#endif
-#else
+         return position_decompress_max.xyz + (position_decompress_min.xyz * position);
+      }
+      else {
+         return asfloat(_position.xyz);
+      }
+#  else
       return float3(0.0, 0.0, 0.0);
-#endif
+#  endif
    }
 
    int3 bone_index()
@@ -57,37 +66,26 @@ struct Vertex_input {
 
    float2 texcoords()
    {
-#ifdef __VERTEX_INPUT_TEXCOORDS__
-#ifdef __VERTEX_INPUT_IS_COMPRESSED__
-      return (float2)_texcoords / 2048.0;
-#else
-      return _texcoords;
-#endif
-#else
+#  ifdef __VERTEX_INPUT_TEXCOORDS__
+      if (compressed_texcoords) {
+         return (float2)_texcoords * (1.0 / 2048.0);
+      }
+      else {
+         return asfloat(_texcoords);
+      }
+#  else
       return float2(0.0, 0.0);
-#endif
+#  endif
    }
 
 #ifdef __VERTEX_INPUT_POSITION__
-
-#ifdef __VERTEX_INPUT_IS_COMPRESSED__
    int4 _position : POSITION;
-#else
-   float3 _position : POSITION;
-#endif
-
 #endif
 
 #ifdef SOFT_SKINNED
 
 #ifdef __VERTEX_INPUT_BLEND_WEIGHT__
-
-#ifdef __VERTEX_INPUT_IS_COMPRESSED__
-   unorm float4 _blend_weights : BLENDWEIGHT;
-#else
    float2 _blend_weights : BLENDWEIGHT;
-#endif
-
 #endif
 
 #endif
@@ -98,11 +96,7 @@ struct Vertex_input {
 
 #ifdef __VERTEX_INPUT_TEXCOORDS__
 
-#ifdef __VERTEX_INPUT_IS_COMPRESSED__
    int2 _texcoords : TEXCOORD;
-#else
-   float2 _texcoords : TEXCOORD;
-#endif
 
 #endif
 };

@@ -1596,17 +1596,19 @@ void Shader_patch::record_draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
    const bool skinned = (_game_shader->vertex_shader_flags &
                          shader::Vertex_shader_flags::hard_skinned) ==
                         shader::Vertex_shader_flags::hard_skinned;
-   const bool compressed = _game_input_layout.compressed;
+   const bool compressed_position = _game_input_layout.compressed_position;
+   const bool compressed_texcoords = _game_input_layout.compressed_texcoords;
    const bool soft_skinned = _game_input_layout.has_vertex_weights;
 
    if (skinned) {
       if (hardedged) {
-         if (compressed) {
+         if (compressed_position) {
             if (soft_skinned) {
                _shadows->add_mesh_hardedged_compressed_soft_skinned(
                   *_device_context,
                   {
                      .input_layout = _game_input_layout.layout_index,
+                     .compressed_texcoords = compressed_texcoords,
 
                      .primitive_topology = topology,
 
@@ -1637,6 +1639,7 @@ void Shader_patch::record_draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
                   *_device_context,
                   {
                      .input_layout = _game_input_layout.layout_index,
+                     .compressed_texcoords = compressed_texcoords,
 
                      .primitive_topology = topology,
 
@@ -1669,6 +1672,7 @@ void Shader_patch::record_draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
                   *_device_context,
                   {
                      .input_layout = _game_input_layout.layout_index,
+                     .compressed_texcoords = compressed_texcoords,
 
                      .primitive_topology = topology,
 
@@ -1696,6 +1700,7 @@ void Shader_patch::record_draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
                   *_device_context,
                   {
                      .input_layout = _game_input_layout.layout_index,
+                     .compressed_texcoords = compressed_texcoords,
 
                      .primitive_topology = topology,
 
@@ -1721,7 +1726,7 @@ void Shader_patch::record_draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
          }
       }
       else {
-         if (compressed) {
+         if (compressed_position) {
             if (soft_skinned) {
                _shadows->add_mesh_compressed_soft_skinned(
                   *_device_context,
@@ -1818,11 +1823,12 @@ void Shader_patch::record_draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
    }
    else {
       if (hardedged) {
-         if (compressed) {
+         if (compressed_position) {
             _shadows->add_mesh_hardedged_compressed(
                *_device_context,
                {
                   .input_layout = _game_input_layout.layout_index,
+                  .compressed_texcoords = compressed_texcoords,
 
                   .primitive_topology = topology,
 
@@ -1852,6 +1858,7 @@ void Shader_patch::record_draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
                *_device_context,
                {
                   .input_layout = _game_input_layout.layout_index,
+                  .compressed_texcoords = compressed_texcoords,
 
                   .primitive_topology = topology,
 
@@ -1875,7 +1882,7 @@ void Shader_patch::record_draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
          }
       }
       else {
-         if (compressed) {
+         if (compressed_position) {
             _shadows->add_mesh_compressed(
                *_device_context,
                {

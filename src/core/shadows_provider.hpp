@@ -83,12 +83,13 @@ public:
 
       const std::array<glm::vec4, 3>& world_matrix;
 
-      const glm::vec4& position_decompress_mul;
-      const glm::vec4& position_decompress_add;
+      const glm::vec3& position_decompress_mul;
+      const glm::vec3& position_decompress_add;
    };
 
    struct Input_hardedged_mesh {
       std::uint16_t input_layout;
+      bool compressed_texcoords;
 
       D3D11_PRIMITIVE_TOPOLOGY primitive_topology;
 
@@ -112,6 +113,7 @@ public:
 
    struct Input_mesh_hardedged_compressed {
       std::uint16_t input_layout;
+      bool compressed_texcoords;
 
       D3D11_PRIMITIVE_TOPOLOGY primitive_topology;
 
@@ -132,8 +134,8 @@ public:
       const glm::vec4& y_texcoord_transform;
       ID3D11ShaderResourceView& texture;
 
-      const glm::vec4& position_decompress_mul;
-      const glm::vec4& position_decompress_add;
+      const glm::vec3& position_decompress_mul;
+      const glm::vec3& position_decompress_add;
    };
 
    void add_mesh(ID3D11DeviceContext4& dc, const Input_mesh& mesh);
@@ -199,9 +201,9 @@ public:
 private:
    struct alignas(256) Transform_cb {
       glm::vec3 position_decompress_mul;
-      std::uint32_t skin_index;
+      std::uint32_t skin_index_flags_packed;
       glm::vec3 position_decompress_add;
-      std::uint32_t use_soft_skinning;
+      std::uint32_t pad0;
       std::array<glm::vec4, 3> world_matrix;
       glm::vec4 x_texcoord_transform;
       glm::vec4 y_texcoord_transform;

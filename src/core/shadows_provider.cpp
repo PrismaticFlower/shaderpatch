@@ -72,6 +72,17 @@ auto make_bounding_sphere(const auto& mesh) noexcept -> shadows::Bounding_sphere
                        static_cast<float>(INT16_MAX))};
 }
 
+auto pack_skin_index_flags(const std::uint32_t skin_index, const bool compressed_position,
+                           const bool compressed_texcoords) noexcept -> std::uint32_t
+{
+   std::uint32_t packed = skin_index & 0x3FFFFFFFu;
+
+   if (compressed_position) packed |= 0x40000000u;
+   if (compressed_texcoords) packed |= 0x80000000u;
+
+   return packed;
+}
+
 }
 
 Shadows_provider::Shadows_provider(Com_ptr<ID3D11Device5> device,
@@ -83,22 +94,21 @@ Shadows_provider::Shadows_provider(Com_ptr<ID3D11Device5> device,
                         .entrypoint("hardedged_vs"sv, 0, Vertex_shader_flags::none)},
      _mesh_hardedged_compressed{
         shaders.vertex("shadowmesh_zprepass"sv)
-           .entrypoint("hardedged_vs"sv, 0, Vertex_shader_flags::compressed)},
+           .entrypoint("hardedged_vs"sv, 0, Vertex_shader_flags::none)},
      _mesh_hardedged_skinned{
         shaders.vertex("shadowmesh_zprepass"sv)
            .entrypoint("hardedged_vs"sv, 0, Vertex_shader_flags::hard_skinned)},
      _mesh_hardedged_compressed_skinned{
         shaders.vertex("shadowmesh_zprepass"sv)
            .entrypoint("hardedged_vs"sv, 0,
-                       Vertex_shader_flags::compressed |
-                          Vertex_shader_flags::hard_skinned)},
+
+                       Vertex_shader_flags::hard_skinned)},
      _mesh_hardedged_soft_skinned{shaders.vertex("shadowmesh_zprepass"sv)
                                      .entrypoint("hardedged_soft_skinned_vs"sv, 0,
                                                  Vertex_shader_flags::hard_skinned)},
      _mesh_hardedged_compressed_soft_skinned{
         shaders.vertex("shadowmesh_zprepass"sv)
-           .entrypoint("hardedged_soft_skinned_vs"sv, 0,
-                       Vertex_shader_flags::compressed | Vertex_shader_flags::hard_skinned)}
+           .entrypoint("hardedged_soft_skinned_vs"sv, 0, Vertex_shader_flags::hard_skinned)}
 {
    create_shadow_map(TEMP_shadow_map_length);
 
@@ -113,8 +123,7 @@ Shadows_provider::Shadows_provider(Com_ptr<ID3D11Device5> device,
       make_input_layout(*device,
                         {{.SemanticName = "POSITION",
                           .Format = DXGI_FORMAT_R16G16B16A16_SINT}},
-                        shader.entrypoint("opaque_vs"sv, 0,
-                                          Vertex_shader_flags::compressed));
+                        shader.entrypoint("opaque_vs"sv, 0, Vertex_shader_flags::none));
    _mesh_skinned_il =
       make_input_layout(*device,
                         {{.SemanticName = "POSITION", .Format = DXGI_FORMAT_R32G32B32_FLOAT},
@@ -130,8 +139,8 @@ Shadows_provider::Shadows_provider(Com_ptr<ID3D11Device5> device,
                           .Format = DXGI_FORMAT_B8G8R8A8_UNORM,
                           .AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT}},
                         shader.entrypoint("opaque_vs"sv, 0,
-                                          Vertex_shader_flags::compressed |
-                                             Vertex_shader_flags::hard_skinned));
+
+                                          Vertex_shader_flags::hard_skinned));
    _mesh_soft_skinned_il =
       make_input_layout(*device,
                         {{.SemanticName = "POSITION", .Format = DXGI_FORMAT_R32G32B32_FLOAT},
@@ -153,25 +162,25 @@ Shadows_provider::Shadows_provider(Com_ptr<ID3D11Device5> device,
                           .Format = DXGI_FORMAT_B8G8R8A8_UNORM,
                           .AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT}},
                         shader.entrypoint("soft_skinned_vs"sv, 0,
-                                          Vertex_shader_flags::compressed |
-                                             Vertex_shader_flags::hard_skinned));
+
+                                          Vertex_shader_flags::hard_skinned));
 
    _mesh_vs = std::get<Com_ptr<ID3D11VertexShader>>(
       shader.entrypoint("opaque_vs"sv, 0, Vertex_shader_flags::none));
    _mesh_compressed_vs = std::get<Com_ptr<ID3D11VertexShader>>(
-      shader.entrypoint("opaque_vs"sv, 0, Vertex_shader_flags::compressed));
+      shader.entrypoint("opaque_vs"sv, 0, Vertex_shader_flags::none));
    _mesh_skinned_vs = std::get<Com_ptr<ID3D11VertexShader>>(
       shader.entrypoint("opaque_vs"sv, 0, Vertex_shader_flags::hard_skinned));
    _mesh_compressed_skinned_vs = std::get<Com_ptr<ID3D11VertexShader>>(
       shader.entrypoint("opaque_vs"sv, 0,
-                        Vertex_shader_flags::compressed |
-                           Vertex_shader_flags::hard_skinned));
+
+                        Vertex_shader_flags::hard_skinned));
    _mesh_soft_skinned_vs = std::get<Com_ptr<ID3D11VertexShader>>(
       shader.entrypoint("soft_skinned_vs"sv, 0, Vertex_shader_flags::hard_skinned));
    _mesh_compressed_soft_skinned_vs = std::get<Com_ptr<ID3D11VertexShader>>(
       shader.entrypoint("soft_skinned_vs"sv, 0,
-                        Vertex_shader_flags::compressed |
-                           Vertex_shader_flags::hard_skinned));
+
+                        Vertex_shader_flags::hard_skinned));
 
    _mesh_hardedged_ps =
       shaders.pixel("shadowmesh_zprepass"sv).entrypoint("hardedged_ps"sv);
@@ -403,6 +412,10 @@ void Shadows_provider::add_mesh(ID3D11DeviceContext4& dc, const Input_mesh& mesh
 
    const UINT constants_index =
       add_transform_cb(dc, {
+                              .position_decompress_mul = {1.0f, 1.0f, 1.0f},
+                              .skin_index_flags_packed =
+                                 pack_skin_index_flags(0, false, false),
+                              .position_decompress_add = {0.0f, 0.0f, 0.0f},
                               .world_matrix = mesh.world_matrix,
                            });
 
@@ -433,8 +446,9 @@ void Shadows_provider::add_mesh_compressed(ID3D11DeviceContext4& dc,
    const UINT constants_index =
       add_transform_cb(dc, {
                               .position_decompress_mul = mesh.position_decompress_mul,
+                              .skin_index_flags_packed =
+                                 pack_skin_index_flags(0, true, false),
                               .position_decompress_add = mesh.position_decompress_add,
-
                               .world_matrix = mesh.world_matrix,
                            });
 
@@ -468,7 +482,10 @@ void Shadows_provider::add_mesh_skinned(
    const UINT skin_index = add_skin(dc, bone_matrices);
    const UINT constants_index =
       add_transform_cb(dc, {
-                              .skin_index = skin_index,
+                              .position_decompress_mul = {1.0f, 1.0f, 1.0f},
+                              .skin_index_flags_packed =
+                                 pack_skin_index_flags(skin_index, false, false),
+                              .position_decompress_add = {0.0f, 0.0f, 0.0f},
 
                               .world_matrix = mesh.world_matrix,
                            });
@@ -502,7 +519,8 @@ void Shadows_provider::add_mesh_compressed_skinned(
    const UINT constants_index =
       add_transform_cb(dc, {
                               .position_decompress_mul = mesh.position_decompress_mul,
-                              .skin_index = skin_index,
+                              .skin_index_flags_packed =
+                                 pack_skin_index_flags(skin_index, true, false),
                               .position_decompress_add = mesh.position_decompress_add,
 
                               .world_matrix = mesh.world_matrix,
@@ -538,7 +556,8 @@ void Shadows_provider::add_mesh_soft_skinned(
    const UINT skin_index = add_skin(dc, bone_matrices);
    const UINT constants_index =
       add_transform_cb(dc, {
-                              .skin_index = skin_index,
+                              .skin_index_flags_packed =
+                                 pack_skin_index_flags(skin_index, false, false),
 
                               .world_matrix = mesh.world_matrix,
                            });
@@ -572,7 +591,8 @@ void Shadows_provider::add_mesh_compressed_soft_skinned(
    const UINT constants_index =
       add_transform_cb(dc, {
                               .position_decompress_mul = mesh.position_decompress_mul,
-                              .skin_index = skin_index,
+                              .skin_index_flags_packed =
+                                 pack_skin_index_flags(skin_index, true, false),
                               .position_decompress_add = mesh.position_decompress_add,
 
                               .world_matrix = mesh.world_matrix,
@@ -614,6 +634,9 @@ void Shadows_provider::add_mesh_hardedged(ID3D11DeviceContext4& dc,
 
    const UINT constants_index =
       add_transform_cb(dc, {
+                              .skin_index_flags_packed =
+                                 pack_skin_index_flags(0, false, mesh.compressed_texcoords),
+
                               .world_matrix = mesh.world_matrix,
 
                               .x_texcoord_transform = mesh.x_texcoord_transform,
@@ -659,6 +682,8 @@ void Shadows_provider::add_mesh_hardedged_compressed(
    const UINT constants_index =
       add_transform_cb(dc, {
                               .position_decompress_mul = mesh.position_decompress_mul,
+                              .skin_index_flags_packed =
+                                 pack_skin_index_flags(0, true, mesh.compressed_texcoords),
                               .position_decompress_add = mesh.position_decompress_add,
 
                               .world_matrix = mesh.world_matrix,
@@ -710,7 +735,9 @@ void Shadows_provider::add_mesh_hardedged_skinned(
    const UINT skin_index = add_skin(dc, bone_matrices);
    const UINT constants_index =
       add_transform_cb(dc, {
-                              .skin_index = skin_index,
+                              .skin_index_flags_packed =
+                                 pack_skin_index_flags(skin_index, false,
+                                                       mesh.compressed_texcoords),
 
                               .world_matrix = mesh.world_matrix,
 
@@ -758,7 +785,9 @@ void Shadows_provider::add_mesh_hardedged_compressed_skinned(
    const UINT constants_index =
       add_transform_cb(dc, {
                               .position_decompress_mul = mesh.position_decompress_mul,
-                              .skin_index = skin_index,
+                              .skin_index_flags_packed =
+                                 pack_skin_index_flags(skin_index, true,
+                                                       mesh.compressed_texcoords),
                               .position_decompress_add = mesh.position_decompress_add,
 
                               .world_matrix = mesh.world_matrix,
@@ -811,7 +840,9 @@ void Shadows_provider::add_mesh_hardedged_soft_skinned(
    const UINT skin_index = add_skin(dc, bone_matrices);
    const UINT constants_index =
       add_transform_cb(dc, {
-                              .skin_index = skin_index,
+                              .skin_index_flags_packed =
+                                 pack_skin_index_flags(skin_index, false,
+                                                       mesh.compressed_texcoords),
 
                               .world_matrix = mesh.world_matrix,
 
@@ -860,7 +891,9 @@ void Shadows_provider::add_mesh_hardedged_compressed_soft_skinned(
    const UINT constants_index =
       add_transform_cb(dc, {
                               .position_decompress_mul = mesh.position_decompress_mul,
-                              .skin_index = skin_index,
+                              .skin_index_flags_packed =
+                                 pack_skin_index_flags(skin_index, true,
+                                                       mesh.compressed_texcoords),
                               .position_decompress_add = mesh.position_decompress_add,
 
                               .world_matrix = mesh.world_matrix,

@@ -54,7 +54,8 @@ struct alignas(16) Draw {
    std::uint32_t compressed_position;
    glm::vec3 position_decompress_min;
    std::uint32_t compressed_texcoords;
-   glm::vec4 position_decompress_max;
+   glm::vec3 position_decompress_max;
+   std::uint32_t pad0;
    glm::vec4 color_state;
    std::array<glm::vec4, 3> world_matrix;
    glm::vec4 light_ambient_color_top;
