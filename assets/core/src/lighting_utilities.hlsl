@@ -39,37 +39,9 @@ float attenuation_point(float3 unnormalized_light_vector, float inv_range_sqr)
    return attenuation;
 }
 
-void spot_params(float3 positionWS, out float attenuation, out float3 light_dirWS)
-{
-   const float3 unnormalized_light_vectorWS = light_spot_pos.xyz - positionWS;
-
-   light_dirWS = normalize(unnormalized_light_vectorWS);
-
-   const float outer_cone = light_spot_params.x;
-
-   const float theta = max(dot(-light_dirWS, light_spot_dir.xyz), 0.0);
-   const float cone_falloff = saturate((theta - outer_cone) * light_spot_params.z);
-
-   attenuation =
-      attenuation_point(unnormalized_light_vectorWS, light_spot_inv_range_sqr);
-   attenuation *= cone_falloff;
-}
-
 float intensity_directional(float3 normalWS, float3 direction)
 {
    return max(dot(normalWS, -direction), 0.0);
-}
-
-float intensity_point(float3 normal, float3 position, float3 light_position,
-                      float inv_range_sqr)
-{
-   const float3 unnormalized_light_vector = light_position - position;
-   const float3 light_dir = normalize(unnormalized_light_vector);
-   const float intensity = saturate(dot(normal, light_dir));
-   const float attenuation =
-      attenuation_point(unnormalized_light_vector, inv_range_sqr);
-
-   return attenuation * intensity;
 }
 
 float intensity_point(float3 normalWS, float3 positionWS, Point_light light)
@@ -77,22 +49,9 @@ float intensity_point(float3 normalWS, float3 positionWS, Point_light light)
    const float3 unnormalized_light_vectorWS = light.positionWS - positionWS;
    const float3 light_dirWS = normalize(unnormalized_light_vectorWS);
    const float intensity = saturate(dot(normalWS, light_dirWS));
-   const float attenuation =
-      attenuation_point(unnormalized_light_vectorWS, light.inv_range_sq);
+   const float attenuation = attenuation_point(unnormalized_light_vectorWS, light.inv_range_sq);
 
    return attenuation * intensity;
-}
-
-float intensity_spot(float3 normalWS, float3 positionWS)
-{
-   float3 light_dirWS;
-   float attenuation;
-
-   spot_params(positionWS, attenuation, light_dirWS);
-
-   const float intensity = saturate(dot(normalWS, light_dirWS));
-
-   return intensity * attenuation;
 }
 
 float intensity_spot(float3 normalWS, float3 positionWS, Spot_light light)
@@ -201,38 +160,33 @@ void calculate(inout float4 in_out_diffuse, inout float4 in_out_specular,
 }
 
 void calculate_point(inout float4 in_out_diffuse, inout float4 in_out_specular,
-                     float3 normal, float3 position, float3 view_normal,
-                     float3 light_position, float inv_range_sq, float3 light_color,
-                     float shadow_factor, float exponent)
+                     float3 normalWS, float3 positionWS, float3 viewWS, 
+                     Point_light light, float exponent)
 {
-   const float3 unnormalized_light_vector = light_position - position;
-   const float3 light_dir = normalize(unnormalized_light_vector);
+   const float3 unnormalized_light_vectorWS = light.positionWS - positionWS;
+   const float3 light_dirWS = normalize(unnormalized_light_vectorWS);
    const float attenuation =
-      attenuation_point(unnormalized_light_vector, inv_range_sq);
+      attenuation_point(unnormalized_light_vectorWS, light.inv_range_sq);
 
-   calculate(in_out_diffuse, in_out_specular, normal, view_normal, light_dir,
-             attenuation, light_color, shadow_factor, exponent);
+   calculate(in_out_diffuse, in_out_specular, normalWS, viewWS, light_dirWS,
+             attenuation, light.color, light.stencil_shadow_factor(), exponent);
 }
 
 void calculate_spot(inout float4 in_out_diffuse, inout float4 in_out_specular,
-                    float3 normalWS, float3 positionWS, float3 view_normalWS,
-                    float3 light_positionWS, float inv_range_sq, float3 cone_directionWS, 
-                    float cone_outer_param, float cone_inner_param,
-                    float3 light_color, float shadow_factor, float exponent)
+                    float3 normalWS, float3 positionWS, float3 viewWS,
+                    Spot_light light, float exponent)
 {
-   const float3 unnormalized_light_vectorWS = light_positionWS - positionWS;
+   const float3 unnormalized_light_vectorWS = light.positionWS - positionWS;
    const float3 light_dirWS = normalize(unnormalized_light_vectorWS);
 
-   const float outer_cone = light_spot_params.x;
-   
-   const float theta = max(dot(-light_dirWS, cone_directionWS), 0.0);
-   const float cone_falloff = saturate((theta - cone_outer_param) * cone_inner_param);
+   const float theta = max(dot(-light_dirWS, light.directionWS), 0.0);
+   const float cone_falloff = saturate((theta - light.cone_outer_param) * light.cone_inner_param);
 
-   const float attenuation = attenuation_point(unnormalized_light_vectorWS, inv_range_sq);
+   const float attenuation = attenuation_point(unnormalized_light_vectorWS, light.inv_range_sq);
 
-   calculate(in_out_diffuse, in_out_specular, normalWS, view_normalWS,
-             light_dirWS, attenuation * cone_falloff, light_color, 
-             shadow_factor, exponent);
+   calculate(in_out_diffuse, in_out_specular, normalWS, viewWS,
+             light_dirWS, attenuation * cone_falloff, light.color, 
+             light.stencil_shadow_factor(), exponent);
 }
 }
 }
