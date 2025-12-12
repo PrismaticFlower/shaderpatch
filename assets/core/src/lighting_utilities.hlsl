@@ -97,6 +97,11 @@ float3 calculate(Calculate_inputs input)
 
    float4 light = float4((ambient(normalWS) + input.static_diffuse_lighting) * input.ambient_occlusion, 0.0);
 
+   #if SP_USE_ADVANCED_LIGHTING
+      [branch]
+      if (input.detailing_pass) return input.detailing_pass_intensity; 
+   #endif
+
    [branch]
    if (light_active) { 
       Lights_context context = acquire_lights_context(positionWS, input.positionSS);
