@@ -45,11 +45,6 @@ Vs_output main_vs(Vertex_input input)
 
    output.texcoords = input.texcoords() * texcoords_transform.xy + texcoords_transform.zw;
 
-   if (particle_texture_scale) {
-      output.texcoords = 
-         (input.texcoords() * 32767.0 * (1.0 / 2048.0)) * texcoords_transform.xy + texcoords_transform.zw;
-   }
-
    const float near_fade = calculate_near_fade_transparent(positionPS);
    const float fade_scale = saturate(positionPS.w * fade_factor.x + fade_factor.y);
 

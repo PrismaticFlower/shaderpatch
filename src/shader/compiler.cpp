@@ -71,9 +71,6 @@ void get_vertex_shader_defines(const Entrypoint_description& entrypoint,
 {
    const auto input_state = entrypoint.vertex_state.generic_input_state;
 
-   const bool compressed = ((vertex_shader_flags & Vertex_shader_flags::compressed) !=
-                            Vertex_shader_flags::none) ||
-                           input_state.always_compressed;
    const bool hard_skinned =
       ((vertex_shader_flags & Vertex_shader_flags::hard_skinned) !=
        Vertex_shader_flags::none) &&
@@ -81,10 +78,6 @@ void get_vertex_shader_defines(const Entrypoint_description& entrypoint,
    const bool color = ((vertex_shader_flags & Vertex_shader_flags::color) !=
                        Vertex_shader_flags::none) &&
                       input_state.color;
-
-   if (compressed) {
-      output.emplace_back("__VERTEX_INPUT_IS_COMPRESSED__", "1");
-   }
 
    if (input_state.position) {
       output.emplace_back("__VERTEX_INPUT_POSITION__", "1");

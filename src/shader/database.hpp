@@ -339,40 +339,19 @@ private:
          base_flags |= Vertex_shader_flags::texcoords;
       }
 
-      if (!input_state.always_compressed) {
-         callback(base_flags);
+      callback(base_flags);
 
-         if (input_state.skinned) {
-            callback(base_flags | Vertex_shader_flags::hard_skinned);
-         }
-
-         if (input_state.color) {
-            callback(base_flags | Vertex_shader_flags::color);
-         }
-
-         if (input_state.skinned && input_state.color) {
-            callback(base_flags | Vertex_shader_flags::hard_skinned |
-                     Vertex_shader_flags::color);
-         }
+      if (input_state.skinned) {
+         callback(base_flags | Vertex_shader_flags::hard_skinned);
       }
 
-      if (input_state.dynamic_compression || input_state.always_compressed) {
-         callback(base_flags | Vertex_shader_flags::compressed);
+      if (input_state.color) {
+         callback(base_flags | Vertex_shader_flags::color);
+      }
 
-         if (input_state.skinned) {
-            callback(base_flags | Vertex_shader_flags::hard_skinned |
-                     Vertex_shader_flags::compressed);
-         }
-
-         if (input_state.color) {
-            callback(base_flags | Vertex_shader_flags::color |
-                     Vertex_shader_flags::compressed);
-         }
-
-         if (input_state.skinned && input_state.color) {
-            callback(base_flags | Vertex_shader_flags::hard_skinned |
-                     Vertex_shader_flags::color | Vertex_shader_flags::compressed);
-         }
+      if (input_state.skinned && input_state.color) {
+         callback(base_flags | Vertex_shader_flags::hard_skinned |
+                  Vertex_shader_flags::color);
       }
    }
 

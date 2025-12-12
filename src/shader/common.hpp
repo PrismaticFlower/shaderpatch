@@ -12,13 +12,12 @@ enum class Stage { compute, vertex, hull, domain, geometry, pixel };
 
 enum class Vertex_shader_flags : std::uint32_t {
    none = 0b0,
-   compressed = 0b1,
-   position = 0b10,
-   normal = 0b100,
-   tangents = 0b1000,
-   texcoords = 0b10000,
-   color = 0b100000,
-   hard_skinned = 0b1000000
+   position = 0b1,
+   normal = 0b10,
+   tangents = 0b100,
+   texcoords = 0b1000,
+   color = 0b10000,
+   hard_skinned = 0b100000
 };
 
 constexpr bool marked_as_enum_flag(Vertex_shader_flags)
@@ -44,7 +43,6 @@ inline auto to_string(const Vertex_shader_flags flags) noexcept
       }
    };
 
-   add_flag(Vertex_shader_flags::compressed, "compressed"sv);
    add_flag(Vertex_shader_flags::position, "position"sv);
    add_flag(Vertex_shader_flags::normal, "normal"sv);
    add_flag(Vertex_shader_flags::tangents, "tangents"sv);

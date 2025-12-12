@@ -101,8 +101,6 @@ void from_json(const nlohmann::json& j, Vertex_generic_input_state& input_state)
       return value;
    };
 
-   input_state.dynamic_compression = get_flag_if("dynamic_compression"s);
-   input_state.always_compressed = get_flag_if("always_compressed"s);
    input_state.position = get_flag_if("position"s);
    input_state.skinned = get_flag_if("skinned"s);
    input_state.normal = get_flag_if("normal"s);

@@ -22,7 +22,6 @@
         "input_layout": "sample_input",
 
         "generic_input": {
-          "always_compressed": true,
           "position": false,
           "skinned": false,
           "normal": false,

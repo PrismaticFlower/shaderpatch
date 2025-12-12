@@ -5,21 +5,14 @@
 
 namespace detail {
 namespace vi {
-#ifdef __VERTEX_INPUT_IS_COMPRESSED__
+
 typedef int4 Position_vec;
-typedef unorm float4 Blend_indices_vec;
-typedef unorm float4 Blend_weight_vec;
-typedef unorm float4 Normal_vec;
-typedef unorm float4 Color_vec;
-typedef int2 Texcoords_vec;
-#else
-      typedef float3 Position_vec;
 typedef unorm float4 Blend_indices_vec;
 typedef float2 Blend_weight_vec;
 typedef float3 Normal_vec;
 typedef unorm float4 Color_vec;
-typedef float2 Texcoords_vec;
-#endif
+typedef int2 Texcoords_vec;
+
 }
 }
 
@@ -28,13 +21,14 @@ struct Vertex_input
    float3 position()
    {
 #  ifdef __VERTEX_INPUT_POSITION__
-#     ifdef __VERTEX_INPUT_IS_COMPRESSED__
+      if (compressed_position) {
          const float3 position = float3(_position.xyz);
 
          return position_decompress_max.xyz + (position_decompress_min.xyz * position);
-      #else
-         return _position;
-      #endif
+      }
+      else {
+         return asfloat(_position.xyz);
+      }
 #  else
       return float3(0.0, 0.0, 0.0);
 #  endif
@@ -68,11 +62,7 @@ struct Vertex_input
    float3 normal()
    {
 #  ifdef __VERTEX_INPUT_NORMAL__
-#     ifdef __VERTEX_INPUT_IS_COMPRESSED__
-         return _normal.xyz * (255.0 / 127.0) - (128.0 / 127.0);
-      #else
-         return _normal;
-      #endif
+      return _normal.xyz * normaltex_decompress.x + normaltex_decompress.y;
 #  else
       return float3(0.0, 0.0, 0.0);
 #  endif
@@ -81,11 +71,7 @@ struct Vertex_input
    float3 tangent()
    {
 #  ifdef __VERTEX_INPUT_TANGENTS__
-#     ifdef __VERTEX_INPUT_IS_COMPRESSED__
-         return _tangent.xyz * (255.0 / 127.0) - (128.0 / 127.0);
-      #else
-         return _tangent;
-      #endif
+         return _tangent.xyz * normaltex_decompress.x + normaltex_decompress.y;
 #  else
       return float3(0.0, 0.0, 0.0);
 #  endif
@@ -94,11 +80,7 @@ struct Vertex_input
    float3 bitangent()
    {
 #  ifdef __VERTEX_INPUT_TANGENTS__
-#     ifdef __VERTEX_INPUT_IS_COMPRESSED__
-         return _bitangent.xyz * (255.0 / 127.0) - (128.0 / 127.0);
-      #else
-         return _bitangent;
-      #endif
+         return _bitangent.xyz * normaltex_decompress.x + normaltex_decompress.y;
 #  else
       return float3(0.0, 0.0, 0.0);
 #  endif
@@ -107,11 +89,7 @@ struct Vertex_input
    float3 patch_tangent()
    {
 #  ifdef __VERTEX_INPUT_TANGENTS__
-#     ifdef __VERTEX_INPUT_IS_COMPRESSED__
-      return _tangent.xyz * (255.0 / 127.0) - (128.0 / 127.0);
-#else
-      return _tangent;
-#endif
+      return _tangent.xyz * normaltex_decompress.x + normaltex_decompress.y;
 #  else
       return float3(0.0, 0.0, 0.0);
 #  endif
@@ -142,11 +120,12 @@ struct Vertex_input
    float2 texcoords()
    {
 #  ifdef __VERTEX_INPUT_TEXCOORDS__
-#     ifdef __VERTEX_INPUT_IS_COMPRESSED__
-         return (float2)_texcoords / 2048.0;
-      #else
-         return _texcoords;
-      #endif
+      if (compressed_texcoords) {
+         return (float2)_texcoords * normaltex_decompress.z;
+      }
+      else {
+         return asfloat(_texcoords);
+      }
 #  else
       return float2(0.0, 0.0);
 #  endif

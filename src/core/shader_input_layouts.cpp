@@ -52,12 +52,6 @@ auto Shader_input_layouts::create_layout(
                                 (elem.semantic_name == sig_elem.semantic_name) &&
                                 (elem.semantic_index == sig_elem.semantic_index);
 
-                             if (match && (shader::dxgi_format_to_input_type(
-                                              elem.format) != sig_elem.input_type)) {
-                                log_and_terminate(
-                                   "Unexpected IA layout format!");
-                             }
-
                              return match;
                           });
           it != layout_desc.end()) {

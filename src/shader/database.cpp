@@ -673,11 +673,6 @@ bool Rendertype_state::vertex_shader_supported(const Vertex_shader_flags game_fl
 {
    const auto input_state = _desc.vs_input_state;
 
-   if ((game_flags & Vertex_shader_flags::compressed) != Vertex_shader_flags::none &&
-       !(input_state.dynamic_compression || input_state.always_compressed)) {
-      return false;
-   }
-
    if ((game_flags & Vertex_shader_flags::position) != Vertex_shader_flags::none &&
        !input_state.position) {
       return false;

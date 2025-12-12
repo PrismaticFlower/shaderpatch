@@ -14,10 +14,8 @@ auto make_game_shader(shader::Rendertypes_database& database,
       database[to_string_view(metadata.rendertype)].state(metadata.shader_name);
 
    auto [vs, vs_bytecode, vs_inputlayout] = state.vertex(metadata.vertex_shader_flags);
-   auto [vs_compressed, vs_bytecode_compressed, vs_inputlayout_compressed] =
-      state.vertex(metadata.vertex_shader_flags | shader::Vertex_shader_flags::compressed);
 
-   if (!vs && !vs_compressed) {
+   if (!vs) {
       log_and_terminate("Game shader has no vertex shader!"sv);
    }
 
@@ -30,7 +28,6 @@ auto make_game_shader(shader::Rendertypes_database& database,
    if (!ps_al_oit) ps_al_oit = ps_oit;
 
    return Game_shader{.vs = std::move(vs),
-                      .vs_compressed = std::move(vs_compressed),
                       .ps = std::move(ps),
                       .ps_al = std::move(ps_al),
                       .ps_oit = std::move(ps_oit),
@@ -42,9 +39,8 @@ auto make_game_shader(shader::Rendertypes_database& database,
                       .srgb_state = metadata.srgb_state,
                       .shader_name = std::string{metadata.shader_name},
                       .vertex_shader_flags = metadata.vertex_shader_flags,
-                      .input_layouts = {std::move(vs_inputlayout), std::move(vs_bytecode)},
-                      .input_layouts_compressed = {std::move(vs_inputlayout_compressed),
-                                                   std::move(vs_bytecode_compressed)}};
+                      .input_layouts = {std::move(vs_inputlayout),
+                                        std::move(vs_bytecode)}};
 }
 
 }

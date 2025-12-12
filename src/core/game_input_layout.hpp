@@ -5,9 +5,9 @@
 namespace sp::core {
 
 struct Game_input_layout {
-   std::uint16_t layout_index;
-   bool compressed;
-   bool particle_texture_scale;
+   UINT16 layout_index;
+   bool compressed_position;
+   bool compressed_texcoords;
    bool has_vertex_weights;
 };
 

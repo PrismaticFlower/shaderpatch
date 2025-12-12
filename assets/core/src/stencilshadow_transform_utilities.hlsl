@@ -13,7 +13,7 @@ float3 unskinned_positionWS(int4 position)
 
 float3 unskinned_normalWS(unorm float4 normal)
 {
-   const float3 normalOS = normal.xyz * (255.0 / 127.0) - (128.0 / 127.0);
+   const float3 normalOS = normal.xyz * normaltex_decompress.x + normaltex_decompress.y;
 
    return mul(normalOS, (float3x3)world_matrix);
 }
@@ -33,7 +33,7 @@ float3 hard_skinned_positionWS(int4 position, int bone_index)
 
 float3 hard_skinned_normalWS(unorm float4 normal, int bone_index)
 {
-   const float3 normal_decompressed = normal.xyz * (255.0 / 127.0) - (128.0 / 127.0);
+   const float3 normal_decompressed = normal.xyz * normaltex_decompress.x + normaltex_decompress.y;
    const float3 normalOS = mul(normal_decompressed, (float3x3)bone_matrices[bone_index]);
 
    return mul(normalOS, (float3x3)world_matrix);
@@ -68,7 +68,7 @@ float3 soft_skinned_normalWS(unorm float4 normal, float4 blend_weights, int4 ble
 {
    const float4x3 skin_matrix = get_soft_skinned_matrix(blend_weights, blend_indices);
 
-   const float3 normal_decompressed = normal.xyz * (255.0 / 127.0) - (128.0 / 127.0);
+   const float3 normal_decompressed = normal.xyz * normaltex_decompress.x + normaltex_decompress.y;
    const float3 normalOS = mul(normal_decompressed, (float3x3)skin_matrix);
 
    return mul(normalOS, (float3x3)world_matrix);
