@@ -35,7 +35,7 @@ The project has several external dependencies, all of them are obtained through 
 Once building you can use `scripts/preparepackages.ps1` to create ready to zip packages of Shader Patch and it's tools.
 
 ### Debugging
-When debugging I reccomend editing the output directory of `shader_patch.vcxproj` to point to your game installation
+When debugging I recommend editing the output directory of `shader_patch.vcxproj` to point to your game installation
 directory and changing the debug command to launch SWBFII. This is the process I use and it works well for me, you just
 have to remember to revert the output directory back before making any commits.
 
