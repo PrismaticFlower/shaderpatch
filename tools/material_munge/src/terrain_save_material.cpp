@@ -186,7 +186,9 @@ auto get_req_contents(const absl::flat_hash_map<std::string, std::string>& resou
    std::vector<std::string> vec;
    vec.reserve(resources.size());
 
-   for (const auto& [key, value] : resources) vec.push_back(value);
+   for (const auto& [key, value] : resources) {
+      if (not value.empty()) vec.push_back(value);
+   }
 
    return vec;
 }
