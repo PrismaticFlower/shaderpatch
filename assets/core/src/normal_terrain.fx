@@ -176,10 +176,11 @@ float4 detailing_ps(Ps_detail_input input,
 
    // Calculate lighting.
    Lighting lighting = light::calculate(normalize(input.normalWS), input.positionWS,
-                                        input.static_lighting, shadow_ao_sample.g, true,
-                                        projection_texture_color);
+                                        input.static_lighting, shadow_ao_sample.g, false);
 
    float3 color = (lighting_factor.x > 0.0) ? lighting.color : lighting_scale.xxx;
+
+   color += projection_texture_color * light_proj_color.xyz * lighting.intensity;
 
    const float shadow_map_value = shadow_ao_sample.r;
    
