@@ -41,7 +41,7 @@
           "normal": true,
           "tangents": true,
           "tangents_unflagged": true,
-          "color": false,
+          "color": true,
           "texture_coords": true
         }
       },
