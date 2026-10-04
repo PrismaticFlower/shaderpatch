@@ -82,7 +82,14 @@ float4 main_ps(Ps_input input) : SV_Target0
    color.rgb *= brightness_scale;
    color.rgb = apply_fog(color.rgb, input.fog);
 
-   return float4(color.rgb / max(color.a, 1e-5), color.a);
+   if (color.a == 0.0) {
+      color = 0.0;
+   }
+   else {
+      color.rgb /= color.a;
+   }
+
+   return color;
 }
 
 [earlydepthstencil]
