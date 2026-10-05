@@ -49,7 +49,7 @@ void clean_chunks(ucfb::Editor_parent_chunk& root) noexcept
 
 void clean_vbufs(ucfb::Editor_parent_chunk& segm) noexcept
 {
-   Vbuf_flags ideal_vbuf{0u};
+   Vbuf_flags ideal_vbuf{0xff'ff'ff'ffu};
 
    for (auto it = ucfb::find(segm, "VBUF"_mn); it != segm.end();
         it = ucfb::find(it + 1, segm.end(), "VBUF"_mn)) {

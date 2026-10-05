@@ -46,11 +46,12 @@ auto create_index_buffer(ucfb::Reader_strict<"IBUF"_mn> ibuf,
 
          index_buffer.emplace_back(tri);
       }
-
-      return index_buffer;
+   }
+   else {
+      throw std::runtime_error{"Unsupported primitive type."};
    }
 
-   throw std::runtime_error{"Unsupported primitive type."};
+   return index_buffer;
 }
 
 auto shrink_index_buffer(const Index_buffer_32& fat_ibuf) -> Index_buffer_16
