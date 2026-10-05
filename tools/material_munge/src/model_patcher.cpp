@@ -76,6 +76,25 @@ void clean_vbufs(ucfb::Editor_parent_chunk& segm) noexcept
               segm.end());
 }
 
+auto read_primitive_type(ucfb::Editor_parent_chunk& segm) -> primitive_type
+{
+   auto info = ucfb::find(segm, "INFO"_mn);
+
+   if (info == segm.end()) {
+      throw std::runtime_error{"segm missing INFO chunk."};
+   }
+
+   switch (ucfb::Reader{info->first, std::get<ucfb::Editor_data_chunk>(info->second)}
+              .read<std::uint32_t>()) {
+   case D3DPT_TRIANGLELIST:
+      return primitive_type::triangle_list;
+   case D3DPT_TRIANGLESTRIP:
+      return primitive_type::triangle_strip;
+   default:
+      throw std::runtime_error{"Invalid primitive type for material munge."};
+   }
+}
+
 void edit_ibuf_vbufs(ucfb::Editor_parent_chunk& segm, const Material_options options,
                      const std::array<glm::vec3, 2> vert_box)
 {
@@ -84,8 +103,9 @@ void edit_ibuf_vbufs(ucfb::Editor_parent_chunk& segm, const Material_options opt
 
    auto vbuf = ucfb::find(segm, "VBUF"_mn);
 
-   auto index_buffer = create_index_buffer(
-      ucfb::make_strict_reader<"IBUF"_mn>(ucfb::find(segm, "IBUF"_mn)));
+   auto index_buffer = create_index_buffer(ucfb::make_strict_reader<"IBUF"_mn>(
+                                              ucfb::find(segm, "IBUF"_mn)),
+                                           read_primitive_type(segm));
    auto vertex_buffer =
       create_vertex_buffer(ucfb::make_strict_reader<"VBUF"_mn>(vbuf), vert_box);
 

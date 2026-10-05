@@ -434,8 +434,9 @@ auto create_terrain_model_segments(ucfb::Reader_strict<"PCHS"_mn> pchs,
                                    const std::array<glm::vec3, 2> world_bbox)
    -> std::vector<Terrain_model_segment>
 {
-   const Index_buffer_16 default_index_buffer = create_index_buffer(
-      pchs.read_child_strict<"COMN"_mn>().read_child_strict<"IBUF"_mn>());
+   const Index_buffer_16 default_index_buffer =
+      create_index_buffer(pchs.read_child_strict<"COMN"_mn>().read_child_strict<"IBUF"_mn>(),
+                          primitive_type::triangle_strip);
 
    const std::size_t patches_length = info.terrain_length / info.patch_length;
 
@@ -468,7 +469,8 @@ auto create_terrain_model_segments(ucfb::Reader_strict<"PCHS"_mn> pchs,
 
          if (auto ibuf = ptch.read_child(std::nothrow);
              ibuf and ibuf->magic_number() == "IBUF"_mn) {
-            index_buffer = create_index_buffer(ucfb::Reader_strict<"IBUF"_mn>{*ibuf});
+            index_buffer = create_index_buffer(ucfb::Reader_strict<"IBUF"_mn>{*ibuf},
+                                               primitive_type::triangle_strip);
          }
          else {
             index_buffer = default_index_buffer;
