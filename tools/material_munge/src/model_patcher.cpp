@@ -57,7 +57,7 @@ void clean_vbufs(ucfb::Editor_parent_chunk& segm) noexcept
          ucfb::Reader{it->first, std::get<ucfb::Editor_data_chunk>(it->second).span()}
             .read_multi<std::uint32_t, std::uint32_t, Vbuf_flags>();
 
-      ideal_vbuf = std::max(ideal_vbuf, flags);
+      ideal_vbuf = std::min(ideal_vbuf, flags);
    }
 
    segm.erase(std::remove_if(segm.begin(), segm.end(),
@@ -138,7 +138,7 @@ void edit_ibuf_vbufs(ucfb::Editor_parent_chunk& segm, const Material_options opt
 
       auto vbuf_writer = vbuf_editor.writer();
 
-      output_vertex_buffer(vertex_buffer, vbuf_writer, options.compressed, vert_box);
+      output_vertex_buffer(vertex_buffer, vbuf_writer, vert_box);
    }
 
    // Update INFO chunk.

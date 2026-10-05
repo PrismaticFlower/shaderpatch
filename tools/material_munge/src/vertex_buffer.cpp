@@ -199,15 +199,13 @@ void write_vertex(const Vertex_buffer& vertex_buffer, const int index,
    }
 }
 
-auto get_vbuf_flags(const Vertex_buffer& vertex_buffer, const bool compressed) noexcept
-   -> Vbuf_flags
+auto get_vbuf_flags(const Vertex_buffer& vertex_buffer) noexcept -> Vbuf_flags
 {
    Vbuf_flags flags{};
 
    if (vertex_buffer.positions) {
       flags |= Vbuf_flags::position;
-
-      if (compressed) flags |= Vbuf_flags::position_compressed;
+      flags |= Vbuf_flags::position_compressed;
    }
 
    if (vertex_buffer.blendindices) {
@@ -215,21 +213,19 @@ auto get_vbuf_flags(const Vertex_buffer& vertex_buffer, const bool compressed) n
 
       if (vertex_buffer.blendweights) {
          flags |= Vbuf_flags::blendweight;
-         if (compressed) flags |= Vbuf_flags::blendinfo_compressed;
+         flags |= Vbuf_flags::blendinfo_compressed;
       }
    }
 
    if (vertex_buffer.normals) {
       flags |= Vbuf_flags::normal;
-
-      if (compressed) flags |= Vbuf_flags::normal_compressed;
+      flags |= Vbuf_flags::normal_compressed;
    }
 
    if (vertex_buffer.tangents || vertex_buffer.bitangent_signs ||
        vertex_buffer.binormals) {
       flags |= Vbuf_flags::tangents;
-
-      if (compressed) flags |= Vbuf_flags::normal_compressed;
+      flags |= Vbuf_flags::normal_compressed;
    }
 
    if (vertex_buffer.colors && !vertex_buffer.static_lighting_colors)
@@ -240,7 +236,19 @@ auto get_vbuf_flags(const Vertex_buffer& vertex_buffer, const bool compressed) n
    if (vertex_buffer.texcoords) {
       flags |= Vbuf_flags::texcoords;
 
-      if (compressed) flags |= Vbuf_flags::texcoord_compressed;
+      for (std::size_t i = 0; i < vertex_buffer.count; ++i) {
+         const glm::vec2& texcoords = vertex_buffer.texcoords[i];
+
+         const float min_small_texcoord = -32768.0f / 2048.0f;
+         const float max_small_texcoord = 32767.0f / 2048.0f;
+
+         if (std::min(texcoords.x, texcoords.y) < min_small_texcoord or
+             std::max(texcoords.x, texcoords.y) > max_small_texcoord) {
+            flags &= ~Vbuf_flags::texcoord_compressed;
+
+            break;
+         }
+      }
    }
 
    return flags;
@@ -354,10 +362,10 @@ auto create_vertex_buffer(ucfb::Reader_strict<"VBUF"_mn> vbuf,
 }
 
 void output_vertex_buffer(const Vertex_buffer& vertex_buffer,
-                          ucfb::Editor_data_writer& writer, const bool compressed,
+                          ucfb::Editor_data_writer& writer,
                           const std::array<glm::vec3, 2> vert_box)
 {
-   const auto flags = get_vbuf_flags(vertex_buffer, compressed);
+   const auto flags = get_vbuf_flags(vertex_buffer);
    const auto stride = get_vbuf_stride(flags);
 
    writer.write(static_cast<std::uint32_t>(vertex_buffer.count), stride, flags);
