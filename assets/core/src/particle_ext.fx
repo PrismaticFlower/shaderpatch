@@ -69,12 +69,13 @@ struct Ps_input
 float4 main_ps(Ps_input input) : SV_Target0
 {
    float4 texture_color = 0.0;
+
    [branch]
    if (use_aniso_wrap_sampler) {
       texture_color = color_map.Sample(aniso_wrap_sampler, input.texcoords);
    }
    else {
-      texture_color = color_map.Sample(linear_clamp_sampler, input.texcoords);
+      texture_color = color_map.Sample(linear_wrap_sampler, input.texcoords);
    }
 
    float4 color = input.color * texture_color;
@@ -107,7 +108,7 @@ float4 blur_ps(Ps_input input, float4 positionSS : SV_Position) : SV_Target0
                                                       scene_texcoords,
                                                       0);
    
-   const float alpha = color_map.Sample(linear_clamp_sampler, input.texcoords).a;
+   const float alpha = color_map.Sample(linear_wrap_sampler, input.texcoords).a;
 
    float3 color = scene_color * input.color.rgb;
 
