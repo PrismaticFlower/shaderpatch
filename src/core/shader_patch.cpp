@@ -778,12 +778,20 @@ auto Shader_patch::create_patch_material(const std::span<const std::byte> materi
       const auto config =
          read_patch_material(ucfb::Reader_strict<"matl"_mn>{material_data});
 
-      auto material = _materials
-                         .emplace_back(std::make_unique<material::Material>(
-                            _material_factory.create_material(config)))
-                         .get();
+      std::unique_ptr<material::Material> material =
+         std::make_unique<material::Material>(_material_factory.create_material(config));
 
-      log(Log_level::info, "Loaded material "sv, std::quoted(material->name));
+      auto insert_before =
+         std::lower_bound(_materials.begin(), _materials.end(), material,
+                          [](const std::unique_ptr<material::Material>& l,
+                             const std::unique_ptr<material::Material>& r) {
+                             return _stricmp(l->name.c_str(), r->name.c_str()) < 0;
+                          });
+
+      material::Material* material_ptr =
+         _materials.insert(insert_before, std::move(material))->get();
+
+      log(Log_level::info, "Loaded material "sv, std::quoted(material_ptr->name));
 
       const auto material_deleter = [this](material::Material* material) noexcept {
          if (_patch_material == material) set_patch_material(nullptr);
@@ -801,7 +809,7 @@ auto Shader_patch::create_patch_material(const std::span<const std::byte> materi
          log_and_terminate("Attempt to destroy nonexistant material!");
       };
 
-      return {material, material_deleter};
+      return {material_ptr, material_deleter};
    }
    catch (std::exception& e) {
       log(Log_level::error, "Failed to create unknown material! reason: "sv, e.what());
