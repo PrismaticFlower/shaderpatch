@@ -26,28 +26,30 @@ struct BF2_log_entry {
 
 namespace {
 
-auto parse_log_file(const std::string_view log_file) noexcept
-   -> std::vector<BF2_log_entry>
+auto parse_log_file(std::string_view log_file) noexcept -> std::vector<BF2_log_entry>
 {
    std::vector<BF2_log_entry> results;
    results.reserve(2048);
 
-   for (auto line_rest = split_string_on(log_file, "\r\n"sv); !line_rest[1].empty();
-        line_rest = split_string_on(line_rest[1], "\r\n"sv)) {
-      if (line_rest[0].starts_with("Message Severity"sv)) {
-         const auto [file, message_rest] = split_string_on(line_rest[1], "\r\n"sv);
+   while (not log_file.empty()) {
+      auto [line, rest] = split_string_on(log_file, "\r\n"sv);
+
+      if (line.starts_with("Message Severity"sv)) {
+         const auto [file, message_rest] = split_string_on(rest, "\r\n"sv);
          const auto [message, remainder] = split_string_on(message_rest, "\r\n"sv);
 
-         line_rest[1] = remainder;
+         rest = remainder;
 
-         results.push_back({.severity = line_rest[0], .file = file, .message = message});
+         results.push_back({.severity = line, .file = file, .message = message});
       }
-      else if (line_rest[0].empty()) {
+      else if (line.empty()) {
          results.push_back({.message = "\n"sv});
       }
       else {
-         results.push_back({.message = line_rest[0]});
+         results.push_back({.message = line});
       }
+
+      log_file = rest;
    }
 
    return results;
