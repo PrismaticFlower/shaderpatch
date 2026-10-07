@@ -784,10 +784,6 @@ void User_config::parse_file(const std::string& path)
 
    developer.scalable_font_name =
       config["Developer"s]["Scalable Font Name"s].as<std::string>();
-
-   std::ofstream out{path};
-
-   out << config;
 }
 
 void User_config::save_file(const std::string& path, const std::string& temp_path)
