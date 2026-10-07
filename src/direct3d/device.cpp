@@ -1274,8 +1274,9 @@ HRESULT Device::SetIndices(IDirect3DIndexBuffer9* index_data) noexcept
 
    const auto& resource = *reinterpret_cast<Resource*>(index_data);
 
-   resource.visit(
-      [&](ID3D11Buffer* buffer) { _shader_patch.set_index_buffer(*buffer, 0); });
+   const Index_buffer_view& ibv = resource.get<Index_buffer_view>();
+
+   _shader_patch.set_index_buffer(*ibv.buffer, ibv.format);
 
    return S_OK;
 }
@@ -1437,7 +1438,7 @@ auto Device::create_vertex_buffer(const UINT size, const bool dynamic) noexcept
 {
    if (dynamic) {
       return Com_ptr{reinterpret_cast<IDirect3DVertexBuffer9*>(
-         Vertex_buffer_dynamic::create(_shader_patch, size, false).release())};
+         Vertex_buffer_dynamic::create(_shader_patch, size).release())};
    }
    else {
       return Com_ptr{reinterpret_cast<IDirect3DVertexBuffer9*>(
@@ -1448,13 +1449,25 @@ auto Device::create_vertex_buffer(const UINT size, const bool dynamic) noexcept
 auto Device::create_index_buffer(const UINT size, const bool dynamic) noexcept
    -> Com_ptr<IDirect3DIndexBuffer9>
 {
-   if (dynamic) {
-      return Com_ptr{reinterpret_cast<IDirect3DIndexBuffer9*>(
-         Index_buffer_dynamic::create(_shader_patch, size, false).release())};
+   if (_shader_patch.is_using_32bit_index_buffers()) {
+      if (dynamic) {
+         return Com_ptr{reinterpret_cast<IDirect3DIndexBuffer9*>(
+            Index_buffer_16_to_32_dynamic::create(_shader_patch, size).release())};
+      }
+      else {
+         return Com_ptr{reinterpret_cast<IDirect3DIndexBuffer9*>(
+            Index_buffer_16_to_32_managed::create(_shader_patch, size).release())};
+      }
    }
    else {
-      return Com_ptr{reinterpret_cast<IDirect3DIndexBuffer9*>(
-         Index_buffer_managed::create(_shader_patch, size).release())};
+      if (dynamic) {
+         return Com_ptr{reinterpret_cast<IDirect3DIndexBuffer9*>(
+            Index_buffer_16_dynamic::create(_shader_patch, size).release())};
+      }
+      else {
+         return Com_ptr{reinterpret_cast<IDirect3DIndexBuffer9*>(
+            Index_buffer_16_managed::create(_shader_patch, size).release())};
+      }
    }
 }
 

@@ -219,6 +219,14 @@ R"(Like Enable User Effects Config except SP will automatically check for a conf
 R"(Force using Direct3D 11 on 12 instead of the any native Direct3D 11 driver. This can workaround bugs in the D3D11 driver. It is likely that turning this on will cost some performance however. CMAA2 is also broken while using this (unsure why, there are no debug layer errors from D3D11 or D3D12 about it).)"sv
 },
 
+
+{
+"Index Buffer Bit Width"sv,      
+R"(Sets the bit width that will be used for mesh index buffers by Shader Patch. 
+
+This is used to work around issues with Shader Patch and some GPU drivers. There should be no reason to change this from Auto, which tells Shader Patch to use the ideal setting. Other values are "Force 16-Bit" and "Force 32-Bit".)"sv
+},
+
 {
 "Effects"sv,      
 R"(Settings for the Effects system, which allows modders to apply various effects to their mods at their discretion and configuration. Below are options provided to tweak the performance of this system for low-end/older GPUs.)"sv

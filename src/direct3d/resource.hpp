@@ -9,6 +9,11 @@
 
 namespace sp::d3d9 {
 
+struct Index_buffer_view {
+   ID3D11Buffer* buffer = nullptr;
+   DXGI_FORMAT format = DXGI_FORMAT_UNKNOWN;
+};
+
 class Resource : public IUnknown {
 public:
    virtual HRESULT __stdcall QueryInterface(const IID& iid, void** obj) noexcept = 0;
@@ -37,7 +42,7 @@ public:
 
    using Resource_variant =
       std::variant<std::monostate, core::Game_texture, core::Game_rendertarget_id,
-                   ID3D11Buffer*, core::Game_depthstencil, core::Texture_handle,
+                   ID3D11Buffer*, Index_buffer_view, core::Game_depthstencil, core::Texture_handle,
                    core::Material_handle, core::Patch_effects_config_handle>;
 
    template<typename Type>

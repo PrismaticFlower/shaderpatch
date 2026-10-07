@@ -291,6 +291,38 @@ auto aspect_ratio_hud_from_string_view(const std::string_view string) noexcept -
    }
 }
 
+auto to_string_view(const Index_buffer_width quality) noexcept -> std::string_view
+{
+   using namespace std::literals;
+
+   switch (quality) {
+   case Index_buffer_width::_auto:
+      return "Auto"sv;
+   case Index_buffer_width::_force_16:
+      return "Force 16-Bit"sv;
+   case Index_buffer_width::_force_32:
+      return "Force 32-Bit"sv;
+   }
+
+   std::terminate();
+}
+
+auto index_buffer_width_from_string_view(const std::string_view string) noexcept
+   -> Index_buffer_width
+{
+   if (string == to_string_view(Index_buffer_width::_auto)) {
+      return Index_buffer_width::_auto;
+   }
+   else if (string == to_string_view(Index_buffer_width::_force_16)) {
+      return Index_buffer_width::_force_16;
+   }
+   else if (string == to_string_view(Index_buffer_width::_force_32)) {
+      return Index_buffer_width::_force_32;
+   }
+
+   return Index_buffer_width::_auto;
+}
+
 }
 
 using namespace std::literals;
@@ -456,6 +488,27 @@ void User_config::show_imgui() noexcept
                                  &graphics.enable_user_effects_auto_config);
 
       MarkProperty("Enable Auto User Effects Config");
+
+      if (ImGui::BeginCombo("Index Buffer Bit Width",
+                            to_string_view(graphics.index_buffer_width).data())) {
+         for (const Index_buffer_width width :
+              {Index_buffer_width::_auto, Index_buffer_width::_force_16,
+               Index_buffer_width::_force_32}) {
+            if (ImGui::Selectable(to_string_view(width).data(),
+                                  width == graphics.index_buffer_width)) {
+               graphics.index_buffer_width = width;
+               changed = true;
+            }
+         }
+
+         ImGui::EndCombo();
+      }
+
+      if (ImGui::IsItemHovered()) {
+         ImGui::SetTooltip("Changes won't take affect until the next map.");
+      }
+
+      MarkProperty("Index Buffer Bit Width");
    }
 
    if (ImGui::CollapsingHeader("Effects", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -676,6 +729,10 @@ void User_config::parse_file(const std::string& path)
    graphics.use_d3d11on12 =
       config["Graphics"s]["Use Direct3D 11 on 12"s].as<bool>(graphics.use_d3d11on12);
 
+   graphics.index_buffer_width = index_buffer_width_from_string_view(
+      config["Graphics"s]["Index Buffer Bit Width"s].as<std::string_view>(
+         to_string_view(graphics.index_buffer_width)));
+
    effects.bloom = config["Effects"s]["Bloom"s].as<bool>(effects.bloom);
 
    effects.vignette = config["Effects"s]["Vignette"s].as<bool>(effects.vignette);
@@ -841,6 +898,7 @@ void User_config::save_file(const std::string& path, const std::string& temp_pat
       write_value("Enable Auto User Effects Config",
                   printify(graphics.enable_user_effects_auto_config));
       write_value("Use Direct3D 11 on 12", printify(graphics.use_d3d11on12));
+      write_value("Index Buffer Bit Width", printify(graphics.index_buffer_width));
 
       out << "Effects: "sv << line_break;
 
