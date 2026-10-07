@@ -15,25 +15,40 @@ constexpr bool is_degenerate_triangle(const std::array<std::uint16_t, 3> triangl
 
 }
 
-auto create_index_buffer(ucfb::Reader_strict<"IBUF"_mn> ibuf) -> Index_buffer_16
+auto create_index_buffer(ucfb::Reader_strict<"IBUF"_mn> ibuf,
+                         const primitive_type type) -> Index_buffer_16
 {
    const auto index_count = ibuf.read<std::uint32_t>();
 
    if (index_count < 3) return {};
 
    std::vector<std::array<std::uint16_t, 3>> index_buffer;
-   index_buffer.reserve(index_count);
 
-   auto strips = ibuf.read_array<std::uint16_t>(index_count);
+   if (type == primitive_type::triangle_list) {
+      index_buffer.resize(index_count / 3);
 
-   for (auto i = 0; i < (index_count - 2); ++i) {
-      const bool even = (i & 1) == 0;
-      const auto tri = even ? std::array{strips[i], strips[i + 1], strips[i + 2]}
-                            : std::array{strips[i + 2], strips[i + 1], strips[i]};
+      std::ranges::copy(ibuf.read_array<std::array<std::uint16_t, 3>>(
+                           index_buffer.size()),
+                        index_buffer.begin());
+   }
+   else if (type == primitive_type::triangle_strip) {
+      index_buffer.reserve(index_count);
 
-      if (is_degenerate_triangle(tri)) continue;
+      auto strips = ibuf.read_array<std::uint16_t>(index_count);
 
-      index_buffer.emplace_back(tri);
+      for (auto i = 0; i < (index_count - 2); ++i) {
+         const bool even = (i & 1) == 0;
+         const auto tri =
+            even ? std::array{strips[i], strips[i + 1], strips[i + 2]}
+                 : std::array{strips[i + 2], strips[i + 1], strips[i]};
+
+         if (is_degenerate_triangle(tri)) continue;
+
+         index_buffer.emplace_back(tri);
+      }
+   }
+   else {
+      throw std::runtime_error{"Unsupported primitive type."};
    }
 
    return index_buffer;

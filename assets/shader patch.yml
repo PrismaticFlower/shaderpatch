@@ -198,6 +198,13 @@ Graphics:
    # about it).
    Use Direct3D 11 on 12: no
 
+   # Sets the bit width that will be used for mesh index buffers by Shader Patch.
+   # 
+   # This is used to work around issues with Shader Patch and some GPU drivers. There should be no
+   # reason to change this from Auto, which tells Shader Patch to use the ideal setting. Other values are
+   # "Force 16-Bit" and "Force 32-Bit".
+   Index Buffer Bit Width: Auto
+
 Effects: 
 
    # Enable or disable a mod using the Bloom effect. This effect is can have a slight performance

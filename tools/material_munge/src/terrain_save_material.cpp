@@ -186,7 +186,9 @@ auto get_req_contents(const absl::flat_hash_map<std::string, std::string>& resou
    std::vector<std::string> vec;
    vec.reserve(resources.size());
 
-   for (const auto& [key, value] : resources) vec.push_back(value);
+   for (const auto& [key, value] : resources) {
+      if (not value.empty()) vec.push_back(value);
+   }
 
    return vec;
 }
@@ -210,16 +212,6 @@ void terrain_save_material(const Terrain_materials_config& config,
    mtrl.resources = select_textures(config, suffix);
 
    const auto req_contents = get_req_contents(mtrl.resources);
-
-   write_patch_material(output_munge_files_dir / mtrl.name += ".material"sv, mtrl);
-   emit_req_file(output_munge_files_dir / mtrl.name += ".material.req"sv,
-                 {{"sptex"s, req_contents}});
-
-   // Save low detail material
-
-   mtrl.name += terrain_low_detail_suffix;
-   mtrl.properties =
-      create_properties(config, texture_transforms, textures_order, true);
 
    write_patch_material(output_munge_files_dir / mtrl.name += ".material"sv, mtrl);
    emit_req_file(output_munge_files_dir / mtrl.name += ".material.req"sv,

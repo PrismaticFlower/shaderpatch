@@ -121,6 +121,11 @@ struct user_config {
                              L"Enabled", L"Disabled"},
 
       bool_user_config_value{L"Use Direct3D 11 on 12", false, L"Yes", L"No"},
+
+      enum_user_config_value{L"Index Buffer Bit Width",
+                             L"Auto",
+                             {L"Auto", L"Force 16-Bit", L"Force 32-Bit"}},
+
    };
 
    user_config_value_vector effects = {

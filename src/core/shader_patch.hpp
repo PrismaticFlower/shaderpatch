@@ -187,7 +187,7 @@ public:
    void clear_depthstencil(const float z, const UINT8 stencil,
                            const bool clear_depth, const bool clear_stencil) noexcept;
 
-   void set_index_buffer(ID3D11Buffer& buffer, const UINT offset) noexcept;
+   void set_index_buffer(ID3D11Buffer& buffer, const DXGI_FORMAT format) noexcept;
 
    void set_vertex_buffer(ID3D11Buffer& buffer, const UINT offset,
                           const UINT stride) noexcept;
@@ -255,6 +255,8 @@ public:
                        std::span<std::byte> data) noexcept -> Query_result;
 
    void force_shader_cache_save_to_disk() noexcept;
+
+   bool is_using_32bit_index_buffers() noexcept;
 
 private:
    auto current_depthstencil(const bool readonly) const noexcept
@@ -381,7 +383,7 @@ private:
    material::Material* _patch_material = nullptr;
 
    Com_ptr<ID3D11Buffer> _game_index_buffer;
-   UINT _game_index_buffer_offset = 0;
+   DXGI_FORMAT _game_index_buffer_format = DXGI_FORMAT_UNKNOWN;
    Com_ptr<ID3D11Buffer> _game_vertex_buffer;
    UINT _game_vertex_buffer_offset = 0;
    UINT _game_vertex_buffer_stride = 0;
@@ -447,6 +449,8 @@ private:
    bool _aspect_ratio_hack_enabled = false;
    bool _imgui_enabled = false;
    bool _screenshot_requested = false;
+
+   bool _is_amd_gpu = false;
 
    Small_function<void(Game_rendertarget&, const Normalized_rect&,
                        Game_rendertarget&, const Normalized_rect&) noexcept>

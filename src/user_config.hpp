@@ -50,6 +50,12 @@ enum class DOF_quality {
    ultra_quality
 };
 
+enum class Index_buffer_width : std::int8_t {
+   _auto,
+   _force_16,
+   _force_32,
+};
+
 struct Effects_user_config {
    bool bloom = true;
    bool vignette = true;
@@ -109,6 +115,7 @@ struct User_config {
       bool supersample_alpha_test = false;
       bool allow_vertex_soft_skinning = false;
       bool use_d3d11on12 = false;
+      Index_buffer_width index_buffer_width = Index_buffer_width::_auto;
       std::string user_effects_config;
    } graphics;
 

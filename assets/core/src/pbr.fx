@@ -202,7 +202,12 @@ Ps_output main_ps(Ps_input input)
       alpha = lerp(1.0, albedo_map_color.a, blend_constant.b);
       alpha *= input.fade;
 
-      color /= max(alpha, 1e-5);
+      if (alpha == 0.0) {
+         color = 0.0;
+      }
+      else {
+         color /= alpha;
+      }
    }
    else {
       alpha = saturate(input.fade);

@@ -127,7 +127,17 @@ void show_editor(Factory& factory,
                  const std::vector<std::unique_ptr<Material>>& materials) noexcept
 {
    if (ImGui::Begin("Materials")) {
+      static ImGuiTextFilter filter;
+
+      filter.Draw();
+
+      ImGui::Separator();
+
       for (auto& material : materials) {
+         if (not filter.PassFilter(material->name.data(),
+                                   material->name.data() + material->name.size()))
+            continue;
+
          if (ImGui::TreeNode(material->name.c_str())) {
             material_editor(factory, *material);
             ImGui::TreePop();

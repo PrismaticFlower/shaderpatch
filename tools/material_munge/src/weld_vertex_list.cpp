@@ -1,20 +1,129 @@
 
 #include "weld_vertex_list.hpp"
 
-#include <execution>
-#include <mutex>
+#include <absl/container/flat_hash_map.h>
 
-#include <gsl/gsl>
+#include <bit>
 
 namespace sp {
 
 namespace {
 
-constexpr auto pos_max_diff = 0.00025f;
-constexpr auto normal_threshold = 1.0f - (1.f / 128.5f);
-constexpr auto texcoords_max_diff = 1.f / 2048.f;
-constexpr auto terrain_blend_threshold = (1.f / 255.5f);
-constexpr auto terrain_color_threshold = (1.f / 255.5f);
+struct Hashable_float {
+   Hashable_float() = default;
+
+   Hashable_float(const float v)
+   {
+      _v = (v == 0.0f or v != v) ? 0 : std::bit_cast<std::uint32_t>(v);
+   }
+
+   bool operator==(const Hashable_float&) const noexcept = default;
+
+   template<typename H>
+   friend H AbslHashValue(H h, const Hashable_float& cached)
+   {
+      return H::combine(std::move(h), cached._v);
+   }
+
+private:
+   uint32_t _v = 0;
+};
+
+struct Hashable_vec2 {
+   Hashable_vec2() = default;
+
+   Hashable_vec2(const glm::vec2& v)
+   {
+      _x = (v.x == 0.0f or v.x != v.x) ? 0 : std::bit_cast<std::uint32_t>(v.x);
+      _y = (v.y == 0.0f or v.y != v.y) ? 0 : std::bit_cast<std::uint32_t>(v.y);
+   }
+
+   bool operator==(const Hashable_vec2&) const noexcept = default;
+
+   template<typename H>
+   friend H AbslHashValue(H h, const Hashable_vec2& cached)
+   {
+      return H::combine(std::move(h), cached._x, cached._y);
+   }
+
+private:
+   uint32_t _x = 0;
+   uint32_t _y = 0;
+};
+
+struct Hashable_vec3 {
+   Hashable_vec3() = default;
+
+   Hashable_vec3(const glm::vec3& v)
+   {
+      _x = (v.x == 0.0f or v.x != v.x) ? 0 : std::bit_cast<std::uint32_t>(v.x);
+      _y = (v.y == 0.0f or v.y != v.y) ? 0 : std::bit_cast<std::uint32_t>(v.y);
+      _z = (v.z == 0.0f or v.z != v.z) ? 0 : std::bit_cast<std::uint32_t>(v.z);
+   }
+
+   bool operator==(const Hashable_vec3&) const noexcept = default;
+
+   template<typename H>
+   friend H AbslHashValue(H h, const Hashable_vec3& cached)
+   {
+      return H::combine(std::move(h), cached._x, cached._y, cached._z);
+   }
+
+private:
+   uint32_t _x = 0;
+   uint32_t _y = 0;
+   uint32_t _z = 0;
+};
+
+struct Vertex {
+   Hashable_vec3 position = {};
+   std::uint32_t blendindices = 0;
+   Hashable_vec3 blendweights = {};
+   Hashable_vec3 normal = {};
+   Hashable_vec3 tangent = {};
+   Hashable_float bitangent_sign = {};
+   Hashable_vec3 binormal = {};
+   std::uint32_t color = 0;
+   std::uint32_t static_lighting_color = 0;
+   Hashable_vec2 texcoords = {};
+
+   Vertex(const Vertex_buffer& vbuf, std::size_t index)
+   {
+      if (index >= vbuf.count) return;
+
+      if (vbuf.positions) position = vbuf.positions[index];
+
+      if (vbuf.blendindices) blendindices = vbuf.blendindices[index];
+
+      if (vbuf.blendweights) blendweights = vbuf.blendweights[index];
+
+      if (vbuf.normals) normal = vbuf.normals[index];
+
+      if (vbuf.tangents) tangent = vbuf.tangents[index];
+
+      if (vbuf.bitangent_signs) bitangent_sign = vbuf.bitangent_signs[index];
+
+      if (vbuf.binormals) binormal = vbuf.binormals[index];
+
+      if (vbuf.colors) color = vbuf.colors[index];
+
+      if (vbuf.static_lighting_colors) {
+         static_lighting_color = vbuf.static_lighting_colors[index];
+      }
+
+      if (vbuf.texcoords) texcoords = vbuf.texcoords[index];
+   }
+
+   bool operator==(const Vertex&) const noexcept = default;
+
+   template<typename H>
+   friend H AbslHashValue(H h, const Vertex& v)
+   {
+      return H::combine(std::move(h), v.position, v.blendindices, v.blendweights,
+                        v.normal, v.tangent, v.bitangent_sign, v.binormal,
+                        v.color, v.static_lighting_color, v.texcoords);
+   }
+};
 
 auto init_vertex_buffer(const Vertex_buffer& old_vbuf) noexcept -> Vertex_buffer
 {
@@ -54,8 +163,8 @@ auto init_vertex_buffer(const Vertex_buffer& old_vbuf) noexcept -> Vertex_buffer
    return vertex_buffer;
 }
 
-auto push_back_vertex(const Vertex_buffer& src_vbuf, const int src_index,
-                      Vertex_buffer& dest_vbuf) noexcept -> int
+auto push_back_vertex(const Vertex_buffer& src_vbuf, const std::size_t src_index,
+                      Vertex_buffer& dest_vbuf) noexcept -> std::uint16_t
 {
    const auto index = dest_vbuf.count;
 
@@ -88,128 +197,9 @@ auto push_back_vertex(const Vertex_buffer& src_vbuf, const int src_index,
    if (src_vbuf.texcoords)
       dest_vbuf.texcoords[index] = src_vbuf.texcoords[src_index];
 
-   return gsl::narrow_cast<int>(dest_vbuf.count++);
+   return static_cast<std::uint16_t>(dest_vbuf.count++);
 }
 
-bool is_vertex_similar(const Vertex_buffer& left_vbuf, const int left_index,
-                       const Vertex_buffer& right_vbuf, const int right_index) noexcept
-{
-   if (left_vbuf.positions) {
-      if (glm::distance(left_vbuf.positions[left_index],
-                        right_vbuf.positions[right_index]) > pos_max_diff)
-         return false;
-   }
-
-   if (left_vbuf.blendindices) {
-      if (left_vbuf.blendindices[left_index] != right_vbuf.blendindices[right_index])
-         return false;
-   }
-
-   if (left_vbuf.blendweights) {
-      if (left_vbuf.blendweights[left_index] != right_vbuf.blendweights[right_index])
-         return false;
-   }
-
-   if (left_vbuf.normals) {
-      if (glm::dot(left_vbuf.normals[left_index],
-                   right_vbuf.normals[right_index]) < normal_threshold)
-         return false;
-   }
-
-   if (left_vbuf.tangents) {
-      if (glm::dot(left_vbuf.tangents[left_index],
-                   right_vbuf.tangents[right_index]) < normal_threshold)
-         return false;
-   }
-
-   if (left_vbuf.bitangent_signs) {
-      if (left_vbuf.bitangent_signs[left_index] > right_vbuf.bitangent_signs[right_index])
-         return false;
-   }
-
-   if (left_vbuf.binormals) {
-      if (glm::dot(left_vbuf.binormals[left_index],
-                   right_vbuf.binormals[right_index]) < normal_threshold)
-         return false;
-   }
-
-   if (left_vbuf.colors) {
-      if (left_vbuf.colors[left_index] != right_vbuf.colors[right_index])
-         return false;
-   }
-
-   if (left_vbuf.static_lighting_colors) {
-      if (left_vbuf.static_lighting_colors[left_index] !=
-          right_vbuf.static_lighting_colors[right_index])
-         return false;
-   }
-
-   if (left_vbuf.texcoords) {
-      if (glm::distance(left_vbuf.texcoords[left_index],
-                        right_vbuf.texcoords[right_index]) > texcoords_max_diff)
-         return false;
-   }
-
-   return true;
-}
-
-bool is_vertex_similar(const Terrain_vertex& left, const Terrain_vertex& right) noexcept
-{
-   if (left.texture_indices != right.texture_indices) return false;
-
-   if (glm::distance(left.position, right.position) > pos_max_diff)
-      return false;
-
-   if (glm::any(glm::greaterThan(glm::vec2{glm::distance(left.texture_blend[0],
-                                                         right.texture_blend[0]),
-                                           glm::distance(left.texture_blend[1],
-                                                         right.texture_blend[1])},
-                                 glm::vec2{terrain_blend_threshold})))
-      return false;
-
-   if (glm::any(glm::greaterThan(glm::abs(right.diffuse_lighting - left.diffuse_lighting),
-                                 glm::vec3{terrain_color_threshold})))
-      return false;
-
-   if (glm::any(glm::greaterThan(glm::abs(right.base_color - left.base_color),
-                                 glm::vec3{terrain_color_threshold})))
-      return false;
-
-   return false;
-}
-
-auto find_similar_vertex(const Vertex_buffer& ref_vbuf, const int ref_index,
-                         const Vertex_buffer& in_vbuf) noexcept -> int
-{
-   for (auto v = 0; v < in_vbuf.count; ++v) {
-      if (is_vertex_similar(ref_vbuf, ref_index, in_vbuf, v)) return v;
-   }
-
-   return -1;
-}
-
-auto find_similar_vertex(const Terrain_vertex& ref_vertex,
-                         const Terrain_vertex_buffer& vertices) noexcept -> int
-{
-   for (auto v = 0; v < vertices.size(); ++v) {
-      if (is_vertex_similar(ref_vertex, vertices[v])) return v;
-   }
-
-   return -1;
-}
-
-auto add_terrain_vertex(Terrain_vertex_buffer& buffer, const Terrain_vertex& vertex)
-   -> std::uint32_t
-{
-   if (const auto index = find_similar_vertex(vertex, buffer); index != -1) {
-      return static_cast<std::uint32_t>(index);
-   }
-   else {
-      buffer.push_back(vertex);
-
-      return static_cast<std::uint32_t>(buffer.size() - 1);
-   }
-}
 }
 
 auto weld_vertex_list(const Vertex_buffer& vertex_buffer) noexcept
@@ -220,44 +210,27 @@ auto weld_vertex_list(const Vertex_buffer& vertex_buffer) noexcept
    Index_buffer_16 ibuf;
    auto welded_vbuf = init_vertex_buffer(vertex_buffer);
 
+   absl::flat_hash_map<Vertex, std::uint16_t> vertex_cache;
+   vertex_cache.reserve(vertex_buffer.count);
+
    const auto face_count = vertex_buffer.count / 3u;
 
-   for (auto f = 0; f < face_count; ++f) {
+   for (std::size_t f = 0; f < face_count; ++f) {
       auto& tri_index = ibuf.emplace_back();
 
-      for (auto v = 0; v < 3; ++v) {
-         if (const auto index =
-                find_similar_vertex(vertex_buffer, f * 3 + v, welded_vbuf);
-             index != -1) {
-            tri_index[v] = static_cast<std::uint16_t>(index);
+      for (std::size_t v = 0; v < 3; ++v) {
+         if (const auto it = vertex_cache.find(Vertex{vertex_buffer, f * 3 + v});
+             it != vertex_cache.end()) {
+            tri_index[v] = it->second;
          }
          else {
-            tri_index[v] = static_cast<std::uint16_t>(
-               push_back_vertex(vertex_buffer, f * 3 + v, welded_vbuf));
+            tri_index[v] = push_back_vertex(vertex_buffer, f * 3 + v, welded_vbuf);
+
+            vertex_cache.emplace(Vertex{vertex_buffer, f * 3 + v}, tri_index[v]);
          }
       }
    }
 
    return {std::move(ibuf), std::move(welded_vbuf)};
-}
-
-auto weld_vertex_list(const Terrain_triangle_list& triangles) noexcept
-   -> std::pair<Index_buffer_32, Terrain_vertex_buffer>
-{
-   Expects((triangles.size() * 3) < std::numeric_limits<std::int32_t>::max());
-
-   std::pair<Index_buffer_32, Terrain_vertex_buffer> result;
-   auto& [indices, vertices] = result;
-
-   vertices.reserve(triangles.size() * 3);
-   indices.reserve(triangles.size());
-
-   for (auto& tri : triangles) {
-      indices.push_back({add_terrain_vertex(vertices, tri[0]),
-                         add_terrain_vertex(vertices, tri[1]),
-                         add_terrain_vertex(vertices, tri[2])});
-   }
-
-   return result;
 }
 }

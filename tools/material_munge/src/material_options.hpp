@@ -15,7 +15,6 @@ struct Material_options {
    std::optional<bool> forced_hard_edged_value = std::nullopt;
    std::optional<bool> forced_double_sided_value = std::nullopt;
    std::optional<bool> forced_unlit_value = std::nullopt;
-   bool compressed = true;
    bool generate_tangents = true;
 };
 
@@ -25,7 +24,6 @@ inline void to_json(nlohmann::json& j, const Material_options& options)
                       {"hard_edged", options.hard_edged},
                       {"double_sided", options.double_sided},
                       {"unlit", options.unlit},
-                      {"compressed", options.compressed},
                       {"generate_tangents", options.generate_tangents}};
 
    if (options.forced_transparent_value) {
@@ -50,7 +48,6 @@ inline void from_json(const nlohmann::json& j, Material_options& options)
    options.hard_edged = j.at("hard_edged"s).get<bool>();
    options.double_sided = j.at("double_sided"s).get<bool>();
    options.unlit = j.at("unlit"s).get<bool>();
-   options.compressed = j.at("compressed"s).get<bool>();
    options.generate_tangents = j.at("generate_tangents"s).get<bool>();
 
    if (j.contains("forced_transparent_value"s)) {

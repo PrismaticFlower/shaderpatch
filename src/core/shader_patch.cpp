@@ -250,6 +250,15 @@ Shader_patch::Shader_patch(IDXGIAdapter4& adapter, const HWND window,
 
    shadows::shadow_world.initialize(*_device, _shader_database);
    _device_context->BeginEventInt(L"<pre render>", 0);
+
+   if (DXGI_ADAPTER_DESC adapter_desc{}; SUCCEEDED(adapter.GetDesc(&adapter_desc))) {
+      _is_amd_gpu = adapter_desc.VendorId == 0x1002;
+   }
+
+   if (_is_amd_gpu and
+       user_config.graphics.index_buffer_width == Index_buffer_width::_auto) {
+      log_fmt(Log_level::info, "AMD GPU Detected. Using 32-bit index buffers.");
+   }
 }
 
 Shader_patch::~Shader_patch()
@@ -286,7 +295,7 @@ void Shader_patch::reset(const Reset_flags flags, const UINT render_width,
    _game_shader = nullptr;
    _game_textures = {};
    _game_stencil_ref = 0xff;
-   _game_index_buffer_offset = 0;
+   _game_index_buffer_format = DXGI_FORMAT_UNKNOWN;
    _game_vertex_buffer_offset = 0;
    _game_vertex_buffer_stride = 0;
    _game_index_buffer = nullptr;
@@ -834,12 +843,20 @@ auto Shader_patch::create_patch_material(const std::span<const std::byte> materi
       const auto config =
          read_patch_material(ucfb::Reader_strict<"matl"_mn>{material_data});
 
-      auto material = _materials
-                         .emplace_back(std::make_unique<material::Material>(
-                            _material_factory.create_material(config)))
-                         .get();
+      std::unique_ptr<material::Material> material =
+         std::make_unique<material::Material>(_material_factory.create_material(config));
 
-      log(Log_level::info, "Loaded material "sv, std::quoted(material->name));
+      auto insert_before =
+         std::lower_bound(_materials.begin(), _materials.end(), material,
+                          [](const std::unique_ptr<material::Material>& l,
+                             const std::unique_ptr<material::Material>& r) {
+                             return _stricmp(l->name.c_str(), r->name.c_str()) < 0;
+                          });
+
+      material::Material* material_ptr =
+         _materials.insert(insert_before, std::move(material))->get();
+
+      log(Log_level::info, "Loaded material "sv, std::quoted(material_ptr->name));
 
       const auto material_deleter = [this](material::Material* material) noexcept {
          if (_patch_material == material) set_patch_material(nullptr);
@@ -857,7 +874,7 @@ auto Shader_patch::create_patch_material(const std::span<const std::byte> materi
          log_and_terminate("Attempt to destroy nonexistant material!");
       };
 
-      return {material, material_deleter};
+      return {material_ptr, material_deleter};
    }
    catch (std::exception& e) {
       log(Log_level::error, "Failed to create unknown material! reason: "sv, e.what());
@@ -1184,10 +1201,10 @@ void Shader_patch::clear_depthstencil(const float depth, const UINT8 stencil,
    _device_context->ClearDepthStencilView(dsv, clear_flags, depth, stencil);
 }
 
-void Shader_patch::set_index_buffer(ID3D11Buffer& buffer, const UINT offset) noexcept
+void Shader_patch::set_index_buffer(ID3D11Buffer& buffer, const DXGI_FORMAT format) noexcept
 {
    _game_index_buffer = copy_raw_com_ptr(buffer);
-   _game_index_buffer_offset = offset;
+   _game_index_buffer_format = format;
    _ia_index_buffer_dirty = true;
 }
 
@@ -1516,6 +1533,18 @@ auto Shader_patch::get_query_data(ID3D11Query& query, const bool flush,
 void Shader_patch::force_shader_cache_save_to_disk() noexcept
 {
    _shader_database.force_cache_save_to_disk();
+}
+
+bool Shader_patch::is_using_32bit_index_buffers() noexcept
+{
+   switch (user_config.graphics.index_buffer_width) {
+   case Index_buffer_width::_auto:
+      return _is_amd_gpu;
+   case Index_buffer_width::_force_32:
+      return true;
+   }
+
+   return false;
 }
 
 auto Shader_patch::current_depthstencil(const bool readonly) const noexcept
@@ -2408,8 +2437,8 @@ void Shader_patch::update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primit
       _device_context->IASetPrimitiveTopology(_primitive_topology);
 
    if (std::exchange(_ia_index_buffer_dirty, false)) {
-      _device_context->IASetIndexBuffer(_game_index_buffer.get(), DXGI_FORMAT_R16_UINT,
-                                        _game_index_buffer_offset);
+      _device_context->IASetIndexBuffer(_game_index_buffer.get(),
+                                        _game_index_buffer_format, 0);
    }
 
    if (std::exchange(_ia_vertex_buffer_dirty, false)) {

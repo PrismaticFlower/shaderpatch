@@ -85,7 +85,7 @@ struct Ps_normal_input
 
 float4 normal_ps(Ps_normal_input input) : SV_Target0
 {
-   const float4 diffuse_color = particle_texture.Sample(linear_clamp_sampler, input.texcoords);
+   const float4 diffuse_color = particle_texture.Sample(linear_wrap_sampler, input.texcoords);
 
    float4 color = diffuse_color * input.color;
 
@@ -109,7 +109,7 @@ float4 blur_ps(Ps_blur_input input) : SV_Target0
                                                       blur_texcoords,
                                                       0);
    
-   const float alpha = particle_texture.Sample(linear_clamp_sampler, input.texcoords).a;
+   const float alpha = particle_texture.Sample(linear_wrap_sampler, input.texcoords).a;
 
    float3 color = scene_color * input.color.rgb;
 

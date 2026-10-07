@@ -128,8 +128,13 @@ Ps_output main_ps(Vs_output input)
    if (use_transparency) {
       color.a = lerp(1.0, color.a, blend_constant.b);
       color.a = saturate(color.a * input.fade);
-
-      color.rgb /= max(color.a, 1e-5);
+      
+      if (color.a == 0.0) {
+         color = 0.0;
+      }
+      else {
+         color.rgb /= color.a;
+      }
    }
    else {
       color.a = saturate(input.fade);

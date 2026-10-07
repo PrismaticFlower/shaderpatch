@@ -181,8 +181,6 @@ auto read_desc_material_options(const YAML::Node& node, Material_options& materi
          material_options.forced_double_sided_value = opt.second.as<bool>();
       else if (key == "Unlit"s)
          material_options.forced_unlit_value = opt.second.as<bool>();
-      else if (key == "Compressed"s)
-         material_options.compressed = opt.second.as<bool>();
       else if (key == "Generate Tangents"s)
          material_options.generate_tangents = opt.second.as<bool>();
       else
