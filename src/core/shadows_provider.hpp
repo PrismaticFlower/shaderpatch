@@ -54,7 +54,7 @@ public:
       D3D11_PRIMITIVE_TOPOLOGY primitive_topology;
 
       ID3D11Buffer& index_buffer;
-      UINT index_buffer_offset;
+      DXGI_FORMAT index_buffer_format;
 
       ID3D11Buffer& vertex_buffer;
       UINT vertex_buffer_offset;
@@ -71,7 +71,7 @@ public:
       D3D11_PRIMITIVE_TOPOLOGY primitive_topology;
 
       ID3D11Buffer& index_buffer;
-      UINT index_buffer_offset;
+      DXGI_FORMAT index_buffer_format;
 
       ID3D11Buffer& vertex_buffer;
       UINT vertex_buffer_offset;
@@ -94,7 +94,7 @@ public:
       D3D11_PRIMITIVE_TOPOLOGY primitive_topology;
 
       ID3D11Buffer& index_buffer;
-      UINT index_buffer_offset;
+      DXGI_FORMAT index_buffer_format;
 
       ID3D11Buffer& vertex_buffer;
       UINT vertex_buffer_offset;
@@ -118,7 +118,7 @@ public:
       D3D11_PRIMITIVE_TOPOLOGY primitive_topology;
 
       ID3D11Buffer& index_buffer;
-      UINT index_buffer_offset;
+      DXGI_FORMAT index_buffer_format;
 
       ID3D11Buffer& vertex_buffer;
       UINT vertex_buffer_offset;
@@ -215,7 +215,7 @@ private:
       D3D11_PRIMITIVE_TOPOLOGY primitive_topology;
 
       Com_ptr<ID3D11Buffer> index_buffer;
-      UINT index_buffer_offset;
+      DXGI_FORMAT index_buffer_format;
 
       Com_ptr<ID3D11Buffer> vertex_buffer;
       UINT vertex_buffer_offset;
@@ -234,7 +234,7 @@ private:
       D3D11_PRIMITIVE_TOPOLOGY primitive_topology;
 
       Com_ptr<ID3D11Buffer> index_buffer;
-      UINT index_buffer_offset;
+      DXGI_FORMAT index_buffer_format;
 
       Com_ptr<ID3D11Buffer> vertex_buffer;
       UINT vertex_buffer_offset;

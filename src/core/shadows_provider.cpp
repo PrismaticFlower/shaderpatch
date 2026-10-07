@@ -423,7 +423,7 @@ void Shadows_provider::add_mesh(ID3D11DeviceContext4& dc, const Input_mesh& mesh
       .primitive_topology = mesh.primitive_topology,
 
       .index_buffer = copy_raw_com_ptr(mesh.index_buffer),
-      .index_buffer_offset = mesh.index_buffer_offset,
+      .index_buffer_format = mesh.index_buffer_format,
 
       .vertex_buffer = copy_raw_com_ptr(mesh.vertex_buffer),
       .vertex_buffer_offset = mesh.vertex_buffer_offset,
@@ -456,7 +456,7 @@ void Shadows_provider::add_mesh_compressed(ID3D11DeviceContext4& dc,
       .primitive_topology = mesh.primitive_topology,
 
       .index_buffer = copy_raw_com_ptr(mesh.index_buffer),
-      .index_buffer_offset = mesh.index_buffer_offset,
+      .index_buffer_format = mesh.index_buffer_format,
 
       .vertex_buffer = copy_raw_com_ptr(mesh.vertex_buffer),
       .vertex_buffer_offset = mesh.vertex_buffer_offset,
@@ -494,7 +494,7 @@ void Shadows_provider::add_mesh_skinned(
       .primitive_topology = mesh.primitive_topology,
 
       .index_buffer = copy_raw_com_ptr(mesh.index_buffer),
-      .index_buffer_offset = mesh.index_buffer_offset,
+      .index_buffer_format = mesh.index_buffer_format,
 
       .vertex_buffer = copy_raw_com_ptr(mesh.vertex_buffer),
       .vertex_buffer_offset = mesh.vertex_buffer_offset,
@@ -530,7 +530,7 @@ void Shadows_provider::add_mesh_compressed_skinned(
       .primitive_topology = mesh.primitive_topology,
 
       .index_buffer = copy_raw_com_ptr(mesh.index_buffer),
-      .index_buffer_offset = mesh.index_buffer_offset,
+      .index_buffer_format = mesh.index_buffer_format,
 
       .vertex_buffer = copy_raw_com_ptr(mesh.vertex_buffer),
       .vertex_buffer_offset = mesh.vertex_buffer_offset,
@@ -566,7 +566,7 @@ void Shadows_provider::add_mesh_soft_skinned(
       .primitive_topology = mesh.primitive_topology,
 
       .index_buffer = copy_raw_com_ptr(mesh.index_buffer),
-      .index_buffer_offset = mesh.index_buffer_offset,
+      .index_buffer_format = mesh.index_buffer_format,
 
       .vertex_buffer = copy_raw_com_ptr(mesh.vertex_buffer),
       .vertex_buffer_offset = mesh.vertex_buffer_offset,
@@ -602,7 +602,7 @@ void Shadows_provider::add_mesh_compressed_soft_skinned(
       .primitive_topology = mesh.primitive_topology,
 
       .index_buffer = copy_raw_com_ptr(mesh.index_buffer),
-      .index_buffer_offset = mesh.index_buffer_offset,
+      .index_buffer_format = mesh.index_buffer_format,
 
       .vertex_buffer = copy_raw_com_ptr(mesh.vertex_buffer),
       .vertex_buffer_offset = mesh.vertex_buffer_offset,
@@ -650,7 +650,7 @@ void Shadows_provider::add_mesh_hardedged(ID3D11DeviceContext4& dc,
       .primitive_topology = mesh.primitive_topology,
 
       .index_buffer = copy_raw_com_ptr(mesh.index_buffer),
-      .index_buffer_offset = mesh.index_buffer_offset,
+      .index_buffer_format = mesh.index_buffer_format,
 
       .vertex_buffer = copy_raw_com_ptr(mesh.vertex_buffer),
       .vertex_buffer_offset = mesh.vertex_buffer_offset,
@@ -700,7 +700,7 @@ void Shadows_provider::add_mesh_hardedged_compressed(
       .primitive_topology = mesh.primitive_topology,
 
       .index_buffer = copy_raw_com_ptr(mesh.index_buffer),
-      .index_buffer_offset = mesh.index_buffer_offset,
+      .index_buffer_format = mesh.index_buffer_format,
 
       .vertex_buffer = copy_raw_com_ptr(mesh.vertex_buffer),
       .vertex_buffer_offset = mesh.vertex_buffer_offset,
@@ -751,7 +751,7 @@ void Shadows_provider::add_mesh_hardedged_skinned(
       .primitive_topology = mesh.primitive_topology,
 
       .index_buffer = copy_raw_com_ptr(mesh.index_buffer),
-      .index_buffer_offset = mesh.index_buffer_offset,
+      .index_buffer_format = mesh.index_buffer_format,
 
       .vertex_buffer = copy_raw_com_ptr(mesh.vertex_buffer),
       .vertex_buffer_offset = mesh.vertex_buffer_offset,
@@ -804,7 +804,7 @@ void Shadows_provider::add_mesh_hardedged_compressed_skinned(
       .primitive_topology = mesh.primitive_topology,
 
       .index_buffer = copy_raw_com_ptr(mesh.index_buffer),
-      .index_buffer_offset = mesh.index_buffer_offset,
+      .index_buffer_format = mesh.index_buffer_format,
 
       .vertex_buffer = copy_raw_com_ptr(mesh.vertex_buffer),
       .vertex_buffer_offset = mesh.vertex_buffer_offset,
@@ -857,7 +857,7 @@ void Shadows_provider::add_mesh_hardedged_soft_skinned(
       .primitive_topology = mesh.primitive_topology,
 
       .index_buffer = copy_raw_com_ptr(mesh.index_buffer),
-      .index_buffer_offset = mesh.index_buffer_offset,
+      .index_buffer_format = mesh.index_buffer_format,
 
       .vertex_buffer = copy_raw_com_ptr(mesh.vertex_buffer),
       .vertex_buffer_offset = mesh.vertex_buffer_offset,
@@ -909,7 +909,7 @@ void Shadows_provider::add_mesh_hardedged_compressed_soft_skinned(
       .primitive_topology = mesh.primitive_topology,
 
       .index_buffer = copy_raw_com_ptr(mesh.index_buffer),
-      .index_buffer_offset = mesh.index_buffer_offset,
+      .index_buffer_format = mesh.index_buffer_format,
 
       .vertex_buffer = copy_raw_com_ptr(mesh.vertex_buffer),
       .vertex_buffer_offset = mesh.vertex_buffer_offset,
@@ -1244,8 +1244,7 @@ void Shadows_provider::draw_shadow_maps_cascades(ID3D11DeviceContext4& dc) noexc
          dc.PSSetShader(nullptr, nullptr, 0);
 
          for (const Mesh& mesh : meshes) {
-            dc.IASetIndexBuffer(mesh.index_buffer.get(), DXGI_FORMAT_R16_UINT,
-                                mesh.index_buffer_offset);
+            dc.IASetIndexBuffer(mesh.index_buffer.get(), mesh.index_buffer_format, 0);
 
             auto* vertex_buffer = mesh.vertex_buffer.get();
 
@@ -1286,8 +1285,7 @@ void Shadows_provider::draw_shadow_maps_cascades(ID3D11DeviceContext4& dc) noexc
          for (const std::uint32_t i : visible) {
             const Mesh& mesh = meshes[i];
 
-            dc.IASetIndexBuffer(mesh.index_buffer.get(), DXGI_FORMAT_R16_UINT,
-                                mesh.index_buffer_offset);
+            dc.IASetIndexBuffer(mesh.index_buffer.get(), mesh.index_buffer_format, 0);
 
             auto* vertex_buffer = mesh.vertex_buffer.get();
 
@@ -1336,8 +1334,7 @@ void Shadows_provider::draw_shadow_maps_cascades(ID3D11DeviceContext4& dc) noexc
                current_input_layout = mesh.input_layout;
             }
 
-            dc.IASetIndexBuffer(mesh.index_buffer.get(), DXGI_FORMAT_R16_UINT,
-                                mesh.index_buffer_offset);
+            dc.IASetIndexBuffer(mesh.index_buffer.get(), mesh.index_buffer_format, 0);
 
             auto* vertex_buffer = mesh.vertex_buffer.get();
 
@@ -1389,8 +1386,8 @@ void Shadows_provider::draw_shadow_maps_cascades(ID3D11DeviceContext4& dc) noexc
                   current_input_layout = mesh.input_layout;
                }
 
-               dc.IASetIndexBuffer(mesh.index_buffer.get(), DXGI_FORMAT_R16_UINT,
-                                   mesh.index_buffer_offset);
+               dc.IASetIndexBuffer(mesh.index_buffer.get(),
+                                   mesh.index_buffer_format, 0);
 
                auto* vertex_buffer = mesh.vertex_buffer.get();
 

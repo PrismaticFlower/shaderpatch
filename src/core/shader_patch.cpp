@@ -1642,7 +1642,7 @@ void Shader_patch::record_draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
                      .primitive_topology = topology,
 
                      .index_buffer = *_game_index_buffer,
-                     .index_buffer_offset = _game_index_buffer_offset,
+                     .index_buffer_format = _game_index_buffer_format,
 
                      .vertex_buffer = *_game_vertex_buffer,
                      .vertex_buffer_offset = _game_vertex_buffer_offset,
@@ -1673,7 +1673,7 @@ void Shader_patch::record_draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
                      .primitive_topology = topology,
 
                      .index_buffer = *_game_index_buffer,
-                     .index_buffer_offset = _game_index_buffer_offset,
+                     .index_buffer_format = _game_index_buffer_format,
 
                      .vertex_buffer = *_game_vertex_buffer,
                      .vertex_buffer_offset = _game_vertex_buffer_offset,
@@ -1706,7 +1706,7 @@ void Shader_patch::record_draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
                      .primitive_topology = topology,
 
                      .index_buffer = *_game_index_buffer,
-                     .index_buffer_offset = _game_index_buffer_offset,
+                     .index_buffer_format = _game_index_buffer_format,
 
                      .vertex_buffer = *_game_vertex_buffer,
                      .vertex_buffer_offset = _game_vertex_buffer_offset,
@@ -1734,7 +1734,7 @@ void Shader_patch::record_draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
                      .primitive_topology = topology,
 
                      .index_buffer = *_game_index_buffer,
-                     .index_buffer_offset = _game_index_buffer_offset,
+                     .index_buffer_format = _game_index_buffer_format,
 
                      .vertex_buffer = *_game_vertex_buffer,
                      .vertex_buffer_offset = _game_vertex_buffer_offset,
@@ -1763,7 +1763,7 @@ void Shader_patch::record_draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
                      .primitive_topology = topology,
 
                      .index_buffer = *_game_index_buffer,
-                     .index_buffer_offset = _game_index_buffer_offset,
+                     .index_buffer_format = _game_index_buffer_format,
 
                      .vertex_buffer = *_game_vertex_buffer,
                      .vertex_buffer_offset = _game_vertex_buffer_offset,
@@ -1787,7 +1787,7 @@ void Shader_patch::record_draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
                      .primitive_topology = topology,
 
                      .index_buffer = *_game_index_buffer,
-                     .index_buffer_offset = _game_index_buffer_offset,
+                     .index_buffer_format = _game_index_buffer_format,
 
                      .vertex_buffer = *_game_vertex_buffer,
                      .vertex_buffer_offset = _game_vertex_buffer_offset,
@@ -1813,7 +1813,7 @@ void Shader_patch::record_draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
                      .primitive_topology = topology,
 
                      .index_buffer = *_game_index_buffer,
-                     .index_buffer_offset = _game_index_buffer_offset,
+                     .index_buffer_format = _game_index_buffer_format,
 
                      .vertex_buffer = *_game_vertex_buffer,
                      .vertex_buffer_offset = _game_vertex_buffer_offset,
@@ -1833,7 +1833,7 @@ void Shader_patch::record_draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
                                              .primitive_topology = topology,
 
                                              .index_buffer = *_game_index_buffer,
-                                             .index_buffer_offset = _game_index_buffer_offset,
+                                             .index_buffer_format = _game_index_buffer_format,
 
                                              .vertex_buffer = *_game_vertex_buffer,
                                              .vertex_buffer_offset = _game_vertex_buffer_offset,
@@ -1862,7 +1862,7 @@ void Shader_patch::record_draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
                   .primitive_topology = topology,
 
                   .index_buffer = *_game_index_buffer,
-                  .index_buffer_offset = _game_index_buffer_offset,
+                  .index_buffer_format = _game_index_buffer_format,
 
                   .vertex_buffer = *_game_vertex_buffer,
                   .vertex_buffer_offset = _game_vertex_buffer_offset,
@@ -1892,7 +1892,7 @@ void Shader_patch::record_draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
                   .primitive_topology = topology,
 
                   .index_buffer = *_game_index_buffer,
-                  .index_buffer_offset = _game_index_buffer_offset,
+                  .index_buffer_format = _game_index_buffer_format,
 
                   .vertex_buffer = *_game_vertex_buffer,
                   .vertex_buffer_offset = _game_vertex_buffer_offset,
@@ -1918,7 +1918,7 @@ void Shader_patch::record_draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
                   .primitive_topology = topology,
 
                   .index_buffer = *_game_index_buffer,
-                  .index_buffer_offset = _game_index_buffer_offset,
+                  .index_buffer_format = _game_index_buffer_format,
 
                   .vertex_buffer = *_game_vertex_buffer,
                   .vertex_buffer_offset = _game_vertex_buffer_offset,
@@ -1940,7 +1940,7 @@ void Shader_patch::record_draw_indexed(const D3D11_PRIMITIVE_TOPOLOGY topology,
                                   .primitive_topology = topology,
 
                                   .index_buffer = *_game_index_buffer,
-                                  .index_buffer_offset = _game_index_buffer_offset,
+                                  .index_buffer_format = _game_index_buffer_format,
 
                                   .vertex_buffer = *_game_vertex_buffer,
                                   .vertex_buffer_offset = _game_vertex_buffer_offset,
