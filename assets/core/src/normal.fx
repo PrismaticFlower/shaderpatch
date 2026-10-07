@@ -313,6 +313,7 @@ Ps_output main_ps(Ps_input input)
 
    lighting_input.detailing_pass = light_detailing_pass;
    lighting_input.detailing_pass_intensity = lighting_scale;
+   lighting_input.detailing_pass_use_texture = false;
 
    float3 color = light::calculate(lighting_input) * diffuse_color;
 

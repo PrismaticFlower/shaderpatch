@@ -88,6 +88,7 @@ struct Calculate_inputs {
 
    bool detailing_pass;
    float detailing_pass_intensity;
+   bool detailing_pass_use_texture;
 };
 
 float3 calculate(Calculate_inputs input)
@@ -163,11 +164,16 @@ float3 calculate(Calculate_inputs input)
    }
 
    if (input.detailing_pass) light.rgb = input.detailing_pass_intensity;
+   
 
    if (input.use_shadow) {
       const float shadow = 1.0 - (light.a * (1.0 - input.shadow));
    
       light.rgb *= shadow;
+   }
+
+   if (input.detailing_pass_use_texture) {
+      light.rgb += input.projected_light_texture_color * light_proj_color.xyz * light.a;
    }
 
    return light.rgb;

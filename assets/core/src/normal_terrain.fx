@@ -156,6 +156,7 @@ float4 diffuse_blendmap_ps(Ps_blendmap_input input,
 
    lighting_input.detailing_pass = light_detailing_pass;
    lighting_input.detailing_pass_intensity = 1.0;
+   lighting_input.detailing_pass_use_texture = false;
 
    float3 color = light::calculate(lighting_input) * diffuse_color;
 
@@ -208,6 +209,7 @@ float4 detailing_ps(Ps_detail_input input,
 
    lighting_input.detailing_pass = light_detailing_pass;
    lighting_input.detailing_pass_intensity = lighting_scale;
+   lighting_input.detailing_pass_use_texture = true;
 
    // Calculate lighting.
    float3 color = light::calculate(lighting_input);

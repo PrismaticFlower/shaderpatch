@@ -184,6 +184,7 @@ float4 nodistortion_ps(Ps_nodistortion_input input,
 
    lighting_input.detailing_pass = false;
    lighting_input.detailing_pass_intensity = 0.0;
+   lighting_input.detailing_pass_use_texture = false;
 
    float3 color = light::calculate(lighting_input) * diffuse_color.rgb;
    color = apply_fog(color, input.fog);
@@ -264,6 +265,7 @@ float4 near_diffuse_ps(Ps_near_input input) : SV_Target0
 
    lighting_input.detailing_pass = false;
    lighting_input.detailing_pass_intensity = 0.0;
+   lighting_input.detailing_pass_use_texture = false;
 
    const float3 lighting_color = light::calculate(lighting_input);
 
@@ -308,6 +310,7 @@ float4 near_ps(Ps_near_input input) : SV_Target0
 
    lighting_input.detailing_pass = false;
    lighting_input.detailing_pass_intensity = 0.0;
+   lighting_input.detailing_pass_use_texture = false;
 
    const float3 lighting_color = light::calculate(lighting_input);
 
@@ -347,6 +350,7 @@ float4 near_diffuse_bump_ps(Ps_near_input input) : SV_Target0
 
    lighting_input.detailing_pass = false;
    lighting_input.detailing_pass_intensity = 0.0;
+   lighting_input.detailing_pass_use_texture = false;
 
    const float3 lighting_color = light::calculate(lighting_input);
 
@@ -392,6 +396,7 @@ float4 near_bump_ps(Ps_near_input input) : SV_Target0
 
    lighting_input.detailing_pass = false;
    lighting_input.detailing_pass_intensity = 0.0;
+   lighting_input.detailing_pass_use_texture = false;
 
    const float3 lighting_color = light::calculate(lighting_input);
 
