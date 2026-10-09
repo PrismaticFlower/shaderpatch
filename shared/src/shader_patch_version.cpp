@@ -35,7 +35,7 @@ auto to_string(const Shader_patch_version& version) noexcept -> std::string
    str += "."sv;
    str += std::to_string(version.prerelease);
 
-   str += " (shadows branch)";
+   str += " (advanced lighting branch)";
 
    return str;
 }
