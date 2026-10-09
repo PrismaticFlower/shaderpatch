@@ -127,8 +127,6 @@ private:
                      const DXGI_FORMAT format, const D3DFORMAT reported_format,
                      std::unique_ptr<Format_patcher> format_patcher) noexcept;
 
-   ~Texture2d_managed();
-
    std::unique_ptr<Format_patcher> _format_patcher;
    std::unique_ptr<Upload_texture> _upload_texture;
    core::Shader_patch& _shader_patch;

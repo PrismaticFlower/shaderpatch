@@ -58,8 +58,6 @@ struct Shadow_world_interface {
 
    static void clear() noexcept;
 
-   static void add_texture(const Input_texture& texture) noexcept;
-
    static void add_model(const Input_model& model) noexcept;
 
    static void add_game_model(const Input_game_model& game_model) noexcept;
@@ -67,11 +65,6 @@ struct Shadow_world_interface {
    static void add_entity_class(const Input_entity_class& entity_class) noexcept;
 
    static void add_object_instance(const Input_object_instance& instance) noexcept;
-
-   static void register_texture(ID3D11ShaderResourceView& srv,
-                                const Texture_hash& data_hash) noexcept;
-
-   static void unregister_texture(ID3D11ShaderResourceView& srv) noexcept;
 
    static void show_imgui(ID3D11DeviceContext2& dc) noexcept;
 };

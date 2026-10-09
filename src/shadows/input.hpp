@@ -1,7 +1,5 @@
 #pragma once
 
-#include "texture_hasher.hpp"
-
 #include <array>
 #include <cstdint>
 #include <string>
@@ -10,13 +8,6 @@
 #include <glm/glm.hpp>
 
 namespace sp::shadows {
-
-struct Input_texture {
-   /// @brief Name of the texture. Provided as a string view to avoid needlessly copying it for each format the texture has.
-   std::string_view name;
-
-   Texture_hash hash;
-};
 
 struct Input_model {
    enum class Topology { tri_list, tri_strip };

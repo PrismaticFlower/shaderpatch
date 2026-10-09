@@ -17,6 +17,12 @@ struct Game_memory {
    /// @brief Pointer to structures::RedDirectionalLight*[2];
    structures::RedDirectionalLight** global_dir_lights = nullptr;
 
+   /// @brief Pointer to the total size (hashes and pointers) of the texture table (in void*/uint32).
+   const unsigned int* texture_table_total_size = nullptr;
+
+   /// @brief Pointer to a pointer of the game's texture table.
+   void* const* texture_table = nullptr;
+
    /// @brief Pointer to float
    float* view_near_plane = nullptr;
 

@@ -235,10 +235,12 @@
     <ClCompile Include="src\freetype_helpers.cpp" />
     <ClCompile Include="src\game_support\font_declarations.cpp" />
     <ClCompile Include="src\game_support\game_memory.cpp" />
+    <ClCompile Include="src\game_support\helpers\hash_table.cpp" />
     <ClCompile Include="src\game_support\leaf_patches.cpp" />
     <ClCompile Include="src\game_support\light_list.cpp" />
     <ClCompile Include="src\game_support\memory_hacks.cpp" />
     <ClCompile Include="src\game_support\munged_shader_declarations.cpp" />
+    <ClCompile Include="src\game_support\texture_table.cpp" />
     <ClCompile Include="src\imgui\imgui.cpp">
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5054;4275;4251;4127;4018</DisableSpecificWarnings>
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5054;4275;4251;4127;4018</DisableSpecificWarnings>
@@ -300,14 +302,8 @@
     <ClCompile Include="src\shadows\read\read_entity_class.cpp" />
     <ClCompile Include="src\shadows\read\read_game_model.cpp" />
     <ClCompile Include="src\shadows\read\read_model.cpp" />
-    <ClCompile Include="src\shadows\read\read_texture.cpp" />
     <ClCompile Include="src\shadows\read\read_world.cpp" />
     <ClCompile Include="src\shadows\shadow_world.cpp" />
-    <ClCompile Include="src\shadows\texture_hasher.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">MaxSpeed</Optimization>
-      <IntrinsicFunctions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</IntrinsicFunctions>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Default</BasicRuntimeChecks>
-    </ClCompile>
     <ClCompile Include="src\user_config.cpp" />
     <ClCompile Include="src\windows_fonts_folder.cpp" />
     <ClCompile Include="src\window_hooks.cpp" />
@@ -420,6 +416,7 @@
     <ClInclude Include="src\game_support\font_declarations.hpp" />
     <ClInclude Include="src\game_support\font_info.hpp" />
     <ClInclude Include="src\game_support\game_memory.hpp" />
+    <ClInclude Include="src\game_support\helpers\hash_table.hpp" />
     <ClInclude Include="src\game_support\leaf_patches.hpp" />
     <ClInclude Include="src\game_support\light_list.hpp" />
     <ClInclude Include="src\game_support\memory_hacks.hpp" />
@@ -430,6 +427,7 @@
     <ClInclude Include="src\game_support\structures\common.hpp" />
     <ClInclude Include="src\game_support\structures\leaf_patch.hpp" />
     <ClInclude Include="src\game_support\structures\light_list.hpp" />
+    <ClInclude Include="src\game_support\texture_table.hpp" />
     <ClInclude Include="src\imgui\imconfig.h" />
     <ClInclude Include="src\imgui\imgui.h" />
     <ClInclude Include="src\imgui\imgui_ext.hpp" />
@@ -481,20 +479,18 @@
     <ClInclude Include="src\shadows\internal\mesh_buffer.hpp" />
     <ClInclude Include="src\shadows\internal\mesh_copy_queue.hpp" />
     <ClInclude Include="src\shadows\internal\active_world.hpp" />
+    <ClInclude Include="src\shadows\internal\texture_table.hpp" />
     <ClInclude Include="src\shadows\internal\world\entity_class.hpp" />
     <ClInclude Include="src\shadows\internal\world\game_model.hpp" />
     <ClInclude Include="src\shadows\internal\world\model.hpp" />
     <ClInclude Include="src\shadows\internal\world\object_instance.hpp" />
-    <ClInclude Include="src\shadows\internal\texture_table.hpp" />
     <ClInclude Include="src\shadows\loader.hpp" />
     <ClInclude Include="src\shadows\internal\name_table.hpp" />
     <ClInclude Include="src\shadows\read\read_entity_class.hpp" />
     <ClInclude Include="src\shadows\read\read_game_model.hpp" />
     <ClInclude Include="src\shadows\read\read_model.hpp" />
-    <ClInclude Include="src\shadows\read\read_texture.hpp" />
     <ClInclude Include="src\shadows\read\read_world.hpp" />
     <ClInclude Include="src\shadows\shadow_world.hpp" />
-    <ClInclude Include="src\shadows\texture_hasher.hpp" />
     <ClInclude Include="src\unlock_memory.hpp" />
     <ClInclude Include="src\user_config.hpp" />
     <ClInclude Include="src\windows_fonts_folder.hpp" />

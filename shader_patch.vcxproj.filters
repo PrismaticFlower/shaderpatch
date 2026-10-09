@@ -301,9 +301,6 @@
     <ClCompile Include="src\shadows\bounding_box.cpp" />
     <ClCompile Include="src\shadows\internal\draw_resources.cpp" />
     <ClCompile Include="src\shadows\internal\debug_world_aabb_draw.cpp" />
-    <ClCompile Include="src\shadows\texture_hasher.cpp" />
-    <ClCompile Include="src\shadows\read\read_texture.cpp" />
-    <ClCompile Include="src\shadows\internal\texture_table.cpp" />
     <ClCompile Include="src\shadows\internal\debug_world_textured_draw.cpp" />
     <ClCompile Include="src\game_support\leaf_patches.cpp" />
     <ClCompile Include="src\shadows\internal\leaf_patch_world.cpp" />
@@ -313,6 +310,9 @@
     <ClCompile Include="src\core\advanced_lighting.cpp" />
     <ClCompile Include="src\core\lighting\clusters.cpp" />
     <ClCompile Include="src\core\lighting\debug\cone_aabb_draw.cpp" />
+    <ClCompile Include="src\shadows\internal\texture_table.cpp" />
+    <ClCompile Include="src\game_support\texture_table.cpp" />
+    <ClCompile Include="src\game_support\helpers\hash_table.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\shader_constants.hpp">
@@ -765,9 +765,6 @@
     <ClInclude Include="src\shadows\internal\draw_resources.hpp" />
     <ClInclude Include="src\shadows\internal\draw_view_constants.hpp" />
     <ClInclude Include="src\shadows\internal\debug_world_aabb_draw.hpp" />
-    <ClInclude Include="src\shadows\texture_hasher.hpp" />
-    <ClInclude Include="src\shadows\read\read_texture.hpp" />
-    <ClInclude Include="src\shadows\internal\texture_table.hpp" />
     <ClInclude Include="src\shadows\internal\debug_world_textured_draw.hpp" />
     <ClInclude Include="src\game_support\leaf_patches.hpp" />
     <ClInclude Include="src\shadows\internal\leaf_patch_world.hpp" />
@@ -780,6 +777,9 @@
     <ClInclude Include="src\core\lighting\clusters.hpp" />
     <ClInclude Include="src\core\lighting\matrices.hpp" />
     <ClInclude Include="src\core\lighting\debug\cone_aabb_draw.hpp" />
+    <ClInclude Include="src\game_support\texture_table.hpp" />
+    <ClInclude Include="src\shadows\internal\texture_table.hpp" />
+    <ClInclude Include="src\game_support\helpers\hash_table.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />

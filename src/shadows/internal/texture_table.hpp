@@ -1,13 +1,8 @@
 #pragma once
 
-#include "../texture_hasher.hpp"
-#include "name_table.hpp"
-
 #include "com_ptr.hpp"
 
 #include <vector>
-
-#include <absl/container/flat_hash_map.h>
 
 #include <d3d11_2.h>
 
@@ -16,22 +11,11 @@ namespace sp::shadows {
 struct Texture_table {
    const static std::size_t null_index = 0xff'ff'ff'ff;
 
+   /// @brief Update the table using the game's one.
+   void update_from_game() noexcept;
+
    /// @brief Clear the table.
    void clear() noexcept;
-
-   /// @brief Add a texture to the table.
-   /// @param name_hash The name of the texture.
-   /// @param texture_hash The hash of the data of the first subresource in the texture.
-   void add(const std::uint32_t name_hash, const Texture_hash& texture_hash) noexcept;
-
-   /// @brief Register an srv with the table.
-   /// @param srv The SRV.
-   /// @param data_hash The hash of the data of the first subresource in the texture.
-   void register_(ID3D11ShaderResourceView& srv, const Texture_hash& data_hash) noexcept;
-
-   /// @brief Unregister an srv with the table. Turning it's binding into a null.
-   /// @param srv The srv to unregister.
-   void unregister(ID3D11ShaderResourceView& srv) noexcept;
 
    /// @brief Acquire the index to a texture from a name hash.
    /// @param name_hash The name of the texture.
@@ -53,16 +37,11 @@ struct Texture_table {
    auto allocated_bytes() const noexcept -> std::size_t;
 
    /// @brief Shows a Dear ImGui "page" of the table. (As in this won't create window rather it'll just submit it's contents)
-   void show_imgui_page(const Name_table& name_table) noexcept;
+   void show_imgui_page() noexcept;
 
 private:
    std::vector<Com_ptr<ID3D11ShaderResourceView>> _textures;
-
-   absl::flat_hash_map<std::uint32_t, std::size_t> _texture_index_from_name;
-   absl::flat_hash_map<Texture_hash, std::vector<std::uint32_t>> _names_from_hash;
-
-   absl::flat_hash_map<Texture_hash, Com_ptr<ID3D11ShaderResourceView>> _registered_srvs;
-   absl::flat_hash_map<void*, Texture_hash> _registered_hashes;
+   std::vector<std::uint32_t> _texture_name_hashes;
 };
 
 }

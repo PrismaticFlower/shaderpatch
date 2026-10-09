@@ -56,6 +56,7 @@ struct Shadow_world {
       if (_active_rebuild_needed) build_active_world();
 
       _leaf_patch_world.update_from_game(*_device, dc, _texture_table);
+      _texture_table.update_from_game();
 
       _counter_total_draws = 0;
       _counter_total_instances = 0;
@@ -552,21 +553,6 @@ struct Shadow_world {
       _active_rebuild_needed = false;
    }
 
-   void add_texture(const Input_texture& input_texture) noexcept
-   {
-      std::scoped_lock lock{_mutex};
-
-      log_debug("Read texture '{}' (hash: "
-                "{:08x}{:08x}{:08x}{:08x}{:08x}{:08x}{:08x}{:08x})",
-                input_texture.name, input_texture.hash.words[0],
-                input_texture.hash.words[1], input_texture.hash.words[2],
-                input_texture.hash.words[3], input_texture.hash.words[4],
-                input_texture.hash.words[5], input_texture.hash.words[6],
-                input_texture.hash.words[7]);
-
-      _texture_table.add(_name_table.add(input_texture.name), input_texture.hash);
-   }
-
    void add_model(const Input_model& input_model) noexcept
    {
       std::scoped_lock lock{_mutex};
@@ -893,20 +879,6 @@ struct Shadow_world {
       });
 
       _active_rebuild_needed = true;
-   }
-
-   void register_texture(ID3D11ShaderResourceView& srv, const Texture_hash& data_hash) noexcept
-   {
-      std::scoped_lock lock{_mutex};
-
-      _texture_table.register_(srv, data_hash);
-   }
-
-   void unregister_texture(ID3D11ShaderResourceView& srv) noexcept
-   {
-      std::scoped_lock lock{_mutex};
-
-      _texture_table.unregister(srv);
    }
 
    void show_imgui(ID3D11DeviceContext2& dc) noexcept
@@ -1551,7 +1523,7 @@ struct Shadow_world {
             }
 
             if (ImGui::BeginTabItem("Textures")) {
-               _texture_table.show_imgui_page(_name_table);
+               _texture_table.show_imgui_page();
 
                ImGui::EndTabItem();
             }
@@ -1828,15 +1800,6 @@ void Shadow_world_interface::clear() noexcept
    self->clear();
 }
 
-void Shadow_world_interface::add_texture(const Input_texture& texture) noexcept
-{
-   Shadow_world* self = shadow_world_ptr.load(std::memory_order_relaxed);
-
-   if (!self) return;
-
-   self->add_texture(texture);
-}
-
 void Shadow_world_interface::add_model(const Input_model& model) noexcept
 {
    Shadow_world* self = shadow_world_ptr.load(std::memory_order_relaxed);
@@ -1871,25 +1834,6 @@ void Shadow_world_interface::add_object_instance(const Input_object_instance& in
    if (!self) return;
 
    self->add_object_instance(instance);
-}
-
-void Shadow_world_interface::register_texture(ID3D11ShaderResourceView& srv,
-                                              const Texture_hash& data_hash) noexcept
-{
-   Shadow_world* self = shadow_world_ptr.load(std::memory_order_relaxed);
-
-   if (!self) return;
-
-   self->register_texture(srv, data_hash);
-}
-
-void Shadow_world_interface::unregister_texture(ID3D11ShaderResourceView& srv) noexcept
-{
-   Shadow_world* self = shadow_world_ptr.load(std::memory_order_relaxed);
-
-   if (!self) return;
-
-   self->unregister_texture(srv);
 }
 
 void Shadow_world_interface::show_imgui(ID3D11DeviceContext2& dc) noexcept

@@ -20,6 +20,9 @@ struct Executable_info {
    std::uintptr_t light_list_ptr = 0;
    std::uintptr_t global_dir_lights_ptr = 0;
 
+   std::uintptr_t texture_table_total_size_ptr = 0;
+   std::uintptr_t texture_table_ptr = 0;
+
    std::uintptr_t view_near_plane = 0;
 
    std::uintptr_t near_scene_fade_start_ptr = 0;
@@ -43,6 +46,9 @@ const Executable_info known_executables[] = {
       .light_list_ptr = 0x007e0014,
       .global_dir_lights_ptr = 0x009623d4,
 
+      .texture_table_total_size_ptr = 0x006bb408,
+      .texture_table_ptr = 0x006bb40d,
+
       .view_near_plane = 0x008f826c,
 
       .near_scene_fade_start_ptr = 0x008f8270,
@@ -61,6 +67,9 @@ const Executable_info known_executables[] = {
 
       .leaf_patch_list_ptr = 0x007ebad8,
 
+      .texture_table_total_size_ptr = 0x006ba378,
+      .texture_table_ptr = 0x006ba37d,
+
       .view_near_plane = 0x008f6dcc,
 
       .near_scene_fade_start_ptr = 0x008f6dd0,
@@ -78,6 +87,9 @@ const Executable_info known_executables[] = {
       .signature_ptr = 0x007bf12c,
       .leaf_patch_list_ptr = 0x00801074,
 
+      .texture_table_total_size_ptr = 0x0042a472,
+      .texture_table_ptr = 0x0042a477,
+
       .view_near_plane = 0x01d72108,
 
       .near_scene_fade_start_ptr = 0x01d72218,
@@ -94,6 +106,9 @@ const Executable_info known_executables[] = {
 
       .signature_ptr = 0x00a2b59c,
       .leaf_patch_list_ptr = 0x00accc84,
+
+      .texture_table_total_size_ptr = 0x007fc6e7,
+      .texture_table_ptr = 0x007fc6ec,
 
       .view_near_plane = 0x00e5ba44,
 
@@ -148,6 +163,14 @@ auto init_game_memory() noexcept -> Game_memory
                   adjust_ptr<structures::RedDirectionalLight*>(info.global_dir_lights_ptr,
                                                                info.base_address,
                                                                executable_base),
+
+               .texture_table_total_size =
+                  adjust_ptr<const unsigned int>(info.texture_table_total_size_ptr,
+                                                 info.base_address, executable_base),
+
+               .texture_table =
+                  adjust_ptr<void* const>(info.texture_table_ptr,
+                                          info.base_address, executable_base),
 
                .view_near_plane = adjust_ptr<float>(info.view_near_plane,
                                                     info.base_address, executable_base),
