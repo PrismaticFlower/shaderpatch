@@ -439,7 +439,7 @@ private:
    bool _use_soft_skinning = false;
 
    bool _use_advanced_lighting = false;
-   bool _use_shadow_maps = true;
+   bool _use_shadow_maps = false;
    bool _preview_shadow_world = false;
    bool _preview_shadow_world_textured = false;
    bool _overlay_shadow_world_aabbs = false;
