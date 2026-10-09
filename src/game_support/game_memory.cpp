@@ -107,6 +107,9 @@ const Executable_info known_executables[] = {
       .signature_ptr = 0x00a2b59c,
       .leaf_patch_list_ptr = 0x00accc84,
 
+      .light_list_ptr = 0x00ae3ae0,
+      .global_dir_lights_ptr = 0x00ed5ef8,
+
       .texture_table_total_size_ptr = 0x007fc6e7,
       .texture_table_ptr = 0x007fc6ec,
 
