@@ -27,7 +27,7 @@ void calculate(inout float4 in_out_diffuse, inout float4 in_out_specular,
 
 void calculate_point(inout float4 in_out_diffuse, inout float4 in_out_specular,
                      float3 normalWS, float3 positionWS, float3 viewWS,
-                     Point_light light, float exponent)
+                     Point_light light, float3 light_color, float exponent)
 {
    const float3 unnormalized_light_vector = light.positionWS - positionWS;
    const float3 light_dirWS = normalize(unnormalized_light_vector);
@@ -35,12 +35,12 @@ void calculate_point(inout float4 in_out_diffuse, inout float4 in_out_specular,
       attenuation_point(unnormalized_light_vector, light.inv_range_sq);
 
    calculate(in_out_diffuse, in_out_specular, normalWS, viewWS, light_dirWS,
-             attenuation, light.color, light.stencil_shadow_factor(), exponent);
+             attenuation, light_color, light.stencil_shadow_factor(), exponent);
 }
 
 void calculate_spot(inout float4 in_out_diffuse, inout float4 in_out_specular,
                     float3 normalWS, float3 positionWS, float3 view_normalWS, 
-                    Spot_light light, float exponent)
+                    Spot_light light, float3 light_color, float exponent)
 {
    const float3 unnormalized_light_vectorWS = light.positionWS - positionWS;
    const float3 light_dirWS = normalize(unnormalized_light_vectorWS);
@@ -51,7 +51,7 @@ void calculate_spot(inout float4 in_out_diffuse, inout float4 in_out_specular,
    const float attenuation = attenuation_point(unnormalized_light_vectorWS, light.inv_range_sq);
 
    calculate(in_out_diffuse, in_out_specular, normalWS, view_normalWS,
-             light_dirWS, attenuation * cone_falloff, light.color, 
+             light_dirWS, attenuation * cone_falloff, light_color, 
              light.stencil_shadow_factor(), exponent);
 }
 
