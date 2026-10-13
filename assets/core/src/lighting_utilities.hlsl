@@ -124,6 +124,9 @@ float3 calculate(Calculate_inputs input)
 
          light += intensity * float4(light_color, directional_light.stencil_shadow_factor());
       }
+      
+      const float3 dx_positionWS = ddx(positionWS); 
+      const float3 dy_positionWS = ddy(positionWS); 
 
       while (!context.point_lights_end()) {
          Point_light point_light = context.next_point_light();
@@ -133,6 +136,11 @@ float3 calculate(Calculate_inputs input)
 
          if (point_light.use_projected_texture()) {
             light_color *= input.projected_light_texture_color;
+         }
+
+         [branch]
+         if (point_light.has_texture()) {
+            light_color *= point_light.sample_texture(positionWS, dx_positionWS, dy_positionWS);
          }
 
          light += intensity * float4(light_color, point_light.stencil_shadow_factor());
@@ -146,6 +154,11 @@ float3 calculate(Calculate_inputs input)
 
          if (spot_light.use_projected_texture()) {
             light_color *= input.projected_light_texture_color;
+         }
+
+         [branch]
+         if (spot_light.has_texture()) {
+            light_color *= spot_light.sample_texture(positionWS, dx_positionWS, dy_positionWS);
          }
 
          light += intensity * float4(light_color, spot_light.stencil_shadow_factor());

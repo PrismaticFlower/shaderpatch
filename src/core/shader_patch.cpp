@@ -2608,14 +2608,14 @@ void Shader_patch::update_dirty_state(const D3D11_PRIMITIVE_TOPOLOGY draw_primit
          _device_context->PSSetConstantBuffers(3, 1,
                                                _cb_advanced_lighting_buffer.get_ptr());
 
-         std::array<ID3D11ShaderResourceView*, 4> lights_srvs =
+         std::array<ID3D11ShaderResourceView*, 11> lights_srvs =
             _advanced_lighting.get_srvs();
 
-         std::array<ID3D11ShaderResourceView*, 5> srvs = {_shadows->shadow_srv(),
-                                                          lights_srvs[0],
-                                                          lights_srvs[1],
-                                                          lights_srvs[2],
-                                                          lights_srvs[3]};
+         std::array<ID3D11ShaderResourceView*, 12> srvs = {_shadows->shadow_srv()};
+
+         for (std::size_t i = 0; i < lights_srvs.size(); ++i) {
+            srvs[i + 1] = lights_srvs[i];
+         }
 
          _device_context->PSSetShaderResources(advanced_lighting_resources_start,
                                                srvs.size(), srvs.data());

@@ -3,6 +3,7 @@
 
 #include "constants_list.hlsl"
 #include "lighting_clusters.hlsl"
+#include "pixel_sampler_states.hlsl"
 
 #ifndef SP_USE_PROJECTED_TEXTURE
 #define SP_USE_PROJECTED_TEXTURE 0
@@ -70,6 +71,40 @@ struct Point_light {
 #else
    float stencil_shadow_factor() { return 0.0; }
 #endif
+
+#if SP_USE_ADVANCED_LIGHTING
+   uint _options;
+
+   bool has_texture() { return light::options_has_texture(_options); }
+
+   float3 sample_texture(float3 surface_positionWS, float3 dx_surface_positionWS, float3 dy_surface_positionWS)
+   {
+      float inv_range = sqrt(inv_range_sq);
+
+      float3 positionLS = (surface_positionWS - positionWS) * inv_range;
+      float3 dx_positionLS = dx_surface_positionWS * inv_range;
+      float3 dy_positionLS = dy_surface_positionWS * inv_range;
+      
+      const uint texture_index = light::options_texture_index(_options);
+
+      [branch]
+      if (texture_index == 0) {
+         return light::light_clusters_point_texture_0.SampleGrad(aniso_wrap_sampler, positionLS, dx_positionLS, dy_positionLS);
+      }
+      else if (texture_index == 1) {
+         return light::light_clusters_point_texture_1.SampleGrad(aniso_wrap_sampler, positionLS, dx_positionLS, dy_positionLS);
+      }
+      else {
+         return light::light_clusters_point_texture_2.SampleGrad(aniso_wrap_sampler, positionLS, dx_positionLS, dy_positionLS);
+      }
+   }
+
+#else
+   bool has_texture() { return false; }
+
+   float3 sample_texture(float3 surface_positionWS, float3 dx_surface_positionWS, float3 dy_surface_positionWS) { return 0.0; }
+#endif
+
 };
 
 struct Spot_light {
@@ -94,6 +129,45 @@ struct Spot_light {
    float _stencil_shadow_factor;
 #else
    float stencil_shadow_factor() { return 0.0; }
+#endif
+
+#if SP_USE_ADVANCED_LIGHTING
+   uint _options;
+
+   bool has_texture() { return light::options_has_texture(_options); }
+
+   float3 sample_texture(float3 surface_positionWS, float3 dx_surface_positionWS, float3 dy_surface_positionWS)
+   {
+      float4x4 light_from_world = light::light_clusters_texture_transforms[light::options_texture_transform(_options)];
+
+      float3 positionLS    = mul(light_from_world, float4(surface_positionWS, 1.0)).xyw;
+      float2 dx_positionLS = mul((float3x3)light_from_world, dx_surface_positionWS).xy;
+      float2 dy_positionLS = mul((float3x3)light_from_world, dy_surface_positionWS).xy;
+      
+      float position_proj = rcp(positionLS.z);
+
+      positionLS.xy *= position_proj;
+      dx_positionLS *= position_proj;
+      dy_positionLS *= position_proj;
+
+      const uint texture_index = light::options_texture_index(_options);
+
+      [branch]
+      if (texture_index == 0) {
+         return light::light_clusters_spot_texture_0.SampleGrad(aniso_wrap_sampler, positionLS.xy, dx_positionLS, dy_positionLS);
+      }
+      else if (texture_index == 1) {
+         return light::light_clusters_spot_texture_1.SampleGrad(aniso_wrap_sampler, positionLS.xy, dx_positionLS, dy_positionLS);
+      }
+      else {
+         return light::light_clusters_spot_texture_2.SampleGrad(aniso_wrap_sampler, positionLS.xy, dx_positionLS, dy_positionLS);
+      }
+   }
+
+#else
+   bool has_texture() { return false; }
+
+   float3 sample_texture(float3 surface_positionWS, float3 dx_surface_positionWS, float3 dy_surface_positionWS) { return 0.0; }
 #endif
 };
 
@@ -140,6 +214,7 @@ struct Lights_context {
       light.positionWS = cluster_light.positionWS;
       light.inv_range_sq = cluster_light.inv_range_sq;
       light.color = cluster_light.color;
+      light._options = cluster_light.options;
 
 #     if SP_USE_PROJECTED_TEXTURE      
          light._use_projected_texture = false;
@@ -167,6 +242,7 @@ struct Lights_context {
       light.cone_outer_param = cluster_light.cone_outer_param;
       light.cone_inner_param = cluster_light.cone_inner_param;
       light.color = cluster_light.color;
+      light._options = cluster_light.options;
 
 #     if SP_USE_PROJECTED_TEXTURE      
          light._use_projected_texture = false;

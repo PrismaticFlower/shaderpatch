@@ -32,10 +32,12 @@ void acquire_global_lights(glm::vec3& global_light1_dir, glm::vec3& global_light
 }
 
 void acquire_light_list(std::vector<Point_light>& point_lights,
-                        std::vector<Spot_light>& spot_lights) noexcept
+                        std::vector<Spot_light>& spot_lights,
+                        std::vector<Light_texture>& textures) noexcept
 {
    point_lights.clear();
    spot_lights.clear();
+   textures.clear();
 
    const Game_memory& game_memory = get_game_memory();
 
@@ -60,6 +62,15 @@ void acquire_light_list(std::vector<Point_light>& point_lights,
             .color = {base_data.color.r, base_data.color.g, base_data.color.b},
             .range = omni_data.range,
          });
+
+         if (base_data.textureHash) {
+            point_lights.back().options.has_texture = true;
+            point_lights.back().options.texture_index = textures.size();
+
+            textures.push_back(
+               {.name_hash = base_data.textureHash,
+                .matrix = std::bit_cast<glm::mat4>(omni_data.textureMatrix)});
+         }
       }
       else if (base_data.type == RedLightType::Spot) {
          RedSpotLight_data& spot_data = ((RedSpotLight*)light_base)->RedSpotLight_data;
@@ -77,6 +88,15 @@ void acquire_light_list(std::vector<Point_light>& point_lights,
             .outer_angle = spot_data.d3dLight.Phi,
             .cone_radius = spot_data.range * spot_data.tanHalfOuterAngle,
          });
+
+         if (base_data.textureHash) {
+            spot_lights.back().options.has_texture = true;
+            spot_lights.back().options.texture_index = textures.size();
+
+            textures.push_back(
+               {.name_hash = base_data.textureHash,
+                .matrix = std::bit_cast<glm::mat4>(spot_data.textureMatrix)});
+         }
       }
 
       node = node->next;
