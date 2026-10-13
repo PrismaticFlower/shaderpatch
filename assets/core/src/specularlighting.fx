@@ -256,7 +256,7 @@ float4 al_blinn_phong_ps(Ps_blinn_phong_input input, float4 positionSS : SV_Posi
    // Ugly hack, but we really want people to be using Advanced Lighting with custom materials anyway. 
    // This just tries to stop things from breaking too much.
    if (custom_constants[3].w != 0) discard;
-
+   
    const float envmap_state = custom_constants[2].x;
 
    float alpha = diffuse_map.Sample(aniso_wrap_sampler, input.texcoords).a;
@@ -275,23 +275,33 @@ float4 al_blinn_phong_ps(Ps_blinn_phong_input input, float4 positionSS : SV_Posi
    }
 
    float3 lighting = global_light_specular * light_colors[0];
+   
+   Lights_context context = acquire_lights_context(positionWS, positionSS);
 
-   const light::Cluster_index cluster = light::load_cluster(positionWS, positionSS);
+   const float3 dx_positionWS = ddx(positionWS); 
+   const float3 dy_positionWS = ddy(positionWS); 
 
-   for (uint i = cluster.point_lights_start; i < cluster.point_lights_end; ++i) {
-      light::Cluster_point_light point_light = light::light_clusters_point_lights[light::light_clusters_lists[i]];
+   while (!context.point_lights_end()) {
+      Point_light point_light = context.next_point_light();
 
       const float3 unorma_light_dirWS = point_light.positionWS - positionWS;
       const float3 light_dirWS = normalize(unorma_light_dirWS);
       const float attenuation = light::attenuation_point(unorma_light_dirWS, point_light.inv_range_sq);
       const float specular = al_calculate_blinn_specular(normalWS, viewWS, light_dirWS);
 
-      lighting += attenuation * specular * point_light.color;
-   }
-   
-   for (uint i = cluster.spot_lights_start; i < cluster.spot_lights_end; ++i) {
-      light::Cluster_spot_light spot_light = light::light_clusters_spot_lights[light::light_clusters_lists[i]];
+      float3 light_color = point_light.color;
+
+      [branch]
+      if (point_light.has_texture()) {
+         light_color *= point_light.sample_texture(positionWS, dx_positionWS, dy_positionWS);
+      }
       
+      lighting += attenuation * specular * light_color;
+   }
+
+   while (!context.spot_lights_end()) {
+      Spot_light spot_light = context.next_spot_light();
+
       const float3 unorma_light_dirWS = spot_light.positionWS - positionWS;
       const float3 light_dirWS = normalize(unorma_light_dirWS);
       const float attenuation = light::attenuation_point(unorma_light_dirWS, spot_light.inv_range_sq);
@@ -300,7 +310,14 @@ float4 al_blinn_phong_ps(Ps_blinn_phong_input input, float4 positionSS : SV_Posi
       const float theta = max(dot(-light_dirWS, spot_light.directionWS), 0.0);
       const float cone_falloff = saturate((theta - spot_light.cone_outer_param) * spot_light.cone_inner_param);
 
-      lighting += attenuation * cone_falloff * specular * spot_light.color;
+      float3 light_color = spot_light.color;
+
+      [branch]
+      if (spot_light.has_texture()) {
+         light_color *= spot_light.sample_texture(positionWS, dx_positionWS, dy_positionWS);
+      }
+      
+      lighting += attenuation * cone_falloff * specular * light_color;
    }
 
    if (envmap_state != 0.0) {
@@ -349,22 +366,32 @@ float4 al_normalmapped_ps(Ps_normalmapped_input input, float4 positionSS : SV_Po
 
    float3 lighting = global_light_specular * light_colors[0];
 
-   const light::Cluster_index cluster = light::load_cluster(positionWS, positionSS);
+   Lights_context context = acquire_lights_context(positionWS, positionSS);
 
-   for (uint i = cluster.point_lights_start; i < cluster.point_lights_end; ++i) {
-      light::Cluster_point_light point_light = light::light_clusters_point_lights[light::light_clusters_lists[i]];
+   const float3 dx_positionWS = ddx(positionWS); 
+   const float3 dy_positionWS = ddy(positionWS); 
+
+   while (!context.point_lights_end()) {
+      Point_light point_light = context.next_point_light();
 
       const float3 unorma_light_dirWS = point_light.positionWS - positionWS;
       const float3 light_dirWS = normalize(unorma_light_dirWS);
       const float attenuation = light::attenuation_point(unorma_light_dirWS, point_light.inv_range_sq);
       const float specular = al_calculate_blinn_specular(normalWS, viewWS, light_dirWS);
 
-      lighting += attenuation * specular * point_light.color;
-   }
-   
-   for (uint i = cluster.spot_lights_start; i < cluster.spot_lights_end; ++i) {
-      light::Cluster_spot_light spot_light = light::light_clusters_spot_lights[light::light_clusters_lists[i]];
+      float3 light_color = point_light.color;
+
+      [branch]
+      if (point_light.has_texture()) {
+         light_color *= point_light.sample_texture(positionWS, dx_positionWS, dy_positionWS);
+      }
       
+      lighting += attenuation * specular * light_color;
+   }
+
+   while (!context.spot_lights_end()) {
+      Spot_light spot_light = context.next_spot_light();
+
       const float3 unorma_light_dirWS = spot_light.positionWS - positionWS;
       const float3 light_dirWS = normalize(unorma_light_dirWS);
       const float attenuation = light::attenuation_point(unorma_light_dirWS, spot_light.inv_range_sq);
@@ -373,7 +400,14 @@ float4 al_normalmapped_ps(Ps_normalmapped_input input, float4 positionSS : SV_Po
       const float theta = max(dot(-light_dirWS, spot_light.directionWS), 0.0);
       const float cone_falloff = saturate((theta - spot_light.cone_outer_param) * spot_light.cone_inner_param);
 
-      lighting += attenuation * cone_falloff * specular * spot_light.color;
+      float3 light_color = spot_light.color;
+
+      [branch]
+      if (spot_light.has_texture()) {
+         light_color *= spot_light.sample_texture(positionWS, dx_positionWS, dy_positionWS);
+      }
+      
+      lighting += attenuation * cone_falloff * specular * light_color;
    }
       
    float gloss = lerp(1.0, normal_map_gloss.a, specular_color.a);
