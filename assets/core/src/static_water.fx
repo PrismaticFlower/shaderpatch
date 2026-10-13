@@ -216,6 +216,9 @@ float3 get_specular(float3 normalWS, float3 viewWS, float3 positionWS, float4 po
 
       Lights_context context = acquire_lights_context(positionWS, positionSS);
 
+      const float3 dx_positionWS = ddx(positionWS); 
+      const float3 dy_positionWS = ddy(positionWS);
+
       while (!context.directional_lights_end()) {
          Directional_light directional_light = context.next_directional_light();
 
@@ -246,6 +249,11 @@ float3 get_specular(float3 normalWS, float3 viewWS, float3 positionWS, float4 po
             light_color *= projected_light_texture_color;
          }
 
+         [branch]
+         if (point_light.has_texture()) {
+            light_color *= point_light.sample_texture(positionWS, dx_positionWS, dy_positionWS);
+         }
+
          float3 light_dirWS;
          float attenuation;
       
@@ -263,6 +271,11 @@ float3 get_specular(float3 normalWS, float3 viewWS, float3 positionWS, float4 po
 
          if (spot_light.use_projected_texture()) {
             light_color *= projected_light_texture_color;
+         }
+
+         [branch]
+         if (spot_light.has_texture()) {
+            light_color *= spot_light.sample_texture(positionWS, dx_positionWS, dy_positionWS);
          }
 
          float3 light_dirWS;

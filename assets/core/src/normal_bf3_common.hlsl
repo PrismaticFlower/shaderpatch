@@ -60,6 +60,9 @@ float3 do_lighting(surface_info surface, Texture2D<float3> projected_light_textu
                                           : 0.0;
 
       Lights_context context = acquire_lights_context(positionWS, surface.positionSS);
+      
+      const float3 dx_positionWS = ddx(positionWS); 
+      const float3 dy_positionWS = ddy(positionWS); 
 
       while (!context.directional_lights_end()) {
          Directional_light directional_light = context.next_directional_light();
@@ -90,6 +93,11 @@ float3 do_lighting(surface_info surface, Texture2D<float3> projected_light_textu
             light_color *= projected_light_texture_color;
          }
 
+         [branch]
+         if (point_light.has_texture()) {
+            light_color *= point_light.sample_texture(positionWS, dx_positionWS, dy_positionWS);
+         }
+
          light::blinnphong::calculate_point(diffuse_lighting, specular_lighting, normalWS,
                                             positionWS, viewWS, point_light, light_color, specular_exponent);
       }
@@ -101,6 +109,11 @@ float3 do_lighting(surface_info surface, Texture2D<float3> projected_light_textu
 
          if (spot_light.use_projected_texture()) {
             light_color *= projected_light_texture_color;
+         }
+
+         [branch]
+         if (spot_light.has_texture()) {
+            light_color *= spot_light.sample_texture(positionWS, dx_positionWS, dy_positionWS);
          }
 
          light::blinnphong::calculate_spot(diffuse_lighting, specular_lighting, normalWS,

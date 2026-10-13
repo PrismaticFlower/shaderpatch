@@ -138,6 +138,9 @@ float3 calculate(surface_info surface, Texture2D<float3> projected_light_texture
                                                            mul(float4(positionWS, 1.0), light_proj_matrix)) 
                                   : 0.0;
 
+      const float3 dx_positionWS = ddx(positionWS); 
+      const float3 dy_positionWS = ddy(positionWS); 
+
       while (!context.directional_lights_end()) {
          Directional_light directional_light = context.next_directional_light();
 
@@ -168,6 +171,11 @@ float3 calculate(surface_info surface, Texture2D<float3> projected_light_texture
             light_color *= projected_light_texture_color;
          }
 
+         [branch]
+         if (point_light.has_texture()) {
+            light_color *= point_light.sample_texture(positionWS, dx_positionWS, dy_positionWS);
+         }
+
          float3 light_dirWS;
          float attenuation;
 
@@ -185,6 +193,11 @@ float3 calculate(surface_info surface, Texture2D<float3> projected_light_texture
 
          if (spot_light.use_projected_texture()) {
             light_color *= projected_light_texture_color;
+         }
+
+         [branch]
+         if (spot_light.has_texture()) {
+            light_color *= spot_light.sample_texture(positionWS, dx_positionWS, dy_positionWS);
          }
 
          float3 light_dirWS;

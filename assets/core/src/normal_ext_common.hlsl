@@ -47,6 +47,9 @@ float3 do_lighting_diffuse(Normal_ext_lighting_input input, Texture2D<float3> pr
 
       Lights_context context = acquire_lights_context(positionWS, input.positionSS);
 
+      const float3 dx_positionWS = ddx(positionWS); 
+      const float3 dy_positionWS = ddy(positionWS); 
+
       while (!context.directional_lights_end()) {
          Directional_light directional_light = context.next_directional_light();
 
@@ -75,6 +78,11 @@ float3 do_lighting_diffuse(Normal_ext_lighting_input input, Texture2D<float3> pr
             light_color *= projected_light_texture_color;
          }
 
+         [branch]
+         if (point_light.has_texture()) {
+            light_color *= point_light.sample_texture(positionWS, dx_positionWS, dy_positionWS);
+         }
+
          diffuse_lighting += intensity * float4(light_color, point_light.stencil_shadow_factor());
       }
 
@@ -86,6 +94,11 @@ float3 do_lighting_diffuse(Normal_ext_lighting_input input, Texture2D<float3> pr
 
          if (spot_light.use_projected_texture()) {
             light_color *= projected_light_texture_color;
+         }
+
+         [branch]
+         if (spot_light.has_texture()) {
+            light_color *= spot_light.sample_texture(positionWS, dx_positionWS, dy_positionWS);
          }
 
          diffuse_lighting += intensity * float4(light_color, spot_light.stencil_shadow_factor());
@@ -129,6 +142,9 @@ float3 do_lighting(Normal_ext_lighting_input input, Texture2D<float3> projected_
 
       Lights_context context = acquire_lights_context(positionWS, input.positionSS);
 
+      const float3 dx_positionWS = ddx(positionWS); 
+      const float3 dy_positionWS = ddy(positionWS); 
+
       while (!context.directional_lights_end()) {
          Directional_light directional_light = context.next_directional_light();
 
@@ -158,6 +174,11 @@ float3 do_lighting(Normal_ext_lighting_input input, Texture2D<float3> projected_
             light_color *= projected_light_texture_color;
          }
 
+         [branch]
+         if (point_light.has_texture()) {
+            light_color *= point_light.sample_texture(positionWS, dx_positionWS, dy_positionWS);
+         }
+
          light::blinnphong::calculate_point(diffuse_lighting, specular_lighting, normalWS,
                                             positionWS, viewWS, point_light, light_color, specular_exponent);
       }
@@ -169,6 +190,11 @@ float3 do_lighting(Normal_ext_lighting_input input, Texture2D<float3> projected_
 
          if (spot_light.use_projected_texture()) {
             light_color *= projected_light_texture_color;
+         }
+
+         [branch]
+         if (spot_light.has_texture()) {
+            light_color *= spot_light.sample_texture(positionWS, dx_positionWS, dy_positionWS);
          }
 
          light::blinnphong::calculate_spot(diffuse_lighting, specular_lighting, normalWS,
@@ -217,6 +243,9 @@ float3 do_lighting_normalized(Normal_ext_lighting_input input, Texture2D<float3>
 
       Lights_context context = acquire_lights_context(positionWS, input.positionSS);
 
+      const float3 dx_positionWS = ddx(positionWS); 
+      const float3 dy_positionWS = ddy(positionWS); 
+
       while (!context.directional_lights_end()) {
          Directional_light directional_light = context.next_directional_light();
 
@@ -246,6 +275,11 @@ float3 do_lighting_normalized(Normal_ext_lighting_input input, Texture2D<float3>
             light_color *= projected_light_texture_color;
          }
 
+         [branch]
+         if (point_light.has_texture()) {
+            light_color *= point_light.sample_texture(positionWS, dx_positionWS, dy_positionWS);
+         }
+
          light::blinnphong_normalized::calculate_point(diffuse_lighting, specular_lighting, normalWS,
                                                        positionWS, viewWS, point_light, light_color, specular_exponent);
       }
@@ -257,6 +291,11 @@ float3 do_lighting_normalized(Normal_ext_lighting_input input, Texture2D<float3>
 
          if (spot_light.use_projected_texture()) {
             light_color *= projected_light_texture_color;
+         }
+
+         [branch]
+         if (spot_light.has_texture()) {
+            light_color *= spot_light.sample_texture(positionWS, dx_positionWS, dy_positionWS);
          }
 
          light::blinnphong_normalized::calculate_spot(diffuse_lighting, specular_lighting, normalWS,
