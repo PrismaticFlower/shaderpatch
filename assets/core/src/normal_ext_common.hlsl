@@ -124,7 +124,7 @@ float3 do_lighting(float3 normalWS, float3 positionWS, float3 viewWS,
          }
 
          light::blinnphong::calculate_point(diffuse_lighting, specular_lighting, normalWS,
-                                            positionWS, viewWS, point_light, specular_exponent);
+                                            positionWS, viewWS, point_light, light_color, specular_exponent);
       }
       
       while (!context.spot_lights_end()) {
@@ -137,7 +137,7 @@ float3 do_lighting(float3 normalWS, float3 positionWS, float3 viewWS,
          }
 
          light::blinnphong::calculate_spot(diffuse_lighting, specular_lighting, normalWS,
-                                           positionWS, viewWS, spot_light, specular_exponent);
+                                           positionWS, viewWS, spot_light, light_color, specular_exponent);
       }
 
       if (normal_ext_use_shadow_map) {
@@ -201,7 +201,7 @@ float3 do_lighting_normalized(float3 normalWS, float3 positionWS, float3 viewWS,
          }
 
          light::blinnphong_normalized::calculate_point(diffuse_lighting, specular_lighting, normalWS,
-                                                       positionWS, viewWS, point_light, specular_exponent);
+                                                       positionWS, viewWS, point_light, light_color, specular_exponent);
       }
       
       while (!context.spot_lights_end()) {
@@ -214,7 +214,7 @@ float3 do_lighting_normalized(float3 normalWS, float3 positionWS, float3 viewWS,
          }
 
          light::blinnphong_normalized::calculate_spot(diffuse_lighting, specular_lighting, normalWS,
-                                                      positionWS, viewWS, spot_light, specular_exponent);
+                                                      positionWS, viewWS, spot_light, light_color, specular_exponent);
       }
 
       if (normal_ext_use_shadow_map) {

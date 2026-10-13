@@ -84,7 +84,7 @@ float3 do_lighting(surface_info surface, Texture2D<float3> projected_light_textu
          }
 
          light::blinnphong::calculate_point(diffuse_lighting, specular_lighting, normalWS,
-                                            positionWS, viewWS, point_light, specular_exponent);
+                                            positionWS, viewWS, point_light, light_color, specular_exponent);
       }
       
       while (!context.spot_lights_end()) {
@@ -97,7 +97,7 @@ float3 do_lighting(surface_info surface, Texture2D<float3> projected_light_textu
          }
 
          light::blinnphong::calculate_spot(diffuse_lighting, specular_lighting, normalWS,
-                                           positionWS, viewWS, spot_light, specular_exponent);
+                                           positionWS, viewWS, spot_light, light_color, specular_exponent);
       }
 
       if (normal_bf3_use_shadow_map) {
