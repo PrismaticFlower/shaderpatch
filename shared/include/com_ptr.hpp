@@ -44,7 +44,7 @@ public:
       _pointer = from;
    }
 
-   Com_ptr(std::nullptr_t){};
+   Com_ptr(std::nullptr_t) {};
 
    Com_ptr(const Com_ptr& other) noexcept
    {
@@ -276,7 +276,7 @@ inline auto make_shared_com_ptr(Com_ptr<Class> com_ptr) -> std::shared_ptr<Class
 template<typename Class>
 inline auto copy_raw_com_ptr(Class* const com_ptr) -> Com_ptr<Class>
 {
-   Expects(com_ptr != nullptr);
+   if (com_ptr == nullptr) return nullptr;
 
    com_ptr->AddRef();
 
