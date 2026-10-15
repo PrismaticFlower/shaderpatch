@@ -25,7 +25,7 @@ namespace sp::core {
 struct Shadows_config {
    bool force_doublesided_meshes = true;
    bool disable_dynamic_hardedged_meshes = false;
-   bool use_game_shadow_intensity = false;
+   bool use_game_shadow_intensity = true;
 
    INT hw_depth_bias = 0;
    float hw_depth_bias_clamp = 0.0f;
