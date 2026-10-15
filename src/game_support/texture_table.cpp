@@ -44,9 +44,19 @@ auto lookup_texture(std::uint32_t name_hash, const bool srgb_view)
 
    std::memcpy(&d3d_texture, texture + texture_offset, sizeof(d3d_texture));
 
-   const core::Game_texture& game_texture = d3d_texture->get<core::Game_texture>();
+   if (const core::Game_texture* game_texture =
+          d3d_texture->get_if<core::Game_texture>();
+       game_texture) {
+      return srgb_view ? game_texture->srgb_srv.get() : game_texture->srv.get();
+   }
 
-   return srgb_view ? game_texture.srgb_srv.get() : game_texture.srv.get();
+   if (const core::Material_handle* material =
+          d3d_texture->get_if<core::Material_handle>();
+       material) {
+      return (*material)->fail_safe_game_texture.get();
+   }
+
+   return nullptr;
 }
 
 }
