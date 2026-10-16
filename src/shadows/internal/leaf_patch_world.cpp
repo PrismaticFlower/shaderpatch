@@ -270,13 +270,16 @@ void Leaf_patch_world::update_from_game(ID3D11Device& device, ID3D11DeviceContex
    }
 
    for (const game_support::Leaf_patch& patch : game_leaf_patches) {
-      const float height_scale =
-         game_leaf_patch_classes[patch.class_index]->m_heightScale;
+      game_support::structures::LeafPatchClass_data* class_data =
+         game_leaf_patch_classes[patch.class_index];
+
+      const float height_scale = class_data->m_heightScale;
 
       classes[patch.class_index].bounding_spheres.push_back({
-         .position = {patch.transform[0].w, patch.transform[1].w,
-                      patch.transform[2].w},
-         .radius = patch.bounds_radius,
+         .position = {class_data->bboxCentre.x + patch.transform[0].w,
+                      class_data->bboxCentre.y + patch.transform[1].w,
+                      class_data->bboxCentre.z + patch.transform[2].w},
+         .radius = class_data->boundsRadius,
       });
       classes[patch.class_index].transforms.push_back(patch.transform);
 
