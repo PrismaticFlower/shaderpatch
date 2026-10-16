@@ -38,7 +38,7 @@ auto Texture_table::acquire(const std::uint32_t name_hash) noexcept -> std::size
       return new_index;
    }
 
-   return static_cast<std::size_t>(std::distance(_texture_name_hashes.end(), it));
+   return static_cast<std::size_t>(std::distance(_texture_name_hashes.begin(), it));
 }
 
 auto Texture_table::get(std::size_t index) const noexcept -> ID3D11ShaderResourceView*
