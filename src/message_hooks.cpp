@@ -42,6 +42,25 @@ LRESULT CALLBACK wnd_proc_hook(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
          input_config.screenshot_func();
       }
    } break;
+   case WM_WINDOWPOSCHANGING: {
+      WINDOWPOS* window_pos = reinterpret_cast<WINDOWPOS*>(lParam);
+
+      MONITORINFO mon_info{sizeof(MONITORINFO)};
+
+      GetMonitorInfoA(MonitorFromWindow(hWnd, MONITOR_DEFAULTTOPRIMARY), &mon_info);
+      const RECT mon_area = mon_info.rcMonitor;
+
+      const UINT monitor_width = mon_area.right - mon_area.left;
+      const UINT monitor_height = mon_area.bottom - mon_area.top;
+
+      const UINT offset_x = (monitor_width - window_pos->cx) / 2;
+      const UINT offset_y = (monitor_height - window_pos->cy) / 2;
+
+      window_pos->x = mon_area.left + offset_x;
+      window_pos->y = mon_area.top + offset_y;
+
+      return 0;
+   } break;
    }
 
    return CallWindowProcA(game_wnd_proc, hWnd, message, wParam, lParam);
