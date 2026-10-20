@@ -171,6 +171,9 @@ void Swapchain::resize(const bool fullscreen, const UINT width, const UINT heigh
    _swapchain->ResizeTarget(&mode);
 
    if (fullscreen_status_changed) {
+      ShowWindow(_window, SW_MINIMIZE);
+      ShowWindow(_window, SW_RESTORE);
+
       _swapchain->SetFullscreenState(_fullscreen, output.get());
    }
 
