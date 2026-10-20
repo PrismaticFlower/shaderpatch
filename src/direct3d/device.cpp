@@ -363,7 +363,6 @@ HRESULT Device::Reset(D3DPRESENT_PARAMETERS* params) noexcept
 
    if (!reset_flags.legacy_fullscreen) {
       win32::position_window(_window, window_width, window_height);
-      win32::clip_cursor_to_window(_window);
    }
 
    return S_OK;

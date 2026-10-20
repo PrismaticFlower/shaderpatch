@@ -33,21 +33,6 @@ LRESULT CALLBACK wnd_proc_hook(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
          if (input_config.activate_app_func) input_config.activate_app_func();
       }
    } break;
-   case WM_ACTIVATE: {
-      if (LOWORD(wParam) == WA_INACTIVE) {
-         ClipCursor(nullptr);
-      }
-      else {
-         win32::clip_cursor_to_window(hWnd);
-      }
-   } break;
-   case WM_SIZE: {
-      if (GetActiveWindow() == game_window) {
-         win32::clip_cursor_to_window(hWnd);
-      }
-
-      return 1;
-   } break;
    case WM_KEYUP: {
       if (const auto key = wParam;
           key == input_config.hotkey && input_config.hotkey_func) {

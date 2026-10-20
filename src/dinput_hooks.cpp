@@ -4,6 +4,8 @@
 #include "logger.hpp"
 #include "user_config.hpp"
 
+#include "imgui/imgui.h"
+
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
 
@@ -37,7 +39,7 @@ struct IDirectInputDevice8A_overlay : IDirectInputDevice8A {
    HRESULT __stdcall SetCooperativeLevel(HWND window,
                                          [[maybe_unused]] DWORD flags) noexcept override
    {
-      return _device->SetCooperativeLevel(window, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
+      return _device->SetCooperativeLevel(window, flags & ~DISCL_NOWINKEY);
    }
 
    HRESULT __stdcall GetDeviceState(DWORD size, LPVOID data) noexcept override
@@ -51,6 +53,26 @@ struct IDirectInputDevice8A_overlay : IDirectInputDevice8A {
       }
 
       if (input_config.mode == Input_mode::imgui) {
+         if (_type == Device_type::mouse and size == sizeof(DIMOUSESTATE2)) {
+            DIMOUSESTATE2* mouse = reinterpret_cast<DIMOUSESTATE2*>(data);
+
+            if (ImGui::GetCurrentContext()) {
+               ImGuiIO& io = ImGui::GetIO();
+
+               static BYTE last_buttons[5] = {0xff, 0xff, 0xff, 0xff, 0xff};
+
+               for (int i = 0; i < 5; ++i) {
+                  if (last_buttons[i] != mouse->rgbButtons[i]) {
+                     io.AddMouseButtonEvent(i, (mouse->rgbButtons[i] & 0x80) != 0);
+
+                     last_buttons[i] = mouse->rgbButtons[i];
+                  }
+               }
+
+               io.AddMouseWheelEvent(0.0f, mouse->lZ / static_cast<float>(WHEEL_DELTA));
+            }
+         }
+
          std::memset(data, 0, size);
 
          return DI_OK;

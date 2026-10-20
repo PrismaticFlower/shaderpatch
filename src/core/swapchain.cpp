@@ -180,8 +180,6 @@ void Swapchain::resize(const bool fullscreen, const UINT width, const UINT heigh
                          _texture.void_clear_and_assign());
    _device->CreateRenderTargetView(_texture.get(), nullptr, _rtv.clear_and_assign());
    _device->CreateShaderResourceView(_texture.get(), nullptr, _srv.clear_and_assign());
-
-   win32::clip_cursor_to_window(_window);
 }
 
 auto Swapchain::present() noexcept -> Present_status

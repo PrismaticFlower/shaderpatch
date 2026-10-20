@@ -11,9 +11,10 @@ inline void make_borderless_window(const HWND window)
 {
    Expects(IsWindow(window));
 
-   SetWindowLongPtrA(window, GWL_STYLE, WS_POPUP | WS_VISIBLE);
    SetWindowLongPtrA(window, GWL_EXSTYLE, WS_EX_APPWINDOW);
-   ShowWindow(window, SW_NORMAL);
+   SetWindowLongPtrA(window, GWL_STYLE,
+                     GetWindowLongPtrA(window, GWL_STYLE) & ~(WS_CAPTION | WS_THICKFRAME) |
+                        WS_POPUP);
 }
 
 inline void resize_window(const HWND window, const UINT width, const UINT height)
@@ -86,30 +87,6 @@ inline void leftalign_window(const HWND window)
 
    SetWindowPos(window, HWND_TOP, mon_area.left, mon_area.top, 0, 0,
                 SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSENDCHANGING);
-}
-
-inline void clip_cursor_to_window(const HWND window)
-{
-   Expects(IsWindow(window));
-
-   RECT rect = {};
-   if (!GetClientRect(window, &rect)) return;
-
-   POINT points[2] = {
-      {.x = rect.left, .y = rect.top},
-      {.x = rect.right, .y = rect.bottom},
-   };
-
-   MapWindowPoints(window, nullptr, &points[0], 2);
-
-   rect = {
-      .left = points[0].x,
-      .top = points[0].y,
-      .right = points[1].x,
-      .bottom = points[1].y,
-   };
-
-   ClipCursor(&rect);
 }
 
 }
