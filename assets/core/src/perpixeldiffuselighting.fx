@@ -23,10 +23,7 @@ const static float light_radiuses[3] =
     (1.0 / light_packed_constants[5].x) * light_packed_constants[5].y};
 
 const static float3 spotlight_color = light_colors[0];
-const static float3 spotlight_positionWS = light_packed_constants[0].xyz;
-const static float spotlight_range =
-   (1.0 / light_packed_constants[1].x) * light_packed_constants[1].y;
-const static float3 spotlight_directionWS = light_packed_constants[2].xyz;
+const static bool   spotlight_bidirectional = ps_custom_constants[0].a > 0.0;
 
 const static bool generate_texcoords = PERPIXEL_GENERATE_TEXCOORDS;
 const static bool generate_tangents = PERPIXEL_GENERATE_TANGENTS;
@@ -308,20 +305,28 @@ float4 perpixel_ps(Ps_perpixel_input input) : SV_Target0
    return float4(color, 1.0);
 }
 
-float3 calculate_spotlight(float3 position, float3 normal, float3 light_position,
-                           float3 light_direction, float3 light_color,
-                           float light_range, float3 projection_color)
+float calculate_spotlight(float3 positionWS, float3 normalWS)
 {
-   const float3 light_normal = normalize(light_position - position);
-   const float intensity = saturate(dot(normal, light_normal));
+   float3 light_dirWS;
+   float attenuation;
 
-   const float light_distance = distance(position, light_position);
+   if (light_packed_constants[0].w > 0.0) {
+      light_dirWS = light_packed_constants[0].xyz - positionWS;
 
-   const float attenuation =
-      saturate(saturate(dot(light_direction, -light_normal)) -
-               ((light_distance * light_distance) / (light_range * light_range)));
+      attenuation = saturate(1.0 - dot(light_dirWS, light_dirWS) / (light_radiuses[0] * light_radiuses[0]));
 
-   return attenuation * intensity * light_color * projection_color;
+      if (!spotlight_bidirectional && dot(light_dirWS, light_packed_constants[2].xyz) > 0.0) attenuation = 0.0;
+   
+      light_dirWS = normalize(light_dirWS);
+   }
+   else {
+      light_dirWS = -light_packed_constants[0].xyz;
+      attenuation = 1.0;
+   }
+
+   float NdotL = saturate(dot(light_dirWS, normalWS));
+
+   return NdotL * attenuation;
 }
 
 struct Ps_perpixel_spotlight_input {
@@ -345,9 +350,7 @@ float4 perpixel_spotlight_ps(Ps_perpixel_spotlight_input input) : SV_Target0
    color *= light_ambient_color_top.a;
    [branch] if (ssao_enabled) color *= shadow_ao_map.Sample(linear_clamp_sampler, input.shadow_texcoords).g;
 
-   color += calculate_spotlight(input.positionWS, normalWS, spotlight_positionWS,
-                                spotlight_directionWS, spotlight_color,
-                                spotlight_range, projection_color);
+   color += calculate_spotlight(input.positionWS, normalWS) * spotlight_color * projection_color;
 
    color = apply_fog(color, input.fog);
 
@@ -381,9 +384,7 @@ float4 normalmapped_spotlight_ps(Ps_normalmapped_spotlight_input input) : SV_Tar
    color *= light_ambient_color_top.a;
    [branch] if (ssao_enabled) color *= shadow_ao_map.Sample(linear_clamp_sampler, input.shadow_texcoords).g;
 
-   color += calculate_spotlight(input.positionWS, normalWS, spotlight_positionWS,
-                                spotlight_directionWS, spotlight_color,
-                                spotlight_range, projection_color);
+   color += calculate_spotlight(input.positionWS, normalWS) * spotlight_color * projection_color;
 
    color = apply_fog(color, input.fog);
 
