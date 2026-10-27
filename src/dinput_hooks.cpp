@@ -39,6 +39,8 @@ struct IDirectInputDevice8A_overlay : IDirectInputDevice8A {
    HRESULT __stdcall SetCooperativeLevel(HWND window,
                                          [[maybe_unused]] DWORD flags) noexcept override
    {
+      _window = window;
+
       return _device->SetCooperativeLevel(window, flags & ~DISCL_NOWINKEY);
    }
 
@@ -69,6 +71,13 @@ struct IDirectInputDevice8A_overlay : IDirectInputDevice8A {
                   }
                }
 
+               POINT cursor_pt;
+
+               GetCursorPos(&cursor_pt);
+               ScreenToClient(_window, &cursor_pt);
+
+               io.AddMousePosEvent(static_cast<float>(cursor_pt.x),
+                                   static_cast<float>(cursor_pt.y));
                io.AddMouseWheelEvent(0.0f, mouse->lZ / static_cast<float>(WHEEL_DELTA));
             }
          }
@@ -273,6 +282,7 @@ struct IDirectInputDevice8A_overlay : IDirectInputDevice8A {
 private:
    Device_type _type = Device_type::other;
    Com_ptr<IDirectInputDevice8A> _device;
+   HWND _window = nullptr;
 
    std::atomic<ULONG> _ref_count = 1;
 };

@@ -723,6 +723,7 @@ ImGuiKey ImGui_ImplWin32_KeyEventToImGuiKey(WPARAM wParam, LPARAM lParam)
 #define DBT_DEVNODES_CHANGED 0x0007
 #endif
 
+#if 0
 // Helper to obtain the source of mouse messages.
 // See https://learn.microsoft.com/en-us/windows/win32/tablet/system-events-and-mouse-messages
 // Prefer to call this at the top of the message handler to avoid the possibility of other Win32 calls interfering with this.
@@ -734,6 +735,7 @@ static ImGuiMouseSource ImGui_ImplWin32_GetMouseSourceFromMessageExtraInfo()
       return ImGuiMouseSource_TouchScreen;
    return ImGuiMouseSource_Mouse;
 }
+#endif
 
 // Win32 message handler (process Win32 mouse/keyboard inputs, etc.)
 // Call from your application's message handler. Keep calling your message handler unless this function returns TRUE.
@@ -768,6 +770,7 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandlerEx(HWND hwnd, UINT msg,
    ImGui_ImplWin32_Data* bd = ImGui_ImplWin32_GetBackendData(io);
    if (bd == nullptr) return 0;
    switch (msg) {
+#if 0 // Shader Patch change, mouse input comes from DirectInput hook.
    case WM_MOUSEMOVE:
    case WM_NCMOUSEMOVE: {
       // We need to call TrackMouseEvent in order to receive WM_MOUSELEAVE events
@@ -875,6 +878,7 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandlerEx(HWND hwnd, UINT msg,
       io.AddMouseWheelEvent(-(float)GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA,
                             0.0f);
       return 0;
+#endif
    case WM_KEYDOWN:
    case WM_KEYUP:
    case WM_SYSKEYDOWN:
